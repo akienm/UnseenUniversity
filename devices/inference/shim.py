@@ -50,6 +50,9 @@ class InferenceRequest:
     # Hard ceiling: dispatch() rejects requests with escalation_hop >= 2.
     escalation_hop: int = 0
     prior_attempt: str = ""
+    # Foreground flag: when True, rules engine prefers cloud (usage_based) over flat_rate.
+    # Used for latency-sensitive tasks like sprint-ticket work that require high capability.
+    foreground: bool = False
 
 
 @dataclass

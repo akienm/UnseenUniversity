@@ -267,6 +267,39 @@ def test_google_paid_source_billing_type_is_usage_based():
     assert src.billing_type == "usage_based"
 
 
+# ── foreground=True routing ───────────────────────────────────────────────────
+
+
+def test_foreground_prefers_usage_based_over_flat_rate():
+    """foreground=True flips the billing-type sort: cloud (usage_based) wins over flat_rate."""
+    sources, flat_src, usage_src = _make_sources(flat_rate_available=True, usage_available=True)
+    engine = RulesEngine(sources, _make_models(), _rules())
+    decision = engine.route("worker", foreground=True)
+    assert decision is not None
+    assert decision.source is usage_src, (
+        "foreground=True must prefer usage_based (cloud) over flat_rate (Ollama)"
+    )
+    assert decision.model.model_id == "usage-model"
+
+
+def test_foreground_falls_back_to_flat_rate_when_cloud_unavailable():
+    """foreground=True still falls back to flat_rate when no cloud source is available."""
+    sources, flat_src, _ = _make_sources(flat_rate_available=True, usage_available=False)
+    engine = RulesEngine(sources, _make_models(), _rules())
+    decision = engine.route("worker", foreground=True)
+    assert decision is not None
+    assert decision.source is flat_src
+
+
+def test_foreground_false_still_prefers_flat_rate():
+    """foreground=False (default) preserves existing flat_rate-first behaviour."""
+    sources, flat_src, _ = _make_sources(flat_rate_available=True, usage_available=True)
+    engine = RulesEngine(sources, _make_models(), _rules())
+    decision = engine.route("worker", foreground=False)
+    assert decision is not None
+    assert decision.source is flat_src
+
+
 def test_worker_routes_to_google_free_when_ollama_cloud_unavailable():
     """Production path: ollama_cloud unavailable (no key), google_free available → worker uses free tier.
 

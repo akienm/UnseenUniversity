@@ -229,3 +229,93 @@ def test_channel_sanitizes_dots_and_hyphens():
     assert _channel("CC.0") == "cc_0"
     assert _channel("dicksimnel.0") == "dicksimnel_0"
     assert _channel("igor-wild-0001") == "igor_wild_0001"
+
+
+# ── Feed types (D-feeds-taxonomy-2026-06-11) ───────────────────────────────────
+
+
+def test_create_mailbox_stores_feed_type(bus):
+    """feed_type is stored in bus.mailboxes and readable back."""
+    bus.create_mailbox("dick/debug", feed_type="debug")
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT feed_type FROM bus.mailboxes WHERE name = 'dick/debug'")
+            assert cur.fetchone()[0] == "debug"
+
+
+def test_shared_mailbox_is_public(bus):
+    """Shared mailbox created by start() is feed_type=public."""
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT feed_type FROM bus.mailboxes WHERE name = 'Shared'")
+            assert cur.fetchone()[0] == "public"
+
+
+def test_default_mailbox_feed_type_is_personal(bus):
+    """create_mailbox with no feed_type kwarg defaults to personal."""
+    bus.create_mailbox("CC.0")
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT feed_type FROM bus.mailboxes WHERE name = 'CC.0'")
+            assert cur.fetchone()[0] == "personal"
+
+
+def test_debug_mailbox_evicts_oldest_at_cap(bus):
+    """Debug mailbox evicts the oldest message when DEBUG_CAP is reached."""
+    from bus.pg_bus import DEBUG_CAP
+
+    bus.create_mailbox("debug-box", feed_type="debug")
+    # Fill to exactly the cap
+    for i in range(DEBUG_CAP):
+        bus.append("debug-box", _env(to_dev="debug-box", n=i))
+
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM bus.messages WHERE mailbox = 'debug-box'")
+            assert cur.fetchone()[0] == DEBUG_CAP
+
+    # One more — cap+1 should still be DEBUG_CAP (oldest evicted)
+    bus.append("debug-box", _env(to_dev="debug-box", n=DEBUG_CAP))
+
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM bus.messages WHERE mailbox = 'debug-box'")
+            assert cur.fetchone()[0] == DEBUG_CAP
+            # Oldest message (n=0) should be gone
+            cur.execute(
+                "SELECT envelope_json->>'payload' FROM bus.messages"
+                " WHERE mailbox = 'debug-box' ORDER BY created_at ASC LIMIT 1"
+            )
+            oldest = cur.fetchone()[0]
+            # n=0 was the first; after eviction n=1 should be oldest
+            assert '"n": 0' not in oldest
+
+
+def test_personal_mailbox_not_capped(bus):
+    """Personal mailboxes are not subject to the debug cap."""
+    from bus.pg_bus import DEBUG_CAP
+
+    bus.create_mailbox("personal-box", feed_type="personal")
+    for i in range(DEBUG_CAP + 10):
+        bus.append("personal-box", _env(to_dev="personal-box", n=i))
+
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM bus.messages WHERE mailbox = 'personal-box'")
+            assert cur.fetchone()[0] == DEBUG_CAP + 10
+
+
+def test_envelope_feed_type_field_default():
+    """Envelope.feed_type defaults to 'personal'."""
+    from bus.envelope import Envelope
+    env = Envelope.now("sender", "receiver")
+    assert env.feed_type == "personal"
+
+
+def test_envelope_feed_type_roundtrips_json():
+    """feed_type survives Envelope.to_json() / from_json() roundtrip."""
+    from bus.envelope import Envelope
+    env = Envelope.now("sender", "receiver", payload={"x": 1})
+    env.feed_type = "debug"
+    env2 = Envelope.from_json(env.to_json())
+    assert env2.feed_type == "debug"

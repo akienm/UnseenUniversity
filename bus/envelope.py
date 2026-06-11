@@ -23,6 +23,9 @@ SCHEMA_VERSION = "1.0"
 # These keys must be present and non-empty in every envelope.
 RIGID_KEYWORDS = frozenset({"from_device", "to_device", "sent_at", "schema_version"})
 
+# Valid feed types (D-feeds-taxonomy-2026-06-11).
+FEED_TYPES = frozenset({"public", "personal", "debug"})
+
 
 @dataclass
 class Envelope:
@@ -31,6 +34,11 @@ class Envelope:
     sent_at: str  # ISO 8601 UTC
     schema_version: str = SCHEMA_VERSION
     payload: dict = field(default_factory=dict)
+    # Feed type hint — informs PgBus routing and cap enforcement.
+    # "personal": per-device feed, notification-eligible (default)
+    # "public":   broadcast, no notifications
+    # "debug":    console/log stream, capped at 1 000 messages, no notifications
+    feed_type: str = "personal"
 
     def validate(self) -> bool:
         """Return True if all rigid keywords are present and non-empty."""

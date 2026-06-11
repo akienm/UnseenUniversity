@@ -19,54 +19,50 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import Optional
 
+from bus.connection import make_bus_connection
 from bus.envelope import Envelope
-from bus.imap_server import IMAPServer, _TEST_MODE
 from devices.queue.device import QueueDevice
 
 _device = QueueDevice()
 
-# ── Feeds IMAP client ─────────────────────────────────────────────────────────
+# ── Feeds bus client (PgBus) ──────────────────────────────────────────────────
 
-_feeds_imap: Optional[IMAPServer] = None
-
-
-def _get_feeds_imap() -> IMAPServer:
-    global _feeds_imap
-    if _feeds_imap is None:
-        s = IMAPServer()
-        if not _TEST_MODE:
-            s.start()
-        _feeds_imap = s
-    return _feeds_imap
+_feeds_bus = None
 
 
-def _feeds_send_to(receiver: str, message: str) -> dict:
-    imap = _get_feeds_imap()
+def _get_feeds_bus():
+    global _feeds_bus
+    if _feeds_bus is None:
+        _feeds_bus = make_bus_connection()
+    return _feeds_bus
+
+
+def _feeds_send_to(receiver: str, message) -> dict:
+    bus = _get_feeds_bus()
     mailbox = f"feeds/{receiver}"
-    imap.create_mailbox(mailbox)
-    imap.append(
+    bus.create_mailbox(mailbox)
+    bus.append(
         mailbox, Envelope.now("cc", mailbox, {"message": message, "kind": "send_to"})
     )
     return {"status": "ok", "mailbox": mailbox}
 
 
 def _feeds_send_feed(event: str, sender: str = "cc") -> dict:
-    imap = _get_feeds_imap()
+    bus = _get_feeds_bus()
     mailbox = f"feeds/{sender}"
-    imap.create_mailbox(mailbox)
-    imap.append(
+    bus.create_mailbox(mailbox)
+    bus.append(
         mailbox, Envelope.now(sender, mailbox, {"event": event, "kind": "send_feed"})
     )
     return {"status": "ok", "mailbox": mailbox}
 
 
 def _feeds_view_feed(sender: str, limit: int = 20) -> dict:
-    imap = _get_feeds_imap()
+    bus = _get_feeds_bus()
     mailbox = f"feeds/{sender}"
     try:
-        events = imap.fetch_recent(mailbox, limit)
+        events = bus.fetch_recent(mailbox, limit)
     except Exception:
         return {"events": [], "count": 0, "mailbox": mailbox}
     result = [

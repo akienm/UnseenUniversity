@@ -255,6 +255,14 @@ class InferenceDevice(BaseDevice):
         if self._blocked:
             raise RuntimeError(f"InferenceDevice blocked: {self._block_reason}")
 
+        # Interface logging — InferenceRequest is a bus envelope; log routing-relevant flags.
+        log.info(
+            "dispatch: task_class=%s foreground=%s escalation_hop=%d",
+            request.task_class,
+            request.foreground,
+            request.escalation_hop,
+        )
+
         # Tier escalation: enforce 2-hop ceiling and prepend attempt summary
         _MAX_ESCALATION_HOPS = 2
         if request.escalation_hop >= _MAX_ESCALATION_HOPS:
@@ -286,6 +294,7 @@ class InferenceDevice(BaseDevice):
                 tools=request.tools,
                 escalation_hop=request.escalation_hop,
                 prior_attempt=request.prior_attempt,
+                foreground=request.foreground,
             )
             log.info(
                 "dispatch: tier-escalation hop=%d prior_summary_len=%d",
@@ -331,7 +340,11 @@ class InferenceDevice(BaseDevice):
                         task_class=request.task_class, agent_id=request.agent_id,
                         tools=request.tools,
                     )
-                    decision = self._rules.route(task_class=request.task_class or "worker", session_id=request.session_id)
+                    decision = self._rules.route(
+                        task_class=request.task_class or "worker",
+                        session_id=request.session_id,
+                        foreground=request.foreground,
+                    )
             else:
                 # Unknown model ID — let it through and let the source handle the error
                 source = self._sources.get("openrouter")
@@ -342,6 +355,7 @@ class InferenceDevice(BaseDevice):
             decision = self._rules.route(
                 task_class=request.task_class or "worker",
                 session_id=request.session_id,
+                foreground=request.foreground,
             )
 
         if decision is not None:
@@ -360,6 +374,9 @@ class InferenceDevice(BaseDevice):
                 coa_id=request.coa_id,
                 session_id=request.session_id,
                 tools=request.tools,
+                escalation_hop=request.escalation_hop,
+                prior_attempt=request.prior_attempt,
+                foreground=request.foreground,
             )
             source = decision.source
             provider_name = source.name

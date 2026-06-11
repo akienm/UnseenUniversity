@@ -478,6 +478,7 @@ class DickSimnelDevice(BaseDevice):
                 agent_id="dicksimnel",
                 max_tokens=512,
                 timeout=30,
+                foreground=True,
             )
             response = InferenceDevice().dispatch(req)
             log.info("DickSimnel: chat response for %r — %d tokens", message[:40], response.output_tokens)

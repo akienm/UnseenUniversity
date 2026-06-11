@@ -46,23 +46,31 @@ _SCHEMA_SQL = """
 CREATE SCHEMA IF NOT EXISTS bus;
 
 CREATE TABLE IF NOT EXISTS bus.mailboxes (
-    name TEXT PRIMARY KEY,
+    name       TEXT PRIMARY KEY,
+    feed_type  TEXT NOT NULL DEFAULT 'personal',
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS bus.messages (
-    id          BIGSERIAL PRIMARY KEY,
-    mailbox     TEXT NOT NULL,
-    from_device TEXT NOT NULL,
+    id            BIGSERIAL PRIMARY KEY,
+    mailbox       TEXT NOT NULL,
+    from_device   TEXT NOT NULL,
     envelope_json JSONB NOT NULL,
-    created_at  TIMESTAMPTZ DEFAULT now(),
-    seen        BOOLEAN DEFAULT false
+    created_at    TIMESTAMPTZ DEFAULT now(),
+    seen          BOOLEAN DEFAULT false
 );
 
 CREATE INDEX IF NOT EXISTS bus_messages_mailbox_unseen
     ON bus.messages (mailbox, created_at)
     WHERE NOT seen;
 """
+
+# Idempotent migration: add feed_type column if the table was created before this change.
+_MIGRATE_SQL = """
+ALTER TABLE bus.mailboxes ADD COLUMN IF NOT EXISTS feed_type TEXT NOT NULL DEFAULT 'personal';
+"""
+
+DEBUG_CAP = 1_000
 
 
 def _channel(mailbox: str) -> str:
@@ -93,7 +101,8 @@ class PgBus:
         with self._connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(_SCHEMA_SQL)
-        self.create_mailbox(self.SHARED_MAILBOX)
+                cur.execute(_MIGRATE_SQL)
+        self.create_mailbox(self.SHARED_MAILBOX, feed_type="public")
         log.info("PgBus: started (dsn=%.40s...)", self._dsn)
 
     def stop(self) -> None:
@@ -101,14 +110,15 @@ class PgBus:
 
     # ── Mailbox registry ───────────────────────────────────────────────────────
 
-    def create_mailbox(self, name: str) -> None:
+    def create_mailbox(self, name: str, feed_type: str = "personal") -> None:
         with self._connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO bus.mailboxes (name) VALUES (%s) ON CONFLICT DO NOTHING",
-                    (name,),
+                    "INSERT INTO bus.mailboxes (name, feed_type) VALUES (%s, %s)"
+                    " ON CONFLICT (name) DO NOTHING",
+                    (name, feed_type),
                 )
-        log.info("PgBus: create_mailbox %r", name)
+        log.info("PgBus: create_mailbox %r feed_type=%r", name, feed_type)
 
     def delete_mailbox(self, name: str) -> None:
         with self._connect() as conn:
@@ -125,17 +135,35 @@ class PgBus:
 
     # ── Message operations ─────────────────────────────────────────────────────
 
+    def _mailbox_feed_type(self, cur, mailbox: str) -> str:
+        """Return the feed_type for a mailbox; 'personal' if not registered."""
+        cur.execute(
+            "SELECT feed_type FROM bus.mailboxes WHERE name = %s", (mailbox,)
+        )
+        row = cur.fetchone()
+        return row[0] if row else "personal"
+
     def append(self, mailbox: str, envelope: Envelope) -> None:
         channel = _channel(mailbox)
         with self._connect() as conn:
             with conn.cursor() as cur:
+                feed_type = self._mailbox_feed_type(cur, mailbox)
+                if feed_type == "debug":
+                    # Evict oldest message when at cap — single atomic DELETE + INSERT.
+                    cur.execute(
+                        "DELETE FROM bus.messages WHERE id = ("
+                        "  SELECT id FROM bus.messages WHERE mailbox = %s"
+                        "  ORDER BY created_at ASC LIMIT 1"
+                        ") AND (SELECT count(*) FROM bus.messages WHERE mailbox = %s) >= %s",
+                        (mailbox, mailbox, DEBUG_CAP),
+                    )
                 cur.execute(
                     "INSERT INTO bus.messages (mailbox, from_device, envelope_json)"
                     " VALUES (%s, %s, %s)",
                     (mailbox, envelope.from_device, envelope.to_json()),
                 )
                 cur.execute("SELECT pg_notify(%s, 'new')", (channel,))
-        log.info("PgBus: append mailbox=%r from=%r", mailbox, envelope.from_device)
+        log.info("PgBus: append mailbox=%r from=%r feed_type=%r", mailbox, envelope.from_device, feed_type)
 
     def unseen_count(self, mailbox: str) -> int:
         with self._connect() as conn:

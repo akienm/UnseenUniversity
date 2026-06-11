@@ -168,6 +168,7 @@ class ToolLoop:
                 max_tokens=4096,
                 timeout=120,
                 extra=extra,
+                foreground=True,
             )
             try:
                 response = InferenceDevice().dispatch(req)

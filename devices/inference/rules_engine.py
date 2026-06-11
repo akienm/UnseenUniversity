@@ -121,13 +121,20 @@ class RulesEngine:
         )  # session_id → (model_id, source_name)
 
     def route(
-        self, task_class: str, session_id: str = "", hour: int | None = None
+        self,
+        task_class: str,
+        session_id: str = "",
+        hour: int | None = None,
+        foreground: bool = False,
     ) -> RoutingDecision | None:
         """
         Return the best (Source, ModelSpec) for this task_class.
 
         hour: inject local hour (0–23) for testing; defaults to current local hour.
               Used to apply the night-mode gate for batch tasks.
+        foreground: when True, prefer usage_based (cloud) sources over flat_rate.
+              Used for latency-sensitive tasks (e.g. sprint-ticket coding) that
+              require high-capability cloud models rather than local Ollama.
 
         Returns None only if no source is available at all.
         """
@@ -179,13 +186,25 @@ class RulesEngine:
                 )
 
         if candidates:
-            # billing_rank: flat_rate=0 (preferred), usage_based=1 (fallback)
-            candidates.sort(
-                key=lambda x: (
-                    0 if getattr(x[1], "billing_type", "usage_based") == "flat_rate" else 1,
-                    x[0].priority,
+            # billing_rank sort key:
+            #   normal:     flat_rate=0 (preferred), usage_based=1 (fallback)
+            #   foreground: usage_based=0 (preferred), flat_rate=1 (fallback)
+            # Priority is the tiebreaker when billing_type is equal.
+            if foreground:
+                candidates.sort(
+                    key=lambda x: (
+                        0 if getattr(x[1], "billing_type", "usage_based") == "usage_based" else 1,
+                        x[0].priority,
+                    )
                 )
-            )
+                log.debug("rules: foreground=True — cloud (usage_based) preferred over flat_rate")
+            else:
+                candidates.sort(
+                    key=lambda x: (
+                        0 if getattr(x[1], "billing_type", "usage_based") == "flat_rate" else 1,
+                        x[0].priority,
+                    )
+                )
             rule, source, model = candidates[0]
             if session_id:
                 self._session_map[session_id] = (rule.model_id, rule.source_name)
