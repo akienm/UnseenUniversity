@@ -319,3 +319,102 @@ def test_envelope_feed_type_roundtrips_json():
     env.feed_type = "debug"
     env2 = Envelope.from_json(env.to_json())
     assert env2.feed_type == "debug"
+
+
+# ── Importance flag + notification threshold (T-feeds-importance-flag) ─────────
+
+
+def test_envelope_importance_default():
+    """Envelope.importance defaults to 3 (normal)."""
+    env = Envelope.now("sender", "receiver")
+    assert env.importance == 3
+
+
+def test_envelope_importance_roundtrips_json():
+    """importance survives Envelope.to_json() / from_json() roundtrip."""
+    env = Envelope.now("sender", "receiver")
+    env.importance = 7
+    env2 = Envelope.from_json(env.to_json())
+    assert env2.importance == 7
+
+
+def test_append_stores_importance_in_db(bus):
+    """importance value is written to bus.messages.importance column."""
+    bus.create_mailbox("imp-box")
+    env = _env(to_dev="imp-box")
+    env.importance = 8
+    bus.append("imp-box", env)
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT importance FROM bus.messages WHERE mailbox = 'imp-box'")
+            assert cur.fetchone()[0] == 8
+
+
+def test_idle_wait_wakes_for_any_message(bus):
+    """idle_wait always wakes on append regardless of importance/threshold."""
+    bus.create_mailbox("notify-box", notify_threshold=9)
+    woke: list[bool] = []
+
+    def _listener():
+        woke.append(bus.idle_wait("notify-box", timeout_s=3.0))
+
+    t = threading.Thread(target=_listener, daemon=True)
+    t.start()
+    time.sleep(0.15)
+
+    env = _env(to_dev="notify-box")
+    env.importance = 1  # well below threshold — NOTIFY still fires
+    bus.append("notify-box", env)
+    t.join(timeout=2.0)
+    assert not t.is_alive(), "idle_wait did not wake within 2s"
+    assert woke == [True]
+
+
+def test_notified_false_below_threshold(bus):
+    """notified=False when importance < notify_threshold; NOTIFY still fires."""
+    bus.create_mailbox("quiet-box", notify_threshold=7)
+    env = _env(to_dev="quiet-box")
+    env.importance = 3  # below threshold
+    bus.append("quiet-box", env)
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT notified FROM bus.messages WHERE mailbox = 'quiet-box'"
+            )
+            assert cur.fetchone()[0] is False
+
+
+def test_notified_true_at_threshold(bus):
+    """notified=True when importance >= notify_threshold."""
+    bus.create_mailbox("noisy-box", notify_threshold=7)
+    env = _env(to_dev="noisy-box")
+    env.importance = 7  # exactly at threshold
+    bus.append("noisy-box", env)
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT notified FROM bus.messages WHERE mailbox = 'noisy-box'"
+            )
+            assert cur.fetchone()[0] is True
+
+
+def test_create_mailbox_stores_notify_threshold(bus):
+    """notify_threshold is stored in bus.mailboxes and readable back."""
+    bus.create_mailbox("thresh-box", notify_threshold=8)
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT notify_threshold FROM bus.mailboxes WHERE name = 'thresh-box'"
+            )
+            assert cur.fetchone()[0] == 8
+
+
+def test_default_notify_threshold_is_five(bus):
+    """Default notify_threshold is 5 when not specified."""
+    bus.create_mailbox("def-thresh-box")
+    with psycopg2.connect(_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT notify_threshold FROM bus.mailboxes WHERE name = 'def-thresh-box'"
+            )
+            assert cur.fetchone()[0] == 5

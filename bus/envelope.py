@@ -39,6 +39,9 @@ class Envelope:
     # "public":   broadcast, no notifications
     # "debug":    console/log stream, capped at 1 000 messages, no notifications
     feed_type: str = "personal"
+    # Importance level (0–10). NOTIFY is gated by mailbox notify_threshold.
+    # 0=trace, 3=normal (default), 7=significant, 10=urgent
+    importance: int = 3
 
     def validate(self) -> bool:
         """Return True if all rigid keywords are present and non-empty."""

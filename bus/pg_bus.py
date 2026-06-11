@@ -46,9 +46,10 @@ _SCHEMA_SQL = """
 CREATE SCHEMA IF NOT EXISTS bus;
 
 CREATE TABLE IF NOT EXISTS bus.mailboxes (
-    name       TEXT PRIMARY KEY,
-    feed_type  TEXT NOT NULL DEFAULT 'personal',
-    created_at TIMESTAMPTZ DEFAULT now()
+    name             TEXT PRIMARY KEY,
+    feed_type        TEXT NOT NULL DEFAULT 'personal',
+    notify_threshold INT  NOT NULL DEFAULT 5,
+    created_at       TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS bus.messages (
@@ -56,6 +57,8 @@ CREATE TABLE IF NOT EXISTS bus.messages (
     mailbox       TEXT NOT NULL,
     from_device   TEXT NOT NULL,
     envelope_json JSONB NOT NULL,
+    importance    INT  NOT NULL DEFAULT 3,
+    notified      BOOLEAN NOT NULL DEFAULT false,
     created_at    TIMESTAMPTZ DEFAULT now(),
     seen          BOOLEAN DEFAULT false
 );
@@ -65,9 +68,12 @@ CREATE INDEX IF NOT EXISTS bus_messages_mailbox_unseen
     WHERE NOT seen;
 """
 
-# Idempotent migration: add feed_type column if the table was created before this change.
+# Idempotent migrations: add columns added after initial schema deploy.
 _MIGRATE_SQL = """
 ALTER TABLE bus.mailboxes ADD COLUMN IF NOT EXISTS feed_type TEXT NOT NULL DEFAULT 'personal';
+ALTER TABLE bus.mailboxes ADD COLUMN IF NOT EXISTS notify_threshold INT NOT NULL DEFAULT 5;
+ALTER TABLE bus.messages  ADD COLUMN IF NOT EXISTS importance INT NOT NULL DEFAULT 3;
+ALTER TABLE bus.messages  ADD COLUMN IF NOT EXISTS notified BOOLEAN NOT NULL DEFAULT false;
 """
 
 DEBUG_CAP = 1_000
@@ -110,15 +116,20 @@ class PgBus:
 
     # ── Mailbox registry ───────────────────────────────────────────────────────
 
-    def create_mailbox(self, name: str, feed_type: str = "personal") -> None:
+    def create_mailbox(
+        self, name: str, feed_type: str = "personal", notify_threshold: int = 5
+    ) -> None:
         with self._connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO bus.mailboxes (name, feed_type) VALUES (%s, %s)"
-                    " ON CONFLICT (name) DO NOTHING",
-                    (name, feed_type),
+                    "INSERT INTO bus.mailboxes (name, feed_type, notify_threshold)"
+                    " VALUES (%s, %s, %s) ON CONFLICT (name) DO NOTHING",
+                    (name, feed_type, notify_threshold),
                 )
-        log.info("PgBus: create_mailbox %r feed_type=%r", name, feed_type)
+        log.info(
+            "PgBus: create_mailbox %r feed_type=%r notify_threshold=%d",
+            name, feed_type, notify_threshold,
+        )
 
     def delete_mailbox(self, name: str) -> None:
         with self._connect() as conn:
@@ -135,19 +146,20 @@ class PgBus:
 
     # ── Message operations ─────────────────────────────────────────────────────
 
-    def _mailbox_feed_type(self, cur, mailbox: str) -> str:
-        """Return the feed_type for a mailbox; 'personal' if not registered."""
+    def _mailbox_meta(self, cur, mailbox: str) -> tuple[str, int]:
+        """Return (feed_type, notify_threshold) for a mailbox; defaults if not registered."""
         cur.execute(
-            "SELECT feed_type FROM bus.mailboxes WHERE name = %s", (mailbox,)
+            "SELECT feed_type, notify_threshold FROM bus.mailboxes WHERE name = %s",
+            (mailbox,),
         )
         row = cur.fetchone()
-        return row[0] if row else "personal"
+        return (row[0], row[1]) if row else ("personal", 5)
 
     def append(self, mailbox: str, envelope: Envelope) -> None:
         channel = _channel(mailbox)
         with self._connect() as conn:
             with conn.cursor() as cur:
-                feed_type = self._mailbox_feed_type(cur, mailbox)
+                feed_type, notify_threshold = self._mailbox_meta(cur, mailbox)
                 if feed_type == "debug":
                     # Evict oldest message when at cap — single atomic DELETE + INSERT.
                     cur.execute(
@@ -157,13 +169,23 @@ class PgBus:
                         ") AND (SELECT count(*) FROM bus.messages WHERE mailbox = %s) >= %s",
                         (mailbox, mailbox, DEBUG_CAP),
                     )
+                notified = envelope.importance >= notify_threshold
                 cur.execute(
-                    "INSERT INTO bus.messages (mailbox, from_device, envelope_json)"
-                    " VALUES (%s, %s, %s)",
-                    (mailbox, envelope.from_device, envelope.to_json()),
+                    "INSERT INTO bus.messages"
+                    " (mailbox, from_device, envelope_json, importance, notified)"
+                    " VALUES (%s, %s, %s, %s, %s)",
+                    (
+                        mailbox, envelope.from_device, envelope.to_json(),
+                        envelope.importance, notified,
+                    ),
                 )
+                # NOTIFY always fires — devices need this to wake and fetch messages.
+                # The `notified` column tells receivers whether to surface a user alert.
                 cur.execute("SELECT pg_notify(%s, 'new')", (channel,))
-        log.info("PgBus: append mailbox=%r from=%r feed_type=%r", mailbox, envelope.from_device, feed_type)
+        log.info(
+            "PgBus: append mailbox=%r from=%r feed_type=%r importance=%d threshold=%d",
+            mailbox, envelope.from_device, feed_type, envelope.importance, notify_threshold,
+        )
 
     def unseen_count(self, mailbox: str) -> int:
         with self._connect() as conn:
