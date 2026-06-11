@@ -206,12 +206,13 @@ class TestDickSimnelEscalation:
     def test_escalate_ticket_posts_to_channel(self):
         d = self._device()
         d._run_queue_cmd = MagicMock(return_value=None)
-        with patch("unseen_university.channel.post_to_channel") as mock_post:
+        with patch.object(d, "_channel_event") as mock_event:
             d._escalate_ticket("T-test", "Security tag")
-        mock_post.assert_called_once()
-        args = mock_post.call_args
-        assert "DICKSIMNEL_ESCALATE" in args[0][0]
-        assert "T-test" in args[0][0]
+        mock_event.assert_called_once()
+        args, kwargs = mock_event.call_args
+        assert "DICKSIMNEL_ESCALATE" in args[0]
+        assert "T-test" in args[0]
+        assert kwargs.get("event_type") == "escalated"
 
 
 # ── _post_result reliability guards ──────────────────────────────────────────

@@ -1499,6 +1499,51 @@ def _load_device_registry() -> list[dict]:
         return []
 
 
+async def _api_device_mru(request: Request):
+    """GET /api/device/mru — top-N devices by most recent bus.messages activity.
+
+    Returns {"mru": [...]} ordered by last message desc; N defaults to 5.
+    Falls back to empty list when bus is unavailable.
+    """
+    n = int(request.query_params.get("n", "5"))
+    try:
+        from bus.connection import make_bus_connection
+        bus = make_bus_connection()
+        import psycopg2
+        dsn = os.environ.get(
+            "IGOR_HOME_DB_URL",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        )
+        with psycopg2.connect(dsn) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT mailbox, max(created_at) AS last_at
+                    FROM bus.messages
+                    GROUP BY mailbox
+                    ORDER BY last_at DESC
+                    LIMIT %s
+                    """,
+                    (n,),
+                )
+                rows = cur.fetchall()
+        # Strip feed path prefix (e.g. "feeds/igor" → "igor", "igor.0" → "igor.0")
+        def _strip(m):
+            return m.split("/")[-1] if "/" in m else m
+        mru = [_strip(row[0]) for row in rows]
+        # Deduplicate while preserving order
+        seen = set()
+        deduped = []
+        for d in mru:
+            if d not in seen:
+                seen.add(d)
+                deduped.append(d)
+        return JSONResponse({"mru": deduped[:n]})
+    except Exception as exc:
+        log.debug("device_mru: failed: %s", exc)
+        return JSONResponse({"mru": []})
+
+
 async def _api_device_list(request: Request):
     """GET /api/device/list — known device IDs from source tree + registry + recent channel authors."""
     devices: set[str] = set()
@@ -2879,6 +2924,7 @@ def _make_app() -> Starlette:
         # Feeds
         Route("/feeds/{device}", _api_feeds),
         # Per-device events + known devices list
+        Route("/api/device/mru", _api_device_mru),
         Route("/api/device/list", _api_device_list),
         Route("/api/device/{id}/status", _api_device_status),
         Route("/api/device/{id}/events", _api_device_events),
@@ -3166,6 +3212,10 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     .channel-tab.active { color: #7ec8e3; border-color: #1a1a30; background: #1a1a2e;
                           font-weight: bold; }
     .channel-tab.has-new { color: #90ee90; }
+    .channel-tab-mru { color: #b0d4f1; }
+    .channel-tab-mru.active { color: #7ec8e3; }
+    .channel-sep { color: #333; font-size: 0.7rem; padding: 0 0.2rem; cursor: default;
+                   user-select: none; }
     .fascia-box { background:#141425; border:1px solid #333; border-radius:4px;
       margin-bottom:0.6rem; resize:vertical; overflow:auto;
       min-height:80px; flex-shrink:0; max-height:240px; }
@@ -3234,7 +3284,6 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
   </div>
   <div class="main-panel active" id="panel-comms">
   <div id="channel-bar">
-    <span class="channel-tab active" data-channel="comms://shared" onclick="switchChannel('comms://shared')">Public</span>
     <button id="new-channel-btn" onclick="newChannel()" title="New channel">+</button>
   </div>
   <div id="chat"></div>
@@ -3406,22 +3455,65 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
     _applyFontSize();
 
     // ── Channel tab bar ──
+    var _mruDevices = [];  // ordered by most-recent bus activity, populated by seedDeviceTabs
+
     function _renderChannelBar() {
-      const existing = new Set([...channelBar.querySelectorAll('.channel-tab')].map(t => t.dataset.channel));
-      Object.keys(channelMsgs).forEach(ch => {
-        if (!existing.has(ch)) {
+      const newBtn = document.getElementById('new-channel-btn');
+      // Remove all existing device tabs (not the new-channel-btn)
+      channelBar.querySelectorAll('.channel-tab').forEach(t => t.remove());
+
+      // Build ordered list: Public first, then MRU devices, then remaining alpha
+      const sharedCh = 'comms://shared';
+      const allDevChs = Object.keys(channelMsgs).filter(ch => ch !== sharedCh);
+      const mruChs = _mruDevices
+        .map(id => 'comms://' + id)
+        .filter(ch => allDevChs.includes(ch));
+      const mruSet = new Set(mruChs);
+      const restChs = allDevChs.filter(ch => !mruSet.has(ch)).sort();
+
+      // Insert: Public tab
+      const pubTab = document.createElement('span');
+      pubTab.className = 'channel-tab' + (currentChannel === sharedCh ? ' active' : '');
+      pubTab.dataset.channel = sharedCh;
+      pubTab.textContent = 'Public';
+      pubTab.onclick = () => switchChannel(sharedCh);
+      channelBar.insertBefore(pubTab, newBtn);
+
+      // MRU section separator + tabs (only when there are MRU devices)
+      if (mruChs.length) {
+        const sep = document.createElement('span');
+        sep.className = 'channel-sep';
+        sep.textContent = '▾';
+        sep.title = 'Recently active';
+        channelBar.insertBefore(sep, newBtn);
+        mruChs.forEach(ch => {
           const tab = document.createElement('span');
-          tab.className = 'channel-tab'; tab.dataset.channel = ch;
-          const label = ch.replace('comms://', '');
-          tab.textContent = label;
+          tab.className = 'channel-tab channel-tab-mru' + (ch === currentChannel ? ' active' : '');
+          tab.dataset.channel = ch;
+          tab.textContent = ch.replace('comms://', '');
           tab.onclick = () => switchChannel(ch);
-          channelBar.insertBefore(tab, document.getElementById('new-channel-btn'));
-        }
-      });
-      channelBar.querySelectorAll('.channel-tab').forEach(t => {
-        t.classList.toggle('active', t.dataset.channel === currentChannel);
-        if (t.dataset.channel === currentChannel) t.classList.remove('has-new');
-      });
+          if (ch === currentChannel) tab.classList.remove('has-new');
+          channelBar.insertBefore(tab, newBtn);
+        });
+      }
+
+      // Complete alpha list separator + tabs
+      if (restChs.length) {
+        const sep2 = document.createElement('span');
+        sep2.className = 'channel-sep';
+        sep2.textContent = '▸';
+        sep2.title = 'All devices';
+        channelBar.insertBefore(sep2, newBtn);
+        restChs.forEach(ch => {
+          const tab = document.createElement('span');
+          tab.className = 'channel-tab' + (ch === currentChannel ? ' active' : '');
+          tab.dataset.channel = ch;
+          tab.textContent = ch.replace('comms://', '');
+          tab.onclick = () => switchChannel(ch);
+          if (ch === currentChannel) tab.classList.remove('has-new');
+          channelBar.insertBefore(tab, newBtn);
+        });
+      }
     }
 
     function _renderChannel(ch) {
@@ -3964,11 +4056,15 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
 
     async function seedDeviceTabs() {
       try {
-        const data = await (await fetch('/api/device/list')).json();
-        (data.devices || []).forEach(id => {
+        const [listData, mruData] = await Promise.all([
+          fetch('/api/device/list').then(r=>r.json()).catch(()=>({devices:[]})),
+          fetch('/api/device/mru?n=5').then(r=>r.json()).catch(()=>({mru:[]})),
+        ]);
+        (listData.devices || []).forEach(id => {
           const ch = 'comms://' + id;
           if (!channelMsgs[ch]) channelMsgs[ch] = [];
         });
+        _mruDevices = mruData.mru || [];
         _renderChannelBar();
       } catch(e) {}
     }
