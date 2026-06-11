@@ -391,12 +391,12 @@ class DickSimnelDevice(BaseDevice):
         """
         return SYSTEM_PROMPT
 
-    # Internal tier cascade: try cheapest first, escalate within Dick before going to CC.
-    # "" = rules engine chooses (currently sonnet/OR at priority 1 for worker tier).
+    # Internal tier cascade: cheapest first, escalate within Dick before going to CC.
+    # Each tier appends context from the prior attempt so the next model starts informed.
     _TIER_CASCADE = [
-        ("", "rules engine default"),                        # tier 1: rules engine picks
-        ("anthropic/claude-sonnet-4.6", "sonnet explicit"),  # tier 2: force sonnet if tier 1 fails
-        ("anthropic/claude-opus-4.8", "opus explicit"),      # tier 3: force opus if sonnet fails
+        ("anthropic/claude-haiku-4.5", "haiku"),    # tier 1: cheapest; compact prompt makes this viable
+        ("anthropic/claude-sonnet-4.6", "sonnet"),  # tier 2: escalation when haiku insufficient
+        ("anthropic/claude-opus-4.8", "opus"),      # tier 3: last resort before CC escalation
     ]
 
     def _run_inference(self, ticket: dict) -> str | None:
