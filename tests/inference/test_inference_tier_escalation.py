@@ -17,6 +17,7 @@ from devices.inference.shim import InferenceRequest, InferenceResponse
 
 def _make_device():
     from devices.inference.device import InferenceDevice
+    from devices.inference.models_registry import default_registry
     d = InferenceDevice.__new__(InferenceDevice)
     d._blocked = False
     d._block_reason = ""
@@ -24,6 +25,7 @@ def _make_device():
     d._rules = MagicMock()
     d._rules.route.return_value = None  # fall through to legacy mode
     d._sources = {}
+    d._models = default_registry()
     return d
 
 

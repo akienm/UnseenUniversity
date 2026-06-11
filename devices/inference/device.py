@@ -305,10 +305,44 @@ class InferenceDevice(BaseDevice):
         from devices.inference.budget_ledger import check_session_limit, debit
 
         # Route via rules engine
-        decision = self._rules.route(
-            task_class=request.task_class or "worker",
-            session_id=request.session_id,
-        )
+        # When model is explicitly set, find its source directly — skip rules engine model selection
+        # so the caller's explicit choice is honored (e.g. Dick's tier cascade forcing haiku/sonnet).
+        if request.model:
+            spec = self._models.get(request.model)
+            if spec is not None:
+                src = self._sources.get(spec.source_name)
+                if src is not None and src.available:
+                    source = src
+                    provider_name = src.name
+                    log.info(
+                        "dispatch: explicit model=%s → %s (source=%s)",
+                        request.model, request.model, provider_name,
+                    )
+                    decision = None  # skip rules-engine path below
+                else:
+                    log.warning(
+                        "dispatch: explicit model=%s source=%s unavailable — falling through to rules engine",
+                        request.model, spec.source_name,
+                    )
+                    request = InferenceRequest(
+                        messages=request.messages, model="",
+                        max_tokens=request.max_tokens, temperature=request.temperature,
+                        system=request.system, timeout=request.timeout, extra=request.extra,
+                        task_class=request.task_class, agent_id=request.agent_id,
+                        tools=request.tools,
+                    )
+                    decision = self._rules.route(task_class=request.task_class or "worker", session_id=request.session_id)
+            else:
+                # Unknown model ID — let it through and let the source handle the error
+                source = self._sources.get("openrouter")
+                provider_name = "openrouter"
+                log.info("dispatch: unknown model=%s — routing to openrouter", request.model)
+                decision = None
+        else:
+            decision = self._rules.route(
+                task_class=request.task_class or "worker",
+                session_id=request.session_id,
+            )
 
         if decision is not None:
             # Resolve model_id for the request
@@ -325,6 +359,7 @@ class InferenceDevice(BaseDevice):
                 instance_id=request.instance_id,
                 coa_id=request.coa_id,
                 session_id=request.session_id,
+                tools=request.tools,
             )
             source = decision.source
             provider_name = source.name
@@ -335,8 +370,8 @@ class InferenceDevice(BaseDevice):
                 provider_name,
                 decision.rule_label,
             )
-        else:
-            # No rules decision — fall back to legacy _mode
+        elif not request.model:
+            # No rules decision and no explicit model — fall back to legacy _mode
             log.warning(
                 "dispatch: rules engine returned no decision — falling back to legacy mode=%s",
                 self._mode,

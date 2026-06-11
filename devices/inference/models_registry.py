@@ -207,6 +207,17 @@ _SEED: list[ModelSpec] = [
         created_at="2026-06-10T00:00:00Z",
     ),
     ModelSpec(
+        model_id="anthropic/claude-opus-4.8",
+        source_name="openrouter",
+        tier="designer",
+        input_cost_per_1m=15.00,
+        output_cost_per_1m=75.00,
+        context_window=200_000,
+        tags=["designer", "claude", "opus", "last-resort"],
+        notes="Claude Opus 4.8 via OpenRouter. Last resort before CC escalation in Dick's tier cascade.",
+        created_at="2026-06-10T00:00:00Z",
+    ),
+    ModelSpec(
         model_id="claude-sonnet-4-6",
         source_name="anthropic",
         tier="designer",
