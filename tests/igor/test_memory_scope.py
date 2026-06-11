@@ -13,7 +13,7 @@ import unittest
 from pathlib import Path
 
 
-from devices.igor.memory.models import Memory, MemoryType, MemoryScope, default_scope
+from devices.igor.memory.models import Memory, MemoryType, MemoryScope, BASE_CONFIDENCE, default_scope
 
 
 def _make_cortex(db_path: str):
@@ -32,7 +32,7 @@ class TestMemoryScopeEnum(unittest.TestCase):
         for mt in (
             MemoryType.ROOT, MemoryType.CORE_PATTERN, MemoryType.IDENTITY,
             MemoryType.ROLE_MODEL, MemoryType.PROCEDURAL, MemoryType.INTERPRETIVE,
-            MemoryType.FACTUAL, MemoryType.REFERENCE,
+            MemoryType.FACTUAL, MemoryType.REFERENCE, MemoryType.LEVER,
         ):
             self.assertEqual(default_scope(mt), MemoryScope.CLASS, f"Expected CLASS for {mt}")
 
@@ -130,6 +130,23 @@ class TestMemoryScopeCortex(unittest.TestCase):
         portable = self._cortex.get_portable()
         ids = [m.id for m in portable]
         self.assertNotIn(cred.id, ids)
+
+
+class TestLeverMemoryType(unittest.TestCase):
+
+    def test_lever_enum_importable(self):
+        self.assertEqual(MemoryType.LEVER.value, "LEVER")
+
+    def test_lever_base_confidence(self):
+        self.assertEqual(BASE_CONFIDENCE[MemoryType.LEVER], 0.85)
+
+    def test_lever_memory_confidence_property(self):
+        m = Memory("physics intuition applies to software architecture", MemoryType.LEVER)
+        self.assertGreaterEqual(m.confidence, 0.85)
+
+    def test_lever_defaults_to_class_scope(self):
+        m = Memory("cross-domain pattern", MemoryType.LEVER)
+        self.assertEqual(m.scope, MemoryScope.CLASS)
 
 
 if __name__ == "__main__":

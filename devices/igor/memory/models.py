@@ -31,6 +31,7 @@ class MemoryType(Enum):
     )
     GOAL = "GOAL"  # D275: active goal node — TACTICAL (completable) or STRATEGIC (orientation)
     WORD_GRAPH = "WORD_GRAPH"  # Low-level word node for spreading activation; migrated from wg_edges
+    LEVER = "LEVER"  # Cross-domain causal/systemic patterns — 'why does this work?' knowledge; high base confidence
 
 
 class MemoryScope(Enum):
@@ -72,6 +73,7 @@ BASE_CONFIDENCE = {
     MemoryType.CREDENTIAL_REF: 0.50,  # credential refs are stable until env changes
     MemoryType.GOAL: 0.15,  # D275: goals are ephemeral — low base confidence, kept hot via TWM
     MemoryType.WORD_GRAPH: 0.05,  # word nodes are pure scaffolding — lowest base confidence
+    MemoryType.LEVER: 0.85,  # cross-domain causal patterns are identity-level durable
 }
 # Backwards compat alias — remove after all callsites updated
 BASE_INERTIA = BASE_CONFIDENCE
