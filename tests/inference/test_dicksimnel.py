@@ -352,8 +352,11 @@ class TestDickSimnelSkillLoad:
         with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
             assert d.skill_load("sprint-ticket") is None
 
-    def test_build_system_prompt_includes_skill_when_found(self, tmp_path):
-        from devices.dicksimnel.device import DickSimnelDevice
+    def test_build_system_prompt_always_uses_compact_prompt(self, tmp_path):
+        # _build_system_prompt always returns SYSTEM_PROMPT regardless of skill availability.
+        # The full sprint-ticket skill was too long for OR models — they narrate instead of
+        # calling tools. Dick uses the compact SYSTEM_PROMPT for reliable tool-first execution.
+        from devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
         skill_dir = tmp_path / "sprint-ticket"
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("SKILL_CONTENT_MARKER")
@@ -361,28 +364,26 @@ class TestDickSimnelSkillLoad:
         d._shim = MagicMock()
         with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
             prompt = d._build_system_prompt({})
-        assert "SKILL_CONTENT_MARKER" in prompt
+        assert prompt == SYSTEM_PROMPT
+        assert "SKILL_CONTENT_MARKER" not in prompt
         assert "DickSimnel" in prompt
 
-    def test_build_system_prompt_includes_ibd_preamble(self, tmp_path):
-        from devices.dicksimnel.device import DickSimnelDevice
+    def test_build_system_prompt_consistent_with_and_without_skill(self, tmp_path):
+        from devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
+        d = self._device()
+        # With skill present
         skill_dir = tmp_path / "sprint-ticket"
         skill_dir.mkdir()
-        (skill_dir / "SKILL.md").write_text("SKILL_CONTENT")
-        d = DickSimnelDevice()
-        d._shim = MagicMock()
+        (skill_dir / "SKILL.md").write_text("SOME_SKILL_CONTENT")
         with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
-            prompt = d._build_system_prompt({})
-        assert "I intend that" in prompt
-        assert "hypothesis" in prompt
-
-    def test_ibd_preamble_absent_when_skill_missing(self, tmp_path):
-        from devices.dicksimnel.device import DickSimnelDevice
-        d = DickSimnelDevice()
-        d._shim = MagicMock()
-        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
-            prompt = d._build_system_prompt({})
-        assert "I intend that" not in prompt
+            prompt_with_skill = d._build_system_prompt({})
+        # Without skill
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+        with patch("devices.dicksimnel.device._SKILLS_DIR", empty_dir):
+            prompt_without_skill = d._build_system_prompt({})
+        # Both should be the same compact SYSTEM_PROMPT
+        assert prompt_with_skill == prompt_without_skill == SYSTEM_PROMPT
 
     def test_build_system_prompt_falls_back_to_base_when_skill_missing(self, tmp_path):
         from devices.dicksimnel.device import SYSTEM_PROMPT
@@ -391,8 +392,8 @@ class TestDickSimnelSkillLoad:
             prompt = d._build_system_prompt({})
         assert prompt == SYSTEM_PROMPT
 
-    def test_run_inference_uses_skill_prompt(self, tmp_path):
-        from devices.dicksimnel.device import DickSimnelDevice
+    def test_run_inference_uses_compact_prompt(self, tmp_path):
+        from devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
         skill_dir = tmp_path / "sprint-ticket"
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("SKILL_MARKER")
@@ -414,7 +415,8 @@ class TestDickSimnelSkillLoad:
                 d._run_inference({"id": "T-test", "title": "Test", "tags": [], "description": "x"})
 
         assert captured, "dispatch was not called"
-        assert "SKILL_MARKER" in captured[0]
+        assert SYSTEM_PROMPT in captured[0]
+        assert "SKILL_MARKER" not in captured[0]
 
 
 # ── OR cost gate ──────────────────────────────────────────────────────────────

@@ -90,17 +90,25 @@ If blocked (scope unclear, HIGH-inertia file, missing context):
 
 """
 
-# Fallback when sprint-ticket skill file is unavailable.
 SYSTEM_PROMPT = _CAPABILITY_MAP + """\
-## Workflow (fallback — sprint-ticket skill not loaded)
+## Workflow
 
-1. Read ticket description.
-2. Explore relevant files (Read + Bash grep/find).
-3. Implement changes (Edit/Write).
-4. Run tests: python3 -m pytest tests/ -q --tb=short 2>&1 | tail -20
-5. Commit: git add <files> && git commit && git pull --rebase && git push
-6. Close: python3 ~/dev/src/UnseenUniversity/lab/claudecode/cc_queue.py close <id> "<summary>"
-7. Output: DONE: <summary>
+Your FIRST ACTION must be a tool call — read the ticket, then explore, implement, test, commit, close.
+
+1. Bash: python3 ~/dev/src/UnseenUniversity/lab/claudecode/cc_queue.py show <ticket_id>
+2. Bash + Read: explore relevant source files to understand scope
+3. Edit/Write: implement the change
+4. Bash: cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python -m pytest tests/ -q --tb=short 2>&1 | tail -20
+5. Bash: git add <specific-files> && git pull --rebase origin main && git push origin main
+   (commit message: "feat/fix: description\\n\\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>")
+6. Bash: python3 ~/dev/src/UnseenUniversity/lab/claudecode/cc_queue.py close <ticket_id> "<one-line summary>"
+7. Output (no tool call): DONE: <one-line summary>
+
+Rules:
+- ALWAYS call a tool first — never start with prose
+- NEVER skip tests (step 4) — green run required before commit
+- NEVER git add -A or git add . — always name specific files
+- If scope is unclear or touches HIGH-inertia files: output ESCALATE: <reason>
 """
 
 
@@ -374,16 +382,13 @@ class DickSimnelDevice(BaseDevice):
     )
 
     def _build_system_prompt(self, ticket: dict) -> str:
-        """Build system prompt: capability map + sprint-ticket skill.
+        """Build system prompt for the ToolLoop.
 
-        The capability map tells OR models (Bash/Read/Edit/Write only) how to
-        execute each sprint-ticket step — mapping CC-specific calls (memory_get,
-        mcp__*, python run X) to their Bash equivalents, and flagging steps to skip.
-        Same workflow as CC; different tool surface.
+        Uses the compact SYSTEM_PROMPT (not the full sprint-ticket skill) so OR
+        models don't narrate the workflow instead of calling tools. The sprint-ticket
+        skill is CC-specific (memory_get, mcp__*, Agent) and too long (~9k chars)
+        for OR models — they interpret it as a workflow to explain, not execute.
         """
-        skill_content = self.skill_load("sprint-ticket")
-        if skill_content:
-            return _CAPABILITY_MAP + self._IBD_PREAMBLE + skill_content
         return SYSTEM_PROMPT
 
     def _run_inference(self, ticket: dict) -> str | None:

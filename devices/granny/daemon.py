@@ -178,7 +178,7 @@ def _sprint_tickets() -> list[dict]:
             cur.execute(
                 """SELECT metadata FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'status' IN ('sprint', 'escalated')
+                   AND metadata->>'status' IN ('sprint')
                    AND (metadata->>'gate' IS NULL OR metadata->>'gate' = '')
                    ORDER BY (metadata->>'priority')::float DESC NULLS LAST
                    LIMIT 50"""
