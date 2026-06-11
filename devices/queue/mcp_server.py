@@ -58,6 +58,20 @@ def _feeds_send_feed(event: str, sender: str = "cc") -> dict:
     return {"status": "ok", "mailbox": mailbox}
 
 
+def _dispatch_ticket(device: str, ticket_id: str, from_device: str = "cc") -> dict:
+    """Write a dispatch envelope directly to the device's bare work mailbox."""
+    bus = _get_feeds_bus()
+    bus.create_mailbox(device)
+    env = Envelope.now(
+        from_device=from_device,
+        to_device=device,
+        payload={"kind": "dispatch", "ticket_id": ticket_id},
+    )
+    env.importance = 5  # dispatch_received level
+    bus.append(device, env)
+    return {"status": "ok", "mailbox": device, "ticket_id": ticket_id}
+
+
 def _feeds_view_feed(sender: str, limit: int = 20) -> dict:
     bus = _get_feeds_bus()
     mailbox = f"feeds/{sender}"
@@ -193,6 +207,28 @@ _TOOL_SCHEMAS = [
             "required": ["sender"],
         },
     },
+    {
+        "name": "dispatch_ticket",
+        "description": "Dispatch a ticket to a device's work mailbox (bare device mailbox, not feeds/). Use this to send a ticket to DickSimnel or other workers.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "device": {
+                    "type": "string",
+                    "description": "Target device mailbox, e.g. 'dicksimnel.0'",
+                },
+                "ticket_id": {
+                    "type": "string",
+                    "description": "Ticket ID to dispatch, e.g. 'T-some-ticket'",
+                },
+                "from_device": {
+                    "type": "string",
+                    "description": "Sending device name. Default: 'cc'",
+                },
+            },
+            "required": ["device", "ticket_id"],
+        },
+    },
 ]
 
 
@@ -227,9 +263,10 @@ def _dispatch(msg: dict) -> dict | None:
             "queue_peek":  lambda a: _device.queue_peek(worker=a["worker"]),
             "queue_show":  lambda a: _device.queue_show(ticket_id=a["ticket_id"]),
             "queue_list":  lambda a: _device.queue_list(worker=a.get("worker"), status=a.get("status", "sprint")),
-            "send_to":     lambda a: _feeds_send_to(a["receiver"], a["message"]),
-            "send_feed":   lambda a: _feeds_send_feed(a["event"], a.get("sender", "cc")),
-            "view_feed":   lambda a: _feeds_view_feed(a["sender"], a.get("limit", 20)),
+            "send_to":        lambda a: _feeds_send_to(a["receiver"], a["message"]),
+            "send_feed":      lambda a: _feeds_send_feed(a["event"], a.get("sender", "cc")),
+            "view_feed":      lambda a: _feeds_view_feed(a["sender"], a.get("limit", 20)),
+            "dispatch_ticket": lambda a: _dispatch_ticket(a["device"], a["ticket_id"], a.get("from_device", "cc")),
         }
         try:
             handler = _handlers.get(name)

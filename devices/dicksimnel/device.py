@@ -254,13 +254,50 @@ class DickSimnelDevice(BaseDevice):
             log.debug("DickSimnel: cc_queue error: %s", exc)
             return None
 
-    def _channel_event(self, message: str) -> None:
-        """Post a lifecycle event to the shared channel. Non-fatal if unavailable."""
+    # Importance levels per event type (D-feeds-taxonomy-2026-06-11).
+    _EVENT_IMPORTANCE = {
+        "dispatch_received": 5,
+        "working": 3,
+        "done": 7,
+        "escalated": 7,
+        "decline": 5,
+        "error": 9,
+    }
+    _PERSONAL_FEED = "dicksimnel/personal"
+
+    def _bus(self):
+        """Return a started PgBus connection. Cached per-process."""
+        if not hasattr(self, "_bus_conn"):
+            from bus.connection import make_bus_connection
+            self._bus_conn = make_bus_connection()
+            self._bus_conn.create_mailbox(self._PERSONAL_FEED, feed_type="personal")
+        return self._bus_conn
+
+    def _channel_event(self, message: str, event_type: str = "working") -> None:
+        """Post a lifecycle event to Dick's personal feed + shared channel.
+
+        event_type selects the importance level from _EVENT_IMPORTANCE.
+        Falls back to shared channel post if bus is unavailable.
+        """
+        importance = self._EVENT_IMPORTANCE.get(event_type, 3)
         try:
-            from unseen_university.channel import post_to_channel
-            post_to_channel(message, author="dicksimnel", channel="shared")
+            from bus.envelope import Envelope
+            bus = self._bus()
+            env = Envelope.now(
+                from_device="dicksimnel.0",
+                to_device=self._PERSONAL_FEED,
+                payload={"event": message, "kind": event_type},
+            )
+            env.importance = importance
+            bus.append(self._PERSONAL_FEED, env)
+            log.info("DickSimnel: posted to %s importance=%d event=%s", self._PERSONAL_FEED, importance, event_type)
         except Exception as exc:
-            log.warning("DickSimnel: channel post failed: %s", exc)
+            log.warning("DickSimnel: bus post failed (%s), falling back to channel: %s", event_type, exc)
+            try:
+                from unseen_university.channel import post_to_channel
+                post_to_channel(message, author="dicksimnel", channel="shared")
+            except Exception as exc2:
+                log.warning("DickSimnel: channel fallback also failed: %s", exc2)
 
     def _post_result(self, ticket_id: str, result_text: str) -> None:
         """Close ticket with inference result as the completion note.
@@ -307,13 +344,13 @@ class DickSimnelDevice(BaseDevice):
                 return
 
         self._tickets_processed += 1
-        self._channel_event(f"DICKSIMNEL_DONE ticket={ticket_id} summary={result_text[:100]!r}")
+        self._channel_event(f"DICKSIMNEL_DONE ticket={ticket_id} summary={result_text[:100]!r}", event_type="done")
         log.info("DickSimnel: closed ticket %s", ticket_id)
 
     def _decline_ticket(self, ticket_id: str, reason: str) -> None:
         """Return ticket to sprint status with a decline note."""
         self._run_queue_cmd("setstatus", ticket_id, "sprint")
-        self._channel_event(f"DICKSIMNEL_DECLINE ticket={ticket_id} reason={reason!r}")
+        self._channel_event(f"DICKSIMNEL_DECLINE ticket={ticket_id} reason={reason!r}", event_type="decline")
         log.info("DickSimnel: declined ticket %s — %s", ticket_id, reason)
         self._tickets_declined += 1
         self._active_ticket = None
@@ -333,7 +370,8 @@ class DickSimnelDevice(BaseDevice):
         )
         self._run_queue_cmd("append-note", ticket_id, summary_block)
         self._channel_event(
-            f"DICKSIMNEL_ESCALATE ticket={ticket_id} reason={reason!r}"
+            f"DICKSIMNEL_ESCALATE ticket={ticket_id} reason={reason!r}",
+            event_type="escalated",
         )
         self._run_queue_cmd("setstatus", ticket_id, "escalated")
         log.info("DickSimnel: escalated ticket %s to CC — %s", ticket_id, reason)
