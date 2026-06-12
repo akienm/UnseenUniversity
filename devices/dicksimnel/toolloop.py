@@ -26,9 +26,10 @@ log = logging.getLogger(__name__)
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
-MAX_TURNS = 30
+MAX_TURNS = 50
+MAX_TURNS_FLAT_RATE = 80  # flat-rate sources don't pay per turn; give more budget
 DONE_PREFIX = "DONE:"
-COST_CAP_USD = 3.00
+COST_CAP_USD = 3.00  # only enforced for usage_based sources
 
 # Bash commands blocked by the safety denylist
 _BASH_DENYLIST = re.compile(
@@ -146,6 +147,7 @@ class ToolLoop:
         self._turn_log = []
         ticket_id = ticket.get("id", "?")
         running_cost: float = 0.0
+        source_billing_type: str = "usage_based"  # updated on first response
         user_msg = (
             f"Ticket ID: {ticket_id}\n"
             f"Title: {ticket.get('title', 'No title')}\n"
@@ -155,9 +157,11 @@ class ToolLoop:
         messages = [{"role": "user", "content": user_msg}]
         full_system = system_prompt + "\n\n" + SYSTEM_RULES
 
-        for turn in range(self._max_turns):
-            log.info("ToolLoop turn %d/%d $%.4f/$%.2f — ticket %s",
-                     turn + 1, self._max_turns, running_cost, COST_CAP_USD, ticket_id)
+        effective_max_turns = self._max_turns
+        turn = 0
+        while turn < effective_max_turns:
+            log.info("ToolLoop turn %d/%d $%.4f — ticket %s",
+                     turn + 1, effective_max_turns, running_cost, ticket_id)
             # Force tool use on turn 1 to prevent planning-mode narration.
             # After turn 1, auto lets the model decide (including returning DONE:).
             extra = {"tool_choice": "required"} if turn == 0 else {}
@@ -180,13 +184,26 @@ class ToolLoop:
                 log.error("ToolLoop inference failed on turn %d: %s", turn + 1, exc)
                 return None
 
-            running_cost += response.cost_estimate
-            if running_cost >= COST_CAP_USD:
-                log.warning(
-                    "ToolLoop: cost cap hit $%.4f/$%.2f on turn %d for %s",
-                    running_cost, COST_CAP_USD, turn + 1, ticket_id,
+            # On first response, lock in billing type and adjust turn cap accordingly.
+            if turn == 0 and response.source_billing_type == "flat_rate":
+                source_billing_type = "flat_rate"
+                effective_max_turns = max(effective_max_turns, MAX_TURNS_FLAT_RATE)
+                log.info(
+                    "ToolLoop: flat_rate source detected — raising turn cap to %d for %s",
+                    effective_max_turns, ticket_id,
                 )
-                return f"COST_EXCEEDED: ${running_cost:.2f} of ${COST_CAP_USD:.2f} cap — inference did not complete within cost constraint"
+
+            if source_billing_type == "flat_rate":
+                # Flat-rate: no per-token cost; skip cost cap entirely.
+                pass
+            else:
+                running_cost += response.cost_estimate
+                if running_cost >= COST_CAP_USD:
+                    log.warning(
+                        "ToolLoop: cost cap hit $%.4f/$%.2f on turn %d for %s",
+                        running_cost, COST_CAP_USD, turn + 1, ticket_id,
+                    )
+                    return f"COST_EXCEEDED: ${running_cost:.2f} of ${COST_CAP_USD:.2f} cap — inference did not complete within cost constraint"
 
             tool_calls = response.tool_calls
             log.debug(
@@ -219,6 +236,7 @@ class ToolLoop:
                             "or make an edit."
                         ),
                     })
+                    turn += 1
                     continue
                 log.info("ToolLoop: done on turn %d for %s", turn + 1, ticket_id)
                 return response.text
@@ -247,8 +265,10 @@ class ToolLoop:
                     "content": result,
                 })
 
-        log.warning("ToolLoop: hit max turns (%d) for %s", self._max_turns, ticket_id)
-        return f"MAX_TURNS: hit {self._max_turns} turns without DONE: prefix"
+            turn += 1
+
+        log.warning("ToolLoop: hit max turns (%d) for %s", effective_max_turns, ticket_id)
+        return f"MAX_TURNS: hit {effective_max_turns} turns without DONE: prefix"
 
 
 # ── Tool dispatch ─────────────────────────────────────────────────────────────

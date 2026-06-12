@@ -69,6 +69,9 @@ class InferenceResponse:
     raw: dict = field(default_factory=dict)
     # Populated when the model returns tool calls (native tool use).
     tool_calls: list | None = field(default=None)
+    # Billing type of the source that served this response.
+    # "flat_rate" = subscription (cost cap irrelevant); "usage_based" = pay-per-token.
+    source_billing_type: str = "usage_based"
 
 
 log = logging.getLogger(__name__)

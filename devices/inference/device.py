@@ -447,6 +447,7 @@ class InferenceDevice(BaseDevice):
             output_tokens=resp.output_tokens,
             cost_usd=cost_usd,
         )
+        resp.source_billing_type = getattr(source, "billing_type", "usage_based") if source is not None else "usage_based"
         return resp
 
     def source_health(self) -> dict[str, bool]:
