@@ -68,7 +68,9 @@ _DEFAULT_RULES: list[RoutingRule] = [
     # Worker tier — qwen3-coder last usage fallback (proven weak on complex instructions)
     RoutingRule(9, "worker", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker→qwen3-coder-30b/OR"),
     # Worker tier — Ollama Pro flat-rate (active when OLLAMA_PRO_API_KEY set)
-    RoutingRule(10, "worker", "qwen2.5-coder:32b", "ollama_cloud", "worker→qwen2.5-coder:32b/ollama-pro"),
+    # devstral-small-2 first: purpose-built agentic coding model, floor candidate
+    RoutingRule(10, "worker", "devstral-small-2:24b", "ollama_cloud", "worker→devstral-small-2:24b/ollama-pro"),
+    RoutingRule(11, "worker", "qwen2.5-coder:32b", "ollama_cloud", "worker→qwen2.5-coder:32b/ollama-pro"),
     # Analyst tier — usage-based fallback
     RoutingRule(3, "analyst", "deepseek/deepseek-v4-flash", "openrouter", "analyst→deepseek-v4-flash/OR"),
     # Analyst tier — Ollama Pro flat-rate

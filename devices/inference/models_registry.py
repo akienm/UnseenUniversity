@@ -163,6 +163,17 @@ _SEED: list[ModelSpec] = [
     # These models are preferred over usage-based OR when the subscription is active.
     # Set OLLAMA_PRO_API_KEY to enable. Model IDs match ollama.com library names.
     ModelSpec(
+        model_id="devstral-small-2:24b",
+        source_name="ollama_cloud",
+        tier="worker",
+        input_cost_per_1m=0.0,
+        output_cost_per_1m=0.0,
+        context_window=128_000,
+        tags=["coding", "flat-rate", "ollama-pro", "agentic", "tool-call"],
+        notes="Mistral Devstral Small 2 — purpose-built agentic coding model, 24B. Floor candidate for flat-rate worker tier.",
+        created_at="2026-06-11T00:00:00Z",
+    ),
+    ModelSpec(
         model_id="qwen2.5-coder:32b",
         source_name="ollama_cloud",
         tier="worker",

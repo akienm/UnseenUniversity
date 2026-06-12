@@ -24,6 +24,21 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+_AKIEN_CREDS_FILE = os.path.expanduser(
+    "~/.unseen_university/akien/akien.credentials.cfg"
+)
+
+
+def _read_akien_cred(key: str) -> str:
+    """Read a single key from akien.credentials.cfg. Returns '' if not found."""
+    try:
+        for line in open(_AKIEN_CREDS_FILE).read().splitlines():
+            if line.startswith(key + "="):
+                return line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return ""
+
 
 @dataclass
 class Source:
@@ -544,6 +559,8 @@ class OllamaCloudSource(Source):
         api_key = (
             os.environ.get("OLLAMA_PRO_API_KEY", "").strip()
             or os.environ.get("OLLAMA_API_KEY", "").strip()
+            or _read_akien_cred("OLLAMA_API_KEY")
+            or _read_akien_cred("OLLAMA_PRO_API_KEY")
         )
         endpoint = os.environ.get(
             "OLLAMA_CLOUD_ENDPOINT", self.DEFAULT_ENDPOINT

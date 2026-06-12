@@ -48,10 +48,12 @@ def test_ollama_cloud_source_billing_type():
 
 
 def test_ollama_cloud_source_disabled_without_api_key():
-    """OllamaCloudSource is unavailable when OLLAMA_PRO_API_KEY not set."""
-    env = {k: v for k, v in __import__("os").environ.items() if k != "OLLAMA_PRO_API_KEY"}
+    """OllamaCloudSource is unavailable when no API key in env or credentials file."""
+    env = {k: v for k, v in __import__("os").environ.items()
+           if k not in ("OLLAMA_PRO_API_KEY", "OLLAMA_API_KEY")}
     with patch.dict("os.environ", env, clear=True):
-        src = OllamaCloudSource()
+        with patch("devices.inference.sources._read_akien_cred", return_value=""):
+            src = OllamaCloudSource()
     assert src.available is False
 
 
