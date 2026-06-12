@@ -72,6 +72,49 @@ class Source:
         self.available = self.ping()
         return self.available
 
+    def _classify_ping_failure(
+        self,
+        exc: BaseException,
+        *,
+        model_name: str = "",
+        base_url: str = "",
+        api_key: str = "",
+        requested_context_window: int | None = None,
+    ) -> dict:
+        """Classify a ping/call failure and return enriched failure info.
+
+        Returns::
+
+            {
+                'failure_category': 'model_not_found' | 'local_bug' | 'auth_error'
+                                    | 'unreachable' | 'unknown',
+                'alternatives': [list of model names],  # non-empty only for model_not_found
+            }
+
+        When failure_category is 'model_not_found', also logs at INFO::
+
+            log.info('source %s model %s not found: alternatives=%s', ...)
+        """
+        from devices.inference.model_alternatives import ModelAlternativesClassifier
+
+        classifier = ModelAlternativesClassifier(
+            source_name=self.name,
+            base_url=base_url or "",
+            api_key=api_key or "",
+            requested_context_window=requested_context_window,
+        )
+        failure_category, alternatives = classifier.classify(self.name, model_name, exc)
+
+        if failure_category == "model_not_found":
+            log.info(
+                "source %s model %s not found: alternatives=%s",
+                self.name,
+                model_name,
+                alternatives,
+            )
+
+        return {"failure_category": failure_category, "alternatives": alternatives}
+
 
 class OpenRouterSource(Source):
     """OpenRouter — cloud inference for all OR-hosted models."""
@@ -679,7 +722,8 @@ def default_registry() -> SourceRegistry:
         base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434")
     ))
     reg.register(GoogleSource(free_tier=True))   # google_free
-    reg.register(GoogleSource(free_tier=False))  # google
-    reg.register(OpenRouterSource())
-    reg.register(AnthropicSource())
+    # TEMPORARY SPEND GATE (2026-06-12): Disabled until account recovered
+    # reg.register(GoogleSource(free_tier=False))  # google — expensive at scale
+    # reg.register(OpenRouterSource())             # openrouter — $57 burned; DISABLED
+    # reg.register(AnthropicSource())              # anthropic direct API — DISABLED
     return reg
