@@ -109,19 +109,27 @@ def test_cc0_and_cc1_exist_returns_cc2(monkeypatch):
 
 def test_tmux_error_falls_back_to_cc0(monkeypatch):
     """When tmux list-sessions fails, fall back to <hostname>.cc.0."""
-    with patch("socket.gethostname", return_value="testhost"):
-        with patch("subprocess.run", side_effect=FileNotFoundError("tmux not found")):
-            import devices.claude.constants as mod
-            importlib.reload(mod)
+    from pathlib import Path
+    _missing = Path("/nonexistent/cc_session_test_stub.txt")
+    monkeypatch.delenv("CC_TMUX_SESSION", raising=False)
+    with patch("socket.gethostname", return_value="testhost"), \
+         patch("subprocess.run", side_effect=FileNotFoundError("tmux not found")), \
+         patch("devices.claude.constants.cc_session_path", return_value=_missing):
+        import devices.claude.constants as mod
+        importlib.reload(mod)
     assert mod.TMUX_SESSION == "testhost.cc.0"
 
 
 def test_tmux_timeout_falls_back_to_cc0(monkeypatch):
     """When tmux list-sessions times out, fall back to <hostname>.cc.0."""
-    with patch("socket.gethostname", return_value="testhost"):
-        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("tmux", 2)):
-            import devices.claude.constants as mod
-            importlib.reload(mod)
+    from pathlib import Path
+    _missing = Path("/nonexistent/cc_session_test_stub.txt")
+    monkeypatch.delenv("CC_TMUX_SESSION", raising=False)
+    with patch("socket.gethostname", return_value="testhost"), \
+         patch("subprocess.run", side_effect=subprocess.TimeoutExpired("tmux", 2)), \
+         patch("devices.claude.constants.cc_session_path", return_value=_missing):
+        import devices.claude.constants as mod
+        importlib.reload(mod)
     assert mod.TMUX_SESSION == "testhost.cc.0"
 
 
