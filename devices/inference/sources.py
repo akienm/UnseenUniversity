@@ -700,9 +700,8 @@ class OllamaCloudSource(Source):
                     "Content-Type": "application/json",
                 },
                 method="POST",
-                timeout=10,
             )
-            with urllib.request.urlopen(http_req) as resp:
+            with urllib.request.urlopen(http_req, timeout=10) as resp:
                 result = json.loads(resp.read())
                 if result.get("choices") and len(result["choices"]) > 0:
                     return True, f"ok: {result['choices'][0]['message']['content'][:50]}"
