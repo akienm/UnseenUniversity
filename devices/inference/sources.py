@@ -752,6 +752,14 @@ class OllamaCloudSource(Source):
             return False, f"error ({test_model}): {type(e).__name__}: {str(e)[:80]}"
 
     def call(self, req: "InferenceRequest") -> dict:
+        """Call Ollama Cloud with aggressive retry + exponential backoff.
+
+        Ollama Cloud frequently returns 503/502/empty responses without proper
+        Retry-After headers. Retry up to 3 times with exponential backoff before
+        raising. Caller (HealthMonitor/RulesEngine) will trigger fallthrough.
+        """
+        import time
+
         messages = (
             [{"role": "system", "content": req.system}] + req.messages
             if req.system
@@ -766,22 +774,107 @@ class OllamaCloudSource(Source):
         if req.tools:
             payload["tools"] = req.tools
         payload.update(req.extra)
-        body = json.dumps(payload).encode()
-        http_req = urllib.request.Request(
-            self._endpoint,
-            data=body,
-            headers={
-                "Authorization": f"Bearer {self._api_key()}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
+
+        max_retries = 3
+        delay = 2  # Start at 2 seconds
+        last_exc = None
+
+        for attempt in range(max_retries):
+            try:
+                body = json.dumps(payload).encode()
+                http_req = urllib.request.Request(
+                    self._endpoint,
+                    data=body,
+                    headers={
+                        "Authorization": f"Bearer {self._api_key()}",
+                        "Content-Type": "application/json",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(http_req, timeout=req.timeout) as resp:
+                    result = json.loads(resp.read())
+                    # Validate response has actual content
+                    if result.get("choices") and len(result["choices"]) > 0:
+                        if attempt > 0:
+                            log.info(
+                                "OllamaCloud succeeded after %d retries (model=%s)",
+                                attempt,
+                                req.model,
+                            )
+                        return result
+                    else:
+                        # Empty response — count as retriable error
+                        log.warning(
+                            "OllamaCloud attempt %d/%d: empty choices (model=%s)",
+                            attempt + 1,
+                            max_retries,
+                            req.model,
+                        )
+                        last_exc = RuntimeError("Empty response from OllamaCloud")
+                        if attempt < max_retries - 1:
+                            time.sleep(delay)
+                            delay *= 2
+                        continue
+
+            except urllib.error.HTTPError as exc:
+                status_code = exc.code
+                # 503/502 are retriable; others are not
+                if status_code in (503, 502) and attempt < max_retries - 1:
+                    log.warning(
+                        "OllamaCloud attempt %d/%d: HTTP %d (model=%s), backing off %ds",
+                        attempt + 1,
+                        max_retries,
+                        status_code,
+                        req.model,
+                        delay,
+                    )
+                    last_exc = exc
+                    time.sleep(delay)
+                    delay *= 2
+                    continue
+                else:
+                    # Non-retriable error or final attempt
+                    err_body = exc.read().decode()[:200]
+                    log.error(
+                        "OllamaCloud %s HTTP %d (model=%s): %s",
+                        "final attempt" if attempt == max_retries - 1 else f"attempt {attempt + 1}",
+                        status_code,
+                        req.model,
+                        err_body,
+                    )
+                    raise RuntimeError(
+                        f"OllamaCloud {status_code}: {err_body}"
+                    ) from exc
+
+            except urllib.error.URLError as exc:
+                # Network error (DNS, connection refused, etc.)
+                if attempt < max_retries - 1:
+                    log.warning(
+                        "OllamaCloud attempt %d/%d: network error (model=%s), backing off %ds: %s",
+                        attempt + 1,
+                        max_retries,
+                        req.model,
+                        delay,
+                        str(exc)[:100],
+                    )
+                    last_exc = exc
+                    time.sleep(delay)
+                    delay *= 2
+                    continue
+                else:
+                    log.error(
+                        "OllamaCloud final attempt: network error (model=%s): %s",
+                        req.model,
+                        str(exc)[:100],
+                    )
+                    raise RuntimeError(f"OllamaCloud network error: {str(exc)[:100]}") from exc
+
+        # Should not reach here, but if we do, raise the last exception
+        if last_exc:
+            raise last_exc
+        raise RuntimeError(
+            f"OllamaCloud failed after {max_retries} retries (model={req.model})"
         )
-        try:
-            with urllib.request.urlopen(http_req, timeout=req.timeout) as resp:
-                return json.loads(resp.read())
-        except urllib.error.HTTPError as exc:
-            err_body = exc.read().decode()[:400]
-            raise RuntimeError(f"OllamaCloud {exc.code}: {err_body}") from exc
 
 
 # ── Registry ──────────────────────────────────────────────────────────────────
