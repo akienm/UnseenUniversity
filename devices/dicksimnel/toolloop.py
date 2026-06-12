@@ -152,6 +152,7 @@ class ToolLoop:
         ticket_id = ticket.get("id", "?")
         running_cost: float = 0.0
         source_billing_type: str = "usage_based"  # updated on first response
+        inference_device = InferenceDevice()  # Cache once per run, not per turn
         user_msg = (
             f"Ticket ID: {ticket_id}\n"
             f"Title: {ticket.get('title', 'No title')}\n"
@@ -183,7 +184,7 @@ class ToolLoop:
                 foreground=True,
             )
             try:
-                response = InferenceDevice().dispatch(req)
+                response = inference_device.dispatch(req)
             except Exception as exc:
                 log.error("ToolLoop inference failed on turn %d: %s", turn + 1, exc)
                 return None
