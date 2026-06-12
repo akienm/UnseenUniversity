@@ -10,6 +10,7 @@ SourceRegistry holds all configured sources and is queried by the RulesEngine.
 
 from __future__ import annotations
 
+import difflib
 import json
 import logging
 import os
@@ -29,15 +30,16 @@ _AKIEN_CREDS_FILE = os.path.expanduser(
 )
 
 
-def _read_akien_cred(key: str) -> str:
+def _read_akien_cred(key: str, owner: str = "akien") -> str:
     """Read a credential: vault first (scoped), flat file fallback.
 
     Vault is tried first — returns '' on any error or when vault is unavailable,
     allowing the flat-file fallback to serve credentials during migration.
+    owner defaults to 'akien' but can be overridden (vault scoping).
     """
     try:
         from devices.vault.client import get_credential
-        val = get_credential("inference", "akien", key)
+        val = get_credential("inference", owner, key)
         if val:
             return val
     except Exception:
@@ -681,13 +683,53 @@ class OllamaCloudSource(Source):
         except OSError:
             return False
 
+    def _get_available_models(self) -> list[str]:
+        """Fetch list of available models from Ollama Cloud."""
+        try:
+            models_endpoint = self._endpoint.replace("/v1/chat/completions", "/v1/models")
+            http_req = urllib.request.Request(
+                models_endpoint,
+                headers={"Authorization": f"Bearer {self._api_key()}"},
+            )
+            with urllib.request.urlopen(http_req, timeout=5) as resp:
+                data = json.loads(resp.read())
+                return [m.get("id", "") for m in data.get("data", [])]
+        except Exception:
+            return []
+
+    def _fuzzy_match_model(self, requested: str) -> str | None:
+        """Find best matching model name using fuzzy matching.
+
+        If exact match exists, return it.
+        Otherwise find the closest match with > 0.6 similarity.
+        """
+        available = self._get_available_models()
+        if not available:
+            return None
+
+        # Exact match
+        if requested in available:
+            return requested
+
+        # Fuzzy match — find closest
+        matches = difflib.get_close_matches(requested, available, n=1, cutoff=0.6)
+        return matches[0] if matches else None
+
     def self_test(self) -> tuple[bool, str]:
-        """Test by calling cheapest Ollama model (nemotron-mini) with hello world."""
+        """Test by calling a small available model from Ollama Cloud."""
         if not self.ping():
             return False, "ping failed"
+
+        # Try to find a small model
+        test_model = self._fuzzy_match_model("ministral-3:3b")
+        if not test_model:
+            # Fallback: get any model
+            available = self._get_available_models()
+            test_model = available[0] if available else "ministral-3:3b"
+
         try:
             payload = {
-                "model": "nemotron-mini",
+                "model": test_model,
                 "messages": [{"role": "user", "content": "hello world"}],
                 "max_tokens": 10,
             }
@@ -704,10 +746,10 @@ class OllamaCloudSource(Source):
             with urllib.request.urlopen(http_req, timeout=10) as resp:
                 result = json.loads(resp.read())
                 if result.get("choices") and len(result["choices"]) > 0:
-                    return True, f"ok: {result['choices'][0]['message']['content'][:50]}"
+                    return True, f"ok ({test_model}): {result['choices'][0]['message']['content'][:40]}"
                 return False, "empty response"
         except Exception as e:
-            return False, f"error: {type(e).__name__}: {str(e)[:100]}"
+            return False, f"error ({test_model}): {type(e).__name__}: {str(e)[:80]}"
 
     def call(self, req: "InferenceRequest") -> dict:
         messages = (
