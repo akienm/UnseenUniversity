@@ -219,9 +219,9 @@ _CC_SESSION_FILE="${IGOR_HOME:-${HOME}/.unseen_university}/claudecode/cc_session
 mkdir -p "$(dirname "$_CC_SESSION_FILE")"
 printf '%s\n' "$_CC_SESSION" > "$_CC_SESSION_FILE"
 
-# Unique session name: hostname-yymmdd.HHMMSS — used for both display name
-# and remote-control handle so Igor/tools can reach this session by name.
-SESSION_NAME="$(hostname)-$(date +%y%m%d.%H%M%S)"
+# Session name for -n / --remote-control: use the stable hostname.cc.N name
+# (T-cc-session-name-regression: the old hostname-YYMMDD.HHMMSS format was wrong).
+SESSION_NAME="$_CC_SESSION"
 
 if [[ -n "${TMUX:-}" ]]; then
     # Already inside tmux — launch directly; CC_TMUX_SESSION already in env.

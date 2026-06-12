@@ -11,19 +11,50 @@ import subprocess
 from unittest.mock import MagicMock, patch
 
 
+def _make_run_mock(tmux_sessions):
+    """Return a subprocess.run mock.
+
+    First call (from _find_existing_cc_session): returns empty stdout so no
+    existing session is found and _resolve_session_name falls through to
+    _detect_session_name.
+    Second call (from _detect_session_name): returns the desired session list
+    so slot-detection picks the correct N.
+    Subsequent calls: repeat the detect-phase result.
+    """
+    empty = MagicMock()
+    empty.stdout = ""
+    empty.returncode = 0
+
+    detect = MagicMock()
+    detect.stdout = "\n".join(tmux_sessions or [])
+    detect.returncode = 0
+
+    mock = MagicMock(side_effect=[empty, detect] + [detect] * 20)
+    return mock
+
+
 def _reload_constants(monkeypatch, cc_tmux_session=None, tmux_sessions=None):
-    """Reload constants module with controlled env and tmux output."""
+    """Reload constants module with controlled env and tmux output.
+
+    When cc_tmux_session is None (auto-detection tests), subprocess.run is
+    mocked so that _find_existing_cc_session sees no sessions (falls through)
+    and _detect_session_name sees the desired tmux_sessions list.
+    cc_session.txt is suppressed via a nonexistent path.
+    """
+    from pathlib import Path
+
     if cc_tmux_session is not None:
         monkeypatch.setenv("CC_TMUX_SESSION", cc_tmux_session)
     else:
         monkeypatch.delenv("CC_TMUX_SESSION", raising=False)
 
-    fake_sessions = "\n".join(tmux_sessions or [])
-    mock_result = MagicMock()
-    mock_result.stdout = fake_sessions
-    mock_result.returncode = 0
+    mock_run = _make_run_mock(tmux_sessions)
 
-    with patch("subprocess.run", return_value=mock_result) as mock_run:
+    # Nonexistent path so read_text raises FileNotFoundError naturally.
+    _missing = Path("/nonexistent/cc_session_test_stub.txt")
+
+    with patch("subprocess.run", mock_run), \
+         patch("devices.claude.constants.cc_session_path", return_value=_missing):
         import devices.claude.constants as mod
         importlib.reload(mod)
         return mod, mock_run
