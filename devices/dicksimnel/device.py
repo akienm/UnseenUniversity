@@ -450,11 +450,12 @@ class DickSimnelDevice(BaseDevice):
 
     # Internal tier cascade: cheapest first, escalate within Dick before going to CC.
     # Each tier appends context from the prior attempt so the next model starts informed.
+    # OLLAMA-ONLY MODE: OR tiers disabled — no paid fallthrough. Escalate to CC if devstral fails.
     _TIER_CASCADE = [
         ("devstral-small-2:24b", "devstral"),       # tier 0: flat-rate floor; purpose-built agentic coding
-        ("anthropic/claude-haiku-4.5", "haiku"),    # tier 1: cheapest OR; proven on S-size tickets
-        ("anthropic/claude-sonnet-4.6", "sonnet"),  # tier 2: escalation when haiku insufficient
-        ("anthropic/claude-opus-4.8", "opus"),      # tier 3: last resort before CC escalation
+        # ("anthropic/claude-haiku-4.5", "haiku"),  # DISABLED — OR off until Ollama-only validated
+        # ("anthropic/claude-sonnet-4.6", "sonnet"),  # DISABLED
+        # ("anthropic/claude-opus-4.8", "opus"),      # DISABLED
     ]
 
     def _run_inference(self, ticket: dict) -> str | None:

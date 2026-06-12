@@ -136,6 +136,23 @@ class Source:
 
         return {"failure_category": failure_category, "alternatives": alternatives}
 
+    def _classify_ping_failure_simple(
+        self,
+        exc: BaseException,
+    ) -> str:
+        """Classify a ping failure and return a category.
+
+        This method is called from subclass ping() except blocks to categorize
+        the exception before returning False. It logs the failure category at INFO.
+
+        Returns one of: 'local_bug', 'auth_error', 'unreachable', 'unknown'
+        """
+        from devices.inference.provider_health import ProviderHealthClassifier
+
+        category = ProviderHealthClassifier.classify(self.name, exc)
+        log.info('source %s unavailable: failure_category=%s', self.name, category)
+        return category
+
 
 class OpenRouterSource(Source):
     """OpenRouter — cloud inference for all OR-hosted models."""
@@ -153,7 +170,8 @@ class OpenRouterSource(Source):
         try:
             with socket.create_connection(("openrouter.ai", 443), timeout=3):
                 return True
-        except OSError:
+        except OSError as exc:
+            self._classify_ping_failure_simple(exc)
             return False
 
     def _is_cacheable(self, model_id: str) -> bool:
@@ -243,7 +261,8 @@ class OllamaSource(Source):
             port = parsed.port or 11434
             with socket.create_connection((host, port), timeout=2):
                 return True
-        except OSError:
+        except OSError as exc:
+            self._classify_ping_failure_simple(exc)
             return False
 
     def self_test(self) -> tuple[bool, str]:
@@ -334,7 +353,8 @@ class AnthropicSource(Source):
         try:
             with socket.create_connection(("api.anthropic.com", 443), timeout=3):
                 return True
-        except OSError:
+        except OSError as exc:
+            self._classify_ping_failure_simple(exc)
             return False
 
     @staticmethod
@@ -533,7 +553,8 @@ class GoogleSource(Source):
         try:
             with socket.create_connection(("generativelanguage.googleapis.com", 443), timeout=3):
                 return True
-        except OSError:
+        except OSError as exc:
+            self._classify_ping_failure_simple(exc)
             return False
 
     def _to_google_messages(self, req: "InferenceRequest") -> tuple[list, dict | None]:
@@ -691,7 +712,8 @@ class OllamaCloudSource(Source):
             port = parsed.port or 443
             with socket.create_connection((host, port), timeout=3):
                 return True
-        except OSError:
+        except OSError as exc:
+            self._classify_ping_failure_simple(exc)
             return False
 
     def _get_available_models(self) -> list[str]:

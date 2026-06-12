@@ -181,7 +181,7 @@ class ToolLoop:
                 timeout=120,
                 temperature=0.0,
                 extra=extra,
-                foreground=True,
+                foreground=False,  # flat-rate (Ollama Cloud) preferred; foreground=True would flip to OR
             )
             try:
                 response = inference_device.dispatch(req)
