@@ -587,6 +587,8 @@ class OllamaCloudSource(Source):
         if not (
             os.environ.get("OLLAMA_PRO_API_KEY", "").strip()
             or os.environ.get("OLLAMA_API_KEY", "").strip()
+            or _read_akien_cred("OLLAMA_API_KEY")
+            or _read_akien_cred("OLLAMA_PRO_API_KEY")
         ):
             return False
         try:
