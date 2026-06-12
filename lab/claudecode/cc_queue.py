@@ -361,7 +361,9 @@ def _format_task_line(t: dict) -> str:
     tier_tag = f" [{DIFFICULTY_TIERS.get(diff, '?')}({diff})]" if diff != 1 else ""
     role = _infer_role(t)
     role_tag = f" [{role}]" if role and role != "apprentice" else ""
-    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag}{tier_tag}{role_tag} {t['title']}  [{t['status']}]"
+    cost_usd = t.get("cost_usd")
+    cost_tag = f" ${cost_usd:.2f}" if cost_usd is not None and t.get("status") in ("closed", "done", "awaiting_validation") else ""
+    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag}{tier_tag}{role_tag} {t['title']}  [{t['status']}]{cost_tag}"
 
 
 def _print_task(t: dict) -> None:
@@ -442,6 +444,75 @@ def cmd_show(args):
     _show_token_log(args[0])
 
 
+# ---------------------------------------------------------------------------
+# Model pricing table (USD per million tokens, as of 2026-06)
+# Keys are model name substrings matched case-insensitively.
+# ---------------------------------------------------------------------------
+_MODEL_PRICING: dict[str, dict[str, float]] = {
+    # claude-sonnet-4-5 / claude-sonnet-4-6
+    "sonnet": {
+        "input": 3.00,
+        "cache_write": 3.75,
+        "cache_read": 0.30,
+        "output": 15.00,
+    },
+    # claude-haiku-3-5
+    "haiku": {
+        "input": 0.80,
+        "cache_write": 1.00,
+        "cache_read": 0.08,
+        "output": 4.00,
+    },
+    # claude-opus-4
+    "opus": {
+        "input": 15.00,
+        "cache_write": 18.75,
+        "cache_read": 1.50,
+        "output": 75.00,
+    },
+}
+_MODEL_PRICING_DEFAULT = _MODEL_PRICING["sonnet"]
+
+
+def _pricing_for_model(model: str) -> dict[str, float]:
+    """Return the pricing dict for a given model name string."""
+    ml = model.lower()
+    for key, pricing in _MODEL_PRICING.items():
+        if key in ml:
+            return pricing
+    return _MODEL_PRICING_DEFAULT
+
+
+def _compute_cost_usd(ticket_id: str) -> float | None:
+    """Compute total inference cost in USD for a ticket from sprint_tokens.log.
+
+    Returns None if no log entries exist for the ticket.
+    """
+    igor_home = Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+    log_path = igor_home / "claudecode" / "sprint_tokens.log"
+    if not log_path.exists():
+        return None
+    entries = [
+        ln for ln in log_path.read_text(encoding="utf-8").splitlines()
+        if ln and len(ln.split("|")) >= 7 and ln.split("|")[1] == ticket_id
+    ]
+    if not entries:
+        return None
+    total_cost = 0.0
+    for entry in entries:
+        parts = entry.split("|")
+        _ts, _tid, inp, cache_w, cache_r, out, model = parts[:7]
+        pricing = _pricing_for_model(model.strip())
+        cost = (
+            int(inp) * pricing["input"]
+            + int(cache_w) * pricing["cache_write"]
+            + int(cache_r) * pricing["cache_read"]
+            + int(out) * pricing["output"]
+        ) / 1_000_000
+        total_cost += cost
+    return total_cost
+
+
 def _show_token_log(ticket_id: str) -> None:
     """Append per-sprint token consumption from sprint_tokens.log, if any."""
     igor_home = Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
@@ -455,17 +526,28 @@ def _show_token_log(ticket_id: str) -> None:
     if not entries:
         return
     print("\nToken consumption (sprints):")
+    total_cost = 0.0
     for entry in entries:
         parts = entry.split("|")
         if len(parts) < 7:
             continue
         ts, tid, inp, cache_w, cache_r, out, model = parts[:7]
         total_in = int(inp) + int(cache_w) + int(cache_r)
+        pricing = _pricing_for_model(model.strip())
+        cost = (
+            int(inp) * pricing["input"]
+            + int(cache_w) * pricing["cache_write"]
+            + int(cache_r) * pricing["cache_read"]
+            + int(out) * pricing["output"]
+        ) / 1_000_000
+        total_cost += cost
         print(
             f"  {ts[:19]}  in={total_in:>7} "
             f"(write={int(cache_w):>6} read={int(cache_r):>6})  "
-            f"out={int(out):>6}  [{model}]"
+            f"out={int(out):>6}  [{model.strip()}]  ${cost:.4f}"
         )
+    if len(entries) > 1:
+        print(f"  Total cost: ${total_cost:.4f}")
 
 
 class LegacyDirectClaimError(Exception):
@@ -976,15 +1058,19 @@ def cmd_close(args):
     t["title"] = _with_status_prefix("closed", t["title"])
     t["result"] = args[1]
     t["completed_at"] = _now()
+    cost_usd = _compute_cost_usd(args[0])
+    if cost_usd is not None:
+        t["cost_usd"] = round(cost_usd, 4)
     decision_id = t.get("decision_id")
     _decision_rollup(tasks, decision_id)
     _ungate_dependents(tasks, t["id"])
     _save(tasks)
-    _log({"action": "close", "id": args[0], "title": t["title"], "result": args[1]})
+    _log({"action": "close", "id": args[0], "title": t["title"], "result": args[1], "cost_usd": t.get("cost_usd")})
     _prepend_closed_ticket(args[0], t["title"])
     _close_igor_goal(args[0])
     _append_to_todays_slate(t)
-    print(f"Closed {args[0]}: {t['title']}")
+    cost_str = f"  cost=${t['cost_usd']:.4f}" if t.get("cost_usd") is not None else ""
+    print(f"Closed {args[0]}: {t['title']}{cost_str}")
 
 
 def cmd_block(args):
