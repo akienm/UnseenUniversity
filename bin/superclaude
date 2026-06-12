@@ -129,6 +129,42 @@ require_api_key() {
     return 0
 }
 
+# ─ Session health ───────────────────────────────────────────────────────────
+
+check_session_health() {
+    local session="$1"
+
+    # Does the session exist?
+    if ! tmux has-session -t "$session" 2>/dev/null; then
+        return 1
+    fi
+
+    # Is there an active pane with a running process?
+    local pids
+    pids=$(tmux list-panes -t "$session" -F '#{pane_pid}' 2>/dev/null)
+    if [[ -z "$pids" ]]; then
+        return 1
+    fi
+
+    # Check if any pane process is still running
+    for pid in $pids; do
+        if kill -0 "$pid" 2>/dev/null; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+recover_stale_session() {
+    local session="$1"
+
+    echo "Recovering from stale session '$session'..."
+    tmux kill-session -t "$session" 2>/dev/null || true
+    sleep 0.5
+    tmux new-session -d -s "$session" 2>/dev/null || true
+}
+
 # ─ Rack server (D335) ───────────────────────────────────────────────────────
 
 start_rack_server() {
@@ -231,9 +267,15 @@ if [[ -n "${TMUX:-}" ]]; then
         "$@"
 else
     # Outside tmux — create session (or reuse) and launch Claude inside it.
+    # Check if a session with this name exists and is healthy.
+    if ! check_session_health "$CC_TMUX_SESSION"; then
+        recover_stale_session "$CC_TMUX_SESSION"
+    fi
+
     # tmux new-session inherits the calling env; CC_TMUX_SESSION is also injected
     # explicitly into CLAUDE_CMD so shell rc files can't shadow it.
     tmux new-session -d -s "$CC_TMUX_SESSION" 2>/dev/null || true
+
     # Build the command string with proper quoting
     CLAUDE_CMD="CC_TMUX_SESSION=$(printf '%q' "$CC_TMUX_SESSION") cd $(printf '%q' "$PWD") && claude --dangerously-skip-permissions"
     CLAUDE_CMD+=" -n $(printf '%q' "$SESSION_NAME")"
