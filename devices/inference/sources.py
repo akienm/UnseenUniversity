@@ -629,13 +629,14 @@ class GoogleSource(Source):
 class OllamaCloudSource(Source):
     """Ollama Pro cloud API — flat-rate subscription ($20/mo Pro plan).
 
-    Uses the OpenAI-compatible endpoint at api.ollama.com (or OLLAMA_CLOUD_ENDPOINT).
+    Uses the OpenAI-compatible endpoint at ollama.com (or OLLAMA_CLOUD_ENDPOINT).
+    (Note: api.ollama.com 301-redirects to ollama.com; urllib converts POST→GET on 301s)
     Auth via OLLAMA_PRO_API_KEY (alias: OLLAMA_API_KEY). Disabled (available=False) when key is not set.
 
     billing_type="flat_rate": preferred over usage-based sources when routing.
     """
 
-    DEFAULT_ENDPOINT = "https://api.ollama.com/v1/chat/completions"
+    DEFAULT_ENDPOINT = "https://ollama.com/v1/chat/completions"
 
     def __init__(self) -> None:
         api_key = (
