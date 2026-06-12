@@ -25,6 +25,16 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+
+class OllamaCloudFatalError(RuntimeError):
+    """Raised by OllamaCloudSource when the failure is non-retriable.
+
+    Distinct from plain RuntimeError so callers can catch it separately and
+    halt the tier cascade rather than falling through to expensive OR models.
+    Covers: 4xx HTTP errors, exhausted retries (503 spam), network errors.
+    """
+
+
 _AKIEN_CREDS_FILE = os.path.expanduser(
     "~/.unseen_university/akien/akien.credentials.cfg"
 )
@@ -817,7 +827,7 @@ class OllamaCloudSource(Source):
 
             except urllib.error.HTTPError as exc:
                 status_code = exc.code
-                # 503/502 are retriable; others are not
+                # 503/502 are retriable; all others are fatal — don't fall through to OR
                 if status_code in (503, 502) and attempt < max_retries - 1:
                     log.warning(
                         "OllamaCloud attempt %d/%d: HTTP %d (model=%s), backing off %ds",
@@ -832,7 +842,7 @@ class OllamaCloudSource(Source):
                     delay *= 2
                     continue
                 else:
-                    # Non-retriable error or final attempt
+                    # Non-retriable (4xx, or 503 on final attempt) — stop, no OR fallthrough
                     err_body = exc.read().decode()[:200]
                     log.error(
                         "OllamaCloud %s HTTP %d (model=%s): %s",
@@ -841,7 +851,7 @@ class OllamaCloudSource(Source):
                         req.model,
                         err_body,
                     )
-                    raise RuntimeError(
+                    raise OllamaCloudFatalError(
                         f"OllamaCloud {status_code}: {err_body}"
                     ) from exc
 
@@ -866,12 +876,16 @@ class OllamaCloudSource(Source):
                         req.model,
                         str(exc)[:100],
                     )
-                    raise RuntimeError(f"OllamaCloud network error: {str(exc)[:100]}") from exc
+                    raise OllamaCloudFatalError(
+                        f"OllamaCloud network error: {str(exc)[:100]}"
+                    ) from exc
 
-        # Should not reach here, but if we do, raise the last exception
+        # Retries exhausted — stop, no OR fallthrough
         if last_exc:
-            raise last_exc
-        raise RuntimeError(
+            raise OllamaCloudFatalError(
+                f"OllamaCloud failed after {max_retries} retries (model={req.model})"
+            ) from last_exc
+        raise OllamaCloudFatalError(
             f"OllamaCloud failed after {max_retries} retries (model={req.model})"
         )
 

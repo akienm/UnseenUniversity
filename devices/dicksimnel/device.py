@@ -501,6 +501,21 @@ class DickSimnelDevice(BaseDevice):
                 else:
                     log.warning("DickSimnel: tier=%s returned None for %s — trying next tier", tier_label, ticket_id)
             except Exception as exc:
+                from devices.inference.sources import OllamaCloudFatalError
+                if isinstance(exc, OllamaCloudFatalError):
+                    # Ollama Cloud failed hard — don't fall through to OR/paid sources.
+                    log.error(
+                        "DickSimnel: tier=%s OllamaCloudFatalError for %s — halting cascade: %s",
+                        tier_label, ticket_id, exc,
+                    )
+                    # Return an escalation envelope so the caller escalates to CC
+                    import json as _json
+                    return _json.dumps({
+                        "status": "escalate",
+                        "result": f"OllamaCloud fatal error on tier {tier_label}: {exc}",
+                        "error_class": "OLLAMA_CLOUD_FATAL",
+                        "error_number": None,
+                    })
                 log.error("DickSimnel: tier=%s failed for %s: %s", tier_label, ticket_id, exc)
 
         # All tiers tried — return last result (will be escalated to CC by caller)
