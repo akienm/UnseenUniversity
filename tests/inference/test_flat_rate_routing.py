@@ -66,8 +66,10 @@ def test_ollama_cloud_source_available_with_api_key():
 
 def test_ollama_cloud_source_ping_returns_false_without_key():
     """ping() returns False immediately when no API key is configured."""
-    env = {k: v for k, v in __import__("os").environ.items() if k != "OLLAMA_PRO_API_KEY"}
-    with patch.dict("os.environ", env, clear=True):
+    env = {k: v for k, v in __import__("os").environ.items()
+           if k not in ("OLLAMA_PRO_API_KEY", "OLLAMA_API_KEY")}
+    with patch.dict("os.environ", env, clear=True), \
+         patch("devices.inference.sources._read_akien_cred", return_value=""):
         src = OllamaCloudSource()
         assert src.ping() is False
 

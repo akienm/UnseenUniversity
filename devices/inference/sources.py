@@ -30,7 +30,19 @@ _AKIEN_CREDS_FILE = os.path.expanduser(
 
 
 def _read_akien_cred(key: str) -> str:
-    """Read a single key from akien.credentials.cfg. Returns '' if not found."""
+    """Read a credential: vault first (scoped), flat file fallback.
+
+    Vault is tried first — returns '' on any error or when vault is unavailable,
+    allowing the flat-file fallback to serve credentials during migration.
+    """
+    try:
+        from devices.vault.client import get_credential
+        val = get_credential("inference", "akien", key)
+        if val:
+            return val
+    except Exception:
+        pass
+    # Flat-file fallback — preserved for migration period and cold-start before vault is up
     try:
         for line in open(_AKIEN_CREDS_FILE).read().splitlines():
             if line.startswith(key + "="):
@@ -206,11 +218,6 @@ class AnthropicSource(Source):
     # Prompt caching beta: cache_control on system + first user turn saves up to 90%.
     BETA_HEADERS = "prompt-caching-2024-07-31"
 
-    # Credentials file where the real key lives (outside of bashrc for non-CC processes)
-    _CREDS_FILE = os.path.expanduser(
-        "~/.unseen_university/akien/akien.credentials.cfg"
-    )
-
     def __init__(self) -> None:
         super().__init__(name="anthropic")
 
@@ -220,16 +227,11 @@ class AnthropicSource(Source):
             key = os.environ.get(var, "").strip()
             if key:
                 return key
-        # Fall back to reading from credentials file — for non-CC processes like DickSimnel
-        try:
-            for line in open(self._CREDS_FILE).read().splitlines():
-                for var in ("REAL_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY"):
-                    if line.startswith(var + "="):
-                        key = line.split("=", 1)[1].strip()
-                        if key:
-                            return key
-        except OSError:
-            pass
+        # Vault + flat-file fallback via shared helper
+        for var in ("REAL_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY"):
+            key = _read_akien_cred(var)
+            if key:
+                return key
         raise RuntimeError("ANTHROPIC_API_KEY not set (checked env + akien.credentials.cfg)")
 
     def ping(self) -> bool:
