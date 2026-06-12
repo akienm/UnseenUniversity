@@ -28,7 +28,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 MAX_TURNS = 50
 MAX_TURNS_FLAT_RATE = 80  # flat-rate sources don't pay per turn; give more budget
-DONE_PREFIX = "DONE:"
+DONE_PREFIX = "DONE:"  # legacy — kept for backwards-compat parsing only
 COST_CAP_USD = 3.00  # only enforced for usage_based sources
 
 # Bash commands blocked by the safety denylist
@@ -109,9 +109,13 @@ TOOL_DEFINITIONS = [
 SYSTEM_RULES = """\
 ## Exit protocol
 
-Output DONE: when: code written, tests green, committed, ticket closed.
-Output ESCALATE: when: scope unclear, HIGH-inertia file, missing context.
-These are the only valid non-tool responses. Everything else is an error.
+When finished, respond with a JSON envelope (no prose, no other text):
+{"status": "done", "result": "<one-line summary of what was done>", "error_class": null, "error_number": null}
+
+When escalating, respond with:
+{"status": "escalate", "result": "<reason>", "error_class": "ESCALATE", "error_number": null}
+
+No other non-tool responses are valid.
 
 ## Rules
 
@@ -223,8 +227,9 @@ class ToolLoop:
             })
 
             if not tool_calls:
-                if turn == 0 and not (response.text or "").strip().startswith("DONE:"):
-                    # Turn 1 returned no tools and no DONE: — model went into planning mode.
+                envelope = _parse_terminal_response(response.text or "")
+                if turn == 0 and envelope is None:
+                    # Turn 1 returned no tools and no terminal envelope — model went into planning mode.
                     # Inject a correction and continue so it will actually call tools.
                     log.warning("ToolLoop: turn 1 no tools for %s — injecting correction", ticket_id)
                     messages.append({"role": "assistant", "content": response.text or ""})
@@ -238,7 +243,8 @@ class ToolLoop:
                     })
                     turn += 1
                     continue
-                log.info("ToolLoop: done on turn %d for %s", turn + 1, ticket_id)
+                log.info("ToolLoop: done on turn %d for %s envelope_status=%s",
+                         turn + 1, ticket_id, (envelope or {}).get("status", "legacy_prose"))
                 return response.text
 
             # Append the assistant message (content may be null on tool-call turns)
@@ -268,7 +274,47 @@ class ToolLoop:
             turn += 1
 
         log.warning("ToolLoop: hit max turns (%d) for %s", effective_max_turns, ticket_id)
-        return f"MAX_TURNS: hit {effective_max_turns} turns without DONE: prefix"
+        return json.dumps({
+            "status": "error",
+            "result": f"MAX_TURNS: hit {effective_max_turns} turns without terminal response",
+            "error_class": "MAX_TURNS",
+            "error_number": effective_max_turns,
+        })
+
+
+# ── Response parsing ─────────────────────────────────────────────────────────
+
+
+def _parse_terminal_response(text: str) -> dict | None:
+    """
+    Parse a terminal (no-tool-calls) response from the model.
+
+    Returns a dict with at least {"status": ...} when the response is a valid
+    terminal envelope (JSON or legacy DONE:/ESCALATE: prefix).
+    Returns None when the response is not a terminal signal (planning mode, etc.).
+
+    Interface crossing log: caller logs envelope_status at INFO.
+    """
+    stripped = text.strip()
+    if not stripped:
+        return None
+
+    # JSON envelope (new protocol)
+    if stripped.startswith("{"):
+        try:
+            envelope = json.loads(stripped)
+            if isinstance(envelope, dict) and "status" in envelope:
+                return envelope
+        except json.JSONDecodeError:
+            pass
+
+    # Legacy DONE: / ESCALATE: prefix (backwards compat)
+    if stripped.startswith("DONE:"):
+        return {"status": "done", "result": stripped[5:].strip(), "error_class": None, "error_number": None}
+    if stripped.upper().startswith("ESCALATE:"):
+        return {"status": "escalate", "result": stripped[9:].strip(), "error_class": "ESCALATE", "error_number": None}
+
+    return None
 
 
 # ── Tool dispatch ─────────────────────────────────────────────────────────────

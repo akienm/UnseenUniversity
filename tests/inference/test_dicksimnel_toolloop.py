@@ -295,7 +295,11 @@ def test_toolloop_max_turns_respected():
 
     assert call_count[0] == 3
     assert result is not None
-    assert result.startswith("MAX_TURNS:"), f"expected MAX_TURNS: sentinel, got: {result!r}"
+    # MAX_TURNS now returns a JSON error envelope
+    import json as _json
+    envelope = _json.loads(result)
+    assert envelope["status"] == "error"
+    assert envelope["error_class"] == "MAX_TURNS"
 
 
 def test_toolloop_max_turns_sentinel_content():
