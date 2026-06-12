@@ -919,7 +919,8 @@ def default_registry() -> SourceRegistry:
         base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434")
     ))
     reg.register(GoogleSource(free_tier=True))   # google_free
-    reg.register(GoogleSource(free_tier=False))  # google
-    reg.register(OpenRouterSource())             # openrouter — re-enabled as fallback
+    # TEMPORARY: Ollama-only test (2026-06-12) — small ticket validation
+    # reg.register(GoogleSource(free_tier=False))  # google — disabled for test
+    # reg.register(OpenRouterSource())             # openrouter — DISABLED for Ollama-only test
     # reg.register(AnthropicSource())              # anthropic direct API — stay disabled
     return reg
