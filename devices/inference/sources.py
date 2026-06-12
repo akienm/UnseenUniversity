@@ -716,7 +716,7 @@ class OllamaCloudSource(Source):
         return matches[0] if matches else None
 
     def self_test(self) -> tuple[bool, str]:
-        """Test by calling a small available model from Ollama Cloud."""
+        """Test by calling a small available model, using full retry logic."""
         if not self.ping():
             return False, "ping failed"
 
@@ -728,26 +728,24 @@ class OllamaCloudSource(Source):
             test_model = available[0] if available else "ministral-3:3b"
 
         try:
-            payload = {
-                "model": test_model,
-                "messages": [{"role": "user", "content": "hello world"}],
-                "max_tokens": 10,
-            }
-            body = json.dumps(payload).encode()
-            http_req = urllib.request.Request(
-                self._endpoint,
-                data=body,
-                headers={
-                    "Authorization": f"Bearer {self._api_key()}",
-                    "Content-Type": "application/json",
-                },
-                method="POST",
+            # Create a minimal InferenceRequest to test the full call() path with retries
+            from devices.inference.shim import InferenceRequest
+
+            req = InferenceRequest(
+                model=test_model,
+                messages=[{"role": "user", "content": "hello world"}],
+                system="",
+                max_tokens=10,
+                temperature=0,
+                timeout=30,
+                task_class="self_test",
+                agent_id="source_health_check",
             )
-            with urllib.request.urlopen(http_req, timeout=10) as resp:
-                result = json.loads(resp.read())
-                if result.get("choices") and len(result["choices"]) > 0:
-                    return True, f"ok ({test_model}): {result['choices'][0]['message']['content'][:40]}"
-                return False, "empty response"
+            result = self.call(req)
+            if result.get("choices") and len(result["choices"]) > 0:
+                content = result["choices"][0].get("message", {}).get("content", "")[:40]
+                return True, f"ok ({test_model}): {content}"
+            return False, f"empty response ({test_model})"
         except Exception as e:
             return False, f"error ({test_model}): {type(e).__name__}: {str(e)[:80]}"
 
