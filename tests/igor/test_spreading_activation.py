@@ -44,23 +44,20 @@ def _mem(mem_id, narrative="test narrative", parent_id=None, children_ids=None):
 class TestWordGraphSpreadFromWords(unittest.TestCase):
     """Unit tests for WordGraph.spread_from_words()"""
 
-    def _make_wg(self, edge_rows=None):
-        """Return a WordGraph-like object with a mocked _db."""
+    def _make_wg(self, spread_return=None):
+        """Return a WordGraph-like object with a mocked _cortex."""
         from devices.igor.cognition.word_graph import WordGraph
 
         wg = MagicMock(spec=WordGraph)
         # Wire spread_from_words to the real implementation via unbound call
         wg.spread_from_words = lambda *a, **kw: WordGraph.spread_from_words(wg, *a, **kw)
-        # Mock the _db context manager
-        conn = MagicMock()
-        conn.execute.return_value.fetchall.return_value = edge_rows or []
-        db_ctx = MagicMock()
-        db_ctx.__enter__ = MagicMock(return_value=conn)
-        db_ctx.__exit__ = MagicMock(return_value=False)
-        wg._db = MagicMock(return_value=db_ctx)
-        # Set _cortex to None (required by spread_from_words method)
-        wg._cortex = None
-        return wg, conn
+        # Wire _cortex to a mock whose spread_word_graph returns spread_return
+        mock_cortex = MagicMock()
+        mock_cortex.spread_word_graph.side_effect = (
+            spread_return if callable(spread_return) else lambda *a, **kw: spread_return or {}
+        )
+        wg._cortex = mock_cortex
+        return wg, mock_cortex
 
     def test_empty_seeds_return_empty(self):
         wg, _ = self._make_wg()
@@ -68,44 +65,48 @@ class TestWordGraphSpreadFromWords(unittest.TestCase):
         self.assertEqual(result, {})
 
     def test_seeds_present_in_result(self):
-        wg, _ = self._make_wg(edge_rows=[])
+        # When _cortex is wired, spread_from_words delegates to _cortex.spread_word_graph
+        wg, mock_cortex = self._make_wg()
+        mock_cortex.spread_word_graph.side_effect = None
+        mock_cortex.spread_word_graph.return_value = {"memory": 1.0, "graph": 0.8}
         result = wg.spread_from_words({"memory": 1.0, "graph": 0.8})
         self.assertIn("memory", result)
         self.assertIn("graph", result)
         self.assertEqual(result["memory"], 1.0)
 
     def test_single_hop_propagation(self):
-        # word_a="memory", word_b="recall", similarity=0.9
-        wg, conn = self._make_wg(edge_rows=[("memory", "recall", 0.9)])
+        # spread_from_words delegates to _cortex.spread_word_graph; verify delegation
+        wg, mock_cortex = self._make_wg()
+        mock_cortex.spread_word_graph.side_effect = None
+        mock_cortex.spread_word_graph.return_value = {"memory": 1.0, "recall": 0.54}
         result = wg.spread_from_words({"memory": 1.0}, hop_decay=0.6, depth=1)
-        # "recall" should appear with score = 1.0 * 0.9 * 0.6 = 0.54
+        mock_cortex.spread_word_graph.assert_called_once_with(
+            {"memory": 1.0}, hop_decay=0.6, depth=1, max_frontier=300
+        )
         self.assertIn("recall", result)
         self.assertAlmostEqual(result["recall"], 0.54, places=5)
 
     def test_multi_source_sum(self):
-        # Two seeds both activate "recall" with different strengths
-        # seed1=memory → recall with sim=0.9; seed2=think → recall with sim=0.5
-        wg, conn = self._make_wg(
-            edge_rows=[("memory", "recall", 0.9), ("think", "recall", 0.5)]
-        )
+        # spread_from_words delegates to _cortex.spread_word_graph; verify delegation
+        wg, mock_cortex = self._make_wg()
+        mock_cortex.spread_word_graph.side_effect = None
+        mock_cortex.spread_word_graph.return_value = {
+            "memory": 1.0, "think": 1.0, "recall": 0.84
+        }
         result = wg.spread_from_words({"memory": 1.0, "think": 1.0}, hop_decay=0.6, depth=1)
-        # Sum: 1.0*0.9*0.6 + 1.0*0.5*0.6 = 0.54 + 0.30 = 0.84
+        mock_cortex.spread_word_graph.assert_called_once()
         self.assertAlmostEqual(result["recall"], 0.84, places=5)
 
     def test_max_frontier_caps_in_clause(self):
-        # Build a frontier of 5 words and cap at 3 to verify only top-3 by score
-        # are queried in the next hop. Prevents OOM from dense-graph explosions.
-        wg, conn = self._make_wg(edge_rows=[])
-        # 5 frontier seeds with distinct scores
+        # Verify max_frontier is forwarded to _cortex.spread_word_graph
+        wg, mock_cortex = self._make_wg()
+        mock_cortex.spread_word_graph.side_effect = None
+        mock_cortex.spread_word_graph.return_value = {}
         seeds = {"alpha": 1.0, "beta": 0.9, "gamma": 0.8, "delta": 0.4, "epsilon": 0.3}
         wg.spread_from_words(seeds, hop_decay=0.6, depth=1, max_frontier=3)
-        # The IN clause should have been built with only the top-3 words
-        call_args = conn.execute.call_args
-        sql, params = call_args[0]
-        assert "IN" in sql
-        assert len(params) == 3
-        # Top-3 by score: alpha, beta, gamma
-        assert set(params) == {"alpha", "beta", "gamma"}
+        mock_cortex.spread_word_graph.assert_called_once_with(
+            seeds, hop_decay=0.6, depth=1, max_frontier=3
+        )
 
 
 class TestWordGraphWordsToDocIds(unittest.TestCase):
@@ -215,14 +216,17 @@ class TestCortexSpreadingActivation(unittest.TestCase):
         m = _mem("ID1", narrative="memory recall testing")
         cortex.get = MagicMock(return_value=m)
 
+        # cortex.spreading_activation calls self.spread_word_graph (not word_graph.spread_from_words)
+        # then bridges via word_graph.words_to_doc_ids
+        cortex.spread_word_graph = MagicMock(return_value={"memory": 0.5, "recall": 0.3})
+
         mock_wg = MagicMock()
-        mock_wg.spread_from_words.return_value = {"memory": 0.5, "recall": 0.3}
         mock_wg.words_to_doc_ids.return_value = {"DOCX": 0.4}
 
         with patch("devices.igor.cognition.word_graph.tokenize", return_value=["memory", "recall", "testing"]):
             result = cortex.spreading_activation(["ID1"], word_graph=mock_wg)
 
-        mock_wg.spread_from_words.assert_called_once()
+        cortex.spread_word_graph.assert_called_once()
         mock_wg.words_to_doc_ids.assert_called_once()
         # DOCX should appear in result from bridge
         self.assertIn("DOCX", result)
