@@ -72,6 +72,15 @@ class Source:
         self.available = self.ping()
         return self.available
 
+    def self_test(self) -> tuple[bool, str]:
+        """Ping cheapest model with hello world; return (success, reason).
+
+        Subclasses override to test their specific cheapest model.
+        Base implementation just does ping().
+        """
+        success = self.ping()
+        return success, "ping: " + ("ok" if success else "failed")
+
     def _classify_ping_failure(
         self,
         exc: BaseException,
@@ -224,6 +233,32 @@ class OllamaSource(Source):
                 return True
         except OSError:
             return False
+
+    def self_test(self) -> tuple[bool, str]:
+        """Test by calling cheapest local Ollama model with hello world."""
+        if not self.ping():
+            return False, "ping failed"
+        try:
+            payload = {
+                "model": "nemotron-mini",
+                "messages": [{"role": "user", "content": "hello world"}],
+                "stream": False,
+                "options": {"temperature": 0, "num_predict": 10},
+            }
+            body = json.dumps(payload).encode()
+            http_req = urllib.request.Request(
+                f"{self.base_url}/api/chat",
+                data=body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(http_req, timeout=10) as resp:
+                result = json.loads(resp.read())
+                if result.get("message") and result["message"].get("content"):
+                    return True, f"ok: {result['message']['content'][:50]}"
+                return False, "empty response"
+        except Exception as e:
+            return False, f"error: {type(e).__name__}: {str(e)[:100]}"
 
     def call(self, req: "InferenceRequest") -> dict:
         messages = (
@@ -646,6 +681,35 @@ class OllamaCloudSource(Source):
         except OSError:
             return False
 
+    def self_test(self) -> tuple[bool, str]:
+        """Test by calling cheapest Ollama model (nemotron-mini) with hello world."""
+        if not self.ping():
+            return False, "ping failed"
+        try:
+            payload = {
+                "model": "nemotron-mini",
+                "messages": [{"role": "user", "content": "hello world"}],
+                "max_tokens": 10,
+            }
+            body = json.dumps(payload).encode()
+            http_req = urllib.request.Request(
+                self._endpoint,
+                data=body,
+                headers={
+                    "Authorization": f"Bearer {self._api_key()}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+                timeout=10,
+            )
+            with urllib.request.urlopen(http_req) as resp:
+                result = json.loads(resp.read())
+                if result.get("choices") and len(result["choices"]) > 0:
+                    return True, f"ok: {result['choices'][0]['message']['content'][:50]}"
+                return False, "empty response"
+        except Exception as e:
+            return False, f"error: {type(e).__name__}: {str(e)[:100]}"
+
     def call(self, req: "InferenceRequest") -> dict:
         messages = (
             [{"role": "system", "content": req.system}] + req.messages
@@ -722,8 +786,7 @@ def default_registry() -> SourceRegistry:
         base_url=os.environ.get("INFERENCE_ENDPOINT", "http://127.0.0.1:11434")
     ))
     reg.register(GoogleSource(free_tier=True))   # google_free
-    # TEMPORARY SPEND GATE (2026-06-12): Disabled until account recovered
-    # reg.register(GoogleSource(free_tier=False))  # google — expensive at scale
-    # reg.register(OpenRouterSource())             # openrouter — $57 burned; DISABLED
-    # reg.register(AnthropicSource())              # anthropic direct API — DISABLED
+    reg.register(GoogleSource(free_tier=False))  # google
+    reg.register(OpenRouterSource())             # openrouter — re-enabled as fallback
+    # reg.register(AnthropicSource())              # anthropic direct API — stay disabled
     return reg
