@@ -275,28 +275,21 @@ def _dispatch_akien(ticket: dict) -> bool:
     return True
 
 
-def _dispatch_dicksimnel(ticket: dict, worker_name: str = "dicksimnel") -> bool:
-    tid = ticket["id"]
-    r = subprocess.run(
-        [_PYTHON, str(_CC_QUEUE), "set-worker", worker_name, tid],
-        capture_output=True,
-        text=True,
-        timeout=10,
-        env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
-    )
-    if r.returncode != 0:
-        log.warning("Granny: set-worker failed for %s: %s", tid, r.stderr[:100])
-        return False
-    log.info("Granny: dispatched %s → DickSimnel.0 (set-worker %s)", tid, worker_name)
-    return True
 
 
 # ── Bus dispatch + handshake response ────────────────────────────────────────
 
-# Granny escalates a dispatched ticket if no ack arrives within this window.
-DISPATCH_ACK_TIMEOUT_S = int(os.environ.get("GRANNY_DISPATCH_ACK_TIMEOUT", "180"))
+# Granny resets a dispatched ticket to sprint if no ack arrives within this window.
+DISPATCH_ACK_TIMEOUT_S = int(os.environ.get("GRANNY_DISPATCH_ACK_TIMEOUT", "120"))
+# Builder cooldown after a dispatch timeout — 10 minutes by default.
+GRANNY_BUILDER_COOLDOWN_S = int(os.environ.get("GRANNY_BUILDER_COOLDOWN_S", "600"))
+# Minimum gap between consecutive builder launch attempts.
+GRANNY_BUILDER_LAUNCH_RETRY_S = int(os.environ.get("GRANNY_BUILDER_LAUNCH_RETRY_S", "60"))
 
 _GRANNY_MAILBOX_DEFAULT = "granny.0"
+
+# Tracks when each worker was last launch-attempted so we don't spam launches.
+_last_launch_attempt: dict[str, float] = {}
 
 
 def _dispatch_bus(ticket: dict, imap, worker_mailbox: str, granny_mailbox: str) -> bool:
@@ -352,7 +345,14 @@ def _process_handshake_replies(imap, granny_mailbox: str) -> int:
         payload = getattr(env, "payload", {}) if not isinstance(env, dict) else env.get("payload", {})
         kind = payload.get("kind", "")
         tid = payload.get("ticket_id", "")
-        if not tid or kind not in ("dispatch_ack", "dispatch_started", "dispatch_timeout"):
+        if not tid or kind not in ("dispatch_ack", "dispatch_started", "dispatch_timeout", "dispatch_done"):
+            continue
+
+        if kind == "dispatch_done":
+            # Builder closed the ticket directly — observability only, no status change needed.
+            builder = payload.get("from_device", "?")
+            log.info("Granny: builder %s completed %s (dispatch_done)", builder, tid)
+            count += 1
             continue
 
         new_status = {
@@ -377,11 +377,15 @@ def _process_handshake_replies(imap, granny_mailbox: str) -> int:
 
 
 def _escalate_stale_dispatched() -> int:
-    """Escalate tickets stuck in 'dispatched' past DISPATCH_ACK_TIMEOUT_S.
+    """Reset tickets stuck in 'dispatched' past DISPATCH_ACK_TIMEOUT_S back to sprint.
 
+    Returns ticket to sprint (not escalated) so any available builder can pick it up.
+    Marks the timed-out worker on cooldown to prevent immediate re-dispatch storm.
     Uses updated_at from the DB — no local timestamp file needed.
-    Returns the number of tickets escalated.
+    Returns the number of tickets reset.
     """
+    from devices.granny.availability import mark_unavailable
+
     try:
         import psycopg2
         import psycopg2.extras
@@ -389,35 +393,45 @@ def _escalate_stale_dispatched() -> int:
         conn = psycopg2.connect(_DB_URL, connect_timeout=5)
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                """SELECT metadata->>'id' AS tid FROM clan.memories
+                """SELECT metadata->>'id' AS tid, metadata->>'worker' AS worker
+                   FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
                    AND metadata->>'status' = 'dispatched'
                    AND updated_at::timestamptz < now() - interval '%s seconds'""",
                 (DISPATCH_ACK_TIMEOUT_S,),
             )
-            stale = [row["tid"] for row in cur.fetchall() if row["tid"]]
+            stale = [(row["tid"], row.get("worker") or "") for row in cur.fetchall() if row["tid"]]
         conn.close()
     except Exception as exc:
         log.warning("Granny: stale-dispatched query failed: %s", exc)
         return 0
 
+    # Map worker name → Granny worker_id for cooldown lookup
+    _WORKER_NAME_TO_ID = {
+        "dicksimnel": "DickSimnel.0",
+        "claude": "CC.0",
+        "cc": "CC.0",
+    }
+
     count = 0
-    for tid in stale:
-        r = subprocess.run(
-            [_PYTHON, str(_CC_QUEUE), "setstatus", tid, "escalated"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+    for tid, worker_name in stale:
+        # Reset to sprint + clear worker assignment
+        ok_status = _setstatus_direct(tid, "sprint", worker="")
+        if not ok_status:
+            log.warning("Granny: stale-dispatched reset failed for %s", tid)
+            continue
+
+        log.warning(
+            "Granny: reset stale-dispatched ticket %s to sprint (no ack within %ds, worker=%s)",
+            tid, DISPATCH_ACK_TIMEOUT_S, worker_name,
         )
-        if r.returncode != 0:
-            log.warning("Granny: escalate-stale setstatus failed for %s: %s", tid, r.stderr[:80])
-        else:
-            log.warning(
-                "Granny: escalated stale-dispatched ticket %s (no ack within %ds)",
-                tid, DISPATCH_ACK_TIMEOUT_S,
-            )
         count += 1
+
+        # Put the timed-out worker on cooldown so we don't immediately re-dispatch
+        worker_id = _WORKER_NAME_TO_ID.get(worker_name.lower())
+        if worker_id:
+            mark_unavailable(worker_id, cooldown_s=GRANNY_BUILDER_COOLDOWN_S)
+            log.info("Granny: %s on cooldown %ds after dispatch timeout", worker_id, GRANNY_BUILDER_COOLDOWN_S)
 
     return count
 
@@ -517,15 +531,51 @@ def _post_channel(msg: str) -> None:
 # ── Poll cycle ────────────────────────────────────────────────────────────────
 
 
+def _launch_builder(worker_id: str, worker_cfg: dict) -> None:
+    """Launch a builder process when launch_cmd is configured and rate limit allows.
+
+    Detaches the process (start_new_session=True) so it outlives Granny.
+    Tracks launch time in _last_launch_attempt to rate-limit retries.
+    """
+    launch_cmd = worker_cfg.get("launch_cmd")
+    if not launch_cmd:
+        log.debug("Granny: no launch_cmd for %s — cannot launch", worker_id)
+        return
+    now = time.time()
+    last = _last_launch_attempt.get(worker_id, 0.0)
+    if now - last < GRANNY_BUILDER_LAUNCH_RETRY_S:
+        log.debug(
+            "Granny: %s launch rate-limited (%.0fs since last attempt)",
+            worker_id, now - last,
+        )
+        return
+    _last_launch_attempt[worker_id] = now
+    try:
+        subprocess.Popen(
+            launch_cmd,
+            shell=True,
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        log.info("Granny: launched builder %s: %s", worker_id, launch_cmd)
+    except Exception as exc:
+        log.warning("Granny: launch_builder %s failed: %s", worker_id, exc)
+
+
 def run_once(config: dict, *, imap=None) -> None:
     """Single poll cycle. Ticket status is the authoritative state — no side files.
 
     imap — optional IMAPServer for bus dispatch; when None, bus dispatch is
     skipped and only legacy (tmux_send_keys / set_worker) paths are used.
     """
-    from devices.granny.availability import is_available
+    from devices.granny.availability import check_and_expire_cooldowns, is_available
 
     granny_mailbox = config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT)
+    workers_cfg = config.get("workers", {})
+
+    # Expire any builder cooldowns before making dispatch decisions.
+    check_and_expire_cooldowns(list(workers_cfg.keys()))
 
     # Process pending handshake replies and run stale-ticket watchdogs
     # before looking for new work, so transitions land before the busy-check.
@@ -536,8 +586,20 @@ def run_once(config: dict, *, imap=None) -> None:
     _escalate_stale_dispatched()
     _reset_stale_inprogress()
 
+    # Launch any idle workers that have sprint tickets waiting but aren't running.
+    # Only fires when there's actually work to do and the worker isn't on cooldown.
+    sprint_tickets_exist = bool(_sprint_tickets())
+    if sprint_tickets_exist:
+        from devices.granny.availability import _avail_dir as _get_avail_dir
+        avail_dir = _get_avail_dir()
+        for wid, wcfg in workers_cfg.items():
+            if not isinstance(wcfg, dict):
+                continue
+            if not is_available(wid) and not (avail_dir / f"{wid}.cooldown_until").exists():
+                # Not available and no cooldown file means worker simply isn't running.
+                _launch_builder(wid, wcfg)
+
     rules = config.get("rules", [])
-    workers_cfg = config.get("workers", {})
 
     # Advance all active workflow scripts (external state, persisted per-workflow).
     try:
@@ -610,7 +672,11 @@ def run_once(config: dict, *, imap=None) -> None:
                     granny_mailbox,
                 )
             else:
-                ok = _dispatch_dicksimnel(ticket, wcfg.get("worker_name", "dicksimnel"))
+                log.warning(
+                    "Granny: dispatch=%s for %s is unsupported — skipping %s",
+                    dispatch_kind, target, tid,
+                )
+                ok = False
 
         if ok:
             dispatched_this_cycle.add(target)

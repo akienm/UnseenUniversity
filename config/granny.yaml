@@ -7,9 +7,11 @@ workers:
     dispatch: bus
     mailbox: cc.0
     one_at_a_time: true        # defer if a claude ticket is already in_progress
+    launch_cmd: null           # CC is launched manually / via tmux
   DickSimnel.0:
     dispatch: bus
     mailbox: dicksimnel.0
+    launch_cmd: "cd /home/akien/dev/src/UnseenUniversity && .venv/bin/python3 -m devices.dicksimnel"
 
 rules:
   # HIGH-inertia tags always go to CC — no exceptions, no silent routing

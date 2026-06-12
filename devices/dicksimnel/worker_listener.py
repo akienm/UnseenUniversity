@@ -198,11 +198,29 @@ class DickSimnelWorkerListener:
 
         if result is None:
             self._device._decline_ticket(ticket_id, "inference proxy unavailable or returned empty")
+            self._send(reply_to, {
+                "kind": "dispatch_done",
+                "ticket_id": ticket_id,
+                "from_device": self._device_mailbox,
+                "outcome": "decline",
+            })
         else:
             should_esc, esc_reason = self._device._should_escalate(ticket, result)
             if should_esc:
                 self._device._escalate_ticket(ticket_id, esc_reason, analysis=result)
+                self._send(reply_to, {
+                    "kind": "dispatch_done",
+                    "ticket_id": ticket_id,
+                    "from_device": self._device_mailbox,
+                    "outcome": "escalated",
+                })
             else:
                 self._device._post_result(ticket_id, result)
+                self._send(reply_to, {
+                    "kind": "dispatch_done",
+                    "ticket_id": ticket_id,
+                    "from_device": self._device_mailbox,
+                    "outcome": "done",
+                })
 
         self._device._active_ticket = None
