@@ -67,11 +67,15 @@ def seed(creds_path: Path = _DEFAULT_CREDS, dry_run: bool = False) -> int:
         if not value:
             log.debug("seed: %s not in cfg — skipping", cfg_key)
             continue
+        source_path = f"{creds_path}:{cfg_key}"
         if dry_run:
-            log.info("seed (dry-run): would upsert owner=%r key=%r devices=%r", owner, vault_key, allowed_devices)
+            log.info("seed (dry-run): would upsert owner=%r key=%r source=%r", owner, vault_key, source_path)
         else:
-            upsert_credential(owner=owner, key=vault_key, value=value, allowed_devices=allowed_devices)
-            log.info("seed: upserted owner=%r key=%r devices=%r", owner, vault_key, allowed_devices)
+            upsert_credential(
+                owner=owner, key=vault_key, value=value,
+                allowed_devices=allowed_devices, source_path=source_path,
+            )
+            log.info("seed: upserted owner=%r key=%r source=%r", owner, vault_key, source_path)
         seeded += 1
 
     return seeded

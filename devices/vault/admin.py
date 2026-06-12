@@ -68,6 +68,7 @@ def handle_upsert(token: str, body: dict) -> tuple[int, dict]:
     key = body.get("key", "").strip()
     value = body.get("value", "")
     allowed_devices = body.get("allowed_devices", [])
+    source_path = body.get("source_path", "").strip()
 
     if not owner or not key:
         return 400, {"error": "owner and key are required"}
@@ -75,8 +76,8 @@ def handle_upsert(token: str, body: dict) -> tuple[int, dict]:
         return 400, {"error": "allowed_devices must be a list"}
 
     from devices.vault.store import upsert_credential
-    upsert_credential(owner=owner, key=key, value=value, allowed_devices=allowed_devices)
-    log.info("vault: upserted owner=%r key=%r via admin", owner, key)
+    upsert_credential(owner=owner, key=key, value=value, allowed_devices=allowed_devices, source_path=source_path)
+    log.info("vault: upserted owner=%r key=%r source=%r via admin", owner, key, source_path)
     return 200, {"status": "ok", "owner": owner, "key": key}
 
 

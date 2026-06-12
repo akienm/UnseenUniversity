@@ -117,22 +117,34 @@ def upsert_credential(
     key: str,
     value: str,
     allowed_devices: list[str],
+    source_path: str = "",
 ) -> None:
-    """Insert or update a credential row. Encrypts value before storing."""
+    """Insert or update a credential row. Encrypts value before storing.
+
+    source_path: canonical origin/destination — '<abs_file_path>:<key_name>'
+    e.g. '/home/akien/.unseen_university/akien/akien.credentials.cfg:OLLAMA_API_KEY'
+    Empty string for manually-entered credentials.
+    On conflict, source_path is only updated when the caller provides a non-empty value
+    (preserves manual edits made in the UI).
+    """
     value_enc = encrypt(value)
     conn = _connect()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO vault.credentials (owner, key, value_enc, allowed_devices, updated_at)
-                VALUES (%s, %s, %s, %s, now())
+                INSERT INTO vault.credentials (owner, key, value_enc, allowed_devices, source_path, updated_at)
+                VALUES (%s, %s, %s, %s, %s, now())
                 ON CONFLICT (owner, key) DO UPDATE
                   SET value_enc = EXCLUDED.value_enc,
                       allowed_devices = EXCLUDED.allowed_devices,
+                      source_path = CASE
+                        WHEN EXCLUDED.source_path != '' THEN EXCLUDED.source_path
+                        ELSE vault.credentials.source_path
+                      END,
                       updated_at = now();
                 """,
-                (owner, key, value_enc, allowed_devices),
+                (owner, key, value_enc, allowed_devices, source_path),
             )
         conn.commit()
     finally:
@@ -162,13 +174,13 @@ def list_credentials(owner: str | None = None) -> list[dict]:
         with conn.cursor() as cur:
             if owner:
                 cur.execute(
-                    "SELECT owner, key, value_enc, allowed_devices, updated_at "
+                    "SELECT owner, key, value_enc, allowed_devices, source_path, updated_at "
                     "FROM vault.credentials WHERE owner=%s ORDER BY owner, key;",
                     (owner,),
                 )
             else:
                 cur.execute(
-                    "SELECT owner, key, value_enc, allowed_devices, updated_at "
+                    "SELECT owner, key, value_enc, allowed_devices, source_path, updated_at "
                     "FROM vault.credentials ORDER BY owner, key;"
                 )
             rows = cur.fetchall()
@@ -176,7 +188,7 @@ def list_credentials(owner: str | None = None) -> list[dict]:
         conn.close()
 
     result = []
-    for owner_val, key_val, value_enc, allowed_devices, updated_at in rows:
+    for owner_val, key_val, value_enc, allowed_devices, source_path, updated_at in rows:
         try:
             value = decrypt(bytes(value_enc))
         except Exception:
@@ -186,8 +198,51 @@ def list_credentials(owner: str | None = None) -> list[dict]:
             "key": key_val,
             "value": value,
             "allowed_devices": allowed_devices or [],
+            "source_path": source_path or "",
             "updated_at": updated_at.isoformat() if updated_at else None,
         })
+    return result
+
+
+def export_to_cfg() -> dict[str, str]:
+    """Export vault credentials back to credentials.cfg format.
+
+    Returns a dict mapping absolute file path → file content (KEY=value lines).
+    Only rows with a source_path are included. Rows without source_path are
+    included in a special '_manual' key with a comment header.
+
+    Usage:
+        files = export_to_cfg()
+        for path, content in files.items():
+            if path == '_manual':
+                print(content)  # or write to a chosen location
+            else:
+                Path(path).write_text(content)
+    """
+    rows = list_credentials()
+    by_file: dict[str, list[tuple[str, str]]] = {}  # file_path → [(key, value)]
+
+    for row in rows:
+        source_path = row["source_path"]
+        value = row["value"]
+        if value == "<decrypt error>":
+            continue
+        if source_path and ":" in source_path:
+            file_path, cfg_key = source_path.rsplit(":", 1)
+        else:
+            file_path = "_manual"
+            cfg_key = f"{row['owner']}.{row['key']}"
+        by_file.setdefault(file_path, []).append((cfg_key, value))
+
+    result = {}
+    for file_path, pairs in sorted(by_file.items()):
+        if file_path == "_manual":
+            lines = ["# Manually entered credentials (no source_path)"]
+        else:
+            lines = [f"# Exported from vault — {file_path}"]
+        for cfg_key, value in sorted(pairs):
+            lines.append(f"{cfg_key}={value}")
+        result[file_path] = "\n".join(lines) + "\n"
     return result
 
 
