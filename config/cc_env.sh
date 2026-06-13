@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# intent: shell script: cc_env.sh
 # CC session hygiene env vars — source this from ~/.bashrc on each machine.
 # D-cc-session-hygiene-2026-05-10: reduce context flooding in long agentic sessions.
 #

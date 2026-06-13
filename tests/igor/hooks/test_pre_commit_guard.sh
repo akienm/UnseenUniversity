@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# intent: shell script: test_pre_commit_guard.sh
 # test_pre_commit_guard.sh — exercises lab/claudecode/hooks/pre-commit rules.
 #
 # Creates a temp git repo, installs the hook, stages files that should be

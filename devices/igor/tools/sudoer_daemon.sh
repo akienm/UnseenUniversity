@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# intent: shell script: sudoer_daemon.sh
 #
 # sudoer_daemon.sh — Igor sudo relay daemon (D123)
 #

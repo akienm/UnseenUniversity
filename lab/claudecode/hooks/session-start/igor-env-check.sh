@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# intent: shell script: igor-env-check.sh
 # igor-env-check.sh — Claude Code SessionStart hook.
 #
 # Validates that the Igor Postgres instance is reachable before the session
