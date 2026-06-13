@@ -84,7 +84,7 @@ def _load_config() -> dict:
 def _default_config() -> dict:
     return {
         "workers": {
-            "CC.0": {"dispatch": "bus", "mailbox": "cc.0", "one_at_a_time": True},
+            "CC.0": {"dispatch": "bus", "mailbox": "cc.0", "one_at_a_time": True, "cascade_if_idle": True},
             "DickSimnel.0": {"dispatch": "bus", "mailbox": "dicksimnel.0"},
         },
         "rules": [
@@ -108,6 +108,12 @@ _WORKER_TO_ROLE: dict[str, str] = {
     "cc": "master",
     "dicksimnel": "builder",
     "igor": "apprentice",
+}
+
+# Worker ID → worker name used in ticket metadata (for _cc0_busy() detection)
+_WORKER_ID_TO_NAME: dict[str, str] = {
+    "CC.0": "claude",
+    "DickSimnel.0": "dicksimnel",
 }
 
 
@@ -528,6 +534,67 @@ def _post_channel(msg: str) -> None:
         log.debug("Granny: channel post failed: %s", e)
 
 
+# ── Cascade tier pickup ────────────────────────────────────────────────────────
+
+# Role tier order from highest to lowest authority.
+_TIER_ORDER = ("guru", "master", "creator", "builder", "apprentice")
+
+
+def _cascade_active_workers(config: dict, tickets: list[dict]) -> dict[str, list[str]]:
+    """
+    Return {worker_id: [extra_roles]} for workers with cascade_if_idle=true
+    whose own native-tier queue is empty.
+
+    Cascade logic: when a worker's primary-role tickets are exhausted, it
+    widens its acceptance to roles below it in _TIER_ORDER. The caller uses
+    this mapping to override match_rule() when a lower-tier ticket arrives.
+
+    Interface crossing: INFO log per cascade-active worker.
+    """
+    workers_cfg = config.get("workers", {})
+    rules = config.get("rules", [])
+
+    # Build worker → native roles from the rules config
+    worker_native: dict[str, set[str]] = {}
+    for rule in rules:
+        when = rule.get("when", {})
+        target = rule.get("route_to", "")
+        if "role_in" in when:
+            worker_native.setdefault(target, set()).update(
+                r.lower() for r in when["role_in"]
+            )
+
+    result: dict[str, list[str]] = {}
+
+    for worker_id, wcfg in workers_cfg.items():
+        if not isinstance(wcfg, dict) or not wcfg.get("cascade_if_idle"):
+            continue
+
+        native = worker_native.get(worker_id, set())
+        if not native:
+            continue
+
+        # Find the highest tier this worker natively covers
+        highest = next((r for r in _TIER_ORDER if r in native), None)
+        if not highest:
+            continue
+
+        # Skip cascade if own-tier tickets still exist
+        own_tier = [t for t in tickets if _infer_role(t) in native]
+        if own_tier:
+            continue
+
+        # Cascade: absorb roles below own tier
+        below = list(_TIER_ORDER[_TIER_ORDER.index(highest) + 1:])
+        result[worker_id] = below
+        log.info(
+            "Granny: cascade_active|worker=%s|native=%s|absorbs=%s",
+            worker_id, sorted(native), below,
+        )
+
+    return result
+
+
 # ── Poll cycle ────────────────────────────────────────────────────────────────
 
 
@@ -609,6 +676,9 @@ def run_once(config: dict, *, imap=None) -> None:
         log.warning("Granny: workflow executor tick failed (non-fatal): %s", exc)
     tickets = _sprint_tickets()
 
+    # Determine which workers have cascade_if_idle active this cycle.
+    cascade = _cascade_active_workers(config, tickets)
+
     # Track workers that already received a ticket this cycle so one_at_a_time is
     # honoured within the cycle — not just via the DB status (which CC hasn't
     # updated yet by the time the second ticket is evaluated).
@@ -627,6 +697,20 @@ def run_once(config: dict, *, imap=None) -> None:
             target = "CC.0"
         else:
             target = match_rule(ticket, rules)
+
+        # Cascade pickup: a higher-tier worker absorbs this ticket when its own
+        # tier queue is empty and cascade_if_idle is set for that worker.
+        ticket_role = _infer_role(ticket)
+        is_cascade = False
+        for cascade_worker, absorb_roles in cascade.items():
+            if ticket_role in absorb_roles and cascade_worker != target:
+                log.info(
+                    "Granny: cascade_pickup|ticket=%s|role=%s|from=%s|to=%s",
+                    tid, ticket_role, target, cascade_worker,
+                )
+                target = cascade_worker
+                is_cascade = True
+                break
 
         # guru tickets go to Akien — no availability check, no CC/DickSimnel dispatch
         if target == "akien":
@@ -680,6 +764,11 @@ def run_once(config: dict, *, imap=None) -> None:
 
         if ok:
             dispatched_this_cycle.add(target)
+            # Cascade: update the ticket's worker field so _cc0_busy() detects it
+            if is_cascade:
+                worker_name = _WORKER_ID_TO_NAME.get(target)
+                if worker_name:
+                    _setstatus_direct(tid, "dispatched", worker=worker_name)
             _post_channel(
                 f"GRANNY_DISPATCH|ticket={tid}|worker={target}"
                 f"|title={ticket.get('title','?')[:60]}"

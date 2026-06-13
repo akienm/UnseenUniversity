@@ -8,6 +8,7 @@ workers:
     mailbox: cc.0
     one_at_a_time: true        # defer if a claude ticket is already in_progress
     launch_cmd: null           # CC is launched manually / via tmux
+    cascade_if_idle: true      # absorb creator/builder tickets when master queue empty
   DickSimnel.0:
     dispatch: bus
     mailbox: dicksimnel.0
