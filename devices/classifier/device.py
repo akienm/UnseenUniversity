@@ -245,7 +245,7 @@ class ClassifierDevice(BaseDevice):
                                jsonb_set(metadata, '{in_flight}', 'true'),
                                '{in_flight_ticket}', %s::jsonb
                            )
-                           WHERE path = %s""",
+                           WHERE id = %s""",
                         (psycopg2.extras.Json(ticket_id), node_path),
                     )
                     if cur.rowcount:
@@ -279,7 +279,7 @@ class ClassifierDevice(BaseDevice):
                 cur.execute(
                     """UPDATE clan.memories
                        SET metadata = metadata - 'in_flight' - 'in_flight_ticket'
-                       WHERE path LIKE 'palace.codebase.%%'
+                       WHERE id LIKE 'palace.codebase.%%'
                          AND metadata->>'in_flight_ticket' = %s""",
                     (ticket_id,),
                 )
@@ -303,9 +303,9 @@ class ClassifierDevice(BaseDevice):
             conn = psycopg2.connect(db_url)
             with conn.cursor() as cur:
                 cur.execute(
-                    """SELECT path, metadata->>'in_flight_ticket' AS ticket
+                    """SELECT id, metadata->>'in_flight_ticket' AS ticket
                        FROM clan.memories
-                       WHERE path LIKE 'palace.codebase.%%'
+                       WHERE id LIKE 'palace.codebase.%%'
                          AND metadata->>'in_flight' = 'true'""",
                 )
                 rows = cur.fetchall()
