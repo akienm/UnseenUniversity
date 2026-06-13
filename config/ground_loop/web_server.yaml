@@ -1,0 +1,29 @@
+# Ground Loop plugin: web_server (http_proxy mode)
+#
+# Ground Loop listens on proxy_port (8078) and starts the real web server
+# on backend_port (8080) on demand. Users hit 8078; Ground Loop ensures
+# the backend is alive, spawning it if needed, then proxies through.
+#
+# To disable auto-start: touch ~/.unseen_university/flags/web_server.breaker
+# To re-enable:          rm  ~/.unseen_university/flags/web_server.breaker
+
+name: web_server
+mode: http_proxy
+
+# Stable public port Ground Loop listens on
+proxy_port: 8078
+
+# Actual backend port the web server process binds to
+backend_port: 8080
+
+# Command to spawn the backend web server
+start_cmd:
+  - python3
+  - -m
+  - devices.web_server.server
+
+# Seconds to wait for backend to become connectable after spawn
+start_timeout: 20
+
+# on_failure hook — null means log only; "cc_recovery" invokes CC fixer
+on_failure: null

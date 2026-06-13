@@ -1,0 +1,34 @@
+[Unit]
+Description=UnseenUniversity Ground Loop — plugin-host process supervisor
+Documentation=https://github.com/akienm/UnseenUniversity
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=akien
+Group=akien
+
+# Repo root — adjust if installed elsewhere
+WorkingDirectory=/home/akien/dev/src/UnseenUniversity
+
+# Python from the repo's venv
+ExecStart=/home/akien/dev/src/UnseenUniversity/.venv/bin/python3 \
+          -m devices.ground_loop.daemon \
+          --poll 15 \
+          --log-level INFO
+
+# Restart on failure (systemd keeps it alive; Ground Loop restarts plugins internally)
+Restart=on-failure
+RestartSec=10
+
+# Environment
+Environment=IGOR_HOME=/home/akien/.unseen_university
+Environment=UU_ROOT=/home/akien/dev/src/UnseenUniversity
+
+# Logs go to journald — view with: journalctl -u ground_loop -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
