@@ -144,6 +144,20 @@ class BaseDevice(DiagnosticBase, ABC):
             log_root=log_root or self._log_root,
         )
 
+    def build_inference_request(self, *, model, messages, system, tools=None, **kwargs):
+        """Build an InferenceRequest with temperature=0 as the explicit default.
+
+        Convenience wrapper around unseen_university.prompt_builder.build_inference_request.
+        Devices that spawn LLM sub-agents should use this instead of constructing
+        InferenceRequest directly — it enforces the six-patterns baseline (pattern 2: explicit
+        temperature). See unseen_university/prompt_builder.py for all six patterns.
+        """
+        from unseen_university.prompt_builder import build_inference_request
+
+        return build_inference_request(
+            model=model, messages=messages, system=system, tools=tools, **kwargs
+        )
+
     def start_heartbeat(
         self,
         imap_server: "IMAPServer",
