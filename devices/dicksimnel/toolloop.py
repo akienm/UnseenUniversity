@@ -127,6 +127,37 @@ No other non-tool responses are valid.
 """
 
 
+def _orientation_prefix(ticket: dict) -> str:
+    """
+    Call the orientation classifier and return its text block (or '' on failure).
+    Fail-open: any exception → empty string, ToolLoop continues without it.
+    Interface crossing: INFO log with match count.
+    """
+    try:
+        from devices.scraps.orientation_classifier import classify
+        report = classify(ticket)
+        if report.relevant_files:
+            text = report.to_text()
+            log.info("ToolLoop builder_report: %d relevant files for %s",
+                     len(report.relevant_files), ticket.get("id", "?"))
+            return text + "\n\n"
+    except Exception as exc:
+        log.warning("ToolLoop builder_report failed for %s: %s", ticket.get("id", "?"), exc)
+    return ""
+
+
+def _build_initial_message(ticket: dict, builder_report_text: str = "") -> str:
+    """Build the first user message for the ToolLoop from a ticket dict."""
+    ticket_id = ticket.get("id", "?")
+    return (
+        f"{builder_report_text}"
+        f"Ticket ID: {ticket_id}\n"
+        f"Title: {ticket.get('title', 'No title')}\n"
+        f"Tags: {', '.join(ticket.get('tags', []))}\n\n"
+        f"Description:\n{ticket.get('description', ticket.get('title', ''))}"
+    )
+
+
 class ToolLoop:
     """Multi-turn ReAct inference loop using native OR tool calling."""
 
@@ -153,12 +184,11 @@ class ToolLoop:
         running_cost: float = 0.0
         source_billing_type: str = "usage_based"  # updated on first response
         inference_device = InferenceDevice()  # Cache once per run, not per turn
-        user_msg = (
-            f"Ticket ID: {ticket_id}\n"
-            f"Title: {ticket.get('title', 'No title')}\n"
-            f"Tags: {', '.join(ticket.get('tags', []))}\n\n"
-            f"Description:\n{ticket.get('description', ticket.get('title', ''))}"
-        )
+
+        # Prepend builder report from orientation classifier (fail-open)
+        builder_report_text = _orientation_prefix(ticket)
+
+        user_msg = _build_initial_message(ticket, builder_report_text)
         messages = [{"role": "user", "content": user_msg}]
         full_system = system_prompt + "\n\n" + SYSTEM_RULES
 
