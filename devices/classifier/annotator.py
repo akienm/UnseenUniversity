@@ -120,10 +120,18 @@ def _fallback_signature(path: str, symbols: list[dict]) -> str:
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
-def _query_modules(db_url: str, since_hours: int | None = None) -> list[ModuleInfo]:
+def _query_modules(
+    db_url: str,
+    since_hours: int | None = None,
+    file_paths: list[str] | None = None,
+) -> list[ModuleInfo]:
     """
     Fetch symbol rows from clan.code_index, grouped by path.
-    When since_hours is set, only return files updated in that window.
+
+    Priority:
+      file_paths — process only these specific paths (delta mode)
+      since_hours — process files updated in the last N hours (nightly mode)
+      neither — process all files (full_build mode)
     """
     import psycopg2
     import psycopg2.extras
@@ -132,7 +140,14 @@ def _query_modules(db_url: str, since_hours: int | None = None) -> list[ModuleIn
 
     with psycopg2.connect(db_url) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            if since_hours:
+            if file_paths is not None:
+                if not file_paths:
+                    return []
+                cur.execute(
+                    "SELECT path, symbol, kind, summary FROM clan.code_index WHERE path = ANY(%s)",
+                    (file_paths,),
+                )
+            elif since_hours:
                 cur.execute(
                     """
                     SELECT DISTINCT path FROM clan.code_index
@@ -211,23 +226,28 @@ def run_annotator(
     db_url: str | None = None,
     mode: str = "nightly",
     dry_run: bool = False,
+    file_paths: list[str] | None = None,
 ) -> dict[str, int]:
     """
     Run the annotation sweep.
 
-    mode='full_build': process all 474 files in clan.code_index.
+    mode='full_build': process all files in clan.code_index.
     mode='nightly': process only files updated in the last 24 hours.
+    file_paths: when set, override mode — process only these specific files (delta mode).
 
     Returns {'modules': N, 'inserted': N, 'updated': N, 'errors': N}.
     """
     import psycopg2
 
     db_url = db_url or _DB_URL
-    since_hours = None if mode == "full_build" else 24
+    if file_paths is not None:
+        since_hours = None
+        log.info("annotator: mode=delta files=%d dry_run=%s", len(file_paths), dry_run)
+    else:
+        since_hours = None if mode == "full_build" else 24
+        log.info("annotator: mode=%s dry_run=%s", mode, dry_run)
 
-    log.info("annotator: mode=%s dry_run=%s", mode, dry_run)
-
-    modules = _query_modules(db_url, since_hours=since_hours)
+    modules = _query_modules(db_url, since_hours=since_hours, file_paths=file_paths)
     log.info("annotator: %d modules to process", len(modules))
 
     counts = {"modules": len(modules), "inserted": 0, "updated": 0, "errors": 0}

@@ -664,6 +664,32 @@ def _classifier_clear_in_flight(ticket_id: str) -> None:
         print(f"classifier clear_in_flight: {exc}", file=sys.stderr)
 
 
+def _annotator_delta_update(ticket_id: str) -> None:
+    """Re-annotate palace.codebase nodes for files touched in this ticket's commit. Non-fatal."""
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
+            capture_output=True, text=True, timeout=10,
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return
+        touched = [f.strip() for f in result.stdout.splitlines() if f.strip()]
+        from devices.classifier.annotator import run_annotator
+        db_url = os.environ.get("UU_HOME_DB_URL") or os.environ.get(
+            "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+        )
+        counts = run_annotator(db_url=db_url, file_paths=touched)
+        print(
+            f"annotator delta: ticket={ticket_id} files={len(touched)} "
+            f"inserted={counts['inserted']} updated={counts['updated']} errors={counts['errors']}",
+            file=sys.stderr,
+        )
+    except Exception as exc:
+        print(f"annotator delta: {exc}", file=sys.stderr)
+
+
 def _close_igor_goal(ticket_id: str) -> None:
     """Close Igor's GOAL memory for a ticket so pe_chain stops re-firing."""
     try:
@@ -1093,6 +1119,7 @@ def cmd_close(args):
     _prepend_closed_ticket(args[0], t["title"])
     _close_igor_goal(args[0])
     _classifier_clear_in_flight(args[0])
+    _annotator_delta_update(args[0])
     _append_to_todays_slate(t)
     cost_str = f"  cost=${t['cost_usd']:.4f}" if t.get("cost_usd") is not None else ""
     print(f"Closed {args[0]}: {t['title']}{cost_str}")
