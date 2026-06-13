@@ -523,6 +523,73 @@ class DickSimnelDevice(BaseDevice):
         log.warning("DickSimnel: all tiers exhausted for %s — escalating to CC", ticket_id)
         return last_result
 
+    def replay_and_analyze(self, ticket_id: str) -> dict:
+        """Replay a closed ticket using the simulator to understand decision-making.
+
+        Args:
+            ticket_id: ID of a closed ticket with recorded logs
+
+        Returns:
+            Analysis dict with keys:
+              - event_count: number of turns recorded
+              - decision_points: list of places where DickSimnel could diverge
+              - success_rate: fraction of tool calls that succeeded
+              - turns: list of turn details (tool_name, tool_args, outcome)
+        """
+        from devices.dicksimnel.simulator import TicketSimulator
+
+        log.info("DickSimnel: replay_and_analyze for %s", ticket_id)
+        try:
+            sim = TicketSimulator(ticket_id)
+            events = list(sim.replay_all())
+
+            if not events:
+                log.warning("DickSimnel: no events found for %s", ticket_id)
+                return {
+                    "ticket_id": ticket_id,
+                    "event_count": 0,
+                    "decision_points": [],
+                    "success_rate": 0.0,
+                    "turns": [],
+                }
+
+            # Collect turn details
+            turns = []
+            for event in events:
+                turns.append({
+                    "turn": event.turn_num,
+                    "timestamp": event.timestamp,
+                    "decision_point": event.decision_point,
+                    "tool": event.tool_name,
+                    "outcome": event.outcome,
+                })
+
+            # Extract decision points
+            decision_points = sim.decision_points()
+
+            # Compute success rate
+            success_rate = sim.success_rate()
+
+            result = {
+                "ticket_id": ticket_id,
+                "event_count": len(events),
+                "decision_points": decision_points,
+                "success_rate": success_rate,
+                "turns": turns,
+            }
+
+            log.info(
+                "DickSimnel: replay_and_analyze complete for %s — %d events, %.1f%% success",
+                ticket_id, len(events), success_rate * 100,
+            )
+            return result
+        except Exception as exc:
+            log.error("DickSimnel: replay_and_analyze failed for %s: %s", ticket_id, exc)
+            return {
+                "ticket_id": ticket_id,
+                "error": str(exc),
+            }
+
     # ── Chat interface ─────────────────────────────────────────────────────────
 
     def chat(self, message: str) -> str:
