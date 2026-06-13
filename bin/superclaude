@@ -233,7 +233,25 @@ if [[ -n "${CC_TMUX_SESSION:-}" ]]; then
 elif [[ -n "${CLAUDE_TMUX_SESSION:-}" ]]; then
     _CC_SESSION="$CLAUDE_TMUX_SESSION"
 elif [[ -n "${TMUX:-}" ]]; then
-    _CC_SESSION=$(tmux display-message -p '#{session_name}')
+    _CURRENT_SESSION=$(tmux display-message -p '#{session_name}')
+    # If already in a correctly-named CC session (*.cc.N), reuse it
+    if [[ "$_CURRENT_SESSION" =~ \.cc\.[0-9]+$ ]]; then
+        _CC_SESSION="$_CURRENT_SESSION"
+    else
+        # Session name is wrong (e.g., claude-main). Kill it and create the correct one.
+        echo "Killing stale session '$_CURRENT_SESSION' (does not match *.cc.N pattern)"
+        tmux kill-session -t "$_CURRENT_SESSION" 2>/dev/null || true
+        sleep 0.5
+        # Now find the right session name
+        _CC_SESSION="${_CC_HOSTNAME}.cc.0"
+        for _n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+            _CANDIDATE="${_CC_HOSTNAME}.cc.${_n}"
+            if ! tmux has-session -t "$_CANDIDATE" 2>/dev/null; then
+                _CC_SESSION="$_CANDIDATE"
+                break
+            fi
+        done
+    fi
 else
     _CC_SESSION=""
     for _n in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
@@ -259,14 +277,14 @@ printf '%s\n' "$_CC_SESSION" > "$_CC_SESSION_FILE"
 # (T-cc-session-name-regression: the old hostname-YYMMDD.HHMMSS format was wrong).
 SESSION_NAME="$_CC_SESSION"
 
-if [[ -n "${TMUX:-}" ]]; then
-    # Already inside tmux — launch directly; CC_TMUX_SESSION already in env.
+if [[ -n "${TMUX:-}" ]] && [[ "$(tmux display-message -p '#{session_name}')" == "$_CC_SESSION" ]]; then
+    # Already inside the correct CC session — launch directly; CC_TMUX_SESSION already in env.
     exec claude --dangerously-skip-permissions \
         -n "$SESSION_NAME" \
         --remote-control "$SESSION_NAME" \
         "$@"
 else
-    # Outside tmux — create session (or reuse) and launch Claude inside it.
+    # Either outside tmux, or we killed a stale session — create session and launch Claude inside it.
     # Check if a session with this name exists and is healthy.
     if ! check_session_health "$CC_TMUX_SESSION"; then
         recover_stale_session "$CC_TMUX_SESSION"
@@ -283,6 +301,7 @@ else
     for arg in "$@"; do
         CLAUDE_CMD+=" $(printf '%q' "$arg")"
     done
+    echo "tmux send-keys -t \"$CC_TMUX_SESSION\" \"$CLAUDE_CMD\" Enter" >> ~/superclaude.launch.command.txt
     tmux send-keys -t "$CC_TMUX_SESSION" "$CLAUDE_CMD" Enter
     exec tmux attach -t "$CC_TMUX_SESSION"
 fi
