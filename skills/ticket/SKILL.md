@@ -62,6 +62,25 @@ Always state the plan back in one sentence before filing. Check:
 - Scope boundary — is it tight?
 - Test coverage — what specifically will be tested?
 
+### 3.5. BuilderReport at filing (best-effort)
+
+Call the classifier to get a BuilderReport and append it to the ticket description.
+Non-fatal — if the classifier is down or returns empty, proceed without the report.
+
+```bash
+BUILDER_REPORT=$(python3 -m devices.classifier.cli classify \
+  --title "<ticket title>" \
+  --tags "<space-separated tags>" \
+  --description "<ticket description>" 2>/dev/null) || BUILDER_REPORT=""
+```
+
+If `$BUILDER_REPORT` is non-empty and contains `"relevant_files"`, append to the description:
+```
+**Builder report:** <BUILDER_REPORT>
+```
+
+Skip silently when the output is `{}`, empty, or the `relevant_files` array is `[]`.
+
 ### 4. Create or update
 
 Always use an ID of form `T-<kebab-slug>` (max 5 words). Check for collision

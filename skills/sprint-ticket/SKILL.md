@@ -66,6 +66,27 @@ python3 ${CC_WORKFLOW_TOOLS}/pre_inference_assemble.py <id>
 
 Combined token budget: ~800 tokens max. Read both before forming the plan.
 
+### 2.4. BuilderReport freshness check (fast path, no LLM)
+
+When the ticket description contains `**Builder report:**`, run freshness_check()
+to surface in_flight conflicts and staleness. Non-fatal — skip if no report present.
+
+```bash
+STORED_REPORT=$(python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py show <id> 2>/dev/null \
+  | python3 -c "
+import sys,json,re
+d=json.load(sys.stdin)
+m=re.search(r'\*\*Builder report:\*\*\s*(\{.*?\})', d.get('description',''), re.S)
+print(m.group(1) if m else '{}')
+")
+if [ "$STORED_REPORT" != "{}" ]; then
+  python3 -m devices.classifier.cli freshness --report-json "$STORED_REPORT" 2>/dev/null || true
+fi
+```
+
+When freshness output shows `"stale": true` or non-empty `"warnings"`, surface to Akien
+before proceeding. When `"stale": false` and no warnings — proceed without comment.
+
 ### 3. Select executor
 - **CC inline**: default for code changes in this repo
 - **Haiku subagent**: mechanical/checklist work (use the Agent tool, subagent_type=general-purpose with a Haiku model override)

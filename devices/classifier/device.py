@@ -333,9 +333,54 @@ class ClassifierDevice(BaseDevice):
         task_description: str,
     ) -> tuple[list[str], list[str]]:
         """
-        Query palace trees for relevant files and context nodes.
-        Stub until T-codebase-tree-annotator populates palace.codebase.*.
+        Query clan.memories for relevant codebase nodes given task keywords.
+
+        Searches palace.codebase.unseen_university.* rows whose narrative or
+        problem_signature contains any keyword from the task description.
+        Returns (relevant_files, context_nodes) — relevant_files are repo-relative paths.
         """
-        # Stub: return empty lists. Palace annotation wired in follow-on tickets.
-        log.debug("classifier: palace query stub — trees=%s", tree_paths)
-        return [], tree_paths
+        db_url = self._db_url()
+        if not db_url:
+            log.debug("classifier: palace query — no DB URL; returning empty")
+            return [], tree_paths
+
+        # Extract keywords (4+ chars, unique, no stop words)
+        _STOP = frozenset(("with", "that", "this", "from", "into", "when", "will", "have",
+                           "been", "they", "their", "should", "which", "also"))
+        words = set()
+        for w in task_description.lower().split():
+            w = w.strip(".,;:!?()")
+            if len(w) >= 4 and w not in _STOP:
+                words.add(w)
+        if not words:
+            return [], tree_paths
+
+        try:
+            import psycopg2
+            import psycopg2.extras
+
+            # Build WHERE clause with OR across keywords
+            kw_conditions = " OR ".join(["narrative ILIKE %s"] * len(words))
+            kw_args = [f"%{w}%" for w in words]
+            query = (
+                "SELECT id, metadata->>'file_path' AS file_path "
+                "FROM clan.memories "
+                "WHERE id LIKE 'palace.codebase.unseen_university.%%' "
+                f"AND ({kw_conditions}) "
+                "LIMIT 15"
+            )
+            with psycopg2.connect(db_url) as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                    cur.execute(query, kw_args)
+                    rows = cur.fetchall()
+
+            relevant_files = [r["file_path"] for r in rows if r.get("file_path")]
+            log.info(
+                "classifier: palace query keywords=%d found=%d files",
+                len(words), len(relevant_files),
+            )
+            return relevant_files[:10], tree_paths
+
+        except Exception as exc:
+            log.warning("classifier: palace query failed: %s — returning empty", exc)
+            return [], tree_paths
