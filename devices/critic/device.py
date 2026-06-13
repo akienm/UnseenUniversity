@@ -93,7 +93,7 @@ class CriticDevice(BaseDevice):
                 decision_point=turn["decision_point"],
                 choice=turn["tool"],
                 context={"ticket": ticket_id},
-                tool_result=turn.get("outcome"),
+                tool_result=turn.get("tool_result"),  # Actual error/success message
             )
             judgment = self._agent.evaluate_decision(decision)
             verdicts.append(judgment)

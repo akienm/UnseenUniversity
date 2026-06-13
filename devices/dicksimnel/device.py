@@ -561,6 +561,7 @@ class DickSimnelDevice(BaseDevice):
                     "timestamp": event.timestamp,
                     "decision_point": event.decision_point,
                     "tool": event.tool_name,
+                    "tool_result": event.tool_result,  # Actual error/success message
                     "outcome": event.outcome,
                 })
 
