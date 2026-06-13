@@ -5,6 +5,7 @@ Usage:
   python run midstream "<hypothesis>"   # mid-session flush
   python run close "<hypothesis>"       # end-of-session flush + session_capture
 """
+import json
 import os
 import subprocess
 import sys
@@ -25,17 +26,36 @@ def _cc_tools() -> Path:
 CC_TOOLS = _cc_tools()
 
 
+def _slate_path() -> Path:
+    date_str = datetime.now().strftime("%Y%m%d")
+    return IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
+
+
+def _update_in_flight(hypothesis: str) -> None:
+    """Write in_flight to slate — JSON or markdown depending on format."""
+    slate = _slate_path()
+    slate.parent.mkdir(parents=True, exist_ok=True)
+
+    if slate.exists():
+        try:
+            data = json.loads(slate.read_text(encoding="utf-8"))
+            # JSON slate: update in_flight field
+            data["in_flight"] = [hypothesis] if hypothesis != "NONE" else []
+            slate.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            return
+        except json.JSONDecodeError:
+            pass
+
+    # Markdown slate (old format): append as before
+    with slate.open("a", encoding="utf-8") as f:
+        f.write(f"\n## In-flight: {hypothesis}\n")
+
+
 def main() -> None:
     mode       = sys.argv[1] if len(sys.argv) > 1 else "midstream"
     hypothesis = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else "NONE"
 
-    date_str = datetime.now().strftime("%Y%m%d")
-    slate    = IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
-    slate.parent.mkdir(parents=True, exist_ok=True)
-
-    with slate.open("a", encoding="utf-8") as f:
-        f.write(f"\n## In-flight: {hypothesis}\n")
-
+    _update_in_flight(hypothesis)
     print(f"savestate ({mode}): {hypothesis}")
 
     if mode == "close" and CC_TOOLS and CC_TOOLS.exists():

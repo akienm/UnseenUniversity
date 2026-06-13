@@ -93,3 +93,39 @@ def test_done_section_content_does_not_count_as_open(tmp_path: Path):
 
 def test_format_slate_date():
     assert mod.format_slate_date("20260421.slate.txt") == "2026-04-21"
+
+
+# ── JSON slate format ─────────────────────────────────────────────────────────
+
+import json as _json
+
+
+def _write_json_slate(tmp_path: Path, data: dict) -> Path:
+    p = tmp_path / "20260421.slate.txt"
+    p.write_text(_json.dumps(data))
+    return p
+
+
+def test_json_slate_empty_is_not_open(tmp_path: Path):
+    p = _write_json_slate(tmp_path, {"date": "2026-04-21", "in_flight": [], "planned": [], "done": [], "notes": []})
+    assert mod.slate_has_open_items(p) is False
+
+
+def test_json_slate_with_in_flight_is_open(tmp_path: Path):
+    p = _write_json_slate(tmp_path, {"date": "2026-04-21", "in_flight": ["T-something in progress"], "planned": []})
+    assert mod.slate_has_open_items(p) is True
+
+
+def test_json_slate_with_planned_is_open(tmp_path: Path):
+    p = _write_json_slate(tmp_path, {"date": "2026-04-21", "in_flight": [], "planned": ["T-next-up"]})
+    assert mod.slate_has_open_items(p) is True
+
+
+def test_json_slate_closed_flag_wins(tmp_path: Path):
+    p = _write_json_slate(tmp_path, {"date": "2026-04-21", "in_flight": ["still here"], "planned": ["more"], "closed": True})
+    assert mod.slate_has_open_items(p) is False
+
+
+def test_json_slate_done_only_is_not_open(tmp_path: Path):
+    p = _write_json_slate(tmp_path, {"date": "2026-04-21", "in_flight": [], "planned": [], "done": ["T-shipped"]})
+    assert mod.slate_has_open_items(p) is False

@@ -53,10 +53,27 @@ def find_latest_slate_before(today: date, slate_dir: Path = SLATE_DIR) -> Path |
 
 
 def slate_has_open_items(path: Path) -> bool:
-    """True when the slate has non-empty Next up / Blocked / After that sections
-    and lacks a ✅ CLOSED marker. A ✅ CLOSED marker wins regardless of section
-    contents — /day-close writes that marker when it finishes."""
-    text = path.read_text()
+    """True when the slate has open items and is not marked closed.
+
+    Handles both JSON (new) and markdown (old) slate formats.
+    JSON: open when in_flight or planned is non-empty and closed != true.
+    Markdown: open when ## Next up / Blocked / After that sections have content
+    and the ✅ CLOSED marker is absent.
+    """
+    import json as _json
+
+    text = path.read_text(encoding="utf-8")
+
+    # Try JSON format first
+    try:
+        data = _json.loads(text)
+        if data.get("closed"):
+            return False
+        return bool(data.get("in_flight") or data.get("planned"))
+    except (ValueError, AttributeError):
+        pass
+
+    # Markdown format (backward compat)
     if CLOSED_MARKER in text:
         return False
     lines = text.splitlines()

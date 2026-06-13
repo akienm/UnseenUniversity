@@ -6,6 +6,7 @@ Usage:
   python run debug-flag           # set debug session flag
   python run violation-summary    # print top recurring forget-flag violations
 """
+import json
 import os
 import sys
 from datetime import datetime
@@ -14,22 +15,71 @@ from pathlib import Path
 IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 
 
+def _slate_path(datestamp: str | None = None) -> Path:
+    ds = datestamp or datetime.now().strftime("%Y%m%d")
+    return IGOR_HOME / "claudecode" / f"{ds}.slate.txt"
+
+
+def _load_slate(path: Path) -> dict | None:
+    """Load slate as dict. Returns None if file is markdown (not JSON)."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+
+
+def _new_slate(date_fmt: str) -> dict:
+    return {
+        "date": date_fmt,
+        "in_flight": [],
+        "planned": [],
+        "done": [],
+        "notes": [],
+        "prose_render": None,
+    }
+
+
+def _print_slate(path: Path) -> None:
+    """Print slate content — JSON as human-friendly text, markdown as-is."""
+    data = _load_slate(path)
+    if data is None:
+        # Old markdown format — print raw
+        print(path.read_text(encoding="utf-8"))
+        return
+
+    lines = [f"# Slate {data.get('date', '?')}"]
+    if data.get("notes"):
+        lines.append("\n## Notes")
+        for n in data["notes"]:
+            lines.append(f"- {n}")
+    if data.get("in_flight"):
+        lines.append("\n## In-flight")
+        for item in data["in_flight"]:
+            lines.append(f"- {item}")
+    else:
+        lines.append("\n## In-flight\nNONE")
+    if data.get("planned"):
+        lines.append("\n## Planned")
+        for item in data["planned"]:
+            lines.append(f"- {item}")
+    if data.get("done"):
+        lines.append("\n## Done today")
+        for item in data["done"]:
+            lines.append(f"- {item}")
+    if data.get("prose_render"):
+        lines.append("\n## Notes (prose)")
+        lines.append(data["prose_render"])
+    print("\n".join(lines))
+
+
 def create_slate() -> None:
     date_str = datetime.now().strftime("%Y%m%d")
     date_fmt = datetime.now().strftime("%Y-%m-%d")
-    slate = IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
+    slate = _slate_path(date_str)
     slate.parent.mkdir(parents=True, exist_ok=True)
     if not slate.exists():
-        slate.write_text(
-            f"# Slate {date_fmt}\n\n"
-            "## Notes\n\n"
-            "## In-flight\nNONE\n\n"
-            "## Planned\n\n"
-            "## Ad hoc\n\n"
-            "## Done today\n",
-            encoding="utf-8",
-        )
-    print(slate.read_text(encoding="utf-8"))
+        slate.write_text(json.dumps(_new_slate(date_fmt), indent=2), encoding="utf-8")
+    _print_slate(slate)
 
 
 def debug_flag() -> None:
@@ -43,10 +93,8 @@ def debug_flag() -> None:
 def violation_summary(n: int = 5, days: int = 30) -> None:
     """Print top forget-flag violations from the last `days` days. Silent when log is empty."""
     try:
-        import sys
         import pathlib
 
-        # Ensure ADC root is on sys.path so the package import works
         _root = str(pathlib.Path(__file__).resolve().parent.parent.parent)
         if _root not in sys.path:
             sys.path.insert(0, _root)
@@ -55,7 +103,7 @@ def violation_summary(n: int = 5, days: int = 30) -> None:
 
         results = top_violations(n=n, days=days)
     except Exception:
-        return  # graceful degradation — never block context-load on this
+        return
 
     if not results:
         return

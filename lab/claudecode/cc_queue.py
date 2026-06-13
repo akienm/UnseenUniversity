@@ -774,8 +774,8 @@ def _decision_rollup(tasks: list, decision_id: str) -> None:
 
 
 def _append_to_todays_slate(ticket: dict) -> None:
-    """T-sync-on-close-not-dayend: append closed ticket to today's slate
-    ## Done today section. Idempotent (skips if ticket id already there).
+    """T-sync-on-close-not-dayend: append closed ticket to today's slate done section.
+    Idempotent. Handles both JSON and markdown slate formats.
     Graceful degrade: silent on missing slate or read/write failure.
     """
     try:
@@ -785,22 +785,39 @@ def _append_to_todays_slate(ticket: dict) -> None:
         )
         if not os.path.exists(slate_path):
             return
-        with open(slate_path) as f:
-            content = f.read()
         tid = ticket["id"]
         title = ticket.get("title", "")
         result = (ticket.get("result") or "").split("\n")[0][:120]
-        entry = f"- {tid} — {title}"
+        entry = f"{tid} — {title}"
         if result:
             entry += f" ({result})"
+
+        # Try JSON format first
+        try:
+            import json as _json
+            with open(slate_path) as f:
+                data = _json.load(f)
+            done = data.get("done") or []
+            if not any(tid in item for item in done):
+                done.append(entry)
+                data["done"] = done
+                with open(slate_path, "w") as f:
+                    _json.dump(data, f, indent=2)
+            return
+        except (ValueError, KeyError):
+            pass
+
+        # Markdown slate (old format)
+        with open(slate_path) as f:
+            content = f.read()
+        bullet = f"- {entry}"
         lines = content.splitlines(keepends=True)
         out = []
         appended = False
         in_done = False
-        for i, line in enumerate(lines):
-            # Skip idempotency: if ticket already present in "## Done today"
+        for line in lines:
             if in_done and tid in line and line.lstrip().startswith("-"):
-                appended = True  # treat as already-done
+                appended = True
                 out.append(line)
                 continue
             out.append(line)
@@ -808,13 +825,13 @@ def _append_to_todays_slate(ticket: dict) -> None:
                 in_done = True
                 continue
             if in_done and line.startswith("## ") and not appended:
-                out.insert(len(out) - 1, entry + "\n")
+                out.insert(len(out) - 1, bullet + "\n")
                 appended = True
                 in_done = False
         if in_done and not appended:
             if out and not out[-1].endswith("\n"):
                 out.append("\n")
-            out.append(entry + "\n")
+            out.append(bullet + "\n")
             appended = True
         if appended:
             with open(slate_path, "w") as f:
