@@ -1,0 +1,142 @@
+# devices/identities.yaml
+# Device identity registry — character inspiration, purpose, and optional wiki link.
+# Loaded by the web UI status panel to show who each device is and why it's here.
+# Add a new entry whenever a new device is registered.
+
+granny:
+  character: "Granny Weatherwax"
+  universe: "Discworld"
+  url: "https://wiki.lspace.org/Granny_Weatherwax"
+  purpose: "Ticket dispatcher and CC session manager — routes work to the right worker and keeps everyone in line."
+
+igor:
+  character: "Igor"
+  universe: "Discworld"
+  url: "https://wiki.lspace.org/Igor_(servant)"
+  purpose: "Cognition, memory palace, and long-term reasoning engine — Igor remembers everything and never wastes a good part."
+
+nanny:
+  character: "Nanny Ogg"
+  universe: "Discworld"
+  url: "https://wiki.lspace.org/Nanny_Ogg"
+  purpose: "Cron scheduler and periodic task runner — knows when everything should happen and makes sure it does."
+
+vetinari:
+  character: "Lord Havelock Vetinari"
+  universe: "Discworld"
+  url: "https://wiki.lspace.org/Lord_Vetinari"
+  purpose: "Strategic planning and goal management — the Patrician sees the whole board."
+
+ponder:
+  character: "Ponder Stibbons"
+  universe: "Discworld"
+  url: "https://wiki.lspace.org/Ponder_Stibbons"
+  purpose: "Research, experimental tracking, and dev-process oversight — Head of Inadvisably Applied Magic."
+
+hubert:
+  character: "Hubert Turvy"
+  universe: "Discworld"
+  url: "https://wiki.lspace.org/Hubert_Turvy"
+  purpose: "Development process manager and build orchestration — the engine room."
+
+scraps:
+  character: "Scraps"
+  universe: "Discworld (The Amazing Maurice)"
+  url: "https://wiki.lspace.org/Scraps"
+  purpose: "Data scraping, embedding, and knowledge ingestion — stitched together from useful pieces."
+
+librarian:
+  character: "The Librarian"
+  universe: "Discworld"
+  url: "https://wiki.lspace.org/Librarian_(UU)"
+  purpose: "Knowledge curation, semantic search, and research — Ook."
+
+dicksimnel:
+  character: "Dick Simnel"
+  universe: "Discworld (Raising Steam)"
+  url: "https://wiki.lspace.org/Dick_Simnel"
+  purpose: "Builder device — executes code, implements tickets, runs tools. The engineer who makes things go."
+
+critic:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Evaluates builder decisions, extracts failure patterns, and learns improvement rules — the feedback loop."
+
+evaluator:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "LLM judge panel — evaluates agent output quality against rubrics stored in the palace."
+
+auditor:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Static analysis — checks tickets, designs, and code against design rules before they ship."
+
+web_server:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Web UI server — Murderbot-style device feeds and Control Station."
+
+archivist:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Long-term storage and retrieval of archived knowledge."
+
+classifier:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Classifies messages and content into categories for routing and learning."
+
+inference:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Inference router — manages LLM calls, tier cascade, and cost control."
+
+minion:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Lightweight task runner for parallelisable sub-steps."
+
+policy:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Policy enforcement — guards against rule violations before actions execute."
+
+queue:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Ticket queue device — canonical work intake and dispatch surface."
+
+sensor:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Environment monitoring — watches for external events and signals."
+
+summarizer:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Condenses long content (transcripts, docs, channels) into structured summaries."
+
+vault:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Secure credential and secret storage — keeps the keys safe."
+
+workspace:
+  character: "Original"
+  universe: "UnseenUniversity"
+  url: ""
+  purpose: "Developer workspace management — file operations, code context, and environment."

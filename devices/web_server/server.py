@@ -1488,6 +1488,16 @@ def _no_db_msg() -> str:
     return '<div class="no-db">IGOR_HOME_DB_URL not set — DB unavailable</div>'
 
 
+def _load_device_identities() -> dict:
+    """Read device identity registry from devices/identities.yaml."""
+    try:
+        import yaml
+        id_file = Path(__file__).resolve().parents[2] / "devices" / "identities.yaml"
+        return yaml.safe_load(id_file.read_text()) or {}
+    except Exception:
+        return {}
+
+
 def _load_device_registry() -> list[dict]:
     """Read the flat-file device registry from _RUNTIME_ROOT/devices.json."""
     registry_path = _RUNTIME_ROOT / "devices.json"
@@ -1650,6 +1660,12 @@ async def _api_device_status(request: Request):
         return JSONResponse({"error": "missing device id"}, status_code=400)
 
     result: dict = {"device": device_id}
+
+    # Identity (character, universe, purpose, url)
+    identities = _load_device_identities()
+    identity = identities.get(device_id)
+    if identity:
+        result["identity"] = identity
 
     # Registry: online status + registered_at
     registry = {r["id"]: r for r in _load_device_registry() if r.get("id")}
@@ -3544,6 +3560,21 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
       const el = document.getElementById('fascia-status-body');
       try {
         const d = await (await fetch('/api/device/'+encodeURIComponent(deviceId)+'/status')).json();
+
+        // Identity header (character name, universe, purpose, optional wiki link)
+        let identHtml = '';
+        if (d.identity) {
+          const id = d.identity;
+          const charLabel = id.url
+            ? '<a href="'+_fasciaEsc(id.url)+'" target="_blank" rel="noopener" style="color:#7ec8e3;text-decoration:none">'+_fasciaEsc(id.character)+'&nbsp;↗</a>'
+            : '<span style="color:#7ec8e3">'+_fasciaEsc(id.character)+'</span>';
+          const universe = id.universe && id.universe !== 'Original' ? ' <span style="color:#555;font-size:0.75rem">('+_fasciaEsc(id.universe)+')</span>' : '';
+          identHtml = '<div style="margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid #2a2a4a">'
+            + '<div style="font-size:0.88rem;font-weight:bold">'+charLabel+universe+'</div>'
+            + '<div style="color:#999;font-size:0.78rem;margin-top:0.2rem">'+_fasciaEsc(id.purpose)+'</div>'
+            + '</div>';
+        }
+
         const rows = [];
         const statusColor = d.status === 'online' ? '#90ee90' : d.status === 'offline' ? '#c66' : '#aaa';
         rows.push(['status', '<span style="color:'+statusColor+'">'+_fasciaEsc(d.status||'unknown')+'</span>']);
@@ -3565,10 +3596,13 @@ _FALLBACK_HTML = r"""<!DOCTYPE html>
           if (act.busy !== undefined)
             rows.push(['busy', '<span style="color:'+(act.busy?'#ffb347':'#90ee90')+'">'+(act.busy?'yes':'idle')+'</span>']);
         }
-        if (!rows.length) { el.innerHTML = '<p style="color:#666">No status data.</p>'; return; }
-        el.innerHTML = '<table class="fascia-kv-table">' + rows.map(([k,v]) =>
-          '<tr><td class="fascia-kv-key">'+_fasciaEsc(k)+'</td><td class="fascia-kv-val">'+v+'</td></tr>'
-        ).join('') + '</table>';
+        if (!rows.length && !identHtml) { el.innerHTML = '<p style="color:#666">No status data.</p>'; return; }
+        const tableHtml = rows.length
+          ? '<table class="fascia-kv-table">' + rows.map(([k,v]) =>
+              '<tr><td class="fascia-kv-key">'+_fasciaEsc(k)+'</td><td class="fascia-kv-val">'+v+'</td></tr>'
+            ).join('') + '</table>'
+          : '';
+        el.innerHTML = identHtml + tableHtml;
       } catch(e) {
         el.innerHTML = '<p style="color:#c66">Status unavailable: '+_fasciaEsc(e)+'</p>';
       }
