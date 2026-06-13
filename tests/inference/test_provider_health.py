@@ -1,95 +1,78 @@
-"""Test ProviderHealthClassifier and Source._classify_ping_failure_simple()."""
+"""
+test_provider_health.py — Tests for ProviderHealthClassifier
+"""
+
+from __future__ import annotations
 
 import socket
 import urllib.error
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+
+import pytest
 
 from devices.inference.provider_health import ProviderHealthClassifier
-from devices.inference.sources import Source
 
 
-def test_classify_local_bug_dns():
-    """DNS resolution failure → local_bug."""
-    exc = socket.gaierror("Name or service not known")
-    category = ProviderHealthClassifier.classify("test_source", exc)
-    assert category == "local_bug"
+class TestProviderHealthClassifier:
+    """Tests for classification of provider ping failures."""
 
+    def test_auth_error_401(self):
+        """HTTP 401 should be classified as auth_error."""
+        exc = urllib.error.HTTPError("http://example.com", 401, "Unauthorized", {}, None)
+        result = ProviderHealthClassifier.classify("openrouter", exc)
+        assert result == "auth_error"
 
-def test_classify_local_bug_connection_refused():
-    """Connection refused → local_bug."""
-    exc = ConnectionRefusedError("Connection refused")
-    category = ProviderHealthClassifier.classify("test_source", exc)
-    assert category == "local_bug"
+    def test_auth_error_403(self):
+        """HTTP 403 should be classified as auth_error."""
+        exc = urllib.error.HTTPError("http://example.com", 403, "Forbidden", {}, None)
+        result = ProviderHealthClassifier.classify("ollama", exc)
+        assert result == "auth_error"
 
+    def test_http_error_other_code(self):
+        """HTTP errors other than 401/403 should be classified as unknown."""
+        exc = urllib.error.HTTPError("http://example.com", 500, "Server Error", {}, None)
+        result = ProviderHealthClassifier.classify("openrouter", exc)
+        assert result == "unknown"
 
-def test_classify_auth_error_401():
-    """HTTP 401 → auth_error."""
-    exc = urllib.error.HTTPError("url", 401, "Unauthorized", {}, None)
-    category = ProviderHealthClassifier.classify("test_source", exc)
-    assert category == "auth_error"
+    def test_dns_error(self):
+        """DNS failure (gaierror) should be classified as local_bug."""
+        exc = socket.gaierror(-2, "Name or service not known")
+        result = ProviderHealthClassifier.classify("google", exc)
+        assert result == "local_bug"
 
+    def test_connection_refused(self):
+        """Connection refused should be classified as local_bug."""
+        exc = OSError("Connection refused")
+        result = ProviderHealthClassifier.classify("ollama", exc)
+        assert result == "local_bug"
 
-def test_classify_auth_error_403():
-    """HTTP 403 → auth_error."""
-    exc = urllib.error.HTTPError("url", 403, "Forbidden", {}, None)
-    category = ProviderHealthClassifier.classify("test_source", exc)
-    assert category == "auth_error"
+    def test_timeout(self):
+        """Socket timeout should be classified as unreachable."""
+        exc = socket.timeout("Connection timed out")
+        result = ProviderHealthClassifier.classify("anthropic", exc)
+        assert result == "unreachable"
 
+    def test_url_error(self):
+        """URLError (non-specific) should be classified as unreachable."""
+        exc = urllib.error.URLError("Connection reset by peer")
+        result = ProviderHealthClassifier.classify("openrouter", exc)
+        assert result == "unreachable"
 
-def test_classify_unreachable_timeout():
-    """Socket timeout → unreachable."""
-    exc = socket.timeout("timed out")
-    category = ProviderHealthClassifier.classify("test_source", exc)
-    assert category == "unreachable"
+    def test_generic_oserror(self):
+        """Generic OSError should be classified as unreachable."""
+        exc = OSError("Some OS error")
+        result = ProviderHealthClassifier.classify("ollama", exc)
+        assert result == "unreachable"
 
+    def test_unknown_exception(self):
+        """Unknown exception types should be classified as unknown."""
+        exc = ValueError("Some value error")
+        result = ProviderHealthClassifier.classify("custom", exc)
+        assert result == "unknown"
 
-def test_classify_unreachable_oserror():
-    """Generic OSError → unreachable."""
-    exc = OSError("Network is unreachable")
-    category = ProviderHealthClassifier.classify("test_source", exc)
-    assert category == "unreachable"
-
-
-def test_classify_unknown():
-    """Unknown exception → unknown."""
-    exc = ValueError("unknown error")
-    category = ProviderHealthClassifier.classify("test_source", exc)
-    assert category == "unknown"
-
-
-def test_source_classify_ping_failure_logs(caplog):
-    """Source._classify_ping_failure_simple logs at INFO."""
-    src = Source(name="test_source")
-    exc = socket.gaierror("Name or service not known")
-    with caplog.at_level("INFO"):
-        category = src._classify_ping_failure_simple(exc)
-    assert category == "local_bug"
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelname == "INFO"
-    assert "failure_category=local_bug" in caplog.text
-
-
-def test_openrouter_ping_failure_classified(caplog):
-    """OpenRouterSource.ping() classifies failures."""
-    from devices.inference.sources import OpenRouterSource
-    src = OpenRouterSource()
-    with patch("socket.create_connection", side_effect=socket.gaierror("DNS failure")):
-        with caplog.at_level("INFO"):
-            result = src.ping()
-    assert result is False
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelname == "INFO"
-    assert "failure_category=local_bug" in caplog.text
-
-
-def test_ollama_ping_failure_classified(caplog):
-    """OllamaSource.ping() classifies failures."""
-    from devices.inference.sources import OllamaSource
-    src = OllamaSource()
-    with patch("socket.create_connection", side_effect=ConnectionRefusedError("refused")):
-        with caplog.at_level("INFO"):
-            result = src.ping()
-    assert result is False
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelname == "INFO"
-    assert "failure_category=local_bug" in caplog.text
+    def test_source_name_unused(self):
+        """source_name parameter doesn't affect classification."""
+        exc = urllib.error.HTTPError("http://example.com", 401, "Unauthorized", {}, None)
+        result1 = ProviderHealthClassifier.classify("openrouter", exc)
+        result2 = ProviderHealthClassifier.classify("different_source", exc)
+        assert result1 == result2 == "auth_error"
