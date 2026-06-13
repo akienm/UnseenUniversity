@@ -769,7 +769,7 @@ def record_cloud_escalation(
     try:
         import psycopg2
 
-        _db_url = os.getenv("IGOR_HOME_DB_URL", "")
+        _db_url = os.getenv("UU_HOME_DB_URL", "")
         if not _db_url:
             return
         conn = psycopg2.connect(_db_url)
@@ -908,7 +908,7 @@ def _write_llm_call_db(
 
         import psycopg2
 
-        db_url = _os.getenv("IGOR_HOME_DB_URL") or str(paths().home_db_url)
+        db_url = _os.getenv("UU_HOME_DB_URL") or str(paths().home_db_url)
         if not db_url:
             return
         instance_id = _os.getenv("IGOR_INSTANCE_ID", "")

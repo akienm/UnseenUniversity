@@ -13,7 +13,7 @@ reads Igor's memory palace, queries the DB, and runs inference for research task
 | `tools/budget_tools.py` | `check_openrouter_balance`, `openrouter_burn_rate` MCP tools |
 | `tools/memory_tools.py` | `memory_get`, `memory_search`, `memory_list_by_type` |
 | `tools/palace_tools.py` | `palace_read`, `palace_write`, `palace_search`, `palace_ls` |
-| `tools/db_tools.py` | `db_query` — raw SQL against IGOR_HOME_DB_URL |
+| `tools/db_tools.py` | `db_query` — raw SQL against UU_HOME_DB_URL |
 | `tools/research_tools.py` | `research` — multi-hop research pipeline |
 | `tools/igor_tools.py` | `cc_send`, `channel_read`, `channel_send` — Igor comms |
 | `tools/health_tools.py` | `rack_health` — aggregated device heartbeat status |
@@ -31,7 +31,7 @@ reads Igor's memory palace, queries the DB, and runs inference for research task
 **MCP tools exposed** (via stdio to CC): see `tools/` for full list.
 
 **Env vars:**
-- `IGOR_HOME_DB_URL` — Postgres for memory/palace/DB tools
+- `UU_HOME_DB_URL` — Postgres for memory/palace/DB tools
 - `OPENROUTER_API_KEY` — for inference in research pipeline
 - `IGOR_UC_PORT` / `IGOR_UC_BASE` — UC registration endpoint
 

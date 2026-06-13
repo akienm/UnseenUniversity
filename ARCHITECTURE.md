@@ -25,7 +25,7 @@ Install the platform without any device; install any device without the others.
 
 ## Storage
 
-All Postgres via `IGOR_HOME_DB_URL`:
+All Postgres via `UU_HOME_DB_URL`:
 
 | Schema | Owner | Contents |
 |---|---|---|
@@ -38,7 +38,7 @@ All Postgres via `IGOR_HOME_DB_URL`:
 
 | Var | Used by |
 |---|---|
-| `IGOR_HOME_DB_URL` | all devices that touch Postgres |
+| `UU_HOME_DB_URL` | all devices that touch Postgres |
 | `OPENROUTER_API_KEY` | inference device, budget_gate |
 | `OR_BUDGET_ALERT_USD` | budget_gate (default $15) |
 | `IGOR_CLOUD_BUDGET_FLOOR_USD` | budget_gate floor gate (default $0) |

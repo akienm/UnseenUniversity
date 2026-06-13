@@ -3,7 +3,7 @@ Unit tests for PostgresDevice.
 
 DB-dependent methods (health, uptime, logs, where_and_how) are tested
 with a mocked connection so they run on a fresh checkout without Postgres.
-Integration tests that hit real Postgres are skipped unless IGOR_HOME_DB_URL
+Integration tests that hit real Postgres are skipped unless UU_HOME_DB_URL
 is set — the coverage environment has the DB and those paths count.
 """
 

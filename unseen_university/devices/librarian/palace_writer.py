@@ -110,7 +110,7 @@ class PalaceWriter:
         import os
 
         self._pg_url = pg_url or os.environ.get(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
         self._cc_inbox_fn = (

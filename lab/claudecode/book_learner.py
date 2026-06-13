@@ -104,7 +104,7 @@ DB_PATH = Path(
         "IGOR_DB_PATH", Path.home() / ".unseen_university" / "Igor-wild-0001" / "wild-0001.db"
     )
 )
-IGOR_HOME_DB_URL = os.environ["IGOR_HOME_DB_URL"]
+UU_HOME_DB_URL = os.environ["UU_HOME_DB_URL"]
 PROGRESS_DIR = Path.home() / ".unseen_university" / "book_learner_progress"
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 OPENROUTER_REFERER = "https://github.com/akienm/TheIgors"
@@ -249,7 +249,7 @@ def _build_watch_context() -> str:
     try:
         import psycopg2
 
-        conn = psycopg2.connect(IGOR_HOME_DB_URL)
+        conn = psycopg2.connect(UU_HOME_DB_URL)
         cur = conn.cursor()
 
         # Active goals — extract just the ticket ID + title
@@ -637,7 +637,7 @@ def _handle_drm_blocked(handle: dict, args) -> None:
         try:
             import psycopg2
 
-            conn = psycopg2.connect(IGOR_HOME_DB_URL)
+            conn = psycopg2.connect(UU_HOME_DB_URL)
             cur = conn.cursor()
             cur.execute(
                 "UPDATE reading_list SET status='failed', completed_at=NOW() WHERE calibre_id=%s",
@@ -654,7 +654,7 @@ def _handle_drm_blocked(handle: dict, args) -> None:
             from devices.igor.paths import paths as _paths
             from devices.igor.memory.cortex import Cortex
 
-            cortex = Cortex(db_url=IGOR_HOME_DB_URL)
+            cortex = Cortex(db_url=UU_HOME_DB_URL)
             import hashlib, datetime
 
             content = (
@@ -1279,7 +1279,7 @@ def run(args) -> None:
         try:
             import psycopg2 as _psycopg2
 
-            _conn = _psycopg2.connect(IGOR_HOME_DB_URL)
+            _conn = _psycopg2.connect(UU_HOME_DB_URL)
             _conn.autocommit = True
             _conn.cursor().execute(
                 "UPDATE reading_list SET status='completed', completed_at=NOW()"

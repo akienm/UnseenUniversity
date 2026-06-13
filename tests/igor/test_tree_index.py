@@ -8,7 +8,7 @@ import pytest
 from devices.igor.memory.tree_index import TreeIndex, _CP_NODES, seed_well_known_trees
 
 DB_URL = os.getenv(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 

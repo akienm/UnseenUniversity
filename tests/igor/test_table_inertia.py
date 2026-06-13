@@ -1,7 +1,7 @@
 """T-high-inertia-shared-state — table-level inertia policy tests.
 
 Pure-policy tests for compute_inertia. Integration against machine_manager
-is covered by a thin smoke test that runs only when IGOR_HOME_DB_URL is set.
+is covered by a thin smoke test that runs only when UU_HOME_DB_URL is set.
 """
 
 from __future__ import annotations
@@ -81,8 +81,8 @@ class TestMachineManagerIntegration:
     """Smoke tests against real machine_manager when DB is available."""
 
     def setup_method(self):
-        if not os.getenv("IGOR_HOME_DB_URL"):
-            pytest.skip("IGOR_HOME_DB_URL not set; skipping DB integration test")
+        if not os.getenv("UU_HOME_DB_URL"):
+            pytest.skip("UU_HOME_DB_URL not set; skipping DB integration test")
 
     def test_machines_inertia_returns_table_inertia(self):
         from devices.igor.tools.machine_manager import machines_inertia

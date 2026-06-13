@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 _START_TIME = time.time()
 _CC_QUEUE = Path(__file__).resolve().parents[2] / "lab" / "claudecode" / "cc_queue.py"
 _DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _SKILLS_DIR = Path.home() / ".claude" / "skills"
@@ -63,7 +63,7 @@ Bash, Read, Edit, Write. Working directory: ~/dev/src/UnseenUniversity
 ## Tool mappings — when the sprint-ticket skill says X, do Y instead
 
   memory_get(path="P")
-    → Bash: psql $IGOR_HOME_DB_URL -tAc "SELECT content FROM memory_palace WHERE path='P'"
+    → Bash: psql $UU_HOME_DB_URL -tAc "SELECT content FROM memory_palace WHERE path='P'"
 
   mcp__igor__* / mcp__datacenter__* / mcp__librarian__*
     → SKIP — MCP not wired yet; continue to the next step
@@ -173,7 +173,7 @@ class DickSimnelDevice(BaseDevice):
     def requirements(self) -> dict:
         return {
             "deps": ["psycopg2", "devices.inference (inference proxy)"],
-            "env": ["IGOR_HOME_DB_URL", "OPENROUTER_API_KEY or GOOGLE_AI_STUDIO_API_KEY"],
+            "env": ["UU_HOME_DB_URL", "OPENROUTER_API_KEY or GOOGLE_AI_STUDIO_API_KEY"],
         }
 
     def capabilities(self) -> dict:
@@ -234,7 +234,7 @@ class DickSimnelDevice(BaseDevice):
                 capture_output=True,
                 text=True,
                 timeout=10,
-                env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+                env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
             )
             if result.returncode != 0:
                 log.warning("DickSimnel: show failed for %s: %s", ticket_id, result.stderr[:100])
@@ -255,7 +255,7 @@ class DickSimnelDevice(BaseDevice):
                 capture_output=True,
                 text=True,
                 timeout=10,
-                env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+                env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
             )
             if result.returncode != 0:
                 log.debug("DickSimnel: cc_queue %s failed: %s", args, result.stderr[:200])

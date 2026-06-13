@@ -7,7 +7,7 @@ import psycopg2
 import pytest
 
 _PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _EMB = [1.0, 0.0, 0.0]  # simple unit vector for testing

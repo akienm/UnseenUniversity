@@ -54,7 +54,7 @@ def test_advance_cycle_expires_committed(fs):
     # Manually commit focus with expires_at_cycle = current + EXPIRY_CYCLES
     conn = psycopg2.connect(
         os.environ.get(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
     )
@@ -127,7 +127,7 @@ def test_no_displacement_does_not_set_task_boundary(fs):
 
     conn = psycopg2.connect(
         os.environ.get(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
     )

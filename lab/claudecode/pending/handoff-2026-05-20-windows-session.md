@@ -81,7 +81,7 @@ replaced with `uv run pytest tests/ -x -q`
 IGOR_HOME       = ~/.TheIgors            (runtime state, logs, channel)
 THEIGORS_HOME   = <path>/TheIgors        (repo root — Python source)
 CC_WORKFLOW_TOOLS = <adc>/lab/claudecode  (cc_queue.py, session_capture.py)
-IGOR_HOME_DB_URL = postgresql://igor:...  (Postgres; not set on Windows — no DB here)
+UU_HOME_DB_URL = postgresql://igor:...  (Postgres; not set on Windows — no DB here)
 PYTHONUTF8      = 1
 ```
 

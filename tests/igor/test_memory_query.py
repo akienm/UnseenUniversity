@@ -99,7 +99,7 @@ class TestMemorySearch(unittest.TestCase):
         import os
 
         os.environ.setdefault(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
         from devices.igor.tools.registry import registry
@@ -239,7 +239,7 @@ class TestFindTool(unittest.TestCase):
         import os
 
         os.environ.setdefault(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
         from devices.igor.tools.registry import registry

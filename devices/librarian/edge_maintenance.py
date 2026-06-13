@@ -223,7 +223,7 @@ def run_consolidation(db_url: str | None = None) -> dict:
     """
     import psycopg2
 
-    url = db_url or os.environ.get("IGOR_HOME_DB_URL", "")
+    url = db_url or os.environ.get("UU_HOME_DB_URL", "")
     if not url:
         return {"error": "no db_url", "hebbian_count": 0, "backfill_count": 0}
 

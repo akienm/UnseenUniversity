@@ -65,7 +65,7 @@ class VaultDevice(BaseDevice):
         }
 
     def requirements(self) -> dict:
-        return {"deps": ["psycopg2", "cryptography", "bcrypt", "IGOR_HOME_DB_URL"]}
+        return {"deps": ["psycopg2", "cryptography", "bcrypt", "UU_HOME_DB_URL"]}
 
     def capabilities(self) -> dict:
         return {

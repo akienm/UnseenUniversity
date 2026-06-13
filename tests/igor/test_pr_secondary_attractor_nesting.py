@@ -43,7 +43,7 @@ def _delete_test_accretions_and_goals():
     import psycopg2
 
     db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
+        "UU_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
     conn = psycopg2.connect(db_url)
@@ -160,7 +160,7 @@ def test_commitment_accretion_helper_works_with_goal_id():
     import psycopg2
 
     db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
+        "UU_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
     conn = psycopg2.connect(db_url)

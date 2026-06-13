@@ -41,9 +41,9 @@ class TestProxyFactories(unittest.TestCase):
     # so these tests exercise production defaults, not session-scoped paths.
     _SEARCH_OVERRIDES = frozenset({"IGOR_HOME_SEARCH_PATH", "IGOR_LOCAL_SEARCH_PATH"})
 
-    def test_make_home_proxy_uses_IGOR_HOME_DB_URL(self):
+    def test_make_home_proxy_uses_UU_HOME_DB_URL(self):
         env = {k: v for k, v in os.environ.items() if k not in self._SEARCH_OVERRIDES}
-        env["IGOR_HOME_DB_URL"] = "postgresql://fake/db"
+        env["UU_HOME_DB_URL"] = "postgresql://fake/db"
         with patch.dict(os.environ, env, clear=True):
             with patch("unseen_university.db_proxy.PGDatabaseProxy") as MockPG:
                 from devices.igor.memory import db_proxy
@@ -55,10 +55,10 @@ class TestProxyFactories(unittest.TestCase):
 
     def test_make_home_proxy_falls_back_to_IGOR_DB_URL(self):
         env = {"IGOR_DB_URL": "postgresql://fallback/db"}
-        # Remove IGOR_HOME_DB_URL + test-schema overrides so the test
+        # Remove UU_HOME_DB_URL + test-schema overrides so the test
         # exercises the production defaults, not the session-fixture paths.
         _EXCLUDE = {
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "IGOR_HOME_SEARCH_PATH",
             "IGOR_LOCAL_SEARCH_PATH",
         }
@@ -86,14 +86,14 @@ class TestProxyFactories(unittest.TestCase):
                 )
 
     def test_make_local_proxy_uses_home_db_when_no_local(self):
-        """Local proxy falls back to IGOR_HOME_DB_URL when IGOR_LOCAL_DB_URL is unset."""
+        """Local proxy falls back to UU_HOME_DB_URL when IGOR_LOCAL_DB_URL is unset."""
         clean_env = {
             k: v
             for k, v in os.environ.items()
-            if k not in ("IGOR_LOCAL_DB_URL", "IGOR_HOME_DB_URL", "IGOR_DB_URL")
+            if k not in ("IGOR_LOCAL_DB_URL", "UU_HOME_DB_URL", "IGOR_DB_URL")
             and k not in self._SEARCH_OVERRIDES
         }
-        clean_env["IGOR_HOME_DB_URL"] = "postgresql://test:test@localhost/test"
+        clean_env["UU_HOME_DB_URL"] = "postgresql://test:test@localhost/test"
         with patch.dict(os.environ, clean_env, clear=True):
             with patch("unseen_university.db_proxy.PGDatabaseProxy") as MockPG:
                 from devices.igor.memory import db_proxy

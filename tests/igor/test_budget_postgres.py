@@ -6,7 +6,7 @@ Covers the round-trip surface: record_spend → SUM, set/get_spending_cap,
 balance_history insert + query, get_balance_trajectory shape, query_costs_log
 when costs.log is absent.
 
-Tests use the live home DB (psycopg2 + IGOR_HOME_DB_URL) and clean up
+Tests use the live home DB (psycopg2 + UU_HOME_DB_URL) and clean up
 their own rows via a unique test-tag suffix on inserted notes/keys.
 """
 
@@ -21,8 +21,8 @@ import pytest
 
 # Skip if no Postgres URL configured — these are integration tests.
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("IGOR_HOME_DB_URL") and not os.environ.get("IGOR_DB_URL"),
-    reason="No Postgres URL — integration tests require IGOR_HOME_DB_URL",
+    not os.environ.get("UU_HOME_DB_URL") and not os.environ.get("IGOR_DB_URL"),
+    reason="No Postgres URL — integration tests require UU_HOME_DB_URL",
 )
 
 

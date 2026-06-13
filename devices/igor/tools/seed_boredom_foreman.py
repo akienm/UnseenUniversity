@@ -19,7 +19,7 @@ _UU_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_UU_ROOT))
 
 _DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 

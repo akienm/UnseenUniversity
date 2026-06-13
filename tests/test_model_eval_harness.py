@@ -2,7 +2,7 @@
 devices/inference/capability_graph.py + InferenceDevice.capability_graph_query().
 
 Unit tests mock DB and InferenceDevice.
-Integration tests are gated on IGOR_HOME_DB_URL and OPENROUTER_API_KEY.
+Integration tests are gated on UU_HOME_DB_URL and OPENROUTER_API_KEY.
 """
 
 from __future__ import annotations
@@ -17,9 +17,9 @@ from devices.evaluator.device import EvaluatorDevice
 from devices.inference.device import InferenceDevice
 from devices.inference.shim import InferenceResponse
 
-_PG_URL = os.environ.get("IGOR_HOME_DB_URL", "")
+_PG_URL = os.environ.get("UU_HOME_DB_URL", "")
 _SKIP_INTEGRATION = pytest.mark.skipif(
-    not _PG_URL, reason="IGOR_HOME_DB_URL not set — skipping integration tests"
+    not _PG_URL, reason="UU_HOME_DB_URL not set — skipping integration tests"
 )
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -400,14 +400,14 @@ def test_model_eval_run_same_run_group_id_for_all_models():
 
 
 def test_inference_device_cg_query_returns_empty_without_db_url(monkeypatch):
-    monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+    monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
     d = InferenceDevice(mode="openrouter")
     result = d.capability_graph_query()
     assert result == []
 
 
 def test_inference_device_cg_query_delegates_to_module(monkeypatch):
-    monkeypatch.setenv("IGOR_HOME_DB_URL", "postgresql://fake")
+    monkeypatch.setenv("UU_HOME_DB_URL", "postgresql://fake")
     d = InferenceDevice(mode="openrouter")
     with patch(
         "devices.inference.capability_graph.query_results",

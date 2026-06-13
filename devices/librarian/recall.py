@@ -391,7 +391,7 @@ def recall(
         query:          Natural language query.
         limit:          Max hits to return.
         escalate:       If True, run inference synthesis on top hits.
-        db_url:         PostgreSQL URL; None → IGOR_HOME_DB_URL env var.
+        db_url:         PostgreSQL URL; None → UU_HOME_DB_URL env var.
         force_fallback: Use hash embeddings (testing, no OpenAI).
         min_trust_tier: If set, filter hits to trust tiers 1..min_trust_tier.
                         tier_0 (unknown) always excluded when filter is active.
@@ -399,7 +399,7 @@ def recall(
     """
     result = RecallResult(query=query)
 
-    url = os.environ.get("IGOR_HOME_DB_URL", "") if db_url is None else db_url
+    url = os.environ.get("UU_HOME_DB_URL", "") if db_url is None else db_url
     if not url:
         return result
 

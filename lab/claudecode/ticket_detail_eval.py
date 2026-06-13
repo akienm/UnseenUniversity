@@ -75,7 +75,7 @@ def _fetch_ticket_meta(ticket_ids: list[str]) -> dict[str, dict]:
     except ImportError:
         return {}
 
-    url = os.environ.get("IGOR_HOME_DB_URL") or os.environ.get(
+    url = os.environ.get("UU_HOME_DB_URL") or os.environ.get(
         "IGOR_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
     )
     try:

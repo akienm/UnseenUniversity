@@ -5,7 +5,7 @@ Canonical home for DatabaseProxy infrastructure. No TheIgors imports, no SQLite.
 wild_igor/igor/memory/db_proxy.py re-exports from here.
 
 Callers:
-    proxy = make_home_proxy()   # Igor's clan DB (IGOR_HOME_DB_URL)
+    proxy = make_home_proxy()   # Igor's clan DB (UU_HOME_DB_URL)
     proxy = make_local_proxy()  # Igor's instance DB
     proxy = make_infra_proxy()  # infra schema only (UC services)
     proxy = make_dc_proxy()     # unseen_university's own DB (AGENT_DATACENTER_DB_URL)
@@ -382,7 +382,7 @@ class PGDatabaseProxy:
 
 def make_home_proxy(db_path=None) -> PGDatabaseProxy:
     """
-    Return PGDatabaseProxy for IGOR_HOME_DB_URL (global truth DB shared across
+    Return PGDatabaseProxy for UU_HOME_DB_URL (global truth DB shared across
     all Igor instances).
 
     HOME tables: clan.memories, clan.interpretive_edges, clan.wg_cooccur,
@@ -391,10 +391,10 @@ def make_home_proxy(db_path=None) -> PGDatabaseProxy:
 
     IGOR_HOME_SEARCH_PATH overrides (used by test fixtures for isolated schemas).
     """
-    db_url = os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+    db_url = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
     if not db_url:
         raise RuntimeError(
-            "IGOR_HOME_DB_URL not set — export IGOR_HOME_DB_URL=postgresql://..."
+            "UU_HOME_DB_URL not set — export UU_HOME_DB_URL=postgresql://..."
         )
     sp = os.getenv("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
     return PGDatabaseProxy(db_url, search_path=sp)
@@ -405,19 +405,20 @@ def make_local_proxy(db_path=None) -> PGDatabaseProxy:
     Return PGDatabaseProxy for LOCAL tables (instance.ring_memory,
     instance.twm_observations, instance.pending_replies, per-box metrics).
 
-    Checks IGOR_LOCAL_DB_URL first, falls back to IGOR_HOME_DB_URL.
+    Checks IGOR_LOCAL_DB_URL first, falls back to UU_HOME_DB_URL.
     search_path: instance,clan,infra,public — full access for Igor.
 
     IGOR_LOCAL_SEARCH_PATH overrides (used by test fixtures).
     """
     db_url = (
         os.getenv("IGOR_LOCAL_DB_URL")
+        or os.getenv("UU_HOME_DB_URL")
         or os.getenv("IGOR_HOME_DB_URL")
         or os.getenv("IGOR_DB_URL")
     )
     if not db_url:
         raise RuntimeError(
-            "IGOR_HOME_DB_URL not set — export IGOR_HOME_DB_URL=postgresql://..."
+            "UU_HOME_DB_URL not set — export UU_HOME_DB_URL=postgresql://..."
         )
     sp = os.getenv("IGOR_LOCAL_SEARCH_PATH") or "instance,clan,infra,public"
     return PGDatabaseProxy(db_url, search_path=sp)
@@ -427,9 +428,9 @@ def make_infra_proxy() -> Optional[PGDatabaseProxy]:
     """
     Return PGDatabaseProxy for infrastructure tables only (infra schema).
     Used by rack server services that don't need clan or instance access.
-    Returns None if IGOR_HOME_DB_URL is not set.
+    Returns None if UU_HOME_DB_URL is not set.
     """
-    db_url = os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+    db_url = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
     if not db_url:
         return None
     return PGDatabaseProxy(db_url, search_path="infra,public")
@@ -488,7 +489,7 @@ def make_agent_proxy() -> PGDatabaseProxy:
     Identity comes from DEVICE_ID env var (default: "igor" for backward compat).
     Env var looked up: {DEVICE_ID_UPPER}_AGENT_DB_URL
       where DEVICE_ID_UPPER = DEVICE_ID.upper().replace('-','_').replace('.','_')
-    Falls back to IGOR_HOME_DB_URL (legacy Igor env var) when the device-specific
+    Falls back to UU_HOME_DB_URL (legacy Igor env var) when the device-specific
     var is absent — covers Igor-only deployments during migration.
 
     search_path: clan,infra,public (IGOR_HOME_SEARCH_PATH override respected)
@@ -500,11 +501,11 @@ def make_agent_proxy() -> PGDatabaseProxy:
     device_id = os.getenv("DEVICE_ID", "igor")
     var_name = device_id.upper().replace("-", "_").replace(".", "_") + "_AGENT_DB_URL"
     db_url = (
-        os.getenv(var_name) or os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+        os.getenv(var_name) or os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
     )
     if not db_url:
         raise RuntimeError(
-            f"{var_name} not set (and IGOR_HOME_DB_URL not set) — "
+            f"{var_name} not set (and UU_HOME_DB_URL not set) — "
             f"export {var_name}=postgresql://..."
         )
     sp = os.getenv("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"

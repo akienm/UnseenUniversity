@@ -28,9 +28,9 @@ TEST_HISTORY = f"{TEST_ROOT}/history"
 @pytest.fixture
 def palace_cur():
     """Open a palace DB connection, seed test nodes, yield cursor, cleanup."""
-    db_url = os.environ.get("IGOR_HOME_DB_URL")
+    db_url = os.environ.get("UU_HOME_DB_URL")
     if not db_url:
-        pytest.skip("IGOR_HOME_DB_URL not set")
+        pytest.skip("UU_HOME_DB_URL not set")
     import psycopg2
 
     conn = psycopg2.connect(db_url)

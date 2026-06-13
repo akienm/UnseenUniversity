@@ -17,7 +17,7 @@ No tool-use loops, no prompt assembly — callers own the prompt, this device ow
 **Env vars:**
 - `INFERENCE_MODE` — `openrouter` (default) or `ollama`
 - `OPENROUTER_API_KEY` — required for OR mode
-- `IGOR_HOME_DB_URL` — optional; enables spend recording and balance history
+- `UU_HOME_DB_URL` — optional; enables spend recording and balance history
 - `OR_BUDGET_ALERT_USD` — alert threshold in USD (default 15.0)
 - `IGOR_CLOUD_BUDGET_FLOOR_USD` — hard floor; blocks calls when balance ≤ this (default 0)
 

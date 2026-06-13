@@ -340,7 +340,7 @@ def _channel_append(author: str, content: str, msg_type: str = "message"):
         with open(_CHANNEL_FILE, "a", encoding="utf-8") as f:
             f.write(line)
         # Mirror to Postgres channel_messages so MCP channel_read sees messages
-        _pg_url = os.environ.get("IGOR_HOME_DB_URL", "") or os.environ.get(
+        _pg_url = os.environ.get("UU_HOME_DB_URL", "") or os.environ.get(
             "IGOR_DB_URL", ""
         )
         if _pg_url:
@@ -1072,7 +1072,7 @@ def _handle_slash_ticket(description: str, device_name: str) -> str:
         r = _sp.run(
             ["python3", str(_CC_QUEUE), "add", tmp],
             capture_output=True, text=True, timeout=15,
-            env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+            env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
         )
         if r.returncode != 0:
             log.warning("slash /ticket failed: %s", r.stderr[:200])
@@ -1422,7 +1422,7 @@ async def _api_nanny_cron_run(request: Request):
 
 
 # ── Palace browser ───────────────────────────────────────────────────────────
-# Read-only palace / rack views. Require IGOR_HOME_DB_URL. Graceful when absent.
+# Read-only palace / rack views. Require UU_HOME_DB_URL. Graceful when absent.
 
 _NAV = (
     '<nav style="margin-bottom:1.5rem;font-size:0.85rem">'
@@ -1471,8 +1471,8 @@ def _html_wrap(title: str, body: str) -> str:
 
 
 def _db_conn():
-    """Return a psycopg2 connection or None when IGOR_HOME_DB_URL is absent."""
-    db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+    """Return a psycopg2 connection or None when UU_HOME_DB_URL is absent."""
+    db_url = os.environ.get("UU_HOME_DB_URL", "")
     if not db_url:
         return None
     try:
@@ -1485,7 +1485,7 @@ def _db_conn():
 
 
 def _no_db_msg() -> str:
-    return '<div class="no-db">IGOR_HOME_DB_URL not set — DB unavailable</div>'
+    return '<div class="no-db">UU_HOME_DB_URL not set — DB unavailable</div>'
 
 
 def _load_device_identities() -> dict:
@@ -1521,7 +1521,7 @@ async def _api_device_mru(request: Request):
         bus = make_bus_connection()
         import psycopg2
         dsn = os.environ.get(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
         with psycopg2.connect(dsn) as conn:

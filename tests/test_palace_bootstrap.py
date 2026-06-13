@@ -1,7 +1,7 @@
 """Tests for palace_bootstrap.py — migration, seed, rollback.
 
 Uses a randomly-named test schema so tests never touch adc.palace production data.
-Requires a live Postgres at IGOR_HOME_DB_URL.
+Requires a live Postgres at UU_HOME_DB_URL.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import psycopg2.extras
 import pytest
 
 _PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 

@@ -91,14 +91,14 @@ class TestCheckBalance:
 
 class TestRecordSpend:
     def test_noop_without_db_url(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         # Should not raise even without psycopg2 available
         from devices.inference.budget_gate import record_spend
 
         record_spend("gpt-4o-mini", 100, 50)  # no exception
 
     def test_writes_to_infra_spend(self, monkeypatch):
-        monkeypatch.setenv("IGOR_HOME_DB_URL", "postgresql://test/test")
+        monkeypatch.setenv("UU_HOME_DB_URL", "postgresql://test/test")
         mock_cur = MagicMock()
         mock_conn = MagicMock()
         mock_conn.__enter__ = lambda s: s
@@ -203,14 +203,14 @@ class TestMaybeAlert:
     def test_no_alert_above_threshold(self, monkeypatch):
         self._clear_stamp()
         monkeypatch.setenv("OR_BUDGET_ALERT_USD", "15.0")
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from devices.inference.budget_gate import _maybe_alert
 
         _maybe_alert(20.0)  # above threshold — no alert, no exception
 
     def test_alert_fires_below_threshold(self, monkeypatch, tmp_path):
         monkeypatch.setenv("OR_BUDGET_ALERT_USD", "15.0")
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         import devices.inference.budget_gate as bg
 
         bg._ALERT_STAMP = tmp_path / "stamp"
@@ -221,7 +221,7 @@ class TestMaybeAlert:
 
     def test_alert_deduped_within_window(self, monkeypatch, tmp_path):
         monkeypatch.setenv("OR_BUDGET_ALERT_USD", "15.0")
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         import devices.inference.budget_gate as bg
 
         stamp = tmp_path / "stamp"
@@ -292,7 +292,7 @@ class TestBudgetToolsSchemas:
         assert budget_tools.dispatch("not_a_budget_tool", {}) is None
 
     def test_burn_rate_graceful_no_db(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from unseen_university.devices.librarian.tools.budget_tools import (
             _openrouter_burn_rate,
         )

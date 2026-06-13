@@ -1330,7 +1330,7 @@ def make_context(
 
     # T-inference-colocation-signal: is Postgres on same host as Ollama?
     # When true, local inference competes with DB for RAM → prefer cloud.
-    db_url = os.getenv("IGOR_HOME_DB_URL", "")
+    db_url = os.getenv("UU_HOME_DB_URL", "")
     db_colocated = (
         "localhost" in db_url
         or "127.0.0.1" in db_url

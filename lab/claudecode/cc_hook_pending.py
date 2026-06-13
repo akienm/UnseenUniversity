@@ -37,15 +37,15 @@ COMPACT_MAX_AGE_SECS = 600  # 10 minutes
 
 def _db_url():
     """Read Igor home DB URL from env or .env file."""
-    url = os.environ.get("IGOR_HOME_DB_URL")
+    url = os.environ.get("UU_HOME_DB_URL")
     if url:
         return url
     env_file = Path.home() / ".unseen_university" / "Igor-wild-0001" / ".env"
     if env_file.exists():
         for line in env_file.read_text().splitlines():
-            if line.startswith("IGOR_HOME_DB_URL="):
+            if line.startswith("UU_HOME_DB_URL="):
                 return line.split("=", 1)[1].strip().strip('"').strip("'")
-    raise RuntimeError("IGOR_HOME_DB_URL not found in environment or .env file")
+    raise RuntimeError("UU_HOME_DB_URL not found in environment or .env file")
 
 
 def _cursor_path(session_id: str) -> Path:

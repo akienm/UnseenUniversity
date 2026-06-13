@@ -90,7 +90,7 @@ def test_compress_hits_with_max_keep_larger_than_count():
 
 # ── Integration tests (real palace DB) ────────────────────────────────────────
 
-_DB_URL = os.environ.get("IGOR_HOME_DB_URL", "")
+_DB_URL = os.environ.get("UU_HOME_DB_URL", "")
 _SENTINEL = "cc-test-persistent-inquiry-xray-sentinel"
 
 
@@ -113,7 +113,7 @@ def test_topic():
             pass
 
 
-@pytest.mark.skipif(not _DB_URL, reason="IGOR_HOME_DB_URL not set")
+@pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 def test_become_knowledgeable_about_creates_inquiry(test_topic):
     result = become_knowledgeable_about(test_topic, db_url=_DB_URL)
     assert result["topic"] == test_topic
@@ -121,14 +121,14 @@ def test_become_knowledgeable_about_creates_inquiry(test_topic):
     assert result["path"].startswith("palace.library.inquiry.")
 
 
-@pytest.mark.skipif(not _DB_URL, reason="IGOR_HOME_DB_URL not set")
+@pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 def test_become_knowledgeable_about_is_idempotent(test_topic):
     r1 = become_knowledgeable_about(test_topic, db_url=_DB_URL)
     r2 = become_knowledgeable_about(test_topic, db_url=_DB_URL)
     assert r1["path"] == r2["path"]
 
 
-@pytest.mark.skipif(not _DB_URL, reason="IGOR_HOME_DB_URL not set")
+@pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 def test_add_hit_accumulates_with_differential_weights(test_topic):
     become_knowledgeable_about(test_topic, db_url=_DB_URL)
     add_hit(test_topic, "confirms existing idea", weight_type="confirmation", db_url=_DB_URL)
@@ -139,7 +139,7 @@ def test_add_hit_accumulates_with_differential_weights(test_topic):
     assert hits_by_type["confirmation"] < hits_by_type["gap_explanation"]
 
 
-@pytest.mark.skipif(not _DB_URL, reason="IGOR_HOME_DB_URL not set")
+@pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 def test_compress_produces_denser_model_than_full_hit_list(test_topic):
     become_knowledgeable_about(test_topic, db_url=_DB_URL)
     for i in range(6):
@@ -155,13 +155,13 @@ def test_compress_produces_denser_model_than_full_hit_list(test_topic):
     assert inq["current_model"] == model
 
 
-@pytest.mark.skipif(not _DB_URL, reason="IGOR_HOME_DB_URL not set")
+@pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 def test_get_inquiry_returns_none_for_unknown_topic():
     result = get_inquiry("this-topic-absolutely-does-not-exist-xray-99", db_url=_DB_URL)
     assert result is None
 
 
-@pytest.mark.skipif(not _DB_URL, reason="IGOR_HOME_DB_URL not set")
+@pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 def test_inquiry_survives_fresh_connection(test_topic):
     become_knowledgeable_about(test_topic, db_url=_DB_URL)
     add_hit(test_topic, "a hit that must persist across connections", weight_type="serendipitous", db_url=_DB_URL)
@@ -172,7 +172,7 @@ def test_inquiry_survives_fresh_connection(test_topic):
     assert any(h["text"] == "a hit that must persist across connections" for h in inq["hits"])
 
 
-@pytest.mark.skipif(not _DB_URL, reason="IGOR_HOME_DB_URL not set")
+@pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 def test_add_hit_raises_for_nonexistent_topic():
     with pytest.raises(ValueError, match="become_knowledgeable_about"):
         add_hit("topic-that-was-never-created-xray", "text", db_url=_DB_URL)

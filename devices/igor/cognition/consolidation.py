@@ -391,7 +391,7 @@ def _upsert_theme_palace(narrative: str, keywords: list, importance: float) -> N
     try:
         import os as _os
 
-        db_url = _os.getenv("IGOR_HOME_DB_URL")
+        db_url = _os.getenv("UU_HOME_DB_URL")
         if not db_url:
             return
         # slug from first keyword, max 40 chars, lowercase, alphanum+dash only

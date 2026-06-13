@@ -1,6 +1,6 @@
 """T-mcp-db-query-capability: db_query + db_dispatch MCP handler tests.
 
-Integration tests against a real Postgres DB. Requires IGOR_HOME_DB_URL.
+Integration tests against a real Postgres DB. Requires UU_HOME_DB_URL.
 
 Updated for T-igor-mcp-delete: imports from Librarian db_tools instead of igor_mcp.
 """
@@ -25,8 +25,8 @@ sys.path.insert(
 )
 
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("IGOR_HOME_DB_URL"),
-    reason="IGOR_HOME_DB_URL not set",
+    not os.environ.get("UU_HOME_DB_URL"),
+    reason="UU_HOME_DB_URL not set",
 )
 
 from unseen_university.devices.librarian.tools.db_tools import (  # noqa: E402
@@ -82,7 +82,7 @@ class TestDbDispatch:
         """Create a temp table for write tests, drop on teardown."""
         import psycopg2
 
-        db_url = os.environ["IGOR_HOME_DB_URL"]
+        db_url = os.environ["UU_HOME_DB_URL"]
         conn = psycopg2.connect(db_url)
         conn.autocommit = True
         cur = conn.cursor()

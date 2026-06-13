@@ -144,7 +144,7 @@ def _db_conn():
     """Connect to clan.memories storage."""
     import psycopg2
 
-    return psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+    return psycopg2.connect(os.environ["UU_HOME_DB_URL"])
 
 
 def _narrative_for(t: dict) -> str:
@@ -662,7 +662,7 @@ def _close_igor_goal(ticket_id: str) -> None:
     try:
         import psycopg2
 
-        conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+        conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute(

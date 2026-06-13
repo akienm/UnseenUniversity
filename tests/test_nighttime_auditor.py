@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 os.environ.setdefault(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
@@ -17,7 +17,7 @@ def _db_reachable() -> bool:
     try:
         import psycopg2
 
-        conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"], connect_timeout=2)
+        conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"], connect_timeout=2)
         conn.close()
         return True
     except Exception:

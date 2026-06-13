@@ -14,12 +14,12 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Avoid importing the full cluster_router at module load (it pulls in
-# machine_manager which requires IGOR_HOME_DB_URL). We stub just enough
+# machine_manager which requires UU_HOME_DB_URL). We stub just enough
 # to exercise the capacity layer.
 import os
 
 os.environ.setdefault(
-    "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 
 from devices.igor.cognition.cluster_router import (

@@ -86,7 +86,7 @@ class EvaluatorDevice(BaseDevice):
     def requirements(self) -> dict:
         return {
             "deps": ["psycopg2"],
-            "system": ["IGOR_HOME_DB_URL env var", "inference device reachable"],
+            "system": ["UU_HOME_DB_URL env var", "inference device reachable"],
         }
 
     def capabilities(self) -> dict:
@@ -123,14 +123,14 @@ class EvaluatorDevice(BaseDevice):
                 "checked_at": _now(),
             }
         db_url = (
-            os.environ.get("IGOR_HOME_DB_URL", "")
+            os.environ.get("UU_HOME_DB_URL", "")
             if self._db_url is None
             else self._db_url
         )
         status = "healthy" if db_url else "degraded"
         return {
             "status": status,
-            "detail": "db url present" if db_url else "IGOR_HOME_DB_URL not set",
+            "detail": "db url present" if db_url else "UU_HOME_DB_URL not set",
             "checked_at": _now(),
         }
 
@@ -175,9 +175,9 @@ class EvaluatorDevice(BaseDevice):
         return self._inference
 
     def _get_db_url(self) -> str:
-        url = self._db_url or os.environ.get("IGOR_HOME_DB_URL", "")
+        url = self._db_url or os.environ.get("UU_HOME_DB_URL", "")
         if not url:
-            raise RuntimeError("IGOR_HOME_DB_URL not set — evaluator requires a DB")
+            raise RuntimeError("UU_HOME_DB_URL not set — evaluator requires a DB")
         return url
 
     def _db_connect(self):

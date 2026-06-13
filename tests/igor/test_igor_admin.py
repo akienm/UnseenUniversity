@@ -2,7 +2,7 @@
 tests/test_igor_admin.py — Integration tests for igor-admin CLI + api.py.
 
 No mocks — real Postgres required.
-Set IGOR_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
+Set UU_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
 
 Tests:
 1. igor-admin ticket list  — returns non-empty list, exits 0
@@ -38,10 +38,10 @@ CC_QUEUE = Path(_spec.origin) if (_spec and _spec.origin) else CC_DIR / "cc_queu
 del _ilu, _spec
 
 DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 
-ENV = {**os.environ, "IGOR_HOME_DB_URL": DB_URL}
+ENV = {**os.environ, "UU_HOME_DB_URL": DB_URL}
 
 
 def _run(cmd: list, **kwargs):

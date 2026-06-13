@@ -19,7 +19,7 @@ from typing import Iterator
 log = logging.getLogger(__name__)
 
 _DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 _CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "librarian.yaml"
 _CHUNK_SIZE = int(os.environ.get("LIBRARIAN_CHUNK_SIZE", "800"))

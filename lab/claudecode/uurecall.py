@@ -194,9 +194,9 @@ def _palace_query(cur, table: str, tokens: list[str], cap: int) -> list:
 def _search_palace(query: str) -> None:
     """Literal token-AND search across Igor memory_palace + adc.palace."""
     _divider("Palace nodes")
-    db_url = os.environ.get("IGOR_HOME_DB_URL")
+    db_url = os.environ.get("UU_HOME_DB_URL")
     if not db_url:
-        print("  (IGOR_HOME_DB_URL not set — skipping)")
+        print("  (UU_HOME_DB_URL not set — skipping)")
         return
     try:
         import psycopg2

@@ -39,7 +39,7 @@ _UU_ROOT = Path(__file__).resolve().parents[2]
 _CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
 _PYTHON = sys.executable
 _DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 
 # Terminal ticket statuses that mean "the step is done"
@@ -169,7 +169,7 @@ def _dispatch_step(step_id: str, ticket_id: str, worker: str, workers_cfg: dict)
         capture_output=True,
         text=True,
         timeout=10,
-        env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+        env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
     )
     if r.returncode != 0:
         log.warning("Workflow: set-worker %s failed for %s/%s: %s", worker_name, step_id, ticket_id, r.stderr[:100])

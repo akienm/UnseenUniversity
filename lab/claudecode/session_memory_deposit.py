@@ -23,7 +23,7 @@ from pathlib import Path
 import psycopg2
 
 _IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
-_DB_URL = os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+_DB_URL = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 _MAX_CONTENT = 4000
 
 

@@ -18,7 +18,7 @@ Basket contract:
 
 Usage:
     cd ~/TheIgors && source venv/bin/activate
-    IGOR_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 \\
+    UU_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 \\
         python claudecode/seed_layer4_read_codebase.py
 
 Verify:
@@ -36,7 +36,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-DB_URL = os.environ["IGOR_HOME_DB_URL"]
+DB_URL = os.environ["UU_HOME_DB_URL"]
 
 TEMPLATE_ID = "tpl-layer4-read-codebase"
 

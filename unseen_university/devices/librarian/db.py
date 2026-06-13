@@ -16,7 +16,7 @@ import psycopg2.extensions
 import psycopg2.pool
 
 _PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 

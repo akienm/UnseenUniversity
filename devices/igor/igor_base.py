@@ -246,7 +246,7 @@ class IgorBase(_BASE):  # type: ignore[valid-type,misc]
 
             import psycopg2
 
-            _db_url = _os.getenv("IGOR_HOME_DB_URL") or str(paths().home_db_url)
+            _db_url = _os.getenv("UU_HOME_DB_URL") or str(paths().home_db_url)
             if _db_url:
                 _hash = hashlib.md5(
                     prompt.encode("utf-8", errors="replace")

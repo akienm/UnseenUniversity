@@ -7,7 +7,7 @@ import os
 import pytest
 
 os.environ.setdefault(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
@@ -16,7 +16,7 @@ def _db_reachable() -> bool:
     try:
         import psycopg2
 
-        conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"], connect_timeout=2)
+        conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"], connect_timeout=2)
         conn.close()
         return True
     except Exception:
@@ -59,7 +59,7 @@ class TestShellExec:
 
         shell_exec("echo action_log_test_marker")
 
-        conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+        conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(

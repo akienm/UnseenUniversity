@@ -2,7 +2,7 @@
 Integration tests for devices/inference/budget_ledger.py.
 
 Uses the real Postgres test schema (test_clan_<ts>) created by tests/igor/conftest.py.
-Requires IGOR_HOME_DB_URL; skipped gracefully when DB is absent.
+Requires UU_HOME_DB_URL; skipped gracefully when DB is absent.
 
 Completion criteria verified:
   - After 3 inference calls, budget_summary(agent_id='igor') returns correct token
@@ -22,8 +22,8 @@ import pytest
 
 
 def _db_connectable() -> bool:
-    """Return True only when IGOR_HOME_DB_URL is set AND a connection actually succeeds."""
-    db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+    """Return True only when UU_HOME_DB_URL is set AND a connection actually succeeds."""
+    db_url = os.environ.get("UU_HOME_DB_URL", "")
     if not db_url:
         return False
     try:
@@ -36,7 +36,7 @@ def _db_connectable() -> bool:
         return False
 
 
-DB_AVAILABLE = bool(os.environ.get("IGOR_HOME_DB_URL"))
+DB_AVAILABLE = bool(os.environ.get("UU_HOME_DB_URL"))
 
 
 @pytest.fixture
@@ -70,37 +70,37 @@ def _debit(agent_id, session_id, provider, cost_usd, tokens=(10, 5), model="gpt-
 
 class TestNoDB:
     def test_debit_noop(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         _debit("igor", "s1", "openrouter", 0.001)  # must not raise
 
     def test_budget_summary_empty(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from devices.inference.budget_ledger import budget_summary
 
         assert budget_summary("igor") == []
 
     def test_budget_limit_set_false(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from devices.inference.budget_ledger import budget_limit_set
 
         assert budget_limit_set("igor", "session", 5.0) is False
 
     def test_budget_remaining_safe_dict(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from devices.inference.budget_ledger import budget_remaining
 
         r = budget_remaining("igor", "s1")
         assert r["remaining_usd"] is None
 
     def test_check_session_limit_noop_for_ollama(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from devices.inference.budget_ledger import check_session_limit
 
         ok, _ = check_session_limit("igor", "s1", "ollama")
         assert ok
 
     def test_check_session_limit_failopen_for_or(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from devices.inference.budget_ledger import check_session_limit
 
         ok, _ = check_session_limit("igor", "s1", "openrouter")
@@ -127,7 +127,7 @@ class TestValidation:
 # ── integration: real DB ──────────────────────────────────────────────────────
 
 
-@pytest.mark.skipif(not DB_AVAILABLE, reason="IGOR_HOME_DB_URL not set")
+@pytest.mark.skipif(not DB_AVAILABLE, reason="UU_HOME_DB_URL not set")
 class TestLedgerIntegration:
     """Real SQL against clan schema. Skips per-test when DB pool is exhausted."""
 
@@ -433,7 +433,7 @@ class TestBudgetLedgerMCPSchemas:
         assert "budget_remaining" in names
 
     def test_dispatch_budget_summary_no_db(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from unseen_university.devices.librarian import tools
 
         result = tools.dispatch("budget_summary", {"agent_id": "igor"})
@@ -441,7 +441,7 @@ class TestBudgetLedgerMCPSchemas:
         assert "No ledger entries" in result or "error" in result.lower()
 
     def test_dispatch_budget_remaining_no_db(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from unseen_university.devices.librarian import tools
 
         result = tools.dispatch(
@@ -451,7 +451,7 @@ class TestBudgetLedgerMCPSchemas:
         assert "No session limit" in result or "error" in result.lower()
 
     def test_dispatch_budget_limit_set_no_db(self, monkeypatch):
-        monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+        monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         from unseen_university.devices.librarian import tools
 
         result = tools.dispatch(

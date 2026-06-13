@@ -7,7 +7,7 @@ to the swarm home and pulls new/updated memories from it.
 
 Gate: IGOR_MEMORY_SYNC_ENABLED=true  (default false)
 Env:  IGOR_SWARM_DB     — Postgres URL for the swarm home (akiendelllinux)
-      IGOR_HOME_DB_URL  — this instance's local Postgres
+      UU_HOME_DB_URL  — this instance's local Postgres
 
 Instance self-registration:
   On every sync, this instance upserts a SWARM_{instance_id} memory node
@@ -232,13 +232,13 @@ def sync_memories(full: str = "false") -> str:
         return "Memory sync gated off (IGOR_MEMORY_SYNC_ENABLED != true)."
 
     swarm_url = os.getenv("IGOR_SWARM_DB", "")
-    home_url = os.getenv("IGOR_HOME_DB_URL", "")
+    home_url = os.getenv("UU_HOME_DB_URL", "")
     instance_id = os.getenv("IGOR_INSTANCE_ID", "wild-0001")
 
     if not swarm_url:
         return "IGOR_SWARM_DB not set — no swarm home configured yet."
     if not home_url:
-        return "IGOR_HOME_DB_URL not set."
+        return "UU_HOME_DB_URL not set."
 
     # On swarm home itself, swarm_url == home_url — skip (no-op)
     if swarm_url.rstrip("/") == home_url.rstrip("/"):

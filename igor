@@ -71,7 +71,7 @@ def _fresh_install_wizard() -> str:
 
     if db_url:
         cfg_path = instance_dir / "igor.cfg"
-        cfg_path.write_text(f"[igor]\nIGOR_HOME_DB_URL={db_url}\n", encoding="utf-8")
+        cfg_path.write_text(f"[igor]\nUU_HOME_DB_URL={db_url}\n", encoding="utf-8")
         print(f"igor: config written to {cfg_path}")
 
     print(f"igor: instance '{name}' created at {instance_dir}")

@@ -202,8 +202,8 @@ def _cmd_contrib(args: list[str]) -> None:
 
     if subcmd == "scan":
         db_url = os.environ.get(
-            "IGOR_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "UU_HOME_DB_URL",
+            os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
         )
         staged = scan(db_url=db_url)
         if staged:

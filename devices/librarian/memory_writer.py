@@ -129,7 +129,7 @@ def write_memory(
         extra_tags:   Caller-supplied tags merged with inferred tags.
         payloads:     Typed payloads dict; EmbeddingPayload added automatically.
         metadata:     Extra metadata fields merged into the DB row.
-        db_url:       PostgreSQL URL; falls back to IGOR_HOME_DB_URL env var.
+        db_url:       PostgreSQL URL; falls back to UU_HOME_DB_URL env var.
         force_fallback: Use hash embeddings and keyword tags (testing).
 
     Returns:
@@ -176,7 +176,7 @@ def write_memory(
 
     # ── 5. Write to DB ────────────────────────────────────────────────────────
     # db_url=None → use env var; db_url="" → no DB (test mode)
-    url = os.environ.get("IGOR_HOME_DB_URL", "") if db_url is None else db_url
+    url = os.environ.get("UU_HOME_DB_URL", "") if db_url is None else db_url
     stored_at = datetime.now(timezone.utc).isoformat()
 
     if url:

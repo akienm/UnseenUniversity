@@ -72,8 +72,8 @@ _CHANNEL_DIR = _RUNTIME_ROOT / "cc_channel"
 _MESSAGES_FILE = _CHANNEL_DIR / "messages.jsonl"
 _SESSION_NAME = os.getenv("CC_SESSION_NAME", f"cc-{os.getpid()}")
 
-# Postgres optional — use if IGOR_HOME_DB_URL set and psycopg2 available
-_PG_URL = os.getenv("IGOR_HOME_DB_URL", "") or os.getenv("IGOR_DB_URL", "")
+# Postgres optional — use if UU_HOME_DB_URL set and psycopg2 available
+_PG_URL = os.getenv("UU_HOME_DB_URL", "") or os.getenv("IGOR_DB_URL", "")
 try:
     if _PG_URL:
         import psycopg2 as _psycopg2

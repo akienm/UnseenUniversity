@@ -119,7 +119,7 @@ _SCHEMA_INDEXES = [
 def _conn():
     import psycopg2
 
-    return psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+    return psycopg2.connect(os.environ["UU_HOME_DB_URL"])
 
 
 def _now_iso() -> str:

@@ -2,7 +2,7 @@
 # igor-env-check.sh — Claude Code SessionStart hook.
 #
 # Validates that the Igor Postgres instance is reachable before the session
-# begins. Delegates to `igor-admin env --check` (which asserts IGOR_HOME_DB_URL
+# begins. Delegates to `igor-admin env --check` (which asserts UU_HOME_DB_URL
 # is set AND runs a trivial SELECT 1 against the DB).
 #
 # Non-fatal: always exits 0 so CC can still start even if the DB is down. The

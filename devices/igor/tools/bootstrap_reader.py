@@ -86,7 +86,7 @@ def start_reading_bootstrap(config: str = "") -> str:
     try:
         import psycopg2
 
-        _db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+        _db_url = os.environ.get("UU_HOME_DB_URL", "")
         if _db_url:
             conn = psycopg2.connect(_db_url)
             cur = conn.cursor()

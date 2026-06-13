@@ -29,7 +29,7 @@ _REPORT_PATH = (
     Path(os.environ.get("GRANNY_HOME", str(Path.home() / ".granny")))
     / "outcome_report.json"
 )
-_PG_URL = os.environ.get("IGOR_HOME_DB_URL", "")
+_PG_URL = os.environ.get("UU_HOME_DB_URL", "")
 
 # Signals that represent the advisor-loop perspective (stored in advisor_signal field).
 _ADVISOR_SIGNALS = {"REPROMPT", "UPGRADE", "BLOCKED", "CONFUSED", "ESCALATE"}

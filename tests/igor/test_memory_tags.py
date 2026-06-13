@@ -72,8 +72,8 @@ class TestBuildTagTree:
 
 def _cortex():
     """Build a cortex against the configured test DB. Skip if no URL."""
-    if not os.getenv("IGOR_HOME_DB_URL"):
-        pytest.skip("IGOR_HOME_DB_URL not set; cortex DB tests require Postgres")
+    if not os.getenv("UU_HOME_DB_URL"):
+        pytest.skip("UU_HOME_DB_URL not set; cortex DB tests require Postgres")
     from pathlib import Path
 
     from devices.igor.memory.cortex import Cortex

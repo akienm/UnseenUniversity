@@ -169,7 +169,7 @@ class GrannyShim(BaseShim):
         try:
             import psycopg2  # type: ignore[import-untyped]
             db_url = os.environ.get(
-                "IGOR_HOME_DB_URL",
+                "UU_HOME_DB_URL",
                 "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
             )
             conn = psycopg2.connect(db_url, connect_timeout=5)

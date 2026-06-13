@@ -51,7 +51,7 @@ runaway log growth.
 ### 6. Test DB cleanup
 ```bash
 # Verify test isolation — no rows left in test schemas
-psql $IGOR_HOME_DB_URL -c "
+psql $UU_HOME_DB_URL -c "
   SELECT schemaname, tablename, n_live_tup
   FROM pg_stat_user_tables
   WHERE schemaname LIKE 'test_%'

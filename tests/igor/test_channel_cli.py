@@ -19,7 +19,7 @@ def _run(args, runtime_root):
     env = {
         "PATH": "/usr/bin:/bin",
         "IGOR_RUNTIME_ROOT": str(runtime_root),
-        "IGOR_HOME_DB_URL": "",
+        "UU_HOME_DB_URL": "",
         "IGOR_DB_URL": "",
     }
     return subprocess.run(

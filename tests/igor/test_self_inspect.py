@@ -13,8 +13,8 @@ import os
 import pytest
 
 pytestmark = pytest.mark.skipif(
-    not os.getenv("IGOR_HOME_DB_URL"),
-    reason="IGOR_HOME_DB_URL required for self_inspect DB reads",
+    not os.getenv("UU_HOME_DB_URL"),
+    reason="UU_HOME_DB_URL required for self_inspect DB reads",
 )
 
 

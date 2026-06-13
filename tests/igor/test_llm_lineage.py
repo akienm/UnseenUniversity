@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 _DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
@@ -77,7 +77,7 @@ class TestWriteLLMCallDB(unittest.TestCase):
     """_write_llm_call_db inserts a queryable row."""
 
     def setUp(self):
-        os.environ["IGOR_HOME_DB_URL"] = _DB_URL
+        os.environ["UU_HOME_DB_URL"] = _DB_URL
         # Use a unique hash so we can find our row
         self._hash = f"test_{int(time.time() * 1000)}"
 

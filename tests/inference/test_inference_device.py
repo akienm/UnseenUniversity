@@ -176,7 +176,7 @@ def test_recovery_unblocks(or_device):
 
 
 def test_capability_graph_query_returns_list_when_no_db(or_device, monkeypatch):
-    monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+    monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
     result = or_device.capability_graph_query()
     assert result == []
 

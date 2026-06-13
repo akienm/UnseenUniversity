@@ -55,7 +55,7 @@ class OrphanWatchdog:
             self._timeouts.update(timeout_overrides)
         self._p90_fn = p90_fn  # callable(size) -> float|None
         self._db_url = db_url or os.environ.get(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
 

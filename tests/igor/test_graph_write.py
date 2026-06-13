@@ -86,16 +86,16 @@ class TestStoreMemory(unittest.TestCase):
         self.assertIn("BLOCKED", result)
 
     @unittest.skipUnless(
-        os.getenv("IGOR_HOME_DB_URL"), "IGOR_HOME_DB_URL not set — Postgres required"
+        os.getenv("UU_HOME_DB_URL"), "UU_HOME_DB_URL not set — Postgres required"
     )
     def test_no_db_path_still_works(self):
-        """IGOR_DB_PATH is no longer required — Postgres handles it via IGOR_HOME_DB_URL."""
+        """IGOR_DB_PATH is no longer required — Postgres handles it via UU_HOME_DB_URL."""
         from devices.igor.tools.graph_write import store_memory
 
         if "IGOR_DB_PATH" in os.environ:
             del os.environ["IGOR_DB_PATH"]
         result = store_memory("No DB path needed", "FACTUAL")
-        # Should succeed (not error) when IGOR_HOME_DB_URL is set
+        # Should succeed (not error) when UU_HOME_DB_URL is set
         self.assertNotIn("ERROR", result)
 
     def test_valence_arousal_stored(self):

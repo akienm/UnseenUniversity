@@ -6,7 +6,7 @@ Wire into Claude Code settings as 'auditor':
         "auditor": {
           "command": "python",
           "args": ["-m", "devices.auditor.mcp_server"],
-          "env": {"IGOR_HOME_DB_URL": "postgresql://..."}
+          "env": {"UU_HOME_DB_URL": "postgresql://..."}
         }
       }
     }

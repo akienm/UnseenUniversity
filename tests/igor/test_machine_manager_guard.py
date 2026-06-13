@@ -1,4 +1,4 @@
-"""Test that machine_manager fails fast when IGOR_HOME_DB_URL is not set."""
+"""Test that machine_manager fails fast when UU_HOME_DB_URL is not set."""
 
 import importlib
 import os
@@ -14,23 +14,23 @@ class TestDbUrlGuard(unittest.TestCase):
         fires at first connect, not at import time. Test updated to
         match — import must succeed; calling _pg_connect must raise.
         """
-        saved = os.environ.pop("IGOR_HOME_DB_URL", None)
+        saved = os.environ.pop("UU_HOME_DB_URL", None)
         uc_mod_name = "devices.igor.tools.machine_manager"
         saved_uc_mod = sys.modules.pop(uc_mod_name, None)
         try:
             mod = importlib.import_module(uc_mod_name)
             with self.assertRaises(RuntimeError) as ctx:
                 mod._pg_connect()
-            self.assertIn("IGOR_HOME_DB_URL not set", str(ctx.exception))
+            self.assertIn("UU_HOME_DB_URL not set", str(ctx.exception))
         finally:
             if saved is not None:
-                os.environ["IGOR_HOME_DB_URL"] = saved
+                os.environ["UU_HOME_DB_URL"] = saved
             if saved_uc_mod is not None:
                 sys.modules[uc_mod_name] = saved_uc_mod
 
     def test_db_url_present_no_error(self):
-        """machine_manager imports cleanly when IGOR_HOME_DB_URL is set."""
-        os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://test@localhost/test")
+        """machine_manager imports cleanly when UU_HOME_DB_URL is set."""
+        os.environ.setdefault("UU_HOME_DB_URL", "postgresql://test@localhost/test")
         mod_name = "devices.igor.tools.machine_manager"
         saved_mod = sys.modules.pop(mod_name, None)
         try:

@@ -11,7 +11,7 @@ import psycopg2
 import psycopg2.extras
 
 _PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _CC_SEND_URL = os.environ.get("CC_SEND_URL", "http://localhost:8082/api/cc_send")

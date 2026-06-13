@@ -91,7 +91,7 @@ python3 ${CC_WORKFLOW_TOOLS}/github_sync.py push-queue
 ### 8. Sync docs DB
 ```bash
 DB=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
-IGOR_HOME_DB_URL=$DB python3 ${CC_WORKFLOW_TOOLS}/docs_sync.py sync
+UU_HOME_DB_URL=$DB python3 ${CC_WORKFLOW_TOOLS}/docs_sync.py sync
 ```
 
 ### 9. Update affected DSBs
@@ -136,7 +136,7 @@ python3 - <<'EOF'
 import os, json, psycopg2, psycopg2.extras
 from datetime import datetime, timezone
 
-pg = os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+pg = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 closing_date = os.environ.get("CLOSING_DATE", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
 datestamp = closing_date.replace("-", "")
 done_section = os.environ.get("DONE_SECTION", "(see slate)")
@@ -179,7 +179,7 @@ Also write a flat-file echo (file is secondary — palace is canonical):
 mkdir -p ${IGOR_HOME:-~/.unseen_university}/claudecode/palace_echo
 python3 -c "
 import os, psycopg2, psycopg2.extras
-pg = os.environ.get('IGOR_HOME_DB_URL','postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
+pg = os.environ.get('UU_HOME_DB_URL','postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
 datestamp = '${DATESTAMP}'
 conn = psycopg2.connect(pg)
 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:

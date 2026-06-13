@@ -36,7 +36,7 @@ def _connect(db_url: str):
 def run_once(db_url: str | None = None, *, force_fallback: bool = False) -> dict:
     """Process up to _BATCH pending queue entries. Returns stats dict."""
     db_url = db_url or os.environ.get(
-        "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+        "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
     )
     try:
         from devices.scraps.embedding_engine import embed
@@ -122,7 +122,7 @@ def run_once(db_url: str | None = None, *, force_fallback: bool = False) -> dict
 def queue_depth(db_url: str | None = None) -> int:
     """Return count of pending queue entries."""
     db_url = db_url or os.environ.get(
-        "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+        "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
     )
     conn = _connect(db_url)
     try:

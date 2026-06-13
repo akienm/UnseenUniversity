@@ -224,11 +224,11 @@ class InferenceDevice(BaseDevice):
         """Query model eval results from the capability graph.
 
         Returns rows from adc.model_eval_results, newest first.
-        Returns [] when IGOR_HOME_DB_URL is absent or the table doesn't exist yet.
+        Returns [] when UU_HOME_DB_URL is absent or the table doesn't exist yet.
         """
         from devices.inference.capability_graph import query_results
 
-        db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+        db_url = os.environ.get("UU_HOME_DB_URL", "")
         if not db_url:
             return []
         log.info(

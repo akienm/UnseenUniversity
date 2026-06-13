@@ -19,7 +19,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 _PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _LOG_ROOT = Path(os.environ.get("ADC_LOG_ROOT", "datacenter_logs"))

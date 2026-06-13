@@ -82,7 +82,7 @@ NODES = [
         "RULE_DB_ACCESS",
         "FACTUAL",
         "Database is PostgreSQL only — never sqlite3. "
-        "Read URL from IGOR_HOME_DB_URL env var. "
+        "Read URL from UU_HOME_DB_URL env var. "
         "Use jsonb_exists(metadata,'key') not metadata ? 'key' — db_proxy breaks ?. "
         "Use json.dumps(dict) for metadata — str(dict) produces invalid JSON. "
         "ON CONFLICT: qualify table: memories.activation_count not just activation_count.",

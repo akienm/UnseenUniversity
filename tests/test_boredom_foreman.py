@@ -27,9 +27,9 @@ def test_boredom_source_twm_push_includes_category():
 
 def test_proc_boredom_foreman_seeded_in_db():
     """PROC_BOREDOM_FOREMAN habit must exist in the DB with correct wiring."""
-    db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+    db_url = os.environ.get("UU_HOME_DB_URL", "")
     if not db_url:
-        pytest.skip("IGOR_HOME_DB_URL not set")
+        pytest.skip("UU_HOME_DB_URL not set")
 
     import psycopg2
 
@@ -61,9 +61,9 @@ def test_foreman_scan_exists_and_is_callable():
 
 def test_seed_script_is_idempotent():
     """seed_boredom_foreman.seed() must run twice without error (ON CONFLICT DO UPDATE)."""
-    db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+    db_url = os.environ.get("UU_HOME_DB_URL", "")
     if not db_url:
-        pytest.skip("IGOR_HOME_DB_URL not set")
+        pytest.skip("UU_HOME_DB_URL not set")
 
     from devices.igor.tools.seed_boredom_foreman import seed
     seed()  # first run

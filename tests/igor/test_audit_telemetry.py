@@ -103,9 +103,9 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import os
-        cls._db_url = os.environ.get("IGOR_HOME_DB_URL")
+        cls._db_url = os.environ.get("UU_HOME_DB_URL")
         if not cls._db_url:
-            raise unittest.SkipTest("IGOR_HOME_DB_URL not set")
+            raise unittest.SkipTest("UU_HOME_DB_URL not set")
 
     def test_emit_then_read_round_trip(self):
         from lab.claudecode.audit_telemetry import AuditRunRecord, AuditFinding, emit_run_record, read_runs
@@ -144,7 +144,7 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
         from lab.claudecode.audit_telemetry import emit_watch_next, read_watch_next
         import psycopg2, os
         # Write a note with ttl_days=0 directly
-        db_url = os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+        db_url = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
         sp = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
         conn = psycopg2.connect(db_url)
         conn.autocommit = True

@@ -73,9 +73,9 @@ def list_unvalidated_memories(limit: int = 10, **_) -> str:
         import psycopg2
         import os
 
-        db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+        db_url = os.environ.get("UU_HOME_DB_URL", "")
         if not db_url:
-            return "list_unvalidated_memories: IGOR_HOME_DB_URL not set"
+            return "list_unvalidated_memories: UU_HOME_DB_URL not set"
 
         conn = psycopg2.connect(db_url)
         cur = conn.cursor()

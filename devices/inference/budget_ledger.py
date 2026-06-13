@@ -14,7 +14,7 @@ Search path is read from IGOR_HOME_SEARCH_PATH (default: clan,infra,public),
 so test fixtures that set IGOR_HOME_SEARCH_PATH=test_clan_<ts>,infra,public
 redirect writes to the isolated test schema.
 
-No-op throughout when IGOR_HOME_DB_URL is absent.
+No-op throughout when UU_HOME_DB_URL is absent.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ _ENFORCING_PROVIDERS = {"openrouter"}
 
 
 def _db_url() -> str:
-    return os.environ.get("IGOR_HOME_DB_URL", "")
+    return os.environ.get("UU_HOME_DB_URL", "")
 
 
 def _search_path() -> str:

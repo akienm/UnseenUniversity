@@ -1,7 +1,7 @@
 """Tests for scripts/palace_cli.py — ls, read, search, edit, delete.
 
 Integration tests against a real Postgres DB (adc.palace in a test schema).
-Requires IGOR_HOME_DB_URL.
+Requires UU_HOME_DB_URL.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 _PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _PREFIX = f"palace.test_cli_{random.randint(10_000_000, 99_999_999)}"

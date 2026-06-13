@@ -44,7 +44,7 @@ class TestPGDatabaseProxySearchPath:
 class TestFactorySearchPaths:
     """Factory functions pass correct search_path to PGDatabaseProxy."""
 
-    @patch.dict("os.environ", {"IGOR_HOME_DB_URL": "postgresql://fake",
+    @patch.dict("os.environ", {"UU_HOME_DB_URL": "postgresql://fake",
                                "IGOR_HOME_SEARCH_PATH": "", "IGOR_LOCAL_SEARCH_PATH": ""})
     @patch("psycopg2.pool.ThreadedConnectionPool")
     def test_home_proxy_excludes_instance(self, mock_pool):
@@ -53,7 +53,7 @@ class TestFactorySearchPaths:
         proxy = make_home_proxy()
         assert proxy._search_path == "clan,infra,public"
 
-    @patch.dict("os.environ", {"IGOR_HOME_DB_URL": "postgresql://fake",
+    @patch.dict("os.environ", {"UU_HOME_DB_URL": "postgresql://fake",
                                "IGOR_HOME_SEARCH_PATH": "", "IGOR_LOCAL_SEARCH_PATH": ""})
     @patch("psycopg2.pool.ThreadedConnectionPool")
     def test_local_proxy_includes_all(self, mock_pool):
@@ -62,7 +62,7 @@ class TestFactorySearchPaths:
         proxy = make_local_proxy()
         assert proxy._search_path == "instance,clan,infra,public"
 
-    @patch.dict("os.environ", {"IGOR_HOME_DB_URL": "postgresql://fake"})
+    @patch.dict("os.environ", {"UU_HOME_DB_URL": "postgresql://fake"})
     @patch("psycopg2.pool.ThreadedConnectionPool")
     def test_infra_proxy_infra_only(self, mock_pool):
         from devices.igor.memory.db_proxy import make_infra_proxy
@@ -74,7 +74,7 @@ class TestFactorySearchPaths:
     def test_infra_proxy_returns_none_without_url(self):
         import os
 
-        os.environ.pop("IGOR_HOME_DB_URL", None)
+        os.environ.pop("UU_HOME_DB_URL", None)
         os.environ.pop("IGOR_DB_URL", None)
         from devices.igor.memory.db_proxy import make_infra_proxy
 

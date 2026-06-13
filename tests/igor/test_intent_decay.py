@@ -33,7 +33,7 @@ def _delete_test_goals():
     import psycopg2
 
     db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
+        "UU_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
     conn = psycopg2.connect(db_url)
@@ -74,7 +74,7 @@ def _seed_goal(
         metadata["origin_turn_id"] = "decayturn"
 
     db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
+        "UU_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
     conn = psycopg2.connect(db_url)

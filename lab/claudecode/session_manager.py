@@ -39,7 +39,7 @@ CURRENT_SESSION_FILE = (
     / "cc_channel"
     / "current_session.txt"
 )
-DB_URL = os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+DB_URL = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
 
 
 def current_session_id() -> str:
@@ -465,7 +465,7 @@ def main():
         return
 
     if not DB_URL:
-        print("ERROR: IGOR_HOME_DB_URL not set", file=sys.stderr)
+        print("ERROR: UU_HOME_DB_URL not set", file=sys.stderr)
         sys.exit(1)
 
     if cmd == "start":

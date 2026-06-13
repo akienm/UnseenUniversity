@@ -1,6 +1,6 @@
 """Tests for QueueDevice.
 
-Integration tests use real Postgres via IGOR_HOME_DB_URL. Unit tests mock the
+Integration tests use real Postgres via UU_HOME_DB_URL. Unit tests mock the
 DB connection to stay fast and isolated.
 """
 
@@ -196,9 +196,9 @@ class TestQueueNextMocked:
 
 # ── Integration tests (real Postgres) ────────────────────────────────────────
 
-_PG_URL = os.environ.get("IGOR_HOME_DB_URL", "")
+_PG_URL = os.environ.get("UU_HOME_DB_URL", "")
 _skip_integration = pytest.mark.skipif(
-    not _PG_URL, reason="IGOR_HOME_DB_URL not set — skipping integration tests"
+    not _PG_URL, reason="UU_HOME_DB_URL not set — skipping integration tests"
 )
 
 

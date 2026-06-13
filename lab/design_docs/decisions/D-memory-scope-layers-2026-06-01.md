@@ -32,10 +32,10 @@ C-agent-taxonomy — per-agent memory ownership maps to agent class (utility/spe
 | Tier | Factory | Env var | Postgres schema | Separate DB instance? | Status |
 |------|---------|---------|----------------|-----------------------|--------|
 | Global KB | `make_global_proxy()` | `UU_GLOBAL_KB_DB_URL` | `global,public` | Yes (standalone global KB DB) | Not yet provisioned |
-| Local/Instance | `make_local_proxy()` | `IGOR_LOCAL_DB_URL` → `IGOR_HOME_DB_URL` | `instance,clan,infra,public` | No (shares Igor DB today; own DB is the target) | In use via Igor fallback |
-| Agent | `make_agent_proxy()` | `{DEVICE_ID_UPPER}_AGENT_DB_URL` → `IGOR_HOME_DB_URL` | `clan,infra,public` | Yes (one DB per device) | In use for Igor via `IGOR_HOME_DB_URL` |
+| Local/Instance | `make_local_proxy()` | `IGOR_LOCAL_DB_URL` → `UU_HOME_DB_URL` | `instance,clan,infra,public` | No (shares Igor DB today; own DB is the target) | In use via Igor fallback |
+| Agent | `make_agent_proxy()` | `{DEVICE_ID_UPPER}_AGENT_DB_URL` → `UU_HOME_DB_URL` | `clan,infra,public` | Yes (one DB per device) | In use for Igor via `UU_HOME_DB_URL` |
 | Client | `make_client_proxy(client_id)` | `{CLIENT_ID_UPPER}_CLIENT_DB_URL` | `client,public` | Yes — **mandatory** | Not yet provisioned |
-| Infra (cross-agent) | `make_infra_proxy()` | `IGOR_HOME_DB_URL` | `infra,public` | No (sits on the Local DB long-term) | In use |
+| Infra (cross-agent) | `make_infra_proxy()` | `UU_HOME_DB_URL` | `infra,public` | No (sits on the Local DB long-term) | In use |
 
 `{DEVICE_ID_UPPER}` is `os.getenv("DEVICE_ID", "igor").upper().replace("-","_").replace(".","_")`.
 `{CLIENT_ID_UPPER}` is `client_id.upper().replace("-","_").replace(".","_")`.
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS global.bootstrap_patterns (
 | `instance.focus_quality_log` | Igor | Focus quality audit trail |
 | `instance.proposals` | Igor | Proposed actions awaiting review |
 
-**Target:** Separate Postgres instance from the Agent DB (`IGOR_LOCAL_DB_URL`). Currently shares `igor-wild-0001` via `IGOR_HOME_DB_URL` fallback.
+**Target:** Separate Postgres instance from the Agent DB (`IGOR_LOCAL_DB_URL`). Currently shares `igor-wild-0001` via `UU_HOME_DB_URL` fallback.
 
 ---
 
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS global.bootstrap_patterns (
 **Future schema name:** `agent` (for non-Igor devices). Igor continues using `clan` for backward compat; the `IGOR_HOME_SEARCH_PATH` env var controls this.
 
 **Env var convention:**
-- Igor: `IGOR_AGENT_DB_URL` (or `IGOR_HOME_DB_URL` as legacy fallback)
+- Igor: `IGOR_AGENT_DB_URL` (or `UU_HOME_DB_URL` as legacy fallback)
 - Granny: `GRANNY_WEATHERWAX_AGENT_DB_URL`
 - Each device only has its OWN URL in its environment — isolation by deployment, not by code gate.
 
@@ -209,13 +209,13 @@ Currently all tiers co-habit `igor-wild-0001` under separate schemas: `clan` (Ag
 ### Stage 0 — Connection config (this ticket)
 - Factory functions for all tiers are wired up in `db_proxy.py`.
 - Env vars defined for each tier (see connection map above).
-- No data moves; all tiers still resolve to `IGOR_HOME_DB_URL` via fallback.
+- No data moves; all tiers still resolve to `UU_HOME_DB_URL` via fallback.
 
 ### Stage 1 — Local/Instance separation
 - Provision a new Postgres instance for the Local tier.
 - Set `IGOR_LOCAL_DB_URL` to the new instance.
 - Migrate `instance.*` tables. Remove from `igor-wild-0001`.
-- `make_local_proxy()` stops falling back to `IGOR_HOME_DB_URL`.
+- `make_local_proxy()` stops falling back to `UU_HOME_DB_URL`.
 
 ### Stage 2 — Global KB bootstrap
 - Create the global KB git repo (T-global-kb-git-repo).
@@ -225,7 +225,7 @@ Currently all tiers co-habit `igor-wild-0001` under separate schemas: `clan` (Ag
 
 ### Stage 3 — Agent DB per device
 - Each new device gets its own `{DEVICE_ID}_AGENT_DB_URL` at provisioning time.
-- Igor continues using `IGOR_HOME_DB_URL` (no migration of clan.* needed short-term).
+- Igor continues using `UU_HOME_DB_URL` (no migration of clan.* needed short-term).
 - New devices (Granny, Vetinari, etc.) provision their own Agent DBs and never touch Igor's.
 
 ### Stage 4 — Client DB provisioning
@@ -238,6 +238,6 @@ Currently all tiers co-habit `igor-wild-0001` under separate schemas: `clan` (Ag
 Migration is complete when:
 - `igor-wild-0001` contains only `clan.*` (Igor Agent DB) + `infra.*` (cross-agent).
 - All other tiers point to separate instances.
-- `IGOR_LOCAL_DB_URL` ≠ `IGOR_HOME_DB_URL`.
+- `IGOR_LOCAL_DB_URL` ≠ `UU_HOME_DB_URL`.
 - `UU_GLOBAL_KB_DB_URL` is set and seeded.
 - At least one client DB is provisioned.

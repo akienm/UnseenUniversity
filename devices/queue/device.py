@@ -3,7 +3,7 @@
 All consumers (CC, Igor, Librarian) call queue_next(worker) → ticket | None
 via MCP instead of calling cc_queue.py directly.
 
-Backend: clan.memories WHERE parent_id='TICKETS_ROOT' in IGOR_HOME_DB_URL.
+Backend: clan.memories WHERE parent_id='TICKETS_ROOT' in UU_HOME_DB_URL.
 This device is stateless — all durable state lives in Postgres.
 
 There is no claim operation. queue_next() is atomic: it reads the next
@@ -41,10 +41,10 @@ class LegacyDirectClaimError(Exception):
 
 
 def _db_url() -> str:
-    url = os.environ.get("IGOR_HOME_DB_URL", "")
+    url = os.environ.get("UU_HOME_DB_URL", "")
     if not url:
         raise RuntimeError(
-            "IGOR_HOME_DB_URL not set — queue device cannot connect to ticket storage"
+            "UU_HOME_DB_URL not set — queue device cannot connect to ticket storage"
         )
     return url
 
@@ -286,7 +286,7 @@ class QueueDevice(BaseDevice):
         }
 
     def requirements(self) -> dict:
-        return {"deps": ["psycopg2", "IGOR_HOME_DB_URL"]}
+        return {"deps": ["psycopg2", "UU_HOME_DB_URL"]}
 
     def capabilities(self) -> dict:
         return {

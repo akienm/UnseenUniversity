@@ -36,7 +36,7 @@ def test_tool_result_verbatim_round_trip_via_twm_category():
     from devices.igor.memory.cortex import Cortex
 
     db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
+        "UU_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
     # Clean any prior test entries

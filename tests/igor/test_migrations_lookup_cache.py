@@ -92,12 +92,12 @@ def test_live_postgres_cache_populates(monkeypatch):
     """Integration: on the real Postgres DB, the cache picks up scope_backfill_123."""
     import os
 
-    if not os.environ.get("IGOR_HOME_DB_URL"):
-        pytest.skip("IGOR_HOME_DB_URL not set — skipping live DB check")
+    if not os.environ.get("UU_HOME_DB_URL"):
+        pytest.skip("UU_HOME_DB_URL not set — skipping live DB check")
 
     import psycopg2
 
-    conn_raw = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+    conn_raw = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
     try:
 
         class _ConnShim:

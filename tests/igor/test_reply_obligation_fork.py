@@ -247,7 +247,7 @@ def test_reply_obligation_habit_seeded():
     import json
 
     db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
+        "UU_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
     conn = psycopg2.connect(db_url)
@@ -286,7 +286,7 @@ def test_seed_script_is_idempotent():
     import os
 
     db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
+        "UU_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
 

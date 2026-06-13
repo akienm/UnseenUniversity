@@ -34,15 +34,15 @@ _log = get_logger(__name__)
 
 
 # T-machine-manager-lazy-db-url-check: guard read at first-connect time,
-# not at module-import time. Previously an unset IGOR_HOME_DB_URL blew up
+# not at module-import time. Previously an unset UU_HOME_DB_URL blew up
 # every import chain that reached here (test discovery, static analysis,
 # audit tools). Now the error fires only when something actually touches
 # the DB — same human-readable message, just at the right moment.
 def _db_url() -> str:
-    url = os.getenv("IGOR_HOME_DB_URL", "")
+    url = os.getenv("UU_HOME_DB_URL", "")
     if not url:
         raise RuntimeError(
-            "IGOR_HOME_DB_URL not set — machine_manager requires a Postgres connection. "
+            "UU_HOME_DB_URL not set — machine_manager requires a Postgres connection. "
             "Set this env var at system level (not user level on Windows)."
         )
     return url

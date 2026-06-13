@@ -76,7 +76,7 @@ def annotate_pending(cortex, batch_size: int = 2) -> int:
     try:
         import psycopg2
 
-        db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+        db_url = os.environ.get("UU_HOME_DB_URL", "")
         if not db_url:
             return 0
         conn = psycopg2.connect(db_url)

@@ -20,7 +20,7 @@ from bus.pg_bus import PgBus, _channel
 from unseen_university.bus.router import Router
 
 _DSN = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 

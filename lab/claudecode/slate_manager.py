@@ -17,7 +17,7 @@ Usage:
     python3 claudecode/slate_manager.py close-ticket <ticket_id>
     python3 claudecode/slate_manager.py advance       — close today's slate, shift remaining
 
-DB: IGOR_HOME_DB_URL (Postgres). Falls back to printing only if not set.
+DB: UU_HOME_DB_URL (Postgres). Falls back to printing only if not set.
 
 Ref: D130, D132, D304
 """
@@ -28,7 +28,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-DB_URL = os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+DB_URL = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
 
 _IGOR_HOME = Path(os.getenv("IGOR_HOME", Path.home() / ".unseen_university"))
 _SLATE_DIR = _IGOR_HOME / "claudecode"
@@ -396,7 +396,7 @@ def cmd_advance():
 
 def main():
     if not DB_URL:
-        print("ERROR: IGOR_HOME_DB_URL not set", file=sys.stderr)
+        print("ERROR: UU_HOME_DB_URL not set", file=sys.stderr)
         sys.exit(1)
 
     cmd = sys.argv[1] if len(sys.argv) > 1 else "show"

@@ -46,7 +46,7 @@ Always run setup once at batch start — per-ticket re-setup just burns time:
 ```bash
 cd ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}
 git pull --rebase origin main
-export IGOR_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
+export UU_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
 ```
 
 Print the ordered plan:

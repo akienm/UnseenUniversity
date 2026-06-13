@@ -106,9 +106,9 @@ def find_stalls(
 
 def _load_in_progress_tickets() -> list[dict]:
     """Query clan.memories for in_progress tickets. Returns [] on any error."""
-    db_url = os.environ.get("IGOR_HOME_DB_URL")
+    db_url = os.environ.get("UU_HOME_DB_URL")
     if not db_url:
-        print("[stall-check] IGOR_HOME_DB_URL not set — skipping", file=sys.stderr)
+        print("[stall-check] UU_HOME_DB_URL not set — skipping", file=sys.stderr)
         return []
     try:
         import psycopg2

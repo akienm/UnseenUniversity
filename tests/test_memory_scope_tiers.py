@@ -86,7 +86,7 @@ def test_make_global_proxy_default_search_path():
 def test_make_agent_proxy_raises_without_any_url():
     saved_device = os.environ.pop("DEVICE_ID", None)
     saved_agent = os.environ.pop("IGOR_AGENT_DB_URL", None)
-    saved_home = os.environ.pop("IGOR_HOME_DB_URL", None)
+    saved_home = os.environ.pop("UU_HOME_DB_URL", None)
     saved_db = os.environ.pop("IGOR_DB_URL", None)
     try:
         from unseen_university.db_proxy import make_agent_proxy
@@ -99,7 +99,7 @@ def test_make_agent_proxy_raises_without_any_url():
         if saved_agent is not None:
             os.environ["IGOR_AGENT_DB_URL"] = saved_agent
         if saved_home is not None:
-            os.environ["IGOR_HOME_DB_URL"] = saved_home
+            os.environ["UU_HOME_DB_URL"] = saved_home
         if saved_db is not None:
             os.environ["IGOR_DB_URL"] = saved_db
 
@@ -110,7 +110,7 @@ def test_make_agent_proxy_uses_device_id_env_var():
     FakePool, captured = _capture_pool_dsn()
 
     saved_device = os.environ.get("DEVICE_ID")
-    saved_home = os.environ.pop("IGOR_HOME_DB_URL", None)
+    saved_home = os.environ.pop("UU_HOME_DB_URL", None)
     os.environ["DEVICE_ID"] = "granny-weatherwax"
     os.environ["GRANNY_WEATHERWAX_AGENT_DB_URL"] = sentinel
     try:
@@ -126,7 +126,7 @@ def test_make_agent_proxy_uses_device_id_env_var():
         else:
             os.environ.pop("DEVICE_ID", None)
         if saved_home is not None:
-            os.environ["IGOR_HOME_DB_URL"] = saved_home
+            os.environ["UU_HOME_DB_URL"] = saved_home
 
 
 def test_make_agent_proxy_device_id_dot_normalization():
@@ -135,7 +135,7 @@ def test_make_agent_proxy_device_id_dot_normalization():
     FakePool, captured = _capture_pool_dsn()
 
     saved_device = os.environ.get("DEVICE_ID")
-    saved_home = os.environ.pop("IGOR_HOME_DB_URL", None)
+    saved_home = os.environ.pop("UU_HOME_DB_URL", None)
     os.environ["DEVICE_ID"] = "CC.0"
     os.environ["CC_0_AGENT_DB_URL"] = sentinel
     try:
@@ -151,17 +151,17 @@ def test_make_agent_proxy_device_id_dot_normalization():
         else:
             os.environ.pop("DEVICE_ID", None)
         if saved_home is not None:
-            os.environ["IGOR_HOME_DB_URL"] = saved_home
+            os.environ["UU_HOME_DB_URL"] = saved_home
 
 
 def test_make_agent_proxy_fallback_to_igor_home():
-    """When DEVICE_ID unset, falls back to IGOR_HOME_DB_URL for backward compat."""
+    """When DEVICE_ID unset, falls back to UU_HOME_DB_URL for backward compat."""
     sentinel = "postgresql://igor:x@localhost/igor-wild-0001"
     FakePool, captured = _capture_pool_dsn()
 
     saved_device = os.environ.pop("DEVICE_ID", None)
     saved_agent = os.environ.pop("IGOR_AGENT_DB_URL", None)
-    os.environ["IGOR_HOME_DB_URL"] = sentinel
+    os.environ["UU_HOME_DB_URL"] = sentinel
     try:
         with patch("psycopg2.pool.ThreadedConnectionPool", FakePool):
             from unseen_university.db_proxy import make_agent_proxy
@@ -169,7 +169,7 @@ def test_make_agent_proxy_fallback_to_igor_home():
             make_agent_proxy()
             assert captured["dsn"] == sentinel
     finally:
-        os.environ.pop("IGOR_HOME_DB_URL", None)
+        os.environ.pop("UU_HOME_DB_URL", None)
         if saved_device is not None:
             os.environ["DEVICE_ID"] = saved_device
         if saved_agent is not None:

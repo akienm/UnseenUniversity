@@ -42,9 +42,9 @@ class TestFindingsAPI:
         """Create the table if the migration hasn't run yet."""
         import os
 
-        db_url = os.environ.get("IGOR_HOME_DB_URL")
+        db_url = os.environ.get("UU_HOME_DB_URL")
         if not db_url:
-            pytest.skip("IGOR_HOME_DB_URL not set")
+            pytest.skip("UU_HOME_DB_URL not set")
         import psycopg2
 
         conn = psycopg2.connect(db_url)

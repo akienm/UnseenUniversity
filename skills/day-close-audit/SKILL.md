@@ -71,7 +71,7 @@ For each finding: is there a log call in the except block? If not → add one no
 ```bash
 cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import sys, os
-os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+os.environ.setdefault("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 )
 sys.path.insert(0, ".")
 from wild_igor.igor.tools.registry import registry
@@ -131,7 +131,7 @@ Safe to call on every day-close — silent when all logs are under 10MB.
 cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os, sys
 sys.path.insert(0, ".")
-os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+os.environ.setdefault("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 from wild_igor.igor.tools.budget import get_balance_trajectory
 print(get_balance_trajectory(window_hours=48))
 EOF
@@ -146,9 +146,9 @@ EOF
 ```bash
 cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os
-os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+os.environ.setdefault("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 import psycopg2
-conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
 cur = conn.cursor()
 cur.execute("""
     SELECT table_schema || '.' || table_name AS qname
@@ -249,7 +249,7 @@ Check against registry, NOT source text (string-search produces false positives)
 cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os, sys, json
 sys.path.insert(0, ".")
-os.environ.setdefault("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+os.environ.setdefault("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 )
 
 from wild_igor.igor.tools.registry import registry
@@ -257,7 +257,7 @@ import wild_igor.igor.tools  # loads all tools
 registered = set(registry._tools.keys())
 
 import psycopg2
-conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
 cur = conn.cursor()
 cur.execute("""
     SELECT id, metadata->>'code_ref'

@@ -73,7 +73,7 @@ def post_to_channel(
             WebSocket push, and you want to guarantee exactly one Postgres row
             regardless of the web server's ws_only support.
     """
-    db_url = os.environ.get("IGOR_HOME_DB_URL", "")
+    db_url = os.environ.get("UU_HOME_DB_URL", "")
     if not db_url:
         # No channel configured — skip silently. JSONL fallback is for Postgres-down,
         # not for "no DB URL set" (which is the test environment).

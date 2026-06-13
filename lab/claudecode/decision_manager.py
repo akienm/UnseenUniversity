@@ -33,7 +33,7 @@ DSB_FILE = (
     / "design_docs_for_igor"
     / "decisions_log.dsb"
 )
-DB_URL = os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+DB_URL = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ def cmd_add(args: list[str]):
         _upsert_docs_entry(decision_id, line)
         print(f"docs_entries upserted: {decision_id}")
     else:
-        print("  [skip] IGOR_HOME_DB_URL not set — DB upsert skipped")
+        print("  [skip] UU_HOME_DB_URL not set — DB upsert skipped")
 
     # 3. Flush to Igor memory (best-effort)
     _flush_to_igor(decision_id, description)
@@ -271,7 +271,7 @@ def cmd_resolve(decision_id: str, resolution: str, notes: str = ""):
 def cmd_open():
     """Show all unresolved decisions."""
     if not DB_URL:
-        print("ERROR: IGOR_HOME_DB_URL not set", file=sys.stderr)
+        print("ERROR: UU_HOME_DB_URL not set", file=sys.stderr)
         sys.exit(1)
     with _conn() as conn:
         with conn.cursor() as c:

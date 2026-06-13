@@ -38,7 +38,7 @@ _PROCESSED_FILE = Path(
 ) / "claudecode" / "bootstrap_processed_sessions.txt"
 
 DEFAULT_DB_URL = (
-    os.environ.get("IGOR_HOME_DB_URL")
+    os.environ.get("UU_HOME_DB_URL")
     or "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 DEFAULT_CHUNK_SIZE = 10

@@ -53,10 +53,10 @@ def _now() -> str:
 def _db_conn():
     import psycopg2
 
-    url = os.environ.get("IGOR_HOME_DB_URL", "")
+    url = os.environ.get("UU_HOME_DB_URL", "")
     if not url:
         raise RuntimeError(
-            "IGOR_HOME_DB_URL not set — auditor device cannot connect to findings storage"
+            "UU_HOME_DB_URL not set — auditor device cannot connect to findings storage"
         )
     return psycopg2.connect(url)
 
@@ -223,7 +223,7 @@ class AuditorDevice(BaseDevice):
 
     Check registry: lab/claudecode/audit_checks.json (forever + next_sweep lists).
     Check scripts: lab/claudecode/audit_check_*.py invoked as shell commands.
-    Finding history: adc.audit_findings in Postgres (IGOR_HOME_DB_URL).
+    Finding history: adc.audit_findings in Postgres (UU_HOME_DB_URL).
     Allowlist: adc.audit_allowlist in Postgres.
     """
 
@@ -473,7 +473,7 @@ class AuditorDevice(BaseDevice):
     def requirements(self) -> dict:
         return {
             "deps": ["psycopg2"],
-            "system": ["IGOR_HOME_DB_URL env var for findings storage"],
+            "system": ["UU_HOME_DB_URL env var for findings storage"],
         }
 
     def capabilities(self) -> dict:

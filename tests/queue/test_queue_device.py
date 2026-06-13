@@ -19,8 +19,8 @@ import pytest
 from devices.queue.device import QueueDevice, LegacyDirectClaimError, _gate_tripped
 from unseen_university.device import INTERFACE_VERSION
 
-_DB_URL = os.environ.get("IGOR_HOME_DB_URL", "")
-_skip_no_db = pytest.mark.skipif(not _DB_URL, reason="IGOR_HOME_DB_URL not set")
+_DB_URL = os.environ.get("UU_HOME_DB_URL", "")
+_skip_no_db = pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 
 
 @pytest.fixture

@@ -1,13 +1,13 @@
 """
 budget_gate.py — Lightweight OR budget gate for the ADC inference device.
 
-No TheIgors imports. Reads OPENROUTER_API_KEY and IGOR_HOME_DB_URL directly.
+No TheIgors imports. Reads OPENROUTER_API_KEY and UU_HOME_DB_URL directly.
 
 Two responsibilities:
   check_balance() — fetch real OR balance (cached 1h in-process).
                     Returns (ok: bool, message: str).
   record_spend()  — append a row to infra.spend for attribution + token counts.
-                    No-op when IGOR_HOME_DB_URL is absent or DB unreachable.
+                    No-op when UU_HOME_DB_URL is absent or DB unreachable.
 
 Balance snapshots are also written to infra.balance_history on each cache refresh
 so the burn-trajectory query (read by budget_tools.py) stays current.
@@ -43,7 +43,7 @@ def _or_api_key() -> str:
 
 
 def _home_db_url() -> str:
-    return os.environ.get("IGOR_HOME_DB_URL", "")
+    return os.environ.get("UU_HOME_DB_URL", "")
 
 
 def _fetch_balance_raw() -> dict | None:
@@ -171,7 +171,7 @@ def record_spend(
     Write an attribution row to infra.spend.
     usd=0.0 (exact cost unknown without model pricing tables).
     Token counts + model are in note for forensic analysis.
-    No-op when IGOR_HOME_DB_URL absent or DB unreachable.
+    No-op when UU_HOME_DB_URL absent or DB unreachable.
     """
     db_url = _home_db_url()
     if not db_url:

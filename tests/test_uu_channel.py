@@ -25,7 +25,7 @@ class TestPostToChannelPostgres:
         mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch.dict(os.environ, {"UU_HOME_DB_URL": "postgresql://test/db"}),
             patch("psycopg2.connect", return_value=mock_conn) as mock_connect,
             _NO_WS,
         ):
@@ -50,7 +50,7 @@ class TestPostToChannelPostgres:
         mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch.dict(os.environ, {"UU_HOME_DB_URL": "postgresql://test/db"}),
             patch("psycopg2.connect", return_value=mock_conn),
             _NO_WS,
         ):
@@ -62,12 +62,12 @@ class TestPostToChannelPostgres:
 
 class TestPostToChannelJsonlFallback:
     def test_no_db_url_is_silent_noop(self, tmp_path):
-        # No IGOR_HOME_DB_URL = no channel configured = silent no-op.
+        # No UU_HOME_DB_URL = no channel configured = silent no-op.
         # JSONL fallback is for Postgres-down, not missing config (test environment).
         fallback = tmp_path / "cc_channel" / "messages.jsonl"
         with (
             patch.dict(
-                os.environ, {"IGOR_HOME_DB_URL": "", "IGOR_HOME": str(tmp_path)}
+                os.environ, {"UU_HOME_DB_URL": "", "IGOR_HOME": str(tmp_path)}
             ),
             patch("unseen_university.channel._JSONL_FALLBACK", fallback),
             _NO_WS,
@@ -76,14 +76,14 @@ class TestPostToChannelJsonlFallback:
 
         assert (
             not fallback.exists()
-        ), "should NOT write JSONL when IGOR_HOME_DB_URL is absent"
+        ), "should NOT write JSONL when UU_HOME_DB_URL is absent"
 
     def test_falls_back_to_jsonl_when_postgres_fails(self, tmp_path):
         fallback = tmp_path / "cc_channel" / "messages.jsonl"
         with (
             patch.dict(
                 os.environ,
-                {"IGOR_HOME_DB_URL": "postgresql://bad/db", "IGOR_HOME": str(tmp_path)},
+                {"UU_HOME_DB_URL": "postgresql://bad/db", "IGOR_HOME": str(tmp_path)},
             ),
             patch("psycopg2.connect", side_effect=Exception("connection refused")),
             patch("unseen_university.channel._JSONL_FALLBACK", fallback),
@@ -97,7 +97,7 @@ class TestPostToChannelJsonlFallback:
 
     def test_never_raises_on_both_failures(self, tmp_path):
         with (
-            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://bad/db"}),
+            patch.dict(os.environ, {"UU_HOME_DB_URL": "postgresql://bad/db"}),
             patch("psycopg2.connect", side_effect=Exception("pg down")),
             patch(
                 "unseen_university.channel._JSONL_FALLBACK",
@@ -115,7 +115,7 @@ class TestPostToChannelJsonlFallback:
         with (
             patch.dict(
                 os.environ,
-                {"IGOR_HOME_DB_URL": "postgresql://bad/db", "IGOR_HOME": str(tmp_path)},
+                {"UU_HOME_DB_URL": "postgresql://bad/db", "IGOR_HOME": str(tmp_path)},
             ),
             patch("psycopg2.connect", side_effect=Exception("pg down")),
             patch("unseen_university.channel._JSONL_FALLBACK", fallback),
@@ -133,7 +133,7 @@ class TestPostToChannelJsonlFallback:
         mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
 
         with (
-            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch.dict(os.environ, {"UU_HOME_DB_URL": "postgresql://test/db"}),
             patch("psycopg2.connect", return_value=mock_conn),
             patch("unseen_university.channel._ws_push") as mock_ws,
         ):
@@ -155,7 +155,7 @@ class TestPushWsParam:
 
     def test_push_ws_false_skips_ws_push(self):
         with (
-            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch.dict(os.environ, {"UU_HOME_DB_URL": "postgresql://test/db"}),
             patch("psycopg2.connect", return_value=self._mock_conn()),
             patch("unseen_university.channel._ws_push") as mock_ws,
         ):
@@ -165,7 +165,7 @@ class TestPushWsParam:
 
     def test_push_ws_true_default_calls_ws_push(self):
         with (
-            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch.dict(os.environ, {"UU_HOME_DB_URL": "postgresql://test/db"}),
             patch("psycopg2.connect", return_value=self._mock_conn()),
             patch("unseen_university.channel._ws_push") as mock_ws,
         ):
@@ -176,7 +176,7 @@ class TestPushWsParam:
     def test_push_ws_false_still_writes_postgres(self):
         mock_conn = self._mock_conn()
         with (
-            patch.dict(os.environ, {"IGOR_HOME_DB_URL": "postgresql://test/db"}),
+            patch.dict(os.environ, {"UU_HOME_DB_URL": "postgresql://test/db"}),
             patch("psycopg2.connect", return_value=mock_conn) as mock_connect,
             patch("unseen_university.channel._ws_push"),
         ):

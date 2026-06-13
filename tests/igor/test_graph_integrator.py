@@ -18,7 +18,7 @@ from devices.igor.cognition.graph_integrator import (
 
 @pytest.fixture
 def cortex_test():
-    """Create a test cortex instance (Postgres via IGOR_HOME_DB_URL)."""
+    """Create a test cortex instance (Postgres via UU_HOME_DB_URL)."""
     cortex = Cortex(None)
     yield cortex
 
@@ -136,7 +136,7 @@ def test_integrate_graph_complete(cortex_test, monkeypatch):
     """Test complete graph integration."""
     content_id = "550e8400-e29b-41d4-a716-446655440000"
 
-    # No DB_PATH needed — Postgres is used via IGOR_HOME_DB_URL
+    # No DB_PATH needed — Postgres is used via UU_HOME_DB_URL
 
     # Mock get_blob_metadata at the blob_store module level
     def mock_get_blob_metadata(cid):

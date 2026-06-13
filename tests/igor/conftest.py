@@ -33,9 +33,9 @@ def pg_test_schema():
     so Cortex writes there instead of the live clan/instance schemas.
     Drops both schemas on teardown.
 
-    Skipped gracefully when IGOR_HOME_DB_URL is not available.
+    Skipped gracefully when UU_HOME_DB_URL is not available.
     """
-    db_url = os.environ.get("IGOR_HOME_DB_URL") or os.environ.get("IGOR_DB_URL")
+    db_url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_DB_URL")
     if not db_url:
         yield None
         return
@@ -172,7 +172,7 @@ def _test_data_lifecycle():
     try:
         import psycopg2
 
-        db_url = os.environ.get("IGOR_HOME_DB_URL") or os.environ.get("IGOR_DB_URL")
+        db_url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_DB_URL")
         if db_url:
             search_path = os.environ.get(
                 "IGOR_LOCAL_SEARCH_PATH", "instance,infra,public"

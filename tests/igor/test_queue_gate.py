@@ -29,7 +29,7 @@ import lab.claudecode.cc_queue as cc_queue
 
 
 def _db_url() -> str | None:
-    return os.environ.get("IGOR_HOME_DB_URL")
+    return os.environ.get("UU_HOME_DB_URL")
 
 
 def _seed_ticket(ticket_id: str, priority, worker: str | None = None) -> None:
@@ -95,7 +95,7 @@ def _make_mock_db_conn(ticket_id: str, metadata: dict):
     return mock_conn
 
 
-@unittest.skipUnless(_db_url(), "IGOR_HOME_DB_URL not set")
+@unittest.skipUnless(_db_url(), "UU_HOME_DB_URL not set")
 class TestCmdNextDB(unittest.TestCase):
     """cmd_next returns correct ticket from real DB."""
 
@@ -301,7 +301,7 @@ class TestCmdNextGateFile(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1)
 
 
-@unittest.skipUnless(_db_url(), "IGOR_HOME_DB_URL not set")
+@unittest.skipUnless(_db_url(), "UU_HOME_DB_URL not set")
 class TestCmdResetTimeoutDB(unittest.TestCase):
     """cmd_reset --timeout increments counter and trips gate at 3."""
 

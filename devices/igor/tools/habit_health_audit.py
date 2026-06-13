@@ -143,7 +143,7 @@ def _read_channel_messages(hours: int = 24) -> list[dict]:
     messages = []
 
     # Try Postgres first
-    db_url = os.environ.get("IGOR_HOME_DB_URL")
+    db_url = os.environ.get("UU_HOME_DB_URL")
     if db_url:
         try:
             import psycopg2

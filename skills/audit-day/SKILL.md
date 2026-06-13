@@ -101,11 +101,11 @@ don't call `cortex.twm_push()` = flag as TWM coverage gap.
 python3 -c "
 import os, sys
 sys.path.insert(0, '.')
-os.environ.setdefault('IGOR_HOME_DB_URL', 'postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
+os.environ.setdefault('UU_HOME_DB_URL', 'postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
 from wild_igor.igor.tools.registry import registry
 import wild_igor.igor.tools
 import psycopg2
-conn = psycopg2.connect(os.environ['IGOR_HOME_DB_URL'])
+conn = psycopg2.connect(os.environ['UU_HOME_DB_URL'])
 cur = conn.cursor()
 cur.execute(\"SELECT id, metadata->>'code_ref' FROM memories WHERE memory_type='PROCEDURAL' AND jsonb_exists(metadata, 'code_ref')\")
 rows = cur.fetchall()

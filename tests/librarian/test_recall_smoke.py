@@ -10,11 +10,11 @@ import pytest
 from devices.librarian.memory_writer import write_memory
 from devices.librarian.recall import recall
 
-_DB_URL = os.environ.get("IGOR_HOME_DB_URL", "")
+_DB_URL = os.environ.get("UU_HOME_DB_URL", "")
 
 pytestmark = pytest.mark.skipif(
     not _DB_URL,
-    reason="IGOR_HOME_DB_URL not set",
+    reason="UU_HOME_DB_URL not set",
 )
 
 _CANARY = "librarian recall smoke test canary xray integration validation sentinel"

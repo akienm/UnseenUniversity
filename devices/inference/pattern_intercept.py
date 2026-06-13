@@ -89,7 +89,7 @@ def find_pattern_match(
     """
     if db_url is None:
         db_url = os.environ.get(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
 
@@ -145,7 +145,7 @@ def record_hit(pattern_id: int, db_url: str | None = None) -> None:
     """Increment hit_count and update last_hit_at for a matched pattern."""
     if db_url is None:
         db_url = os.environ.get(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
     try:

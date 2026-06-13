@@ -2,7 +2,7 @@
 Tests for AuditorDevice.
 
 Unit tests mock the DB and subprocess calls to stay fast and isolated.
-Integration tests require IGOR_HOME_DB_URL and a live Postgres instance.
+Integration tests require UU_HOME_DB_URL and a live Postgres instance.
 """
 
 from __future__ import annotations
@@ -327,9 +327,9 @@ class TestCheckAdd:
         assert "already exists" in result["detail"]
 
 
-_PG_URL = os.environ.get("IGOR_HOME_DB_URL", "")
+_PG_URL = os.environ.get("UU_HOME_DB_URL", "")
 _skip_integration = pytest.mark.skipif(
-    not _PG_URL, reason="IGOR_HOME_DB_URL not set — skipping integration tests"
+    not _PG_URL, reason="UU_HOME_DB_URL not set — skipping integration tests"
 )
 
 
@@ -365,7 +365,7 @@ class TestAuditorIntegration:
         """Synthetic spike: insert rows to exceed 3x baseline, verify FAIL finding."""
         import psycopg2
 
-        db_url = os.environ.get("IGOR_HOME_DB_URL")
+        db_url = os.environ.get("UU_HOME_DB_URL")
         conn = psycopg2.connect(db_url)
         try:
             cur = conn.cursor()

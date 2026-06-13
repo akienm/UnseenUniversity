@@ -22,7 +22,7 @@ Usage:
     # Show one finding
     python3 lab/claudecode/findings.py show <id>
 
-Requires IGOR_HOME_DB_URL.
+Requires UU_HOME_DB_URL.
 """
 
 import argparse
@@ -31,7 +31,7 @@ import os
 import sys
 from datetime import datetime
 
-DB_URL = os.environ.get("IGOR_HOME_DB_URL") or os.environ.get("IGOR_DB_URL") or ""
+DB_URL = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_DB_URL") or ""
 
 
 def _conn():
@@ -181,7 +181,7 @@ def main():
     args = parser.parse_args()
 
     if not DB_URL:
-        print("IGOR_HOME_DB_URL not set")
+        print("UU_HOME_DB_URL not set")
         sys.exit(1)
 
     if args.cmd == "add":

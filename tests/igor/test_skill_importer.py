@@ -275,7 +275,7 @@ class TestImportSkill(unittest.TestCase):
         import os
 
         os.environ.setdefault(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
 
@@ -324,7 +324,7 @@ class TestImportSkill(unittest.TestCase):
         import psycopg2, json
 
         db_url = os.environ.get(
-            "IGOR_HOME_DB_URL",
+            "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
 

@@ -7,7 +7,7 @@ import os
 import pytest
 
 os.environ.setdefault(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
@@ -16,7 +16,7 @@ def _db_reachable() -> bool:
     try:
         import psycopg2
 
-        conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"], connect_timeout=2)
+        conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"], connect_timeout=2)
         conn.close()
         return True
     except Exception:
@@ -29,7 +29,7 @@ pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Igor DB not reachab
 def _read_ticket(ticket_id: str) -> dict:
     import psycopg2
 
-    conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+    conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
     try:
         with conn.cursor() as cur:
             cur.execute(
@@ -47,7 +47,7 @@ def _last_action_log(tool_name: str) -> dict:
     import psycopg2
     import psycopg2.extras
 
-    conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+    conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
@@ -65,7 +65,7 @@ def _delete_ticket(ticket_id: str) -> None:
     """Remove a test-created ticket from clan.memories so it doesn't pollute the live queue."""
     import psycopg2
 
-    conn = psycopg2.connect(os.environ["IGOR_HOME_DB_URL"])
+    conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
     try:
         with conn:
             with conn.cursor() as cur:

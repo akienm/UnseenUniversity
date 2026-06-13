@@ -1,7 +1,7 @@
 """
 Tests for devices/vault/store.py.
 
-Uses a real Postgres connection (IGOR_HOME_DB_URL) — vault schema must exist.
+Uses a real Postgres connection (UU_HOME_DB_URL) — vault schema must exist.
 Run migrations/m_vault.py first.
 
 Covers:
@@ -20,8 +20,8 @@ import pytest
 
 # Skip entire module if vault schema is not available
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
-    reason="IGOR_HOME_DB_URL not set",
+    not os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
+    reason="UU_HOME_DB_URL not set",
 )
 
 _TEST_OWNER = "_vault_test"

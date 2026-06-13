@@ -1,6 +1,6 @@
 """Tests for scripts/session_capture.py — JSONL extraction + palace write.
 
-Requires IGOR_HOME_DB_URL for DB integration tests.
+Requires UU_HOME_DB_URL for DB integration tests.
 """
 
 from __future__ import annotations
@@ -15,11 +15,11 @@ import psycopg2.extras
 import pytest
 
 _PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _SCHEMA_MARK = pytest.mark.skipif(
-    not os.environ.get("IGOR_HOME_DB_URL"), reason="IGOR_HOME_DB_URL not set"
+    not os.environ.get("UU_HOME_DB_URL"), reason="UU_HOME_DB_URL not set"
 )
 
 

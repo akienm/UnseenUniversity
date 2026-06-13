@@ -101,7 +101,7 @@ def test_verbatim_trace_push_and_retrieve_via_twm_category():
     from devices.igor.memory.cortex import Cortex
 
     db_url = os.environ.get(
-        "IGOR_HOME_DB_URL",
+        "UU_HOME_DB_URL",
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
     # Clean any prior test entries for a known sentinel thread

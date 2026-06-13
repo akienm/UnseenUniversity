@@ -175,6 +175,6 @@ def run_pipeline(db_url: str = None) -> dict:
     """Standalone entry point for overnight scheduler."""
     if db_url is None:
         import os
-        db_url = os.environ.get("IGOR_HOME_DB_URL") or "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+        db_url = os.environ.get("UU_HOME_DB_URL") or "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
     pipeline = LearningPipeline(db_url)
     return pipeline.run_once()

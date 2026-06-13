@@ -232,7 +232,7 @@ def test_equivalence_vs_wg_edges_production():
     """
     import psycopg2, os
 
-    _DB = os.environ.get("IGOR_HOME_DB_URL") or "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    _DB = os.environ.get("UU_HOME_DB_URL") or "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
     try:
         pg_conn = psycopg2.connect(_DB)
     except Exception:

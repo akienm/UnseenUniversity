@@ -53,16 +53,16 @@ class _BootstrapPathManager:
     def home_db_url(self) -> str:
         """Postgres connection string for this instance's home DB.
 
-        Reads IGOR_HOME_DB_URL from the environment. Raises RuntimeError
+        Reads UU_HOME_DB_URL from the environment. Raises RuntimeError
         if unset — this is the CP6 move for credential hygiene
         (T-hardcoded-instance-refs): never silently fall back to a
         baked-in default credential. The error includes guidance so
         callers know what to fix.
         """
-        url = os.environ.get("IGOR_HOME_DB_URL")
+        url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL")
         if not url:
             raise RuntimeError(
-                "IGOR_HOME_DB_URL environment variable not set. "
+                "UU_HOME_DB_URL environment variable not set. "
                 "Export it to the Postgres connection string for this "
                 "instance (e.g. "
                 "postgresql://igor:<password>@127.0.0.1/<instance-db>)."

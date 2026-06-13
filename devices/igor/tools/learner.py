@@ -1317,7 +1317,7 @@ def flag_top_gap(**_kwargs) -> str:
         import os as _os
         import psycopg2 as _pg
 
-        pg_url = _os.environ.get("IGOR_HOME_DB_URL", "") or _os.environ.get(
+        pg_url = _os.environ.get("UU_HOME_DB_URL", "") or _os.environ.get(
             "IGOR_DB_URL", ""
         )
         if pg_url:

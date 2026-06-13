@@ -53,7 +53,7 @@ log = logging.getLogger(__name__)
 _UU_ROOT = Path(__file__).resolve().parents[2]
 _CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
 _DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 _PYTHON = sys.executable
 _GRANNY_HOME = Path.home() / ".granny"
@@ -263,7 +263,7 @@ def _dispatch_akien(ticket: dict) -> bool:
         capture_output=True,
         text=True,
         timeout=10,
-        env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+        env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
     )
     if r.returncode != 0:
         log.warning("Granny: set-worker akien failed for %s: %s", tid, r.stderr[:100])
@@ -473,7 +473,7 @@ def _reset_stale_inprogress() -> int:
             capture_output=True,
             text=True,
             timeout=10,
-            env={**os.environ, "IGOR_HOME_DB_URL": _DB_URL},
+            env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
         )
         if r.returncode != 0:
             log.warning("Granny: stale-inprogress reset failed for %s: %s", tid, r.stderr[:80])

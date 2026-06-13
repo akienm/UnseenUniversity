@@ -20,7 +20,7 @@ from typing import List, Optional
 logger = logging.getLogger(__name__)
 
 _DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 _GIT_ROOT = Path(__file__).resolve().parents[3]
 

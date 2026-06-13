@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 DB_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
@@ -37,7 +37,7 @@ def _connect():
 
 @pytest.fixture
 def cortex():
-    os.environ.setdefault("IGOR_HOME_DB_URL", DB_URL)
+    os.environ.setdefault("UU_HOME_DB_URL", DB_URL)
     from devices.igor.memory.cortex import Cortex
 
     return Cortex(None)

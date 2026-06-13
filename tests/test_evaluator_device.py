@@ -1,7 +1,7 @@
 """Tests for devices/evaluator/device.py — EvaluatorDevice.
 
 Unit tests mock psycopg2 and InferenceDevice. Integration tests are gated on
-IGOR_HOME_DB_URL being set; they hit real Postgres and real inference.
+UU_HOME_DB_URL being set; they hit real Postgres and real inference.
 """
 
 from __future__ import annotations
@@ -17,9 +17,9 @@ from devices.evaluator.shim import EvaluatorShim
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-_PG_URL = os.environ.get("IGOR_HOME_DB_URL", "")
+_PG_URL = os.environ.get("UU_HOME_DB_URL", "")
 _SKIP_INTEGRATION = pytest.mark.skipif(
-    not _PG_URL, reason="IGOR_HOME_DB_URL not set — skipping integration tests"
+    not _PG_URL, reason="UU_HOME_DB_URL not set — skipping integration tests"
 )
 
 
@@ -124,11 +124,11 @@ def test_who_am_i_shape():
 
 
 def test_health_degraded_without_db_url(monkeypatch):
-    monkeypatch.delenv("IGOR_HOME_DB_URL", raising=False)
+    monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
     d = EvaluatorDevice()
     h = d.health()
     assert h["status"] == "degraded"
-    assert "IGOR_HOME_DB_URL" in h["detail"]
+    assert "UU_HOME_DB_URL" in h["detail"]
 
 
 def test_health_healthy_with_db_url():

@@ -1,7 +1,7 @@
 """Tests for scripts/palace_seed_decisions.py — parse + seed palace.decisions.*
 
 Uses a randomly-named test schema; never touches adc.palace production data.
-Requires IGOR_HOME_DB_URL.
+Requires UU_HOME_DB_URL.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import psycopg2.extras
 import pytest
 
 _PG_URL = os.environ.get(
-    "IGOR_HOME_DB_URL",
+    "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 _SCHEMA = f"test_decisions_{random.randint(10_000_000, 99_999_999)}"

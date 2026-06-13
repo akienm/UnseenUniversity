@@ -54,7 +54,7 @@ class TestPalaceEditAuth:
         from starlette.testclient import TestClient
 
         with patch.dict(os.environ, {"ADC_EDIT_TOKEN": "secret123"}):
-            os.environ.pop("IGOR_HOME_DB_URL", None)
+            os.environ.pop("UU_HOME_DB_URL", None)
             app = _make_app()
             with TestClient(app) as client:
                 resp = client.post(
