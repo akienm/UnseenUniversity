@@ -148,6 +148,14 @@ _DEFAULT_SCHEDULE: list[dict[str, Any]] = [
         "action_params": {},
         "enabled": True,
     },
+    {
+        "entry_id": "nightly_annotator",
+        "condition_type": "cron",
+        "condition_params": {"hour": 4, "minute": 30},  # 04:30 daily, after code sweep
+        "action_type": "run_annotator",
+        "action_params": {"mode": "nightly"},
+        "enabled": True,
+    },
 ]
 
 # World-interaction ticket tags that Nanny routes to external agents
@@ -418,6 +426,8 @@ class NannyOggDevice(BaseDevice):
                 self._run_code_sweep(params)
             elif action == "run_screenshot_capture":
                 self._run_screenshot_capture(params)
+            elif action == "run_annotator":
+                self._run_annotator(params)
 
             entry.last_fired = _now_iso()
             entry.fire_count += 1
@@ -662,6 +672,32 @@ class NannyOggDevice(BaseDevice):
         except Exception as e:
             self._errors.append(f"_run_code_sweep failed: {e}")
             self._log.error("_run_code_sweep failed: %s", e)
+
+    def _run_annotator(self, params: dict) -> None:
+        """Run the codebase annotator and post results to channel."""
+        try:
+            import os
+            from devices.classifier.annotator import run_annotator
+
+            db_url = os.environ.get(
+                "UU_HOME_DB_URL",
+                "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            )
+            mode = params.get("mode", "nightly")
+            result = run_annotator(db_url=db_url, mode=mode)
+            msg = (
+                f"ANNOTATOR_RESULT|mode={mode}|modules={result['modules']}|"
+                f"inserted={result['inserted']}|updated={result['updated']}|"
+                f"errors={result['errors']}"
+            )
+            self._post_to_channel("shared", msg)
+            self._log.info(
+                "annotator: mode=%s modules=%d inserted=%d updated=%d errors=%d",
+                mode, result["modules"], result["inserted"], result["updated"], result["errors"],
+            )
+        except Exception as e:
+            self._errors.append(f"_run_annotator failed: {e}")
+            self._log.error("_run_annotator failed: %s", e)
 
     def _run_screenshot_capture(self, params: dict) -> None:
         """Capture fascia screenshots for all online devices."""
