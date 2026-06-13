@@ -164,6 +164,22 @@ _DEFAULT_SCHEDULE: list[dict[str, Any]] = [
         "action_params": {},
         "enabled": True,
     },
+    {
+        "entry_id": "nightly_palace_updates",
+        "condition_type": "cron",
+        "condition_params": {"hour": 3, "minute": 15},  # 03:15 daily, after repo audit
+        "action_type": "run_palace_updates",
+        "action_params": {},
+        "enabled": True,
+    },
+    {
+        "entry_id": "nightly_context_prep",
+        "condition_type": "cron",
+        "condition_params": {"hour": 3, "minute": 30},  # 03:30 daily, after palace updates
+        "action_type": "run_context_prep",
+        "action_params": {},
+        "enabled": True,
+    },
 ]
 
 # World-interaction ticket tags that Nanny routes to external agents
@@ -438,6 +454,10 @@ class NannyOggDevice(BaseDevice):
                 self._run_annotator(params)
             elif action == "run_repo_audit":
                 self._run_repo_audit(params)
+            elif action == "run_palace_updates":
+                self._run_palace_updates(params)
+            elif action == "run_context_prep":
+                self._run_context_prep(params)
 
             entry.last_fired = _now_iso()
             entry.fire_count += 1
@@ -734,6 +754,46 @@ class NannyOggDevice(BaseDevice):
         except Exception as e:
             self._errors.append(f"_run_repo_audit failed: {e}")
             self._log.error("_run_repo_audit failed: %s", e)
+
+    def _run_palace_updates(self, params: dict) -> None:
+        """Run nightly palace update: decision nodes + session brief."""
+        try:
+            from datetime import timezone as _tz
+            from lab.claudecode.cc_nightly_palace_updates import run as _palace_run
+
+            date = datetime.now(_tz.utc).strftime("%Y-%m-%d")
+            summary = _palace_run(date=date, dry_run=False, all_docs=False)
+            self._post_to_channel(
+                "shared",
+                f"PALACE_UPDATE_RESULT|date={date}|decisions={summary['decisions_written']}|"
+                f"brief={'ok' if summary['session_brief_written'] else 'failed'}",
+            )
+            self._log.info(
+                "palace update: decisions=%d brief=%s",
+                summary["decisions_written"],
+                summary["session_brief_written"],
+            )
+        except Exception as e:
+            self._errors.append(f"_run_palace_updates failed: {e}")
+            self._log.error("_run_palace_updates failed: %s", e)
+
+    def _run_context_prep(self, params: dict) -> None:
+        """Run nightly context prep: write tomorrow's palace.sessions.DATE+1.brief."""
+        try:
+            from datetime import timezone as _tz
+            from lab.claudecode.cc_nightly_context_prep import run as _ctx_run
+
+            date = datetime.now(_tz.utc).strftime("%Y-%m-%d")
+            summary = _ctx_run(date=date, dry_run=False)
+            ok = summary.get("context_brief_written", False)
+            self._post_to_channel(
+                "shared",
+                f"CONTEXT_PREP_RESULT|date={date}|ok={'yes' if ok else 'no'}",
+            )
+            self._log.info("context prep: date=%s ok=%s", date, ok)
+        except Exception as e:
+            self._errors.append(f"_run_context_prep failed: {e}")
+            self._log.error("_run_context_prep failed: %s", e)
 
     def _run_screenshot_capture(self, params: dict) -> None:
         """Capture fascia screenshots for all online devices."""
