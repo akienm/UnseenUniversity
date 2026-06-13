@@ -185,6 +185,34 @@ class ToolLoop:
         source_billing_type: str = "usage_based"  # updated on first response
         inference_device = InferenceDevice()  # Cache once per run, not per turn
 
+        # Initialize Critic for advisory rule application and decision evaluation.
+        # _load_rules() is called in CriticDevice.__init__ — prior learning carries forward.
+        # Fail-open: if Critic unavailable, sprint continues unaffected.
+        critic = None
+        critic_judgments: list = []
+        try:
+            from devices.critic.device import CriticDevice
+            from devices.critic.agent import Decision as CriticDecision
+            critic = CriticDevice()
+            log.info("ToolLoop: Critic initialized for %s (%d prior rules)",
+                     ticket_id, len(critic._agent.export_rules()))
+        except Exception as exc:
+            log.debug("ToolLoop: critic init skipped (non-fatal): %s", exc)
+
+        def _critic_finalize() -> None:
+            """Analyze patterns + learn rules at sprint end. Non-fatal."""
+            if critic is None or not critic_judgments:
+                return
+            try:
+                analysis = critic._agent.analyze_pattern(critic_judgments)
+                critic.learn_from_critic(analysis)
+                log.info(
+                    "ToolLoop: critic_finalize|ticket=%s|judgments=%d|rules_saved=%d",
+                    ticket_id, len(critic_judgments), critic._agent.get_stats()["rules_learned"],
+                )
+            except Exception as exc:
+                log.debug("ToolLoop: critic_finalize failed (non-fatal): %s", exc)
+
         # Prepend builder report from orientation classifier (fail-open)
         builder_report_text = _orientation_prefix(ticket)
 
@@ -217,7 +245,7 @@ class ToolLoop:
                 response = inference_device.dispatch(req)
             except Exception as exc:
                 log.error("ToolLoop inference failed on turn %d: %s", turn + 1, exc)
-                return None
+                return None  # inference error — no critic finalize (no data)
 
             # On first response, lock in billing type and adjust turn cap accordingly.
             if turn == 0 and response.source_billing_type == "flat_rate":
@@ -238,6 +266,7 @@ class ToolLoop:
                         "ToolLoop: cost cap hit $%.4f/$%.2f on turn %d for %s",
                         running_cost, COST_CAP_USD, turn + 1, ticket_id,
                     )
+                    _critic_finalize()
                     return f"COST_EXCEEDED: ${running_cost:.2f} of ${COST_CAP_USD:.2f} cap — inference did not complete within cost constraint"
 
             tool_calls = response.tool_calls
@@ -276,6 +305,7 @@ class ToolLoop:
                     continue
                 log.info("ToolLoop: done on turn %d for %s envelope_status=%s",
                          turn + 1, ticket_id, (envelope or {}).get("status", "legacy_prose"))
+                _critic_finalize()
                 return response.text
 
             # Append the assistant message (content may be null on tool-call turns)
@@ -294,8 +324,38 @@ class ToolLoop:
                     args = json.loads(fn.get("arguments", "{}"))
                 except json.JSONDecodeError:
                     args = {}
+                # Advisory: apply prior critic rules before executing this tool call.
+                if critic is not None:
+                    try:
+                        ctx = {"decision_point": "tool_selection", "tool_name": name, "turn": turn + 1}
+                        rec = critic.get_recommendation(ctx)
+                        if rec:
+                            log.info(
+                                "ToolLoop: Critic advisory|ticket=%s|turn=%d|rule=%s|action=%s",
+                                ticket_id, turn + 1, rec["rule"], rec["action"][:80],
+                            )
+                    except Exception:
+                        pass
+
                 result = _execute_tool(name, args)
                 log.info("ToolLoop: %s → %d chars result", name, len(result))
+
+                # Evaluate this decision point — verdict logged at INFO in CriticAgent.
+                if critic is not None:
+                    try:
+                        decision = CriticDecision(
+                            ticket_id=ticket_id,
+                            turn_num=turn + 1,
+                            decision_point="tool_selection",
+                            choice=name,
+                            context={"ticket_id": ticket_id, "turn": turn + 1, "tool_args": args},
+                            tool_result=result[:200],
+                        )
+                        judgment = critic._agent.evaluate_decision(decision)
+                        critic_judgments.append(judgment)
+                    except Exception:
+                        pass
+
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tc_id,
@@ -305,6 +365,7 @@ class ToolLoop:
             turn += 1
 
         log.warning("ToolLoop: hit max turns (%d) for %s", effective_max_turns, ticket_id)
+        _critic_finalize()
         return json.dumps({
             "status": "error",
             "result": f"MAX_TURNS: hit {effective_max_turns} turns without terminal response",

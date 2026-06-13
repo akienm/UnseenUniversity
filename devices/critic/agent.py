@@ -210,12 +210,17 @@ class CriticAgent:
         ]
 
     def load_rules(self, rules_data: list[dict]) -> None:
-        """Restore rules from persisted JSON."""
+        """Restore rules from persisted JSON. Skips malformed entries."""
+        loaded = 0
         for r in rules_data:
-            self._rules.append(LearningRule(
-                pattern_name=r["pattern"],
-                condition=r["condition"],
-                action=r["action"],
-                confidence=r["confidence"],
-            ))
-        log.info("Critic: loaded %d rules", len(rules_data))
+            try:
+                self._rules.append(LearningRule(
+                    pattern_name=r["pattern"],
+                    condition=r["condition"],
+                    action=r["action"],
+                    confidence=r["confidence"],
+                ))
+                loaded += 1
+            except (KeyError, TypeError) as exc:
+                log.warning("Critic: skipping malformed rule entry: %s — %s", r, exc)
+        log.info("Critic: loaded %d rules (%d skipped)", loaded, len(rules_data) - loaded)
