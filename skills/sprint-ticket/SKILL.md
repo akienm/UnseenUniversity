@@ -193,6 +193,21 @@ git pull --rebase origin main && git push origin main
 ```
 Always let pre-commit hooks run. Push non-force to main.
 
+### 10.5. Refresh clan.code_index for committed files
+
+After push, re-index only the files touched in the sprint so the orientation
+classifier sees the new symbols immediately on the next ticket.
+
+```bash
+FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null)
+if [ -n "$FILES" ]; then
+  python3 ${CC_WORKFLOW_TOOLS}/code_indexer.py --files $FILES 2>&1 | tail -1 || true
+fi
+```
+
+Non-fatal — log and continue if the indexer fails or the DB is down.
+Skip silently when `HEAD~1` doesn't exist (first commit in repo).
+
 ### 11. Close ticket
 
 Always close with a one-line summary of what actually shipped:
