@@ -154,7 +154,7 @@ def launch_next_worker() -> str:
                         daemon_pid,
                     )
                     t["status"] = "sprint"
-                    t.pop("claimed_at", None)
+                    t.pop("dispatched_at", None)
 
         # Find next sprint-ready ticket (skip blocked/gated)
         pending = [t for t in tasks if t["status"] == "sprint"]

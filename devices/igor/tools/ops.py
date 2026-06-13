@@ -171,7 +171,7 @@ def queue_task(task_json: str) -> str:
         task.setdefault("status", "pending")
         task["created_by"] = "igor"
         task.setdefault("result", None)
-        task.setdefault("claimed_at", None)
+        task.setdefault("dispatched_at", None)
         task.setdefault("completed_at", None)
         tasks.append(task)
         _cc_queue.save_tasks(tasks)

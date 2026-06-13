@@ -158,7 +158,7 @@ class QueueDevice(BaseDevice):
                     return None
                 now = datetime.now(timezone.utc).isoformat()
                 t["status"] = "in_progress"
-                t["claimed_at"] = now
+                t["dispatched_at"] = now
                 import psycopg2.extras
 
                 cur.execute(

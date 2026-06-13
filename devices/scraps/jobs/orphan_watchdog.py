@@ -70,7 +70,7 @@ class OrphanWatchdog:
                 cur.execute("""SELECT metadata FROM clan.memories
                        WHERE metadata->>'kind' = 'ticket'
                          AND metadata->>'status' = 'in_progress'
-                       ORDER BY metadata->>'claimed_at' ASC""")
+                       ORDER BY metadata->>'dispatched_at' ASC""")
                 rows = cur.fetchall()
             conn.close()
             return [dict(r["metadata"]) for r in rows]
@@ -79,12 +79,12 @@ class OrphanWatchdog:
             return []
 
     def _age_minutes(self, ticket: dict) -> Optional[float]:
-        """Return minutes since claimed_at, or None if field missing/unparseable."""
-        claimed_at = ticket.get("claimed_at", "") or ticket.get("updated_at", "")
-        if not claimed_at:
+        """Return minutes since dispatched_at, or None if field missing/unparseable."""
+        dispatched_at = ticket.get("dispatched_at", "") or ticket.get("updated_at", "")
+        if not dispatched_at:
             return None
         try:
-            ts = datetime.fromisoformat(claimed_at)
+            ts = datetime.fromisoformat(dispatched_at)
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)
             return (datetime.now(timezone.utc) - ts).total_seconds() / 60
@@ -146,7 +146,7 @@ class OrphanWatchdog:
 
             age = self._age_minutes(ticket)
             if age is None:
-                log.debug("orphan_watchdog: %s has no claimed_at — skipping", tid)
+                log.debug("orphan_watchdog: %s has no dispatched_at — skipping", tid)
                 continue
 
             timeout = self._timeout_for(ticket)

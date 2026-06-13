@@ -30,7 +30,7 @@ def _task(**kw):
         "decision_id": None,
         "description": "test",
         "result": None,
-        "claimed_at": None,
+        "dispatched_at": None,
         "target_difficulty": 1,
     }
     base.update(kw)
@@ -87,7 +87,7 @@ class TestCmdNextMarksInProgress:
                     "decision_id": None,
                     "description": "temporary dispatch test ticket",
                     "result": None,
-                    "claimed_at": None,
+                    "dispatched_at": None,
                     "target_difficulty": 1,
                     "kind": "ticket",
                     "test_data": "true",

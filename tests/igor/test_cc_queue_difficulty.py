@@ -29,7 +29,7 @@ def _t(**kw):
         "decision_id": None,
         "description": "desc\n\n**Affected files:** foo.py\n**Design rules:** none\n**Scope boundary:** in/out\n**Test plan:** yes",
         "result": None,
-        "claimed_at": None,
+        "dispatched_at": None,
         "created_at": None,
         "completed_at": None,
         "github_issue": None,

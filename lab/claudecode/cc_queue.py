@@ -238,10 +238,7 @@ def set_status_in_progress(ticket_id: str) -> bool:
             """
             UPDATE clan.memories
             SET metadata = jsonb_set(
-                    jsonb_set(
-                        jsonb_set(metadata, '{status}', '"in_progress"'),
-                        '{claimed_at}', to_jsonb(%s::text)
-                    ),
+                    jsonb_set(metadata, '{status}', '"in_progress"'),
                     '{dispatched_at}', to_jsonb(%s::text)
                 ),
                 updated_at = %s
@@ -249,7 +246,7 @@ def set_status_in_progress(ticket_id: str) -> bool:
               AND metadata->>'status' = 'sprint'
               AND parent_id = %s
             """,
-            (now, now, now, ticket_id, TICKETS_ROOT_ID),
+            (now, now, ticket_id, TICKETS_ROOT_ID),
         )
         updated = cur.rowcount > 0
         conn.commit()
@@ -279,7 +276,7 @@ def reset_stale_in_progress(ticket_id: str) -> bool:
             """
             UPDATE clan.memories
             SET metadata = jsonb_set(
-                    metadata #- '{claimed_at}',
+                    metadata #- '{dispatched_at}',
                     '{status}', '"sprint"'
                 ),
                 updated_at = %s
@@ -295,7 +292,7 @@ def reset_stale_in_progress(ticket_id: str) -> bool:
             import logging
 
             logging.getLogger(__name__).info(
-                f"QUEUE_DRAIN: reset stale claim {ticket_id} → sprint"
+                f"QUEUE_DRAIN: reset stale dispatch {ticket_id} → sprint"
             )
         return updated
     finally:
@@ -563,19 +560,7 @@ class LegacyDirectClaimError(Exception):
     """
 
 
-def cmd_claim(args):
-    """cmd_claim is no longer supported — tickets are dispatched by CC via dispatch command."""
-    msg = (
-        "cmd_claim is no longer supported. "
-        "Igor receives tickets only when CC dispatches them: cc_queue.py dispatch <ticket-id>.\n"
-        "Workers must not autonomously claim from the queue. "
-        "If you see this error, a caller is using the removed direct-claim path."
-    )
-    _log({"action": "legacy_direct_claim_attempt", "args": str(args)})
-    # Do NOT post to Igor's input channel — that creates a feedback loop where
-    # Igor's NE receives the error, generates a response describing the old model,
-    # and may retry the claim. The log entry above is sufficient for auditing.
-    raise LegacyDirectClaimError(msg)
+
 
 
 def cmd_dispatch(args):
@@ -635,8 +620,6 @@ def cmd_dispatch(args):
         t["title"] = _with_status_prefix("in_progress", t["title"])
         t["dispatched_by"] = dispatched_by
         t["dispatched_at"] = now
-        # Keep claimed_at for compatibility with downstream status readers
-        t["claimed_at"] = now
         metadata = dict(t)
         metadata["kind"] = "ticket"
         cur.execute(
@@ -1376,7 +1359,7 @@ def cmd_add(args):
             nt["worker"] = _infer_worker(nt)
         nt.setdefault("created_by", None)
         nt.setdefault("result", None)
-        nt.setdefault("claimed_at", None)
+        nt.setdefault("dispatched_at", None)
         nt.setdefault("completed_at", None)
         nt.setdefault("required_files", [])
         nt.setdefault("related_to", None)
@@ -1690,7 +1673,7 @@ def cmd_next(args):
         now = _now()
         t["status"] = "in_progress"
         t["title"] = _with_status_prefix("in_progress", t["title"])
-        t["claimed_at"] = now
+        t["dispatched_at"] = now
         metadata = dict(t)
         metadata["kind"] = "ticket"
         cur.execute(
@@ -1708,7 +1691,7 @@ def cmd_next(args):
     finally:
         conn.close()
 
-    _log({"action": "claim_via_next", "id": ticket_id, "worker": worker_filter})
+    _log({"action": "dispatch_via_next", "id": ticket_id, "worker": worker_filter})
     _classifier_stamp_in_flight(ticket_id, t.get("required_files", []))
     print(ticket_id)
 
@@ -1736,7 +1719,7 @@ def cmd_reset(args):
         )
         return
     t["status"] = "sprint"
-    t["claimed_at"] = None
+    t["dispatched_at"] = None
     t["blocked_at"] = None
     if timeout_mode:
         count = (t.get("timeout_count") or 0) + 1
@@ -1757,7 +1740,7 @@ def cmd_reset_stale(args):
         if t["status"] == "in_progress":
             prev = t["status"]
             t["status"] = "sprint"
-            t["claimed_at"] = None
+            t["dispatched_at"] = None
             _log({"action": "reset_stale", "id": t["id"], "prev_status": prev})
             print(f"  reset stale: {t['id']}")
             reset_count += 1
@@ -1882,7 +1865,6 @@ def cmd_append_note(args):
 COMMANDS = {
     "list": cmd_list,
     "show": cmd_show,
-    "claim": cmd_claim,
     "done": cmd_done,
     "close": cmd_close,
     "block": cmd_block,

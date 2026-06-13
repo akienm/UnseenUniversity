@@ -3,7 +3,7 @@
 stall_check.py — Detect stalled in_progress tickets.
 
 A ticket is stalled when its status is in_progress AND its age (measured from
-claimed_at, or updated_at as fallback) exceeds the threshold (default 2h).
+dispatched_at, or updated_at as fallback) exceeds the threshold (default 2h).
 
 Usage:
     python3 stall_check.py                    # print stalled tickets, exit 1 if any
@@ -56,14 +56,14 @@ def compute_stall_info(
 
     A ticket is stalled when:
     - status == 'in_progress'
-    - age (from claimed_at, or updated_at as fallback) > threshold_hours
+    - age (from dispatched_at, or updated_at as fallback) > threshold_hours
 
     Returns None when: not in_progress, no timing info, or age within threshold.
     """
     if ticket.get("status") != "in_progress":
         return None
 
-    ts = _parse_ts(ticket.get("claimed_at")) or _parse_ts(ticket.get("updated_at"))
+    ts = _parse_ts(ticket.get("dispatched_at")) or _parse_ts(ticket.get("updated_at"))
     if ts is None:
         return None
 
@@ -82,7 +82,7 @@ def compute_stall_info(
         "id": ticket.get("id", "?"),
         "title": title,
         "age_hours": age_hours,
-        "claimed_at": ticket.get("claimed_at") or ticket.get("updated_at"),
+        "dispatched_at": ticket.get("dispatched_at") or ticket.get("updated_at"),
         "worker": ticket.get("worker", "?"),
     }
 
@@ -158,7 +158,7 @@ def main(argv: list[str] | None = None) -> int:
         # List every in_progress ticket with its age
         in_progress = []
         for t in tasks:
-            ts = _parse_ts(t.get("claimed_at")) or _parse_ts(t.get("updated_at"))
+            ts = _parse_ts(t.get("dispatched_at")) or _parse_ts(t.get("updated_at"))
             age_str = f"{(now - ts).total_seconds() / 3600:.1f}h" if ts else "age:?"
             title = t.get("title") or "?"
             for prefix in ("[in_progress] ", "[sprint] ", "[hold] "):

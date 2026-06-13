@@ -435,7 +435,7 @@ class TestDaemonDeadRaceCondition(unittest.TestCase):
             "status": "in_progress",
             "priority": 5,
             "worker": "claude",
-            "claimed_at": "2026-05-24T00:00:00+00:00",
+            "dispatched_at": "2026-05-24T00:00:00+00:00",
             "tags": [],
         }
         tasks = [task]
@@ -510,7 +510,7 @@ class TestDaemonDeadRaceCondition(unittest.TestCase):
         mock_reset.assert_called_once_with("T-stale-1")
         # Ticket should have been reset in memory
         self.assertEqual(task["status"], "sprint")
-        self.assertNotIn("claimed_at", task)
+        self.assertNotIn("dispatched_at", task)
 
 
 if __name__ == "__main__":

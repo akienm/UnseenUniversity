@@ -35,7 +35,7 @@ def _t(**kw):
             "**Completion criteria:** tests pass"
         ),
         "result": None,
-        "claimed_at": None,
+        "dispatched_at": None,
         "created_at": None,
         "completed_at": None,
         "github_issue": None,

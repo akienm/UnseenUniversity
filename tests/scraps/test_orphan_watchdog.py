@@ -15,7 +15,7 @@ def _ticket(
     age_minutes=180,
 ) -> dict:
     """Build a minimal in_progress ticket dict."""
-    claimed_at = (
+    dispatched_at = (
         datetime.now(timezone.utc) - timedelta(minutes=age_minutes)
     ).isoformat()
     return {
@@ -23,7 +23,7 @@ def _ticket(
         "title": f"ticket {id}",
         "size": size,
         "status": status,
-        "claimed_at": claimed_at,
+        "dispatched_at": dispatched_at,
     }
 
 
@@ -145,7 +145,7 @@ class TestOrphanWatchdogChannelPost:
 
 
 class TestOrphanWatchdogEdgeCases:
-    def test_missing_claimed_at_skipped(self):
+    def test_missing_dispatched_at_skipped(self):
         wd = _make_watchdog()
         t = {"id": "T-no-ts", "size": "S", "status": "in_progress"}
         with (
