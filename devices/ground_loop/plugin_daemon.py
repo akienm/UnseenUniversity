@@ -16,7 +16,10 @@ from typing import Optional
 
 log = logging.getLogger(__name__)
 
-_FLAGS_DIR = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university")) / "flags"
+_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+_FLAGS_DIR = _IGOR_HOME / "flags"
+_STDERR_DIR = _IGOR_HOME / "ground_loop" / "logs"
+_STDERR_TAIL = 30  # lines of plugin stderr to include in CC recovery prompt
 
 
 class PluginDaemon:
@@ -37,6 +40,10 @@ class PluginDaemon:
     def breaker_path(self) -> Path:
         return _FLAGS_DIR / f"{self.name}.breaker"
 
+    @property
+    def stderr_log_path(self) -> Path:
+        return _STDERR_DIR / f"{self.name}.stderr.log"
+
     def _breaker_tripped(self) -> bool:
         return self.breaker_path.exists()
 
@@ -48,11 +55,13 @@ class PluginDaemon:
     def _spawn(self) -> None:
         env = {**os.environ, **self.start_env}
         log.info("GROUND_LOOP|plugin=%s|action=spawn|cmd=%s", self.name, self.start_cmd)
+        _STDERR_DIR.mkdir(parents=True, exist_ok=True)
+        stderr_fh = open(self.stderr_log_path, "a")
         self._proc = subprocess.Popen(
             self.start_cmd,
             env=env,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=stderr_fh,
         )
         log.info("GROUND_LOOP|plugin=%s|action=spawned|pid=%d", self.name, self._proc.pid)
 
@@ -106,9 +115,51 @@ class PluginDaemon:
                 self._proc.kill()
 
 
-def _fire_cc_recovery(plugin_name: str, reason: str) -> None:
-    """Scaffold: log CC recovery event. Full wiring in T-ground-loop-cc-recovery."""
+def _fire_cc_recovery(plugin_name: str, reason: str, stderr_log: Path | None = None) -> None:
+    """
+    Spawn CC to diagnose and fix a repeatedly-failing plugin.
+
+    Reads the last _STDERR_TAIL lines from the plugin's stderr log, builds a
+    structured recovery prompt, and spawns CC non-blocking so Ground Loop keeps
+    polling other plugins. Logs the invocation at WARNING; never raises.
+    """
+    # Read last N lines of plugin stderr for context
+    stderr_text = ""
+    log_path = stderr_log or (_STDERR_DIR / f"{plugin_name}.stderr.log")
+    try:
+        if log_path.exists():
+            lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+            stderr_text = "\n".join(lines[-_STDERR_TAIL:])
+    except Exception as exc:
+        log.warning("CC_RECOVERY|plugin=%s|stderr_read_failed=%s", plugin_name, exc)
+
+    prompt = (
+        f"Ground Loop reports plugin '{plugin_name}' has failed repeatedly.\n\n"
+        f"Failure reason: {reason}\n\n"
+        f"Last {_STDERR_TAIL} lines of plugin stderr:\n{stderr_text or '(no stderr captured)'}\n\n"
+        "Task: diagnose the root cause, fix the code in "
+        "~/dev/src/UnseenUniversity/, run tests "
+        "(cd ~/dev/src/UnseenUniversity && .venv/bin/python3 -m pytest tests/ -x -q), "
+        "commit the fix with a descriptive message, then exit cleanly. "
+        "Do not restart the plugin manually — Ground Loop will restart it after you exit."
+    )
+
     log.warning(
-        "CC_RECOVERY_NEEDED|plugin=%s|reason=%s|action=scaffold_only",
+        "CC_RECOVERY|plugin=%s|reason=%s|action=spawning_cc",
         plugin_name, reason,
     )
+    try:
+        subprocess.Popen(
+            ["claude", "--dangerously-skip-permissions", "-p", prompt],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        log.warning(
+            "CC_RECOVERY|plugin=%s|action=cc_spawned",
+            plugin_name,
+        )
+    except Exception as exc:
+        log.error(
+            "CC_RECOVERY|plugin=%s|action=cc_spawn_failed|exc=%s",
+            plugin_name, exc,
+        )

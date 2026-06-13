@@ -3370,27 +3370,32 @@ class Igor(IgorBase):
                 # the full structured traceback (not just the last 80 log lines).
                 # Skip if debug_session.flag is present — a CC session is already active.
                 # Exit 42 afterwards → bash restart loop fires without calling CC again.
-                _debug_flag = _paths().instance / "debug_session.flag"
-                if not _debug_flag.exists():
-                    _prompt = (
-                        f"Igor crashed with an unhandled exception in the main loop.\n\n"
-                        f"Exception: {type(_loop_exc).__name__}: {_loop_exc}\n\n"
-                        f"Full traceback:\n{_full_tb}\n\n"
-                        "Task: diagnose the root cause, fix the code in ~/dev/src/UnseenUniversity/devices/igor/, "
-                        "run tests (cd ~/dev/src/UnseenUniversity && source venv/bin/activate && "
-                        "python -m pytest tests/ -x -q), commit the fix, then exit cleanly. "
-                        "Do not restart Igor — the startup script will restart it after you exit."
-                    )
-                    try:
-                        _sp.run(
-                            ["claude", "--dangerously-skip-permissions", "-p", _prompt],
-                            timeout=600,
-                        )
-                    except Exception as _cc_e:
-                        log_error(
-                            kind="CC_AUTO_FIX_FAIL",
-                            detail=f"Could not launch CC auto-fixer: {_cc_e}",
-                        )
+                #
+                # NOTE (T-ground-loop-cc-recovery): this per-device CC recovery path is now
+                # superseded by Ground Loop on_failure: cc_recovery. Commented out pending
+                # T-consequence-ground-loop validation. Igor is launched by Ground Loop, so
+                # the Ground Loop hook fires after max_restarts exceed threshold.
+                # _debug_flag = _paths().instance / "debug_session.flag"
+                # if not _debug_flag.exists():
+                #     _prompt = (
+                #         f"Igor crashed with an unhandled exception in the main loop.\n\n"
+                #         f"Exception: {type(_loop_exc).__name__}: {_loop_exc}\n\n"
+                #         f"Full traceback:\n{_full_tb}\n\n"
+                #         "Task: diagnose the root cause, fix the code in ~/dev/src/UnseenUniversity/devices/igor/, "
+                #         "run tests (cd ~/dev/src/UnseenUniversity && source venv/bin/activate && "
+                #         "python -m pytest tests/ -x -q), commit the fix, then exit cleanly. "
+                #         "Do not restart Igor — the startup script will restart it after you exit."
+                #     )
+                #     try:
+                #         _sp.run(
+                #             ["claude", "--dangerously-skip-permissions", "-p", _prompt],
+                #             timeout=600,
+                #         )
+                #     except Exception as _cc_e:
+                #         log_error(
+                #             kind="CC_AUTO_FIX_FAIL",
+                #             detail=f"Could not launch CC auto-fixer: {_cc_e}",
+                #         )
                 # Exit 42 = restart signal: bash loop restarts Igor cleanly.
                 # Bash crash-detection (which also calls CC) only fires for non-42 exits,
                 # so this prevents double-invocation of CC.
