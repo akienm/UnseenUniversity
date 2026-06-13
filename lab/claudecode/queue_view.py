@@ -23,14 +23,14 @@ _TERMINAL = {"done", "closed", "cancelled", "discarded"}
 _STATUS_ORDER = [
     "in_progress",
     "sprint",
+    "dependency",
+    "pending",
     "escalated",
     "approval",
     "hold",
     "design",
     "triage",
     "akien",
-    "dependency",
-    "pending",
 ]
 
 _STATUS_LABEL = {
