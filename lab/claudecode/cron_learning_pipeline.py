@@ -40,22 +40,44 @@ def main() -> int:
         "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
     )
 
+    total_stats = {
+        "inference_entries": 0,
+        "inference_nodes": 0,
+        "chat_turns": 0,
+        "chat_nodes": 0,
+    }
+
     try:
         from devices.librarian.learning_pipeline import LearningPipeline
         pipeline = LearningPipeline(db_url)
         stats = pipeline.run_once()
+        if "error" in stats:
+            _log.error("learning_pipeline: run_once returned error: %s", stats["error"])
+            return 1
+        total_stats["inference_entries"] = stats.get("entries_processed", 0)
+        total_stats["inference_nodes"] = stats.get("nodes_built", 0)
     except Exception as e:
-        _log.error("learning_pipeline: run_once() failed: %s", e)
+        _log.error("learning_pipeline: inference pipeline failed: %s", e)
         return 1
 
-    if "error" in stats:
-        _log.error("learning_pipeline: run_once returned error: %s", stats["error"])
+    try:
+        from devices.scraps.chat_classifier import ChatClassifier
+        classifier = ChatClassifier(db_url)
+        stats = classifier.run_once()
+        if "error" in stats:
+            _log.error("chat_classifier: run_once returned error: %s", stats["error"])
+            return 1
+        total_stats["chat_turns"] = stats.get("turns_read", 0)
+        total_stats["chat_nodes"] = stats.get("nodes_built", 0)
+    except Exception as e:
+        _log.error("chat_classifier: run_once() failed: %s", e)
         return 1
 
     _log.info(
-        "learning_pipeline: complete — entries_processed=%d nodes_built=%d",
-        stats.get("entries_processed", 0),
-        stats.get("nodes_built", 0),
+        "learning_pipeline: complete — inference_entries=%d inference_nodes=%d chat_nodes=%d",
+        total_stats["inference_entries"],
+        total_stats["inference_nodes"],
+        total_stats["chat_nodes"],
     )
     return 0
 
