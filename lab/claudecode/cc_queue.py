@@ -657,7 +657,28 @@ def cmd_dispatch(args):
         conn.close()
 
     _log({"action": "dispatch", "id": ticket_id, "dispatched_by": dispatched_by})
+    _classifier_stamp_in_flight(ticket_id, t.get("required_files", []))
     print(f"dispatched {ticket_id} → {dispatched_by}")
+
+
+def _classifier_stamp_in_flight(ticket_id: str, required_files: list) -> None:
+    """Stamp palace.codebase nodes for required_files as in_flight. Non-fatal."""
+    if not required_files:
+        return
+    try:
+        from devices.classifier.device import ClassifierDevice
+        ClassifierDevice(llm_fallback=False).stamp_in_flight(ticket_id, required_files)
+    except Exception as exc:
+        print(f"classifier stamp_in_flight: {exc}", file=sys.stderr)
+
+
+def _classifier_clear_in_flight(ticket_id: str) -> None:
+    """Clear palace.codebase in_flight flags for ticket_id. Non-fatal."""
+    try:
+        from devices.classifier.device import ClassifierDevice
+        ClassifierDevice(llm_fallback=False).clear_in_flight(ticket_id)
+    except Exception as exc:
+        print(f"classifier clear_in_flight: {exc}", file=sys.stderr)
 
 
 def _close_igor_goal(ticket_id: str) -> None:
@@ -1088,6 +1109,7 @@ def cmd_close(args):
     _log({"action": "close", "id": args[0], "title": t["title"], "result": args[1], "cost_usd": t.get("cost_usd")})
     _prepend_closed_ticket(args[0], t["title"])
     _close_igor_goal(args[0])
+    _classifier_clear_in_flight(args[0])
     _append_to_todays_slate(t)
     cost_str = f"  cost=${t['cost_usd']:.4f}" if t.get("cost_usd") is not None else ""
     print(f"Closed {args[0]}: {t['title']}{cost_str}")
@@ -1687,6 +1709,7 @@ def cmd_next(args):
         conn.close()
 
     _log({"action": "claim_via_next", "id": ticket_id, "worker": worker_filter})
+    _classifier_stamp_in_flight(ticket_id, t.get("required_files", []))
     print(ticket_id)
 
 

@@ -112,6 +112,12 @@ class ClassifierDevice(BaseDevice):
             log.warning("classifier: freshness_check ts parse error: %s", exc)
             builder_report.stale = True
 
+        # Check for in_flight conflicts on relevant files
+        builder_report.warnings = self._check_in_flight_overlap(builder_report)
+        if builder_report.warnings:
+            log.warning("classifier: %d in_flight conflict(s) detected: %s",
+                        len(builder_report.warnings), builder_report.warnings)
+
         return builder_report
 
     def score(
@@ -205,6 +211,121 @@ class ClassifierDevice(BaseDevice):
         """LLM fallback classification. Stub — wires in T-classifier-device sprint."""
         log.info("classifier: LLM fallback — stub returning unknown for %r", task_description[:60])
         return "unknown", [f"palace.codebase.{project_id}"], 0.3, "llm_fallback_stub"
+
+    # ── In-flight palace stamps ───────────────────────────────────────────────
+
+    def stamp_in_flight(self, ticket_id: str, affected_files: list[str]) -> int:
+        """Stamp palace.codebase nodes for affected_files with in_flight=true.
+
+        Called when a ticket transitions to in_progress. Returns count of nodes stamped.
+        Nodes that don't exist yet are silently skipped (created by T-codebase-tree-annotator).
+        Logs every DB write (interface crossing rule).
+        """
+        if not affected_files:
+            log.debug("classifier: stamp_in_flight ticket=%s no affected_files — skip", ticket_id)
+            return 0
+
+        db_url = self._db_url()
+        if not db_url:
+            log.warning("classifier: stamp_in_flight — UU_HOME_DB_URL not set; skipping stamp")
+            return 0
+
+        try:
+            import psycopg2
+            import psycopg2.extras
+            conn = psycopg2.connect(db_url)
+            conn.autocommit = True
+            stamped = 0
+            with conn.cursor() as cur:
+                for file_path in affected_files:
+                    node_path = f"palace.codebase.{file_path.replace('/', '.')}"
+                    cur.execute(
+                        """UPDATE clan.memories
+                           SET metadata = jsonb_set(
+                               jsonb_set(metadata, '{in_flight}', 'true'),
+                               '{in_flight_ticket}', %s::jsonb
+                           )
+                           WHERE path = %s""",
+                        (psycopg2.extras.Json(ticket_id), node_path),
+                    )
+                    if cur.rowcount:
+                        log.info(
+                            "classifier: stamped in_flight=true ticket=%s node=%s",
+                            ticket_id, node_path,
+                        )
+                        stamped += 1
+            conn.close()
+            log.info("classifier: stamp_in_flight ticket=%s stamped=%d/%d nodes", ticket_id, stamped, len(affected_files))
+            return stamped
+        except Exception as exc:
+            log.warning("classifier: stamp_in_flight failed ticket=%s: %s", ticket_id, exc)
+            return 0
+
+    def clear_in_flight(self, ticket_id: str) -> int:
+        """Clear in_flight flags for all palace.codebase nodes tagged with ticket_id.
+
+        Called when a ticket closes. Returns count of nodes cleared.
+        """
+        db_url = self._db_url()
+        if not db_url:
+            log.warning("classifier: clear_in_flight — UU_HOME_DB_URL not set; skipping")
+            return 0
+
+        try:
+            import psycopg2
+            conn = psycopg2.connect(db_url)
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                cur.execute(
+                    """UPDATE clan.memories
+                       SET metadata = metadata - 'in_flight' - 'in_flight_ticket'
+                       WHERE path LIKE 'palace.codebase.%%'
+                         AND metadata->>'in_flight_ticket' = %s""",
+                    (ticket_id,),
+                )
+                cleared = cur.rowcount
+            conn.close()
+            log.info("classifier: clear_in_flight ticket=%s cleared=%d nodes", ticket_id, cleared)
+            return cleared
+        except Exception as exc:
+            log.warning("classifier: clear_in_flight failed ticket=%s: %s", ticket_id, exc)
+            return 0
+
+    def _check_in_flight_overlap(self, builder_report: "BuilderReport") -> list[str]:
+        """Return warning strings for relevant_files that overlap with in_flight palace nodes."""
+        if not builder_report.relevant_files:
+            return []
+        db_url = self._db_url()
+        if not db_url:
+            return []
+        try:
+            import psycopg2
+            conn = psycopg2.connect(db_url)
+            with conn.cursor() as cur:
+                cur.execute(
+                    """SELECT path, metadata->>'in_flight_ticket' AS ticket
+                       FROM clan.memories
+                       WHERE path LIKE 'palace.codebase.%%'
+                         AND metadata->>'in_flight' = 'true'""",
+                )
+                rows = cur.fetchall()
+            conn.close()
+            in_flight_paths = {r[0]: r[1] for r in rows}
+            warnings = []
+            for f in builder_report.relevant_files:
+                node_path = f"palace.codebase.{f.replace('/', '.')}"
+                if node_path in in_flight_paths:
+                    warnings.append(
+                        f"in_flight conflict: {f} is being worked by {in_flight_paths[node_path]}"
+                    )
+            return warnings
+        except Exception as exc:
+            log.debug("classifier: in_flight overlap check failed: %s", exc)
+            return []
+
+    def _db_url(self) -> str:
+        import os
+        return os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL", "")
 
     def _query_palace_trees(
         self,

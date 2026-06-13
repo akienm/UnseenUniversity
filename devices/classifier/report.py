@@ -18,6 +18,7 @@ class BuilderReport:
     confidence: float = 0.0
     classifier: str = ""
     stale: bool = False
+    warnings: list[str] = field(default_factory=list)
     ts: str = ""
 
     def __post_init__(self) -> None:
@@ -32,6 +33,7 @@ class BuilderReport:
             "confidence": self.confidence,
             "classifier": self.classifier,
             "stale": self.stale,
+            "warnings": self.warnings,
             "ts": self.ts,
         }
 
@@ -44,5 +46,6 @@ class BuilderReport:
             confidence=float(d.get("confidence", 0.0)),
             classifier=d.get("classifier", ""),
             stale=bool(d.get("stale", False)),
+            warnings=list(d.get("warnings", [])),
             ts=d.get("ts", ""),
         )
