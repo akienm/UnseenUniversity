@@ -5,9 +5,8 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any
 
-from unseen_university.base_device import BaseDevice
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 from .agent import CriticAgent, Decision
 
@@ -19,7 +18,7 @@ class CriticDevice(BaseDevice):
 
     def __init__(self) -> None:
         """Initialize Critic device."""
-        super().__init__("critic", "master")
+        super().__init__("critic")
         self._agent = CriticAgent()
         self._judgments: dict = {}
 
@@ -31,6 +30,48 @@ class CriticDevice(BaseDevice):
             "purpose": "validates builder decisions and extracts improvement patterns",
             "version": "0.1",
         }
+
+    def health(self) -> dict:
+        return {"status": "healthy", "detail": "analyst device", "checked_at": ""}
+
+    def startup_errors(self) -> list:
+        return []
+
+    def requirements(self) -> dict:
+        return {"deps": [], "env": []}
+
+    def capabilities(self) -> dict:
+        return {"can_send": False, "can_receive": False}
+
+    def comms(self) -> dict:
+        return {"address": "none", "mode": "none"}
+
+    def interface_version(self) -> str:
+        return INTERFACE_VERSION
+
+    def uptime(self) -> float:
+        return 0.0
+
+    def logs(self) -> dict:
+        return {"paths": {}}
+
+    def update_info(self) -> dict:
+        return {"current_version": "0.1.0"}
+
+    def where_and_how(self) -> dict:
+        return {"host": "localhost", "pid": 0}
+
+    def restart(self) -> None:
+        pass
+
+    def block(self, reason: str) -> None:
+        log.warning("Critic: blocked — %s", reason)
+
+    def halt(self) -> None:
+        pass
+
+    def recovery(self) -> None:
+        pass
 
     def evaluate_replay(self, ticket_id: str, replay_data: dict) -> dict:
         """Evaluate a ticket replay using critic analysis.

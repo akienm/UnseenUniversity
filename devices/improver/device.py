@@ -6,7 +6,7 @@ import json
 import logging
 from pathlib import Path
 
-from unseen_university.base_device import BaseDevice
+from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 from .agent import ImproverAgent
 
@@ -20,7 +20,7 @@ class ImproverDevice(BaseDevice):
 
     def __init__(self) -> None:
         """Initialize Improver device."""
-        super().__init__("improver", "master")
+        super().__init__("improver")
         self._agent = ImproverAgent()
         self._load_rules()
 
@@ -32,6 +32,48 @@ class ImproverDevice(BaseDevice):
             "purpose": "applies learned patterns to improve builder decisions",
             "version": "0.1",
         }
+
+    def health(self) -> dict:
+        return {"status": "healthy", "detail": "analyst device", "checked_at": ""}
+
+    def startup_errors(self) -> list:
+        return []
+
+    def requirements(self) -> dict:
+        return {"deps": [], "env": []}
+
+    def capabilities(self) -> dict:
+        return {"can_send": False, "can_receive": False}
+
+    def comms(self) -> dict:
+        return {"address": "none", "mode": "none"}
+
+    def interface_version(self) -> str:
+        return INTERFACE_VERSION
+
+    def uptime(self) -> float:
+        return 0.0
+
+    def logs(self) -> dict:
+        return {"paths": {}}
+
+    def update_info(self) -> dict:
+        return {"current_version": "0.1.0"}
+
+    def where_and_how(self) -> dict:
+        return {"host": "localhost", "pid": 0}
+
+    def restart(self) -> None:
+        pass
+
+    def block(self, reason: str) -> None:
+        log.warning("Improver: blocked — %s", reason)
+
+    def halt(self) -> None:
+        pass
+
+    def recovery(self) -> None:
+        pass
 
     def learn_from_critic(self, critic_analysis: dict) -> dict:
         """Learn from Critic's pattern analysis.
