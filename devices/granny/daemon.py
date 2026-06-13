@@ -226,14 +226,19 @@ def _cc0_busy() -> bool:
 # ── Rules engine ──────────────────────────────────────────────────────────────
 
 
-def match_rule(ticket: dict, rules: list[dict]) -> str:
-    """First-match rules engine. Returns the target worker_id.
+def match_rule(ticket: dict, rules: list[dict], exact_match: bool = False) -> str | None:
+    """First-match rules engine. Returns the target worker_id, or None when exact_match
+    is True and no role rule matched.
 
     Rule shapes:
       {when: {tags_any: [...]}, route_to: X}   — matches if any tag in list
       {when: {role_in: [...]},  route_to: X}   — matches if role in list
       {when: {role: str},       route_to: X}   — exact role match
       {route_to: X}                             — default (no 'when' = always matches)
+
+    exact_match=True: default fallback rules (no 'when') and the last-resort CC.0
+    fallback are both skipped. Returns None when no role rule matched — caller
+    logs a warning and defers the ticket.
     """
     tags = set(ticket.get("tags") or [])
     role = (ticket.get("role") or "").lower()
@@ -241,6 +246,8 @@ def match_rule(ticket: dict, rules: list[dict]) -> str:
     for rule in rules:
         when = rule.get("when")
         if when is None:
+            if exact_match:
+                continue  # skip default catch-all in exact_match mode
             return rule["route_to"]  # default/fallback
         if "tags_any" in when and tags & set(when["tags_any"]):
             log.info(
@@ -255,6 +262,8 @@ def match_rule(ticket: dict, rules: list[dict]) -> str:
         if "role" in when and role == when["role"].lower():
             return rule["route_to"]
 
+    if exact_match:
+        return None  # no match in exact mode — caller defers the ticket
     return "CC.0"  # last-resort default
 
 
@@ -667,6 +676,7 @@ def run_once(config: dict, *, imap=None) -> None:
                 _launch_builder(wid, wcfg)
 
     rules = config.get("rules", [])
+    exact_match = config.get("exact_match", False)
 
     # Advance all active workflow scripts (external state, persisted per-workflow).
     try:
@@ -690,17 +700,25 @@ def run_once(config: dict, *, imap=None) -> None:
             continue
 
         status = ticket.get("status", "sprint")
+        ticket_role = _infer_role(ticket)
 
         # Escalated tickets: always route to CC.0 — never back to builder tier.
         # DickSimnel already tried and failed; only master+ should handle them.
         if status == "escalated":
             target = "CC.0"
         else:
-            target = match_rule(ticket, rules)
+            target = match_rule(ticket, rules, exact_match=exact_match)
+            if target is None:
+                # exact_match=True and no role rule fired — defer without dispatching.
+                log.warning(
+                    "Granny: exact_match_defer|ticket=%s|role=%s|no_route",
+                    tid, ticket_role,
+                )
+                continue
 
         # Cascade pickup: a higher-tier worker absorbs this ticket when its own
         # tier queue is empty and cascade_if_idle is set for that worker.
-        ticket_role = _infer_role(ticket)
+        # ticket_role already computed above.
         is_cascade = False
         for cascade_worker, absorb_roles in cascade.items():
             if ticket_role in absorb_roles and cascade_worker != target:

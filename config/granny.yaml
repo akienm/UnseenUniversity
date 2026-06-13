@@ -2,6 +2,11 @@
 # Granny dispatch rules — first-match wins, top to bottom.
 # Edit this file; the daemon reloads it every poll cycle.
 
+# exact_match: when true, tickets with no matching role rule are deferred (logged
+# and skipped) rather than falling through to the default CC.0 catch-all.
+# Set to true to prevent any cross-tier dispatch.
+exact_match: false
+
 workers:
   CC.0:
     dispatch: bus
