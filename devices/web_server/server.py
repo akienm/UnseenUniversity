@@ -1804,6 +1804,51 @@ async def _api_device_console(request: Request):
     return JSONResponse({"lines": [], "source": None, "total": 0})
 
 
+async def _api_hubert_audit_flags(request: Request):
+    """GET /api/device/hubert/audit_flags — unreviewed structural audit flags.
+
+    Returns flags sorted by severity (HIGH first). Flags with a reviewed_at
+    field are excluded by default; pass ?all=1 to include them.
+    """
+    try:
+        from devices.hubert.repo_auditor import read_flags
+
+        include_reviewed = request.query_params.get("all", "") == "1"
+        flags = read_flags()
+        if not include_reviewed:
+            flags = [f for f in flags if not f.get("reviewed_at")]
+        severity_order = {"HIGH": 0, "MED": 1, "LOW": 2}
+        flags.sort(key=lambda f: severity_order.get(f.get("severity", "LOW"), 3))
+        log.info("AUDIT_FLAGS count=%d include_reviewed=%s", len(flags), include_reviewed)
+        return JSONResponse({"flags": flags, "count": len(flags)})
+    except Exception as exc:
+        log.warning("AUDIT_FLAGS error=%s", exc)
+        return JSONResponse({"flags": [], "count": 0, "error": str(exc)})
+
+
+async def _api_hubert_audit_flag_review(request: Request):
+    """POST /api/device/hubert/audit_flags/review — dismiss or confirm a flag.
+
+    Body: {"ticket_id": "T-xxx", "signal": "NO_COMMIT", "verdict": "dismiss"|"confirm"}
+    Returns {"ok": true} on success, {"ok": false, "error": "..."} when flag not found.
+    """
+    try:
+        body = await request.json()
+        ticket_id = body.get("ticket_id", "")
+        signal = body.get("signal", "")
+        verdict = body.get("verdict", "dismiss")
+        if not ticket_id or not signal:
+            return JSONResponse({"ok": False, "error": "ticket_id and signal required"}, status_code=400)
+        from devices.hubert.repo_auditor import review_flag
+        found = review_flag(ticket_id, signal, verdict)
+        if found:
+            log.info("AUDIT_FLAG_REVIEW ticket=%s signal=%s verdict=%s", ticket_id, signal, verdict)
+        return JSONResponse({"ok": found, "ticket_id": ticket_id, "signal": signal, "verdict": verdict})
+    except Exception as exc:
+        log.warning("AUDIT_FLAG_REVIEW error=%s", exc)
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
+
+
 async def _api_device_breaker(request: Request):
     """POST /api/device/{id}/breaker — stub circuit breaker toggle.
 
@@ -3290,6 +3335,9 @@ def _make_app() -> Starlette:
         Route("/inference/models", _page_inference_models),
         # Feeds
         Route("/feeds/{device}", _api_feeds),
+        # Hubert: structural audit flags panel
+        Route("/api/device/hubert/audit_flags", _api_hubert_audit_flags, methods=["GET"]),
+        Route("/api/device/hubert/audit_flags/review", _api_hubert_audit_flag_review, methods=["POST"]),
         # Per-device events + known devices list
         Route("/api/device/mru", _api_device_mru),
         Route("/api/device/list", _api_device_list),

@@ -306,3 +306,15 @@ def read_flags(ticket_id: str | None = None) -> list[dict]:
     if ticket_id:
         return [f for f in index.values() if f.get("ticket_id") == ticket_id]
     return list(index.values())
+
+
+def review_flag(ticket_id: str, signal: str, verdict: str) -> bool:
+    """Mark a flag as reviewed (dismiss/confirm). Returns True if flag found."""
+    index = _read_existing_flags()
+    key = (ticket_id, signal)
+    if key not in index:
+        return False
+    index[key]["reviewed_at"] = datetime.now(timezone.utc).isoformat()
+    index[key]["verdict"] = verdict
+    _write_flags(index)
+    return True

@@ -13,6 +13,8 @@ Tests:
 - run_structural_audit: skips coordination tickets (Tracking/Decision/Doc tags)
 - run_structural_audit: skips tickets without T- prefix
 - Flag persistence: _upsert_flag is idempotent (same key upserts, not duplicates)
+- review_flag: sets reviewed_at and verdict on existing flag
+- review_flag: returns False when flag not found
 """
 
 from __future__ import annotations
@@ -33,6 +35,7 @@ from devices.hubert.repo_auditor import (
     _read_existing_flags,
     _upsert_flag,
     _write_flags,
+    review_flag,
     run_structural_audit,
 )
 
@@ -259,3 +262,40 @@ def test_upsert_flag_updates_detail(tmp_path):
         index = _read_existing_flags()
 
     assert index[("T-u", "NO_COMMIT")]["detail"] == "new detail"
+
+
+# ── review_flag ────────────────────────────────────────────────────────────────
+
+def test_review_flag_sets_reviewed_at_and_verdict(tmp_path):
+    """review_flag sets reviewed_at and verdict on the matching entry."""
+    flags_file = tmp_path / "flags.jsonl"
+    with patch("devices.hubert.repo_auditor._FLAGS_FILE", flags_file):
+        flag = AuditFlag("T-rv", "NO_COMMIT", "HIGH", "detail", "2026-06-13T00:00:00+00:00")
+        _upsert_flag(flag)
+
+        result = review_flag("T-rv", "NO_COMMIT", "dismiss")
+        index = _read_existing_flags()
+
+    assert result is True
+    entry = index[("T-rv", "NO_COMMIT")]
+    assert entry["verdict"] == "dismiss"
+    assert entry.get("reviewed_at") is not None
+
+
+def test_review_flag_returns_false_when_not_found(tmp_path):
+    """review_flag returns False when (ticket_id, signal) has no matching entry."""
+    with patch("devices.hubert.repo_auditor._FLAGS_FILE", tmp_path / "flags.jsonl"):
+        result = review_flag("T-missing", "NO_COMMIT", "confirm")
+    assert result is False
+
+
+# ── Nanny cron entry ───────────────────────────────────────────────────────────
+
+def test_nanny_default_schedule_includes_repo_audit():
+    """nightly_repo_audit appears in Nanny Ogg's default schedule."""
+    from devices.nanny.device import _DEFAULT_SCHEDULE
+    ids = {e["entry_id"] for e in _DEFAULT_SCHEDULE}
+    assert "nightly_repo_audit" in ids
+    entry = next(e for e in _DEFAULT_SCHEDULE if e["entry_id"] == "nightly_repo_audit")
+    assert entry["action_type"] == "run_repo_audit"
+    assert entry["condition_params"].get("hour") == 3

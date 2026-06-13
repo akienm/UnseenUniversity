@@ -156,6 +156,14 @@ _DEFAULT_SCHEDULE: list[dict[str, Any]] = [
         "action_params": {"mode": "nightly"},
         "enabled": True,
     },
+    {
+        "entry_id": "nightly_repo_audit",
+        "condition_type": "cron",
+        "condition_params": {"hour": 3, "minute": 0},  # 03:00 daily
+        "action_type": "run_repo_audit",
+        "action_params": {},
+        "enabled": True,
+    },
 ]
 
 # World-interaction ticket tags that Nanny routes to external agents
@@ -428,6 +436,8 @@ class NannyOggDevice(BaseDevice):
                 self._run_screenshot_capture(params)
             elif action == "run_annotator":
                 self._run_annotator(params)
+            elif action == "run_repo_audit":
+                self._run_repo_audit(params)
 
             entry.last_fired = _now_iso()
             entry.fire_count += 1
@@ -698,6 +708,32 @@ class NannyOggDevice(BaseDevice):
         except Exception as e:
             self._errors.append(f"_run_annotator failed: {e}")
             self._log.error("_run_annotator failed: %s", e)
+
+    def _run_repo_audit(self, params: dict) -> None:
+        """Run structural repo audit and post HIGH-severity flags to channel."""
+        try:
+            import os
+            from devices.hubert.repo_auditor import run_structural_audit
+
+            repo_path = params.get("repo_path", ".")
+            flags = run_structural_audit(repo_path=repo_path)
+            high_flags = [f for f in flags if f.severity == "HIGH"]
+            self._post_to_channel(
+                "shared",
+                f"REPO_AUDIT_RESULT|flags={len(flags)}|high={len(high_flags)}",
+            )
+            for flag in high_flags:
+                self._post_to_channel(
+                    "shared",
+                    f"REPO_AUDIT_HIGH|ticket={flag.ticket_id}|signal={flag.signal}|"
+                    f"detail={flag.detail[:120]}",
+                )
+            self._log.info(
+                "repo audit: flags=%d high=%d", len(flags), len(high_flags)
+            )
+        except Exception as e:
+            self._errors.append(f"_run_repo_audit failed: {e}")
+            self._log.error("_run_repo_audit failed: %s", e)
 
     def _run_screenshot_capture(self, params: dict) -> None:
         """Capture fascia screenshots for all online devices."""
