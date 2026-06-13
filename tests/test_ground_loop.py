@@ -159,6 +159,49 @@ class TestPluginProxy:
             alive = px._ensure_backend()
         assert alive is False
 
+    def test_concurrent_requests_all_handled(self, tmp_path):
+        """Multiple concurrent _ensure_backend() calls: backend spawned once, all get True."""
+        backend_port = _free_port()
+        cfg = {
+            "name": "test_concurrent",
+            "mode": "http_proxy",
+            "proxy_port": _free_port(),
+            "backend_port": backend_port,
+            "start_cmd": [sys.executable, "-c", "import time; time.sleep(999)"],
+            "start_timeout": 2,
+        }
+        px = PluginProxy(cfg)
+        spawn_count = [0]
+        alive_state = [False]
+
+        def mock_spawn():
+            spawn_count[0] += 1
+            alive_state[0] = True  # backend is now up
+
+        def mock_alive():
+            return alive_state[0]
+
+        breaker = tmp_path / "no.breaker"
+        results = []
+
+        # Patch once at class level so all threads share the same mock
+        with patch.object(px, "_backend_alive", side_effect=mock_alive), \
+             patch.object(px, "_spawn_backend", side_effect=mock_spawn), \
+             patch.object(type(px), "breaker_path",
+                          new_callable=lambda: property(lambda self: breaker)):
+
+            def call_ensure():
+                results.append(px._ensure_backend())
+
+            threads = [threading.Thread(target=call_ensure) for _ in range(8)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(timeout=5)
+
+        assert all(results), f"Expected all True, got {results}"
+        assert spawn_count[0] == 1, f"Backend should spawn once, spawned {spawn_count[0]} times"
+
 
 # ── GroundLoop integration tests ──────────────────────────────────────────────
 
