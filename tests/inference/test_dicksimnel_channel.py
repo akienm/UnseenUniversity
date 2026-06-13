@@ -8,6 +8,16 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def no_bus():
+    """Disable bus so _channel_event always falls back to post_to_channel.
+
+    _channel_event tries bus first; these tests cover the channel path.
+    """
+    with patch("bus.connection.make_bus_connection", side_effect=RuntimeError("no bus in test")):
+        yield
+
+
 def _device():
     from devices.dicksimnel.device import DickSimnelDevice
     d = DickSimnelDevice()
@@ -42,7 +52,7 @@ def test_channel_event_swallows_exception(caplog):
     with patch("unseen_university.channel.post_to_channel", side_effect=RuntimeError("no channel")):
         d._channel_event("DICKSIMNEL_WORKING ticket=T-x title='test'")
     # must not raise; warning logged
-    assert any("channel post failed" in r.message for r in caplog.records)
+    assert any("channel fallback also failed" in r.message for r in caplog.records)
 
 
 # ── DickSimnelWorkerListener posts WORKING on dispatch ────────────────────────
