@@ -1435,7 +1435,8 @@ _NAV = (
     '<a href="/hypotheses">Hypotheses</a> · '
     '<a href="/outcomes">Outcomes</a> · '
     '<a href="/queue">Queue</a> · '
-    '<a href="/dashboard">Dashboard</a>'
+    '<a href="/dashboard">Dashboard</a> · '
+    '<a href="/settings">Settings</a>'
     "</nav>"
 )
 
@@ -2867,6 +2868,356 @@ async def _api_feeds(request: Request):
     return JSONResponse({"events": result, "count": len(result), "device": device})
 
 
+# ── Vault admin API endpoints ─────────────────────────────────────────────────
+
+
+async def _api_vault_login(request: Request):
+    """POST /api/vault/admin/login — issue admin session token."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+    try:
+        from devices.vault.admin import handle_login
+        status, result = handle_login(body)
+        return JSONResponse(result, status_code=status)
+    except Exception as exc:
+        log.warning("vault: login error: %s", exc)
+        return JSONResponse({"error": "internal error"}, status_code=500)
+
+
+async def _api_vault_logout(request: Request):
+    """POST /api/vault/admin/logout — revoke admin session."""
+    token = request.headers.get("x-vault-token", "")
+    try:
+        from devices.vault.admin import handle_logout
+        status, result = handle_logout(token)
+        return JSONResponse(result, status_code=status)
+    except Exception as exc:
+        log.warning("vault: logout error: %s", exc)
+        return JSONResponse({"error": "internal error"}, status_code=500)
+
+
+async def _api_vault_credentials_get(request: Request):
+    """GET /api/vault/admin/credentials — list all credentials."""
+    token = request.headers.get("x-vault-token", "")
+    owner_filter = request.query_params.get("owner")
+    try:
+        from devices.vault.admin import handle_list
+        status, result = handle_list(token, owner_filter)
+        return JSONResponse(result, status_code=status)
+    except Exception as exc:
+        log.warning("vault: list error: %s", exc)
+        return JSONResponse({"error": "internal error"}, status_code=500)
+
+
+async def _api_vault_credentials_put(request: Request):
+    """PUT /api/vault/admin/credentials — upsert a credential."""
+    token = request.headers.get("x-vault-token", "")
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+    try:
+        from devices.vault.admin import handle_upsert
+        status, result = handle_upsert(token, body)
+        return JSONResponse(result, status_code=status)
+    except Exception as exc:
+        log.warning("vault: upsert error: %s", exc)
+        return JSONResponse({"error": "internal error"}, status_code=500)
+
+
+async def _api_vault_credentials_delete(request: Request):
+    """DELETE /api/vault/admin/credentials — remove a credential."""
+    token = request.headers.get("x-vault-token", "")
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON"}, status_code=400)
+    try:
+        from devices.vault.admin import handle_delete
+        status, result = handle_delete(token, body)
+        return JSONResponse(result, status_code=status)
+    except Exception as exc:
+        log.warning("vault: delete error: %s", exc)
+        return JSONResponse({"error": "internal error"}, status_code=500)
+
+
+_VAULT_SETTINGS_PAGE = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vault Settings — ADC</title>
+<style>
+* { box-sizing: border-box; }
+body { background:#111; color:#ddd; font-family:monospace; margin:0; padding:1rem 2rem; }
+h1 { color:#7ec8e3; }
+a { color:#7ec8e3; }
+nav { margin-bottom:1.5rem; }
+nav a { margin-right:1rem; text-decoration:none; }
+
+#login-section { max-width:400px; margin:2rem auto; }
+#login-section input[type=password] {
+  display:block; width:100%; padding:0.6rem; margin:0.5rem 0;
+  background:#1a1a1a; border:1px solid #333; color:#ddd; border-radius:4px;
+  font-family:monospace; font-size:1rem;
+}
+#login-section button {
+  background:#2a5;color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:4px;
+  cursor:pointer;font-family:monospace;font-size:1rem;margin-top:0.5rem;
+}
+#login-error { color:#f66; margin-top:0.5rem; }
+
+#vault-section { display:none; }
+#vault-section h2 { color:#7ec8e3; margin-top:0; }
+
+table { border-collapse:collapse; width:100%; }
+th { text-align:left; color:#888; font-weight:normal; padding:0.3rem 0.6rem; border-bottom:1px solid #333; }
+td { padding:0.3rem 0.6rem; border-bottom:1px solid #1e1e1e; vertical-align:top; }
+tr:hover td { background:#1a1a1a; }
+
+.editable { outline:none; min-width:6rem; }
+.editable:focus { background:#1a1a1a; border:1px solid #555; border-radius:3px; padding:0.1rem 0.3rem; }
+
+.btn { background:#333; color:#ccc; border:none; padding:0.2rem 0.6rem; border-radius:3px; cursor:pointer; font-family:monospace; font-size:0.85rem; }
+.btn:hover { background:#444; }
+.btn.save { background:#2a5; color:#fff; }
+.btn.del { background:#700; color:#faa; }
+.btn.del:hover { background:#900; }
+
+#add-row { margin:1rem 0; }
+#add-row input { background:#1a1a1a; border:1px solid #333; color:#ddd; padding:0.3rem 0.5rem; border-radius:3px; font-family:monospace; width:14rem; }
+#add-row input::placeholder { color:#555; }
+#status { color:#888; font-size:0.85rem; margin-top:1rem; }
+.err { color:#f66; }
+.ok { color:#5c5; }
+
+#logout-btn { float:right; margin-top:-2.5rem; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">Home</a>
+  <a href="/rack">Rack</a>
+  <a href="/queue">Queue</a>
+  <a href="/palace">Palace</a>
+  <a href="/settings" style="color:#fff;font-weight:bold">Settings</a>
+</nav>
+
+<h1>Vault Settings</h1>
+
+<div id="login-section">
+  <p style="color:#888">Admin login required to view or edit credentials.</p>
+  <input id="pw-input" type="password" placeholder="Admin password" autocomplete="current-password">
+  <button onclick="doLogin()">Login</button>
+  <div id="login-error"></div>
+</div>
+
+<div id="vault-section">
+  <button class="btn" id="logout-btn" onclick="doLogout()">Logout</button>
+  <h2>Credentials</h2>
+  <table id="cred-table">
+    <thead><tr>
+      <th>Owner</th><th>Key</th><th>Value</th><th>Allowed Devices</th><th>Source</th><th></th>
+    </tr></thead>
+    <tbody id="cred-tbody"></tbody>
+  </table>
+  <div id="add-row">
+    <input id="new-owner" placeholder="owner" style="width:8rem">
+    <input id="new-key"   placeholder="key"   style="width:10rem">
+    <input id="new-value" placeholder="value" style="width:14rem">
+    <input id="new-devices" placeholder="allowed_devices (comma-sep)" style="width:16rem">
+    <button class="btn save" onclick="addRow()">Add</button>
+  </div>
+  <div id="status"></div>
+</div>
+
+<script>
+const TOKEN_KEY = 'vault_admin_token';
+let _token = localStorage.getItem(TOKEN_KEY) || '';
+
+function _esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function _setStatus(msg, ok) {
+  const el = document.getElementById('status');
+  el.className = ok ? 'ok' : 'err';
+  el.textContent = msg;
+  setTimeout(()=>{ el.textContent=''; }, 4000);
+}
+
+async function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  document.getElementById('login-error').textContent = '';
+  try {
+    const r = await fetch('/api/vault/admin/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({password: pw})
+    });
+    if (!r.ok) {
+      const d = await r.json();
+      document.getElementById('login-error').textContent = d.error || 'Login failed';
+      return;
+    }
+    const d = await r.json();
+    _token = d.token;
+    localStorage.setItem(TOKEN_KEY, _token);
+    showVault();
+  } catch(e) {
+    document.getElementById('login-error').textContent = 'Network error: ' + e.message;
+  }
+}
+
+async function doLogout() {
+  try {
+    await fetch('/api/vault/admin/logout', {
+      method:'POST', headers:{'X-Vault-Token': _token}
+    });
+  } catch(e) {}
+  _token = '';
+  localStorage.removeItem(TOKEN_KEY);
+  document.getElementById('vault-section').style.display='none';
+  document.getElementById('login-section').style.display='block';
+  document.getElementById('pw-input').value='';
+}
+
+async function showVault() {
+  document.getElementById('login-section').style.display='none';
+  document.getElementById('vault-section').style.display='block';
+  await loadCredentials();
+}
+
+async function loadCredentials() {
+  try {
+    const r = await fetch('/api/vault/admin/credentials', {
+      headers:{'X-Vault-Token': _token}
+    });
+    if (r.status === 401) { doLogout(); return; }
+    const data = await r.json();
+    renderTable(Array.isArray(data) ? data : []);
+  } catch(e) {
+    _setStatus('Load failed: ' + e.message, false);
+  }
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('cred-tbody');
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    const devices = (row.allowed_devices||[]).join(',');
+    tr.innerHTML = `
+      <td>${_esc(row.owner)}</td>
+      <td>${_esc(row.key)}</td>
+      <td contenteditable="true" class="editable" data-field="value" data-owner="${_esc(row.owner)}" data-key="${_esc(row.key)}">${_esc(row.value)}</td>
+      <td contenteditable="true" class="editable" data-field="devices" data-owner="${_esc(row.owner)}" data-key="${_esc(row.key)}">${_esc(devices)}</td>
+      <td style="color:#666;font-size:0.8rem">${_esc(row.source_path||'')}</td>
+      <td>
+        <button class="btn save" onclick="saveRow(this)">Save</button>
+        <button class="btn del" onclick="deleteRow('${_esc(row.owner)}','${_esc(row.key)}')">Del</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function saveRow(btn) {
+  const tr = btn.closest('tr');
+  const cells = tr.querySelectorAll('[data-field]');
+  const owner = cells[0].dataset.owner;
+  const key = cells[0].dataset.key;
+  const value = cells[0].textContent;
+  const devicesStr = cells[1].textContent;
+  const allowed_devices = devicesStr.split(',').map(s=>s.trim()).filter(Boolean);
+  try {
+    const r = await fetch('/api/vault/admin/credentials', {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Vault-Token':_token},
+      body: JSON.stringify({owner, key, value, allowed_devices})
+    });
+    if (r.status===401) { doLogout(); return; }
+    const d = await r.json();
+    _setStatus(d.error || ('Saved: '+owner+'/'+key), !d.error);
+  } catch(e) {
+    _setStatus('Save failed: '+e.message, false);
+  }
+}
+
+async function deleteRow(owner, key) {
+  if (!confirm('Delete '+owner+'/'+key+'?')) return;
+  try {
+    const r = await fetch('/api/vault/admin/credentials', {
+      method:'DELETE',
+      headers:{'Content-Type':'application/json','X-Vault-Token':_token},
+      body: JSON.stringify({owner, key})
+    });
+    if (r.status===401) { doLogout(); return; }
+    _setStatus('Deleted: '+owner+'/'+key, true);
+    await loadCredentials();
+  } catch(e) {
+    _setStatus('Delete failed: '+e.message, false);
+  }
+}
+
+async function addRow() {
+  const owner = document.getElementById('new-owner').value.trim();
+  const key   = document.getElementById('new-key').value.trim();
+  const value = document.getElementById('new-value').value;
+  const devStr= document.getElementById('new-devices').value.trim();
+  const allowed_devices = devStr ? devStr.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  if (!owner || !key) { _setStatus('Owner and key are required', false); return; }
+  try {
+    const r = await fetch('/api/vault/admin/credentials', {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Vault-Token':_token},
+      body: JSON.stringify({owner, key, value, allowed_devices})
+    });
+    if (r.status===401) { doLogout(); return; }
+    const d = await r.json();
+    if (!d.error) {
+      document.getElementById('new-owner').value='';
+      document.getElementById('new-key').value='';
+      document.getElementById('new-value').value='';
+      document.getElementById('new-devices').value='';
+    }
+    _setStatus(d.error || ('Added: '+owner+'/'+key), !d.error);
+    await loadCredentials();
+  } catch(e) {
+    _setStatus('Add failed: '+e.message, false);
+  }
+}
+
+// Auto-login if token exists in localStorage
+document.addEventListener('DOMContentLoaded', async () => {
+  if (_token) {
+    // Validate stored token
+    try {
+      const r = await fetch('/api/vault/admin/credentials', {
+        headers:{'X-Vault-Token':_token}
+      });
+      if (r.ok) { showVault(); return; }
+    } catch(e) {}
+    localStorage.removeItem(TOKEN_KEY);
+    _token = '';
+  }
+  // Show login form
+  document.getElementById('pw-input').focus();
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+});
+</script>
+</body>
+</html>
+"""
+
+
+async def _page_settings(request: Request):
+    """GET /settings — vault credential settings panel."""
+    return HTMLResponse(_VAULT_SETTINGS_PAGE)
+
+
 def _make_app() -> Starlette:
     @contextlib.asynccontextmanager
     async def _lifespan(app: Starlette):
@@ -2947,6 +3298,14 @@ def _make_app() -> Starlette:
         Route("/api/device/{id}/console", _api_device_console),
         Route("/api/device/{id}/breaker", _api_device_breaker, methods=["POST"]),
         Route("/api/device/{id}/screenshot", _api_device_screenshot),
+        # Vault admin API
+        Route("/api/vault/admin/login", _api_vault_login, methods=["POST"]),
+        Route("/api/vault/admin/logout", _api_vault_logout, methods=["POST"]),
+        Route("/api/vault/admin/credentials", _api_vault_credentials_get, methods=["GET"]),
+        Route("/api/vault/admin/credentials", _api_vault_credentials_put, methods=["PUT"]),
+        Route("/api/vault/admin/credentials", _api_vault_credentials_delete, methods=["DELETE"]),
+        # Settings page
+        Route("/settings", _page_settings),
     ]
 
     # Serve compiled Svelte assets if the UI has been built
