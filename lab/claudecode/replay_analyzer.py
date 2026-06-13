@@ -23,12 +23,17 @@ _UU_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_UU_ROOT))
 
 from devices.dicksimnel.device import DickSimnelDevice
+from devices.critic.device import CriticDevice
 
 
 def analyze_single(ticket_id: str, detail: bool = False) -> None:
     """Analyze a single closed ticket."""
-    device = DickSimnelDevice()
-    result = device.replay_and_analyze(ticket_id)
+    dsimnel = DickSimnelDevice()
+    critic = CriticDevice()
+
+    # Get replay data from DickSimnel
+    replay_result = dsimnel.replay_and_analyze(ticket_id)
+    result = replay_result
 
     print()
     print(f"═══════════════════════════════════════════════════════════════")
@@ -43,6 +48,17 @@ def analyze_single(ticket_id: str, detail: bool = False) -> None:
 
     print(f"Events recorded: {result['event_count']}")
     print(f"Tool success rate: {result['success_rate'] * 100:.1f}%")
+    print()
+
+    # Get Critic analysis
+    critic_analysis = critic.evaluate_replay(ticket_id, result)
+    print("CRITIC ANALYSIS:")
+    print("-" * 63)
+    print(f"  Good/Bad/Neutral: {critic_analysis['verdict_distribution']}")
+    if critic_analysis["failure_modes"]:
+        print(f"  Failure modes: {', '.join(critic_analysis['failure_modes'])}")
+    if critic_analysis["improvement_opportunities"]:
+        print(f"  Improvements: {critic_analysis['improvement_opportunities'][0]}")
     print()
 
     if result["decision_points"]:
