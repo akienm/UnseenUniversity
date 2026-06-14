@@ -450,27 +450,42 @@ class DickSimnelDevice(BaseDevice):
 
     # Internal tier cascade: cheapest first, escalate within Dick before going to CC.
     # Each tier appends context from the prior attempt so the next model starts informed.
+    # Tier cascade: builder → creator → (CC). Each explicit ESCALATE: advances to the next
+    # tier (with context appended) rather than going straight to CC. Only the last tier's
+    # ESCALATE: propagates to CC. Creator tier absorbs escalations that builder can't handle
+    # but that don't need master (CC/Anthropic) attention.
+    #
+    # Tuple: (model_id, tier_label)
+    # tier_label "builder" — cheap floor; first attempt
+    # tier_label "creator" — mid-tier; receives builder escalation context
+    #
     # OLLAMA-ONLY MODE: OR tiers disabled — no paid fallthrough. Escalate to CC if devstral fails.
     _TIER_CASCADE = [
-        ("devstral-small-2:24b", "devstral"),       # tier 0: flat-rate floor; purpose-built agentic coding
-        # ("anthropic/claude-haiku-4.5", "haiku"),  # DISABLED — OR off until Ollama-only validated
-        # ("anthropic/claude-sonnet-4.6", "sonnet"),  # DISABLED
-        # ("anthropic/claude-opus-4.8", "opus"),      # DISABLED
+        ("devstral-small-2:24b", "builder"),        # tier 0: flat-rate floor; purpose-built agentic coding
+        # Creator tier — larger OR model; absorbs builder escalations before reaching CC
+        # Enable when OR/paid inference is back on.
+        # ("qwen/qwen3-30b-a3b-instruct", "creator"),  # DISABLED — OR off
+        # ("anthropic/claude-haiku-4.5", "creator"),   # DISABLED — OR off
     ]
 
     def _run_inference(self, ticket: dict) -> str | None:
         """Work a ticket through the ReAct ToolLoop with internal tier escalation.
 
-        Tries tiers in _TIER_CASCADE order. Only escalates to CC after all tiers
-        have been tried — so haiku→sonnet→opus retry stays within Dick.
-        Returns the last result (for CC escalation message) or None if all tiers fail hard.
+        Tries tiers in _TIER_CASCADE order. ESCALATE: from a non-final tier advances
+        to the next tier with the escalation context appended — builder→creator before
+        reaching CC. DONE: or COST_EXCEEDED: terminate immediately. MAX_TURNS: with
+        tool calls escalates to CC directly (no tier advance — tier was working, ran out
+        of turns, adding context to a bigger model won't help).
+
+        Returns the last result (for CC escalation) or None if all tiers fail hard.
         """
         from devices.dicksimnel.toolloop import ToolLoop
         ticket_id = ticket.get("id", "?")
         system_prompt = self._build_system_prompt(ticket)
         last_result: str | None = None
 
-        for model_id, tier_label in self._TIER_CASCADE:
+        for idx, (model_id, tier_label) in enumerate(self._TIER_CASCADE):
+            is_last_tier = (idx == len(self._TIER_CASCADE) - 1)
             log.info("DickSimnel: ToolLoop tier=%s model=%r for ticket %s", tier_label, model_id or "rules-engine", ticket_id)
             try:
                 loop = ToolLoop()
@@ -479,9 +494,26 @@ class DickSimnelDevice(BaseDevice):
                     log.info("DickSimnel: tier=%s finished for %s (%d chars)", tier_label, ticket_id, len(result))
                     last_result = result
                     stripped = result.strip()
-                    # DONE: = success; ESCALATE:/COST_EXCEEDED: = stop cascade, hand to CC.
-                    if stripped.startswith("DONE:") or stripped.startswith("ESCALATE:") or stripped.startswith("COST_EXCEEDED:"):
+                    # DONE: / COST_EXCEEDED: terminate the cascade immediately.
+                    if stripped.startswith("DONE:") or stripped.startswith("COST_EXCEEDED:"):
                         return result
+                    # ESCALATE: — if more tiers remain, advance with context; otherwise hand to CC.
+                    if stripped.startswith("ESCALATE:"):
+                        if is_last_tier:
+                            return result  # CC handles it
+                        reason = stripped[len("ESCALATE:"):].strip()[:300]
+                        esc_note = (
+                            f"\n\n---\n**{tier_label} tier escalation:**\n"
+                            f"Reason: {reason}\n"
+                            f"Attempt: {result[:400]}"
+                        )
+                        ticket = dict(ticket)
+                        ticket["description"] = ticket.get("description", "") + esc_note
+                        log.info(
+                            "DickSimnel: tier=%s escalated for %s — advancing to next tier with context",
+                            tier_label, ticket_id,
+                        )
+                        continue
                     # MAX_TURNS: with tool calls = tier was working but ran out of turns.
                     # Don't advance to a more expensive tier — escalate to CC with the log.
                     had_tool_calls = any(e.get("had_tool_calls") for e in loop._turn_log)

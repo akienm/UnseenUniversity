@@ -29,6 +29,11 @@ Default rules — flat_rate (Ollama Pro) preferred, usage_based (OR) as fallback
     6.  designer → google/gemini-2.0-flash / openrouter  (no-cache fallback)
     7.  designer → claude-sonnet-4-6 / anthropic     (heaviest, last resort)
 
+  Creator tier (between builder and master — absorbs builder escalations before CC):
+    1. creator → qwen/qwen3-30b-a3b-instruct / openrouter (primary — larger than builder)
+    2. creator → anthropic/claude-haiku-4.5 / openrouter  (fallback — strong instruction follower)
+  NOTE: creator tier is currently disabled in Ollama-only mode — rules present, sources unavailable.
+
   99. fallback → cheapest available worker model
 """
 
@@ -80,6 +85,11 @@ _DEFAULT_RULES: list[RoutingRule] = [
     RoutingRule(5, "designer", "gemini-2.0-flash-paid", "google", "designer→gemini-flash/google-paid"),
     RoutingRule(6, "designer", "google/gemini-2.0-flash", "openrouter", "designer→gemini-flash/OR-fallback"),
     RoutingRule(7, "designer", "claude-sonnet-4-6", "anthropic", "designer→claude-sonnet/anthropic"),
+    # Creator tier — absorbs builder escalations before reaching master (CC).
+    # Between worker (builder) and master; currently disabled in Ollama-only mode (OR unavailable).
+    # Rules remain so route() can be used when OR sources become available.
+    RoutingRule(1, "creator", "qwen/qwen3-30b-a3b-instruct", "openrouter", "creator→qwen3-30b/OR"),
+    RoutingRule(2, "creator", "anthropic/claude-haiku-4.5", "openrouter", "creator→haiku/OR"),
     # Batch tier — off-hours knowledge integration. Cost cascade: free local → flat-rate cloud → OR.
     # Intended for night-mode (00:00-06:00); route() applies a time-of-day gate.
     RoutingRule(1, "batch", "qwen2.5-coder:32b", "local_ollama", "batch→qwen2.5-coder/local-ollama"),
