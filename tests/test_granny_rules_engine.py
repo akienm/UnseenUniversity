@@ -114,8 +114,11 @@ class TestRunOnce:
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
 
+        # Patch cascade to empty so CC.0 doesn't absorb the builder ticket
+        # (CC.0 has cascade_if_idle=True — without this patch, it would claim the ticket).
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
              patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._cascade_active_workers", return_value={}), \
              patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
              patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
              patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
@@ -142,25 +145,30 @@ class TestRunOnce:
     def test_guru_ticket_dispatches_to_akien_not_cc_or_ds(self):
         ticket = {"id": "T-guru", "tags": [], "role": "guru", "status": "sprint",
                   "title": "Needs Akien"}
+        # _dispatch_dicksimnel was removed — bus dispatch is the unified path now;
+        # for guru tickets, _dispatch_akien is called and _dispatch_bus is NOT called.
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
             with patch("devices.granny.daemon._dispatch_akien", return_value=True) as mock_akien:
                 with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
-                    with patch("devices.granny.daemon._dispatch_dicksimnel") as mock_ds:
-                        with patch("devices.granny.daemon._post_channel"):
-                            run_once(_config())
+                    with patch("devices.granny.daemon._post_channel"):
+                        run_once(_config())
         mock_akien.assert_called_once()
         mock_bus.assert_not_called()
-        mock_ds.assert_not_called()
 
     def test_guru_ticket_skips_availability_check(self):
         ticket = {"id": "T-guru2", "tags": [], "role": "guru", "status": "sprint",
                   "title": "Human needed"}
+        # is_available IS called during the idle-worker-launch pass (checking whether
+        # DickSimnel/CC.0 need launching), but must NOT be called for guru routing itself.
+        # Observable check: _dispatch_akien fires even when all workers are "unavailable".
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=False) as mock_avail:
-                with patch("devices.granny.daemon._dispatch_akien", return_value=True):
-                    with patch("devices.granny.daemon._post_channel"):
-                        run_once(_config())
-        mock_avail.assert_not_called()
+            with patch("devices.granny.availability.is_available", return_value=False):
+                with patch("devices.granny.daemon._dispatch_akien", return_value=True) as mock_akien:
+                    with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
+                        with patch("devices.granny.daemon._post_channel"):
+                            run_once(_config())
+        mock_akien.assert_called_once()
+        mock_bus.assert_not_called()
 
     def test_dispatch_cc0_calls_bus_dispatch(self):
         ticket = {"id": "T-cc-mark", "tags": [], "role": "master", "status": "sprint",
@@ -235,14 +243,14 @@ class TestRunOnce:
             dispatched_mailboxes.append(worker_mailbox)
             return True
 
+        # _dispatch_dicksimnel was removed — bus dispatch is the unified path;
+        # check observable behavior: bus dispatched to cc.0, not dicksimnel.0.
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
              patch("devices.granny.availability.is_available", return_value=True), \
              patch("devices.granny.daemon._cc0_busy", return_value=False), \
              patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
-             patch("devices.granny.daemon._dispatch_dicksimnel") as mock_ds, \
              patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
              patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
              patch("devices.granny.daemon._post_channel"):
             run_once(_config(), imap=imap)
         assert dispatched_mailboxes == ["cc.0"], "escalated tickets must go to CC (cc.0)"
-        mock_ds.assert_not_called()
