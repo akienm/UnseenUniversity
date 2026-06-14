@@ -2,6 +2,7 @@
 2026-06-07T20:55:56 | D-vetinari-gap-map-2026-06-08 | Vetinari gap map: 5 MISSING + 2 PARTIAL across 7 dimensions | tickets: T-vetinari-directive-intake, T-vetinari-decompose, T-vetinari-clarification-loop, T-vetinari-team-dispatch, T-vetinari-progress-tracking, T-vetinari-deployment-signal, T-vetinari-cp-audit
 2026-06-08T13:34:03 | D-wg-node-tree-architecture-2026-06-08 | Universal stable-node+calving-tree arch applied to word graph: words-as-memories (Option C) | tickets: T-scraps-embed-rack-tool, T-wg-words-as-memories, T-wg-spread-via-cortex, T-wg-calving-time-threshold, T-wg-cooccur-retire, T-consequence-wg-node-tree-arch
 2026-06-08T16:31:39 | D-uurecall-search-gaps-2026-06-08 | uurecall: fix literal search gaps, suppress semantic noise, add palace source | tickets: T-uurecall-search-gaps, T-consequence-uurecall-search-gaps
+<<<<<<< Updated upstream
 2026-06-09T15:44:55 | D-comms-fascia-ux-2026-06-09 | Comms page UX redesign — Public landing + device fascia pages | tickets: T-comms-public-landing, T-device-fascia-page, T-consequence-comms-fascia-ux
 2026-06-09T15:44:55 | D-hubert-device-2026-06-09 | Hubert rack device + Control Station as pure breaker panel | tickets: T-hubert-device-scaffold, T-hubert-wire-dev-tools, T-control-station-breakers-only, T-consequence-hubert-device
 2026-06-09T16:49:37 | D-nanny-ogg-device-2026-06-09 | Nanny Ogg device — pure cron/scheduler, no inference | tickets: T-nanny-ogg-scaffold, T-nanny-ogg-os-cron, T-nanny-ogg-quotes, T-consequence-nanny-ogg-device
@@ -26,3 +27,6 @@
 2026-06-13T14:59:55 | D-orientation-classifier-arch-2026-06-13 | Orientation classifier arch: clan.code_index + Haiku intent pass + ClassifierDevice stubs | tickets: T-symbols-table-multilang, T-after-sprint-symbols-refresh, T-orientation-classifier, T-consequence-orientation-arch
 2026-06-13T15:24:36 | D-ground-loop-2026-06-13 | Ground Loop plugin-host supervisor below rack stack | tickets: T-guru-loop-core, T-ground-loop-cc-recovery, T-consequence-ground-loop
 2026-06-13T16:03:23 | D-builder-learning-blockade-2026-06-13 | Critic exists in devices/critic/ but not wired into DickSimnel ToolLoop; roadmap: simulator → wire Critic → pattern mining | tickets: T-simulator-execution-sandbox, T-critic-verifier-agent
+=======
+2026-06-09T14:25:26 | D-consequence-enforcement-gap-2026-06-09 | Consequence-checking enforcement + web UI end-user-ready | tickets: T-consequence-web-ui-controls, T-gap-scan-consequence-debt, T-consequence-enforcement-gate
+>>>>>>> Stashed changes

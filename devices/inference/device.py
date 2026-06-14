@@ -346,11 +346,20 @@ class InferenceDevice(BaseDevice):
                         foreground=request.foreground,
                     )
             else:
-                # Unknown model ID — let it through and let the source handle the error
+                # Unknown model ID — fall through to openrouter; guard against no source.
                 source = self._sources.get("openrouter")
                 provider_name = "openrouter"
                 log.info("dispatch: unknown model=%s — routing to openrouter", request.model)
                 decision = None
+                if source is None:
+                    log.error(
+                        "dispatch: unknown model=%s and openrouter source unavailable — error response",
+                        request.model,
+                    )
+                    return InferenceResponse(
+                        text=f"[InferenceDevice: no source for model={request.model}]",
+                        finish_reason="error",
+                    )
         else:
             decision = self._rules.route(
                 task_class=request.task_class or "worker",
@@ -395,6 +404,15 @@ class InferenceDevice(BaseDevice):
             )
             source = self._sources.get(self._mode)
             provider_name = self._mode
+            if source is None:
+                log.error(
+                    "dispatch: no source available for mode=%s — returning error response",
+                    self._mode,
+                )
+                return InferenceResponse(
+                    text=f"[InferenceDevice: no source available for mode={self._mode}]",
+                    finish_reason="error",
+                )
 
         # OR-specific pre-call gates
         if provider_name == "openrouter":
