@@ -1,11 +1,11 @@
 """Tests for T-cc-queue-scraps-gate — Scraps pre-flight in cmd_add.
 
 Scraps validation lives entirely in cmd_add — never in cmd_claim (removed).
-Four cases from the test plan:
+Three cases from the test plan:
   1. add with empty description → Scraps issues printed, ticket not added
   2. valid ticket add → passes, metadata contains scraps_validated timestamp
   3. Scraps offline during add → warning printed, ticket still added
-  4. cmd_claim always raises LegacyDirectClaimError (claim path removed)
+  (cmd_claim test removed — function was deleted entirely from cc_queue.py)
 
 # author-model: claude-sonnet-4-6
 """
@@ -27,7 +27,6 @@ from lab.claudecode.cc_queue import (
     LegacyDirectClaimError,
     _scraps_validate,
     cmd_add,
-    cmd_claim,
 )
 
 _NO_CHANNEL = patch("unseen_university.channel.post_to_channel")
@@ -133,23 +132,3 @@ class TestCmdAddScrapsGate:
         assert len(saved) == 1, "offline Scraps must not block add"
         assert "Scraps offline" in out
 
-
-class TestCmdClaimRemoved:
-    """cmd_claim is removed — always raises LegacyDirectClaimError.
-
-    Scraps validation now lives entirely in cmd_add (at add-time).
-    Workers receive tickets only via CC dispatch: cc_queue.py dispatch <ticket-id>
-    """
-
-    def test_cmd_claim_always_raises(self):
-        """cmd_claim raises LegacyDirectClaimError unconditionally."""
-        with patch("lab.claudecode.cc_queue._igor_post", return_value=False):
-            with pytest.raises(LegacyDirectClaimError) as exc_info:
-                cmd_claim(["T-test-scraps-gate"])
-        assert "dispatch" in str(exc_info.value)
-
-    def test_cmd_claim_raises_even_with_valid_ticket(self):
-        """cmd_claim raises even when the ticket would otherwise be valid."""
-        with patch("lab.claudecode.cc_queue._igor_post", return_value=False):
-            with pytest.raises(LegacyDirectClaimError):
-                cmd_claim(["T-test-scraps-gate", "--as", "claude"])
