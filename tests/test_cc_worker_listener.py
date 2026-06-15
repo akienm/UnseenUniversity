@@ -83,8 +83,8 @@ class TestCCWorkerListenerPollOnce:
         assert acks[0].payload["ticket_id"] == "T-foo"
         assert acks[0].from_device == "cc.0"
 
-    def test_deliver_fn_injects_sprint_ticket_when_tmux_found(self):
-        """deliver_fn directly: tmux session present → send-keys /sprint-ticket."""
+    def test_deliver_fn_notifies_when_tmux_found(self):
+        """deliver_fn directly: tmux session present → send-keys soft notification."""
         imap = _FakeIMAP()
         listener, mock_run, _, tmux_inject = self._listener(imap)
         deliver_fn = listener._make_deliver_fn()
@@ -94,7 +94,9 @@ class TestCCWorkerListenerPollOnce:
 
         assert result is True
         injected_cmds = [str(c) for c in tmux_inject.call_args_list]
-        assert any("T-bar" in c and "sprint-ticket" in c for c in injected_cmds)
+        # Must notify "ticket waiting", must NOT inject /sprint-ticket directly
+        assert any("T-bar" in c and "ticket waiting" in c for c in injected_cmds)
+        assert not any("sprint-ticket" in c for c in injected_cmds)
 
     def test_non_dispatch_envelope_ignored(self):
         imap = _FakeIMAP()

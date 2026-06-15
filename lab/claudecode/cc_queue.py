@@ -1889,6 +1889,35 @@ def cmd_append_note(args):
     print(f"Note appended to {tid}")
 
 
+def cmd_stamp_verdict(args):
+    """Stamp a post-sprint grader verdict onto a ticket: stamp-verdict <id> <pass|fail|partial> [<reasoning>]
+
+    Adds a 'verdict' field to the ticket metadata so cc_queue.py show surfaces it.
+    Advisory only — never affects ticket status or closes the ticket.
+    """
+    if len(args) < 2:
+        print("Usage: stamp-verdict <id> <pass|fail|partial> [<reasoning>]")
+        sys.exit(1)
+    tid = args[0]
+    verdict_value = args[1]
+    if verdict_value not in ("pass", "fail", "partial"):
+        print(f"Invalid verdict {verdict_value!r} — must be pass, fail, or partial")
+        sys.exit(1)
+    reasoning = " ".join(args[2:]) if len(args) > 2 else ""
+    tasks = _load()
+    t = _find(tasks, tid)
+    if not t:
+        print(f"Task {tid} not found.")
+        sys.exit(1)
+    t["verdict"] = verdict_value
+    if reasoning:
+        t["verdict_reasoning"] = reasoning[:500]
+    _save(tasks)
+    _log({"action": "stamp_verdict", "id": tid, "verdict": verdict_value})
+    reasoning_suffix = f" — {reasoning[:80]}" if reasoning else ""
+    print(f"Verdict stamped on {tid}: {verdict_value}{reasoning_suffix}")
+
+
 COMMANDS = {
     "list": cmd_list,
     "show": cmd_show,
@@ -1900,6 +1929,7 @@ COMMANDS = {
     "log": cmd_log,
     "add": cmd_add,
     "append-note": cmd_append_note,
+    "stamp-verdict": cmd_stamp_verdict,
     "flush_decision": cmd_flush_decision,
     "flush_session": cmd_flush_session,
     "worker-launch": cmd_worker_launch,
