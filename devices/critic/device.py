@@ -9,6 +9,7 @@ from pathlib import Path
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 from .agent import CriticAgent, CriticJudgment, Decision
+from devices.evaluator.core import EvaluatorCore
 
 log = logging.getLogger(__name__)
 
@@ -108,8 +109,6 @@ class CriticDevice(BaseDevice):
         Output shape matches CriticJudgment for DickSimnel compat.
         Falls back to CriticAgent heuristic evaluation if inference fails.
         """
-        from devices.evaluator.core import EvaluatorCore
-
         context = (
             f"Ticket: {decision.ticket_id}\n"
             f"Turn: {decision.turn_num}\n"
