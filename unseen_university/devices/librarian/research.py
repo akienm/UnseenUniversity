@@ -259,6 +259,11 @@ class ResearchEngine:
             except Exception:
                 pass
 
+        # Seed the intent extractor's learning store with this research outcome
+        # (post-hoc validation with no prediction, since research is exploration)
+        if answer.strip():
+            self._seed_intent_extractor(query, answer)
+
         return ResearchResult(
             query=query,
             breadth=breadth,
@@ -268,3 +273,19 @@ class ResearchEngine:
             tier=selection.tier,
             sources=sources,
         )
+
+    def _seed_intent_extractor(self, query: str, answer: str) -> None:
+        """Post-hoc validation: seed the intent extractor with research outcomes.
+
+        Called after successful research completion. Validates the answer as ground truth
+        (no pre-hoc prediction needed, since research is exploration). Fails open if
+        the intent device is unavailable.
+        """
+        try:
+            from devices.intent.tools import intent_validate
+            intent_validate(actual_outcome=answer[:500], prediction_id=None)
+            log.debug("research: seeded intent extractor with research outcome")
+        except ImportError:
+            log.warning("research: intent extractor device not available")
+        except Exception as exc:
+            log.warning("research: failed to seed intent extractor: %s", exc)

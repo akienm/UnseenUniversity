@@ -131,6 +131,51 @@ class TestResearchEngine:
         assert matches
         assert any("psycopg" in m["url"] for m in matches)
 
+    def test_research_calls_intent_extractor_validation(self):
+        """Verify research() seeds the intent extractor with ground truth."""
+        from unittest.mock import patch
+
+        validate_calls = []
+
+        def mock_validate(actual_outcome, prediction_id=None):
+            validate_calls.append({"outcome": actual_outcome, "prediction_id": prediction_id})
+            return {"status": "ok"}
+
+        with patch("devices.intent.tools.intent_validate", side_effect=mock_validate):
+            result = self.engine.research("what is connection pooling?")
+
+        # Should have called validate with the answer and prediction_id=None
+        assert len(validate_calls) > 0
+        call = validate_calls[0]
+        assert call["prediction_id"] is None
+        assert call["outcome"][:100] in result.answer or result.answer[:100] in call["outcome"]
+
+    def test_research_intent_extractor_unavailable_fails_open(self):
+        """Verify research() fails open if intent extractor is unavailable."""
+        from unittest.mock import patch
+
+        # Simulate missing intent extractor device
+        with patch("devices.intent.tools.intent_validate", side_effect=ImportError("not found")):
+            result = self.engine.research("what is X?")
+
+        # Should still return a valid research result, not raise
+        assert isinstance(result, ResearchResult)
+        assert result.answer
+
+    def test_research_intent_extractor_validation_error_fails_open(self):
+        """Verify research() fails open if validation raises an exception."""
+        from unittest.mock import patch
+
+        def mock_validate_error(actual_outcome, prediction_id=None):
+            raise RuntimeError("validation failed")
+
+        with patch("devices.intent.tools.intent_validate", side_effect=mock_validate_error):
+            result = self.engine.research("what is Y?")
+
+        # Should still return a valid research result, not raise
+        assert isinstance(result, ResearchResult)
+        assert result.answer
+
 
 class TestResearchTools:
     def test_summarize_tool_returns_json(self):
