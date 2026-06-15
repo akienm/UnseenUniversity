@@ -81,14 +81,21 @@ class TestCarveHoldout(unittest.TestCase):
 
     def test_stratified_split_approximately_twenty_percent(self):
         results = carve(dry_run=False)
-        # With 10 rows per type, ~20% = 2 rows
         for mtype in ("FACTUAL", "EPISODIC"):
             if mtype not in results:
                 continue
             stats = results[mtype]
-            # Holdout should be roughly 20% (1-3 rows for N=10)
-            self.assertGreaterEqual(stats["holdout"], 1)
-            self.assertLessEqual(stats["holdout"], 3)
+            # Holdout fraction should be ~20% regardless of absolute row count.
+            # Allow 10%–30% tolerance to handle rounding on small sets.
+            holdout_ratio = stats["holdout"] / stats["total"]
+            self.assertGreaterEqual(
+                holdout_ratio, 0.10,
+                f"{mtype}: holdout ratio {holdout_ratio:.2f} below 10%",
+            )
+            self.assertLessEqual(
+                holdout_ratio, 0.30,
+                f"{mtype}: holdout ratio {holdout_ratio:.2f} above 30%",
+            )
 
     def test_dry_run_does_not_modify(self):
         # First reset all to false
