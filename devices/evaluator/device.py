@@ -33,13 +33,6 @@ _START_TIME = time.time()
 
 log = logging.getLogger(__name__)
 
-_JUDGE_SYSTEM = (
-    "You are an impartial output evaluator. "
-    "Given an agent output and rubric criteria, score each criterion as pass or fail. "
-    "Respond ONLY with valid JSON (no markdown, no prose):\n"
-    '{"overall_passed": true, "criteria_results": [{"name": "...", "passed": true, "reasoning": "..."}]}'
-)
-
 _JUDGE_MODEL = "anthropic/claude-haiku-4-5-20251001"
 
 
@@ -226,60 +219,11 @@ class EvaluatorDevice(BaseDevice):
         return json.loads(row[0])
 
     def _run_judge(self, output: str, criteria: list[dict], judge_index: int) -> dict:
-        """Run one LLM judge. Always returns a dict; never raises."""
-        from devices.inference.shim import InferenceRequest
+        """Run one LLM judge via EvaluatorCore (neutral optimism). Always returns a dict."""
+        from devices.evaluator.core import EvaluatorCore
 
-        criteria_text = "\n".join(
-            f"- {c.get('name','criterion')}: {c.get('instruction','evaluate this criterion')}"
-            for c in criteria
-        )
-        prompt = f"Output to evaluate:\n{output}\n\nRubric criteria:\n{criteria_text}"
-        try:
-            req = InferenceRequest(
-                messages=[{"role": "user", "content": prompt}],
-                system=_JUDGE_SYSTEM,
-                model=_JUDGE_MODEL,
-                max_tokens=1024,
-                temperature=0.0,
-            )
-            resp = self._get_inference().dispatch(req)
-            parsed = _extract_json(resp.text)
-            overall_passed = bool(parsed.get("overall_passed", False))
-            cr = parsed.get("criteria_results", [])
-            if not cr:
-                cr = [
-                    {
-                        "name": c.get("name", "criterion"),
-                        "passed": overall_passed,
-                        "reasoning": "no detail",
-                    }
-                    for c in criteria
-                ]
-            passed_count = sum(1 for item in cr if item.get("passed", False))
-            score = passed_count / len(cr) if cr else 0.0
-            return {
-                "judge_index": judge_index,
-                "passed": overall_passed,
-                "score": round(score, 4),
-                "criteria_results": cr,
-                "raw_response": resp.text[:500],
-            }
-        except Exception as exc:
-            # Failed judge is recorded as fail — never dropped
-            return {
-                "judge_index": judge_index,
-                "passed": False,
-                "score": 0.0,
-                "criteria_results": [
-                    {
-                        "name": c.get("name", "criterion"),
-                        "passed": False,
-                        "reasoning": f"judge {judge_index} error: {exc}",
-                    }
-                    for c in criteria
-                ],
-                "raw_response": f"error: {exc}",
-            }
+        core = EvaluatorCore(self._get_inference(), model=_JUDGE_MODEL)
+        return core.evaluate(output, criteria, optimism=0.0, judge_index=judge_index)
 
     # ── MCP tools ─────────────────────────────────────────────────────────────
 
