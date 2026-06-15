@@ -23,14 +23,8 @@ else
     VENV_PYTHON="${THEIGORS_DIR}/venv/bin/python"
 fi
 
-# Try to source common functions if available
-if [[ -f "${SCRIPT_DIR}/_igor_common.sh" ]]; then
-    # shellcheck disable=SC1091
-    source "${SCRIPT_DIR}/_igor_common.sh"
-elif [[ -f "${HOME}/bin/_igor_common.sh" ]]; then
-    # shellcheck disable=SC1091
-    source "${HOME}/bin/_igor_common.sh"
-fi
+# Note: do not source _igor_common.sh — it's TheIgors legacy code that corrupts
+# IGOR_HOME and CC_TMUX_SESSION. superclaude is a UU launcher and must stay clean.
 
 # ─ Setup wizard ──────────────────────────────────────────────────────────────
 
@@ -198,8 +192,8 @@ start_rack_server() {
     nohup "$VENV_PYTHON" "$uc_server" >> "${IGOR_HOME}/logs/rack_server.log" 2>&1 &
     disown
 
-    # Wait briefly for it to come up
-    for i in 1 2 3 4 5; do
+    # Wait for rack server startup (can take 10-15s on first boot)
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
         sleep 1
         if "$VENV_PYTHON" "$uc_server" --check >/dev/null 2>&1; then
             echo "Rack server: started (pid $(cat "${IGOR_HOME}/web_server.pid" 2>/dev/null || echo '?'))"
@@ -207,7 +201,7 @@ start_rack_server() {
         fi
     done
 
-    echo "Warning: rack server did not start within 5s (continuing anyway)"
+    echo "Warning: rack server did not start within 15s (continuing anyway)"
     return 0
 }
 
