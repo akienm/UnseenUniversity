@@ -21,6 +21,7 @@ from devices.claude.device import ClaudeDevice
 from devices.claude.shim import ClaudeShim
 from devices.discord_bot.device import DiscordBotDevice
 from devices.discord_bot.shim import DiscordBotShim
+from devices.granny.device import GrannyWeatherwaxDevice
 from devices.granny.shim import GrannyShim
 from devices.igor.device import IgorDevice
 from devices.igor.shim import IgorShim
@@ -57,6 +58,7 @@ ALL_DEVICE_CLASSES = [
     ClaudeDevice,
     DiscordBotDevice,
     EvaluatorDevice,
+    GrannyWeatherwaxDevice,
     IgorDevice,
     InferenceDevice,
     MinionDevice,
