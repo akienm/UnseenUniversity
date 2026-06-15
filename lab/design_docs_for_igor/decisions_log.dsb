@@ -33,3 +33,5 @@
 2026-06-14T16:05:57 | D-storage-layer-formalization-2026-06-14 | Formalize storage layer — clan/devlab/library/instance/employer.akien split | tickets: T-devlab-schema-create, T-library-schema-create, T-clan-data-audit, T-ccqueue-devlab-writer, T-consequence-storage-layer-formalization
 2026-06-14T16:44:17 | D-intent-extractor-learning-substrate-2026-06-14 | intent extractor as canonical learning substrate | tickets: T-intent-extractor-device, T-intent-extractor-backfill, T-intent-extractor-librarian, T-consequence-intent-extractor
 2026-06-14T18:14:18 | D-evaluator-consolidation-2026-06-14 | Evaluator consolidation — Critic/Improver/Judge unified around EvaluatorCore with optimism parameter | tickets: T-evaluator-core, T-critic-to-evaluator-core, T-improver-device, T-judge-wire-post-sprint, T-consequence-evaluator-consolidation
+2026-06-15T$(date +%H:%M:%S) | D-acurite-isolated-network-2026-06-15 | AcuRite hub on isolated network with daemon listener | tickets: TBD (pre-audit)
+2026-06-15T$(date +%H:%M:%S) | D-daemon-process-critic-infrastructure-2026-06-15 | Unified daemon supervisor, process skill/script pairs, critic expansion | tickets: TBD (pre-audit)
