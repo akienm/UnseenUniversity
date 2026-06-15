@@ -71,7 +71,7 @@ def main():
             print(f"  ✓ {ticket_id}: predicted '{predicted_intent}' (confidence: {confidence:.2f})")
 
             # If ticket is closed with a result, validate the prediction
-            if task.get("status") == "closed" and task.get("result"):
+            if task.get("status") in ("closed", "done") and task.get("result"):
                 result_text = str(task.get("result"))[:200]
                 try:
                     intent_validate(actual_outcome=result_text, prediction_id=prediction_id)
