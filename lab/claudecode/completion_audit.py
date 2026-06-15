@@ -90,6 +90,8 @@ def get_closed_tickets(days: int = 1, ticket_id: str = None) -> list[dict]:
                 "result": (t.get("result") or "")[:120],
                 "completed_at": (t.get("completed_at") or t.get("deposited_at") or "")[:19],
                 "criteria": extract_criteria(t.get("description") or ""),
+                "size": t.get("size"),
+                "status": t.get("status"),
             }
         )
     results.sort(key=lambda r: r["completed_at"], reverse=True)
