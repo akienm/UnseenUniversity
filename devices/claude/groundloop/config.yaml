@@ -1,0 +1,5 @@
+daemon: cc-worker-listener
+description: CC.0 bus mailbox listener — acks Granny dispatch, nags CC tmux session
+restart_policy: always
+poll_interval_s: 5
+nag_interval_s: 600
