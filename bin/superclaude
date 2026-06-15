@@ -295,7 +295,7 @@ else
     tmux new-session -d -s "$CC_TMUX_SESSION" 2>/dev/null || true
 
     # Build the command string with proper quoting
-    CLAUDE_CMD="CC_TMUX_SESSION=$(printf '%q' "$CC_TMUX_SESSION") cd $(printf '%q' "$PWD") && claude --dangerously-skip-permissions"
+    CLAUDE_CMD="CC_TMUX_SESSION=$(printf '%q' "$CC_TMUX_SESSION") && cd $(printf '%q' "$PWD") && claude --dangerously-skip-permissions"
     CLAUDE_CMD+=" -n $(printf '%q' "$SESSION_NAME")"
     CLAUDE_CMD+=" --remote-control $(printf '%q' "$SESSION_NAME")"
     for arg in "$@"; do
