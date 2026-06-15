@@ -8,19 +8,36 @@ from pathlib import Path
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
-from .agent import CriticAgent, Decision
+from .agent import CriticAgent, CriticJudgment, Decision
 
 log = logging.getLogger(__name__)
 
 _RULES_DIR = Path.home() / ".unseen_university" / "critic_rules"
+_CRITIC_MODEL = "anthropic/claude-haiku-4-5-20251001"
+
+_DECISION_CRITERIA = [
+    {
+        "name": "correctness",
+        "instruction": "Was the tool choice correct given the decision context?",
+    },
+    {
+        "name": "efficiency",
+        "instruction": "Did the tool advance the task without unnecessary side-effects?",
+    },
+    {
+        "name": "error_handling",
+        "instruction": "Were errors detected and recovered from appropriately?",
+    },
+]
 
 
 class CriticDevice(BaseDevice):
     """Evaluates builder decisions and learns improvement rules from patterns."""
 
-    def __init__(self) -> None:
+    def __init__(self, inference_device=None) -> None:
         super().__init__("critic")
         self._agent = CriticAgent()
+        self._inference = inference_device
         self._judgments: dict = {}
         self._load_rules()
 
@@ -74,10 +91,67 @@ class CriticDevice(BaseDevice):
     def recovery(self) -> None:
         pass
 
-    # ── Evaluation ────────────────────────────────────────────────────────────
+    # ── Inference helper ──────────────────────────────────────────────────────
+
+    def _get_inference(self):
+        if self._inference is None:
+            from devices.inference.device import InferenceDevice
+            self._inference = InferenceDevice()
+        return self._inference
+
+    # ── EvaluatorCore-backed evaluation ───────────────────────────────────────
+
+    def evaluate_decision(self, decision: Decision) -> CriticJudgment:
+        """Evaluate a builder decision via EvaluatorCore(optimism=-1.0).
+
+        Uses a fault-finding stance — errs toward identifying problems.
+        Output shape matches CriticJudgment for DickSimnel compat.
+        Falls back to CriticAgent heuristic evaluation if inference fails.
+        """
+        from devices.evaluator.core import EvaluatorCore
+
+        context = (
+            f"Ticket: {decision.ticket_id}\n"
+            f"Turn: {decision.turn_num}\n"
+            f"Decision point: {decision.decision_point}\n"
+            f"Tool chosen: {decision.choice}\n"
+            f"Tool result: {decision.tool_result or '(no result)'}"
+        )
+        try:
+            core = EvaluatorCore(self._get_inference(), model=_CRITIC_MODEL)
+            result = core.evaluate(context, _DECISION_CRITERIA, optimism=-1.0)
+            passed = result.get("passed", False)
+            score = result.get("score", 0.0)
+            verdict = "good" if passed and score >= 0.6 else ("bad" if score < 0.3 else "neutral")
+            failed_criteria = [
+                c["name"] for c in result.get("criteria_results", []) if not c.get("passed", True)
+            ]
+            pattern = failed_criteria[0] if failed_criteria else ("successful_forward_progress" if passed else None)
+            reasoning = "; ".join(
+                f"{c['name']}: {c.get('reasoning', '')[:80]}"
+                for c in result.get("criteria_results", [])
+            ) or result.get("raw_response", "")[:200]
+            improvement = None if passed else f"Address failure in: {', '.join(failed_criteria)}"
+            log.info(
+                "Critic.evaluate_decision (EvaluatorCore)|ticket=%s|turn=%d|verdict=%s|score=%.2f",
+                decision.ticket_id, decision.turn_num, verdict, score,
+            )
+            return CriticJudgment(
+                decision=decision,
+                verdict=verdict,
+                confidence=score,
+                reasoning=reasoning,
+                pattern=pattern,
+                improvement=improvement,
+            )
+        except Exception as exc:
+            log.warning("Critic.evaluate_decision: EvaluatorCore failed, using heuristic: %s", exc)
+            return self._agent.evaluate_decision(decision)
+
+    # ── Replay evaluation ─────────────────────────────────────────────────────
 
     def evaluate_replay(self, ticket_id: str, replay_data: dict) -> dict:
-        """Evaluate a ticket replay and return pattern analysis."""
+        """Evaluate a ticket replay using EvaluatorCore(optimism=-1.0) per turn."""
         log.info("Critic: evaluating replay for %s", ticket_id)
 
         verdicts = []
@@ -90,7 +164,7 @@ class CriticDevice(BaseDevice):
                 context={"ticket": ticket_id},
                 tool_result=turn.get("tool_result"),
             )
-            verdicts.append(self._agent.evaluate_decision(decision))
+            verdicts.append(self.evaluate_decision(decision))
 
         pattern_analysis = self._agent.analyze_pattern(verdicts)
 
