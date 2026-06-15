@@ -153,12 +153,11 @@ class ImproverDevice(BaseDevice):
 
     # ── Core API ──────────────────────────────────────────────────────────────
 
-    def improve(self, patterns) -> list:
+    def improve(self, patterns) -> list[LearningRule]:
         """Extract constructive improvement rules from a list of CriticJudgment objects.
 
         Calls EvaluatorCore(optimism=+1.0) once per distinct failure pattern cluster.
-        Returns a list of LearningRule-compatible dicts (pattern_name, condition,
-        action, confidence) that are also persisted to disk.
+        Returns a list of LearningRule objects that are also persisted to disk.
         """
         if not patterns:
             return []
@@ -176,9 +175,12 @@ class ImproverDevice(BaseDevice):
             # Build a summary context for this cluster.
             verdicts = [j.verdict for j in judgments]
             reasonings = "; ".join(j.reasoning[:100] for j in judgments if j.reasoning)
+            avg_confidence = sum(j.confidence for j in judgments) / len(judgments)
             context = (
                 f"Pattern cluster: {pattern_name}\n"
+                f"Occurrences: {len(judgments)}\n"
                 f"Verdict distribution: {dict((v, verdicts.count(v)) for v in set(verdicts))}\n"
+                f"Average confidence: {avg_confidence:.2f}\n"
                 f"Examples: {reasonings[:400]}"
             )
 
@@ -187,39 +189,50 @@ class ImproverDevice(BaseDevice):
                 score = result.get("score", 0.5)
                 criteria_results = result.get("criteria_results", [])
 
-                # Map each criterion to a potential LearningRule.
+                # Extract a single constructive rule from the criteria results.
+                # Use the "suggest_improvement" criterion as the primary action.
+                action_text = ""
                 for crit in criteria_results:
-                    name = crit.get("name", "improvement")
-                    reasoning = crit.get("reasoning", "")[:200]
-                    if not reasoning:
-                        continue
+                    if crit.get("name") == "suggest_improvement":
+                        action_text = crit.get("reasoning", "")[:200]
+                        break
+                if not action_text:
+                    # Fallback: use first passing criterion reasoning
+                    for crit in criteria_results:
+                        if crit.get("passed"):
+                            action_text = crit.get("reasoning", "")[:200]
+                            break
+
+                if action_text:
+                    confidence = round(min(1.0, avg_confidence * score), 4)
                     rule = LearningRule(
                         pattern_name=pattern_name,
-                        condition=f"pattern={pattern_name}",
-                        action=reasoning,
-                        confidence=round(score, 4),
+                        condition=f"When pattern '{pattern_name}' is observed",
+                        action=action_text,
+                        confidence=confidence,
                     )
                     new_rules.append(rule)
                     log.info(
-                        "ImproverDevice.improve: rule extracted pattern=%s criterion=%s conf=%.2f",
-                        pattern_name, name, score,
+                        "ImproverDevice.improve: rule extracted pattern=%s confidence=%.2f",
+                        pattern_name, confidence,
                     )
             except Exception as exc:
                 log.warning("ImproverDevice.improve: EvaluatorCore failed for %s: %s", pattern_name, exc)
                 self._errors.append(f"improve({pattern_name}): {exc}")
 
-        # Convert to serializable dicts, persist, and return.
-        rule_dicts = [
-            {
-                "pattern": r.pattern_name,
-                "condition": r.condition,
-                "action": r.action,
-                "confidence": r.confidence,
-            }
-            for r in new_rules
-        ]
-        self._rules.extend(rule_dicts)
-        self._save_rules()
+        # Persist rules and return.
+        if new_rules:
+            rule_dicts = [
+                {
+                    "pattern": r.pattern_name,
+                    "condition": r.condition,
+                    "action": r.action,
+                    "confidence": r.confidence,
+                }
+                for r in new_rules
+            ]
+            self._rules.extend(rule_dicts)
+            self._save_rules()
 
         log.info("ImproverDevice.improve: %d rules extracted from %d patterns", len(new_rules), len(clusters))
         return new_rules
