@@ -1349,6 +1349,62 @@ def _check_intention_field(ticket_id: str, intention: str | None) -> None:
         )
 
 
+def _decorate_with_intent(ticket: dict) -> None:
+    """Intent extractor decoration hook: predict or validate ticket intention.
+
+    Graceful degradation: if intent extractor device is unavailable, proceed normally
+    with a warning. Never raises.
+    """
+    try:
+        from devices.intent.tools import intent_predict, intent_validate
+    except ImportError:
+        # Device or tools module not available
+        _log({"action": "intent_decorate_skip", "id": ticket["id"], "reason": "import_failed"})
+        return
+
+    ticket_id = ticket.get("id")
+    if not ticket_id:
+        return
+
+    try:
+        # If intention field is blank, predict it from description
+        if not ticket.get("intention") or not str(ticket.get("intention")).strip():
+            description = ticket.get("description", "")[:500]
+            if description:
+                result = intent_predict(context=description, domain="coding")
+                if result:
+                    predicted = result.get("intent", "")
+                    prediction_id = result.get("prediction_id")
+                    if predicted:
+                        ticket["inferred_intention"] = predicted
+                        ticket["inferred_intention_id"] = prediction_id
+                        _log({
+                            "action": "intent_decorate_predict",
+                            "id": ticket_id,
+                            "predicted": predicted,
+                            "confidence": result.get("confidence", 0.0),
+                        })
+        # If intention field exists, validate it as ground truth
+        elif ticket.get("intention"):
+            intention = str(ticket.get("intention")).strip()
+            result = intent_predict(context=ticket.get("description", "")[:500], domain="coding")
+            if result:
+                prediction_id = result.get("prediction_id")
+                intent_validate(actual_outcome=intention, prediction_id=prediction_id)
+                _log({
+                    "action": "intent_decorate_validate",
+                    "id": ticket_id,
+                    "intention": intention,
+                })
+    except Exception as exc:
+        # Fail open: log warning but continue
+        _log({
+            "action": "intent_decorate_error",
+            "id": ticket_id,
+            "error": str(exc)[:200],
+        })
+
+
 def cmd_add(args):
     """Add tasks from a JSON file (array of task objects) or inline JSON string."""
     if not args:
@@ -1420,6 +1476,8 @@ def cmd_add(args):
             continue
         _check_description_contracts(nt["id"], nt.get("description", ""))
         _check_intention_field(nt["id"], nt.get("intention"))
+        # Intent extractor decoration: predict intention or validate if already present
+        _decorate_with_intent(nt)
         # Embed status prefix in title for one-grep searchability
         nt["title"] = _with_status_prefix(nt["status"], nt["title"])
         tasks.append(nt)
