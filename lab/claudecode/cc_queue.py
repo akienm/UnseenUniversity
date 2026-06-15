@@ -1395,12 +1395,12 @@ _HIGH_INERTIA_PATHS = (
 
 
 def _infer_worker(t: dict) -> str:
-    """Route ticket to 'claude' (reviewable) or 'igor' (cheap) by metadata.
+    """Route ticket to 'claude' (reviewable) for HIGH-inertia work, else unassigned.
 
     Rule:
       HIGH-inertia tag OR size=XL OR description touches HIGH-inertia paths
         → 'claude' (CC reviews; konsole-spawned session).
-      Everything else → 'igor' (in-process via engram chain, Qwen tier).
+      Everything else → None (unassigned; awaits explicit assignment by Akien).
 
     Callers should only invoke this when the ticket has no explicit 'worker'.
     """
@@ -1421,7 +1421,7 @@ def _infer_worker(t: dict) -> str:
         if path in blob:
             return "claude"
 
-    return "igor"
+    return None  # unassigned; awaits Akien assignment
 
 
 def _infer_role(t: dict) -> str:
