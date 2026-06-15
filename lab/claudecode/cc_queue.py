@@ -157,59 +157,183 @@ def _narrative_for(t: dict) -> str:
     return f"{title}\n\n{desc}" if desc else title
 
 
-def _load():
-    """Canonical read: SELECT from clan.memories. Returns list of ticket dicts."""
+def _tickets_in_clan(ticket_ids: list[str]) -> set:
+    """Return set of ticket IDs that exist in clan.memories."""
+    if not ticket_ids:
+        return set()
     conn = _db_conn()
     try:
         cur = conn.cursor()
+        placeholders = ",".join(["%s"] * len(ticket_ids))
+        cur.execute(
+            f"SELECT id FROM clan.memories WHERE id IN ({placeholders}) AND parent_id = %s",
+            ticket_ids + [TICKETS_ROOT_ID],
+        )
+        return {row[0] for row in cur.fetchall()}
+    finally:
+        conn.close()
+
+
+def _load():
+    """Canonical read: SELECT from clan.memories and devlab.tickets (merged).
+
+    During transition, read from both tables:
+    - clan.memories: existing tickets (old format with metadata JSONB)
+    - devlab.tickets: new tickets (new format with explicit columns)
+
+    Merge results, preferring devlab if a ticket appears in both.
+    """
+    conn = _db_conn()
+    try:
+        cur = conn.cursor()
+        tasks = {}
+
+        # Read from clan.memories (existing tickets)
         cur.execute(
             "SELECT metadata FROM clan.memories WHERE parent_id = %s",
             (TICKETS_ROOT_ID,),
         )
-        tasks = []
         for (md,) in cur.fetchall():
             if not md:
                 continue
             t = dict(md)
             t.pop("kind", None)
-            tasks.append(t)
-        return tasks
+            tasks[t.get("id")] = t
+
+        # Read from devlab.tickets (new tickets) — these override clan if present
+        cur.execute(
+            """SELECT id, title, status, worker, size, tags, description,
+                      decision_id, metadata, created_at, updated_at, completed_at
+               FROM devlab.tickets
+               ORDER BY created_at DESC"""
+        )
+        for row in cur.fetchall():
+            (ticket_id, title, status, worker, size, tags, description,
+             decision_id, metadata, created_at, updated_at, completed_at) = row
+
+            t = {
+                "id": ticket_id,
+                "title": title,
+                "status": status,
+                "worker": worker,
+                "size": size,
+                "tags": tags or [],
+                "description": description,
+                "decision_id": decision_id,
+                "created_at": created_at.isoformat() if created_at else None,
+                "updated_at": updated_at.isoformat() if updated_at else None,
+                "completed_at": completed_at.isoformat() if completed_at else None,
+                "result": None,
+                "role": "master",  # default role
+                "priority": 0.5,  # default priority
+                "gate": None,
+                "related_to": None,
+                "github_issue": None,
+                "dispatched_at": None,
+                "required_files": [],
+                "target_difficulty": 1,
+            }
+
+            # Merge metadata fields if present
+            if metadata:
+                t.update(metadata)
+
+            tasks[ticket_id] = t
+
+        return list(tasks.values())
     finally:
         conn.close()
 
 
 def _save(tasks):
-    """Canonical write: UPSERT each ticket to clan.memories."""
+    """Canonical write: UPSERT each ticket.
+
+    Strategy during transition:
+    - NEW tickets: write to devlab.tickets
+    - EXISTING tickets (in clan): update clan.memories in-place
+    """
+    if not tasks:
+        return
+
     conn = _db_conn()
     try:
         cur = conn.cursor()
         now = datetime.now(timezone.utc).isoformat()
+        now_ts = datetime.now(timezone.utc)
+
+        # Batch-check which tickets exist in clan
+        ticket_ids = [t.get("id") for t in tasks if t.get("id")]
+        existing_in_clan = _tickets_in_clan(ticket_ids)
+
         for t in tasks:
             if not t.get("id"):
                 continue
-            metadata = dict(t)
-            metadata["kind"] = "ticket"
-            cur.execute(
-                """
-                INSERT INTO clan.memories
-                  (id, narrative, memory_type, parent_id, metadata, timestamp,
-                   source, scope, certainty, updated_at)
-                VALUES (%s, %s, 'FACTUAL', %s, %s::jsonb, %s, 'cc_queue',
-                        'class', 1.0, %s)
-                ON CONFLICT (id) DO UPDATE SET
-                  narrative = EXCLUDED.narrative,
-                  metadata = EXCLUDED.metadata,
-                  updated_at = EXCLUDED.updated_at
-                """,
-                (
-                    t["id"],
-                    _narrative_for(t),
-                    TICKETS_ROOT_ID,
-                    json.dumps(metadata),
-                    now,
-                    now,
-                ),
-            )
+
+            ticket_id = t["id"]
+            exists_in_clan = ticket_id in existing_in_clan
+
+            if exists_in_clan:
+                # Update existing clan ticket in-place
+                metadata = dict(t)
+                metadata["kind"] = "ticket"
+                cur.execute(
+                    """
+                    INSERT INTO clan.memories
+                      (id, narrative, memory_type, parent_id, metadata, timestamp,
+                       source, scope, certainty, updated_at)
+                    VALUES (%s, %s, 'FACTUAL', %s, %s::jsonb, %s, 'cc_queue',
+                            'class', 1.0, %s)
+                    ON CONFLICT (id) DO UPDATE SET
+                      narrative = EXCLUDED.narrative,
+                      metadata = EXCLUDED.metadata,
+                      updated_at = EXCLUDED.updated_at
+                    """,
+                    (
+                        ticket_id,
+                        _narrative_for(t),
+                        TICKETS_ROOT_ID,
+                        json.dumps(metadata),
+                        now,
+                        now,
+                    ),
+                )
+            else:
+                # Write new ticket to devlab.tickets
+                cur.execute(
+                    """
+                    INSERT INTO devlab.tickets
+                      (id, title, status, worker, size, tags, description,
+                       decision_id, metadata, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s::jsonb, %s, %s)
+                    ON CONFLICT (id) DO UPDATE SET
+                      title = EXCLUDED.title,
+                      status = EXCLUDED.status,
+                      worker = EXCLUDED.worker,
+                      size = EXCLUDED.size,
+                      tags = EXCLUDED.tags,
+                      description = EXCLUDED.description,
+                      decision_id = EXCLUDED.decision_id,
+                      metadata = EXCLUDED.metadata,
+                      updated_at = EXCLUDED.updated_at,
+                      completed_at = EXCLUDED.completed_at
+                    """,
+                    (
+                        ticket_id,
+                        t.get("title"),
+                        t.get("status", "triage"),
+                        t.get("worker"),
+                        t.get("size"),
+                        json.dumps(t.get("tags", [])),
+                        t.get("description"),
+                        t.get("decision_id"),
+                        json.dumps({k: v for k, v in t.items()
+                                   if k not in ("id", "title", "status", "worker", "size",
+                                               "tags", "description", "decision_id")}),
+                        now_ts,
+                        now_ts,
+                    ),
+                )
+
         conn.commit()
     finally:
         conn.close()
@@ -229,26 +353,47 @@ def save_tasks(tasks: list[dict]) -> None:
 
 
 def set_status_in_progress(ticket_id: str) -> bool:
-    """Targeted single-ticket status flip sprint→in_progress. Returns True if updated."""
+    """Targeted single-ticket status flip sprint→in_progress. Returns True if updated.
+
+    Updates whichever table the ticket is in (devlab.tickets or clan.memories).
+    """
     conn = _db_conn()
     try:
         cur = conn.cursor()
         now = datetime.now(timezone.utc).isoformat()
+        now_ts = datetime.now(timezone.utc)
+
+        # Try updating devlab.tickets first (new tickets)
         cur.execute(
             """
-            UPDATE clan.memories
-            SET metadata = jsonb_set(
-                    jsonb_set(metadata, '{status}', '"in_progress"'),
-                    '{dispatched_at}', to_jsonb(%s::text)
-                ),
+            UPDATE devlab.tickets
+            SET status = 'in_progress',
                 updated_at = %s
             WHERE id = %s
-              AND metadata->>'status' = 'sprint'
-              AND parent_id = %s
+              AND status = 'sprint'
             """,
-            (now, now, ticket_id, TICKETS_ROOT_ID),
+            (now_ts, ticket_id),
         )
         updated = cur.rowcount > 0
+
+        # If not found in devlab, try clan.memories (existing tickets)
+        if not updated:
+            cur.execute(
+                """
+                UPDATE clan.memories
+                SET metadata = jsonb_set(
+                        jsonb_set(metadata, '{status}', '"in_progress"'),
+                        '{dispatched_at}', to_jsonb(%s::text)
+                    ),
+                    updated_at = %s
+                WHERE id = %s
+                  AND metadata->>'status' = 'sprint'
+                  AND parent_id = %s
+                """,
+                (now, now, ticket_id, TICKETS_ROOT_ID),
+            )
+            updated = cur.rowcount > 0
+
         conn.commit()
         if updated:
             import logging
