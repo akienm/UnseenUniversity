@@ -28,9 +28,7 @@ _TERMINAL = {"closed", "done"}
 
 def _db_conn():
     import psycopg2
-    url = os.environ.get("UU_HOME_DB_URL") or os.environ.get(
-        "IGOR_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-    )
+    url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL")
     return psycopg2.connect(url)
 
 
