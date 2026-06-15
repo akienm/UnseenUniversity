@@ -279,13 +279,11 @@ if [[ -n "${TMUX:-}" ]] && [[ "$(tmux display-message -p '#{session_name}')" == 
         "$@"
 else
     # Either outside tmux, or we killed a stale session — create session and launch Claude inside it.
-    # Check if a session with this name exists and is healthy.
-    if ! check_session_health "$CC_TMUX_SESSION"; then
-        recover_stale_session "$CC_TMUX_SESSION"
-    fi
+    # Kill the server to clear any leftover state (the server only runs CC, so killing it is safe).
+    tmux kill-server 2>/dev/null || true
+    sleep 0.5
 
-    # tmux new-session inherits the calling env; CC_TMUX_SESSION is also injected
-    # explicitly into CLAUDE_CMD so shell rc files can't shadow it.
+    # Create a fresh session from scratch.
     tmux new-session -d -s "$CC_TMUX_SESSION" 2>/dev/null || true
 
     # Build the command string with proper quoting
