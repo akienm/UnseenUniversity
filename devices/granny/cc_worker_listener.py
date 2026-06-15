@@ -160,10 +160,10 @@ class CCWorkerListener:
                 log.warning("CCWorkerListener: tmux session %r not found", session)
                 return False
             subprocess.run(
-                ["tmux", "send-keys", "-t", session, f"\r\r\r/sprint-ticket {ticket_id}\r"],
+                ["tmux", "send-keys", "-t", session, f"\r\r\ryou have a ticket waiting: {ticket_id}\r"],
                 check=False,
             )
-            log.info("CCWorkerListener: injected /sprint-ticket %s into %s", ticket_id, session)
+            log.info("CCWorkerListener: notified %s of waiting ticket=%s", session, ticket_id)
             return True
 
         return deliver_fn
