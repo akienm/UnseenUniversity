@@ -1,8 +1,8 @@
 # Ground Loop plugin: web_server (http_proxy mode)
 #
 # Ground Loop listens on proxy_port (8078) and starts the real web server
-# on backend_port (8080) on demand. Users hit 8078; Ground Loop ensures
-# the backend is alive, spawning it if needed, then proxies through.
+# on backend_port (8082, plain HTTP) on demand. Users hit 8078; Ground Loop
+# ensures the backend is alive, spawning it if needed, then proxies through.
 #
 # To disable auto-start: touch ~/.unseen_university/flags/web_server.breaker
 # To re-enable:          rm  ~/.unseen_university/flags/web_server.breaker
@@ -13,14 +13,25 @@ mode: http_proxy
 # Stable public port Ground Loop listens on
 proxy_port: 8078
 
-# Actual backend port the web server process binds to
-backend_port: 8080
+# Backend port the proxy connects to and probes for liveness.
+# http_proxy does PLAIN-HTTP passthrough (http://127.0.0.1:<backend_port>),
+# so this MUST be the web server's plain-HTTP port (8082), NOT the SSL
+# port (8080). Most internal clients (channel.py, librarian tools,
+# adc_client.py) already target 8082 by default.
+backend_port: 8082
 
-# Command to spawn the backend web server
+# Command to spawn the backend web server.
+# MUST use the venv interpreter — system python3 lacks starlette/uvicorn,
+# which would make a bare `python3` spawn fail with a silent ImportError
+# (plugin_proxy spawns with stderr=DEVNULL).
 start_cmd:
-  - python3
+  - /home/akien/dev/src/UnseenUniversity/.venv/bin/python3
   - -m
   - devices.web_server.server
+
+# Ensure the package resolves regardless of the daemon's cwd.
+start_env:
+  PYTHONPATH: /home/akien/dev/src/UnseenUniversity
 
 # Seconds to wait for backend to become connectable after spawn
 start_timeout: 20
