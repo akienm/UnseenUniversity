@@ -122,7 +122,15 @@ STATUS_ORDER = {
 _TERMINAL_STATUSES = {"closed", "done", "cancelled"}
 # design folded into triage (TRIAGE = not yet ready to work), so it is no longer
 # auto-claimable — deliberate claim-path change per D-ticket-status-model-2026-06-16.
-_ACTIONABLE_STATUSES = {"sprint", "akien", "awaiting_approval", "approval"}
+# Step 2 (T-ticket-status-approval-akien-removal): approval/akien/awaiting_approval
+# dropped from the actionable set — sorted = approved makes the approval gate
+# redundant, and `akien` means "needs Akien" (never dispatchable to a worker).
+# Only READY (internal string `sprint`) is claimable.
+_ACTIONABLE_STATUSES = {"sprint"}
+# Recognized for legacy DB rows (display/sort) but NO LONGER settable — a status
+# transition into one of these is rejected by setstatus/propose. The lone live
+# `akien` row (T-uc-cert-domain-migration) stays visible until Akien reclassifies it.
+_DEPRECATED_STATUSES = {"approval", "akien", "awaiting_approval"}
 
 # Status prefix helpers — embed [status] in title for one-grep searchability
 _STATUS_PREFIX_RE = None
@@ -1329,7 +1337,13 @@ def cmd_block(args):
 
 
 def cmd_propose(args):
-    """D331: Igor proposes a design change for approval. Sets status=approval."""
+    """D331: propose a design change for review. Sets status=triage.
+
+    Step 2 (D-ticket-status-model-2026-06-16): the legacy `approval` status is
+    gone (sorted = approved). A proposal awaiting review is "not yet cleared" —
+    that is exactly TRIAGE, which absorbs the old needs_review concept. The
+    `proposal` field still flags it for cmd_approve to pick up.
+    """
     if len(args) < 2:
         print("Usage: propose <id> <proposal text>")
         sys.exit(1)
@@ -1339,8 +1353,8 @@ def cmd_propose(args):
         print(f"Task {args[0]} not found.")
         sys.exit(1)
     proposal = " ".join(args[1:])
-    t["status"] = "approval"
-    t["title"] = _with_status_prefix("approval", t["title"])
+    t["status"] = "triage"
+    t["title"] = _with_status_prefix("triage", t["title"])
     t["proposal"] = proposal
     t["proposed_at"] = _now()
     _save(tasks)
@@ -1353,7 +1367,7 @@ def cmd_propose(args):
         }
     )
     print(f"Proposed {args[0]}: {proposal[:120]}")
-    print(f"Status: approval — CC will review on next context-load")
+    print(f"Status: triage — CC will review on next context-load")
 
 
 def cmd_approve(args):
@@ -1366,8 +1380,11 @@ def cmd_approve(args):
     if not t:
         print(f"Task {args[0]} not found.")
         sys.exit(1)
-    if t["status"] not in ("approval", "awaiting_approval"):
-        print(f"Task {args[0]} is {t['status']}, not approval.")
+    # A proposal lives in `triage` now (step 2: approval status removed). Accept
+    # any ticket carrying a proposal, plus the legacy approval/awaiting_approval
+    # rows still in the DB, for backward compatibility.
+    if not t.get("proposal") and t["status"] not in ("approval", "awaiting_approval", "triage"):
+        print(f"Task {args[0]} has no pending proposal (status {t['status']}).")
         sys.exit(1)
     notes = " ".join(args[1:]) if len(args) > 1 else ""
     t["status"] = "sprint"
@@ -2033,6 +2050,17 @@ def cmd_setstatus(args):
             f"Unknown status {new_status!r}. Valid: {', '.join(sorted(_VALID_STATUSES))}"
         )
         sys.exit(1)
+    if new_status in _DEPRECATED_STATUSES:
+        # D-ticket-status-model-2026-06-16 step 2: these are recognized for legacy
+        # display but no longer settable. sorted = approved, so the pre-sprint
+        # approval gate is gone; "needs Akien" should be `dependency` (blocked on
+        # Akien) or `triage` (not yet cleared), never the legacy `akien` status.
+        settable = sorted(_VALID_STATUSES - _DEPRECATED_STATUSES)
+        print(
+            f"Status {new_status!r} is deprecated (D-ticket-status-model-2026-06-16) "
+            f"and not settable. Use one of: {', '.join(settable)}"
+        )
+        sys.exit(1)
     tasks = _load()
     t = _find(tasks, tid)
     if not t:
@@ -2084,8 +2112,11 @@ def cmd_migrate_statuses(args):
         # Map legacy statuses to new canonical names
         legacy_map = {
             "blocked": "hold",
-            "awaiting_approval": "approval",
-            # Fold → triage (D-ticket-status-model-2026-06-16):
+            # Fold → triage (D-ticket-status-model-2026-06-16). Step 2 removed the
+            # `approval` status, so awaiting_approval (a gate not yet passed) folds
+            # to triage like the other pre-clear states rather than to approval.
+            "awaiting_approval": "triage",
+            "approval": "triage",
             "needs_review": "triage",
             "design": "triage",
             "open_questions": "triage",
