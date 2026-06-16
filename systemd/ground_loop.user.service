@@ -19,7 +19,12 @@ WorkingDirectory=/home/akien/dev/src/UnseenUniversity
 # start. Without this, the descriptor only lives in config/ and the daemon
 # (which scans ~/.unseen_university/ground_loop/) never sees it — the exact
 # failure that took the web server down. Makes the supervisor self-deploying.
-ExecStartPre=/bin/sh -c 'mkdir -p %h/.unseen_university/ground_loop && cp /home/akien/dev/src/UnseenUniversity/config/ground_loop/*.yaml %h/.unseen_university/ground_loop/'
+# Fail-OPEN: a copy failure must never block the supervisor from starting (it
+# matches Ground Loop's fail-open philosophy and the "never down" intent — a
+# stale-but-present descriptor beats no supervisor). The `|| true` guarantees
+# ExecStartPre always succeeds; worst case the daemon scans whatever descriptors
+# are already deposited.
+ExecStartPre=-/bin/sh -c 'mkdir -p %h/.unseen_university/ground_loop && cp /home/akien/dev/src/UnseenUniversity/config/ground_loop/*.yaml %h/.unseen_university/ground_loop/ 2>/dev/null || true'
 
 # Python from the repo's venv
 ExecStart=/home/akien/dev/src/UnseenUniversity/.venv/bin/python3 \
