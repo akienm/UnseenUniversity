@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-acurite-free-2026-06-14.20260614.004206201842",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-acurite-free-2026-06-14"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-14T00:42:06.201842",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-free-2026-06-14"
+    ],
+    "tickets": [
+      "T-acurite-capture-daemon",
+      "T-acurite-repo-setup",
+      "T-acurite-web-ui",
+      "T-consequence-acurite-free"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-acurite-free-2026-06-14",
+    "title": "Free open-source AcuRite replacement — RTL-SDR capture → CSV → any cloud → web dashboard",
+    "status": "open",
+    "date": "2026-06-14",
+    "source": "lab/design_docs/decisions/D-acurite-free-2026-06-14.md",
+    "text": "# D-acurite-free-2026-06-14\n**title:** Free open-source AcuRite replacement — RTL-SDR capture → CSV → any cloud → web dashboard\n**date:** 2026-06-14\n**status:** open\n**spawned_tickets:** T-acurite-repo-setup, T-acurite-capture-daemon, T-acurite-web-ui, T-consequence-acurite-free\n\n## Decision narrative\nAcuRite is moving to an app-only model with a poor UX. This decision establishes a standalone open-source replacement: an RTL-SDR dongle captures raw 433.92 MHz packets via rtl_433, a Python daemon writes weather.csv to a local folder that the user syncs to any cloud storage (OneDrive, Google Drive, Dropbox, etc.), and a single weather.html file served from that public URL displays current conditions. Zero infrastructure, any cloud account, publishable for others to use.\n\n## Hypothesis\nAfter shipping, AcuRite hardware works without the AcuRite app or cloud — sensor data appears in weather.csv and weather.html displays it from a public cloud URL.\n\n## Measurement Signal\nweather.csv receives new rows from actual sensors; weather.html loads from a public URL and shows current conditions; Weather Underground station updates on each reading.\n\n## Goal Link\nnone: personal project + publishable tool — not tied to a G-xxx goal\n\n## Architecture\n- **Capture**: rtl_433 subprocess → parse JSON → filter by sensor whitelist → append CSV row + WU upload\n- **Storage**: local filesystem (user's cloud-synced folder) — daemon writes, OS sync handles cloud\n- **Display**: weather.html fetches sibling weather.csv (derives URL from window.location)\n- **Output format**: `<endpoint>.html` and `<endpoint>.csv` — two files, same location\n- **No web server**: HTML + CSV served as static files from any cloud storage public URL\n- **Android app**: PWA (inline manifest) + music intent anchors (Pandora/YT Music/Amazon)\n\n## Constraints\n- stdlib only in acurite-capture.py (no pip install required)\n- No UU dependency — standalone repo, publishable independently\n- CORS: user's responsibility to pick cloud storage that serves files with correct headers\n"
+  }
+}

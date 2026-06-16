@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.D-granny-fast-sprint-2026-06-04.20260604.144435356557",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-granny-fast-sprint-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T14:44:35.356557",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-fast-sprint-2026-06-04"
+    ],
+    "tickets": [
+      "T-cc-worker-idle-listener",
+      "T-consequence-granny-fast-sprint",
+      "T-granny-dispatched-set-prune",
+      "T-granny-flip-bus-cc",
+      "T-granny-stale-inprogress-watchdog"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-granny-fast-sprint-2026-06-04",
+    "title": "Granny fast-sprint loop — stale watchdog, dispatched-set prune, CC idle listener, bus flip",
+    "status": "open",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-granny-fast-sprint-2026-06-04.md",
+    "text": "# D-granny-fast-sprint-2026-06-04\n**title:** Granny fast-sprint loop — stale watchdog, dispatched-set prune, CC idle listener, bus flip\n**date:** 2026-06-04\n**status:** open\n**spawned_tickets:** T-granny-stale-inprogress-watchdog, T-granny-dispatched-set-prune, T-cc-worker-idle-listener, T-granny-flip-bus-cc, T-consequence-granny-fast-sprint\n**goal_link:** none: sprint-throughput autonomy not yet a named goal\n**concept_links:** none\n\n## Decision narrative\nGranny was blocking itself: 8 tickets stuck at in_progress prevented _cc0_busy() from clearing; dispatched_cycle.json had 26 stale IDs blocking re-dispatch of reopened tickets; and the bus dispatch handshake (T-granny-bus-dispatch) lacked the CC worker-side IDLE listener needed to close the loop. This decision wires all four missing pieces: a stale-in_progress watchdog (resets after 2h), dispatched-set pruning on load (drops IDs no longer active in DB), a CC IDLE listener (receives bus envelopes, drives ack/started/timeout handshake, injects /sprint-ticket via tmux), and a config flip once the listener is live.\n\n## Hypothesis\nAfter these 4 tickets ship, Granny dispatches the next sprint ticket to CC automatically within one poll cycle (≤60s) of the previous ticket closing, with no stale-ticket accumulation and no manual intervention.\n\n## Measurement Signal\nGranny log shows consecutive 'dispatched T-xxx → CC.0' entries after each close; dispatched_cycle.json stays accurate across restarts; no repeated GRANNY_DISPATCH for the same ticket in channel_messages.\n\n## Concept Links\nnone\n"
+  }
+}

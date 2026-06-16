@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-bus-postgres-transport-2026-06-10.20260610.120623204628",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-bus-postgres-transport-2026-06-10"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-10T12:06:23.204628",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-bus-postgres-transport-2026-06-10"
+    ],
+    "tickets": [
+      "T-bus-postgres-transport",
+      "T-consequence-bus-postgres-transport"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-bus-postgres-transport-2026-06-10",
+    "title": "Replace IMAP bus transport with Postgres LISTEN/NOTIFY + messages table",
+    "status": "open",
+    "date": "2026-06-10",
+    "source": "lab/design_docs/decisions/D-bus-postgres-transport-2026-06-10.md",
+    "text": "# D-bus-postgres-transport-2026-06-10\n**title:** Replace IMAP bus transport with Postgres LISTEN/NOTIFY + messages table\n**date:** 2026-06-10\n**status:** open\n**spawned_tickets:** T-bus-postgres-transport, T-consequence-bus-postgres-transport\n**supersedes:** T-bus-shim-autostart (closed won't-fix)\n\n## Decision narrative\nReplace the IMAP _StubServer/_DovecotClient transport in `bus/` with a Postgres-backed message bus: a `bus.messages` table for persistence and LISTEN/NOTIFY for push delivery. Postgres is already required by the CLAUDE.md rule (Postgres-or-flat-file), so this eliminates the IMAP server as an external dependency with zero new infrastructure. The `bus/` abstraction layer isolates the change — device code (shims, listeners, envelopes) is unchanged.\n\nOrigin: conversation about why the IMAP stub server keeps causing operational incidents. The transport analogy (IMAP mailbox = device inbox) still holds; it's only the backing mechanism that changes. LISTEN/NOTIFY gives us IDLE-push semantics; bus.messages gives us persistence, inspection, and routing — all via existing Postgres.\n\n## Hypothesis\nDevices exchange envelopes without any IMAP server running; `nc -z 127.0.0.1 10143` exits non-zero while DickSimnel polls successfully.\n\n## Measurement Signal\n`SELECT count(*) FROM bus.messages` increments on dispatch; no ConnectionRefusedError from port 10143 in logs; all bus/ tests pass.\n\n## Goal Link\nSystem reliability — eliminate external IMAP server dependency. No G-xxx yet; T-goal-consolidation-review will assign canonical ID.\n"
+  }
+}

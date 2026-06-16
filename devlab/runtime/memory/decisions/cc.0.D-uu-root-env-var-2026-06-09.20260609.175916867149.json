@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-uu-root-env-var-2026-06-09.20260609.175916867149",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-uu-root-env-var-2026-06-09"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-09T17:59:16.867149",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-root-env-var-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-uu-root-env-var",
+      "T-uu-root-auto-detect",
+      "T-uu-root-migrate-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-uu-root-env-var-2026-06-09",
+    "title": "UU_ROOT env var — portable repo root with auto-detection fallback",
+    "status": "open",
+    "date": "2026-06-09",
+    "source": "lab/design_docs/decisions/D-uu-root-env-var-2026-06-09.md",
+    "text": "# D-uu-root-env-var-2026-06-09\n**title:** UU_ROOT env var — portable repo root with auto-detection fallback\n**date:** 2026-06-09\n**status:** open\n**spawned_tickets:** T-uu-root-auto-detect, T-uu-root-migrate-skills, T-consequence-uu-root-env-var\n\n## Decision narrative\nTwo canonical env vars: UU_ROOT (repo root) and IGOR_HOME (runtime, already exists). CC_WORKFLOW_TOOLS becomes a derived alias (${UU_ROOT}/lab/claudecode). A uu_root() utility auto-detects from package __file__ when UU_ROOT is not set, making fresh clones work without shell config. Skill run scripts migrated off hardcoded paths.\n\n## Hypothesis\nA fresh clone on any machine runs skill run scripts without setting CC_WORKFLOW_TOOLS or hardcoding a path.\n\n## Measurement Signal\ngrep -r '/home/akien' skills/ returns nothing; python3 skills/savestate/run close 'test' works without UU_ROOT set.\n\n## Goal Link\nG-invisible-tools\n"
+  }
+}

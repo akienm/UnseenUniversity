@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-json-envelope-principle-2026-06-12.20260612.133127465494",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-json-envelope-principle-2026-06-12"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-12T13:31:27.465494",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-json-envelope-principle-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-json-envelope",
+      "T-json-envelope-inference",
+      "T-slate-json-format"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-json-envelope-principle-2026-06-12",
+    "title": "All agent I/O envelopes are JSON; ProseVersion carried forward when already present",
+    "status": "open",
+    "date": "2026-06-12",
+    "source": "lab/design_docs/decisions/D-json-envelope-principle-2026-06-12.md",
+    "text": "# D-json-envelope-principle-2026-06-12\n**title:** All agent I/O envelopes are JSON; ProseVersion carried forward when already present\n**date:** 2026-06-12\n**status:** open\n**spawned_tickets:** T-json-envelope-inference, T-slate-json-format, T-consequence-json-envelope\n\n## Decision narrative\nAll agent-to-agent messages and tool responses use JSON envelopes with typed fields (RESULT, ERRORCLASS, ERRORNUMBER, etc.). If a prose representation already exists from the originating tool or agent, it is preserved as a named field (ProseVersion). Prose is NOT generated for all packets — only carried forward when it already exists. Agents key on structured fields; humans read ProseVersion. Nothing is lost: existing prose output is promoted to a named field rather than discarded.\n\n## Hypothesis\nAgent-to-agent messages and tool responses carry typed JSON envelopes; consumers parse structured fields rather than regex-extracting from prose; ProseVersion appears only when already present.\n\n## Measurement Signal\nSide-by-side token count comparison (same task, with/without envelopes); for build tasks, CLOSED on T-json-envelope-inference is the done signal.\n\n## Goal Link\nCost savings (direct token reduction) + training signal quality (structured fields are cleaner training examples than prose).\n"
+  }
+}

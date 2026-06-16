@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.D-wg-node-tree-architecture-2026-06-08.20260608.122946420386",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-wg-node-tree-architecture-2026-06-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-08T12:29:46.420386",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wg-node-tree-architecture-2026-06-08"
+    ],
+    "tickets": [
+      "T-consequence-wg-node-tree-arch",
+      "T-scraps-embed-rack-tool",
+      "T-wg-calving-time-threshold",
+      "T-wg-cooccur-retire",
+      "T-wg-spread-via-cortex",
+      "T-wg-words-as-memories"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-wg-node-tree-architecture-2026-06-08",
+    "title": "Universal stable-node + small-calving-tree architecture applied to word graph",
+    "status": "open",
+    "date": "2026-06-08",
+    "source": "lab/design_docs/decisions/D-wg-node-tree-architecture-2026-06-08.md",
+    "text": "# D-wg-node-tree-architecture-2026-06-08\n**title:** Universal stable-node + small-calving-tree architecture applied to word graph\n**date:** 2026-06-08\n**status:** open\n**spawned_tickets:** T-scraps-embed-rack-tool, T-wg-words-as-memories, T-wg-spread-via-cortex, T-wg-calving-time-threshold, T-wg-cooccur-retire, T-consequence-wg-node-tree-arch\n**supersedes:** T-wg-cooccur-tree-restructure\n\n## Decision narrative\n\nThe universal memory architecture — one large append-only node table with stable timestamp IDs (YYYYMMDDHHMMSSuuuuuu from node_id.py), small calving tree tables (≤threshold rows), and a shared node_registry — already governs the memories tree. The word graph (wg_cooccur 29M rows, wg_edges 1.1M rows) was never wired into it.\n\nArchitecture restated during this session: wg words become first-class memory nodes (Option C). ~57K distinct words in wg_edges → clan.memories as WORD_GRAPH type. Co-occurrence semantic weights from wg_edges → links_weighted on each word node. Spreading activation unifies: cortex.spreading_activation() handles both cognitive memories and word-graph nodes.\n\n## Hypothesis\n\nIgor's slow wg queries go away. spread_from_words() traverses a calving-bounded tree instead of a 1.1M-row flat table.\n\n## Measurement Signal\n\nspread_from_words() latency in integration tests drops below 5ms. traversal_timing table (T-wg-calving-time-threshold) shows search time stays flat as corpus grows. No tsvector GIN scan regressions on memories.payload/narrative for type-filtered queries.\n\n## Goal Link\n\nMultiple: factory-of-factories, Igor cognition speed, DickSimnel learning substrate, CC pre-inference.\n\n## Key design choices made in this session\n\n- **Option C (words-as-memories)**: words ride existing node_registry, calving, and spreading activation — not a separate wg-specific tree\n- **Calving threshold**: search-time-based; interim WORD_GRAPH tree threshold = 5000 (bigger than 1000 default) while timing data is gathered\n- **links_weighted source**: wg_edges (semantic similarity), NOT wg_cooccur (frequency) — preserves spread_from_words semantics\n- **No embedding calls in v1 migration**: wg_edges weights port directly; vector embeddings for word nodes are a separate decision (model choice unmade, Ollama-first preference)\n- **wg_cooccur retire**: must kill write paths (reinforce_text, voice_ab, coactivation_counter, main.py), not just reads\n- **Embedding device**: lives in devices/scraps/embedding_engine.py; not yet a rack MCP tool; T-scraps-embed-rack-tool is decoupled from the migration\n\n## Prior ticket status\n\nT-db-wg-replace-cooccur marked done but wg_cooccur still has 29M live rows (write path still active). That was a partial migration — wg_edges was added alongside, not a replacement. T-wg-cooccur-retire finishes it.\n"
+  }
+}

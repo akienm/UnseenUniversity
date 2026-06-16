@@ -1,0 +1,27 @@
+{
+  "id": "cc.0.C-clan-template.20260604.014032092585",
+  "emitter": "cc.0",
+  "namespace": [
+    "C-clan-template"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T01:40:32.092585",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-clan-template"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "C-clan-template",
+    "title": "C-clan-template",
+    "status": "active",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/C-clan-template.md",
+    "text": "# C-clan-template\n**type:** concept\n**concept_id:** C-clan-template\n**date:** 2026-06-04\n**decision_ref:** D-clan-template-memory-ownership-2026-06-01\n**status:** active\n\n## Definition\n\nA **clan template** is the shared identity and baseline memory layer for a family of\nagent instances. When an agent declares `template_id: igor`, it inherits:\n- Clan-level memories (universal patterns, bootstrap sequences, shared procedures)\n- The clan's memory scope (all agents in the clan read/write `clan.*` DB schema)\n- The template's capability profile (allowed devices, ACL shape)\n\nIndividual instances layer their own memories on top. Two Igor instances sharing the\nsame `template_id: igor` see the same clan-layer memories but have separate\nagent-layer memories. A second Igor cannot read the first's personal memories by\ndefault — it can only read clan-level patterns.\n\n## Memory ownership model\n\nMemory ownership is declared per-device in the profile (`memory_domain` field).\nThe owning device is the canonical writer for that domain. Other devices read only\nvia explicit inter-agent request protocol (see C-clan-instance-scoping).\n\n| Device    | memory_domain          | What it owns                                   |\n|-----------|------------------------|------------------------------------------------|\n| igor      | cognition              | NE cycles, ring memories, personal milieu      |\n| granny    | build                  | Sprint outcomes, escalation history, queue ops |\n| vetinari  | task_management        | Project status, stakeholder tracking, roadmap  |\n| librarian | knowledge_retrieval    | Indexed recall, research results               |\n| cc        | session                | CC session transcripts, sprint logs            |\n\n## Rack namespace\n\nThe rack has its own IMAP namespace segment: `rack.*` (distinct from `igor.*` in\nthe shared IMAP server). This prevents the rack infrastructure from co-opting\nTheIgors' shared namespace. Devices register under `rack.{device_id}`.\n\nCurrent status: `rack.*` namespace is declared as the target shape; migration from\n`comms://` to `rack.{id}` is a future infrastructure ticket.\n\n## Relationship to C-clan-instance-scoping\n\nC-clan-instance-scoping defines the global/local/agent/client boundary.\nC-clan-template defines the identity and memory inheritance model.\nTogether they answer: \"who shares what, and how do they ask for more?\"\n\n## Implementation notes (as of 2026-06-04)\n\n- `template_id` field added to `config/profiles/igor.yaml`\n- `memory_domain` field added to `config/profiles/granny.yaml` and `config/profiles/vetinari.yaml`\n- Palace concept node at `lab/design_docs/decisions/C-clan-template.md` (this file)\n- Full memory scope isolation (T-clan-instance-scoping) is a separate ticket\n"
+  }
+}

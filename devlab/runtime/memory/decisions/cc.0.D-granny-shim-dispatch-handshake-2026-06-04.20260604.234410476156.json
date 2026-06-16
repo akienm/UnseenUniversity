@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-granny-shim-dispatch-handshake-2026-06-04.20260604.234410476156",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-granny-shim-dispatch-handshake-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T23:44:10.476156",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-shim-dispatch-handshake-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-granny-handshake",
+      "T-granny-bus-dispatch",
+      "T-queue-dispatched-status",
+      "T-shim-dispatch-handshake"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-granny-shim-dispatch-handshake-2026-06-04",
+    "title": "Two-phase shim-level dispatch handshake to eliminate silent work loss",
+    "status": "open",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-granny-shim-dispatch-handshake-2026-06-04.md",
+    "text": "# D-granny-shim-dispatch-handshake-2026-06-04\n**title:** Two-phase shim-level dispatch handshake to eliminate silent work loss\n**date:** 2026-06-04\n**status:** open\n**spawned_tickets:** T-queue-dispatched-status, T-shim-dispatch-handshake, T-granny-bus-dispatch, T-consequence-granny-handshake\n**supersedes:** T-granny-send-keys-idle-check, T-granny-dispatched-set-ttl\n**goal_link:** G-process-optimization\n**concept_links:** C-registered-dispatcher\n\n## Decision narrative\nGranny dispatches work via tmux send-keys, which is silently swallowed when CC is mid-response. Replace with bus envelope dispatch and a two-phase shim handshake: (1) shim acks immediately (\"got it\") on receive — Granny marks `acked`; (2) shim prods app every 2 min and sends \"started\" when app picks up — Granny marks `in_progress`; 10-min timeout from ack with no start → shim sends timeout → Granny marks `escalated`. Mechanics live in BaseShim so every worker gets the protocol for free. The specific use case: CC is mid-sprint when Granny sends new work — shim buffers it and delivers when CC is ready, rather than losing it silently.\n\n## Hypothesis\nNo `dispatched` ticket older than 12 minutes remains unescalated after this ships.\n\n## Measurement Signal\nQueue monitoring: `SELECT id, status, updated_at FROM clan.memories WHERE status IN ('dispatched','acked') AND updated_at < now() - interval '12 minutes'` returns 0 rows during normal operation.\n\n## Goal Link\nG-process-optimization\n\n## Concept Links\nC-registered-dispatcher — Granny is the canonical registered dispatcher; this wires the handshake into the shim layer all dispatchers use.\n"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-escalation-handoff-protocol-2026-06-04.20260604.002945878817",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-escalation-handoff-protocol-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T00:29:45.878817",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-escalation-handoff-protocol-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-escalation-handoff",
+      "T-dicksimnel-escalation-summary",
+      "T-inference-tier-escalation-summary"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-escalation-handoff-protocol-2026-06-04",
+    "title": "Escalation handoff protocol — structured summary + \"what now?\" at every tier boundary",
+    "status": "open",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-escalation-handoff-protocol-2026-06-04.md",
+    "text": "# D-escalation-handoff-protocol-2026-06-04\n**title:** Escalation handoff protocol — structured summary + \"what now?\" at every tier boundary\n**date:** 2026-06-04\n**status:** open\n**spawned_tickets:** T-dicksimnel-escalation-summary, T-inference-tier-escalation-summary, T-consequence-escalation-handoff\n**goal_link:** none: cost management — not a G-xxx goal but directly reduces re-derivation cost at every tier boundary\n**concept_links:** none\n\n## Decision narrative\n\nWhen any tier fails, it produces a structured summary (what was tried, where it broke) before escalating. The higher tier receives [full context] + [attempt summary] + \"What now?\" — mirroring advisor() but adding the digest layer. Applies at two scopes: inference device (cheap→expensive model, automated) and agent tier (DickSimnel→CC, via ticket body). A 2-hop hard ceiling prevents runaway cascade. This is better than advisor()'s pure full-context forwarding because the lower tier CAN name its failure point; a digest + open question gives the higher tier a running start.\n\n## Hypothesis\nDickSimnel ticket bodies have structured escalation summaries; inference device logs show tier transitions with summary length; no escalation cascade beyond 2 hops.\n\n## Measurement Signal\nINFO log lines at tier boundaries; ticket body content after escalation; T-consequence-escalation-handoff observation at gate.\n\n## Goal Link\nnone: cost management — reduces redundant token spend at tier boundaries without a G-xxx anchor.\n\n## Concept Links\nnone\n"
+  }
+}

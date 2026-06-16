@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.D-inference-competition-bootstrap-2026-06-10.20260610.061057641234",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-inference-competition-bootstrap-2026-06-10"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-10T06:10:57.641234",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-competition-bootstrap-2026-06-10"
+    ],
+    "tickets": [
+      "T-classifier-graph-first",
+      "T-classifier-prompt-first",
+      "T-competition-eval-harness",
+      "T-competition-holdout-split",
+      "T-competition-ingest-batch",
+      "T-competition-pipeline-configurable",
+      "T-competition-schema",
+      "T-consequence-inference-competition"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-inference-competition-bootstrap-2026-06-10",
+    "title": "Bootstrap inference competition — two classifiers race on a clean programming-book corpus",
+    "status": "open",
+    "date": "2026-06-10",
+    "source": "lab/design_docs/decisions/D-inference-competition-bootstrap-2026-06-10.md",
+    "text": "# D-inference-competition-bootstrap-2026-06-10\n**title:** Bootstrap inference competition — two classifiers race on a clean programming-book corpus\n**date:** 2026-06-10\n**status:** open\n**spawned_tickets:** T-competition-schema, T-competition-pipeline-configurable, T-competition-ingest-batch, T-competition-holdout-split, T-classifier-graph-first, T-classifier-prompt-first, T-competition-eval-harness, T-consequence-inference-competition\n\n## Decision narrative\nBuild the first inference compilation competition: two memory-type classifiers (graph-first k-NN and prompt-first LLM) race on a clean programming-book corpus. The goal is a measurable quality × cost scorecard that tells us which approach classifies book chunks better and at what cloud cost. Starting with memory classification in a constrained domain (programming books) gives clean signal before tackling the full memory matrix.\n\nThe live production matrix (186K memories, mixed domains) is too noisy for training. A dedicated `competition` schema fed by the new `infra.reading_blocks` pipeline gives a clean, reproducible experimental environment.\n\n## Hypothesis\nAfter these tickets ship, two competing memory classifiers exist with measurable accuracy and cloud-call counts on a held-out programming-book eval set.\n\n## Measurement Signal\neval_harness.py produces a scorecard: accuracy% (agreement with book_learner labels) and cloud_calls_count per classifier. Winner = highest quality/cost ratio.\n\n## Goal Link\nG-factory-factory (3.META: UU builds compiled-inference factories; this is the first race track)\n"
+  }
+}

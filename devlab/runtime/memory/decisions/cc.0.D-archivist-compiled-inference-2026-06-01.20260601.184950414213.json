@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-archivist-compiled-inference-2026-06-01.20260601.184950414213",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-archivist-compiled-inference-2026-06-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-01T18:49:50.414213",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-archivist-compiled-inference-2026-06-01"
+    ],
+    "tickets": [
+      "T-archivist-device",
+      "T-chat-log-learning-bootstrap",
+      "T-consequence-archivist-inference",
+      "T-inference-learning-pipeline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-archivist-compiled-inference-2026-06-01",
+    "title": "Archivist device owns compiled-inference proxy; Librarian stays as retrieval only",
+    "status": "open",
+    "date": "2026-06-01",
+    "source": "lab/design_docs/decisions/D-archivist-compiled-inference-2026-06-01.md",
+    "text": "# D-archivist-compiled-inference-2026-06-01\n**title:** Archivist device owns compiled-inference proxy; Librarian stays as retrieval only\n**date:** 2026-06-01\n**status:** open\n**spawned_tickets:** T-archivist-device, T-inference-learning-pipeline, T-chat-log-learning-bootstrap, T-consequence-archivist-inference\n**goal_link:** G-factory-of-factories\n**concept_links:** C-compiled-inference, C-graph-trees-small-compute\n\n## Decision narrative\nA new Archivist device owns the inference proxy layer. Every inference call flows through the Archivist: graph-tree pre-check first (local answer, zero LLM cost on hit), on miss go to LLM and fan out — answer to caller, learning payload to Archivist's overnight pipeline. Over time the graph tree absorbs more queries locally. The knowledge graph is purely epistemic (no emotional encoding — that stays in Igor's graph). Librarian remains purely retrieval/research; the Archivist and Librarian share the knowledge store but have different jobs. Supersedes T-librarian-inference-proxy. All historical chat logs get bootstrapped through the learning pipeline in cost-monitored chunks.\n\n## Hypothesis\nAfter shipping, inference calls that match compiled patterns return locally without LLM; PROXY_INTERCEPT log shows graph_hit=true rate rising over time as the knowledge graph grows.\n\n## Measurement Signal\nPROXY_INTERCEPT|graph_hit=true rate in channel logs; LLM cost per equivalent query drops over weeks.\n\n## Goal Link\nG-factory-of-factories — the platform compiles inference as it goes; this is the proxy-layer manifestation of that goal.\n\n## Concept Links\nC-compiled-inference — the Archivist IS the compiled inference engine at the proxy layer.\nC-graph-trees-small-compute — graph-tree pre-check fires before every LLM call.\n"
+  }
+}

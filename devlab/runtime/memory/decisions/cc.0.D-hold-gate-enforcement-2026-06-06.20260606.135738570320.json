@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-hold-gate-enforcement-2026-06-06.20260606.135738570320",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-hold-gate-enforcement-2026-06-06"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-06T13:57:38.570320",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hold-gate-enforcement-2026-06-06"
+    ],
+    "tickets": [
+      "T-audit-ticket-hold-gate",
+      "T-consequence-hold-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-hold-gate-enforcement-2026-06-06",
+    "title": "/audit-ticket hold-gate: flag hold-status without named dependency",
+    "status": "open",
+    "date": "2026-06-06",
+    "source": "lab/design_docs/decisions/D-hold-gate-enforcement-2026-06-06.md",
+    "text": "# D-hold-gate-enforcement-2026-06-06\n**title:** /audit-ticket hold-gate: flag hold-status without named dependency\n**date:** 2026-06-06\n**status:** open\n**spawned_tickets:** T-audit-ticket-hold-gate, T-consequence-hold-gate\n**goal_link:** G-process-optimization\n**concept_links:** none\n\n## Decision narrative\nCC has a history of putting tickets on hold for reasons that don't apply to this project — projected external impact, imagined users, hypothetical downstream components. Holds without a named dependency ticket ID or explicit Akien action are almost always wrong. Adding a structural check to /audit-ticket forces explicit dependency naming at filing time, before the ticket reaches the queue.\n\n## Hypothesis\nAfter T-audit-ticket-hold-gate ships, no hold-status ticket passes /audit-ticket without a named blocking ticket ID or an explicit \"Akien:\" action in the description.\n\n## Measurement Signal\n/audit-ticket returns AMEND for any draft with status=hold and no named dependency; future /sorted batches contain no stale unblocked holds.\n\n## Goal Link\nG-process-optimization — structural enforcement of a behavioral rule.\n\n## Concept Links\nnone\n"
+  }
+}

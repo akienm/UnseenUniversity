@@ -1,0 +1,27 @@
+{
+  "id": "cc.0.D-constraints-first-class-2026-05-31.20260531.204619985974",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-constraints-first-class-2026-05-31"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-31T20:46:19.985974",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-constraints-first-class-2026-05-31"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-constraints-first-class-2026-05-31",
+    "title": "D-constraints-first-class-2026-05-31",
+    "status": "adopted",
+    "date": "2026-05-31",
+    "source": "lab/design_docs/decisions/D-constraints-first-class-2026-05-31.md",
+    "text": "# D-constraints-first-class-2026-05-31\n\n**Status:** adopted  \n**Date:** 2026-05-31  \n**Related ticket:** T-constraint-availability-root  \n**Palace node:** `palace.constraints`\n\n---\n\n## Decision\n\nConstraints are a first-class palace node type in `adc.palace`. A constraint is a\nnon-negotiable limit that gates decisions, dispatch paths, or ticket types. Unlike\ngoals (desired outcomes) or decisions (architectural choices), constraints are hard\nstops — violating one freezes the work it gates.\n\n---\n\n## Constraint node schema\n\n| Field | Type | Description |\n|---|---|---|\n| `path` | text | `palace.constraints.<slug>` |\n| `title` | text | `C-<name> — <one-line statement>` |\n| `node_type` | text | `constraint` |\n| `content` | markdown | See template below |\n| `metadata.tags` | list[str] | subtype tag(s) + gated-resource tags |\n\n### Content template\n\n```\n## Statement\n<What must always be true / never happen>\n\n## Type\n<budget | behavioral | resource | temporal | quality>\n\n## Severity\n<fatal | critical | warning>\n\n## Gates\n<What this constraint blocks: decision types, ticket tags, dispatch paths>\n\n## Derived from\n<Parent constraint path, or ROOT>\n\n## Derived constraints\n<Child constraint paths, or (none)>\n\n## Why\n<Consequence of violating this constraint>\n\n## Enforcement\n<How it's checked: palace audit, ticket gate, dispatch rule, etc.>\n```\n\n---\n\n## Subtypes\n\n| Subtype | Meaning |\n|---|---|\n| **budget** | Limits on monetary/token spend (OR ledger, Anthropic API bill) |\n| **behavioral** | Limits on how an agent acts (spawn rules, dispatch rules, interaction patterns) |\n| **resource** | Limits on resource availability (CC access, network connectivity, disk) |\n| **temporal** | Time-bounded limits (freeze windows, maintenance windows, rate limits) |\n| **quality** | Minimum quality floors (test pass rate, audit score threshold, coverage) |\n\n---\n\n## Seeded nodes\n\n### `palace.constraints` (root — this schema)\n\nThe `palace.constraints` path is the schema node itself. Its content is this document\nin compact form. Child paths follow the pattern `palace.constraints.<slug>`.\n\n### `palace.constraints.system-availability` (root constraint)\n\n- **Type:** resource\n- **Severity:** fatal\n- **Statement:** CC must remain accessible to Akien — a CC blackout stops all agent work.\n- **Gates:** all decision types, all ticket tags, all dispatch paths\n- **Derived constraints:** `no-cc-spawn`, `burn-rate-gate`\n\nThis is the root constraint because CC is the only agent that can close the\nobserve→learn→improve loop. Igor can process signals without CC but cannot commit\ncode, close tickets, or make architectural decisions.\n\n### `palace.constraints.no-cc-spawn` (behavioral — derived)\n\n- **Type:** behavioral\n- **Severity:** fatal\n- **Statement:** Granny must never spawn a CC session autonomously.\n- **Gates:** Granny ESCALATE dispatch path\n- **Derived from:** `system-availability`\n- **Why:** 2026-05-31 Granny spawned CC on an escalation loop, burning $$ and\n  risking a billing block. Spawned CC sessions are unbounded in cost and unsupervisable.\n\n### `palace.constraints.burn-rate-gate` (budget — derived)\n\n- **Type:** budget\n- **Severity:** critical\n- **Statement:** Igor OR spend must stay within daily budget gates; increases require explicit Akien approval.\n- **Gates:** budget decision type, OR-tagged tickets, Igor dispatch paths invoking LLM tools\n- **Derived from:** `system-availability`\n- **Why:** OR spend is the only variable-rate cost. Unchecked burn can hit the ceiling,\n  degrading Igor's reasoning or triggering a billing block that affects CC.\n\n---\n\n## What's out of scope here\n\n- Enforcement wiring into `audit-design` (separate ticket)\n- Constraint nodes for the remaining subtypes (temporal, quality, resource children)\n- A `palace.decisions.D-constraints-first-class` decision palace node (out of scope for this sprint)\n"
+  }
+}

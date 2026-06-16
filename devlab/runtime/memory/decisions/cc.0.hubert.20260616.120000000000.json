@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.hubert.20260616.120000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "hubert"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-16T12:00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-filesystem-memory-store-2026-06-16",
+      "D-rewind-as-workflow-primitive-2026-06-16"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-filesystem-memory-store-2026-06-16",
+    "title": "Move the palace (tickets, decisions, all dev-process records) to a filesystem JSON store in the repo",
+    "status": "open",
+    "why": "The palace fragmented across four stores with no sync; /sorted wrote files, never the DB, so the DB went stale. Akien: 'this palace system is not working ... we will be moving the palace to the filesystem and out of the database.' Plus the self-aware note: an API-write-through palace assumes a disciplined service; CC operates on files + grep + git. Match the substrate to the operator.",
+    "design_doc": "lab/design_docs/decisions/D-filesystem-memory-store-2026-06-16.md",
+    "spec": "devlab/runtime/memory/SPEC.md",
+    "genesis_note": "First record in the store IS the decision to build the store. Dogfood. Emitted via lab/claudecode/memory_emit.py, the single chokepoint.",
+    "locked_this_pass": [
+      "projection not relocation (additive, sources stay authoritative)",
+      "idempotent migration via original timestamps",
+      "single chokepoint emitter",
+      "semantic ids in links, never filenames",
+      "reserved names judge/chat.cc.0/chat.igor kept verbatim"
+    ]
+  }
+}

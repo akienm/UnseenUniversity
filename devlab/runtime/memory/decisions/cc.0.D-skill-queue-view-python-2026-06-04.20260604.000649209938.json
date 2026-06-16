@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-skill-queue-view-python-2026-06-04.20260604.000649209938",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-skill-queue-view-python-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T00:06:49.209938",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skill-queue-view-python-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-skill-queue-view",
+      "T-skill-queue-view-script"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-skill-queue-view-python-2026-06-04",
+    "title": "Compile /mytickets + /opentickets formatting into queue_view.py",
+    "status": "open",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-skill-queue-view-python-2026-06-04.md",
+    "text": "# D-skill-queue-view-python-2026-06-04\n**title:** Compile /mytickets + /opentickets formatting into queue_view.py\n**date:** 2026-06-04\n**status:** open\n**spawned_tickets:** T-skill-queue-view-script, T-consequence-skill-queue-view\n**goal_link:** none: cost reduction / compiled inference — not a G-xxx goal\n**concept_links:** none\n\n## Decision narrative\n\nThe /mytickets and /opentickets skills currently pipe cc_queue.py output through bash grep filters and CC re-derives formatting logic in prose instructions each invocation. Moving this to a compiled Python script (queue_view.py) makes the formatting happen once at script creation, not at each invocation. Compiled inference: CC executes a command and gets structured output; no re-derivation.\n\n## Hypothesis\nAfter T-skill-queue-view-script ships, both skills call queue_view.py with no inline bash pipes, and the output is correctly grouped without CC re-deriving the logic.\n\n## Measurement Signal\nSkill files contain a single python3 call; queue_view.py exists and passes the consequence check.\n\n## Goal Link\nnone: cost reduction / compiled inference — not a G-xxx goal but aligns with factory-of-factories ethos of compiling repeated reasoning into durable tools.\n\n## Concept Links\nnone\n"
+  }
+}

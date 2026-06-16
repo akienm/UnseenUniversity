@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-ticket-quality-verification-loop-2026-06-06.20260606.134401649411",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-ticket-quality-verification-loop-2026-06-06"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-06T13:44:01.649411",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ticket-quality-verification-loop-2026-06-06"
+    ],
+    "tickets": [
+      "T-completion-audit-closed-tickets",
+      "T-opus-ticket-eval"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-ticket-quality-verification-loop-2026-06-06",
+    "title": "Verification-first ticket-quality loop + hybrid model (Sonnet driver / Opus advisor)",
+    "status": "open",
+    "date": "2026-06-06",
+    "source": "lab/design_docs/decisions/D-ticket-quality-verification-loop-2026-06-06.md",
+    "text": "# D-ticket-quality-verification-loop-2026-06-06\n**title:** Verification-first ticket-quality loop + hybrid model (Sonnet driver / Opus advisor)\n**date:** 2026-06-06\n**status:** open\n**spawned_tickets:** T-completion-audit-closed-tickets, T-opus-ticket-eval\n**goal_link:** project_self_improving_goal — closes observe->verify->improve loop\n**concept_links:** none\n\n## Decision narrative\nAkien asked whether to use Opus more for design/ticket-writing (richer tickets -> easier builds). Verdict (Opus-advisor pressure-tested): the instinct is right (intelligence upstream = the compiled-inference thesis) but the PRIORITY is backwards. Today's real failure was a fake completion (Granny handshake closed with code never written), which more ticket detail does not fix. So verification is the binding constraint, not detail.\n\nKey reframes:\n1. The real payoff of better tickets is not \"easier to build\" — it's machine-verifiable completion. Crisp completion criteria -> a Haiku audit can verify them against code. So the two experiments are one loop: Opus writes verifiable criteria -> Haiku audits closed tickets -> fake completions surface.\n2. The completion audit (Akien's #3) is the priority — it matches today's failure; high-severity + invisible + cheap = do first.\n3. Measure before building the Opus-ticket pipeline: mine sprint_tokens.log + reset_count to test whether detail actually predicts build cost. If not, the pipeline is premature optimization.\n4. Hybrid model is the answer: do NOT make Opus the blanket default (~5x cost on high-volume building). Sonnet drives; advisor() (already advisorModel=opus) brings Opus judgment at decision points. Cheap high-leverage upgrade: call advisor() PROACTIVELY at ticket-draft time in /sorted for L/XL or high-inertia tickets, not just reactively (reset_count>0, 3rd test failure). settings.json model set to \"sonnet\" 2026-06-06.\n\n## Hypothesis\nWith a Haiku completion audit running on cadence, fake completions are caught automatically rather than by accident; and ticket-detail investment is justified only if measured to reduce build cost.\n\n## Measurement Signal\nCompletion-audit pass/fail/cannot-verify per closed ticket; Phase-1 correlation of detail-proxy vs sprint tokens + reset_count.\n\n## Goal Link\nproject_self_improving_goal\n\n## Concept Links\nnone\n\n## Follow-up idea (not yet ticketed)\nProactive advisor() at /sorted ticket-draft time for L/XL or high-inertia tickets — small skill tweak, file if Phase-1 or the audit shows ticket quality is the lever.\n"
+  }
+}

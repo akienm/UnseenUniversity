@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-minion-model-upgrade-2026-06-01.20260601.032932149645",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-minion-model-upgrade-2026-06-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-01T03:29:32.149645",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-minion-model-upgrade-2026-06-01"
+    ],
+    "tickets": [
+      "T-minion-model-upgrade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-minion-model-upgrade-2026-06-01",
+    "title": "Upgrade inference model lineup to coding-benchmark-validated models",
+    "status": "open",
+    "date": "2026-06-01",
+    "source": "lab/design_docs/decisions/D-minion-model-upgrade-2026-06-01.md",
+    "text": "# D-minion-model-upgrade-2026-06-01\n**title:** Upgrade inference model lineup to coding-benchmark-validated models\n**date:** 2026-06-01\n**status:** open\n**spawned_tickets:** T-minion-model-upgrade\n**goal_link:** G-factory-of-factories\n**concept_links:** C-prescient-agents-pa20\n\n## Decision narrative\nCurrent models (qwen3.5-9b, deepseek-v4-flash) were chosen by price alone and both hit the 20-iteration cap on first live run. Replace with models ranked by SWE-bench Verified and Aider leaderboard: worker→qwen2.5-coder-32b-instruct, analyst→deepseek-v3, designer→gemini-2.0-flash. Minion tier (qwen3.5-9b) stays — cheapest for trivial tasks.\n\n## Hypothesis\nCheap-model workers complete S tickets without hitting the iteration cap; DONE% rises.\n\n## Measurement Signal\nMINION_RESULT channel signal=DONE% rises; average iterations/DONE drops below 10 over 20 dispatches.\n\n## Goal Link\nG-factory-of-factories — framework builds cheaply so Claude stays available for design.\n\n## Concept Links\nC-prescient-agents-pa20 — model upgrades directly serve the factory-of-factories goal by making cheap workers effective for execution\n"
+  }
+}

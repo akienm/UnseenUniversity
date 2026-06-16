@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-anticipatory-memory-2026-06-04.20260604.064847263732",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-anticipatory-memory-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T06:48:47.263732",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-anticipatory-memory-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-anticipatory-memory",
+      "T-sprint-anticipatory-brief",
+      "T-token-tracking-per-sprint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-anticipatory-memory-2026-06-04",
+    "title": "Anticipatory memory — proactive pre-brief before sprint + token tracking",
+    "status": "open",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-anticipatory-memory-2026-06-04.md",
+    "text": "# D-anticipatory-memory-2026-06-04\n**title:** Anticipatory memory — proactive pre-brief before sprint + token tracking\n**date:** 2026-06-04\n**status:** open\n**spawned_tickets:** T-sprint-anticipatory-brief, T-token-tracking-per-sprint, T-consequence-anticipatory-memory\n**goal_link:** none: token optimization / cost management\n**concept_links:** none\n\n## Decision narrative\n\nCurrent recall is reactive — CC asks, Librarian answers. Anticipatory: when a ticket enters sprint, assemble a briefing from prior tickets on the same files, linked decisions, and any escalation history — before CC reads a single file. Push model, not pull. Token tracking per sprint is the measurement layer: without counting tokens we cannot verify that compiled inference, anticipatory memory, or any other optimization strategy actually reduces consumption. T-token-tracking-per-sprint is the diagnostic instrument; T-sprint-anticipatory-brief is the first optimization it should measure.\n\n## Hypothesis\nSprint token spend decreases after anticipatory brief ships; pre-brief stays under 500-token cap.\n\n## Measurement Signal\nsprint_tokens.log before vs. after T-sprint-anticipatory-brief ships; briefing token cost logged at INFO per sprint.\n\n## Goal Link\nnone: token optimization — not a G-xxx goal but directly supports cost management and compiled inference ethos.\n"
+  }
+}

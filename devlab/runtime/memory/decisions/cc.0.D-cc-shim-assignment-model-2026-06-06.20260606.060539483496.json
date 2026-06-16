@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-cc-shim-assignment-model-2026-06-06.20260606.060539483496",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-cc-shim-assignment-model-2026-06-06"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-06T06:05:39.483496",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-shim-assignment-model-2026-06-06"
+    ],
+    "tickets": [
+      "T-cc-shim-ack-nag",
+      "T-cc-shim-priority-halt",
+      "T-consequence-cc-shim-assignment",
+      "T-granny-transport-agnostic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-cc-shim-assignment-model-2026-06-06",
+    "title": "CC shim owns all delivery; Granny is transport-agnostic bus assignment only",
+    "status": "open",
+    "date": "2026-06-06",
+    "source": "lab/design_docs/decisions/D-cc-shim-assignment-model-2026-06-06.md",
+    "text": "# D-cc-shim-assignment-model-2026-06-06\n**title:** CC shim owns all delivery; Granny is transport-agnostic bus assignment only\n**date:** 2026-06-06\n**status:** open\n**spawned_tickets:** T-granny-transport-agnostic, T-cc-shim-ack-nag, T-cc-shim-priority-halt, T-consequence-cc-shim-assignment\n**goal_link:** none\n\n## Hypothesis\nAfter these tickets ship, Granny daemon contains zero tmux knowledge. A dispatched ticket shows \"CC.0 acked at <time>\" state. The nag to CC is `\\r\\r\\rcheck messages when possible\\n` on a configurable interval. HALT works from any bus device.\n\n## Measurement Signal\ngrep for 'tmux' in devices/granny/daemon.py returns nothing. Queue show on a dispatched ticket shows acked timestamp. CCWorkerListener test verifies nag fires and HALT fires interrupt sequence.\n\n## Goal Link\nnone (Granny reliability — precondition for system functioning)\n\n## Decision narrative\nGranny makes assignments to the bus mailbox (cc.0). That's all Granny does — she is transport-agnostic. The CC shim (CCWorkerListener) owns: ack receipt (adds note to ticket with timestamp), nag loop (fires `\\r\\r\\rcheck messages when possible\\n` via tmux every CC_SHIM_NAG_INTERVAL seconds, default 600), and priority/HALT path (any bus device drops kind=halt/priority envelope → shim fires Enter Enter Enter <message> Enter immediately). tmux knowledge is fully enclosed in the CC device layer.\n"
+  }
+}

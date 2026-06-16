@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-web-ui-controls-2026-06-01.20260601.135144593417",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-web-ui-controls-2026-06-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-01T13:51:44.593417",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-ui-controls-2026-06-01"
+    ],
+    "tickets": [
+      "T-web-ui-circuit-breakers",
+      "T-web-ui-three-pane"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-web-ui-controls-2026-06-01",
+    "title": "Web UI three-pane layout + circuit breakers per device",
+    "status": "open",
+    "date": "2026-06-01",
+    "source": "lab/design_docs/decisions/D-web-ui-controls-2026-06-01.md",
+    "text": "# D-web-ui-controls-2026-06-01\n**title:** Web UI three-pane layout + circuit breakers per device\n**date:** 2026-06-01\n**status:** open\n**spawned_tickets:** T-web-ui-three-pane, T-web-ui-circuit-breakers\n**goal_link:** none: observability + control infrastructure\n**concept_links:** none\n\n## Decision narrative\nEach device tab has four sections: (1) Announce — scrolling feed of recent channel events (machine-to-machine log, most-recent-important entries); (2) Health/Status — alpha-sorted key=value pairs from the device's health surface, TTL-aged (configurable per device), all cleared on web startup then repopulated by polling each device's /health endpoint; (3) Controls — circuit breakers and action buttons drawn from the health surface; (4) Chat — edit box + scrollable history for human↔device interaction. The health panel IS the control panel. Devices generate their own panel from a BaseShim template/mixin — the web page renders each device's panel. CC.0 circuit breaker kills all cc-T-* tmux sessions without touching claude-main, and blocks Granny from dispatching new CC sessions while open. All breakers start closed; web startup polls health to detect any pre-existing open state.\n\n## Hypothesis\nAfter shipping, activating CC.0 from the web UI kills all cc-T-* sessions within 5s and prevents new CC dispatch until CC.0 is closed. A device posting key=value status causes it to appear in the health pane and age out after TTL. Granny dispatching a ticket causes an entry in the announce pane.\n\n## Measurement Signal\nCC.0 toggle → cc-T-* sessions dead (verified tmux list-sessions) + GRANNY_THROTTLED on next Granny poll; GRANNY_DISPATCH channel event → announce pane entry; key=value status message → health pane entry disappears after TTL.\n\n## Concept Links\nnone\n"
+  }
+}

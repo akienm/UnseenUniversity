@@ -1,0 +1,27 @@
+{
+  "id": "cc.0.D-vetinari-role-2026-06-09.20260609.002944250362",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-vetinari-role-2026-06-09"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-09T00:29:44.250362",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-role-2026-06-09"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-vetinari-role-2026-06-09",
+    "title": "Vetinari — reserved for external-world and strategic-optimization role",
+    "status": "open",
+    "date": "2026-06-09",
+    "source": "lab/design_docs/decisions/D-vetinari-role-2026-06-09.md",
+    "text": "# D-vetinari-role-2026-06-09\n**title:** Vetinari — reserved for external-world and strategic-optimization role\n**date:** 2026-06-09\n**status:** open\n**spawned_tickets:** (none yet — future)\n\n## Decision narrative\nVetinari is NOT the development process controller (that is Hubert). Vetinari's role: watches the whole UU, decides how often to update Ollama based on advisor inputs, manages relationships with the external world, and makes system-level policy decisions. He is the strategic governor and diplomat — smaller immediate scope than originally envisioned, but a more important future role. No tickets yet; this decision exists to reserve the name and role against future design.\n\n## Goal Link\nG-invisible-tools, G-factory-factory\n"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-uurecall-search-gaps-2026-06-08.20260608.233938564159",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-uurecall-search-gaps-2026-06-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-08T23:39:38.564159",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uurecall-search-gaps-2026-06-08"
+    ],
+    "tickets": [
+      "T-consequence-uurecall-search-gaps",
+      "T-uurecall-search-gaps"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-uurecall-search-gaps-2026-06-08",
+    "title": "uurecall: fix literal search gaps, suppress semantic noise, add palace source",
+    "status": "open",
+    "date": "2026-06-08",
+    "source": "lab/design_docs/decisions/D-uurecall-search-gaps-2026-06-08.md",
+    "text": "# D-uurecall-search-gaps-2026-06-08\n**title:** uurecall: fix literal search gaps, suppress semantic noise, add palace source\n**date:** 2026-06-08\n**status:** open\n**spawned_tickets:** T-uurecall-search-gaps, T-consequence-uurecall-search-gaps\n\n## Decision narrative\nuurecall must be the single reliable tool for \"everything you'd need to know about X\" — logs, tickets (all statuses), code, and palace nodes. Literal search gaps (status filter, semantic noise at 0.016 scores, missing palace source) are fixed in a single M-ticket rather than splitting into specialized tool flavors; the template/specialization option is captured as an open design question (Q1) in the ticket.\n\n## Hypothesis\nAny term that grep finds in CC.0 logs or tickets also appears in uurecall output.\n\n## Measurement Signal\n`uurecall T-inference-proxy-mini-rack` returns the ticket in the Tickets section (not only semantic noise).\n\n## Goal Link\nG-self-improving\n"
+  }
+}

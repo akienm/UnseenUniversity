@@ -1,0 +1,27 @@
+{
+  "id": "cc.0.C-agent-taxonomy.20260601.034033124182",
+  "emitter": "cc.0",
+  "namespace": [
+    "C-agent-taxonomy"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-01T03:40:33.124182",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-agent-taxonomy"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "C-agent-taxonomy",
+    "title": "C-agent-taxonomy",
+    "status": "unknown",
+    "date": "20260601",
+    "source": "lab/design_docs/decisions/C-agent-taxonomy.md",
+    "text": "# C-agent-taxonomy — Three-class agent taxonomy: utility / specialized / general-purpose\n\n**palace path:** palace.concepts.agent-taxonomy\n**type:** concept\n**tags:** Architecture, Taxonomy, Device\n**decision:** D-agent-taxonomy-2026-06-01\n\nStub — authoritative content lives in the palace at `palace.concepts.agent-taxonomy`.\n\n## Quick reference\n\n| Class | Autonomy | Scope | Examples |\n|---|---|---|---|\n| utility | low | single bounded capability | Scraps, GoogleSecretary |\n| specialized | medium | domain workflow expert | Granny, Nanny |\n| general-purpose | high | broad reasoning + novel problems | Igor, CC |\n\n**Librarian:** utility class, annotated `platform-utility` (rack-wide service scope).\n"
+  }
+}

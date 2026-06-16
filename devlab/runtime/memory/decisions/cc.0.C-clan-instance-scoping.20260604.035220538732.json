@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.C-clan-instance-scoping.20260604.035220538732",
+  "emitter": "cc.0",
+  "namespace": [
+    "C-clan-instance-scoping"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T03:52:20.538732",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-clan-instance-scoping",
+      "C-clan-template"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "C-clan-instance-scoping",
+    "title": "C-clan-instance-scoping",
+    "status": "active",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/C-clan-instance-scoping.md",
+    "text": "# C-clan-instance-scoping\n**type:** concept\n**concept_id:** C-clan-instance-scoping\n**date:** 2026-06-04\n**decision_ref:** D-clan-template-memory-ownership-2026-06-01\n**status:** active\n**related:** C-clan-template\n\n## The four knowledge tiers\n\n| Tier           | Scope                            | Who reads                  | Who writes              |\n|----------------|----------------------------------|----------------------------|-------------------------|\n| **universal**  | All UU instances everywhere      | Any agent on any rack      | Human curation only     |\n| **clan**       | This rack's shared layer         | All agents on this rack    | Memory-domain owner     |\n| **agent**      | One agent type (e.g. igor)       | That agent type only       | That agent type         |\n| **client**     | One user's private data          | That user's agents only    | That user's agents      |\n\nA UU instance running a legal citation project receives universal and clan patterns\nbut NOT the sprint ticket history from another installation. Sprint tickets are\nagent-tier (igor) or clan-tier (granny/build). Legal citation patterns would be\nagent-tier on that installation, invisible to ours.\n\n## Boundary rules\n\n1. **Universal → clan** join: any rack can read universal. Writing requires a\n   contribution protocol (not yet defined; gated on T-global-kb-git-repo).\n2. **Clan → agent**: agents read clan freely. Reading another agent's tier requires\n   an inter-agent knowledge request (see Bus protocol below).\n3. **Agent → client**: client data is siloed. No cross-client reads. No exceptions.\n4. **Memory ownership** declares the write boundary (see C-clan-template).\n\n## Inter-agent knowledge request — bus protocol\n\nWhen an agent needs access to another agent's tier-specific memories, it sends\na typed bus message rather than querying the DB directly. This keeps memory\nisolation enforcement in one place (the owning agent) rather than in access\ncontrol rules scattered across the DB schema.\n\n### Request message schema\n\n```json\n{\n  \"kind\": \"memory.access_request\",\n  \"from_agent\": \"librarian-wild-0001\",\n  \"to_agent\":   \"igor-wild-0001\",\n  \"scope\":      \"agent\",\n  \"query\":      \"recent escalation summaries on T-inference-*\",\n  \"intent\":     \"populating recall index for inference tickets\",\n  \"max_results\": 5\n}\n```\n\n**Fields:**\n- `kind`: always `\"memory.access_request\"` — allows the owning agent to dispatch\n- `from_agent`: requesting agent's instance ID\n- `to_agent`: owning agent's instance ID (the one whose tier-specific memory is requested)\n- `scope`: `\"agent\"` | `\"client\"` — which tier is being requested\n- `query`: natural-language or structured query string\n- `intent`: why the requesting agent needs this (logged; used for audit)\n- `max_results`: optional cap (default 10)\n\n### Response message schema\n\n```json\n{\n  \"kind\": \"memory.access_response\",\n  \"request_id\": \"<echoes request envelope uuid>\",\n  \"from_agent\": \"igor-wild-0001\",\n  \"to_agent\":   \"librarian-wild-0001\",\n  \"approved\":   true,\n  \"memories\":   [{\"id\": \"...\", \"narrative\": \"...\", \"memory_type\": \"EPISODIC\"}],\n  \"denied_reason\": null\n}\n```\n\n**Fields:**\n- `approved`: true = memories included; false = denied_reason set, memories empty\n- `denied_reason`: human-readable reason when denied (scope too broad, client data, etc.)\n\nThe owning agent decides approval policy. Default policy (v1): approve `scope=agent`\nrequests from same-rack agents; deny `scope=client` unconditionally.\n\n### Implementation note\n\nThis protocol is a bus envelope pair (see §1.3 of TheoryOfOperation). Neither\nthe requesting agent nor the owning agent needs a shared DB connection — the\nowning agent reads its own DB and returns results via the bus.\n\nCurrent status: schema defined; implementation pending. The test below verifies\nthe request/response shape at the envelope level.\n\n## Relationship to C-clan-template\n\nC-clan-template defines the identity and memory inheritance model (template_id,\nmemory_domain). C-clan-instance-scoping defines the boundary rules and the\ninter-agent protocol for crossing those boundaries. Together they answer:\n- \"who shares what by default?\" (C-clan-template)\n- \"how does an agent ask for more?\" (C-clan-instance-scoping)\n"
+  }
+}

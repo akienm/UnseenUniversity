@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-hubert-device-2026-06-09.20260609.230709371244",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-hubert-device-2026-06-09"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-09T23:07:09.371244",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hubert-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-hubert-device",
+      "T-control-station-breakers-only",
+      "T-hubert-device-scaffold",
+      "T-hubert-wire-dev-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-hubert-device-2026-06-09",
+    "title": "Hubert rack device + Control Station as pure breaker panel",
+    "status": "open",
+    "date": "2026-06-09",
+    "source": "lab/design_docs/decisions/D-hubert-device-2026-06-09.md",
+    "text": "# D-hubert-device-2026-06-09\n**title:** Hubert rack device + Control Station as pure breaker panel\n**date:** 2026-06-09\n**status:** open\n**spawned_tickets:** T-hubert-device-scaffold, T-hubert-wire-dev-tools, T-control-station-breakers-only, T-consequence-hubert-device\n\n## Decision narrative\nNew rack device \"Hubert\" (from Making Money — the lab guy Igor worked for) owns lab/, all tickets, decisions, outcomes, palace browser, goals, racks, and other infrastructure. He is the development process controller and infrastructure owner. Control Station is stripped to a pure breaker panel: master kill, soft kill, per-device circuit breakers only. Dev tools (Goals, Decisions, etc.) move from Control Station to Hubert's fascia page. Ticket sequence enforced: scaffold → wire-dev-tools → strip, so dev tools are never unreachable. Vetinari is reserved for future external-world/strategic-optimization role.\n\n## Hypothesis\nThe UI starts at Comms://Public with a scrollable device list across the top; each device tab shows that device's fascia page with live status, chat, public feed, and controls where relevant.\n\n## Measurement Signal\nOpen the page — Control Station shows only breakers. Hubert tab shows all dev tool links. All links resolve.\n\n## Goal Link\nG-invisible-tools\n"
+  }
+}

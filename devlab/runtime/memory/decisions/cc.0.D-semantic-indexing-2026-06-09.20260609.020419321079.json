@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-semantic-indexing-2026-06-09.20260609.020419321079",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-semantic-indexing-2026-06-09"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-09T02:04:19.321079",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-semantic-indexing-2026-06-09"
+    ],
+    "tickets": [
+      "T-auto-embed-on-creation",
+      "T-cc-log-session-memory",
+      "T-code-index-schema",
+      "T-consequence-semantic-indexing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-semantic-indexing-2026-06-09",
+    "title": "Comprehensive semantic indexing — auto-embed on creation + code index + session memory",
+    "status": "open",
+    "date": "2026-06-09",
+    "source": "lab/design_docs/decisions/D-semantic-indexing-2026-06-09.md",
+    "text": "# D-semantic-indexing-2026-06-09\n**title:** Comprehensive semantic indexing — auto-embed on creation + code index + session memory\n**date:** 2026-06-09\n**status:** open\n**spawned_tickets:** T-auto-embed-on-creation, T-code-index-schema, T-cc-log-session-memory, T-consequence-semantic-indexing\n\n## Decision narrative\nThree mutually reinforcing changes make the whole project semantically searchable without manual curation. (1) A Postgres trigger on clan.memories auto-queues any row with text content for embedding — embedding becomes a side-effect of writing, not a pipeline step. (2) A code_index table (path, symbol, kind, summary, embedding, content_hash) populated by a Nanny Ogg cron sweep makes Python code semantically findable at function/class granularity; filesystem stays authoritative, DB holds summaries + pointers + hashes. (3) CC.0 session close deposits the slate's Done+Notes content as a memory row, making design conversations semantically searchable via uurecall. Storage layer: summaries + pointers (not full code in DB). Caller layer: uniform librarian API over palace, code index, and session memories.\n\n## Hypothesis\nAny term in the project (code symbol, design concept, conversation excerpt) is semantically findable via uurecall without requiring grep.\n\n## Measurement Signal\nuurecall \"ponder coordinator\" returns the palace node (not just raw chat log excerpts); uurecall \"tick cooldown\" returns coa.py:tick with a file pointer; semantic score > 0.4 for relevant queries.\n\n## Goal Link\nG-factory-factory\n"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-acurite-isolated-network-2026-06-15.20260615.195554636099",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-acurite-isolated-network-2026-06-15"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-15T19:55:54.636099",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-isolated-network-2026-06-15"
+    ],
+    "tickets": [
+      "T-acurite-integrate-weather-html",
+      "T-acurite-isolated-daemon",
+      "T-acurite-usb-isolated-config",
+      "T-consequence-acurite-isolated-network"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-acurite-isolated-network-2026-06-15",
+    "title": "AcuRite hub on isolated network with daemon listener",
+    "status": "open",
+    "date": "2026-06-15",
+    "source": "lab/design_docs/decisions/D-acurite-isolated-network-2026-06-15.md",
+    "text": "# D-acurite-isolated-network-2026-06-15\n\n**title:** AcuRite hub on isolated network with daemon listener\n\n**date:** 2026-06-15\n\n**status:** open\n\n**spawned_tickets:** T-acurite-usb-isolated-config, T-acurite-isolated-daemon, T-acurite-integrate-weather-html, T-consequence-acurite-isolated-network\n\n## Decision narrative\n\nAcuRite Access 09155M device transmits weather data via HTTP/WU format to myacurite.com. Instead of routing through main network, connect device directly to USB Ethernet port on laptop and isolate it on a dedicated network segment. Set up dnsmasq on the isolated segment to intercept myacurite.com DNS queries and redirect to local IP. Daemon listens on that IP:80, captures device POST requests (WU format), writes to CSV. This is the first ground-up project built from our tools that isn't part of the tool infrastructure itself.\n\n**Architecture:**\n- USB Ethernet port: static IP 10.0.0.230, no internet gateway\n- Device: DHCP from isolated segment (10.0.0.231)\n- dnsmasq: 10.0.0.230:53 resolves *.myacurite.com → 10.0.0.230\n- Daemon: listens on 10.0.0.230:80 for device POST, captures WU format, writes weather.csv\n- No device reconfiguration needed; DNS redirect handles everything\n\n## Hypothesis\n\n**Observable difference:** Weather data flows in isolated network, is captured and persisted to CSV accessible from dashboard.\n\n**Signal:** CSV file (weather.csv) grows with new sensor readings; weather.html dashboard displays live data.\n\n**Goal link:** G-acurite-demo\n\n## Spawned tickets\n\n- T-acurite-usb-isolated-config (S): Configure USB Ethernet port with static IP 10.0.0.230, DHCP, dnsmasq DNS redirect\n- T-acurite-isolated-daemon (S): Daemon on 10.0.0.230:80, parse WU format, merge two-message pattern, write weather.csv\n- T-acurite-integrate-weather-html (S): Point weather.html at isolated CSV (symlink or HTTP endpoint)\n- T-consequence-acurite-isolated-network (S): Verify data flows, CSV populates, dashboard renders, gate 2026-06-29\n"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-agent-notification-system-2026-06-07.20260607.132749916577",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-agent-notification-system-2026-06-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-07T13:27:49.916577",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agent-notification-system-2026-06-07"
+    ],
+    "tickets": [
+      "T-consequence-agent-notification-system",
+      "T-notif-config-schema",
+      "T-notify-skill",
+      "T-shim-notif-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-agent-notification-system-2026-06-07",
+    "title": "Shim-owned agent notification system — SILENT/QUIET/LOUD with per-sender overrides",
+    "status": "open",
+    "date": "2026-06-07",
+    "source": "lab/design_docs/decisions/D-agent-notification-system-2026-06-07.md",
+    "text": "# D-agent-notification-system-2026-06-07\n**title:** Shim-owned agent notification system — SILENT/QUIET/LOUD with per-sender overrides\n**date:** 2026-06-07\n**status:** open\n**spawned_tickets:** T-notif-config-schema, T-shim-notif-filter, T-notify-skill, T-consequence-agent-notification-system\n\n## Decision narrative\nEvery UU device shim owns its own notification delivery: incoming bus messages are filtered through a persistent notifications.cfg (SILENT/QUIET/LOUD, per-sender overrides). Default level is state-linked — idle → QUIET, working → SILENT. LOUD fires immediate tmux send-keys to the device's own session (local-only; falls back to QUIET if no session). Sender is transport-agnostic: it puts messages in the mailbox and is done. The ad-hoc on_alert_send_tmux flag collapses into this system. Replaces all per-ticket delivery hacks with a single shim-level filter.\n\n## Hypothesis\nCC receives Granny dispatches and delivers them at the correct level with no silent failures; logs show delivery decisions on every inbound message.\n\n## Measurement Signal\nLogs show `notif: <sender> → <LEVEL> (reason: ...)` on every inbound message. No HALT messages silently queued. CC wakes when idle on Granny dispatch.\n\n## Goal Link\nG-factory-of-factories, G-system-self-improving\n\n## Design constraints\n- tmux delivery is local-only and always self-initiated by the receiving shim\n- Sender never touches delivery — puts message in mailbox, done\n- Config is external flat file (not in-memory); survives restarts\n- HALT protocol sits above this system and cannot be filtered\n- BaseShim change is additive-only (new _notifier attribute; no existing methods modified)\n- Akien pre-approved T-shim-notif-filter HIGH-inertia touch 2026-06-07\n"
+  }
+}

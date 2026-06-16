@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-dsimnel-cc-parity-2026-06-04.20260604.110418291285",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-dsimnel-cc-parity-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T11:04:18.291285",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dsimnel-cc-parity-2026-06-04"
+    ],
+    "tickets": [
+      "T-dsimnel-cc-parity",
+      "T-flat-rate-provider-routing",
+      "T-inference-caching-all-providers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-dsimnel-cc-parity-2026-06-04",
+    "title": "DickSimnel is a CC mirror — only difference is cost/provider",
+    "status": "open",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-dsimnel-cc-parity-2026-06-04.md",
+    "text": "# D-dsimnel-cc-parity-2026-06-04\n**title:** DickSimnel is a CC mirror — only difference is cost/provider\n**date:** 2026-06-04\n**status:** open\n**spawned_tickets:** T-dsimnel-cc-parity, T-inference-caching-all-providers, T-flat-rate-provider-routing\n**goal_link:** G-factory-of-factories\n\n## Decision narrative\nDickSimnel must be behaviorally identical to Claude Code from the perspective of a Claude Code expert. The only legitimate difference is the underlying cost/provider — handled entirely by the inference proxy. The bespoke `## Analysis / ## Implementation` format prompt is the bug: it told the OR model to plan and stop, producing fake-DONE tickets. Strip it; the sprint-ticket skill is the sole procedural guide. Add a DONE: + git commit gate so close is gated on real work. All providers that support caching get cache_control. Flat-rate subscription sources (Ollama Pro $20/mo) are preferred over usage-based sources. All usage-based accounts are assumed to eventually end.\n\n## Hypothesis\nAfter T-dsimnel-cc-parity ships, DickSimnel working a ticket produces a git commit with passing tests before closing. Planning-text closes drop to zero.\n\n## Measurement Signal\n`git log --oneline | grep T-dsimnel` shows real commits with test runs. DICKSIMNEL_DONE channel events reference commit hashes, not planning phrases.\n\n## Goal Link\nG-factory-of-factories — cheap workers that actually work = factory can self-extend\n\n## Concept Links\nnone\n"
+  }
+}

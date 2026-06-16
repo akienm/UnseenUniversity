@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-ponder-stibbons-device-2026-06-09.20260609.072338907464",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-ponder-stibbons-device-2026-06-09"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-09T07:23:38.907464",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ponder-stibbons-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-ponder-device",
+      "T-ponder-scaffold"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-ponder-stibbons-device-2026-06-09",
+    "title": "Ponder Stibbons device — human-facing coordinator (Radar O'Reilly equivalent)",
+    "status": "open",
+    "date": "2026-06-09",
+    "source": "lab/design_docs/decisions/D-ponder-stibbons-device-2026-06-09.md",
+    "text": "# D-ponder-stibbons-device-2026-06-09\n**title:** Ponder Stibbons device — human-facing coordinator (Radar O'Reilly equivalent)\n**date:** 2026-06-09\n**status:** open\n**spawned_tickets:** T-ponder-scaffold, T-consequence-ponder-device\n\n## Decision narrative\nPonder Stibbons is the human-facing coordinator of the rack. He is the Radar O'Reilly of UnseenUniversity: personable, anticipates needs, bridges the human to the system without the human needing to understand system internals. He is NOT a leader — he quietly gets things done. He interfaces with HEX (Igor/CC.0 in our case). His fascia will be the natural-language system-state query interface in a future sprint. This sprint only scaffolds the device; the coordinator functionality is a separate design conversation once the routing architecture is clear.\n\n## Hypothesis\nA user can ask Ponder a natural-language question about system state and get a human-readable summary without knowing which device owns the answer.\n\n## Measurement Signal\nPonder fascia renders a coherent response to \"what's happening?\" queries; system-status traffic that currently goes to Igor routes to Ponder instead.\n\n## Goal Link\nG-invisible-tools\n"
+  }
+}

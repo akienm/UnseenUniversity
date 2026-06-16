@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-nanny-ogg-device-2026-06-09.20260609.074631613349",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-nanny-ogg-device-2026-06-09"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-09T07:46:31.613349",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-nanny-ogg-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-nanny-ogg-device",
+      "T-nanny-ogg-os-cron",
+      "T-nanny-ogg-quotes",
+      "T-nanny-ogg-scaffold"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-nanny-ogg-device-2026-06-09",
+    "title": "Nanny Ogg device — pure cron/scheduler, no inference",
+    "status": "open",
+    "date": "2026-06-09",
+    "source": "lab/design_docs/decisions/D-nanny-ogg-device-2026-06-09.md",
+    "text": "# D-nanny-ogg-device-2026-06-09\n**title:** Nanny Ogg device — pure cron/scheduler, no inference\n**date:** 2026-06-09\n**status:** open\n**spawned_tickets:** T-nanny-ogg-scaffold, T-nanny-ogg-os-cron, T-nanny-ogg-quotes, T-consequence-nanny-ogg-device\n\n## Decision narrative\nNanny Ogg is the rack's cron/scheduler device. She drives OS cron (crontab on Linux, Task Scheduler abstraction on Windows) with no inference involvement whatsoever. Complex scheduling rules may use a graph-tree rules engine in a future sprint. Her fascia exposes slash commands (list/add/disable/enable/run-now) and she responds to nonsense prompts with Nanny Ogg quotes from the Discworld canon (target: 100 quotes). She has no dispatch role — that stays with Granny.\n\n## Hypothesis\nCron jobs are visible in the web UI and manageable via slash commands, with zero scheduling logic in Granny or Igor.\n\n## Measurement Signal\n/cron list in Nanny Ogg's fascia returns current crontab entries; grep devices/granny devices/igor finds no scheduler/timer calls added after this ships.\n\n## Goal Link\nG-invisible-tools\n"
+  }
+}

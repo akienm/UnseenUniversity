@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-orientation-classifier-2026-06-12.20260612.210214304659",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-orientation-classifier-2026-06-12"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-12T21:02:14.304659",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-orientation-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-orientation-classifier",
+      "T-orientation-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-orientation-classifier-2026-06-12",
+    "title": "Graph-tree classifier produces structured builder report at session/ticket start",
+    "status": "open",
+    "date": "2026-06-12",
+    "source": "lab/design_docs/decisions/D-orientation-classifier-2026-06-12.md",
+    "text": "# D-orientation-classifier-2026-06-12\n**title:** Graph-tree classifier produces structured builder report at session/ticket start\n**date:** 2026-06-12\n**status:** open\n**spawned_tickets:** T-orientation-classifier, T-consequence-orientation-classifier\n\n## Decision narrative\nCurrent session orientation burns tokens on exploratory file searches (grep/find/read loops). A graph-tree classifier takes the task description, pattern-matches against the codebase graph (code_index symbols, git tree), and returns a structured builder report: {relevant_files[], context_nodes[], task_shape, estimated_complexity}. Local inference only. Same principle as palace reading-node classifiers but applied to the code graph. Output consumed by DS/CC before any file reads.\n\nOpen design questions for sprint: (1) Source graph — code_index symbols table, git tree, or both? (2) Per-ticket (DS ToolLoop) or per-session (context-load)? (3) KNN over embeddings or rule-based tree traversal first?\n\n## Hypothesis\nDS ToolLoop emits a builder_report JSON block before first file read; orientation token count measurably lower vs baseline on same ticket type.\n\n## Measurement Signal\nSide-by-side token count (orientation phase only) for 5 comparable tickets before/after. Builder report accuracy: files listed vs files actually touched.\n\n## Goal Link\nCost savings (direct orientation token reduction) + training (structured builder reports become training examples for future orientation).\n"
+  }
+}

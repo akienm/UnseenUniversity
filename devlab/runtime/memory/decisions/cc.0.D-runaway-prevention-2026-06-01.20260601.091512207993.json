@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-runaway-prevention-2026-06-01.20260601.091512207993",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-runaway-prevention-2026-06-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-01T09:15:12.207993",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-runaway-prevention-2026-06-01"
+    ],
+    "tickets": [
+      "T-cc-stop-command",
+      "T-consequence-runaway-prevention",
+      "T-granny-cc-concurrency-gate",
+      "T-granny-health-cmd"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-runaway-prevention-2026-06-01",
+    "title": "Granny concurrency gate + CC emergency stop — prevent runaway CC dispatch",
+    "status": "open",
+    "date": "2026-06-01",
+    "source": "lab/design_docs/decisions/D-runaway-prevention-2026-06-01.md",
+    "text": "# D-runaway-prevention-2026-06-01\n**title:** Granny concurrency gate + CC emergency stop — prevent runaway CC dispatch\n**date:** 2026-06-01\n**status:** open\n**spawned_tickets:** T-granny-cc-concurrency-gate, T-cc-stop-command, T-granny-health-cmd, T-consequence-runaway-prevention\n**goal_link:** none: reliability/safety infrastructure\n**concept_links:** none\n\n## Decision narrative\nOn 2026-06-01, Granny dispatched 6 concurrent CC sessions. A STOP order was given at 83% context; CC reported them killed but they weren't; Akien manually killed them from the OS task manager at 96% context — rendering the session unusable and losing ~4h of work time. Root cause: no pre-dispatch live-session check, and kill-by-PID is unreliable (child processes survive). Fix: (1) Granny checks `tmux list-sessions | grep cc-T-` count before dispatch — if >= cc_max_concurrent (default 1), post GRANNY_THROTTLED and abort; (2) stop_cc_minions script kills cc-T-* tmux sessions + SIGTERM remaining claude sprint-ticket processes and verifies ps empty; (3) /health command surfaces queue state, active sessions, orphans, routing gaps with zero inference.\n\n## Hypothesis\nAfter these tickets ship, a STOP order clears all CC minions within 5s (verifiable via ps). Granny never dispatches a second CC session while one is active. GRANNY_THROTTLED appears in channel log when the gate fires.\n\n## Measurement Signal\nGRANNY_THROTTLED channel events when concurrency limit hit; ps aux | grep \"claude.*sprint-ticket\" returns empty within 5s of stop_cc_minions run; zero manual ticket resets needed for killed-session scenarios.\n\n## Concept Links\nnone\n"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-consequence-enforcement-gap-2026-06-09.20260609.101352618231",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-consequence-enforcement-gap-2026-06-09"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-09T10:13:52.618231",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consequence-enforcement-gap-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-enforcement-gate",
+      "T-consequence-web-ui-controls",
+      "T-gap-scan-consequence-debt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-consequence-enforcement-gap-2026-06-09",
+    "title": "Consequence-checking enforcement — close the design verification gap",
+    "status": "open",
+    "date": "2026-06-09",
+    "source": "lab/design_docs/decisions/D-consequence-enforcement-gap-2026-06-09.md",
+    "text": "# D-consequence-enforcement-gap-2026-06-09\n**title:** Consequence-checking enforcement — close the design verification gap\n**date:** 2026-06-09\n**status:** open\n**spawned_tickets:** T-consequence-web-ui-controls, T-gap-scan-consequence-debt, T-consequence-enforcement-gate\n**goal_link:** G-factory-of-factories: self-coding improvement requires observe→verify→learn loop\n\n## Decision narrative\nConsequence-checking gaps exist: D-web-ui-controls spawned two tickets (both closed 2026-06-04) but the four-pane device-tab layout never shipped. No consequence-check ticket was filed or verified. Root cause: no enforcement gate. /sorted Step 5.5 makes consequence tickets optional; /audit-ticket doesn't block design closure on missing verification. Fix: make Step 5.5 mandatory for M+ decisions, add /audit-ticket check flagging unverified designs, gate design closure on filed+closed consequence tickets.\n\n## Hypothesis\nAfter shipping, all designs with M+ size or behavioral hypotheses will have filed+closed consequence tickets before status moves to closed. Web UI will display all registered devices with 4-panel health layout (Status/Chat/Public Feed/Settings) and private feed behavior preserved.\n\n## Measurement Signal\n/sorted Step 5.5 is MANDATORY for M+ designs (enforced in skill file). /audit-ticket surfaces unverified designs with AMEND verdict. Attempting to close D-xxx fails until consequence ticket is filed+closed. Audit logging captures all findings for self-improvement patterns.\n\n## Goal Link\nG-factory-of-factories: self-coding improvement depends on observe→verify→learn loop. Consequence-checking closes that loop — verified design ship enables learning from outcomes.\n"
+  }
+}

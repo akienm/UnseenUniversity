@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.D-classifier-device-architecture-2026-06-12.20260612.111128245748",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-classifier-device-architecture-2026-06-12"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-12T11:11:28.245748",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-classifier-device-architecture-2026-06-12"
+    ],
+    "tickets": [
+      "T-annotator-delta-update",
+      "T-builder-report-at-filing",
+      "T-classifier-device",
+      "T-classifier-inflight-flags",
+      "T-codebase-tree-annotator",
+      "T-consequence-classifier-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-classifier-device-architecture-2026-06-12",
+    "title": "Unified Classifier rack device — palace trees, BuilderReport at filing, self-improving via precision/recall",
+    "status": "open",
+    "date": "2026-06-12",
+    "source": "lab/design_docs/decisions/D-classifier-device-architecture-2026-06-12.md",
+    "text": "# D-classifier-device-architecture-2026-06-12\n**title:** Unified Classifier rack device — palace trees, BuilderReport at filing, self-improving via precision/recall\n**date:** 2026-06-12\n**status:** open\n**spawned_tickets:** T-classifier-device, T-codebase-tree-annotator, T-builder-report-at-filing, T-classifier-inflight-flags, T-annotator-delta-update, T-consequence-classifier-device\n\n## Decision narrative\nAll classification work belongs to one rack device. Trees live in the palace as palace.codebase.<project>.* (per-project, built from code_index + LLM annotation) and palace.domains.* (shared). Meta-classifier is rule-based router + LLM fallback. Device exposes classify()/freshness_check()/score(). BuilderReport computed once at ticket filing, reused at sprint start (freshness check only). Live delta on ticket close re-annotates touched files; nightly sweep is catchall. In-flight flags on palace nodes surface contention. Self-improving: precision/recall scored at close, weights updated on palace nodes.\n\n## Hypothesis\nAt ticket filing a BuilderReport structured field is written; DS reads relevant_files from it rather than exploring; orientation token count drops measurably over first 10 tickets using the classifier.\n\n## Measurement Signal\nprecision/recall scores in palace node metadata after first 10 tickets; cost_usd per ticket before/after; builder_report section present on new tickets.\n\n## Goal Link\nCost savings (token reduction on orientation) + training signal quality (structured reports become training examples).\n\n## Dependency chain\nT-classifier-device → T-codebase-tree-annotator → T-builder-report-at-filing\nT-classifier-device → T-classifier-inflight-flags\nT-codebase-tree-annotator → T-annotator-delta-update\n"
+  }
+}

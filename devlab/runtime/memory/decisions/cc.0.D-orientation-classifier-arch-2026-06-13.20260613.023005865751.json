@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-orientation-classifier-arch-2026-06-13.20260613.023005865751",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-orientation-classifier-arch-2026-06-13"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-13T02:30:05.865751",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-orientation-classifier-arch-2026-06-13"
+    ],
+    "tickets": [
+      "T-after-sprint-symbols-refresh",
+      "T-consequence-orientation-arch",
+      "T-orientation-classifier",
+      "T-symbols-table-multilang"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-orientation-classifier-arch-2026-06-13",
+    "title": "Orientation classifier architecture: clan.code_index + Haiku intent pass + ClassifierDevice stubs",
+    "status": "open",
+    "date": "2026-06-13",
+    "source": "lab/design_docs/decisions/D-orientation-classifier-arch-2026-06-13.md",
+    "text": "# D-orientation-classifier-arch-2026-06-13\n**title:** Orientation classifier architecture: clan.code_index + Haiku intent pass + ClassifierDevice stubs\n**date:** 2026-06-13\n**status:** open\n**spawned_tickets:** T-symbols-table-multilang, T-after-sprint-symbols-refresh, T-orientation-classifier, T-consequence-orientation-arch\n\n## Decision narrative\nThree architecture questions for T-orientation-classifier resolved: (1) Graph source = clan.code_index symbols table extended to all languages (not just Python); for shell/bash files with few parseable symbols, a Haiku pass extracts one-line intent and writes it as a header comment, giving the index something to scan. (2) Timing = at dispatch (before sprint starts), filling ClassifierDevice._query_palace_trees(); freshness updates via new after-sprint skill hook (T-after-sprint-symbols-refresh) plus nightly Nanny full sweep. (3) Classification method = keyword/symbol matching first (deterministic, zero cost), Haiku LLM fallback at confidence < LLM_FALLBACK_THRESHOLD (same pattern as existing ClassifierDevice._llm_classify stub). T-orientation-classifier now fills ClassifierDevice stubs in devices/classifier/device.py, not a new file.\n\n## Hypothesis\nThe orientation classifier produces a non-empty BuilderReport.relevant_files for the majority of tickets by reading clan.code_index, eliminating exploratory file-search token burn during session start and reducing orientation cost measurably.\n\n## Measurement Signal\nBuilderReport.relevant_files non-empty for >80% of classified tickets (logged at sprint start); token count for orientation phase measurably lower vs pre-classifier baseline (same ticket type, documented in ticket close note on T-orientation-classifier).\n\n## Goal Link\nnone: direct cash savings — first step on the compiled-inference / graph-tree path (planetary-level vision: move entire coding process from LLM to graph tree inference; see memory: compiled-inference-vision)\n"
+  }
+}

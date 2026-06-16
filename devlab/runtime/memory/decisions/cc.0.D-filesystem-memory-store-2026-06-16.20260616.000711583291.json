@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-filesystem-memory-store-2026-06-16.20260616.000711583291",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-filesystem-memory-store-2026-06-16"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-16T00:07:11.583291",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-filesystem-memory-store-2026-06-16",
+      "D-hubert-decision-ownership",
+      "D-rewind-as-workflow-primitive-2026-06-16"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-filesystem-memory-store-2026-06-16",
+    "title": "Move the palace (tickets, decisions, all dev-process records) to a filesystem JSON store in the repo",
+    "status": "open",
+    "date": "2026-06-16",
+    "source": "lab/design_docs/decisions/D-filesystem-memory-store-2026-06-16.md",
+    "text": "# D-filesystem-memory-store-2026-06-16\n**title:** Move the palace (tickets, decisions, all dev-process records) to a filesystem JSON store in the repo\n**date:** 2026-06-16\n**status:** open\n**spawned_tickets:** TBD (migration + hook-rewire tickets filed after envelope is red-penned)\n**related:** D-rewind-as-workflow-primitive-2026-06-16 (durable store this feeds), D-hubert-decision-ownership (Hubert owns it), feedback_design_for_cc_mental_model, project_arch_separation\n\n## The why (Akien, 2026-06-16)\n*\"This palace system is not working.\"* Decisions fragmented across four stores\n(memory_palace D###, `lab/design_docs/decisions/` D-slug-date, `adc.palace`,\n`decisions_log.dsb`) with **no sync** — my `/sorted` flow writes files and never\ntouches the DB palace, so the DB went stale (newest April/May) while files piled\nup. *\"This isn't a bug level issue anymore. This is a design issue. And I already\nknow what I want to do. Same thing we did at work. We will be moving the palace to\nthe filesystem and out of the database.\"* And the sharp self-aware note:\n*\"one of the many reasons a tool like this might not work is because of alternative\ntraining you have\"* — an API-write-through palace assumes a disciplined service;\nCC operates on files + grep + git. Match the substrate to the operator.\n\n## Hypothesis\nA flat-file JSON store, one record per file, under `devlab/runtime/memory/`:\n- removes the sync problem (one store, no DB↔file drift),\n- is grep-searchable with zero index to maintain,\n- is git-backed (history + backup for free; *\"backs up product development\n  artifacts for free\"*),\n- routes every write through one chokepoint (`memory_emit.py`) so the provisional\n  location is a one-line change later (*\"I will change it later\"*),\n- and carries a `links` spine (goals→decisions→tickets→commits, whys back up) that\n  is the precondition for *build from intent*.\n\n## Measurement Signal\n- Zero stores out of sync (there is one store).\n- Akien can answer \"is decision D linked to a ticket / a commit?\" with one `grep`.\n- The codebase-inference rack device has a real substrate to hang symbol maps +\n  whys off of (`architecture/`), every why resolving down to a commit.\n\n## Goal Link\nServes the self-improvement goal and the compiled-inference north star: intent\ncan't be compiled if the intent records are fragmented and partially in a stale\nDB. This is the durable store that D-rewind-as-workflow-primitive assumes exists.\n\n## Scope boundary\n- IN (this pass): the store skeleton — directory tree, `SPEC.md`, the single\n  chokepoint emitter (`memory_emit.py`), this decision + the genesis emission\n  (dogfood). Envelope + filename convention locked here.\n- OUT (gated on Akien's red-pen of the envelope): rewiring hooks to write here;\n  migrating existing records (projection, idempotent, original timestamps);\n  setting Haiku on bulk goal→decision→ticket→commit matching; the two-intention\n  blend tooling; full-text search ergonomics; the cutover that makes this\n  authoritative and retires the DB palace.\n\n## Design notes locked this pass\n- **Projection, not relocation** (advisor): migration is additive copy; sources\n  stay authoritative until a separate cutover. Nothing deleted this pass.\n- **Idempotent migration**: stamp with the record's ORIGINAL time; same stamp →\n  same filename → atomic overwrite, never a duplicate. Day-only sources get a\n  deterministic sub-day component.\n- **Single chokepoint**: hooks + migration both call `emit()`. Provisional path\n  lives in ONE constant (`MEMORY_ROOT`, overridable via `UU_MEMORY_ROOT`).\n- **Semantic ids vs emission ids**: `links` reference `D-…`/`T-…`/sha/goal/why,\n  never filenames. Records point at what they're about, not at which file.\n- **Reserved names respected**: `judge`, `chat.cc.0`, `chat.igor` kept verbatim.\n"
+  }
+}

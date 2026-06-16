@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.D-pre-inference-assembly-2026-06-05.20260605.195635028120",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-pre-inference-assembly-2026-06-05"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-05T19:56:35.028120",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pre-inference-assembly-2026-06-05"
+    ],
+    "tickets": [
+      "T-consequence-pre-inference-assembly",
+      "T-design-patterns-inventory",
+      "T-dsimnel-pre-inference-parity",
+      "T-pre-inference-assembler",
+      "T-sprint-wire-pre-inference"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-pre-inference-assembly-2026-06-05",
+    "title": "Pre-inference context assembly pipeline",
+    "status": "open",
+    "date": "2026-06-05",
+    "source": "lab/design_docs/decisions/D-pre-inference-assembly-2026-06-05.md",
+    "text": "# D-pre-inference-assembly-2026-06-05\n**title:** Pre-inference context assembly pipeline\n**date:** 2026-06-05\n**status:** open\n**spawned_tickets:** T-design-patterns-inventory, T-pre-inference-assembler, T-sprint-wire-pre-inference, T-dsimnel-pre-inference-parity, T-consequence-pre-inference-assembly\n**goal_link:** none: DickSimnel==CC parity is near-term; factory vision is long-term — no G-xxx assigned yet\n**concept_links:** word graph/co-occurrence tree, compiled inference, factory pattern\n\n## Decision narrative\nBuild a pre-inference context assembly pipeline that runs before any LLM call fires: collects relevant files, loads a design patterns inventory, runs word graph traversal for domain terms, extracts architecture summaries via repo_map. No LLM involvement in the assembly step. Applies to both CC and DickSimnel sprints to achieve parity.\n\n## Hypothesis\nSprint-ticket starts with a pre-assembled context block; the LLM never spends turns on file discovery.\n\n## Measurement Signal\nSprint transcripts show fewer file-discovery tool calls in the orientation phase; token counts for orientation decrease over time.\n\n## Concept Links\nword graph/co-occurrence tree, compiled inference, factory pattern (C-xxx TBD — Akien auditing via TOO doc)\n"
+  }
+}

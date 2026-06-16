@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-comms-fascia-ux-2026-06-09.20260609.104907565984",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-comms-fascia-ux-2026-06-09"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-09T10:49:07.565984",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-comms-fascia-ux-2026-06-09"
+    ],
+    "tickets": [
+      "T-comms-public-landing",
+      "T-consequence-comms-fascia-ux",
+      "T-device-fascia-page"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-comms-fascia-ux-2026-06-09",
+    "title": "Comms page UX redesign — Public landing + device fascia pages",
+    "status": "open",
+    "date": "2026-06-09",
+    "source": "lab/design_docs/decisions/D-comms-fascia-ux-2026-06-09.md",
+    "text": "# D-comms-fascia-ux-2026-06-09\n**title:** Comms page UX redesign — Public landing + device fascia pages\n**date:** 2026-06-09\n**status:** open\n**spawned_tickets:** T-comms-public-landing, T-device-fascia-page, T-consequence-comms-fascia-ux\n\n## Decision narrative\nComms page redesigned around two navigation models: Public tab is the default landing page (the town square); device name tabs (igor, librarian, granny-weatherwax) become fascia pages rather than channel filters. The checkbox affordance is replaced with tab navigation. Each device fascia has 4 independently-loading sub-page boxes (Status K/V / Chat / Console / Settings) so status is visible even when other boxes fail. Graceful degradation: live → greyed cached screenshot → 404. Rename \"health page\" → \"fascia page\" everywhere.\n\n## Hypothesis\nA new user opens the URL and immediately sees the public channel feed; clicking any device tab shows that device's live status, chat, and controls without any guidance needed.\n\n## Measurement Signal\nOpen the page cold — Public feed is visible without any clicks; clicking a device tab shows all 4 fascia boxes loading independently.\n\n## Goal Link\nG-invisible-tools\n"
+  }
+}

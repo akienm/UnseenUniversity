@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-sorted-advisor-probe-2026-06-06.20260606.065516578121",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-sorted-advisor-probe-2026-06-06"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-06T06:55:16.578121",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sorted-advisor-probe-2026-06-06"
+    ],
+    "tickets": [
+      "T-consequence-sorted-advisor",
+      "T-sorted-advisor-probe"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-sorted-advisor-probe-2026-06-06",
+    "title": "Proactive advisor() call in /sorted for L/XL ticket drafts",
+    "status": "open",
+    "date": "2026-06-06",
+    "source": "lab/design_docs/decisions/D-sorted-advisor-probe-2026-06-06.md",
+    "text": "# D-sorted-advisor-probe-2026-06-06\n**title:** Proactive advisor() call in /sorted for L/XL ticket drafts\n**date:** 2026-06-06\n**status:** open\n**spawned_tickets:** T-sorted-advisor-probe, T-consequence-sorted-advisor\n**goal_link:** G-process-optimization\n**concept_links:** none\n\n## Decision narrative\n/sorted drafts L/XL tickets without advisor review, so completion criteria gaps survive to the queue unchanged. The right moment for Opus judgment is at draft time. D-ticket-quality-verification-loop-2026-06-06 identified this as the cheap high-leverage move: Sonnet drives /sorted, advisor() (Opus) evaluates L/XL drafts before filing. Feedback applied before /audit-ticket runs.\n\n## Hypothesis\nL/XL tickets filed after this change have advisor-reviewed completion criteria; sprint reset_count for L/XL tickets decreases over the following 30 days.\n\n## Measurement Signal\nL/XL tickets in queue post-change have specific, checkable completion criteria; T-completion-audit-closed-tickets pass rate improves for L/XL tickets; advisor() call visible in /sorted transcript.\n\n## Goal Link\nG-process-optimization — proactive Opus judgment at ticket-draft time, not sprint-reset time.\n\n## Concept Links\nnone\n"
+  }
+}

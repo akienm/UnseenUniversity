@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.D-evaluator-consolidation-2026-06-14.20260614.074805115960",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-evaluator-consolidation-2026-06-14"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-14T07:48:05.115960",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-evaluator-consolidation-2026-06-14"
+    ],
+    "tickets": [
+      "T-consequence-evaluator-consolidation",
+      "T-critic-to-evaluator-core",
+      "T-evaluator-core",
+      "T-improver-device",
+      "T-judge-wire-post-sprint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-evaluator-consolidation-2026-06-14",
+    "title": "Evaluator consolidation — Critic/Improver/Judge unified around EvaluatorCore with optimism parameter",
+    "status": "open",
+    "date": "2026-06-14",
+    "source": "lab/design_docs/decisions/D-evaluator-consolidation-2026-06-14.md",
+    "text": "# D-evaluator-consolidation-2026-06-14\n**title:** Evaluator consolidation — Critic/Improver/Judge unified around EvaluatorCore with optimism parameter\n**date:** 2026-06-14\n**status:** open\n**spawned_tickets:** T-evaluator-core, T-critic-to-evaluator-core, T-improver-device, T-judge-wire-post-sprint, T-consequence-evaluator-consolidation\n\n## Decision narrative\nCritic, Improver, Judge, and Evaluator are all instances of one underlying device — an inference-based evaluator whose bias is configurable via an optimism parameter (-1=pessimistic/Critic, 0=neutral/Judge, +1=constructive/Improver). EvaluatorCore is the shared single-call inference module; EvaluatorDevice wraps it in a 3-panel majority-vote for post-hoc verdicts; CriticDevice and ImproverDevice become thin named wrappers. Named wrappers over a unified core rather than a single parameterized abstraction — designed for the executor's mental model (CC reaches for concrete named devices, not abstract parameters). Intent Extractor stays in its own box: it answers \"what did they mean to do?\" not \"was this good?\" — a different question, different architecture.\n\n## Hypothesis\nSprint agents make fewer wasted tool calls as the inline Critic evaluation layer (EvaluatorCore at optimism=-1) filters bad decisions before execution, and evaluation verdicts are stamped on tickets at runtime.\n\n## Measurement Signal\nCompare tool call count per sprint in logs before vs after; check that cc_queue.py show <id> surfaces a verdict field post-sprint; eval_history() returns entries from both inline Critic calls and post-sprint Judge calls.\n\n## Goal Link\nG-compiled-inference (factory of factories — evaluation is the quality gate in the factory pipeline)\n\n## Context\n- Emerged from design conversation 2026-06-14\n- Evaluator device (devices/evaluator/) already exists as 3-judge panel — Judge == Evaluator, just needs wiring\n- Improver (devices/improver/) was documented in D-builder-learning-blockade-2026-06-13 but never built as code\n- Auditor (devices/auditor/) stays separate — rules-based structural checks, not on the inference evaluation axis\n- Intent Extractor stays separate — different box, different question\n- HIGH-INERTIA: devices/critic/ wired into DickSimnel tool loop — Akien pre-approved refactor 2026-06-14\n- T-judge-agent (design) cancelled as superseded by this decision\n- Design principle captured: design for executor mental model — named wrappers beat abstract parameters when CC is the sprint agent\n"
+  }
+}

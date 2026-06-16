@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-intention-based-development-2026-06-04.20260604.210150789973",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-intention-based-development-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T21:01:50.789973",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-based-development-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-ibd",
+      "T-ibd-dicksimnel-preamble",
+      "T-ibd-intention-field",
+      "T-too-intentions-annotation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-intention-based-development-2026-06-04",
+    "title": "Adopt Intention-Based Development — intentions as root artifacts, DickSimnel IBD preamble, TOO intentions map",
+    "status": "open",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-intention-based-development-2026-06-04.md",
+    "text": "# D-intention-based-development-2026-06-04\n**title:** Adopt Intention-Based Development — intentions as root artifacts, DickSimnel IBD preamble, TOO intentions map\n**date:** 2026-06-04\n**status:** open\n**spawned_tickets:** T-ibd-intention-field, T-ibd-dicksimnel-preamble, T-too-intentions-annotation, T-consequence-ibd\n**goal_link:** G-process-optimization (new: \"How optimized can we make our process?\" — research goal)\n**concept_links:** none (IBD is a root concept in this project)\n\n## Decision narrative\n\nAdopt Intention-Based Development as the project's design paradigm: every ticket, decision, and architectural section begins with a falsifiable \"I intend that...\" statement. The intention is the root artifact — hypothesis, test, and code flow from it. Theory of Operation becomes the durable intentions map for the system; tickets carry an `intention:` field; DickSimnel's ToolLoop is prefaced with an IBD preamble (state intention + hypothesis, write test, then code) once CC parity ships.\n\nDickSimnel remains a CC clone in capability and behavior (D-dsimnel-cc-parity-2026-06-04). IBD improvements apply to DickSimnel first as an experimental surface before any CC loop changes.\n\n## Hypothesis\n\nLanguage of intention used everywhere (tickets, TOO, DickSimnel ToolLoop); evaluating whether this reduces friction and lost points.\n\n## Measurement Signal\n\nQualitative: Akien's friction drops, fewer fake-DONEs. Quantitative proxy: `grep -c \"intention:\" queue/*.json` rises; `grep -c \"I intend that\" docs/TheoryOfOperation.md` = section count after TOO annotation.\n\n## Goal Link\n\nG-process-optimization — \"How optimized can we make our process?\" (research goal, no prior G-id)\n\n## Concept Links\n\nnone — IBD is a root concept; no prerequisite C-xxx identifiers\n"
+  }
+}

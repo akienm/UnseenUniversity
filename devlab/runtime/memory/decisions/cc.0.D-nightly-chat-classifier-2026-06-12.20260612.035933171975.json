@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-nightly-chat-classifier-2026-06-12.20260612.035933171975",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-nightly-chat-classifier-2026-06-12"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-12T03:59:33.171975",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-nightly-chat-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-nightly-classifier",
+      "T-nightly-chat-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-nightly-chat-classifier-2026-06-12",
+    "title": "Wire existing classifiers to run nightly over CC chat transcripts",
+    "status": "open",
+    "date": "2026-06-12",
+    "source": "lab/design_docs/decisions/D-nightly-chat-classifier-2026-06-12.md",
+    "text": "# D-nightly-chat-classifier-2026-06-12\n**title:** Wire existing classifiers to run nightly over CC chat transcripts\n**date:** 2026-06-12\n**status:** open\n**spawned_tickets:** T-nightly-chat-classifier, T-consequence-nightly-classifier\n\n## Decision narrative\nClassifiers exist (purpose_classifier, llm_classifier, knn_classifier) and Nanny runs cron_learning_pipeline at 03:30. Missing link: a step that reads raw CC chat transcripts (.jsonl session files), extracts turn content, runs the classifier, and deposits memory nodes. This closes the observe→learn→improve loop for chat-derived training data.\n\n## Hypothesis\nThe morning after deploy, palace contains nodes deposited from prior night's CC chat transcripts, classified by type and confidence.\n\n## Measurement Signal\nPalace node count growth rate; classification confidence distribution in logs; Nanny cron log confirms run.\n\n## Goal Link\nTraining data quality + system self-improvement loop (primary project goal).\n"
+  }
+}

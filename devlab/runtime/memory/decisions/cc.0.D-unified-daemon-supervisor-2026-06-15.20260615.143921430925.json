@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-unified-daemon-supervisor-2026-06-15.20260615.143921430925",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-unified-daemon-supervisor-2026-06-15"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-15T14:39:21.430925",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-unified-daemon-supervisor-2026-06-15"
+    ],
+    "tickets": [
+      "T-consequence-unified-daemon-supervisor",
+      "T-daemon-supervisor-demo",
+      "T-daemon-supervisor-file-pattern",
+      "T-groundloop-cron-bootstrap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-unified-daemon-supervisor-2026-06-15",
+    "title": "Unified daemon supervisor via Ground Loop — cron bootstrap + file placement pattern",
+    "status": "open",
+    "date": "2026-06-15",
+    "source": "lab/design_docs/decisions/D-unified-daemon-supervisor-2026-06-15.md",
+    "text": "# D-unified-daemon-supervisor-2026-06-15\n\n**title:** Unified daemon supervisor via Ground Loop — cron bootstrap + file placement pattern\n\n**date:** 2026-06-15\n\n**status:** open\n\n**spawned_tickets:** T-groundloop-cron-bootstrap, T-daemon-supervisor-file-pattern, T-daemon-supervisor-demo, T-consequence-unified-daemon-supervisor\n\n## Decision narrative\n\nConsolidate daemon management under a single Ground Loop supervisor. Cross-platform compatible: system cron (Linux, macOS) triggers Ground Loop startup; Ground Loop runs as a persistent loop (optionally with delay gates for Windows). All device daemons are `devices/*/groundloop/runme.py` modules — drop a file, Ground Loop hot-reloads it. Config in YAML/JSON alongside (launch frequency, etc.). Error handling: if a daemon crashes, Ground Loop renames it to `.borkedpy` to exclude it from reload. On next startup or manual fix, rename back to `.py` to re-enable. Simplicity: \"make a file, put it in the right place. That's it.\"\n\n**Cross-platform strategy:**\n- Linux/macOS: system cron invokes `ground_loop_start.sh` → Ground Loop runs, loads all runme.py, serves daemons forever\n- Windows: Ground Loop runs as a service or startup task, loads all runme.py, serves daemons forever\n- Ground Loop itself is cross-platform (Python + no Unix-specific APIs)\n\n## Hypothesis\n\n**Observable difference:** From this point forward, to create a new daemon, write `devices/mydevice/groundloop/runme.py` and place it. Ground Loop auto-discovers and runs it. System is simpler to maintain and extend.\n\n**Signal:** New daemons created via file placement only; no hand-coded dispatcher or supervisor logic needed; system resilience improves (failed daemon doesn't kill others; Ground Loop recovers).\n\n**Goal link:** G-self-improving-system, G-simplification, G-resilience\n\n## Open questions (none — design confirmed)\n"
+  }
+}

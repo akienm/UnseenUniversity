@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-prescient-agents-north-star-2026-06-01.20260601.010039231373",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-prescient-agents-north-star-2026-06-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-01T01:00:39.231373",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-prescient-agents-north-star-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-prescient-agents",
+      "T-inference-outcome-learner",
+      "T-pa20-palace-foundation",
+      "T-vetinari-pa20-spec"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-prescient-agents-north-star-2026-06-01",
+    "title": "Prescient Agents 2.0 as UU's architectural north star; factory-of-factories as master goal",
+    "status": "open",
+    "date": "2026-06-01",
+    "source": "lab/design_docs/decisions/D-prescient-agents-north-star-2026-06-01.md",
+    "text": "# D-prescient-agents-north-star-2026-06-01\n**title:** Prescient Agents 2.0 as UU's architectural north star; factory-of-factories as master goal\n**date:** 2026-06-01\n**status:** open\n**spawned_tickets:** T-pa20-palace-foundation, T-inference-outcome-learner, T-vetinari-pa20-spec, T-consequence-prescient-agents\n**goal_link:** G-factory-of-factories\n**concept_links:** C-prescient-agents-pa20\n\n## Decision narrative\nUU has been building Prescient Agents 2.0 without naming it. The core insight (from a parallel Claude conversation on the 1991 McGregor paper): a Prescient Agent is not trying to make decisions — it is trying to continuously improve the quality of future decisions. This is the distinction between automation (Observe→Reason→Act) and anticipation. UU's four-layer architecture maps directly to PA2.0: Observe (channel posts, tool signals) → Relationship Discovery (pattern tracker, outcome learner) → Future Modeling (advisor loop, Vetinari) → Human Decision Support (CC sessions with Akien). Alejandro's coding factory pattern identifies the missing Layer 3 device: Vetinari takes project briefs → generates tasks with implementation details + testing criteria → routes to worker tier → automated proof of life → CI → manual QA. The master goal G-factory-of-factories: the framework can build anything; Claude stays for design; the system continuously improves its own routing decisions.\n\n## Hypothesis\nAll work streams route through tiered cheap workers; CC is reserved for design with Akien; the observe→discover loop surfaces routing improvements automatically.\n\n## Measurement Signal\n% of sprint tickets completed by non-CC workers; OUTCOME_LEARNER_REPORT shows routing insight signal; CC sessions per week trend toward design-only.\n\n## Goal Link\nG-factory-of-factories — this decision IS the goal definition.\n\n## Concept Links\nC-prescient-agents-pa20 — this decision establishes the concept\n"
+  }
+}

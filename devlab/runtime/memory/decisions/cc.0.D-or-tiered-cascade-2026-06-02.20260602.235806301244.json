@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-or-tiered-cascade-2026-06-02.20260602.235806301244",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-or-tiered-cascade-2026-06-02"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-02T23:58:06.301244",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-or-tiered-cascade-2026-06-02"
+    ],
+    "tickets": [
+      "T-inference-tiered-fallback",
+      "T-models-registry-refresh"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-or-tiered-cascade-2026-06-02",
+    "title": "OR tiered cascade dispatch — analyst→worker→minion before CC block",
+    "status": "open",
+    "date": "2026-06-02",
+    "source": "lab/design_docs/decisions/D-or-tiered-cascade-2026-06-02.md",
+    "text": "# D-or-tiered-cascade-2026-06-02\n**title:** OR tiered cascade dispatch — analyst→worker→minion before CC block\n**date:** 2026-06-02\n**status:** open\n**spawned_tickets:** T-inference-tiered-fallback, T-models-registry-refresh\n**goal_link:** none: cost reduction / CC usage reduction\n**concept_links:** none\n\n## Decision narrative\nCC usage hit 44-50% of the 5h window during a single session (partly from runaway, partly from normal dispatch). To reduce CC dependency, the inference dispatch chain now cascades through all OR tiers before blocking for CC: analyst (DeepSeek-v3, 42% SWE-bench) → worker (Qwen2.5-Coder, 28%) → minion (Qwen3.5-9B). Each tier receives the full escalation_history from prior hops. Only when all three OR tiers ESCALATE does the ticket block for CC review. Two new models added: Llama-3.1-70B (worker fallback) and Gemini Flash 1.5 (analyst, 1M context).\n\n## Hypothesis\nMore tickets DONE by OR models; CC only sees genuinely hard tickets that OR can't handle. OR_TIER_ESCALATE and MINION_RESULT channel events provide the corpus data needed to calibrate which ticket categories OR handles reliably.\n\n## Measurement Signal\nMINION_RESULT|signal=DONE entries in channel; OR_TIER_ESCALATE entries show which tiers fail on what kinds of tickets; CC usage % drops per 5h window once OR handles a meaningful fraction.\n\n## Concept Links\nnone\n"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.D-vetinari-gap-map-2026-06-08.20260608.095832521861",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-vetinari-gap-map-2026-06-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-08T09:58:32.521861",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-gap-map-2026-06-08"
+    ],
+    "tickets": [
+      "T-vetinari-clarification-loop",
+      "T-vetinari-cp-audit",
+      "T-vetinari-decompose",
+      "T-vetinari-deployment-signal",
+      "T-vetinari-directive-intake",
+      "T-vetinari-progress-tracking",
+      "T-vetinari-team-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-vetinari-gap-map-2026-06-08",
+    "title": "Vetinari gap map — 7 capability dimensions vs autonomous directive vision",
+    "status": "open",
+    "date": "2026-06-08",
+    "source": "lab/design_docs/decisions/D-vetinari-gap-map-2026-06-08.md",
+    "text": "# D-vetinari-gap-map-2026-06-08\n**title:** Vetinari gap map — 7 capability dimensions vs autonomous directive vision\n**date:** 2026-06-08\n**status:** open\n**spawned_tickets:** T-vetinari-directive-intake, T-vetinari-decompose, T-vetinari-clarification-loop, T-vetinari-team-dispatch, T-vetinari-progress-tracking, T-vetinari-deployment-signal, T-vetinari-cp-audit\n\n## Decision narrative\n\nVetinari (devices/vetinari/device.py) was evaluated against the autonomous directive\nvision: Akien gives a natural-language goal → Vetinari decomposes → dispatches to\nCC/Librarian/DickSimnel → tracks → reports deployed.\n\nThe device is a factory health monitor (receive_health_rollup → escalate if score\nbelow threshold). That is useful infrastructure but represents <15% of what the\ndirective-executor vision requires. All receive/decompose/dispatch/track/signal\ndimensions are MISSING. Progress tracking and CP alignment are PARTIAL only.\n\nSeven follow-on tickets, sequenced by dependency:\n\n  Foundation:   T-vetinari-directive-intake (M)\n  Build on:     T-vetinari-decompose (L, gate: intake)\n  Build on:     T-vetinari-clarification-loop (M, gate: decompose)\n               T-vetinari-team-dispatch (S, gate: decompose)\n               T-vetinari-progress-tracking (M, gate: decompose)\n               T-vetinari-cp-audit (S, gate: decompose)\n  Capstone:    T-vetinari-deployment-signal (S, gate: progress-tracking)\n\n## Hypothesis\nAfter these tickets ship, Vetinari should be able to accept a natural-language\ndirective from Akien, decompose it into tickets, dispatch them to the correct\nworkers, and post a completion signal when all child tickets close.\n\n## Measurement Signal\nEnd-to-end smoke test: send a simple directive via comms://vetinari/inbox;\nverify child tickets appear in cc_queue; verify channel gets a completion post\nwhen tickets close.\n\n## Goal Link\nG-factory-of-factories (PA2.0 Layer 3 meta-orchestrator vision)\n\n## Gap detail\n\n### 1. Directive intake — MISSING\ncomms() returns pull: False. No IMAP idle_wait listener. No shim integration.\nVetinari cannot receive anything — he can only post to the channel.\nFix: add shim with IMAP listener; parse incoming message as directive; store\nto flat-file pending queue at ~/.unseen_university/vetinari/pending_directives.json\n\n### 2. Decomposition — MISSING\nNo LLM call anywhere. No cc_queue integration. Device cannot break a goal\ninto subtasks. Fix: LLM call (system: Vetinari persona, user: directive text)\n→ JSON list of subtasks → write each to cc_queue with worker tag.\n\n### 3. Clarification loop — MISSING (CP1)\nNo way to ask a question and wait for reply. channel_post is fire-and-forget.\nFix: before decomposing, score confidence; if < threshold, post question to\nchannel with reply-to directive_id; listen for reply envelope before proceeding.\n\n### 4. Team dispatch — MISSING\nOnly escalation exists. No routing to CC / Librarian / DickSimnel based on\nwork type. Fix: tag-based routing in cc_queue writes (tag → worker mapping).\n\n### 5. Progress tracking — PARTIAL\nreceive_health_rollup tracks factory health (eval_score 0-1). Useful signal\nbut tracks running-factory quality, not ticket completion. Fix: poll cc_queue\nfor child ticket status; maintain directive_state.json tracking all child IDs.\n\n### 6. Deployment signal — MISSING\nNo success path. Escalation fires only on health threshold breach. Fix:\nwhen all child tickets for a directive are closed, post success to Akien channel.\n\n### 7. CP alignment — PARTIAL\nescalation_threshold (0.5) is a weak CP6 signal (safety-conservative). CP1\n(uncertainty → ask), CP3 (explain each dispatch why), CP6 (structured safety\nescalation) are all unimplemented.\nFix: T-vetinari-clarification-loop covers CP1; T-vetinari-cp-audit covers CP3/CP6.\n"
+  }
+}

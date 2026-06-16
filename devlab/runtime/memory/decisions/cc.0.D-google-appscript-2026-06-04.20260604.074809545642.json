@@ -1,0 +1,27 @@
+{
+  "id": "cc.0.D-google-appscript-2026-06-04.20260604.074809545642",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-google-appscript-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T07:48:09.545642",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-google-appscript-2026-06-04"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-google-appscript-2026-06-04",
+    "title": "Google AppScript as GoogleSecretary execution layer — evaluation",
+    "status": "complete",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-google-appscript-2026-06-04.md",
+    "text": "# D-google-appscript-2026-06-04\n**title:** Google AppScript as GoogleSecretary execution layer — evaluation\n**date:** 2026-06-04\n**status:** complete\n**verdict:** ADOPT for write operations; SWADL remains fallback for read-heavy flows\n\n## What AppScript can do\n\nAppScript runs server-side inside Google's infrastructure as the authenticated user.\nIt has native access to: Gmail (send/read/label/search), Calendar (create/update/delete/RSVP),\nSheets/Docs/Drive (CRUD), Forms, Contacts, Groups. No OAuth dance per operation — the\nscript executes with the user's credentials established at deployment time.\n\nTrigger types: time-based (cron-style), event-based (form submit, sheet edit),\nHTTP endpoint (doGet/doPost via Web App deployment). The HTTP endpoint trigger is\nthe key: deploy a script as a Web App → call it from Python with `requests.post(url, json=payload)`.\n\n## Invocation path from Python\n\n1. Deploy AppScript project as Web App (Execute as: Me, Who has access: Anyone with link or specific account).\n2. From Python rack device:\n   ```python\n   import requests\n   resp = requests.post(APPSCRIPT_URL, json={\"action\": \"send_email\", \"to\": \"...\", \"body\": \"...\"}, timeout=30)\n   ```\n3. AppScript doPost() routes action → handler → executes Workspace API call → returns JSON.\n\nNo service account needed for the HTTP approach (the script runs as the owner).\nFor more controlled access, Apps Script API (REST) requires OAuth2 service account — adds setup complexity.\nRecommend: Web App + shared secret header for now; OAuth2 later if audit requirements demand it.\n\n## Quota limits\n\n| Operation | Quota |\n|---|---|\n| Email sends | 100/day (consumer), 1500/day (Workspace) |\n| Calendar creates | 10,000/day |\n| Script runtime | 6 min per execution, 90 min/day total |\n| Triggers | 20 per user, 20 per script |\n\nFor the agent-datacenter use case (Igor posting calendar events, sending summaries, querying inbox),\nthese limits are non-binding at current volume.\n\n## Comparison with SWADL\n\n| Dimension | AppScript | SWADL |\n|---|---|---|\n| Fragility | Low — API calls, not DOM scraping | High — breaks on Gmail/Calendar UI changes |\n| Setup | Deploy once, call forever | Requires running browser, session management |\n| Latency | ~1-3s per call | ~5-15s (browser startup + nav) |\n| Quota | Per-user API quotas | Rate-limited by Google's UI anti-bot logic |\n| Write ops | Native (send email, create event) | Via UI actions (fragile) |\n| Read ops | Native (search, fetch) | Can screen-scrape if API is missing |\n\n## Verdict: ADOPT\n\nAppScript as the execution layer for GoogleSecretary write operations.\nReplace SWADL-based Gmail/Calendar actions with AppScript Web App calls.\nSWADL remains available as fallback for niche UI-only operations with no API.\n\nNext steps (not this ticket): implement the AppScript functions (email, calendar, drive),\nwire into devices/google_secretary/device.py as a new dispatcher strategy.\n"
+  }
+}

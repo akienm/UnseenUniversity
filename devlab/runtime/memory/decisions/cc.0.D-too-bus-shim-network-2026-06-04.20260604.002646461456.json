@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-too-bus-shim-network-2026-06-04.20260604.002646461456",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-too-bus-shim-network-2026-06-04"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-04T00:26:46.461456",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-too-bus-shim-network-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-too-bus-shim",
+      "T-too-bus-shim-framing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-too-bus-shim-network-2026-06-04",
+    "title": "Bus=network, shim=easy interface — add framing to ToO §1.3 and §2",
+    "status": "open",
+    "date": "2026-06-04",
+    "source": "lab/design_docs/decisions/D-too-bus-shim-network-2026-06-04.md",
+    "text": "# D-too-bus-shim-network-2026-06-04\n**title:** Bus=network, shim=easy interface — add framing to ToO §1.3 and §2\n**date:** 2026-06-04\n**status:** open\n**spawned_tickets:** T-too-bus-shim-framing, T-consequence-too-bus-shim\n**goal_link:** G-factory-of-factories\n**concept_links:** none\n\n## Decision narrative\n\nThe bus is the rack's internal network; shims are each device's interface to that network — they handle announce, routing, capability advertisement, and wake-on-demand so devices never touch transport directly. This framing is the load-bearing mental model for factory design but is absent from ToO, causing it to be re-derived in sessions. Adding it explicitly eliminates that cost.\n\n## Hypothesis\nToO §1.3 and §2 state the framing in one readable pass, so CC and human readers don't need it explained again.\n\n## Measurement Signal\nFollow-on ticket T-consequence-too-bus-shim checks in with Akien at 2026-06-18: did the framing reduce re-explanation load?\n\n## Goal Link\nG-factory-of-factories — factory vision requires easy device-to-device communication; the framing is the knowledge layer that makes new factory designs coherent without starting from scratch.\n\n## Concept Links\nnone\n"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-claim-rename-dispatch-2026-06-13.20260613.021111666363",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-claim-rename-dispatch-2026-06-13"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-13T02:11:11.666363",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-claim-rename-dispatch-2026-06-13"
+    ],
+    "tickets": [
+      "T-claim-rename-dispatch",
+      "T-consequence-claim-rename"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-claim-rename-dispatch-2026-06-13",
+    "title": "Rename claimed_at → dispatched_at; remove ticket-claim language from queue",
+    "status": "open",
+    "date": "2026-06-13",
+    "source": "lab/design_docs/decisions/D-claim-rename-dispatch-2026-06-13.md",
+    "text": "# D-claim-rename-dispatch-2026-06-13\n**title:** Rename claimed_at → dispatched_at; remove ticket-claim language from queue\n**date:** 2026-06-13\n**status:** open\n**spawned_tickets:** T-claim-rename-dispatch, T-consequence-claim-rename\n\n## Decision narrative\nLLMs misread `claimed_at` as an autonomous-claim action rather than a Granny dispatch event, causing orphaned in_progress tickets and recurring builder confusion. Rename `claimed_at → dispatched_at` throughout cc_queue.py and referencing files; remove the dead `cmd_claim` stub; update log action strings to use dispatch language. Scope boundary: ticket-dispatch terminology only — action_claim_verifier.py (cognition domain) is explicitly excluded.\n\n## Hypothesis\nLLMs reading the queue codebase will correctly interpret the state machine without confusing \"dispatched_at\" for an autonomous-claim action, reducing the class of orphaned in_progress tickets caused by terminology misreading.\n\n## Measurement Signal\nZero recurrence of \"stale claimed ticket\" misdiagnoses in CC session logs after rename ships; grep for `claimed_at` in cc_queue.py returns 0 results.\n\n## Goal Link\nnone: direct friction reduction + factory-of-factories cost savings — same principle as renaming confusing terms for human teammates\n"
+  }
+}

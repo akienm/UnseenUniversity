@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-compact-cadence-hook-2026-06-05.20260605.042413986601",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-compact-cadence-hook-2026-06-05"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-05T04:24:13.986601",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-compact-cadence-hook-2026-06-05"
+    ],
+    "tickets": [
+      "T-autocompact-haiku-dance",
+      "T-cc-compact-cadence-hook",
+      "T-consequence-compact-cadence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-compact-cadence-hook-2026-06-05",
+    "title": "Harness-enforced compaction cadence — Stop hook fires /autocompact every 5 closes; Haiku does the compact",
+    "status": "open",
+    "date": "2026-06-05",
+    "source": "lab/design_docs/decisions/D-compact-cadence-hook-2026-06-05.md",
+    "text": "# D-compact-cadence-hook-2026-06-05\n**title:** Harness-enforced compaction cadence — Stop hook fires /autocompact every 5 closes; Haiku does the compact\n**date:** 2026-06-05\n**status:** open\n**spawned_tickets:** T-cc-compact-cadence-hook, T-autocompact-haiku-dance, T-consequence-compact-cadence\n**goal_link:** none — operational reliability (compaction was silently never firing)\n**concept_links:** none\n\n## Decision narrative\nCompaction never fired on a cadence for three reasons: (1) the native % auto-compact trigger never arms on Sonnet 1M (live-window occupancy never reaches 85% of 1M); (2) the \"every 5 tickets\" rule lived only in /sprint-batch, which Granny bypasses by dispatching atomic /sprint-ticket commands; (3) when the compact line is in a skill the model reads, the model treats it as advisory and defers it. Fix: move the trigger out of model-advisory skill text and into a harness-enforced Stop hook registered by ClaudeShim. The hook counts ticket-closes via sprint_tokens.log line count vs a baseline file (external state, shim-owned), and every 5 closes injects /autocompact via tmux — a queued slash command the model cannot defer. /autocompact itself does the Haiku dance (model haiku -> compact -> model sonnet) because Akien prefers Haiku for compaction: cheap, fast, no 1M credits. The root 1M problems are separately removed by CLAUDE_CODE_DISABLE_1M_CONTEXT=1 (pins standard 200K, restores the non-1M picker option, makes /compact work without credits).\n\n## Hypothesis\nAfter this ships, CC compacts automatically every 5 ticket-closes regardless of how the ticket was dispatched, without the model deferring it.\n\n## Measurement Signal\nsprint_tokens.log grows by 5 lines -> a /compact event appears in the transcript within the next turn; the session returns to Sonnet afterward.\n\n## Goal Link\nnone — operational reliability\n\n## Concept Links\nnone\n\n## Related finding\nWhile reviewing, discovered D-granny-shim-dispatch-handshake-2026-06-04 was a fake completion: daemon.py docstring claims CC.0 dispatch=bus but _default_config() still uses tmux_send_keys, so the handshake never runs for CC. Filed T-granny-bus-flip-fake-completion (hold, guru) under that decision for Akien's judgment.\n"
+  }
+}

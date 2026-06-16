@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-granny-orphan-watchdog-2026-06-01.20260601.090001161412",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-granny-orphan-watchdog-2026-06-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-01T09:00:01.161412",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-orphan-watchdog-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-granny-orphan-watchdog",
+      "T-granny-orphan-watchdog",
+      "T-ticket-build-time"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-granny-orphan-watchdog-2026-06-01",
+    "title": "Granny orphan watchdog + build-time calibration",
+    "status": "open",
+    "date": "2026-06-01",
+    "source": "lab/design_docs/decisions/D-granny-orphan-watchdog-2026-06-01.md",
+    "text": "# D-granny-orphan-watchdog-2026-06-01\n**title:** Granny orphan watchdog + build-time calibration\n**date:** 2026-06-01\n**status:** open\n**spawned_tickets:** T-granny-orphan-watchdog, T-ticket-build-time, T-consequence-granny-orphan-watchdog\n**goal_link:** none: reliability infrastructure, not a cognition goal\n**concept_links:** none\n\n## Decision narrative\nGranny should auto-detect and reset orphaned in_progress tickets (no live CC session matching the ticket ID in cmdline + size-keyed timeout exceeded) rather than requiring manual intervention. Build-time tracking (dispatched_at timestamp + wall_minutes in PatternTracker corpus) feeds a calibration loop that tightens the timeout from fixed defaults to 3×p90 once 10+ completions per size class are recorded. The actual timing data (1007 tickets, S median=5m p90=26m, M median=5m p90=22m, L median=6m p90=39m) shows the current claimed_at→completed_at window includes significant queue wait; dispatched_at separates queue time from build time.\n\n## Hypothesis\nOrphaned in_progress tickets auto-reset to sprint without manual intervention; GRANNY_ORPHAN_RESET events appear in channel log when it fires.\n\n## Measurement Signal\nGRANNY_ORPHAN_RESET log events in channel; zero manual `setstatus sprint` calls needed for session-death scenarios; GRANNY_TIMEOUT_CALIBRATED log line appears after 10+ DONE outcomes per size class.\n\n## Concept Links\nnone\n"
+  }
+}

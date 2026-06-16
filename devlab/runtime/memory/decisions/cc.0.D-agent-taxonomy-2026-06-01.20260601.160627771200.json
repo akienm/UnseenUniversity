@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-agent-taxonomy-2026-06-01.20260601.160627771200",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-agent-taxonomy-2026-06-01"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-01T16:06:27.771200",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agent-taxonomy-2026-06-01"
+    ],
+    "tickets": [
+      "T-agent-taxonomy-concept",
+      "T-consequence-agent-taxonomy",
+      "T-device-registry-agent-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-agent-taxonomy-2026-06-01",
+    "title": "Three-class agent taxonomy: utility / specialized / general-purpose",
+    "status": "open",
+    "date": "2026-06-01",
+    "source": "lab/design_docs/decisions/D-agent-taxonomy-2026-06-01.md",
+    "text": "# D-agent-taxonomy-2026-06-01\n**title:** Three-class agent taxonomy: utility / specialized / general-purpose\n**date:** 2026-06-01\n**status:** open\n**spawned_tickets:** T-agent-taxonomy-concept, T-device-registry-agent-class, T-consequence-agent-taxonomy\n**goal_link:** G-uu-platform\n**concept_links:** C-agent-taxonomy (new — created by this decision)\n\n## Decision narrative\nEstablish a formal three-class taxonomy for rack agents: utility (single bounded capability, composable, function-like — Scraps, GoogleSecretary), specialized (domain workflow expert, orchestrates within its lane — Granny, Nanny), and general-purpose (broad reasoning, novel problem-solving — Igor, CC). Librarian sits at the edge: utility in function but wider scope; annotated as 'platform utility' within the utility class. The taxonomy is primarily vocabulary — when Akien says \"utility agent\" there's a canonical definition to point at. Practically: every device self-declares agent_class in who_am_i(); datacenter_manifest exposes it; Granny routing can eventually use it to route non-coding requests to utility agents.\n\n## Hypothesis\nEvery device in the registry carries an agent_class field; datacenter_manifest returns the class for each device.\n\n## Measurement Signal\ndatacenter_manifest JSON includes agent_class for every registered device; no device returns unknown or missing.\n\n## Goal Link\nG-uu-platform — self-describing rack where devices declare their capabilities and class.\n\n## Concept Links\nC-agent-taxonomy — this decision creates the concept node.\n"
+  }
+}

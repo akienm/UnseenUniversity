@@ -1,0 +1,27 @@
+{
+  "id": "cc.0.D-daemon-process-critic-infrastructure-2026-06-15.20260615.055328741221",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-daemon-process-critic-infrastructure-2026-06-15"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-15T05:53:28.741221",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-daemon-process-critic-infrastructure-2026-06-15"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-daemon-process-critic-infrastructure-2026-06-15",
+    "title": "Unified daemon supervisor, process skill/script pairs, critic expansion",
+    "status": "open",
+    "date": "2026-06-15",
+    "source": "lab/design_docs/decisions/D-daemon-process-critic-infrastructure-2026-06-15.md",
+    "text": "# D-daemon-process-critic-infrastructure-2026-06-15\n\n**title:** Unified daemon supervisor, process skill/script pairs, critic expansion\n\n**date:** 2026-06-15\n\n**status:** open\n\n**spawned_tickets:** TBD (pre-audit)\n\n## Decision narrative\n\nThree interconnected infrastructure improvements:\n\n1. **Unified daemon supervisor via Ground Loop:** Instead of individual device daemons, consolidate all daemons under a single Ground Loop supervisor. Design: `devices/*/groundloop/runme.py` as hot-reloadable modules. Ground Loop monitors for errors, renames broken modules to `.borkedpy` to exclude them. Daemon config (launch frequency, etc.) in YAML/JSON alongside. Supports Linux, Windows, macOS, Android. Simplifies daemon creation: \"make a file, put it in the right place. That's it.\"\n\n2. **Skill + Script process pairs:** Orientation, constraint-sorting, and other process steps get both `/skill` and script versions. Allows interactive testing: put any piece through a step, examine results for efficacy. Improves developer velocity and system refinement.\n\n3. **Critic expansion:** Generalize adversarial reasoning beyond evaluator. Humans have built-in critics; apply that pattern more broadly to improve quality.\n\n## Hypothesis\n\n**Observable difference:** \n- Daemons consolidated under Ground Loop supervisor; new daemons created via file placement only.\n- Process steps (orientation, constraint-sorting, etc.) accessible as both skills and scripts for experimentation.\n- Critic applied in additional components (dispatcher, tier-cascade, constraint-normalizer, etc.).\n\n**Signal:**\n- Daemons working, consolidated via runme pattern.\n- System quality improves; adversarial reasoning catches more issues.\n\n**Goal link:** G-self-improving-system, G-simplification, G-resilience\n\n## Open questions\n\n- Should cron daemon also be driven by Ground Loop, or remain separate?\n- Which process steps beyond orientation + constraint-sorting get skill/script pairs?\n- Where is critic added first? (dispatcher, tier-cascade, constraint-normalizer, other?)\n- How do we measure \"system quality improves\" from critic expansion?\n"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-provider-health-classifier-2026-06-12.20260612.195733511130",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-provider-health-classifier-2026-06-12"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-12T19:57:33.511130",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-provider-health-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-provider-health-classifier",
+      "T-provider-health-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-provider-health-classifier-2026-06-12",
+    "title": "Classify inference source ping failures by exception type before fallthrough",
+    "status": "open",
+    "date": "2026-06-12",
+    "source": "lab/design_docs/decisions/D-provider-health-classifier-2026-06-12.md",
+    "text": "# D-provider-health-classifier-2026-06-12\n**title:** Classify inference source ping failures by exception type before fallthrough\n**date:** 2026-06-12\n**status:** open\n**spawned_tickets:** T-provider-health-classifier, T-consequence-provider-health-classifier\n\n## Decision narrative\nWhen a source ping fails, log a categorized failure reason before routing to a fallback source. ProviderHealthClassifier.classify(source_name, exc) -> str maps exception types to: local_bug (DNS/connection-refused), auth_error (401/403), unreachable (timeout), unknown. Injection point is Source._classify_ping_failure() called from each subclass ping() except block — the only reachable point since ping() swallows exceptions before callers see them. Status-page fetch deferred as optional background enrichment. Module is local to devices/inference/, not part of the Classifier rack device.\n\nAlternatives considered: pure status-page fetch (adds outbound dep to failure path, stale data risk); log raw error codes only (actionable categories need classification). Chose exception-type classification as primary — zero latency, no outbound dep, covers the two actionable cases (auth_error = credential bug, local_bug = our connection issue).\n\n## Hypothesis\nWhen a source ping fails, logs include failure_category=(local_bug|auth_error|unreachable|unknown) instead of just \"unavailable — falling through.\"\n\n## Measurement Signal\nAfter next DS run against currently-failing source, grep 'failure_category=' in datacenter_logs/inference/ confirms the path fires. Also: pytest tests/inference/test_provider_health.py passes.\n\n## Goal Link\nCost savings (prevent mis-routing from flat-rate Ollama to paid OR when it's our bug) + observability.\n"
+  }
+}
