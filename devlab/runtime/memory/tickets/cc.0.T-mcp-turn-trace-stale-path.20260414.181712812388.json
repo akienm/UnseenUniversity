@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-mcp-turn-trace-stale-path.20260414.181712812388",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-turn-trace-stale-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T18:17:12.812388",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-mcp-turn-trace-stale-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-turn-trace-stale-path",
+    "body": "Caught 2026-04-14 during refractory-leak verification. mcp__igor__turn_trace_recent returns 2026-03-25 entries even though Igor restarted at 1122 today and is actively writing turn_trace.20260414.log.\n\nROOT CAUSE: lab/claudecode/igor_mcp.py:695 hardcodes log_dir = ~/.TheIgors/logs/ but Igor writes to ~/.TheIgors/local/logs/ per paths().logs (paths.py:64). The canonical log path moved to local/logs/ at some point and the MCP wrapper wasn't updated.\n\nEVIDENCE: ls ~/.TheIgors/logs/turn_trace.*.log → only turn_trace.20260325.log (3 weeks old). ls ~/.TheIgors/local/logs/turn_trace.*.log → turn_trace.20260413.log + turn_trace.20260414.log (current).\n\nALSO DEAD: lab/claudecode/igor_mcp.py:48 has TURN_TRACE_LOG = Path.home() / .TheIgors / logs / turn_trace.20260319.log — wrong path AND hardcoded to a single specific date from March 19. Constant is never referenced anywhere else. Pure dead code.\n\nFIX:\n1. Update _turn_trace_recent log_dir to ~/.TheIgors/local/logs/ to match paths().logs\n2. Delete the dead TURN_TRACE_LOG constant on line 48\n3. Verify no other MCP tools have similar stale path references\n\nNOT IN SCOPE: importing paths() from wild_igor — MCP runs in a separate Python context and doesn't easily share Igor's package namespace. Hardcoded path matching paths.py:64 is acceptable; if the path moves again, this ticket repeats.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "mcp",
+      "logs",
+      "bug",
+      "paths"
+    ],
+    "title": "MCP turn_trace_recent reads from wrong log path (returns 3-week-stale data)",
+    "result": "0e943da3 — _turn_trace_recent log_dir → ~/.TheIgors/local/logs/ matching paths.py:64. Dead TURN_TRACE_LOG constant removed. Verified live: returns today's turns from 1122 restart. BONUS: turn_trace also revealed PROC_WG_PREPARSE_TUNING habit firing the canned word-graph reply at 10:00 — refractory-leak ticket WAS correct, my SQL query missed it because narrative didn't contain 'Stage 1'. Reopening that line of investigation.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-14T18:15:57.524992+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-14T18:17:12.812388+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

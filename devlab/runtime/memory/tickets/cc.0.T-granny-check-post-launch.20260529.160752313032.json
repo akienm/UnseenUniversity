@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-granny-check-post-launch.20260529.160752313032",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-check-post-launch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T16:07:52.313032",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-cc-launch",
+      "T-granny-check-post-launch",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-check-post-launch",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Granny"
+    ],
+    "title": "Check Granny behavior after CC launch wiring",
+    "result": "fixed: daemon used nonexistent --json flag on list; CC spawn now includes --dangerously-skip-permissions",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-05-29T16:07:52.313032+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "After T-granny-cc-launch shipped, Granny appeared to trigger a full install instead of a sprint. Investigate: does \"claude -p /sprint-ticket T-xxx\" run correctly in a fresh tmux session? Check if the claude binary is in PATH, if the UU working dir is correct, and if any install/setup steps fire unexpectedly on first launch. May need --no-install flag or different claude invocation.\n\n**Affected files:** devices/granny/dispatch.py\n**Design rules:** no-env-var-required\n**Scope boundary:** diagnose and fix CC launch command; do not change sprint-ticket skill\n**Test plan:** manually verify tmux session runs /sprint-ticket correctly on a test ticket",
+    "completed_at": "2026-05-29T16:17:56.949291+00:00",
+    "deposited_at": "2026-05-29T10:08:24.486042",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-29T16:07:52.366467+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "890507ad-c25d-41a1-b81b-0bb08c75db79",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

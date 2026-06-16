@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-learning-pipeline-schedule.20260609.165759676114",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-learning-pipeline-schedule"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.676114",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-learning-pipeline-schedule"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-learning-pipeline-schedule",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "Reliability",
+      "Workflow"
+    ],
+    "title": "Wire LearningPipeline.run_once() into recurring scheduled job",
+    "result": "cron_learning_pipeline.py at 3:30 AM daily; logs to ~/.unseen_university/logs/learning_pipeline.log; crontab entry added",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that the inference learning pipeline runs nightly without manual triggering.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.676114+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (Product Manager): the learning pipeline has no scheduler — it never runs autonomously. The self-improvement loop cannot close without this. Wire run_once() into a recurring scheduled job: either a Vetinari scheduled task or a night-mode cron entry (run once per day, low priority).\n\n**Affected files:** devices/librarian/ (scheduler wiring), or cron config, or Vetinari directive\n**Design rules:** run during night-mode (IGOR_NIGHT_MODE or equivalent); log every run\n**Scope boundary:** IN — schedule run_once() nightly; OUT — changes to run_once() logic\n**Completion criteria:** run_once() executes automatically at least once per day without manual invocation; log line confirms execution with entries_processed count",
+    "completed_at": "2026-06-09T17:46:00.294717+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

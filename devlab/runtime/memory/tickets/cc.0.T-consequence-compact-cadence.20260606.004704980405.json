@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-compact-cadence.20260606.004704980405",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-compact-cadence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T00:47:04.980405",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-compact-cadence-hook-2026-06-05"
+    ],
+    "tickets": [
+      "T-consequence-compact-cadence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-compact-cadence",
+    "gate": "2026-06-19",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: harness-enforced compaction cadence + Haiku dance",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "intention": "I intend that the predicted side-effects of the compaction-cadence hook are observed and annotated before they bite silently.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T00:47:04.980405+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-compact-cadence-hook-2026-06-05",
+    "description": "**What changed:** A Stop hook now injects /autocompact every 5 ticket-closes, and /autocompact compacts on Haiku then returns to Sonnet.\n**Predicted unintended effects:** (1) compaction may fire mid-multi-step work if a close lands then the next turn is unrelated; (2) the Haiku dance may leave the session stuck on Haiku if the return-to-sonnet send-keys mis-sequences (compact is async); (3) sprint_tokens.log may receive lines from non-CC workers (DickSimnel) inflating CC's close counter and compacting too often; (4) baseline-update race could double-fire or never-fire.\n**Signals to watch:** /compact appearing at odd points in the transcript; model still on Haiku after a compact; sprint_tokens.log lines whose trailing model field is not a CC sonnet/opus model; compact firing every turn (baseline broken).\n**Gate condition:** Check by 2026-06-19 or after the next 10+ ticket-close session, whichever comes first.\n**Worst-case token spend:**\n  - Per-failure cost: one spurious compaction = one Haiku summarization call (cheap — Haiku, standard context).\n  - Hard cap: baseline=current after each fire prevents re-fire; if baseline logic breaks, worst case is one compact per Stop event (one per assistant turn).\n  - Blast radius: a compact-loop every turn; halt by removing the Stop hook (ClaudeShim.stop()) or setting COMPACT_EVERY_N very high.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": null,
+    "deposited_at": "2026-06-05T18:53:50.552425",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

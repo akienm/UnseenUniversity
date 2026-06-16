@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-igor-db-path-migration.20260325.214043880757",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-db-path-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T21:40:43.880757",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-db-path-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-db-path-migration",
+    "title": "Migrate all IGOR_DB_PATH usages to make_home_proxy (D224 completion)",
+    "result": "Migrated all IGOR_DB_PATH usages to Cortex(None)/make_home_proxy() across 20 files. Fixed 2 pre-existing Postgres bugs (bare % in LIKE, json.loads on dict). 457 tests pass.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "D224 retired SQLite but 9+ files still use IGOR_DB_PATH to construct Cortex connections. When IGOR_DB_PATH is unset (correct post-D224), these all return None and do nothing silently. Reading pipeline affected: graph_integrator.py, reading_indexer.py, self_test.py, blob_store.py, find_it.py. Tools affected: runner.py, github.py, interpretive.py, google_contacts.py, metrics.py, os_primitives.py. Fix: replace IGOR_DB_PATH-based Cortex construction with make_home_proxy() directly (no db_path arg needed — reads IGOR_HOME_DB_URL). All reading pipeline deposits (FACT_CLOUD nodes, co-occurrence edges) may not have landed in Postgres. After fix: verify FACT_CLOUD count in Postgres matches expectation. IGOR_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/igor_wild_0001",
+    "completed_at": "2026-03-25T21:40:43.880757+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cd654148-b457-4456-8185-b2a4ccc9bcd6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-after-action-capture.20260405.210839684750",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-after-action-capture"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T21:08:39.684750",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-after-action-capture"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-after-action-capture",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "After-action capture: high-salience conversation deposits to matrix",
+    "result": "Created after_action_reviewer.py: scans CC: prefixed interaction turns, calls Ollama to extract key learnings (falls back to raw Q&A if unavailable), deposits as FACTUAL source=after_action_review with learned_from metadata. Seeded PROC_AFTER_ACTION habit (schedule_interval_sec=7200). 9 tests. Fixed test isolation issue (sys.modules stub pollution) in test_scope_guard.py too.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-05T21:04:34.831022+00:00",
+    "related_to": null,
+    "description": "After any high-salience conversation (not just design sessions — any exchange with a more knowledgeable agent, or where self-programming goal lends salience), Igor should deposit key learnings to matrix as FACTUALs. Pattern: army after-action review. Trigger: salience > threshold on completed conversation turn. Goal: self-programming context lends salience so design/architecture conversations auto-qualify. Generalizes beyond coding — applies to Akien, Claude, any upstream knowledgeable agent.",
+    "completed_at": "2026-04-05T21:08:39.684750+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6e480228-408d-48a6-975b-fb1930bf5b7d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-habit-fire-rate-visibility.20260428.111633000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-fire-rate-visibility"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T11:16:33",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cap-map-followups-2026-04-27"
+    ],
+    "tickets": [
+      "T-habit-fire-rate-visibility"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-fire-rate-visibility",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Habits",
+      "Observability"
+    ],
+    "title": "Per-habit fire-rate counter — expose in habit_list MCP tool",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T08:31:05.818357+00:00",
+    "created_at": "2026-04-28T11:16:33Z",
+    "related_to": null,
+    "approved_at": "2026-04-28T01:40:49.175059+00:00",
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "description": "132 habits have code_ref registered (counted via clan.memories WHERE memory_type='PROCEDURAL' AND metadata->>'code_ref' IS NOT NULL on 2026-04-27). Day-close-audit Step 12 verifies the code_ref points at a registered tool, but NOT whether the habit ever fires. 'Registered' ≠ 'live'. A habit could be perfectly registered with a working code_ref and never actually fire — invisible from current observability.\n\nWork: add a fire counter (fired_count, last_fired_at) to PROC memory metadata. Increment in basal_ganglia.py at habit-fire path. Expose via mcp__igor__habit_list — sort by fire-rate, flag never-fired habits as 'cold'. Add a day-close-audit step that surfaces cold habits (registered but never fired).\n\nAffected files:\n- wild_igor/igor/cognition/basal_ganglia.py (or wherever the fire path lives — needs a quick read first to confirm)\n- wild_igor/igor/tools/habit_tool.py or wherever habit_list is registered\n- ~/.claude/skills/day-close-audit/SKILL.md (new step or extend Step 12)\n\nDesign rules:\n- postgres-only: ✓ (writes to clan.memories.metadata).\n- oop-first: applicable — increment lives in BG fire method, not free function.\n- docs-in-code: BG docstring should mention fire-rate side effect.\n- no-new-memory-schemas: ✓ — uses existing metadata jsonb.\n- test-plan-or-why-not: needs test coverage for: counter increments on fire, habit_list sort, cold-habit detection.\n\nScope boundary:\nIN: counter + last_fired_at in metadata, sort/filter in habit_list, cold-habit audit step.\nOUT: deleting cold habits (Akien-reviewed only), retraining BG threshold based on rate, fire-rate-driven salience changes.\n\nTest plan:\n- Unit: fire path increments fired_count, sets last_fired_at.\n- Unit: habit_list returns habits sorted by fired_count desc; 'cold' filter selects fired_count==0.\n- Integration: run a smoke test where a known habit fires, verify counter persists across restart.\n- Audit step: grep test that running day-close-audit Step N produces 'cold habits: N' line.\n\nWhy now: lab/docs/capability_map.md §6.2 surfaced the gap (2026-04-27).",
+    "proposed_at": "2026-04-28T04:36:33.978497+00:00",
+    "completed_at": "2026-04-29T08:44:19.880210+00:00",
+    "github_issue": 545,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Approved by Akien 2026-04-27",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ee4df550-afd7-4b5f-9079-a301bb7aa8bc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

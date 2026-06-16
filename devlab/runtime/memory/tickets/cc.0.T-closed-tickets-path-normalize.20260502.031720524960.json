@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-closed-tickets-path-normalize.20260502.031720524960",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-closed-tickets-path-normalize"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T03:17:20.524960",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reorg-execute-2026-05-01"
+    ],
+    "tickets": [
+      "T-closed-tickets-path-normalize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-closed-tickets-path-normalize",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Reorg",
+      "Path-Cleanup"
+    ],
+    "title": "Normalize closed_tickets.txt path (~/.TheIgors/lab/claudecode/ → ~/.TheIgors/claudecode/)",
+    "result": "Normalized: cc_queue.py + github_sync.py both use ~/.TheIgors/claudecode/closed_tickets.txt. Merged 506+165→660 deduped lines (sort-desc, newest first). ~/.TheIgors/lab/{claudecode,} dirs removed. Commit: see latest.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "P2",
+    "claimed_at": null,
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-reorg-execute-2026-05-01",
+    "description": "Reorg § 4 #11 — only file in ~/.TheIgors/lab/claudecode/ is closed_tickets.txt (written by cc_queue.py:57 + github_sync.py:223). All other CC runtime artifacts live at ~/.TheIgors/claudecode/ (no lab/). Consolidate the path.\n\n**Affected files:** lab/claudecode/cc_queue.py:57, lab/claudecode/github_sync.py:223, ~/.TheIgors/lab/claudecode/closed_tickets.txt (mv to ~/.TheIgors/claudecode/closed_tickets.txt)\n**Design rules:** path-consolidation\n**Scope boundary:** in — change two path constants; mv existing file; verify no other code references the old path; rmdir ~/.TheIgors/lab/claudecode/ when empty; out — closed-tickets schema/format changes\n**Test plan:** grep confirms only 2 referrers; after change cc_queue.py done <id> appends to new path; existing closed-tickets log preserved (no data loss)",
+    "completed_at": "2026-05-02T03:17:20.524960+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68dcaa22-261f-41e9-8253-4a63bdb2bcc6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

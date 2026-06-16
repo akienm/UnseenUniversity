@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-outcome-skill.20260518.164429530210",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-outcome-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530210",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17",
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-outcome-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-outcome-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Hypothesis",
+      "Outcomes",
+      "Skills"
+    ],
+    "title": "Create /outcome skill — review hypothesis at decision close",
+    "result": "Created /outcome skill — hypothesis review at decision close, verdict + KR update",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530210+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "The learning loop has no closure step. When the last ticket of a decision closes, /outcome reviews the hypothesis against observable evidence and records the result. This is what makes the system actually self-improving rather than just self-busy.\n\n**Affected files:** agent_datacenter/skills/outcome/SKILL.md (new); /sprint-ticket SKILL.md (add: on ticket close, check if last ticket of decision — if so, prompt /outcome)\n**Design rules:** outcome record stored on the decision's palace node and .md file; feeds back to goal KRs\n**Scope boundary:** in scope: read hypothesis from decision record, gather observable evidence (logs, metrics, psych log delta, eval questions), record verdict (confirmed/partially-confirmed/falsified/too-early), update goal KR progress note. Out of scope: auto-updating numeric KR values (requires eval infrastructure), automated triggering (prompt-based for now).\n**Test plan:** skill file; manual smoke: run /outcome on D-igor-cognition-research-improvements-2026-05-17 using existing post-ship observations.",
+    "completed_at": "2026-05-18T16:58:52.974313+00:00",
+    "github_issue": 743,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "776ff388-56c7-4127-a745-7dfe9fdbe7c9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

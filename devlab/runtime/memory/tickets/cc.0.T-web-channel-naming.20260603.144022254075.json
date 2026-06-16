@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-web-channel-naming.20260603.144022254075",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-channel-naming"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T14:40:22.254075",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-channel-naming"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-channel-naming",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "WebUI",
+      "Channel",
+      "Naming"
+    ],
+    "title": "Web UI: rename 'Shared' channel to 'Public'",
+    "result": "renamed 'Shared' tab to 'Public' in web UI (server.py:2157) — 949b4773",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": "2026-06-03T14:45:31.019329+00:00",
+    "claimed_at": "2026-06-03T20:24:20.483217+00:00",
+    "created_at": "2026-06-03T14:40:22.254075+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Rename the 'Shared' channel to 'Public' throughout the web UI and underlying code. This is a user-facing terminology improvement — 'Public' is clearer about the channel's visibility scope. Also affects configuration, API responses, and database references.\n\n**Affected files:** TBD — discovery step in sprint (likely web UI views, channel dispatch code, config files, tests)\n**Design rules:** channel naming must be consistent across UI, API, DB, and config\n**Scope boundary:** IN: rename Shared→Public in web UI, API, config, tests. OUT: deployment/ops changes (channel re-creation is operational). OUT: other channel renames.\n**Completion criteria:** web UI displays 'Public' instead of 'Shared' in channel tabs and feeds; all channel references in code use 'public' (lowercase canonical); tests reference updated name; no broken references in codebase",
+    "completed_at": "2026-06-03T20:53:54.468327+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T19:42:27.724294+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f41a335e-91eb-4c38-9a2e-af8a83ad16e3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

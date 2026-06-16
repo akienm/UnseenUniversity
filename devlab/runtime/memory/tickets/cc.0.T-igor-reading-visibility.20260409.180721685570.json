@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-igor-reading-visibility.20260409.180721685570",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-reading-visibility"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T18:07:21.685570",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-reading-visibility"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-reading-visibility",
+    "size": "L",
+    "title": "Igor reading session visibility — track record and meta-view",
+    "result": "D334: unified reading tool built — graph-based runs, blob fetch, facia+habits seeded, 10 commands",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Igor can see the extraction procedure but not which books were read, in what order, quality, or track record. Build tool/habit to give him meta-visibility: reading_list status, node counts per book, session timeline, extraction quality signals. Helps Igor calibrate his own reading quality.",
+    "completed_at": "2026-04-09T18:07:21.685570+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d7452efa-f7ef-46c5-82ab-311231f5948f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ds-done-prefix-prompt-fix.20260611.230622836794",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-done-prefix-prompt-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T23:06:22.836794",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ds-done-prefix-prompt-fix",
+      "T-spreading-activation-test-stale-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-done-prefix-prompt-fix",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "dicksimnel",
+      "inference",
+      "cost"
+    ],
+    "title": "DS ToolLoop: OR models never return DONE: prefix — prompt forces correct exit token",
+    "result": "superseded by T-ds-cost-cap which adds cost cap framing",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that DS completes S-size tickets at haiku tier without cascading to opus due to missing DONE: exit token.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T23:06:22.836794+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "OR models (haiku/sonnet/opus) complete work correctly but return bare analysis text instead of DONE: prefix. This triggers the DONE: gate in _post_result, escalates to CC, and Granny re-dispatches — causing the full haiku→sonnet→opus cascade to run repeatedly on a single ticket (burned ~$80 on 2026-06-11).\n\nRoot cause: SYSTEM_PROMPT in device.py and SYSTEM_RULES in toolloop.py mention DONE: as a completion format but bury it. OR models respond to each turn independently and don't enforce the exit token. Fix: make DONE: the *only* valid non-tool response format — any prose without it is a model output bug, not a continuation.\n\nSecond fix: tier cascade in _run_inference() should not advance to sonnet/opus when haiku actually executed tool calls (MAX_TURNS hit after real work = capability/complexity issue, not a tier miss). Only advance on zero-tool-call response or explicit ESCALATE:.\n\n**Affected files:** devices/dicksimnel/device.py (SYSTEM_PROMPT, _run_inference), devices/dicksimnel/toolloop.py (SYSTEM_RULES)\n**Design rules:** no-sqlite, test-plan-or-why-not\n**Scope boundary:** In: SYSTEM_PROMPT rewrite to enforce DONE:, cascade guard on tool-call count. Out: new OR models, ToolLoop architecture changes.\n**Completion criteria:** Run DS on a trivial ticket (T-spreading-activation-test-stale-path or similar S-size); observe haiku returns DONE: on first successful run without cascade to sonnet/opus. Log shows no 'result missing DONE: prefix' warning.",
+    "completed_at": "2026-06-11T23:14:18.834389+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

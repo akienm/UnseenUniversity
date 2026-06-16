@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.322.20260322.013741135390",
+  "emitter": "cc.0",
+  "namespace": [
+    "322"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T01:37:41.135390",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "322"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "322",
+    "size": "M",
+    "notes": "D200/D091. Rename cortex batch/query methods to capability names (get_by_activation, traverse_from). Move raw SQL construction into db_proxy. DO NOT change cortex.store()/search()/recall() signatures — only internal SQL paths. HIGH inertia — minimal scope. Close #322.",
+    "title": "T-memorystore: Cortex speaks capabilities, DatabaseProxy owns SQL",
+    "result": "D200 minimal-scope implementation: (1) MEM_COLS constant moved to db_proxy.py — cortex imports and aliases as _MEM_COLS_NO_EMBED for backward compat. (2) fetch_by_ids(ids, excl_types) added to both DatabaseProxy and PGDatabaseProxy — executes SELECT MEM_COLS FROM memories WHERE id IN (...). (3) get_activation_rows(limit, since_hours) added to both proxies — tails heat query. (4) cortex: _get_recently_activated renamed to get_by_activation; _traversal_search renamed to traverse_from; both now call proxy capability methods instead of inline SQL. (5) All 3 internal call sites updated. Smoke tested: fetch_by_ids + get_activation_rows live against PG. HIGH inertia respected — store/search/recall signatures untouched.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": "2026-03-22T01:30:54.341464+00:00",
+    "completed_at": "2026-03-22T01:37:41.135390+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

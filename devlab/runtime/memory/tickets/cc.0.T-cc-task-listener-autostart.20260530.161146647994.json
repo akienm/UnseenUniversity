@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-cc-task-listener-autostart.20260530.161146647994",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-task-listener-autostart"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T16:11:46.647994",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-task-listener-autostart"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-task-listener-autostart",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure"
+    ],
+    "title": "cc_task_listener not started — Granny dispatches land in channel with no worker picking them up",
+    "result": "TaskListener started as daemon thread inside GrannyDaemon.start(); stop() wired to GrannyDaemon.stop(); stop event replaces bare while True in run()",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-30T16:11:46.647994+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "cc_task_listener.py polls for GRANNY_DISPATCH channel messages and marks tickets in_progress via cc_queue dispatch. It exists and works (9 tests pass) but is never started anywhere — no launcher, no superclaude hook, nothing. Granny correctly routes tickets and posts GRANNY_DISPATCH, but without the listener running those dispatches go unacknowledged and tickets sit in sprint status indefinitely.\n\n**Affected files:** lab/claudecode/cc_task_listener.py, devices/granny/daemon.py\n**Design rules:** orchestration-over-monolith — listener is logically coupled to GrannyDaemon (Granny dispatches, listener acknowledges); start them together\n**Scope boundary:** IN — start TaskListener as a background thread inside GrannyDaemon.start(); stop it in GrannyDaemon.stop(); OUT — do not make CC sprint autonomously (listener only marks in_progress + posts ACK; human still triggers /sprint)\n**Completion criteria:** after `python3 -m devices.granny.daemon` starts, a GRANNY_DISPATCH message posted to the channel results in a GRANNY_ACK reply and the ticket status changing to in_progress within one poll cycle (≤15s)",
+    "completed_at": "2026-05-30T16:13:05.971813+00:00",
+    "deposited_at": "2026-05-30T10:11:57.839082",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T16:11:46.722180+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e93a05f7-04f6-461b-a46d-81401305e541",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

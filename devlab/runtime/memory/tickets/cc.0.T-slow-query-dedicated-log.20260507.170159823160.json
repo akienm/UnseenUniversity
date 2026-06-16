@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-slow-query-dedicated-log.20260507.170159823160",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slow-query-dedicated-log"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T17:01:59.823160",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-slow-query-dedicated-log"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slow-query-dedicated-log",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Observability"
+    ],
+    "title": "CLOSED: Dedicated slow_queries.log file in db_proxy",
+    "result": "lazy RotatingFileHandler writes slow_queries.log on first slow query; path respects IGOR_LOG_DIR; 1 test added; 4492 TheIgors tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Slow queries currently emit WARNING to the general log stream (logger=lab.utility_closet.db_proxy). They should also write to a dedicated slow_queries.log so performance regressions are easy to spot without grepping through the main log. Each entry: timestamp, elapsed_ms, sql (truncated), caller module if inferrable.\n\n**Affected files:** lab/utility_closet/db_proxy.py (slow query detection lives in _db_log or _on_sql), ~/.TheIgors/logs/ (output location)\n**Design rules:** no-sqlite; log goes through RotatingFileHandler pattern already used by logging_setup.py\n**Scope boundary:** add dedicated file handler for slow-query lines only; do NOT change the existing WARNING log path (keep both). No schema changes. No new tool/habit needed — file is readable directly or via get_slow_query_report.\n**Test plan:** add test asserting slow query writes to the dedicated file path; existing slow-query tests must still pass",
+    "completed_at": "2026-05-07T17:01:59.823160+00:00",
+    "github_issue": 670,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "aadb1436-93c2-446d-9bd7-c2d5ced62c75",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

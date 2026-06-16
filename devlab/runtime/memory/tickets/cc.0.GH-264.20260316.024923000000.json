@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-264.20260316.024923000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-264"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T02:49:23",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-264"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-264",
+    "title": "D093-W4: Remote Igor bootstrap (Windows launcher, env template, git-pull-on-start)",
+    "result": "Per Akien 2026-04-19: done. Remote Igor bootstrap (Windows launcher, env template, git-pull-on-start) — landed.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-16T02:49:23Z",
+    "description": "GitHub issue #264. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-19T21:17:54.603870+00:00",
+    "github_issue": 264,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "39633c71-fb1d-4d8c-93b1-2c131784bf86",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

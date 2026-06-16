@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-complete-dsn-hardcode-migration-50-remai.20260522.164149273134",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-complete-dsn-hardcode-migration-50-remai"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-22T16:41:49.273134",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-complete-dsn-hardcode-migration-50-remai",
+      "T-credential-boundary-audit",
+      "T-hardcoded-instance-refs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-complete-dsn-hardcode-migration-50-remai",
+    "size": "M",
+    "tags": [
+      "Security",
+      "Database",
+      "Debt"
+    ],
+    "title": "Complete DSN hardcode migration: ~50 remaining choose_a_password refs in wild_igor/ and lab/",
+    "result": "replaced all choose_a_password fallbacks with os.environ['IGOR_HOME_DB_URL']/paths().home_db_url; 52 files in wild_igor/ and lab/; d3716e3b",
+    "status": "closed",
+    "priority": 0.5,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "T-hardcoded-instance-refs was closed as \"done\" but ~50+ hardcoded DSN refs remain in committed source (public GitHub). Found by T-credential-boundary-audit.\n\nCorrect pattern (paths.py:52): read IGOR_HOME_DB_URL from env, raise RuntimeError if unset — never silent-fallback.\n\n**Affected files (wild_igor/ — 8 cognition/tool modules):**\n- wild_igor/igor/cognition/activate.py:25\n- wild_igor/igor/cognition/dreaming.py:30\n- wild_igor/igor/cognition/focus_state.py:33\n- wild_igor/igor/cognition/narrative_engine.py:1245 (HIGH-inertia — pre-approve before touching)\n- wild_igor/igor/cognition/playbook.py:27\n- wild_igor/igor/cognition/proposals.py:23\n- wild_igor/igor/cognition/watch_problems.py:125\n- wild_igor/igor/tools/pe_chain_priors.py:27\n\n**Affected files (lab/ — ~30+ seed/util scripts):**\naudit_runner.py, audit_telemetry.py, book_learner.py, cc_hook_pending.py, cc_queue.py (2× silent-fallback), cron_feed_reading.py, debug_session_cli.py, drain_learn_queue.py, map_igor.py, reading_campaign.py, review_manager.py, seed_*.py (~20 files), slate_manager.py, sprint_infrastructure_brief.py, ticket_prefix_refit.py, lab/tools/build_ebook_index.py, lab/utility_closet/failover.py\n\n**Design rules:**\n- wild_igor/ modules: use paths().home_db_url (hard-fails if env unset)\n- lab/ scripts: os.environ.get(\"IGOR_HOME_DB_URL\") with explicit error message; never silent fallback to literal\n- cc_queue.py: remove hardcoded fallback strings at lines 130 and 383\n\n**Scope boundary:** Replace hardcoded DSN literals with env-var reads. Do NOT change the Postgres password, docker-compose defaults, or installer bootstrap (those are acceptable per audit).\n\n**Test plan:** After migration, `grep -r 'choose_a_password' wild_igor/ lab/ --include='*.py'` returns only audit_check_hardcoded_instance.py (the checker) and installer.py (bootstrapper). Run python run test.",
+    "completed_at": "2026-05-22T16:41:49.273134+00:00",
+    "github_issue": 780,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "89b213d4-0601-47e2-8e4b-59cda71ffcff",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

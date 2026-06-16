@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-priming-via-spreading-activation.20260504.215944186544",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-priming-via-spreading-activation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T21:59:44.186544",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-priming-via-spreading-activation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-priming-via-spreading-activation",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "biomimicry",
+      "cortex",
+      "spreading-activation",
+      "cognition"
+    ],
+    "title": "CLOSED: wire spreading_activation heat_field into cortex.search priming",
+    "result": "set_heat_field + _get_current_heat_field on Cortex; NE stashes after SA calls; search bumps hot candidates pre-Phase-2 and inside cosine scoring; 4415 tests pass",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-04T21:50:46.348371+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "cortex.spreading_activation() is called by NE every turn (for prediction-error training and coalition detection) but its heat_field output never primes cortex.search() candidate scores. True priming (doctor->nurse) is absent. Fix: NE stashes the heat_field on the cortex instance as _current_heat_field (dict[str, float]) with 60s TTL. cortex.search checks _current_heat_field; candidates with heat > 0 get a proportional relevance bump (max +0.10) before Phase 2 rerank. If heat_field is empty or expired, search is unchanged. Back-compat: new optional attribute, no signature change to existing callers.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (_current_heat_field attribute + bump in search), wild_igor/igor/cognition/narrative_engine.py (stash heat_field after spreading_activation call)\n**Design rules:** none-apply\n**Scope boundary:** IN: stash heat_field on cortex; apply bump in search. OUT: do not change NE coalition detection, TWM push surface, or Phase 2 rerank behavior.\n**Test plan:** test that search results are reranked when heat_field is populated; test that search is unchanged when heat_field is empty; test TTL expiry.\n**Pass condition:** A node with high heat scores gets surfaced higher in cortex.search results than an equally-matched cold node; pytest passes.",
+    "completed_at": "2026-05-04T21:59:44.186544+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6f7ffc7b-ea5f-4aff-b9a2-5da7e0494aca",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

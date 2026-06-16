@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-routing-machines-json.20260324.151346868130",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-routing-machines-json"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:13:46.868130",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-routing-machines-json"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-routing-machines-json",
+    "size": "S",
+    "notes": "Replace priority field with inference_rank (1-4). Add network_type wired|wifi. Add in_use_hours [[start,end]]. Add roles list (db_host, igor_home). Add aliases list for habit name matching. Confirm akienyogai7 RAM (16GB or 8GB?). D211.",
+    "title": "machines.json: inference_rank, network_type, in_use_hours, roles, aliases",
+    "result": "Updated offline machines (akienasus, akienpi) in machines.json: removed priority:batch, added inference_rank (5/6), network_type, in_use_hours, roles, aliases per D211. All 6 machines now appear in get_machine_availability(). Alias resolution verified. akienyogai7 RAM remains at 16GB (unconfirmed per ticket note).",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-24T15:12:09.476611+00:00",
+    "completed_at": "2026-03-24T15:13:46.868130+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

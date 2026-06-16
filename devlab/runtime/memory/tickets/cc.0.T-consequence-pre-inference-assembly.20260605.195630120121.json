@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-pre-inference-assembly.20260605.195630120121",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-pre-inference-assembly"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T19:56:30.120121",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pre-inference-assembly-2026-06-05"
+    ],
+    "tickets": [
+      "T-consequence-pre-inference-assembly"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-pre-inference-assembly",
+    "gate": "2026-06-19",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: pre-inference assembly pipeline",
+    "result": null,
+    "status": "sprint",
+    "worker": null,
+    "priority": 0.3,
+    "intention": "I intend that the consequence check verifies the pre-inference assembler actually reduces file-discovery turns and token counts in practice.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T19:56:30.120121+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-pre-inference-assembly-2026-06-05",
+    "description": "**What changed:** Pre-inference assembler added to sprint-ticket and DickSimnel; context is pre-assembled before LLM fires.\n\n**Predicted unintended effects:** (1) Pre-assembled context may be stale if affected-files list in ticket is wrong — LLM gets wrong context silently; (2) Context block may bloat the prompt for simple tickets with few affected files; (3) Word graph traversal may surface irrelevant domain terms and add noise.\n\n**Signals to watch:** Sprint transcripts — are file-discovery tool calls eliminated for pre-briefed files? Token counts for orientation phase — trending down? Any complaints from DickSimnel about wrong context?\n\n**Gate condition:** Check by 2026-06-19.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** No automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

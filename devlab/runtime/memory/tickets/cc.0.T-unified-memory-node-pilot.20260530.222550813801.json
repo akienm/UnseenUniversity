@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-unified-memory-node-pilot.20260530.222550813801",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-unified-memory-node-pilot"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T22:25:50.813801",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-unified-memory-node-pilot"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-unified-memory-node-pilot",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Architecture"
+    ],
+    "title": "Unified memory node format: pilot one table with ID/METADATA/TRIGGERS/TAGS/DATA_PAYLOAD",
+    "result": "tags + triggers columns on clan.memories; m058 migrations; 2921 rows backfilled; _derive_tags/_derive_triggers helpers; 4 tests",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-30T22:25:50.813801+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Every persistent object in the system — tickets, memories, goals, habits, palace nodes, channel messages — shares the same outer shell:\n\n  { ID, METADATA: {type, ...}, TRIGGERS, TAGS, DATA_PAYLOAD }\n\nTAGS at the outer shell is structural/routing (Granny routes on it, evaluator fires on it, fast-indexed). TAGS inside DATA_PAYLOAD is semantic/content (domain-specific, type-specific meaning). Queries can target either layer or both: memory.tags contains foo vs memory.all contains foo.\n\nTRIGGERS at the outer shell unifies what are currently scattered mechanisms: ticket gate, goal salience threshold, habit activation condition, memory retrieval salience. A single trigger evaluator fires any node when its conditions are satisfied — it doesn't know ticket from goal from habit.\n\nThis is the 'compiled inference' foundation: each node type gets a prebuilt view (e.g. SELECT * FROM tickets becomes a view over the unified table filtered by metadata.type = TICKET with pre-indexed access patterns). Consumers keep their existing query shape; the unification is underneath.\n\nclan.memories is already closest to this shape. Pilot: promote tags out of metadata JSON into a top-level column, add triggers as a top-level jsonb column, verify node_registry lookup still works for calved payloads. One table only.\n\nGate on follow-on: after 12+ node types are live in the unified format and search effectiveness is validated (can we constrain searches meaningfully across type boundaries?), roll out to remaining tables.\n\n**Affected files:** clan.memories schema migration, cortex.py (read/write path), any query that touches metadata->>'tags'\n**Design rules:** no SQLite; Postgres only; existing consumers get views so their query shape does not change\n**Scope boundary:** IN — clan.memories schema change (tags + triggers columns), cortex.py updated, prebuilt view for backward compat; OUT — migrating other tables (that is the follow-on gated ticket)\n**Completion criteria:** clan.memories has top-level tags (jsonb array) and triggers (jsonb) columns; cortex.py reads/writes both; existing tag queries via metadata still work via a migration shim; at least one node type uses TRIGGERS field meaningfully; node_registry lookup unaffected",
+    "completed_at": "2026-06-07T01:54:04.752088+00:00",
+    "deposited_at": "2026-05-30T16:27:27.829877",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T22:25:50.882811+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2c8e87a0-3e7d-4c4d-abd6-fbb4825b3f84",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

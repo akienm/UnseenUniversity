@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-igor-modes.20260411.005016000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-modes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-11T00:50:16",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-modes"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-modes",
+    "size": "L",
+    "tags": "Cognition",
+    "title": "Igor operating modes: Awake/Background/Sleep",
+    "result": "Four biological modes: Foreground/Default/Consolidation/Dreaming. Derived from milieu + input recency + clock. mode_config() per mode. 14 tests.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-18T01:50:38.322477+00:00",
+    "created_at": "2026-04-11T00:50:16Z",
+    "related_to": null,
+    "description": "D352-D354 implemented the gating primitives. Next: formalize three operating modes. AWAKE: conversation gate ON, user dominates TWM, habits yield to engaged responses. BACKGROUND: topicked work (coding, reading, training), conversation gate OFF, graph+local LLM. SLEEP: graph-only consolidation, no LLM at all (D353 already built). Each mode has different routing rules, different model ceilings, different TWM policies. Modes are the architectural frame for progressive LLM replacement — graph handles more in each mode over time.",
+    "completed_at": "2026-04-18T01:52:03.805104+00:00",
+    "deposited_at": "2026-04-21T18:47:56.749154",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": 406,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "87f2417f-ee75-459a-bcd3-e2ec98b771c0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

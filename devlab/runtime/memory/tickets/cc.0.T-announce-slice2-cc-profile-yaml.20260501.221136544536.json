@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice2-cc-profile-yaml.20260501.221136544536",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice2-cc-profile-yaml"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:11:36.544536",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice2-cc-profile-yaml"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice2-cc-profile-yaml",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice2",
+      "Datacenter",
+      "Profile"
+    ],
+    "title": "Add config/profiles/cc.yaml — CC agent profile",
+    "result": "config/profiles/cc.yaml shipped: stateless CC profile (inference+browser_use+swadl, no postgres/discord, narrow inbound ACL, mcp surface). Test coverage in test_announce_round_trip.py. agent_datacenter commit afecb97.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-01T22:09:51.517086+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "CC profile YAML. Per § 4.3 of design: CC has inference + filesystem-read access, joins shared + igor-cc channels, no state_refs (CC is stateless across sessions), inbound from skeleton + igor only, outbound to *. Slice 3 prereq for the CC-side announce_mcp.py adapter — filing now so it's ready when slice 3 starts. Not on critical path of slice 2 green test.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/config/profiles/cc.yaml (NEW)\n**Design rules:** matches igor.yaml shape (profile_version, agent_type, allowed_devices, device_permissions, default_channels, state_refs, acl, surfaces); inherits: [] (v1, no inheritance); design § 4.3.\n**Scope boundary:** in — single YAML file matching the Igor profile shape. Out — inheritance processing (slice 5), CC-side adapter code (slice 3 ticket).\n**Test plan:** Extend test_announce_round_trip.py with a cc fixture (or new tests/test_cc_profile.py) that loads cc.yaml, validates required fields, asserts allowed_devices includes 'inference', default_channels includes 'shared' and 'igor-cc', state_refs is empty dict.",
+    "completed_at": "2026-05-01T22:11:36.544536+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c273f115-1d0f-4842-83de-f74c92d0bc86",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

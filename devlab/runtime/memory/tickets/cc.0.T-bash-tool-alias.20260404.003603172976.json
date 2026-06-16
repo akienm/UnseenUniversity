@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-bash-tool-alias.20260404.003603172976",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bash-tool-alias"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T00:36:03.172976",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bash-tool-alias"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bash-tool-alias",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Add bash→run_bash tool alias",
+    "result": "Tool name alias 'bash' → run_bash registered in tools/registry.py (LOW inertia). Both names route to same function. All 52 tests pass. Manual test verified — Igor can call either 'bash' or 'run_bash' interchangeably. Committed to main.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Igor's tier.2 Ollama sometimes calls 'bash' instead of registered 'run_bash'. Defensive alias prevents tool-fail cycle. Change: tools/registry.py or relevant dispatcher — map alias 'bash' → run_bash function. Test: manual or existing tool tests. LOW inertia. Scope OUT: tool behavior changes, gateway changes, tier logic.",
+    "completed_at": "2026-04-04T00:36:03.172976+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "66f37cd4-1746-4c78-9d51-b932e4ca665b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

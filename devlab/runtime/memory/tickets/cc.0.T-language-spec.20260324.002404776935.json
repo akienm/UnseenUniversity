@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-language-spec.20260324.002404776935",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-language-spec"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T00:24:04.776935",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-language-spec"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-language-spec",
+    "body": "Igor named the language: Engram. From Semon (1904) — the engram is the physical trace memory leaves in neural tissue; the engram IS the memory, not a pointer to it. In Engram: you don't write code that runs separately from memory — you lay down template nodes that become the substrate. The engram IS the program. At runtime, there is only activation spreading through engrams (habits).\n\nCharacteristics to document: biologically-inspired, template macros (not subroutines), reactive trigger→condition→action, code=data (habits are Memory nodes), no call stack, graph-structured, async by default, gradients not binary control flow, self-modifying via template instantiation.\n\nClosest ancestors: Lisp macros (code=data, macro expansion), dataflow programming, reactive systems, Hebb's rule (wiring IS the program).\n\nOutput: design_docs/engram_language.md — name etymology, grammar, full pattern inventory (20 patterns — original 10 + Igor's 10 additions), paradigm comparison, example programs.",
+    "size": "S",
+    "title": "Engram language spec — name, grammar, primitives, paradigm doc",
+    "result": "design_docs/engram_language.md written: 429-line full spec. Covers name etymology (Semon 1904), core paradigm table, grammar (habit/template/condition/action node schemas), 12 primitive ops, all 21 patterns with descriptions and canonical instances, 3 example programs, paradigm comparison vs Lisp/Dataflow/Erlang/SQL, implementation status table, and 6 design principles. BLOOM_INHIBIT and DISTILLATION given full clarifications from Igor.",
+    "status": "done",
+    "created": "2026-03-23T00:14:44.332776",
+    "priority": 3,
+    "claimed_at": "2026-03-24T00:21:08.903182+00:00",
+    "completed_at": "2026-03-24T00:24:04.776935+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

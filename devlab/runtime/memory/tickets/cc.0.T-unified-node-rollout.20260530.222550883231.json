@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-unified-node-rollout.20260530.222550883231",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-unified-node-rollout"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T22:25:50.883231",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-unified-memory-node-pilot",
+      "T-unified-node-rollout"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-unified-node-rollout",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Platform",
+      "Architecture"
+    ],
+    "title": "Unified memory node rollout: migrate remaining tables after pilot validates",
+    "result": "tags+triggers+GIN on 4 tables + compiled-inference registry (node_registry.py, 6 types, 12 tests) + _cross_type_fts in recall.py wired into escalation path. Commit 1ef885f6.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.4,
+    "claimed_at": "2026-06-07T23:58:24.494466+00:00",
+    "created_at": "2026-05-30T22:25:50.883231+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "After T-unified-memory-node-pilot ships and at least 12 examples of the unified node format are live and searchable, roll out the ID/METADATA/TRIGGERS/TAGS/DATA_PAYLOAD outer shell to remaining tables: tickets (clan.memories procedural), palace nodes (adc.palace), channel messages (infra.channel_messages), reading items, eval history, etc.\n\nEach table migration produces: a schema change, a prebuilt view so existing consumers are unchanged, and any compiled-inference query patterns specific to that type (e.g. 'tickets due today' as a materialized view rather than an ad-hoc query).\n\nThe compiled inference vision: pre-built constrained queries per node type replace general ad-hoc searches. The system knows the access patterns at design time and compiles them in. General queries remain possible but are not the default path.\n\n**Affected files:** multiple schema migrations + view definitions; one file per table type\n**Design rules:** no SQLite; each migration is independently deployable; views maintain backward compat\n**Scope boundary:** IN — all tables not covered by T-unified-memory-node-pilot; prebuilt views per type; compiled-inference query registry; OUT — changing consumer code beyond view wiring\n**Completion criteria:** all major tables use unified outer shell; a compiled-inference query registry exists mapping node type → canonical prebuilt query; search across type boundaries (memory.all contains foo) works correctly",
+    "completed_at": "2026-06-08T02:31:12.678757+00:00",
+    "deposited_at": "2026-05-30T16:29:36.578433",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T22:25:50.883275+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2c64fa01-1d1e-4f0f-a006-6d8a4d751cf4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

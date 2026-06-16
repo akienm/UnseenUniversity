@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-migrations-lookup-cache.20260422.193737700142",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-migrations-lookup-cache"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T19:37:37.700142",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-slow-query-triage-2026-04-22"
+    ],
+    "tickets": [
+      "T-migrations-lookup-cache"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-migrations-lookup-cache",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Performance"
+    ],
+    "title": "Cache _migrations table lookups per-process (9,264 hits, avg 121ms)",
+    "result": "75254143 — module-level _MIGRATION_CACHE in cortex.py + 3 callsite refactors (scope_backfill gate, meaning_to_me gate, _run_schema_migrations). 6 tests pass. Eliminates SELECT 1 FROM _migrations per Cortex init.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-22T19:33:21.589825+00:00",
+    "related_to": null,
+    "decision_id": "D-slow-query-triage-2026-04-22",
+    "description": "SELECT 1 FROM _migrations WHERE name = ? fires 9,264 times per session (avg 121ms, worst 1,152ms) — every call to the migration checker re-queries the DB even for already-completed migrations. Cache the set of completed migration names in a module-level or class-level frozenset loaded once at process start; skip the DB lookup for any name already in the set.\n\n**Affected files:** lab/utility_closet/db_proxy.py (migration check logic, lines ~183 and ~744). Update db_proxy.py top-of-file docstring to note the cache.\n**Design rules:** no-sqlite: reads _migrations table (Postgres), in-process cache only (no new persistence). oop-first: PGDatabaseProxy is already a class — cache goes as an instance or class attribute. docs-in-code: update db_proxy.py docstring. test-plan-or-why-not: applies.\n**Scope boundary:** IN — cache the per-name lookup. OUT — cache invalidation across processes, restructuring _migrations table, multi-process cache coherence (single-process only).\n**Test plan:** Unit test — mock _migrations table with 3 entries, call migration check 100x, assert DB query called exactly 3 times total (one per name). Integration test — boot Igor, confirm _migrations SELECT count in db_queries.log drops from ~9k to <20.",
+    "completed_at": "2026-04-22T19:37:37.700142+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4e3f6831-6c3f-4c82-80a4-9caec3f75774",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

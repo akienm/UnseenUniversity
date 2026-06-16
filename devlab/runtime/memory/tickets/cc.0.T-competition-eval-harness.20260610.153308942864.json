@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-competition-eval-harness.20260610.153308942864",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-competition-eval-harness"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:33:08.942864",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-competition-bootstrap-2026-06-10"
+    ],
+    "tickets": [
+      "T-competition-eval-harness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-competition-eval-harness",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Competition",
+      "Evaluation"
+    ],
+    "title": "Inference competition eval harness and race runner",
+    "result": "eval_harness.py: run_race() scores both classifiers on holdout, returns accuracy + cloud_calls scorecard; 8 tests pass; deterministic",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.45,
+    "intention": "I intend that the eval harness produces a reproducible scorecard that tells us which classifier wins the first race and at what cost.",
+    "claimed_at": "2026-06-10T16:19:52.980481+00:00",
+    "created_at": "2026-06-10T15:33:08.942864+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-inference-competition-bootstrap-2026-06-10",
+    "description": "Build the race track: run both classifiers on the holdout set, score each on accuracy (agreement with book_learner labels) and cost (cloud_calls_count). Output a scorecard. This is the first run of the inference compilation competition.\n\n**Affected files:** New `lab/competition/eval_harness.py`; imports both classifiers\n**Design rules:** Holdout rows only; log per-row verdict; never modify holdout labels\n**Scope boundary:** Score both classifiers on holdout; output scorecard. No winner promotion or model update in this ticket.\n**Completion criteria:** Running `python lab/competition/eval_harness.py` prints scorecard with accuracy% and total_cloud_calls for each classifier; scorecard is deterministic (same holdout, same result).",
+    "completed_at": "2026-06-10T16:21:05.861242+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-10T16:19:52.980481+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

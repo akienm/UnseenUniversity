@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-clan-pattern-sharing.20260504.220440253287",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-clan-pattern-sharing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T22:04:40.253287",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-clan-pattern-sharing",
+      "T-engram-portability"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-clan-pattern-sharing",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "memory",
+      "engram",
+      "clan"
+    ],
+    "title": "CLOSED: wire export_pattern/import_pattern for cross-Igor pattern sharing",
+    "result": "export_pattern + import_pattern tools registered; 5 tests pass round-trip, no-clobber, missing-root; 4420 total pass",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-04T21:59:52.468820+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor instances should be able to share learned patterns (not data) with each other. T-engram-portability already shipped export_engram() + import_engram() + BFS subgraph extraction + dependency manifest. This ticket wires those into a usable sharing surface: one Igor exports a pattern subtree; another imports it and integrates it into their own memory graph. The scope is light — the infrastructure exists.\n\n**Affected files:** wild_igor/igor/memory/engram_portable.py, wild_igor/igor/tools/ (new share_pattern tool or extend existing), tests/test_engram_portable.py\n**Design rules:** no-sqlite, test-plan-or-why-not\n**Scope boundary:** IN: export/import of pattern subgraphs across Igor instances. OUT: data sharing, shared belief state, any memory merge that overwrites existing nodes.\n**Test plan:** test that export→import round-trip preserves node count + edge structure; test that import into a non-empty graph doesn't clobber existing nodes.\n**Pass condition:** Igor A exports a learned pattern subtree; Igor B imports it and can retrieve the pattern nodes via cortex.search.",
+    "completed_at": "2026-05-04T22:04:40.253287+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "43984045-9c12-4212-b4db-e59cc3ee928c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

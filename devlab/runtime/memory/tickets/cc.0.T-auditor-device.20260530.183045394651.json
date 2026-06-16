@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-auditor-device.20260530.183045394651",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-auditor-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T18:30:45.394651",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-auditor-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-auditor-device",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Auditor rack device: promote audit_runner.py to first-class rack service",
+    "result": "AuditorDevice rack device: 6 MCP tools (run_check/run_all/check_add/check_list/allowlist_add/finding_history), adc.audit_findings history, 24 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-30T23:45:48.667998+00:00",
+    "created_at": "2026-05-30T18:30:45.394651+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "audit_runner.py in lab/claudecode/ runs registered checks (grep, sql, shell, python kinds) against the codebase and DB. Promote this to a rack device so all audit skills call it via MCP instead of inline bash. Skills become thin wrappers; the audit logic, check registry, history, and allowlist live in the device.\n\nMCP tools exposed: run_check(name) → finding[]; run_all(severity_min='med') → finding[]; check_add(name, kind, pattern, severity, description); check_list() → check[]; allowlist_add(pattern, reason); finding_history(days=7) → finding[].\n\nMigration: audit_checks.json and audit_runner.py become the device's seed data + implementation. Existing /day-close-audit and /audit-expert skills updated to call mcp__auditor__* instead of bash.\n\n**Affected files:** devices/auditor/ (new), lab/claudecode/audit_runner.py (migrated), lab/claudecode/audit_checks.json (migrated), skills/day-close-audit/SKILL.md, skills/audit-expert/SKILL.md\n**Design rules:** BaseDevice/BaseShim; no-sqlite; audit history in Postgres (clan schema or instance schema TBD)\n**Scope boundary:** IN — promote existing audit_runner to device; migrate audit skills to MCP calls; OUT — new check types beyond current grep/sql/shell/python kinds\n**Completion criteria:** mcp__auditor__run_check(name='no-sqlite-imports') returns same result as current audit_runner; /day-close-audit skill uses MCP calls, not bash; audit history queryable via MCP",
+    "completed_at": "2026-05-31T02:44:01.786866+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:45:48.667998+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T18:30:45.394735+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9a73c7d6-cef7-4574-8eef-59d723c002e6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

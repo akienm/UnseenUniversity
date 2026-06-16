@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-local-preparse-fallback.20260422.210000279818",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-local-preparse-fallback"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T21:00:00.279818",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-architecture-2026-04-22"
+    ],
+    "tickets": [
+      "T-gist-before-retrieve",
+      "T-local-preparse-fallback"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-local-preparse-fallback",
+    "gate": "T-gist-before-retrieve",
+    "size": "M",
+    "tags": [
+      "Preparse",
+      "Fallback"
+    ],
+    "title": "Local mini-LLM fallback when graph-tree confidence is low",
+    "result": "local_preparse.LocalPreparser class + preparse_local() convenience + default_preparser singleton. qwen2.5:0.5b default model, 1s default timeout, IGOR_LOCAL_PREPARSE_* env knobs. Returns PARSED_INPUT CSB block matching existing preparse schema. Local-only enforced via AST-strip test. 16 tests. Commit 47c943d1.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-22T20:57:33.521819+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-architecture-2026-04-22",
+    "description": "When graph-tree gist-pass returns low confidence (per T-gist-before-retrieve), today we fall through to cortex.search. Add a middle tier: a local small-model LLM (Ollama with qwen 0.5B-1B or similar) that handles cases trees don't recognize but don't require full cortex retrieval. Zero network cost, sub-second latency on local hardware. Note: Akien explicitly removed web-LLM preparse (gpt5mini) from akiendell/akiendelllinux — this fallback must be LOCAL only.\n\n**Affected files:** new `wild_igor/igor/cognition/local_preparse.py` wrapping an Ollama client; wire-in at the confidence-gated fallback point from T-gist-before-retrieve; `tests/test_local_preparse.py` new.\n**Design rules:** docs-in-code (the local-only constraint is load-bearing — document clearly); test-plan-or-why-not (covered); oop-first (LocalPreparser class); no-sqlite.\n**Scope boundary:** IN: Ollama client with small-model default (qwen 0.5B or configured equivalent); timeout ≤1s; returns same preparse schema as graph-tree path (intent, salience, entities, memory-route) so downstream is consumer-agnostic; instrumentation for invocation count and latency. OUT: cloud LLM fallback (explicitly excluded — local-only); model selection/tuning (config-driven, not hardcoded); training/fine-tuning the local model.\n**Test plan:** low-confidence gist → local preparse invoked; local preparse returns same schema as graph-tree path; timeout triggers fall-through to cortex.search; unavailable Ollama triggers fall-through cleanly (no bork); latency ≤500ms p50 on CPU hardware; tests MUST NOT invoke cloud LLMs.",
+    "completed_at": "2026-04-22T21:00:00.279818+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c55f01f7-71c6-4f60-a9d6-b59535e2f0da",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

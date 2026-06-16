@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-debug-skill.20260528.190120594952",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-debug-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:20.594952",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-debug-skill-2026-05-28"
+    ],
+    "tickets": [
+      "T-debug-skill",
+      "T-scraps-debug-extractor",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-debug-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Skills",
+      "Debug",
+      "Tooling"
+    ],
+    "title": "/debug skill: pointer resolution → Scraps → Haiku → Sonnet → report",
+    "result": "/debug skill written: pointer resolution, Scraps extraction, Haiku/Sonnet analysis, structured report format. Skill at ~/.claude/skills/debug/SKILL.md + canonical copy.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-28T20:05:25.724096+00:00",
+    "created_at": "2026-05-28T19:01:20.594952+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-debug-skill-2026-05-28",
+    "description": "Implement the /debug CC skill — autonomous mixed-mode debugger that returns a structured report so CC diagnoses without interactive investigation.\n\nFlow: (1) Pointer resolution (light inference): parse freeform input (ticket ID, timestamp like '160401', pasted console text, error snippet) into a structured log query {component, ts_start, ts_end, ticket_id?}; (2) Call T-scraps-debug-extractor to extract log window, state, test output deterministically; (3) Haiku: classify failure type, generate HYPOTHESIS with confidence score (0.0-1.0), suggest NEXT step; (4) Escalate to Sonnet if Haiku confidence < 0.5; (5) Format and return structured report.\n\nReport format:\n```\nDEBUG REPORT — <timestamp>\nComponent: <X>  Ticket: <T-xxx>  Phase: <Y>\n\nSUMMARY: <one line>\n\nWHERE:    <file>:<line>  fn=<function>  (<context>)\nWHAT:     <expected> vs <actual>\n\nSTATE:    <type-specific fields>\n\nLOG WINDOW (<ts_start> → <ts_end>):\n  <pre-extracted lines>\n\nHYPOTHESIS (<confidence>): <diagnosis>\n  check: <specific command to verify>\n\nNEXT: <action>\n```\n\n**Affected files:** ~/.claude/skills/debug/ (new skill file)\n**Design rules:** pointer resolution uses minimal inference (one small call); Scraps and Haiku do the heavy lifting; escalate to Sonnet only on low confidence; report is the deliverable — CC reads it, doesn't investigate\n**Scope boundary:** IN — skill file, pointer resolution, report formatting; OUT — Scraps extraction logic (T-scraps-debug-extractor)\n**Test plan:** /debug with a known ticket ID produces a report with correct SUMMARY and WHERE; /debug with pasted timestamp text resolves to correct log window; report produced without CC needing follow-up commands",
+    "completed_at": "2026-05-28T20:06:13.919453+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:05:25.724096+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:20.595000+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8456e742-f2fc-482a-bacd-01a480375c07",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

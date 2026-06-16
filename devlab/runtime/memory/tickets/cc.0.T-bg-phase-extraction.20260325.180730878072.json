@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-bg-phase-extraction.20260325.180730878072",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bg-phase-extraction"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T18:07:30.878072",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bg-phase-extraction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bg-phase-extraction",
+    "body": "basal_ganglia.py (MEDIUM inertia — cognition/ — no behaviour change, refactor only).\n\nBG scoring is the highest-traffic path. specificity_bonus and intent_gate logic are inline in the main scoring loop. Extract into:\n  _apply_intent_gate(habit, parsed_intent) -> bool\n  _apply_specificity_bonus(habit, context) -> float\n\nNo logic changes — identical scoring before and after. Named boundaries make each phase independently testable and readable.\n\nSCOPE: basal_ganglia.py only. Do NOT touch brainstem/ or memory/models.py.\n\nTESTS: existing BG tests must pass unchanged. Add unit tests for each extracted method in isolation (intent_gate returns False on question intent; specificity_bonus > 0 when conditions field present).\n\nFORENSIC LOGGING: none needed — pure refactor.",
+    "role": "worker",
+    "size": "S",
+    "title": "BG scoring: extract intent_gate and specificity_bonus into named phases",
+    "result": "Extracted intent_gate and specificity_bonus into named phases for independent testability. 424 tests passing including 13 new unit tests. Commit 02741205 pushed.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": "2026-03-25T18:04:39.623672+00:00",
+    "completed_at": "2026-03-25T18:07:30.878072+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-consequence-bus-postgres-transport.20260610.224435593123",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-bus-postgres-transport"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T22:44:35.593123",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-bus-postgres-transport-2026-06-10"
+    ],
+    "tickets": [
+      "T-bus-postgres-transport",
+      "T-consequence-bus-postgres-transport"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-bus-postgres-transport",
+    "gate": "2026-06-24",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Bus",
+      "Infrastructure"
+    ],
+    "title": "[sprint] Consequence check: Postgres bus transport",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "intention": "I intend that we verify the Postgres bus transport has no silent regressions 14 days after shipping.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T22:44:35.593123+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-bus-postgres-transport-2026-06-10",
+    "description": "**What changed:** IMAP bus transport (_StubServer/_DovecotClient) replaced with Postgres LISTEN/NOTIFY + bus.messages table.\n\n**Predicted unintended effects:**\n1. `bus.messages` accumulates rows without pruning — old seen=true messages pile up indefinitely; no retention policy yet\n2. LISTEN/NOTIFY uses a persistent connection; if Postgres restarts, the LISTEN subscription is lost silently — reconnect logic may not exist yet\n3. Any code that directly imports from `bus/imap_server.py` (outside of bus/ itself) breaks on the next import\n4. Test fixtures that mock IMAPServer need updating; tests that don't mock at all now hit real Postgres\n5. `web UI` message-feed reads that pointed at IMAP mailboxes now need to point at bus.messages — silent empty feed if not updated\n\n**Signals to watch:**\n- `SELECT count(*) FROM bus.messages WHERE seen=true AND created_at < now() - interval '7 days'` growing without bound\n- `grep -r 'imap_server' devices/ --include='*.py'` returns hits outside bus/ (stale imports)\n- DickSimnel logs showing 'LISTEN subscription lost' or reconnect errors after Postgres restart\n- Web UI feed showing empty / stale after the transport swap\n\n**Gate condition:** Check by 2026-06-24 or when T-bus-postgres-transport closes, whichever is later.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** All five predicted effects checked; each annotated as occurred/clear/partial; any 'occurred' effects either fixed inline or have a follow-up ticket\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "deposited_at": "2026-06-10T17:12:53.303203",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "experience",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-thread-context-persistence.20260402.185532997481",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-thread-context-persistence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T18:55:32.997481",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-thread-context-persistence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-thread-context-persistence",
+    "tags": [
+      "cognition",
+      "threading",
+      "blocker"
+    ],
+    "title": "Thread context persistence: fix 'I don't recall what we were talking about'",
+    "result": "store_plan + read_active_goal_plan tools live; PROC_ACTIVE_GOAL_CONTEXT_REFRESH seeded (120s schedule); run_coding_sprint prompt updated to call store_plan before starting. commit f9139a91.",
+    "status": "done",
+    "worker": "claude",
+    "grep_for": [
+      "context_inject",
+      "thread_id",
+      "_inject_context",
+      "PROC_CONTEXT_INJECT"
+    ],
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Igor loses thread context across restarts and cold turns. Symptom: 'I don't recall what we were talking about' — he sees the [CODING SPRINT] prompt but can't hold the reasoning chain across turns. Root causes: (1) TWM and ring buffer reset on restart — active thread's reasoning state is in-process only; (2) no context_inject habit to re-load thread history for active ticket on turn start; (3) tier.2 LLM reasons from scratch each turn, generating plausible-sounding text instead of real tool dispatch. Fix direction: (A) persist active thread reasoning state to DB on every significant step; (B) context_inject habit: on new turn about active goal/ticket, retrieve thread history from DB before BG scoring; (C) facia as thread entry-point — hitting the facia node for a ticket should re-contextualize Igor before he responds. This is the blocker for 'Igor as coder' — without thread continuity, he cannot maintain a coherent implementation session.",
+    "completed_at": "2026-04-02T18:55:32.997481+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8f1a504a-43f0-483f-9bd5-9c7036a42e4f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

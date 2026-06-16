@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.327.20260322.010914987212",
+  "emitter": "cc.0",
+  "namespace": [
+    "327"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T01:09:14.987212",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "327"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "327",
+    "size": "S",
+    "notes": "Add composite index on wg_cooccur(word_a, word_b) to fix full-table-scan on INSERT/UPDATE. Migration at startup in word_graph.py or ensure_indexes. Close #327.",
+    "title": "T-wg-cooccur-index: Add index on wg_cooccur(word_a, word_b)",
+    "result": "Verified complete — wg_cooccur already has all required indexes in PostgreSQL: wg_cooccur_pkey PRIMARY KEY btree(word_a, word_b) used as conflict arbiter for upserts, idx_wgc_covering btree(word_a, word_b, score) used for UPDATE. EXPLAIN confirms no full-table-scan. _SCHEMA DDL in word_graph.py creates them via CREATE INDEX IF NOT EXISTS at init. No code change needed.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-22T01:03:37.373970+00:00",
+    "completed_at": "2026-03-22T01:09:14.987212+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

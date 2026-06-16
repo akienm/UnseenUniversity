@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-cpu-peg-notify.20260603.215840373646",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cpu-peg-notify"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.373646",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cpu-peg-notify"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cpu-peg-notify",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Monitoring",
+      "Scraps",
+      "Observability"
+    ],
+    "title": "Scraps: notify CC when CPU pegged >30s",
+    "result": "CpuPegMonitor job in devices/scraps/jobs/cpu_peg_monitor.py — rolling window threshold detection, debounce, channel post, 15 tests; fixed orphan_watchdog integration tests removed by Granny rewrite",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-06-03T23:06:49.380147+00:00",
+    "created_at": "2026-06-03T21:58:40.373646+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When a process pegs CPU above ~90% for longer than 30 seconds, CC and Akien get no signal — the symptom (sluggish response) arrives before the cause is diagnosable. Add a Scraps recurring job that samples cpu_percent() every 5s; when the rolling average stays above threshold for N consecutive samples (default 6 = 30s), post to the shared channel with a brief process breakdown (top 3 by CPU). Configurable threshold and duration via env vars CPU_PEG_THRESHOLD (default 90) and CPU_PEG_SECONDS (default 30).\n\n**Affected files:** devices/scraps/scraps_device.py or a new scraps job module\n**Design rules:** no-sqlite; OOP-first (Scraps job class); flat-file state ok for debounce tracking\n**Scope boundary:** In scope: periodic CPU sampling, rolling threshold detection, channel post with top-3 processes. Out of scope: memory/disk/network monitoring, process killing, alerting outside channel post.\n**Completion criteria:** (1) CPU pegged above threshold for 30s → channel post appears within 5s of trigger; (2) single short spike (<30s) produces no post; (3) post includes process list; (4) unit tests: threshold detection logic, debounce, channel post call",
+    "completed_at": "2026-06-03T23:33:30.297848+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:59:46.814963+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a6ba9388-d78f-4182-be5b-76c9ef6e88ca",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

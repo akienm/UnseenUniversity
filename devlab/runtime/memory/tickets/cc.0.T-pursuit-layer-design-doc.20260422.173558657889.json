@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-pursuit-layer-design-doc.20260422.173558657889",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pursuit-layer-design-doc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T17:35:58.657889",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pursuit-layer-2026-04-22"
+    ],
+    "tickets": [
+      "T-pursuit-engram-programming-docs",
+      "T-pursuit-layer-design-doc",
+      "T-pursuit-naming-decision"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pursuit-layer-design-doc",
+    "gate": "T-pursuit-naming-decision",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Engrams",
+      "Pursuits",
+      "Docs"
+    ],
+    "title": "Design doc: Pursuit as Igor's goal-bound behavioral layer above engrams",
+    "result": "Three-layer design doc (Cells → Engrams → Pursuits) with biology refs (Schultz, Graybiel, TOTE, Dickinson-Balleine). Primitives, explains BOREDOM+reply bugs, open questions for test-case ticket. lab/design_docs/pursuit_layer.md + lab/design_docs_for_igor/pursuit_layer.dsb (machine-readable). Commit a1fcbcc4.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-22T17:29:58.285380+00:00",
+    "related_to": null,
+    "decision_id": "D-pursuit-layer-2026-04-22",
+    "description": "Capture the full architectural design of the Pursuit layer for Igor's cognitive hierarchy.\n\nDoc must cover:\n\n1. Three-layer model\n   - Cells: engram primitives (BRANCHIF, FORKIF, SPAWNIF, EMITIF — 'assembly')\n   - Engrams: behavior chains ('high-level code')\n   - Pursuits: goal-bound orchestration of engrams ('behavioral processes')\n   Pursuits USE engrams; they are not a template OF engrams. Different organizational level.\n\n2. What a Pursuit IS\n   - Entry stimulus (what triggers commitment)\n   - Goal-facia formation at commitment (the 'I am now pursuing X' moment)\n   - Anticipatory dopamine trace (not just at completion — at commitment)\n   - Engram-substrate action(s) in service of the goal\n   - Recursive sub-Pursuit spawning (Pursuit invokes Pursuit)\n   - Completion test (did the goal resolve?)\n   - Dopamine ding on resolution\n\n3. Goals are everywhere\n   - Not just big ambitions — every act of commitment is a Pursuit\n   - 'Reply to Akien' is a Pursuit. 'Scan for work' is a Pursuit. 'Claim T-x' is a Pursuit.\n   - Nested: top-level Pursuits spawn sub-Pursuits, each with its own dopamine events\n\n4. Biology references\n   - Schultz/Dayan/Daw: dopamine = prediction error, fires at anticipation not just reward\n   - Miller-Galanter-Pribram (1960): TOTE units — recursive Test-Operate-Test-Exit\n   - Sutton-Precup: Options (CS analog) — temporally-extended action with initiation/policy/termination\n   - Graybiel: action chunks in striatum (habitual side)\n   - Dickinson-Balleine: goal-directed vs habitual action — Pursuits are goal-directed layer\n   - Cortico-basal-ganglia loops as architectural analog: BG recruits cortex, Pursuits recruit engrams\n\n5. Relationship to bugs being fixed\n   - BOREDOM chain: was stimulus→action (no commitment trace) → foreman pickup fails\n   - Reply-eats-progress: reply fires without Pursuit → no continuation goal → attention drops\n   - Both fail same way: action without goal-adoption\n\nFile location: lab/design_docs/ (or lab/docs/ per DSB convention — check before writing).\nGates: T-pursuit-engram-programming-docs (the programming docs build on this).\n\nTest plan:\n- All 5 sections present and complete\n- Biology citations verifiable\n- Bug explanation section clear to future CC sessions post-compact\n- Doc reviewed by Akien before closing",
+    "completed_at": "2026-04-22T17:35:58.657889+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "192ccc71-0336-4095-b214-96fa477fef7e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

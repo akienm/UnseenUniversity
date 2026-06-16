@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-dicksimnel-toolloop.20260603.015913670520",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-toolloop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T01:59:13.670520",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-toolloop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-toolloop",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "DickSimnel",
+      "Inference",
+      "ToolLoop"
+    ],
+    "title": "DickSimnel: ReAct ToolLoop — multi-turn inference with tool execution",
+    "result": "ToolLoop class + Bash/Read/Edit/Write dispatch + safety denylist; _run_inference() delegates to ToolLoop; 19 tests; committed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "blocked_at": "2026-06-03T02:59:01.469113+00:00",
+    "claimed_at": "2026-06-03T02:58:18.179043+00:00",
+    "created_at": "2026-06-03T01:59:13.670520+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "DickSimnel currently does one inference call and posts the result as a ticket note. That makes it an analyst, not a worker — it can reason about a sprint ticket but cannot actually write files, run tests, or commit. This ticket adds a ReAct-style ToolLoop: a multi-turn inference loop where DickSimnel receives a tool result, incorporates it into its next inference call, and continues until it emits a DONE signal or hits a turn cap.\n\nThe loop enables DickSimnel to execute the sprint-ticket SKILL.md procedure step by step, just as CC does.\n\n**Affected files:** devices/dicksimnel/device.py, devices/dicksimnel/toolloop.py (new), tests/inference/test_dicksimnel_toolloop.py (new)\n\n**Design rules:** no-sqlite; OOP-first (ToolLoop is a class, not standalone functions); log every tool call at INFO per CLAUDE.md AR-009.\n\n**Scope boundary:** In scope: ToolLoop class with Bash/Read/Edit/Write tool dispatch; turn cap (default 20); tool result injection into next inference message; loop termination on DONE_SIGNAL or exception. Out of scope: parallel tool calls, streaming output, tool permission gates (those are policy device work).\n\n**Completion criteria:** tests/inference/test_dicksimnel_toolloop.py passes; DickSimnel._run_inference() calls ToolLoop and iterates tool calls until DONE; mock ToolLoop test shows multi-turn cycle with Bash call → result injection → second inference → DONE. Verified by running tests/inference/test_dicksimnel_toolloop.py green.",
+    "completed_at": "2026-06-03T03:12:18.854084+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T02:58:18.179043+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1c463b92-9310-40dc-915f-367959fd2bf3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

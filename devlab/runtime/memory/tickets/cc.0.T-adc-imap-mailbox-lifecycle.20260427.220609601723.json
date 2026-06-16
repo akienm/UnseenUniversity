@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-imap-mailbox-lifecycle.20260427.220609601723",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-imap-mailbox-lifecycle"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:06:09.601723",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-imap-24hr-retention",
+      "T-adc-imap-mailbox-lifecycle",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-imap-mailbox-lifecycle",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: IMAP mailbox created on device registration, retained on deregistration",
+    "result": "Skeleton.__init__ accepts optional imap_server param. register_device() calls imap_server.create_mailbox() after registry write (idempotent). deregister_device() calls set_status('offline') — mailbox NOT deleted (24hr retention).",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T22:03:33.910045+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Hook device registration/deregistration to IMAP mailbox lifecycle. Mailboxes persist after deregistration for log retention.\n\nProposed shape:\n- In Skeleton.register_device(): after registry write, call imap_server.create_mailbox(device_id)\n  If mailbox already exists (device reattach): no-op (idempotent)\n- In Skeleton.deregister_device(): do NOT call delete_mailbox — mailbox persists for 24hr log retention\n  Update registry status to 'offline'; mailbox stays browseable\n- Manual cleanup: agentctl cleanup-mailboxes (future ticket; out of scope here)\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py (register_device hook)\n\nDesign rules:\n- docs-in-code: comment in register_device explains why mailbox is created here and why delete is not called on deregistration\n\nScope boundary:\nIN: mailbox creation on registration, no-delete on deregistration\nOUT: 24hr retention policy (T-adc-imap-24hr-retention), Shared mailbox (created in IMAPServer.start())\n\nTest plan:\n- Register device 'igor' → imap mailbox 'igor' created\n- Deregister 'igor' → imap mailbox 'igor' still exists\n- Register 'igor' again (reattach) → no RegistrationError; mailbox still has old messages",
+    "completed_at": "2026-04-27T22:06:09.601723+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d9098d0c-34bc-4340-878a-733c58b0d974",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

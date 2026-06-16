@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-uc-rack-architecture.20260417.192456934430",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-rack-architecture"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T19:24:56.934430",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tailscale-cert-restore",
+      "T-uc-base-class",
+      "T-uc-cert-domain-migration",
+      "T-uc-channel-tabs-redesign",
+      "T-uc-comms-module",
+      "T-uc-named-channels",
+      "T-uc-rack-architecture"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-rack-architecture",
+    "size": "L",
+    "tags": [
+      "Operations",
+      "Architecture"
+    ],
+    "title": "Utility closet rack architecture: modular services with standard interface",
+    "result": "RackModule base class + Rack registry. Health checks, lifecycle (start/stop/heartbeat), thread-safe, get_rack() singleton. 22 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T19:21:40.338604+00:00",
+    "related_to": null,
+    "description": "Establish the utility closet as a rackmount-style service host. Each module is an independent shelf — own lifecycle, own tests, standard registration interface, communicates via comms channels.\n\n## Vision\n- Igor = brain (cognition, memory graph, engrams). UC = body (infrastructure, periphery, I/O).\n- Boundary test: if it requires graph-native cognition, it's Igor. If it's a generalized service, it's a UC rack module.\n- Igor connects as a client. Never needs to know if a message came from web UI, Discord, Matter, or a minion — it's all channel messages.\n\n## UC core (the rack frame)\n- Module registration on startup (extend existing agent registration pattern)\n- Health endpoint per module\n- Shared comms bus for inter-module communication\n- Web UI for visibility into rack state\n\n## Rack modules (shelves)\n- **Comms** — channel routing, message envelopes, notifications (T-uc-comms-module)\n- **Web UI** — Svelte frontend, WebSocket hub (T-uc-channel-tabs-redesign)\n- **Matter** — home automation sensors/actuators (GH#185)\n- **Certs/TLS** — domain management, Tailscale (T-uc-cert-domain-migration, T-tailscale-cert-restore)\n- **System Proxy** — hardware metrics, resource monitoring (already built)\n- **Future** — minion launcher, backup, research corpus, etc.\n\n## Standard module interface\n- Register with UC core on startup (name, version, health URL)\n- Expose health/status endpoint\n- Communicate through comms channels (not direct function calls between modules)\n- Independently testable — unit tests run against just that module\n- Can restart/update without taking down the whole closet\n\n## Related\n- T-uc-channel-tabs-redesign — web UI module\n- T-uc-named-channels (#403) — feeds into comms module\n- T-uc-base-class (#402) — may evolve into the standard module interface\n- D335 — original utility closet decision\n\n## Depends on\n- T-uc-comms-module (comms bus is the backbone — build that first)",
+    "completed_at": "2026-04-17T19:24:56.934430+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6e731510-277f-46ae-8e4a-5153948740e2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

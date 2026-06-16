@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-rack-device-reregister.20260601.203713104312",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rack-device-reregister"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T20:37:13.104312",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-rack-device-reregister"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rack-device-reregister",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "WebUI",
+      "Reliability"
+    ],
+    "title": "Rack devices re-register after web server restart",
+    "result": "flat-file persistence for agent registrations — _save_agents/_load_agents in server.py, restored on startup; 5 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-06-01T20:40:03.183320+00:00",
+    "created_at": "2026-06-01T20:37:13.104312+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When the web server restarts, all agent registrations are lost from _agents dict. Devices registered at boot (Granny, Librarian) don't re-register, so their tabs disappear from the web UI.\n\nProposed shape: on WebSocket connect, server broadcasts a 'server_restarted' or 'announce_yourselves' event. Devices listening (via their existing WS or HTTP poll loop) call /api/agents/register again. Alternatively, web server persists registrations to a flat file on disk and reloads on startup.\n\n**Affected files:** devices/web_server/server.py, devices/granny/daemon.py\n**Design rules:** no-sqlite; flat-file or Postgres only for persistence\n**Scope boundary:** registration persistence across server restarts; not full device lifecycle management\n**Completion criteria:** restart web server → Granny's tab reappears in UI within one poll cycle without manual intervention",
+    "completed_at": "2026-06-01T20:51:54.993313+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T20:40:03.183320+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9d34b10a-cfba-4fa8-a39a-3bc1303cea70",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

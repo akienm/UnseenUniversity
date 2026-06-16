@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-queue-encapsulation.20260521.163328607332",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-queue-encapsulation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T16:33:28.607332",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-queue-encapsulation-2026-05-21"
+    ],
+    "tickets": [
+      "T-consequence-queue-encapsulation",
+      "T-dispatch-is-assignment",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-queue-encapsulation",
+    "gate": "2026-06-04",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: queue black-box + dispatch model",
+    "result": "CLEAR — cmd_next marks in_progress at dispatch; direct CC sprints using setstatus work correctly; no edge cases with double-claim or missed in_progress transitions observed in practice",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-21T16:33:28.607332+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-queue-encapsulation-2026-05-21",
+    "description": "**What changed:** The queue became an encapsulated black box — cmd_next marks in_progress at dispatch, no separate claim, date gates enforced by _gate_clear.\n**Predicted unintended effects:** (1) direct CC sprints that relied on claim may silently skip the in_progress mark if verify logic has an edge case; (2) date-format gate fix may over-block tickets whose gate intentionally references both a date and a ticket ID; (3) worker_daemon may double-dispatch a ticket if cmd_next is called twice before the first in_progress write commits.\n**Signals to watch:** channel log — any 'sprint timeout' on already-closed tickets (should be zero); cc_queue.py show on any gated ticket showing correct blocked state; no 'T-xxx already in_progress' errors from worker_daemon.\n**Gate condition:** Check 14 days after T-dispatch-is-assignment closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": "2026-06-05T15:33:21.402920+00:00",
+    "github_issue": 784,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T16:33:28.607355+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "61969522-7432-44d0-aab1-32e5a76484cc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

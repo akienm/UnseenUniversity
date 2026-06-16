@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-autocompact-interruption-protocol.20260605.191555453134",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-autocompact-interruption-protocol"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T19:15:55.453134",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-autocompact-interruption-protocol"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-autocompact-interruption-protocol",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Robustness"
+    ],
+    "title": "Autocompact send interrupt signals before command",
+    "result": "Added three interrupt Enter signals before compact command in skills/autocompact/SKILL.md — deployed to repo root, reverted incorrect ~/.claude/skills edit",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that /autocompact uses interrupt signals (three Enters) before sending the compact command to guarantee the command survives concurrent user typing.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T19:15:55.453134+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The /autocompact skill currently sends the compact command via tmux without interrupt signals, so if you're typing when the command is sent, it can get inserted mid-word and lost. Proposed fix: send three Enter signals first (visible interruption that breaks any ongoing input), then send the compact command, then Enter. Trades UX smoothness for robustness — the interruption is visible but guarantees the command always fires.\n\n**Affected files:** ~/.claude/skills/autocompact/SKILL.md\n\n**Design rules:** none apply\n\n**Scope boundary:** Only the tmux send-keys pattern in Step 2 of /autocompact (the two send-keys calls at lines ~51-53). The preserve string and compact logic unchanged.\n\n**Completion criteria:** /autocompact sends three Enter signals before the compact command string via tmux; verified by reading SKILL.md and testing one autocompaction to confirm interruption signals fire.",
+    "completed_at": "2026-06-05T19:18:34.424794+00:00",
+    "deposited_at": "2026-06-05T13:16:40.523292",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

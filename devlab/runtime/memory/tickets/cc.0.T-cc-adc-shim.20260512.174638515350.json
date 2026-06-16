@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-adc-shim.20260512.174638515350",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-adc-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T17:46:38.515350",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-pipeline-observability-2026-05-12"
+    ],
+    "tickets": [
+      "T-cc-adc-shim",
+      "T-igor-adc-shim"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-adc-shim",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Infrastructure",
+      "Shim"
+    ],
+    "title": "CLOSED: Add ADC auto-restart to ClaudeShim.start()",
+    "result": "Added _ensure_adc_running() to ClaudeShim — ADC auto-start, non-blocking, env-configurable",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-12T17:46:38.515350+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "description": "ClaudeShim (devices/claude/shim.py) already extends BaseShim and its start() runs at CC session startup to register the YGM hook. But it does not check whether ADC itself is up. If ADC is down when a CC session starts, MCP tools (mcp__datacenter__*, mcp__librarian__*) silently fail with no indication why and no recovery attempt.\n\nThe ADC specification requires that any resident — Igor or CC — can automagically restart ADC if down by reaching for it. The shim is the correct location: it is the boundary object that represents CC's connection to ADC.\n\nAdd to ClaudeShim.start() as the first step, before YGM hook registration:\n1. Ping http://localhost:8080/health (or ADC_WEB_PORT if set)\n2. If no response within 3s: subprocess-launch the ADC server (utility_closet_server.py in the TheIgors venv, same as T-igor-adc-shim uses)\n3. Poll /health for up to 15s; log result either way\n4. Proceed with existing YGM hook registration regardless (ADC down should not block CC startup)\n\nAlso update self_test() to hit /health and include ADC reachability in the result.\n\nNote: ClaudeShim should not kill an ADC it didn't launch (same ownership rule as T-igor-adc-shim).\n\n**Affected files:** agent_datacenter/devices/claude/shim.py\n**Design rules:** OOP-first (adding to existing ClaudeShim class), docs-live-in-code (update shim.py module docstring to describe ADC health check step)\n**Scope boundary:** devices/claude/shim.py only. Does not change YGM hook logic. Does not block CC startup if ADC fails to come up — log and continue.\n**Test plan:** Unit test ClaudeShim.start() with /health mocked: (1) ADC already up — no subprocess launched, hook registered normally; (2) ADC down — subprocess launched, health poll succeeds, hook registered; (3) ADC down and stays down — logs error, hook still registered (no block). Run existing ClaudeShim tests to verify no regression.",
+    "completed_at": "2026-05-12T18:10:31.711293+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "233d9333-2800-4ed1-99f6-e1a6818be433",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-ne-arc-expiry.20260330.020631010517",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ne-arc-expiry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T02:06:31.010517",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-book-learner-hash-lookup",
+      "T-ne-arc-expiry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ne-arc-expiry",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "NE arc expiry — TTL-based close for stale NE arcs",
+    "result": "NARRATIVE_GAP auto-close on age: first_pushed_at in gap metadata, _process_gaps() checks age vs NARRATIVE_GAP_MAX_AGE_MINUTES=60; logs NARRATIVE_GAP_TIMEDOUT to ring(ne_diagnostic). Syntax OK.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "description": "NE arcs need TTL-based expiry/archival. Arcs exceeding a time threshold without resolution should be auto-shelved or archived, not looped indefinitely. Observed live: T-book-learner-hash-lookup arc cycled every 2min for 195min before being noticed. DISTILLATION engram pattern is the intended closer long-term. Short-term: add max_age_minutes field to NE arc tracking; background source or NE tick archives stale arcs.",
+    "completed_at": "2026-03-30T02:06:31.010517+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b64868fc-53c2-49e5-9256-f57be15aefa1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

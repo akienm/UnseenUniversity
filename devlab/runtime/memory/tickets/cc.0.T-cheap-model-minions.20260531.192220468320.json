@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-cheap-model-minions.20260531.192220468320",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cheap-model-minions"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:22:20.468320",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cheap-model-minions",
+      "T-inference-proxy-mini-rack",
+      "T-model-eval-harness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cheap-model-minions",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Route minion/build tasks to cheap models via inference proxy",
+    "result": "WorkerEnvelope.task_class propagated to InferenceRequest; minion tag → qwen3.5-9b via OR; cost/tokens accumulated in WorkerResult and logged to channel",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.9,
+    "claimed_at": "2026-05-31T21:07:13.672427+00:00",
+    "created_at": "2026-05-31T19:22:20.468320+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Granny currently routes all CC work to Claude (expensive). Add a task-class concept: minion tasks (builds, simple transforms, boilerplate) route to cheap models (Qwen via Ollama or OpenRouter) instead of Anthropic. Ticket tags or a new 'complexity' field determines routing. Immediate cost reduction for factory-of-factories workloads.\n\n**Affected files:** devices/granny/device.py, devices/granny/daemon.py, lab/claudecode/cc_queue.py (complexity field TBD)\n**Design rules:** none apply\n**Scope boundary:** In scope: complexity/class field on tickets, routing rule in Granny, Ollama/OR as cheap target. Out of scope: full eval harness (T-model-eval-harness), provider redesign (T-inference-proxy-mini-rack).\n**Completion criteria:** A ticket tagged 'minion' routes to Qwen via Ollama, not Claude. Cost per ticket logged.",
+    "completed_at": "2026-05-31T21:42:05.840745+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T21:07:13.672427+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-31T19:22:20.519902+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cbfc2746-ac5a-47e1-995a-6d10d11a1ad2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

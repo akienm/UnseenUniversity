@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-mcp-channel-send-broken.20260419.203304160954",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-channel-send-broken"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T20:33:04.160954",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-mcp-channel-send-broken"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-channel-send-broken",
+    "size": "S",
+    "notes": "Observed 2026-04-19 during T-swadl-concepts-in-graph. MCP channel_send returns 'Remote end closed connection without response' on every attempt; direct POST to http://localhost:8082/api/cc_send works fine. Symptom: CC has to fall back to curl. Hypothesis: MCP server (igor_mcp.py) may be targeting the HTTPS port 8080 with stale/no-verify SSL, or UC's channel_send endpoint was never wired to match MCP's expectation. Verify by grepping igor_mcp.py for channel_send path + matching UC routes. Fix: align the transport, either make MCP hit 8082 plain-HTTP or add the missing HTTPS route to UC.",
+    "title": "mcp__igor__channel_send fails with 'Remote end closed connection without response'",
+    "result": "One-line fix in igor_mcp.py: CC_SEND_URL default changed from port 8081 to 8082 (UC's plain-HTTP companion). Smoke-tested the exact code path: {'status': 'ok'}. Shipped cadb4dd3. MCP channel_send will work after Akien's Claude Code session reloads the MCP server (next CC restart / claude --resume).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T20:32:28.303397+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-19T20:33:04.160954+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

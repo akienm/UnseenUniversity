@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-skill-capability-check-dynamic.20260508.195441793651",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-capability-check-dynamic"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T19:54:41.793651",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-shared-agent-substrate-2026-05-08"
+    ],
+    "tickets": [
+      "T-skill-capability-check-dynamic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-capability-check-dynamic",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Workflow",
+      "Capability"
+    ],
+    "title": "sprint-ticket CAPABILITY CHECK reads ADC routing manifest dynamically",
+    "result": "capability check now calls datacenter_manifest(routing_only=True) as primary; tag heuristics as fallback",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-08T20:51:54.226974+00:00",
+    "created_at": "2026-05-08T19:54:41.793651+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-shared-agent-substrate-2026-05-08",
+    "description": "The CAPABILITY CHECK step in /sprint-ticket has hardcoded tag→tool heuristics (e.g. 'tag includes Database → mcp__igor__db_query'). Replace with a call to mcp__datacenter__datacenter_manifest(routing_only=True) and match ticket tags against the returned routing_map. This makes new ADC devices automatically reachable without manual skill file edits.\n\n**Affected files:** ~/.claude/skills/sprint-ticket/SKILL.md\n**Design rules:** Skill files are user config, not ADC source — no inertia concerns. The manifest routing_map must be live before this ships.\n**Scope boundary:** In scope: update CAPABILITY CHECK step in sprint-ticket only. Out of scope: updating /decided, /sprint-batch, or other skills (can follow once pattern is established).\n**Test plan:** Manual verification — sprint a ticket and confirm CAPABILITY CHECK output references manifest-sourced tool name rather than hardcoded rule match. No automated test (skill files are not unit-testable).",
+    "completed_at": "2026-05-08T20:52:09.790411+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "387470fb-27c3-454a-bb49-64f1661e8934",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

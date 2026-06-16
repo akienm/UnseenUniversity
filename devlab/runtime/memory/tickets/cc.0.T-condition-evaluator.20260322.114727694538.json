@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-condition-evaluator.20260322.114727694538",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-condition-evaluator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T11:47:27.694538",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-condition-evaluator"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-condition-evaluator",
+    "size": "S",
+    "title": "Condition evaluator: _eval_condition(expr, basket) + wire to interpretive edge condition field",
+    "result": "Completed by CC session 2026-03-22",
+    "status": "done",
+    "priority": 8,
+    "claimed_at": null,
+    "description": "3-tuple parser: key op literal (or key op key). Six operators: eq/ne/gt/lt/exists/contains. Shared helper used by conditional + branch step types. Wire to existing interpretive_edge.condition field. TYPE COERCION RULE: basket values are strings; gt/lt/ge/le coerce to float before comparison; eq/ne stay as string unless both sides parse as numeric. Define this in evaluator to prevent silent failures in count/numeric comparisons.",
+    "completed_at": "2026-03-22T11:47:27.694538",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1920b08d-37a8-4c75-a63a-5a6f99d18fa1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

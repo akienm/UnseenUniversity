@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-audit-telemetry-shape.20260429.180757991475",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-telemetry-shape"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:07:57.991475",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-telemetry-shape"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-telemetry-shape",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Memory",
+      "Palace"
+    ],
+    "title": "Audit telemetry — palace tree + per-run record schema",
+    "result": "Created lab/claudecode/audit_telemetry.py: AuditRunRecord dataclass, emit_run_record() → theigors/audits/<level>/runs/<ts>, emit_watch_next() with TTL, read_runs() + read_watch_next(). Seeded theigors/audits and theigors/audits/model_routing palace nodes. 10 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-29T18:06:20.612038+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "Define the structured per-run record every audit emits, and the palace tree it lives in. Enables audit-audits as the consumer.\n\nPalace branches: theigors/audits/<level>/runs/<YYYY-MM-DD-HHMMSS>, theigors/audits/<level>/watch_next/<id>. Record schema (YAML in node content): level, ran_at, inputs_examined, checks_fired, checks_passed, checks_amended, checks_discarded, findings[{check, severity, file_or_target, matched_pattern, upstream_layer, overridden}], duration_seconds, tokens_used, model, watch_next_written, watch_next_hit, watch_next_aged, watch_next_expired, notes. TTL 90 days for raw runs; promoted patterns persist.\n\nProvide a tiny helper at lab/claudecode/audit_telemetry.py with emit_run_record(level, payload) and read_runs(level, since) — every audit skill calls these. Watch-for notes are first-class palace nodes with a TTL field.\n\n**Affected files:** new lab/claudecode/audit_telemetry.py, new palace subtrees theigors/audits/*. No code in wild_igor/.\n**Design rules:** Postgres only — palace lives in memory_palace table. no-new-memory-schemas: reusing memory_palace, no new tables. oop-first: AuditRunRecord class encapsulates emit/read/age. docs-in-code: top-of-file docstring on audit_telemetry.py.\n**Test plan:** unit tests for emit_run_record (writes valid palace node), read_runs (returns within window, respects TTL), watch_next age/hit/expire. Integration: emit then read round-trip on real palace.",
+    "completed_at": "2026-04-29T18:07:57.991475+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6bbcdeaa-1420-4f92-b73a-4b446cae0df6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

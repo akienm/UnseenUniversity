@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-audit-smell-skill.20260429.180641158687",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-smell-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:06:41.158687",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-smell-skill",
+      "T-rule-inherit-base-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-smell-skill",
+    "gate": "T-rule-inherit-base-class",
+    "size": "L",
+    "tags": [
+      "Audit",
+      "Skills",
+      "Smells",
+      "Sonnet-Constraints"
+    ],
+    "title": "Build audit-smell skill — post-code, pre-test code-quality layer",
+    "result": "Built ~/.claude/skills/audit-smell/SKILL.md describing 17 checks (bare except, silent-return-False, shape-names, dead code, what-comments, mocked DB, speculative flags, new memory tables, SQLite, backcompat shims, speculative abstractions, base-class inheritance, module shared state, stale docstring, preferred_paths deprecated forms, fix-one-leave-many call-graph walk, diff drift). Severity HIGH/MED/LOW with HIGH blocking /sprint commit. Helper engine described: SmellEngine(IgorBase) at lab/claudecode/audit_smell_engine.py — implementation lands when this skill ships. Reuses existing audit_check_igorbase.py / audit_check_sqlite_imports.py / audit_check_bare_except.py. Skip on doc-only / audit-skip-smell tag; escalate to Opus on audit-emphasis-smell tag. Telemetry per standard shape, waits on T-audit-telemetry-shape. Tests: 3988 passed.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-04-29T18:02:15.122330+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "New skill audit-smell — invoked after code edits, before tests run. Initial check set:\n- Bare try/except without log line\n- Silent-return-False / fanout=0 without WARNING\n- Variable/function names that describe shape not purpose (tmp, data, process, result, do_thing)\n- Dead code: unused imports, unreferenced helpers, commented-out blocks, bare pass\n- New comments explaining WHAT (rule violation)\n- Mocked DB in tests (incident-rooted rule)\n- New feature flags / IGOR_*_ENABLED gates without go-live-when companion (no-speculative-flags)\n- New memory tables (rule violation)\n- SQLite / file-store fallbacks (rule violation)\n- Backwards-compat shims for code without callers\n- New abstractions for hypothetical futures\n- Class without base-class inheritance (inherit-base-class rule)\n- Shared state across functions without encapsulation (oop-first inverse)\n- Top-of-file docstring stale on load-bearing edit\n- Deprecated forms from preferred_paths palace rule\n- Fix-one-leave-many: when signature/method changes, walk call graph and require diff touches all callers OR ticket declares 'first of N'\n- Diff drift: ticket said touch X, diff touches Y too — AMEND-by-default (drift requires explicit ticket extension)\n\nEmits per-run record. Model: Sonnet (Haiku misses too many).\n\nGated by diff-size threshold or ticket audit-emphasis tag — doesn't run on doc-only changes.\n\n**Affected files:** new ~/.claude/skills/audit-smell/SKILL.md, palace check definitions at theigors/rules/audit_smell_checks/*. Helper at lab/claudecode/audit_smell_engine.py for call-graph walk + diff-drift detection.\n**Design rules:** no persistence beyond palace telemetry. oop-first: SmellEngine class. docs-in-code: top-of-file docstring on audit_smell_engine.py.\n**Test plan:** seed a diff with a bare try/except → flagged. Diff with renamed signature touching 1/5 callers → fix-one-leave-many fires. Diff drift on file-not-in-ticket → AMEND. Mocked-DB test in diff → flagged. Telemetry recorded.",
+    "completed_at": "2026-04-29T18:06:41.158687+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bceefb13-ecee-479c-bad9-034c3b170d96",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

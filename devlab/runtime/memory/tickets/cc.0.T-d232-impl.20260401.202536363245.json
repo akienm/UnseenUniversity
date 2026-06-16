@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-d232-impl.20260401.202536363245",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-d232-impl"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T20:25:36.363245",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-containerize",
+      "T-d232-impl"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-d232-impl",
+    "epic": "Swarm",
+    "title": "Implement D232 startup shim — bash + ps1",
+    "result": "igor (bash) and igor.ps1 (PowerShell) both live at repo root. Crash auto-fixer, restart loop, pause.wait semaphore, debug_session.flag all implemented.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "description": "D232. Linux/Mac: ~/bin/igor + ~/bin/superclaude bash scripts with shared _igor_common.sh. Windows: %LOCALAPPDATA%\\Microsoft\\WindowsApps\\igor.ps1 + superclaude.ps1 with _igor_common.ps1. Windows scripts must be native (not WSL2 container) — Igor needs OS-level access for network/process diagnostics. Linux/Mac scripts become docker run wrappers after T-containerize lands. Alerts to file only (no Discord). File-only until T-containerize completes, then update Linux/Mac scripts to wrap docker run.",
+    "completed_at": "2026-04-01T20:25:36.363245+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1a27c550-13b0-470d-a481-78cb3357cd94",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-instance-id-normalize-v2.20260407.194433651735",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-instance-id-normalize-v2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T19:44:33.651735",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-instance-id-normalize-v2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-instance-id-normalize-v2",
+    "title": "Normalize igor_wild_0001 to Igor-wild-0001 EVERYWHERE incl PG DB",
+    "result": "DONE. igor_wild_0001 eliminated everywhere: 197 repo files, 12 ~/.claude/skills, 5 ~/bin scripts, 4 ~/dev/src skills, ~/.ssh/config+authorized_keys, ~/.config/konsolesshconfig, .env, machines.json, PG database renamed, stale ~/.TheIgors/igor_wild_0001/ deleted. Zero remaining hits in repo. D318 recorded.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-07T19:39:18.301834+00:00",
+    "related_to": null,
+    "description": "Every reference to igor_wild_0001 anywhere — filesystem paths, IGOR_INSTANCE_ID, PG database name, Cortex instance_id, seed scripts, shell scripts (linux+windows), docs, .dsb, tests, Dockerfile, docker-compose — changed to Igor-wild-0001. PG DB renamed. Delete stale ~/.TheIgors/igor_wild_0001/. 12+ prior partial fixes failed because scope was too narrow.",
+    "completed_at": "2026-04-07T19:44:33.651735+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e1b9f759-e200-44f7-afae-7e8f9b9a6eec",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-watch-list.20260510.194139364637",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-watch-list"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T19:41:39.364637",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-escalate-as-default-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-lever-watcher",
+      "T-igor-watch-list"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-watch-list",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Operations"
+    ],
+    "title": "CLOSED: Extend watchlist — per-instance instance.watch_problems DB tree",
+    "result": "instance.watch_problems table + full API + lever_watcher + escalate.py auto-deposit; 9 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "blocked_at": null,
+    "claimed_at": "2026-05-10T20:14:27.896570+00:00",
+    "created_at": "2026-05-10T19:41:39.364637+00:00",
+    "related_to": null,
+    "decision_id": "D-escalate-as-default-2026-05-10",
+    "description": "The watch list has two tiers: clan.memories WATCH_Q_*/WATCH_T_* (already exists — shared biological/interest/question nodes across all instances) and a per-instance unsolved-problem tree (new). This ticket builds the second tier.\n\nCreate instance.watch_problems table in the instance.* schema (alongside ring_memory, twm_observations):\n\n  CREATE TABLE instance.watch_problems (\n    id SERIAL PRIMARY KEY,\n    parent_id INTEGER REFERENCES instance.watch_problems(id),\n    problem TEXT NOT NULL,\n    lever_description TEXT,\n    watch_condition TEXT,\n    created_at TIMESTAMPTZ DEFAULT now(),\n    resolved_at TIMESTAMPTZ,\n    last_surfaced_at TIMESTAMPTZ,\n    metadata JSONB DEFAULT '{}'\n  );\n\nAPI in new wild_igor/igor/cognition/watch_problems.py:\n  add_watch_problem(problem, lever_description=None, watch_condition=None, parent_id=None) -> int\n  read_active_problems() -> list[dict]\n  resolve_problem(id: int) -> None\n  mark_surfaced(id: int) -> None\n\nWire into escalate.py: every call to _escalate_to_channel() also calls add_watch_problem() so escalation leaves a durable per-instance trace.\n\nThe clan-level clan.memories WATCH_Q_*/WATCH_T_* nodes are the \"universal watching\" (interests, questions, drives). instance.watch_problems is the \"right now I'm stuck on this\" watching. Both are DB trees.\n\n**Affected files:** wild_igor/igor/cognition/watch_problems.py (NEW), wild_igor/igor/cognition/escalate.py (call add_watch_problem as side effect), migration in wild_igor/igor/migrations/ or equivalent\n**Design rules:** instance.* schema for per-instance data. Tree via parent_id.\n**Scope boundary:** In scope: table creation + API + wire into escalate.py. Out of scope: lever watcher (T-igor-lever-watcher), clan.memories WATCH_Q_*/WATCH_T_* (don't touch), watchlist.md error log (untouched — separate concern).\n**Test plan:** Test add_watch_problem inserts row; test parent_id forms tree; test read_active_problems excludes resolved; test mark_surfaced updates last_surfaced_at; test escalate.py side-effect creates watch entry.",
+    "completed_at": "2026-05-10T20:18:16.491760+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cceeced4-e469-404f-a0e7-c4979469a7c5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

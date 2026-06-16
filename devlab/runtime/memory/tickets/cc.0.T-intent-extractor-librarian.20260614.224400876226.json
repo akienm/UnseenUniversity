@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-intent-extractor-librarian.20260614.224400876226",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intent-extractor-librarian"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:44:00.876226",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intent-extractor-learning-substrate-2026-06-14"
+    ],
+    "tickets": [
+      "T-intent-extractor-librarian"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-intent-extractor-librarian",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "Learning",
+      "CompiledInference"
+    ],
+    "title": "Wire Librarian research completion to intent extractor validate()",
+    "result": "Librarian research completion wired to intent extractor validation — _seed_intent_extractor() calls validate(prediction_id=None) after successful research with non-empty answer; fails open on device unavailability; 3 tests verify behavior (call made, fail-open on ImportError, fail-open on Exception)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that Librarian research completions generate validate(prediction_id=None) signals to the intent extractor, seeding the learning store with research-domain ground truth without any pre-hoc prediction.",
+    "created_at": "2026-06-14T22:44:00.876226+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-intent-extractor-learning-substrate-2026-06-14",
+    "description": "Librarian.research() produces genuine unknowns. Post-research, the query intent and what was actually useful is a clean ground-truth signal with no prediction noise.\n\nAfter research() completes and deposits nodes: call intent_extractor.validate(prediction_id=None, actual_outcome=summary_of_useful_findings, domain=research). This seeds the intent extractor with research-domain examples.\n\nNever call predict() in the Librarian research path — explicitly excluded by design.\n\n**Affected files:** devices/librarian/ (research completion hook — read devices/librarian/ at sprint time to find correct hook point)\n**Design rules:** external-state; post-hoc only; no SQLite; fail-open if intent device unavailable\n**Scope boundary:** IN — validate() call at research completion. OUT — predict() in Librarian path (excluded); changing what Librarian deposits.\n**Completion criteria:** After Librarian research() call, devlab.validations contains new row with prediction_id=NULL; existing Librarian tests pass; new test verifies validate() called on completion; hook fails open if intent device is down.",
+    "completed_at": "2026-06-15T21:04:46.738844+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

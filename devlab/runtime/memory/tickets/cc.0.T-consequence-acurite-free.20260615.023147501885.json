@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-acurite-free.20260615.023147501885",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-acurite-free"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T02:31:47.501885",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-free-2026-06-14"
+    ],
+    "tickets": [
+      "T-consequence-acurite-free"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-acurite-free",
+    "gate": "2026-06-28",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "AcuRite"
+    ],
+    "title": "[sprint] Consequence check: acurite-free ecosystem replacement",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the acurite-free replacement is verified to actually work end-to-end with real hardware.",
+    "created_at": "2026-06-15T02:31:47.501885+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-acurite-free-2026-06-14",
+    "description": "**What changed:** acurite-free repo: RTL-SDR capture daemon + web dashboard replacing AcuRite app/cloud.\n\n**Predicted unintended effects:**\n- rtl_433 version differences across distros may change JSON field names (temp_F vs temperature_F etc) — parse defensively\n- Some cloud storage public URLs block cross-origin fetch (CORS) — users hit this and don't know why\n- Neighbor sensors may flood CSV if whitelist not configured — CSV grows fast\n- WU upload may silently fail if station_id/key wrong — no feedback in kiosk mode\n- RTL-SDR dongle may require udev rules for non-root access — undocumented gotcha\n\n**Signals to watch:** Does --discover actually find sensors? Does weather.csv grow with real readings? Does weather.html load and display from a public cloud URL?\n\n**Gate condition:** Check by 2026-06-28 or when first end-to-end test with real hardware runs.\n\n**Affected files:** None — observation only\n**Design rules:** none\n**Scope boundary:** Observe and annotate predicted effects as occurred/clear/partial\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-15T02:31:47.501908+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

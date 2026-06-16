@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-remove-sqlite-twm.20260101.051004514345",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-sqlite-twm"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T05:10:04.514345",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-remove-sqlite-twm"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-sqlite-twm",
+    "title": "Remove all SQLite TWM usage — Postgres only",
+    "result": "make_local_proxy now falls back to IGOR_HOME_DB_URL instead of SQLite. TWM + ring_memory always use Postgres. Test updated.",
+    "status": "done",
+    "priority": 1,
+    "description": "cortex.py TWM methods use _local_conn() (SQLite) instead of Postgres. This causes CuriositySource to read stale SQLite data while everything else writes to Postgres. All TWM operations must use Postgres. Find and fix every _local_conn() call in TWM methods.",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d479bff4-1435-4837-a3ea-3541143e72a5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

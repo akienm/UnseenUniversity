@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-pr-investment-weight-propagation.20260413.195428457563",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-investment-weight-propagation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T19:54:28.457563",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-accretion",
+      "T-pr-investment-weight-propagation",
+      "T-pr-load-as-primary-attractor",
+      "T-pr-schema-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-investment-weight-propagation",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Promote investment_weight to facia level — cumulative weight as subtree salience multiplier",
+    "result": "8654e7fb — Reframed from 'subtree salience multiplier' to 'frame salience modulator' since frame-vs-content refinement means subtree memories aren't pushed at frame time. Pure formula pr_compute_frame_salience(weight) = clamp(0.75 + (weight-1.0)*0.05, 0.70, 0.80). Integrated into _push_relationship_frame. Critical invariant tested: even max weight stays below foreground band (0.85). 11 new tests including the never-enters-foreground assertion. 2024 total pass, zero regressions. Future retrieval-bias work in cortex.search() can use the same formula at the scoring site.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T19:47:13.571487+00:00",
+    "related_to": null,
+    "description": "Node-level investment_weight exists (Leah/Krissy mechanism). Promote to facia-level as a cumulative signal. When facia loads into TWM as primary attractor, its weight acts as a salience multiplier for everything in its subtree. Leah's facia at weight 1.0 pulls her children bright; a one-off acquaintance's facia at weight 0.1 stays dim.\n\nWEIGHT COMPUTATION: cumulative_investment_weight = f(activity_level, emotional_valence_history, duration_of_relationship, count_of_shared_commitments, explicit_this_matters_markers). Start with a simple formula and iterate. Probably: base + activity_bonus + investment_marker_bonus, decaying over time without activity.\n\nINDIVIDUAL NODE investment_weight STILL EXISTS — it's a bottom-up input that feeds the facia's weight calculation. Not replaced, augmented.\n\nPROPAGATION: when facia is pushed to TWM at load time (T-pr-load-as-primary-attractor), its cumulative_investment_weight is used as a multiplier on the salience of all subtree memories pushed as secondary context. Weight 0.5 → subtree memories at 0.5× their usual salience. Weight 1.2 → 1.2× (capped at 1.0 absolute salience).\n\nDEPENDS ON: T-pr-schema-seed, T-pr-load-as-primary-attractor, T-pr-accretion (accretion is what feeds the weight calculation).\n\nTESTS: weight computation unit tests with various histories. TWM push of subtree memories respects the facia's weight multiplier. Dormant facia (weight near 0) still exists and its memories are still findable, just not prioritized.\n\nINERTIA: LOW-MEDIUM. tools/ + cortex twm_push site.",
+    "completed_at": "2026-04-13T19:54:28.457563+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "741837e6-f190-480c-a7b1-b779163df293",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

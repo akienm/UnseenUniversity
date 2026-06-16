@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-log-parsing-out-of-igor.20260528.163509201902",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-log-parsing-out-of-igor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:35:09.201902",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-log-parsing-out-of-igor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-log-parsing-out-of-igor",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Cognition",
+      "Cleanup"
+    ],
+    "title": "Move log parsing out of Igor — to Librarian (inference) or Scraps (deterministic)",
+    "result": "DailyConsoleFileHandler: force_terminal=True → no_color=True; ANSI codes no longer written to .console.log files",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "created_at": "2026-05-28T16:35:09.201902+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor currently contains log-parsing and ANSI-escape-stripping code that belongs outside cognition. Architecture principle: Igor uses systems, does not contain them (see memory). Log parsing with inference → Librarian MCP tool. Deterministic log scraping → Scraps device. Igor calls the tool, does not implement it.\n\nDiscovery step: grep devices/igor/ for ANSI stripping, log parsing, console scraping. Map each to Librarian vs Scraps based on whether inference is needed.\n\nContext: console log ANSI escape codes are appearing raw in Kate editor because tmux adds them; the fix is to strip at source (in the log producer) or handle in the consuming tool, not in Igor cognition.\n\n**Affected files:** TBD — discovery step required. Likely in devices/igor/web/ or devices/igor/cognition/. Also check devices/web_server/ for any log parsing that leaked in.\n**Design rules:** igor-uses-not-contains (memory), Compiled_Inference.md framework (lab/docs/Compiled_Inference.md)\n**Scope boundary:** IN — find log-processing code in Igor; relocate to Librarian/Scraps; wire Igor to call the tool; OUT — do not redesign Librarian or Scraps architecture; do not change log format or output\n**Test plan:** grep -rn 'ANSI\\|strip_escape\\|ansi_escape\\|log_parse' devices/igor/ returns 0 hits after fix; Igor log reading behavior unchanged via tool call; pytest passes",
+    "completed_at": "2026-05-28T23:31:56.081779+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T16:35:09.252593+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1c4bf2c8-e342-446e-aea4-8c86c38f1287",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

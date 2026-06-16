@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-too-bus-shim-framing.20260605.000738986191",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-too-bus-shim-framing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T00:07:38.986191",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-too-bus-shim-network-2026-06-04"
+    ],
+    "tickets": [
+      "T-too-bus-shim-framing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-too-bus-shim-framing",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Docs",
+      "Architecture"
+    ],
+    "title": "ToO §1.3/§2: add bus=network, shim=easy-interface framing",
+    "result": "ToO §1.3 mental model callout + §2.1 shim sentence updated",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "intention": "I intend that ToO §1.3 and §2 state the bus=network / shim=interface framing explicitly so any reader — human or CC — understands the conceptual model without re-explanation.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T00:07:38.986191+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-too-bus-shim-network-2026-06-04",
+    "description": "The bus and shims together are the rack's internal network, but ToO currently describes them mechanically (IMAP, envelope fields, idle_wait) without ever stating the simple framing: 'the bus IS the network; shims are each device's interface to that network, making it easy for devices to talk without knowing transport details.'\n\nAdd a 'Bus + Shim mental model' callout at the top of §1.3 and a cross-reference sentence in §2.1 where the shim is first introduced.\n\n**Affected files:** docs/TheoryOfOperation.md\n**Design rules:** none apply (docs change only)\n**Scope boundary:** Add framing paragraphs to §1.3 and §2.1 only. No code changes. Do not restructure existing sections.\n**Completion criteria:** §1.3 opens with an explicit framing paragraph stating 'The bus is the rack's network; the shim is each device's interface to that network.' §2.1 references the shim's role as the device's network adapter in a single sentence. The existing mechanical detail (IMAP, envelope, IDLE loop) is unchanged.",
+    "completed_at": "2026-06-05T03:28:35.815739+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

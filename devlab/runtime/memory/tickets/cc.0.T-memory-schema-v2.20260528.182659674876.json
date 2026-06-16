@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-memory-schema-v2.20260528.182659674876",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-schema-v2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T18:26:59.674876",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-api-2026-05-28"
+    ],
+    "tickets": [
+      "T-librarian-edge-maintenance",
+      "T-memory-schema-v2",
+      "T-memory-write-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-schema-v2",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Database",
+      "Schema"
+    ],
+    "title": "Memory schema v2: add payloads, edge_type, source_agent",
+    "result": "m055 migrations: payloads JSONB + source_agent on clan.memories, edge_type + index on clan.interpretive_edges; models.py updated; 61 tests green (1 pre-existing in test_after_action_reviewer)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "created_at": "2026-05-28T18:26:59.674876+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-api-2026-05-28",
+    "description": "Add three nullable columns to support the recall(X) retrieval architecture: (1) payloads jsonb on clan.memories for typed payload attachment (code, link, primitive, embedding); (2) edge_type varchar on interpretive_edges for typed relationship tracking (implements, contradicts, derived_from, co-activates); (3) source_agent varchar on clan.memories for multi-agent provenance. All columns nullable — zero breaking change to existing rows.\n\nHIGH-inertia touch approved: Akien pre-approved memory/models.py touch 2026-05-28 — 'evolutionary improvement; schema did its job for hundreds of commits.'\n\n**Affected files:** new migration file (next after m054_llm_calls), wild_igor/igor/memory/models.py (HIGH inertia, pre-approved)\n**Design rules:** postgres only, no sqlite; nullable columns only — no backfill required\n**Scope boundary:** schema migration only — no behavior change; no code that uses new columns (that belongs in T-memory-write-path and T-librarian-edge-maintenance)\n**Test plan:** migration runs clean on fresh DB and on DB with existing rows; all three new columns exist with correct types; existing tests still pass",
+    "completed_at": "2026-05-28T19:44:02.620075+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T19:38:28.853766+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T18:26:59.724907+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8da5ad44-5bdb-4429-9f85-69c06d8020de",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

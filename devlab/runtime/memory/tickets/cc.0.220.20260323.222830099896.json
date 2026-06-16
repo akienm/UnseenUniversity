@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.220.20260323.222830099896",
+  "emitter": "cc.0",
+  "namespace": [
+    "220"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T22:28:30.099896",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "220"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "220",
+    "size": "S",
+    "title": "G-HB3: PROC_RESP_WHO_AM_I bypasses _build_think_context",
+    "result": "Removed 'who am i' from tier.0 _name_words and thalamus _MEMORY_LOOKUP_PHRASES. Output complexity now 'medium' → context_inject runs, SELF_CONTEXT pushed to TWM, falls through to LLM, _build_think_context + D072 vigilance gate execute correctly. 'what's my name'/'what is my name' unchanged — those are user-name lookups, not identity questions.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-23T22:22:45.130404+00:00",
+    "description": "Habit responses get no D072 vigilance check. Fix: route through _build_think_context or add vigilance inline. #220",
+    "completed_at": "2026-03-23T22:28:30.099896+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d788fcbf-ae9d-4d99-8eab-4854752666f8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

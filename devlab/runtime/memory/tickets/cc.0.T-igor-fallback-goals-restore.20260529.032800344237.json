@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-fallback-goals-restore.20260529.032800344237",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-fallback-goals-restore"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T03:28:00.344237",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-fallback-goals-restore"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-fallback-goals-restore",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Database"
+    ],
+    "title": "Restore Igor fallback goal tree — boredom/idle standing goals",
+    "result": "Restored three STANDING goals: read codebase, read queue, read web. Modified goal_continuation to push STANDING goals to TWM.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-29T03:28:00.344237+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor has no STANDING or STRATEGIC goals in the DB. When no TACTICAL goal is active, goal_continuation finds nothing and the NE spins on a deduped 'Identify and set new goals' impulse. The fallback goal tree has been lost.\n\nRestore three STANDING goals (goal_active=true, never auto-closed):\n1. Read and learn from Igor's own codebase (wild_igor/)\n2. Read from the existing reading/book queue\n3. Find and read free content on the web\n\nAlso verify goal_continuation checks for STANDING goal_type when no TACTICAL goal is active — if the code only looks at TACTICAL, it needs a fallback branch.\n\n**Affected files:** clan.memories (DB insert, 3 rows), wild_igor/igor/cognition/goal_continuation.py (verify/patch fallback branch)\n**Design rules:** none — data restoration + defensive code check\n**Scope boundary:** insert standing goals + verify continuation logic picks them up. No new goal types.\n**Test plan:** after insert, confirm ring_memory shows goal_continuation adopting a standing goal within one NE cycle instead of spinning",
+    "completed_at": "2026-05-29T12:14:04.822893+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-29T03:28:00.401947+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "badeb167-1e32-415d-ba62-21e32be66d1f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

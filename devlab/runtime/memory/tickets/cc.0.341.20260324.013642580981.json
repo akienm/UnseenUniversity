@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.341.20260324.013642580981",
+  "emitter": "cc.0",
+  "namespace": [
+    "341"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T01:36:42.580981",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "341",
+      "T-anticipation-pull"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "341",
+    "size": "M",
+    "title": "Boredom/idle detector — 'how could I be using my time better?'",
+    "result": "BoredomSource in push_sources.py fires BOREDOM_DETECTED when arousal flat for 20min; foreman_scan() in worker_foreman.py checks queue and launches next worker; PROC_BOREDOM_FOREMAN and PROC_WHAT_ARE_WE_WORKING_ON habits seeded to live DB. Pipeline: idle arousal → BOREDOM_DETECTED → ACTION_IMPULSE → PROC_BOREDOM_FOREMAN → foreman_scan() → worker launch. Env-var configurable window and threshold.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T01:27:55.352721+00:00",
+    "description": "Implement boredom/idle detector with foreman scan loop. Inner question: 'how could I be using my time better?' Igor self-initiates when idle. #341\n\nCALIBRATION (2026-03-23): Boredom = SLIGHT negative — mild aversive drift, enough to make stillness less comfortable than motion. Too strong = anxiety + freeze. Too weak = no-mind attractor wins. Slight is load-bearing. This is the push half; see T-anticipation-pull for the directional pull half.",
+    "completed_at": "2026-03-24T01:36:42.580981+00:00",
+    "deposited_at": "2026-06-04T16:23:21.029570",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9ff8b149-37d1-4014-9c00-4c6650e259de",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

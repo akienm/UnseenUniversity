@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-swarm-tmux-face.20260505.190112294553",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-tmux-face"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T19:01:12.294553",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-channel-mechanism",
+      "T-swarm-tmux-face",
+      "T-swarm-via-home-web-server"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-tmux-face",
+    "gate": null,
+    "title": "CLOSED: swarm tmux face — JSONL transcript, capture-pane, send-keys attribution",
+    "result": "JSONL transcript reader + capture-pane + send-keys attribution; 21 tests; commit 397de34",
+    "status": "done",
+    "worker": "claude",
+    "priority": "M",
+    "claimed_at": null,
+    "related_to": "T-swarm-via-home-web-server",
+    "decision_id": null,
+    "description": "Implement the tmux transport face: outbound uses capture-pane (preferring CC's JSONL transcripts at ~/.claude/projects/ over raw capture-pane for escape-code-free output) to produce bus envelopes. Inbound takes bus envelopes and injects into the agent's tmux session via send-keys with attribution prefix so the agent knows the message is not from the primary user.\n\n**Affected files:** agent_datacenter/devices/claude/shim.py (extend with tmux transport), new agent_datacenter/devices/claude/tmux_face.py\n**Design rules:** no-sqlite\n**Scope boundary:** IN — outbound: JSONL transcript reader + capture-pane fallback → envelope; inbound: envelope → send-keys with attribution. OUT — web UI rendering; channel subscription (T-swarm-channel-mechanism); ACL/mute.\n**Test plan:** unit tests with mock subprocess — outbound: JSONL file with 2 turns → 2 envelopes emitted; capture-pane fallback fires when JSONL absent; inbound: envelope with sender=igor → send-keys called with `igor: <message>` prefix.\n**Pass condition:** Given a mock JSONL transcript, the tmux face emits correctly-shaped bus envelopes; given an inbound envelope, `tmux send-keys` is called with attribution so the receiving agent can distinguish injected messages from primary user input.",
+    "completed_at": "2026-05-05T19:01:12.294553+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1d28925d-a626-42ec-9355-5fa97e021a6a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

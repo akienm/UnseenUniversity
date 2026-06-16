@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-scribe-20260319d.20260321.011057085060",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260319d"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:57.085060",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260319d"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260319d",
+    "body": "Decisions: D133, D134, D135. Gaps closed: T-sessions-in-db, T-decided-habit. Session theme: crash-safe session accumulation + skill audit. Subsystems touched: claudecode tooling, skills.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-19d",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:57.085060+00:00",
+    "deposited_at": "2026-04-22T16:41:03.803174",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-queue-task-fix.20260401.163224079249",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-queue-task-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T16:32:24.079249",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-queue-task-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-queue-task-fix",
+    "size": "S",
+    "tags": [
+      "operations",
+      "bugfix"
+    ],
+    "title": "Fix queue_task node misfire on cc_queue.py mentions",
+    "result": "Fixed two bugs: (1) queue_task tool in ops.py now guards against empty queue.json with content.strip() check before json.loads — prevents JSONDecodeError when file is empty. (2) Narrowed habit trigger in DB from 'cc queue' tokens (fired on any cc_queue.py mention) to explicit intent phrases. 567 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-01T16:31:00.794871+00:00",
+    "description": "Node 20260316142050372144 fires on any message containing cc_queue.py, tries to parse queue.json, errors with Expecting value line 1 column 1. Blocks training exercises involving ticket commands. Fix: narrow trigger to exclude bare cc_queue.py mentions, or suppress node and replace with cleaner implementation.",
+    "completed_at": "2026-04-01T16:32:24.079249+00:00",
+    "deposited_at": "2026-05-20T18:04:20.961002",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2cd956cd-3d8d-4bc9-9ab7-a87de96f26fb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

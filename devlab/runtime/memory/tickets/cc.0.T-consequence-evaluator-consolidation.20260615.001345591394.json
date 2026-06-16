@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-evaluator-consolidation.20260615.001345591394",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-evaluator-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T00:13:45.591394",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-evaluator-consolidation-2026-06-14"
+    ],
+    "tickets": [
+      "T-consequence-evaluator-consolidation",
+      "T-judge-wire-post-sprint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-evaluator-consolidation",
+    "gate": "2026-06-28",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: evaluator consolidation",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the predicted effects of evaluator consolidation are observed — specifically whether tool use decreases and verdicts appear on tickets.",
+    "created_at": "2026-06-15T00:13:45.591394+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-evaluator-consolidation-2026-06-14",
+    "description": "**What changed:** Critic/Improver/Judge consolidated around EvaluatorCore with optimism parameter; verdicts stamped to ticket metadata post-sprint.\n\n**Predicted unintended effects:**\n- EvaluatorCore inference latency adds time to every Critic call inline in DickSimnel's tool loop — could slow sprints noticeably\n- Optimism bias may be too coarse — -1/+1 may not produce meaningfully different verdicts if the rubric overrides the bias\n- Improver rules persisted to disk may accumulate stale rules that conflict with updated patterns\n- Post-sprint verdict stamping on ticket metadata may conflict with other metadata writers (race condition at close time)\n- CriticDevice refactor may subtly change verdict quality — DickSimnel may make different decisions, for better or worse\n\n**Signals to watch:** Tool call count per sprint in logs (expect decrease); verdict fields visible via cc_queue.py show; eval_history() returning entries; sprint duration before/after.\n\n**Gate condition:** Check by 2026-06-28 or when T-judge-wire-post-sprint closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate as occurred / clear / partial and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

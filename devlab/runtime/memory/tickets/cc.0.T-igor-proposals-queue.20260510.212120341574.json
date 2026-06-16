@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-proposals-queue.20260510.212120341574",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-proposals-queue"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T21:21:20.341574",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-activate-primitive-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-proposals-queue"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-proposals-queue",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Cognition"
+    ],
+    "title": "CLOSED: instance.proposals queue — controlled write channel for Igor-approved clan.memories entries",
+    "result": "proposals.py + instance.proposals schema with occurrence_count dedup; 9 tests pass (42a44a45)",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-10T22:28:35.695610+00:00",
+    "created_at": "2026-05-10T21:21:20.341574+00:00",
+    "related_to": null,
+    "decision_id": "D-activate-primitive-2026-05-10",
+    "description": "New `instance.proposals` table (psycopg2 direct, same pattern as watch_problems.py). API in `wild_igor/igor/cognition/proposals.py`: add_proposal(kind, content, metadata=None) / read_pending() / commit_proposal(id, memory_id) / reject_proposal(id, reason). Dreaming, librarian, and playbook modules WRITE proposals here; Igor NE habits COMMIT accepted proposals to clan.memories. Enforces the 'Igor decides what goes into clan.memories' architectural principle.\n\nSchema: id serial PK, kind text (habit|watch_q|playbook|archive_action), content text, metadata jsonb default '{}', status text default 'pending' (pending|committed|rejected), source_module text, created_at timestamptz default now(), committed_at timestamptz, committed_memory_id bigint, rejected_at timestamptz, rejected_reason text.\n\n**Affected files:** `wild_igor/igor/cognition/proposals.py` (new), DB migration (CREATE TABLE instance.proposals)\n**Design rules:** no-sqlite; direct psycopg2 (no cortex.py touch); never hard-delete (rejected proposals stay with rejected_at + reason); status column not boolean — three states needed; source_module records which module submitted the proposal\n**Scope boundary:** IN — proposals.py CRUD module, instance.proposals schema, migration. OUT — no automated commit logic (lives in NE habits), no UI, no cross-instance proposals, no cortex.py integration.\n**Test plan:** add_proposal() inserts row with status=pending; read_pending() returns only pending rows; commit_proposal() sets committed_at + committed_memory_id; reject_proposal() sets rejected_at + rejected_reason; committed and rejected rows excluded from read_pending()",
+    "completed_at": "2026-05-10T22:29:40.435036+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "706c9597-7960-4dc9-9a70-a114ece9daf6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

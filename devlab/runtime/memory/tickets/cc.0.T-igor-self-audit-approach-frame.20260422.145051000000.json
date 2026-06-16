@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-igor-self-audit-approach-frame.20260422.145051000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-self-audit-approach-frame"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T14:50:51",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-approach-frame-principle-2026-04-21"
+    ],
+    "tickets": [
+      "T-approach-frame-sensor-node",
+      "T-igor-self-audit-approach-frame"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-self-audit-approach-frame",
+    "gate": "stale approved_plan references brainstem/core_patterns.py (P1 false-positive) — clear before retry",
+    "size": "L",
+    "tags": [
+      "Igor",
+      "ApproachFrame",
+      "SelfAudit",
+      "Habit"
+    ],
+    "title": "Igor self-audit habit: scan rule-shaped memories for avoidance-frame, propose reframes",
+    "result": "ApproachFrameAuditSource shipped: night-time periodic scan of rule-shaped memories, regex-scored, writes pending_approach_reframe FACTUAL candidates with TWM markers. 24 tests pass. Commit 75d2cb24.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-28T20:41:47.325766+00:00",
+    "created_at": "2026-04-22T14:50:51Z",
+    "related_to": null,
+    "approved_at": "2026-04-24T02:02:58.039845+00:00",
+    "decision_id": "D-approach-frame-principle-2026-04-21",
+    "description": "Igor's memory corpus contains rule-shaped memories (habits, pe_chain cells, palace rule echoes) that likely carry proscriptive language. Need an ongoing process — not a one-shot sprint — where Igor audits these memories through the approach-frame lens, proposes reframes, and queues them for CC/Akien review.\n\n**Pre-sprint discovery step (REQUIRED before coding):** identify the target file for the new habit/hook. Expected candidates: wild_igor/igor/tools/habit_engine.py, wild_igor/igor/brainstem/habit_runner.py, or similar. Update 'Affected files' in this ticket before writing any code. Docs-in-code: update that file's docstring to describe the new habit alongside the code change.\n\n**Shape:** periodic habit (not one-shot — no deadline, housekeeping). Worker: igor. On each trigger: sample N rule-shaped memories from clan.memories (memory_type IN ('RULE','HABIT','PROCEDURE','SKILL')), score for approach-frame, flag avoidance-frame ones, write proposed reframe as a new pending memory in clan.memories (tagged pending_approach_reframe — no new table, reuse existing schema). CC/Akien drains the pending queue during normal sessions.\n\n**Affected files:** TBD — discovery step first (see above). Expected: one file in wild_igor/igor/. Persistence: clan.memories (existing Postgres table, existing schema — new tag only).\n\n**Design rules:** no-sqlite (Postgres only, clan.memories existing); no-new-memory-schemas (new tag on existing type, not new table); docs-in-code (update target file's docstring alongside code); test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: habit/hook that samples rule-shaped memories, scores, proposes reframes, writes to pending queue.\n- Out: actually applying reframes (CC review step). Out: non-rule memories.\n\n**Gate:** T-approach-frame-sensor-node (metric must exist to report into).\n\n**Test plan:** write test with 2 synthetic memories (one approach-framed, one proscriptive). Confirm: proscriptive → flagged + reframe written to pending queue. Approach-framed → passes without action. Use existing habit engine test patterns.",
+    "proposed_at": "2026-04-24T16:07:57.083166+00:00",
+    "completed_at": "2026-04-29T20:46:02.298058+00:00",
+    "github_issue": 503,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "false-positive brainstem/core_patterns.py gate — ticket does not touch HIGH-inertia files; cleared 2026-04-23",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e8697d29-ae2d-4d42-b88a-71a4d6e2cafa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

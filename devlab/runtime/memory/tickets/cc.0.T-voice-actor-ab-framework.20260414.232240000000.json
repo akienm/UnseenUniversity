@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-voice-actor-ab-framework.20260414.232240000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-voice-actor-ab-framework"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:40",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-voice-actor-ab-framework"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-voice-actor-ab-framework",
+    "body": "From Akien 2026-04-14: 'we run tests. a run all with local models and another with all cloud models. and we sample different LLMs for quality. that's a ticket all by itself. but we are aiming for less and less cloud.'\n\n## Shape\n\nExperimentation framework for comparing voice actor configurations on the same decision blob. Run the SAME decision through:\n- All-local configuration (qwen2.5:7b, llama3.2, etc.)\n- All-cloud configuration (current LLM)\n- Mixed configurations (e.g. local for routine, cloud for complex)\n- Different cloud LLMs at different price points (Haiku, Sonnet, Opus, gpt-4o-mini, DeepSeek, etc.)\n\nScore quality, capture outputs, build a body of evidence on which configuration delivers acceptable Igor voice at what cost.\n\n## Why standalone\n\nAkien explicitly named this as 'a ticket all by itself.' It's the measurement infrastructure that informs the migration. Without it the parallel-voice-actors comparison from T-reasoning-voice-split has no way to score quality.\n\n## Existing work to check\n\n- wild_igor/igor/cognition/inference_gateway.py — already supports model_override (added in D359 reading-extract-via-gateway)\n- D360 reading-model-benchmark — same shape, different domain (reading extraction). Could share infrastructure. Existing 7-pass benchmark covers gpt-4o-mini, llama3.2:1b, qwen2.5:7b, DeepSeek R1 distill, DeepSeek R1 cloud, Haiku, Sonnet. THIS TICKET IS THE VOICE EQUIVALENT.\n- benchmarks/ directory in lab/\n- tools/budget.py — cost tracking, latency tracking\n- inference_ollama.py for local model calls\n- inference_openrouter.py for cloud routing\n\n## Open design questions\n\n- Quality scoring: human (Akien) vibe-check, automated similarity to past Igor responses, third-LLM judge, or a mix?\n- Sample size per configuration before drawing conclusions?\n- Production gating: when does a configuration get promoted from 'experiment' to 'default for tier X turns'?\n- Cost tracking format: per-call, per-configuration, rolled up?\n- Stable test set vs sampling live traffic?\n\n## North star\n\n'We are aiming for less and less cloud.' Each successful local-config experiment shrinks cloud burn. Eventually most voice production runs locally with cloud only as a fallback for hard cases.\n\n## Dependencies\n\n- Parent: T-reasoning-voice-split\n- Reuses infrastructure from D360 reading-model-benchmark (same shape)\n- Co-evolves with T-decision-blob-schema (the input format both lanes consume)",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "cognition",
+      "voice",
+      "benchmarking",
+      "cost",
+      "local-first"
+    ],
+    "title": "A/B test framework for voice actors — local vs cloud, sample LLMs at different price points",
+    "result": "VoiceABFramework: GraphVoiceActor (word graph G37) + LLMVoiceActor (gateway) compete per blob. Winner selected, loser trains graph via reinforce_text. Graduation tracked via stats(). JSONL logging. 22 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T18:41:46.672480+00:00",
+    "created_at": "2026-04-14T23:22:40Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T18:44:38.537872+00:00",
+    "github_issue": 439,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

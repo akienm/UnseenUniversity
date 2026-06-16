@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-feeds-mru-device-list.20260611.183752665207",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-feeds-mru-device-list"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T18:37:52.665207",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-feeds-taxonomy-2026-06-11"
+    ],
+    "tickets": [
+      "T-feeds-mru-device-list"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-feeds-mru-device-list",
+    "gate": null,
+    "role": "master",
+    "tags": [
+      "WebUI",
+      "Feeds"
+    ],
+    "title": "Split web UI device list into MRU + complete alpha",
+    "result": "/api/device/mru endpoint + channel bar split into MRU+complete sections. seedDeviceTabs fetches both in parallel. All tests green. Commit 915f34466a3f1bec12b6031b2357a3e926c4720d.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that the web UI device sidebar shows a MRU list (ordered by most-recent feed activity) above the full alpha list, so frequently active devices like Igor and Librarian stay visible without manual pinning.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T18:37:52.665207+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-feeds-taxonomy-2026-06-11",
+    "description": "Replace the current single alpha-sorted device list in the web UI sidebar with two lists: (1) MRU — the N most recently active devices ordered by last feed post timestamp (N=5 initially); (2) Complete — full alpha list of all devices. No changes to feed rendering or feed type display yet. MRU is derived from bus.messages most-recent-per-mailbox query.\n\n**Affected files:** web UI device list component + backend endpoint that serves the device list\n**Design rules:** none apply\n**Scope boundary:** IN: two-list sidebar, MRU ordering by last bus message. OUT: feed type badges, importance indicators, personal/public/debug rendering distinctions.\n**Completion criteria:** (1) Sidebar renders MRU section above Complete section; (2) Igor and Librarian appear in MRU when active; (3) Complete section remains full alpha list; (4) existing device list tests pass.",
+    "completed_at": "2026-06-11T19:10:01.519807+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "description_blocked_by": [
+      "T-feeds-bus-types"
+    ],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

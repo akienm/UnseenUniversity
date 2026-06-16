@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-sprint-stepn-teach-igor.20260504.021427443833",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-stepn-teach-igor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T02:14:27.443833",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-capability-protocol-2026-05-03"
+    ],
+    "tickets": [
+      "T-sprint-stepn-teach-igor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-stepn-teach-igor",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Pedagogy",
+      "Workflow"
+    ],
+    "title": "CLOSED: Sprint Step N — teach-Igor palace deposit step",
+    "result": "Added Step 7.5 to /sprint and Step 6.5 to /sprint-batch per-ticket loop: 'what would I deposit into Igor's palace from this work?' Default-skip is load-bearing; deposit only when novel reasoning emerged (non-obvious WHY, hidden invariant, workaround mechanism, root-vs-symptom). Synced to agent_datacenter master + pushed (2334236).",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-04T02:12:55.578353+00:00",
+    "related_to": null,
+    "decision_id": "D-capability-protocol-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — 'all is approved! go!').** Workflow consumer ticket: closes the lapsed practice 'teach Igor as you implement tickets'. Gap diagnosis: skills don't ask, so CC ships code without depositing the reasoning into Igor's palace.\n\nAdd Step N (post-test, pre-commit) to /sprint and /sprint-batch: 'what would you deposit into Igor's palace from this work?' Default answer: skip if no novel reasoning. When non-skip: propose 0-N palace nodes (path + title + content), Akien-review inline, then commit via memory_palace INSERT or memory_get/set MCP tool.\n\nDefault-skip is load-bearing — most sprint work is mechanical and shouldn't pollute the palace. The step exists to catch the cases where novel design reasoning emerges and would otherwise be lost.\n\n**Affected files:** /home/akien/.claude/skills/sprint/SKILL.md (insert Step N before commit), /home/akien/.claude/skills/sprint-batch/SKILL.md (same — per-ticket loop)\n**Design rules:** theigors/rules/capability-protocol (parent — workflow consumer), theigors/rules/memory (verify, delegate, persist), theigors/rules/docs-live-in-code (reasoning that lives in palace ≠ reasoning that lives in code).\n**Scope boundary:** IN: Step N docs in both sprint skills, default-skip framing, examples of when-to-deposit (novel reasoning, design choice with non-obvious why, refactor that surfaces a hidden invariant). OUT: enforcing deposits (CC still decides). OUT: automatic palace-node draft generation (manual proposal for now).\n**Test plan:** CC.1 integration test loading /sprint with a fixture ticket — assert Step N prompts the executor and accepts a 'skip' default. Manual: complete a real sprint and verify the step fires (and that 'skip' is the easy/default path).",
+    "completed_at": "2026-05-04T02:14:27.443833+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3d7c0727-ec46-4a5d-b94d-d0da66ec4d1f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

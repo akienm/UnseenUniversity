@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-pe-chain-goal-close-on-escalate.20260424.234635029155",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-goal-close-on-escalate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T23:46:35.029155",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-chain-goal-close-on-escalate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-goal-close-on-escalate",
+    "gate": null,
+    "tags": [
+      "igor",
+      "control-flow",
+      "pe_chain"
+    ],
+    "title": "Deactivate goal when pe_chain escalates",
+    "result": "pe_chain deactivates goal on all escalate paths — _close_goal_on_escalate() helper wired into filter_fail, preflight-fail, preflight-timeout, and scope_guard early-return paths. _pe_escalate refactored to use same helper. 3970 tests pass. commit b1cade4a.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 50,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When pe_chain escalates (preflight fail, scope block, or attempt exhaustion), the active GOAL stays open. goal_continuation re-emits GOAL_READY on the next 2-minute cycle, which fires PROC_CODING_SPRINT again and also lets \"LLM territory\" (step 4+) run. Igor's main LLM then hallucinates file edits (e.g. core_patterns.py — highest-cited file in system prompts) that are out of scope. scope_guard blocks those edits and posts blank DESIGN PROPOSALs. Fix: pe_chain escalate paths must deactivate the goal (goal_active=False) before returning, so goal_continuation closes it on the next cycle instead of re-firing the chain.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py, wild_igor/igor/tools/goal_continuation.py\n**Design rules:** none apply\n**Scope boundary:** IN - deactivating goal on escalate paths when returning early; OUT - changing goal lifecycle otherwise or adding new goal states\n**Test plan:** no tests because this is a control-flow fix in pe_chain escalate/return paths (preflight fail, scope block, attempt exhaustion)",
+    "completed_at": "2026-04-24T23:46:35.029155+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "76a963ca-d745-4fa8-a00c-0bff93807868",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

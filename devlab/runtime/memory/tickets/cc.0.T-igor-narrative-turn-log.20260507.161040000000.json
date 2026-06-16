@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-narrative-turn-log.20260507.161040000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-narrative-turn-log"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:10:40",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-noise-2026-05-06"
+    ],
+    "tickets": [
+      "T-igor-narrative-turn-log"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-narrative-turn-log",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Observability",
+      "Cognition"
+    ],
+    "title": "CLOSED: narrative turn log",
+    "result": "narrative_turn.log + log_cascade_event/log_memory_retrieval in forensic_logger, wired into cascade/cortex/pipeline",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": "2026-05-06T23:21:00.281080+00:00",
+    "created_at": "2026-05-07T16:10:40Z",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-noise-2026-05-06",
+    "description": "Add a per-turn narrative log that surfaces whether Igor's cognition is working or full of noise. Without this, cognition quality is only intuitable from the console.\n\n**Affected files:** wild_igor/igor/cognition/turn_pipeline.py, new wild_igor/igor/cognition/narrative_logger.py\n**Design rules:** docs-live-in-code; no-sqlite (Postgres or flat-file only)\n**Scope boundary:** In scope: one log entry per TurnPipeline.run_turn call, written to datacenter_logs/igor/cognition/narrative_turn.log. Each entry: turn_id, timestamp, channel, raw user_input, top retrieved memories (id + narrative[:150]), cascade path taken (level names + status), voice context summary (first 300 chars), final response text. Out of scope: log rotation, retention policy, UI viewer.\n**Test plan:** Invoke TurnPipeline with a StubCortex; assert log file contains an entry with correct fields (turn_id, user_input, cascade path, response).\n**Pass condition:** After a real Igor turn, narrative_turn.log has a readable entry showing what was retrieved and what was assembled — visible in 'tail -1 narrative_turn.log' without needing to decode any binary or query Postgres.",
+    "completed_at": "2026-05-06T23:43:11.262018+00:00",
+    "github_issue": 608,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0de5b5c8-44f0-4cd9-a6ce-305cf500536d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

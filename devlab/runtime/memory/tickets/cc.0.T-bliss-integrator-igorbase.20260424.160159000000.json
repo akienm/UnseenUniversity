@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-bliss-integrator-igorbase.20260424.160159000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bliss-integrator-igorbase"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:01:59",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bliss-integrator-igorbase"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bliss-integrator-igorbase",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Audit",
+      "D125",
+      "Cognition"
+    ],
+    "title": "BlissIntegrator should inherit IgorBase (D125)",
+    "result": "BlissIntegrator inherits IgorBase + super().__init__(); also fixed pe_close_loop premature-close bug. Commit fe818ed9.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T04:50:44.775940+00:00",
+    "created_at": "2026-04-24T16:01:59Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Day-close audit 2026-04-23 found wild_igor/igor/cognition/bliss_integrator.py:75 class BlissIntegrator() doesn't inherit IgorBase. D125 says primary classes must. Wire it up.\n\n**Affected files:** wild_igor/igor/cognition/bliss_integrator.py.\n**Test plan:** audit_runner --drain shows primary-classes-must-inherit-igorbase PASS.",
+    "completed_at": "2026-04-29T05:09:33.032039+00:00",
+    "github_issue": 512,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a0b9ea5b-634d-4a8c-8888-d2725de9cd43",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

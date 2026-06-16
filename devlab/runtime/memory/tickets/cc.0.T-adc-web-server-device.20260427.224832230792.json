@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-web-server-device.20260427.224832230792",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-web-server-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:48:32.230792",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-imap-server-embedded",
+      "T-adc-web-server-device",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-web-server-device",
+    "gate": "T-adc-imap-server-embedded",
+    "size": "L",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: web server device — read-only IMAP subscriber, tab-per-mailbox",
+    "result": "Web server device deferred to Phase 5 (no blocker for Igor relaunch)",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "The web server is a read-only device that subscribes to all IMAP mailboxes via IDLE and renders them as live tabs. Design invariant: 'just a device that draws' — all data comes from the bus.\n\nProposed shape:\n- agent_datacenter/devices/web_server/device.py:\n  class WebServerDevice(BaseDevice):\n    comms() → {'read_only': True, 'push': False, 'pull': True, 'nudge': False}\n    health() → {'http_server_up': bool, 'imap_connected': bool, 'subscribed_mailboxes': count}\n    On registration: subscribe to all current IMAP mailboxes via IMAP IDLE\n    On new mailbox created: skeleton notifies web server → web server subscribes to new mailbox\n    Each mailbox = one browser tab, live-updating via IMAP IDLE push\n    HTTP server: FastAPI or Flask, single-page app, tab per mailbox\n    24hr log view: render message history from IMAP store (no separate log pipeline)\n    Design invariant enforced: web server has NO direct access to device state — all info from bus\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/web_server/device.py\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/web_server/shim.py\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/web_server/app.py (HTTP server, tab renderer)\n\nDesign rules:\n- oop-first: WebServerDevice, WebServerShim classes\n- docs-in-code: 'just a device that draws' invariant stated in class docstring\n\nScope boundary:\nIN: web server device registration, IMAP IDLE subscription for all mailboxes, tab-per-mailbox HTTP UI, 24hr history from IMAP\nOUT: any privileged device state access — web server sees only what's on the bus\n\nTest plan:\n- WebServerDevice registers → rack.devices() includes 'web-server'\n- Open browser: each registered device's mailbox appears as a tab\n- Send message to Shared → Shared tab updates within 2s (IDLE push)\n- 24hr history rendered from IMAP store (no separate log query)",
+    "completed_at": "2026-04-27T22:48:32.230792+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5b29d652-a67c-40b9-92e9-b9b1e2d5ff3a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

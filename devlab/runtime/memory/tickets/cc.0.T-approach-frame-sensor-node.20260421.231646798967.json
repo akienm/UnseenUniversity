@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-approach-frame-sensor-node.20260421.231646798967",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-approach-frame-sensor-node"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T23:16:46.798967",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-approach-frame-principle-2026-04-21"
+    ],
+    "tickets": [
+      "T-approach-frame-sensor-node",
+      "T-audit-cc-rules-approach-frame",
+      "T-igor-self-audit",
+      "T-igor-self-audit-approach-frame",
+      "T-slow-metrics-sensor-tree-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-approach-frame-sensor-node",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "SensorTree",
+      "Metrics",
+      "ApproachFrame"
+    ],
+    "title": "SensorTree node for approach-frame audit metric (versioned history, text sparkline)",
+    "result": "Palace subtree theigors/metrics/approach_frame_audit/ created (7 nodes). Helpers in wild_igor/igor/tools/palace_metric.py: read_counter, increment_metric, append_history, parse_history, render_sparkline, render_history_sparkline. 9 tests pass (pure + DB round-trip).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.65,
+    "claimed_at": "2026-04-21T23:13:16.378709+00:00",
+    "related_to": null,
+    "decision_id": "D-approach-frame-principle-2026-04-21",
+    "description": "Akien 2026-04-21: '% complete might be served with a small text only line chart that shows activity toward this goal... oh! it's a metric! we have tools and a tree for that!' SensorTree (GH-281, shipped) is the home.\n\n**Shape:** palace nodes at `theigors/metrics/approach_frame_audit/` with children:\n- `rules_reviewed` — count of rule-shaped items scored\n- `rules_reframed` — count successfully reframed\n- `rules_kept_with_rationale` — count kept proscriptive with explicit justification\n- `pct_complete` — derived counter\n- `history` — one row per update batch, format: `YYYY-MM-DD HH:MM | reviewed:N reframed:M` — enables text sparkline\n\nUpdate mechanism: T-igor-self-audit-approach-frame and T-audit-cc-rules-approach-frame each append to history and increment counters after each batch.\n\nText sparkline: query `history` rows, render ASCII bar or dot-line. Callable on-demand.\n\n**Affected files:** palace nodes under `theigors/metrics/approach_frame_audit/` (new subtree, clan.memory_palace existing table). SensorTree traversal code (locate via `find wild_igor -name 'sensor_tree*'` at sprint start) — if metrics/ branch needs registering, update that file's docstring to note metrics/ as a monitored subtree.\n\n**Design rules:** no-sqlite (Postgres only, clan.memory_palace); no-new-memory-schemas (new path not new table); docs-in-code (if SensorTree code touched, update its docstring); test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: create metric nodes, write increment logic, render text sparkline.\n- Out: broader slow-metrics migration (T-slow-metrics-sensor-tree-pattern instantiates this as the template). Out: automated triggers (T-igor-self-audit handles its own reporting).\n\n**Test plan:** write 3 synthetic history rows programmatically; confirm sparkline renders correctly. Simulate a batch-of-5 audit run; confirm counters increment and history appends.",
+    "completed_at": "2026-04-21T23:16:46.798967+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c09b28ba-1051-4d19-9881-ff511ff2d36f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

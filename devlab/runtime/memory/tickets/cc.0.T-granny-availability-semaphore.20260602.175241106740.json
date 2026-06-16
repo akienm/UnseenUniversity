@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-granny-availability-semaphore.20260602.175241106740",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-availability-semaphore"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T17:52:41.106740",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-worker-registry-2026-06-02"
+    ],
+    "tickets": [
+      "T-granny-availability-semaphore",
+      "T-granny-cc0-dispatch",
+      "T-granny-dispatch-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-availability-semaphore",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Infrastructure",
+      "Observability"
+    ],
+    "title": "Granny: generic availability semaphore + fix THROTTLED false positive",
+    "result": "availability.py semaphore protocol; killed _launch_cc_instance spawn path; _cc0_in_progress() replaces tmux count; GRANNY_THROTTLED false-positive eliminated",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "blocked_at": "2026-06-02T17:58:28.452345+00:00",
+    "claimed_at": "2026-06-02T18:27:45.749440+00:00",
+    "created_at": "2026-06-02T17:52:41.106740+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-worker-registry-2026-06-02",
+    "description": "Granny currently uses _count_active_cc_sessions() (counts tmux cc-* sessions) to throttle dispatch — this produces false positives (GRANNY_THROTTLED|active=1 even with no CC workers). Replace with two changes: (1) a generic is_available(worker_id) function reading ~/.granny/available/{worker_id}.available.true/false — .false present wins regardless of .true; (2) replace 'busy' check with Postgres query status=in_progress AND worker={id} instead of tmux count.\n\nSemaphore directory ~/.granny/available/ created on first use. Universal protocol: any device/worker drops {name}.available.true to register, {name}.available.false to block (e.g., granny.queue.available.false pauses Granny's own dispatch loop).\n\n**Affected files:** devices/granny/daemon.py (remove _count_active_cc_sessions, _list_cc_sessions; update top of run_once), new devices/granny/availability.py\n**Design rules:** no-sqlite; log every availability state change at INFO\n**Scope boundary:** IN: is_available(worker_id) pure function; .false-wins logic; in_progress Postgres query replaces tmux count; GRANNY_THROTTLED false positive fixed. OUT: time-window rules (T-granny-dispatch-config), CC.0 actual dispatch (T-granny-cc0-dispatch).\n**Completion criteria:** GRANNY_THROTTLED no longer fires when no real CC session is active; is_available('CC.0') returns True with only .true present, False with .false present, False with neither; unit tests covering all three states plus the granny.queue namespace.",
+    "completed_at": "2026-06-02T18:30:02.784022+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T18:27:45.749440+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "756dbe4e-52cc-4347-928e-ced6d2c76a2c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

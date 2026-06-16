@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-announce-slice2-suffix-comms-routing.20260501.220416460406",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice2-suffix-comms-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:04:16.460406",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice2-suffix-comms-routing",
+      "T-comms-device-router-mismatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice2-suffix-comms-routing",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice2",
+      "Datacenter",
+      "CommsRouting"
+    ],
+    "title": "Migrate slash-style comms:// addresses to suffix-style + router resolves dot-separated suffixes",
+    "result": "Router.resolve() peels suffix-style addresses (longest-prefix-wins). Router.extract_surface() exposes the qualifier. skeleton/stub migrated from slash-style. 5 new tests; 134 passed. Closes T-comms-device-router-mismatch. agent_datacenter commit 0ed4a75.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T22:02:02.590008+00:00",
+    "related_to": "T-comms-device-router-mismatch",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Existing devices use slash-style comms:// (skeleton/inbox, stub/inbox) but announce-protocol surface_addresses use suffix-style (box.n.surface). Migrate the 3 slash sites to suffix-style and teach the router to resolve dot-separated suffix variants (comms://igor-wild-0001.console → primary mailbox of igor-wild-0001 with surface=console tagged on the envelope). Closes T-comms-device-router-mismatch as side effect — once skeleton.comms() emits suffix-form, IgorDevice.comms() addresses resolve cleanly through the router. Per § 14 decision 11.A.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py (lines 61, 247), /home/akien/dev/src/agent_datacenter/tests/fixtures/stub_devices.py (line 40), /home/akien/dev/src/agent_datacenter/agent_datacenter/bus/router.py (resolve() to handle dot suffixes), /home/akien/dev/src/agent_datacenter/tests/test_bus.py (assertions on resolve() suffix behavior)\n**Design rules:** § 14 decision 11.A (suffix-style flat addressing); router treats path as opaque mailbox name + optional dot-separated surface qualifier\n**Scope boundary:** in — convert 3 slash-style sites to suffix-style; router.resolve() returns base mailbox for suffix variants; tests updated. Out — surface-multiplexing (separate mailboxes per surface), announce wiring (slice 2 ticket #2), new device endpoints, schema changes.\n**Test plan:** test_bus.py: resolve('comms://x.y.z') returns 'x' (prefix mailbox), resolve('comms://x') returns 'x' (no suffix), resolve('comms://nonexistent.foo') still raises. New: test_router_extracts_surface_from_suffix asserts surface qualifier propagates as envelope metadata. Update test_device_contract.py expectations. Existing 129 tests must stay green.",
+    "completed_at": "2026-05-01T22:04:16.460406+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5de261ac-07e3-4c1e-b2d0-37dfc9884002",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

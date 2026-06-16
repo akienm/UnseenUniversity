@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-announce-slice3b-cc-mcp-adapter.20260501.232110691728",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice3b-cc-mcp-adapter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T23:21:10.691728",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice3b-cc-mcp-adapter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice3b-cc-mcp-adapter",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice3b",
+      "Datacenter",
+      "CC",
+      "MCP"
+    ],
+    "title": "CC-side announce_mcp.py adapter — exposes announce protocol as MCP tools",
+    "result": "AnnounceMcpServer ships: 3 MCP-style tools (announce_tool, manifest_tool, check_for_invalidate_tool) returning JSON-friendly {ok, ...} dicts. Singleton DatacenterClient. Identity defaults from hostname + pid. Errors returned as data, not exceptions. Wiring into .mcp.json is slice 5. 9 new tests; 219 passed. agent_datacenter commit 0552d7c.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-01T23:19:05.130156+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "CC sessions are clients of the datacenter just like Igor. This ticket ships the CC-side adapter: a small MCP server module (announce_mcp.py) that exposes three tools — datacenter_announce, datacenter_manifest, datacenter_check_for_invalidate — backed by a singleton DatacenterClient. CC invokes these via Claude Code's MCP layer; the tools return JSON-friendly dict shapes. Module is added to agent_datacenter (consistent placement with the rest of the announce protocol) but is wired by Claude Code via .mcp.json — that .mcp.json entry is slice 5 work, this ticket only ships the adapter module itself.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/announce_mcp.py (NEW), /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/__init__.py (export AnnounceMcpServer), /home/akien/dev/src/agent_datacenter/tests/test_announce_mcp_adapter.py (NEW)\n**Design rules:** singleton-per-process DatacenterClient (CC sessions are 1:1 with the agent identity); cc.yaml profile drives the announce; tools return JSON-serializable dicts (no dataclass instances over the wire); errors converted to {\"error\": str} return values rather than exceptions (MCP convention); identity envelope built at module import time using socket.gethostname() + os.getpid() to match Igor's pattern.\n**Scope boundary:** in — AnnounceMcpServer wrapper class with three tool methods (announce, manifest, check_for_invalidate); idempotent connect; tests covering each tool path. Out — actual MCP server registration (Claude Code's .mcp.json — slice 5), Igor-side reciprocal tools, FastMCP wiring (this is a thin wrapper that any MCP host can drive; FastMCP integration if desired comes later).\n**Test plan:** test_adapter_announces_via_tool (boot in-process Skeleton, instantiate AnnounceMcpServer with cc identity, call announce_tool(), assert manifest dict returned with cc agent_id); test_adapter_returns_error_dict_on_unknown_agent (point at non-existent profile, assert {\"error\": ...} returned, no exception); test_manifest_tool_returns_cached_manifest_dict; test_check_for_invalidate_tool_handles_envelopes; test_singleton_reuse_across_calls (announce + manifest in sequence share the same client).",
+    "completed_at": "2026-05-01T23:21:10.691728+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "12434185-6ab2-4410-8323-7fe30afdc7bc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

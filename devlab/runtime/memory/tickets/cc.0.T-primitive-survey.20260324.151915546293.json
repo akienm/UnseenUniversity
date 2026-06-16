@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-primitive-survey.20260324.151915546293",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-primitive-survey"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:19:15.546293",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-primitive-survey"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-primitive-survey",
+    "size": "M",
+    "title": "Primitive completeness survey: what do you need to build X entirely from habits?",
+    "result": "Survey complete. primitives.json v2: 21 documented primitives (was 9; 12 existed in code but weren't cataloged). 16 gaps identified across 3 target programs (book_reader, worker_monitor, cc_design_loop). Gap ranking: prim_cc_post + prim_log needed by 2-3 programs (XS effort, implement first); prim_wg_ingest is the hardest gap (new_semantics, book reader can't work without it); prim_thalamus_parse + prim_habit_update are new_semantics/M effort, lowest priority. book_reader needs 5 new primitives; worker_monitor needs 6; cc_design_loop needs 5. Catalog also removed stale 'missing' entries for prim_count + prim_format (covered by prim_list_count + prim_str_format).",
+    "status": "done",
+    "priority": 8,
+    "claimed_at": "2026-03-24T15:15:22.784169+00:00",
+    "description": "Survey ticket, not implementation. Pick 3 target programs: book reader, worker monitor, CC design loop. For each: enumerate every primitive needed. Classify each as: (a) already exists, (b) thin code_ref wrapper, (c) needs new semantics/design. Output: updated primitives.json + gap list ranked by how many target programs need it. This answers when the system is sufficient rather than discovering gaps one program at a time.",
+    "completed_at": "2026-03-24T15:19:15.546293+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8b803109-a4d0-48e0-af22-9ba1227dad3b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

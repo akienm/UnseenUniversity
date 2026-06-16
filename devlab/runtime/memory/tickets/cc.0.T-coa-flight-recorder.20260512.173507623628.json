@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-coa-flight-recorder.20260512.173507623628",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-coa-flight-recorder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T17:35:07.623628",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-pipeline-observability-2026-05-12"
+    ],
+    "tickets": [
+      "T-coa-flight-recorder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-coa-flight-recorder",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "COA",
+      "Observability"
+    ],
+    "title": "CLOSED: Add flight-recorder logging to COA",
+    "result": "TWM snapshot + NE timing in tick(); forensic_logger → self.log throughout coa.py",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-12T23:47:06.292993+00:00",
+    "created_at": "2026-05-12T17:35:07.623628+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "description": "COA already extends IgorBase but the NE.run() call has no log of what was in TWM before it fired or how long it took. When NE produces empty cycles (as seen with the 5-week queue-drain blindspot), there is no record of whether TWM was empty, stale, or populated with the wrong entries.\n\nAdd to COA.tick() in wild_igor/igor/cognition/coa.py:\n1. Before NE.run(): self.log.info('NE_TICK twm_count=%d top_categories=%s', twm_count, categories) — reads _cortex.twm_count() and a category breakdown; read-only, no side effects\n2. Wrap NE.run() call in: with self.time_it('ne_run'): ... — logs elapsed ms via IgorBase's time_it context manager\n3. Opportunistic forensic_logger neatening: replace all forensic_logger.log_error calls in coa.py with self.log.error — there are ~4 lazy imports to clean\n\n**Affected files:** wild_igor/igor/cognition/coa.py\n**Design rules:** docs-live-in-code (no docstring change needed for logging additions)\n**Scope boundary:** coa.py only. TWM snapshot is read-only. forensic_logger migration is all 4 forensic_logger imports in this file only.\n**Test plan:** After Igor restarts with this change, confirm the standard Igor log shows NE_TICK lines with twm_count before each NE cycle. Confirm time_it('ne_run') timing lines appear. Run full test suite — green required.",
+    "completed_at": "2026-05-13T00:07:09.326617+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eae902e1-4097-4210-8ff4-c8f9b14d8b3b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

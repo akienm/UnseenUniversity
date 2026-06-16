@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-librarian-edge-maintenance.20260528.175134406789",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-edge-maintenance"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T17:51:34.406789",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-api-2026-05-28"
+    ],
+    "tickets": [
+      "T-librarian-edge-maintenance",
+      "T-librarian-retrieval-service",
+      "T-memory-agent-write-api",
+      "T-memory-write-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-edge-maintenance",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Librarian",
+      "Dreaming",
+      "Architecture"
+    ],
+    "title": "Librarian edge maintenance: typed edge_type + move Hebbian from Igor",
+    "result": "edge_maintenance.py: Hebbian + backfill + query_by_type + EdgeMaintenanceWorker. Igor dreaming stub delegates to Librarian. 18 tests green.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-28T20:14:01.440904+00:00",
+    "created_at": "2026-05-28T17:51:34.406789+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-api-2026-05-28",
+    "description": "Move Hebbian strengthening and theme extraction from Igor's dreaming pass to Librarian background service — Librarian runs periodic consolidation on its own schedule, independent of Igor. Igor's dreaming pass becomes a stub.\n\nAlso add typed edge_type to every edge creation and strengthening call. Controlled vocabulary: 'implements', 'contradicts', 'derived_from', 'co-activates' (default for Hebbian). Existing edges without edge_type get default 'co-activates' on next strengthening pass (lazy migration).\n\nGate updated: T-memory-write-path (supersedes T-memory-agent-write-api).\n\n**Affected files:** devices/librarian/ (new consolidation background task), devices/igor/cognition/dreaming.py (remove Hebbian + consolidation)\n**Design rules:** igor-uses-not-contains, compiled-inference; controlled vocabulary only for edge_type; constraint violation logs and uses default, never raises\n**Scope boundary:** IN — move Hebbian + consolidation to Librarian; add typed edge_type to all edge writes; OUT — retrieval logic (T-librarian-retrieval-service)\n**Test plan:** Stop Igor; wait one consolidation cycle; verify interpretive_edges weights updated; new edges have edge_type set; existing edge gets 'co-activates' on next strengthening; query edges by type returns correct subset",
+    "completed_at": "2026-05-28T20:15:51.789782+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:14:01.440904+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T17:51:34.406864+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7d452160-0272-4848-a984-565346ff43e6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

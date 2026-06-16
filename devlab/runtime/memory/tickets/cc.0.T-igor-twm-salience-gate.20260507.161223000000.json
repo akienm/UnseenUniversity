@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-twm-salience-gate.20260507.161223000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-twm-salience-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:12:23",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-noise-2026-05-06"
+    ],
+    "tickets": [
+      "T-igor-twm-salience-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-twm-salience-gate",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Cognition",
+      "Memory",
+      "Performance"
+    ],
+    "title": "CLOSED: TWM salience gate in _get_context_anchors()",
+    "result": "salience gate added in _get_context_anchors(); TWM obs with salience < max(0.3, attractor_weight*0.5) excluded from BFS anchor set; 8 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-05-06T23:43:28.143060+00:00",
+    "created_at": "2026-05-07T16:12:23Z",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-noise-2026-05-06",
+    "description": "Background TWM observations (heartbeat ticks, decayed TASK_SETs, periodic snapshots) should not surface in cortex.search results. Currently they enter the candidate pool regardless of salience, and because they contain current session context verbatim they score highest by embedding similarity — producing a circular noise flood. Biological model: background associations only surface if they beat the current activation level of the attractor.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (cortex.search candidate pool assembly, ~line 2503)\n**Design rules:** no-sqlite; test-plan-or-why-not\n**Scope boundary:** In scope: filter TWM observations pulled into cortex.search candidate pool by their current salience relative to the active attractor weight. Threshold: obs.salience >= attractor_weight * 0.5 (configurable). When no attractor set, use minimum salience floor of 0.3. Out of scope: changing how salience is assigned at push time; changing TWM direct-injection into LLM context (reasoners/base.py — that path is correct and separate).\n**Test plan:** Push two TWM observations (one salience=0.9 matching query, one salience=0.1 matching query). Run cortex.search. Assert only the 0.9 observation appears in results. Verify heartbeat/TASK_SET entries with decayed salience don't appear in a real search result set.\n**Pass condition:** After a real Igor turn for a simple greeting, the [SEARCH] Relevant log shows no TASK_SET or heartbeat entries — only episodic/semantic memories above the salience threshold.",
+    "completed_at": "2026-05-06T23:56:06.530437+00:00",
+    "github_issue": 622,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9426b1b0-1a91-425d-8dfb-d7a820f4aa4f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

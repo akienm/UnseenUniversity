@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-dicksimnel-reliability-audit.20260606.200836496870",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-reliability-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:08:36.496870",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-or-cost-gate",
+      "T-dicksimnel-reliability-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-reliability-audit",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "DickSimnel",
+      "Reliability",
+      "Audit"
+    ],
+    "title": "DickSimnel: reliability audit — what actually works, what fails",
+    "result": "audit complete: 5 gaps (starvation, tool_calls unverified, double-close, max-turns reason, git push auth); 4 fix tickets filed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": null,
+    "claimed_at": "2026-06-06T20:32:05.996710+00:00",
+    "created_at": "2026-06-06T20:08:36.496870+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** DickSimnel 'can't be trusted to run at all' (Akien 2026-06-06). Before fixing him, we need to know precisely what breaks and why.\n\n**What to audit:** (1) What does a full ticket claim→inference→close cycle look like in practice? (2) What causes escalations? (3) Does the ToolLoop reliably complete? (4) Are there known OR inference failures? (5) What is the actual success rate? (6) Does OR cost outweigh value delivered?\n\n**Method:** Read device.py, toolloop.py in full. Run the test suite. Check recent escalation patterns in the queue. Check OR logs if any. Produce a written audit: pass/fail per capability, specific failure modes, concrete list of gaps to fix.\n\n**Affected files:** devices/dicksimnel/device.py, devices/dicksimnel/toolloop.py, tests/dicksimnel/\n**Design rules:** Read before writing — audit first, ticket fixes second\n**Scope boundary:** Audit only; the fix tickets come from the audit findings\n**Completion criteria:** Written audit attached to ticket: per-capability pass/fail, failure modes, specific gaps. Follow-on fix tickets filed based on findings.\n\n## DickSimnel Reliability Audit — 2026-06-06\n\n### Per-capability pass/fail\n\n| Capability | Status | Notes |\n|---|---|---|\n| Shim lifecycle (start/stop/restart/rollback) | ✅ PASS | 85/85 unit tests pass |\n| Availability semaphore (.true/.false flags) | ✅ PASS | Correctly integrated with Granny |\n| Granny dispatch routing (builder/creator→DickSimnel) | ✅ PASS | set-worker dispatch works |\n| Ticket claim cycle (next --worker dicksimnel → show) | ✅ PASS | Logic correct |\n| HIGH-inertia pre-filter (Security/Auth/DB → escalate) | ✅ PASS | Saves OR cost |\n| DONE: gate + close-failure guard | ✅ PASS | Logic correct |\n| Escalation structure (summary note + status=escalated) | ✅ PASS | Well-structured |\n| ToolLoop tool implementations (Bash/Read/Edit/Write) | ✅ PASS | Denylist + all 4 tools |\n| Turn-1 planning correction injection | ✅ PASS | Good recovery |\n| Sprint-ticket skill load (~/.claude/skills/sprint-ticket) | ✅ PASS | Exists and loads (13620 bytes) |\n| OR balance | ✅ OK | $82.74 remaining |\n| End-to-end ticket close via inference | ❌ NEVER HAPPENED | Zero \"DickSimnel.0:\" results in queue |\n| Builder/creator role tickets in queue | ❌ NONE | All current tickets are role=master |\n| OR tool_calls for qwen3-coder-30b verified | ❌ UNTESTED | No live OR call in test suite |\n| Double-close handling | ⚠️ BUG | Model closes via Bash, _post_result closes again → escalates |\n| Git push from daemon context | ⚠️ UNKNOWN | HTTPS auth may not be cached |\n| Max-turns escalation reason | ⚠️ MISLEADING | Says \"DONE: missing\" not \"max turns\" |\n\n### Why \"can't be trusted to run at all\"\n\n**Root cause 1 (primary):** No builder/creator role tickets exist. Granny only dispatches role=builder or role=creator tickets to DickSimnel. All current sprint/pending tickets are role=master (CC tier). DickSimnel's poll loop runs but finds nothing — it's not broken, it's starved.\n\n**Root cause 2 (critical unknown):** The full inference→tool_calls→DONE: cycle has never run against a real OR endpoint. All 85 tests mock InferenceDevice. Whether qwen3-coder-30b on OpenRouter actually returns OpenAI-format tool_calls is unverified. If it doesn't, every ticket would produce text-only responses, DONE: gate would fire, and everything escalates.\n\n**Root cause 3 (bug):** Double-close risk. Sprint-ticket skill instructs the model to call `cc_queue.py close <id>` via Bash tool. When that succeeds, the model writes \"DONE: ...\". Then _post_result() tries to close the already-closed ticket → cc_queue returns None → treats as close failure → escalates. Result: ticket is closed + escalated simultaneously.\n\n### Specific failure modes\n\n1. **Starvation**: DickSimnel starts, poll loop runs every 30s, `cc_queue next --worker dicksimnel` returns nothing because no builder/creator tickets exist. Device appears \"working\" but processes zero tickets indefinitely.\n\n2. **Phantom escalations**: If OR model returns text-only (no tool_calls) on first real invocation, turn-1 correction fires, model may still not call tools, ToolLoop terminates, text returned, DONE: gate fires, escalate. Everything routes back to CC. DickSimnel looks broken.\n\n3. **Double-action close**: Model closes ticket via Bash (sprint-ticket step 11), writes DONE:, _post_result runs cc_queue close again → None → escalates closed ticket. Queue shows status=escalated on a ticket that's actually done.\n\n4. **Max-turns diagnosis pollution**: After 20 turns with no DONE:, escalation reason says \"result missing DONE: prefix\" not \"max turns hit (20/20)\". Misleads CC when picking up the escalated ticket.\n\n### Gaps to fix\n\n1. E2E smoke test: one real OR inference call against a dummy ticket, verify tool_calls in response\n2. Role-seed: file builder/creator tickets so DickSimnel has work\n3. Double-close: treat cc_queue close returning None on already-closed ticket as success, not escalate\n4. Max-turns: escalate with \"max turns (N) hit\" reason, not DONE: gate message\n5. T-dicksimnel-or-cost-gate (already filed, in sprint): gets free-tier routing working",
+    "completed_at": "2026-06-06T22:45:39.762628+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b55e3327-0433-44c8-b91c-ba2bb3e3db59",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

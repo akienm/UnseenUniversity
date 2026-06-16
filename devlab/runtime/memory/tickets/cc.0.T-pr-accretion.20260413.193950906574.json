@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-pr-accretion.20260413.193950906574",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-accretion"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T19:39:50.906574",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-accretion",
+      "T-pr-consolidation",
+      "T-pr-investment-weight-propagation",
+      "T-pr-load-as-primary-attractor",
+      "T-pr-schema-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-accretion",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Per-turn online accretion — write relationship updates into the facia subtree",
+    "result": "993a4461 — Per-turn online accretion. New module wild_igor/igor/tools/pr_accretion.py with pr_accrete + pr_accrete_exchange + pr_accrete_marker + pr_accrete_commitment + detect_marker + pr_recent_accretions. Memory shape: gist+verbatim split (Fuzzy Trace Theory) — narrative is ≤240 char summary, metadata holds full untruncated user_text and igor_reply. Integration at end of _process_inner gated on same conditions as frame push. Marker detection conservative (narrow phrase list) to avoid noise. Forensic log at logs/pr_accretion.log. 8 new tests including credential-scrubber edge case (x*5000 gets redacted by Igor's security — switched to repeated sentences). 2000 total pass, zero regressions. Ready for T-pr-consolidation (walk accretions, cluster, integrate).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T19:31:34.683018+00:00",
+    "related_to": null,
+    "description": "Every Akien-turn writes relationship-level observations into the Akien facia's subtree. Online accretion — fast, noisy, low-latency. Consolidation (T-pr-consolidation) cleans it up offline.\n\nWHAT GETS ACCRETED PER TURN:\n- Exchange snippet (verbatim user input, leveraging verbatim_source from f0ad6dab)\n- Detected commitment if user asked Igor to do/look/check something (hooks into reply-obligation-fork goals)\n- Emotional register observation if milieu shifted meaningfully\n- Explicit 'this matters' markers ('remember', 'important', 'don't forget')\n- Decisions made (hooks into decision_manager.py)\n- New shared vocabulary / coined terms (harder, maybe Hebbian cluster detection)\n\nIMPLEMENTATION: new module wild_igor/igor/tools/pr_accretion.py with pr_accrete(facia_id, content_type, content, metadata). Called from _process_inner after reply composition. Writes a new memory (type=EPISODIC or EXPERIENTIAL) with pr_facia_id in its metadata pointing at the relationship facia. Also updates the facia's last_activity_ts.\n\nDEPENDS ON: T-pr-schema-seed, T-pr-load-as-primary-attractor.\n\nDOES NOT: consolidate (T-pr-consolidation), do Hebbian clustering (that's in consolidation pass), compute weight deltas (T-pr-investment-weight-propagation).\n\nTESTS: pr_accrete writes a memory with correct pr_facia_id linkage. last_activity_ts updates. Multiple accretions in a turn cluster correctly. Exchanges are retrievable via pr_facia_id filter.\n\nINERTIA: MEDIUM. tools/ (new module, LOW) + main.py integration point (MEDIUM).",
+    "completed_at": "2026-04-13T19:39:50.906574+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a8b231ae-17a6-4984-929c-b87f8d244ae1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

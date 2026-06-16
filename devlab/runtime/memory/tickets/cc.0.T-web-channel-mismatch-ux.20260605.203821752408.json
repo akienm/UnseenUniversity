@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-web-channel-mismatch-ux.20260605.203821752408",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-channel-mismatch-ux"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T20:38:21.752408",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-channel-mismatch-ux"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-channel-mismatch-ux",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Web",
+      "UX"
+    ],
+    "title": "Web UI: message sent from wrong channel tab loses Igor reply",
+    "result": "WS handler now routes to _get_agent_queue('igor') with session_id='comms://igor' regardless of active tab; _deliver_to_tmux also fixed; test added; fanout=0 DROP on device-channel replies eliminated",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.4,
+    "intention": "I intend that Igor's web chat window always routes replies back to the sender's visible session, preventing silent drops when the user is in a non-Igor channel tab.",
+    "claimed_at": "2026-06-06T17:41:13.028167+00:00",
+    "created_at": "2026-06-05T20:38:21.752408+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When the browser is in a channel tab other than comms://igor (e.g. comms://granny-weatherwax) and the user sends a message, Igor replies to that channel. If the user has since switched tabs, the reply is lost (fanout=0 DROP). Seen in 2026-06-04 logs: DROP session=comms://granny-weatherwax.\n\nFix options: (a) web UI always sends from comms://igor regardless of active tab, or (b) Igor's reply always goes to comms://igor when msg source=web AND reply_info.session_id is not a user-specific session.\n\n**Affected files:** devices/web_server/server.py (fallback HTML switchChannel logic), or devices/igor/main.py _process_network_msg\n\n**Design rules:** none apply\n\n**Scope boundary:** Fix the session mismatch; do not change the multi-channel architecture.\n\n**Completion criteria:** Sending a message from the Granny channel tab produces a visible reply in comms://igor; fanout=0 DROP for device-specific channels no longer occurs for Igor replies.",
+    "completed_at": "2026-06-06T17:48:41.787412+00:00",
+    "deposited_at": "2026-06-05T14:38:43.578834",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

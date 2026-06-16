@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-inference-comms-unification-test.20260427.224816896396",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-inference-comms-unification-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:48:16.896396",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-3-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-inference-comms-unification-test",
+      "T-adc-inference-device",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-inference-comms-unification-test",
+    "gate": "T-adc-inference-device",
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Testing"
+    ],
+    "title": "agent_datacenter: verify Igor→Claude and Igor→Inference are identical comms:// call pattern",
+    "result": "comms:// unification validated — identical call pattern for igor→inference and igor→claude in contract tests",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-3-2026-04-27",
+    "description": "Verify the comms:// unification invariant: Igor talks to Claude and Igor talks to Inference using the identical call pattern to different addresses. The caller is topology-blind.\n\nThis is the architectural invariant the bus is designed to provide. If this test fails, the design is broken.\n\nProposed shape:\n- agent_datacenter/tests/test_comms_unification.py:\n  def test_igor_to_claude_and_inference_identical_pattern():\n    # Build two envelopes: one to CC.0, one to inference\n    # Send both using Router.send(address, envelope) — same call pattern\n    # Verify: Router.send() doesn't inspect or branch on destination\n    # Verify: both deliveries succeed (envelope in CC.0 mailbox; envelope in inference mailbox)\n    # Verify: the calling code is identical — no if/else on destination\n  def test_router_does_not_special_case_any_address():\n    # Inspect Router.send() — assert no isinstance checks or address-specific branches\n    # If Router.send() has branching logic for 'CC.0' vs 'inference', this test should catch it\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/tests/test_comms_unification.py\n\nDesign rules:\n- docs-in-code: test docstrings explain the 'topology-blind caller' invariant\n\nScope boundary:\nIN: comms unification test — same call pattern for CC and inference\nOUT: YGM pipeline (different test), performance comparison of routes\n\nTest plan:\n- Both tests pass with stub devices for CC and inference\n- If Router.send() gains a special case, this test breaks and surfaces it",
+    "completed_at": "2026-04-27T22:48:16.896396+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a347abf3-9d8d-417b-a68b-90f32c747525",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

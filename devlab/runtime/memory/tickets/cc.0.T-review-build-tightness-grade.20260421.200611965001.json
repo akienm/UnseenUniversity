@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-review-build-tightness-grade.20260421.200611965001",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-review-build-tightness-grade"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T20:06:11.965001",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-scaffold-not-correct-2026-04-21"
+    ],
+    "tickets": [
+      "T-review-build-tightness-grade",
+      "T-review-loads-palace-rules"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-review-build-tightness-grade",
+    "gate": "T-review-loads-palace-rules",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Review",
+      "Quality"
+    ],
+    "title": "/review build-tightness grade: could a cheap builder execute this?",
+    "result": "/review SKILL.md Check 8: build-tightness grade (tight/medium/loose) from 4 structured fields. Loose forces AMEND with bounce-to-designer message. Output includes Build-tightness line. Commit 032ec98a. CLOSES D-scaffold-not-correct-2026-04-21 (4/4).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-21T20:05:24.765599+00:00",
+    "related_to": null,
+    "decision_id": "D-scaffold-not-correct-2026-04-21",
+    "description": "Add a build-tightness score to /review filing-time output. Rubric: could a junior engineer (or a cheaper LLM) execute this ticket without making judgment calls about design? Scoring factors: are affected files named, is scope boundary explicit, are design rules addressed, is test plan specific. Output a grade (tight / medium / loose).\n\nLow grade -> AMEND with guidance: 'this ticket makes the builder do design work; bounce back to the designer to tighten before filing'. Medium -> advisory note. Tight -> PASS.\n\nScope boundary: scoring logic + threshold + AMEND reason text. No UI changes beyond /review output.\n\nWhy: the leverage point Akien identified — well-speced tickets make cheap models viable as builders, and the bar for 'well-speced' should be explicit.\n\nGated on T-review-loads-palace-rules.\n\ntest_plan: feed a vague ticket ('make it better'), confirm loose grade; feed a tight one, confirm tight grade.",
+    "completed_at": "2026-04-21T20:06:11.965001+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e4934afd-70a5-4257-ae3b-ec0fb3cea784",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

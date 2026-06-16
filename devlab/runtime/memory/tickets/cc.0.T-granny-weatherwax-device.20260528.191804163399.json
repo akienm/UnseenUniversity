@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-granny-weatherwax-device.20260528.191804163399",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-weatherwax-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:18:04.163399",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-nanny-2026-05-28"
+    ],
+    "tickets": [
+      "T-granny-weatherwax-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-weatherwax-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Platform",
+      "Orchestrator",
+      "Architecture"
+    ],
+    "title": "Granny Weatherwax: ticket gateway + coding orchestrator device",
+    "result": "GrannyWeatherwaxDevice: ticket intake+audit gate, tag→worker routing (weighted graph), Hebbian strengthening, CC escalation, status tracking. 28 tests green.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-28T20:09:40.040509+00:00",
+    "created_at": "2026-05-28T19:18:04.163399+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-nanny-2026-05-28",
+    "description": "Implement Granny Weatherwax as a rack device — the single entry point for all coding tickets. Responsibilities: (1) ticket intake + filing-time audit gate (deterministic where possible, Haiku for judgment calls); (2) routing via capability graph — ticket tags → typed edges → worker nodes (Igor, Scraps, Librarian, CC); (3) Hebbian strengthening on routing decisions — successful routes develop stronger edges; (4) CC escalation path for novel/HIGH-inertia tickets; (5) status tracking as single source of truth for work state. cc_queue.py becomes pure storage underneath her.\n\nRouting is graph traversal — no inference in the common case. Novel routing escalates to Haiku/Sonnet, result compiles back as a new edge.\n\n**Affected files:** devices/ (new devices/granny/ rack device), cc_queue.py (becomes storage layer only), devices/librarian/ (Granny calls Librarian for capability graph queries)\n**Design rules:** igor-uses-not-contains; routing logic is graph traversal not inference; HIGH-inertia tickets always escalate to CC; Hebbian strengthening via same mechanism as interpretive_edges\n**Scope boundary:** IN — ticket intake, audit gate, routing, status tracking, CC escalation; OUT — scheduling/triggers (Nanny), world-interaction dispatch (Nanny)\n**Test plan:** ticket filed via Granny routes to correct worker based on tags; novel tag combination escalates to CC; routing edge strengthens after successful dispatch; HIGH-inertia ticket surfaces to CC without routing",
+    "completed_at": "2026-05-28T20:11:34.294242+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:09:40.040509+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:18:04.223155+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "11f5bdda-918e-479a-b083-24cba7fa98a2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

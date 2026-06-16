@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-goal-37-task-service.20260521.163328607149",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-37-task-service"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T16:33:28.607149",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-queue-encapsulation-2026-05-21"
+    ],
+    "tickets": [
+      "T-goal-37-task-service"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-37-task-service",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Goals",
+      "ADC",
+      "Design"
+    ],
+    "title": "Write Goal 3.7 to palace: shared task management service",
+    "result": "wrote Goal 3.7 to palace.shared.akien.goals — shared task management service with scope routing (Igor personal/clan/employer/rack); palace node updated 2026-05-21T11:01:50",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-21T16:33:28.607149+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-queue-encapsulation-2026-05-21",
+    "description": "The goals tree (palace.shared.akien.goals) names 3.1–3.6 but has no node for generalized task management. Add Goal 3.7: 'Shared task management service — agents create and consume tasks across scopes (Igor personal, clan, employer, rack). Platform routes tasks to the right store. Building block for any agent type on the ADC platform.' Also add a brief design sketch: the service accepts task(scope, payload, for_agent?) and routes to the appropriate store; the current cc_queue is the Igor-personal-scope implementation; clan/employer/rack scopes are future implementations under the same interface.\n\n**Affected files:** palace.shared.akien.goals (palace node UPDATE — append 3.7 section)\n**Design rules:** none apply — palace doc edit only\n**Scope boundary:** palace node only; no code changes; no new DB tables; the task service itself is future work\n**Test plan:** no tests — palace doc; verify via palace_read(path='palace.shared.akien.goals') showing 3.7 section present\n**Validation:** palace_read returns content containing '3.7' and 'shared task management'\n**Cleanup:** n/a — palace write is idempotent\n**Observable via:** palace_read('palace.shared.akien.goals') contains 3.7 section",
+    "completed_at": "2026-05-21T17:01:57.843646+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T16:33:28.607175+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "17bf01f5-c05d-40e7-997f-d2b8a4750608",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

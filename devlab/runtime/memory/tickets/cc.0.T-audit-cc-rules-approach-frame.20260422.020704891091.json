@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-audit-cc-rules-approach-frame.20260422.020704891091",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-cc-rules-approach-frame"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T02:07:04.891091",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-approach-frame-principle-2026-04-21"
+    ],
+    "tickets": [
+      "T-approach-frame-sensor-node",
+      "T-audit-cc-rules-approach-frame",
+      "T-audit-igor-cp-approach-frame",
+      "T-palace-approach-frame-rule",
+      "T-sweep-avoidance-frame-docs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-cc-rules-approach-frame",
+    "gate": "T-palace-approach-frame-rule",
+    "size": "M",
+    "tags": [
+      "Palace",
+      "Rules",
+      "ApproachFrame",
+      "Audit"
+    ],
+    "title": "Audit CC palace rules through approach-frame lens; dissolve do-not rule",
+    "result": "10 top-level CC palace rules audited: 2 already approach-framed (persona, docs-live-in-code), 7 content-reframed (budget, coding, collaboration, commits, database, igor-constraints, memory), 1 dissolved + reborn (do-not → safeguards, target=clean reversibility + cross-index). CLAUDE.md + MEMORY.md read-order updated as coupling fix. Metric +10 reviewed +8 reframed. Commit 7217cda7.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.65,
+    "claimed_at": "2026-04-22T02:01:51.241596+00:00",
+    "related_to": null,
+    "decision_id": "D-approach-frame-principle-2026-04-21",
+    "description": "Walk all `theigors/rules/*` palace nodes through the approach-frame lens. For each proscriptive rule (starts with 'no', 'don't', 'never', 'avoid'), propose a positive-target reframe and write it. Specifically: the `do-not` rule is the structural mismatch — it's the prohibition dumping ground. Dissolve it: each entry moves to a positive home in an existing or new rule node.\n\n**Affected files:** palace rows under `theigors/rules/*` (content edits). `theigors/rules/do-not` likely becomes empty and gets archived.\n\n**Design rules:** no-sqlite (clan.memory_palace, Postgres only); approach-frame (this IS the implementation); no-new-memory-schemas (edits to existing rows, no new tables); test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: reframe existing proscriptive rules to approach-frame. Dissolve do-not node.\n- Out: Igor's base rules (T-audit-igor-cp-approach-frame). Out: generated docs (T-sweep-avoidance-frame-docs). Out: feedback_no_* memory files (T-sweep-avoidance-frame-docs).\n\n**Gate:** T-palace-approach-frame-rule (need the canonical rule in place to score against).\n\n**Test plan:** no new tests. Verification: `SELECT path, content FROM memory_palace WHERE path LIKE 'theigors/rules/%'` — no proscriptive openers remain without explicit keep-rationale noted inline. Record sweep count in T-approach-frame-sensor-node metric.",
+    "completed_at": "2026-04-22T02:07:04.891091+00:00",
+    "deposited_at": "2026-04-21T20:23:01.911058",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0002a360-a049-4bdb-9de5-3a4e359a71b6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

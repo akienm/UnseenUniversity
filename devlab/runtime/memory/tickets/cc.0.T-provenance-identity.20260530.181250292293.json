@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-provenance-identity.20260530.181250292293",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-provenance-identity"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T18:12:50.292293",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-provenance-identity"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-provenance-identity",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Provenance service: rack-issued identity tokens at announce",
+    "result": "ProvenanceService issues HMAC-signed tokens at announce; stored in registry/tokens.json; returned in Manifest.token; wired into Skeleton + AnnounceBroker; 12 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.85,
+    "claimed_at": "2026-05-31T21:08:59.132364+00:00",
+    "created_at": "2026-05-30T18:12:50.292293+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Agents currently self-report their identity at announce. The rack accepts whatever agent_id/instance they claim. A provenance service issues a signed token at announce time — not self-reported, rack-verified. Every subsequent action by that agent carries the token.\n\nToken contains: agent_id, instance, announce_timestamp, rack_signature. Stored in flat-file registry alongside the device manifest. Token is short-lived (expires at deregister or rack restart). Other services (memory writes, channel posts, tool calls) can verify the token against the registry.\n\n**Affected files:** unseen_university/announce/broker.py, unseen_university/announce/manifest.py, ~/.unseen_university/registry/ (token field added to registry JSON)\n**Design rules:** flat-file registry survives DB outage; no Postgres dependency in announce path\n**Scope boundary:** IN — token issuance at announce, token stored in registry, token returned in manifest; OUT — cryptographic PKI (HMAC shared secret is sufficient for v1), revocation, cross-rack federation\n**Completion criteria:** announcing agent receives a token in its manifest; registry JSON contains the token; a second announce with the same agent_id but no valid prior token gets a fresh token (not reuse)",
+    "completed_at": "2026-05-31T21:12:09.846380+00:00",
+    "deposited_at": "2026-05-30T12:13:30.654190",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T21:08:59.132364+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T18:12:50.498448+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d716dab5-935b-4e97-a269-715066fa96da",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

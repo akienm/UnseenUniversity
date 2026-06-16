@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-spreading-activation-d233.20260325.173218727839",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-spreading-activation-d233"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:32:18.727839",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-spreading-activation-d233"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-spreading-activation-d233",
+    "body": "Implement D233 spreading activation design.\n\nTWO LAYERS:\n1. Word-graph layer (word_graph.py LOW inertia): spread from TWM top-7 seeds along co-occurrence/bigram edges (hop_decay=0.6, depth=2). Feeds predict_next() for context-sensitive generation.\n2. Memory layer (cortex.py MEDIUM inertia, design pre-approved D233): spread from bridged word nodes through interpretive_edges (hop_decay=0.8, depth=2). Feeds cortex.search() ranking.\n\nNEW METHOD: cortex.spreading_activation(seed_nodes, depth=2) -> dict[node_id, float]\n- Seeds = TWM top-7 hot_attractors\n- Bridge: hot word nodes activate associated memories via content index\n- Multi-source nodes: sum activations\n- Decay multipliers as config constants (not hardcoded)\n\nTESTS: tests/test_spreading_activation.py\n- single-hop activation from one seed\n- multi-hop decay (3 hops ~ 0.216 of original)\n- interpretive edges carry more heat than co-occurrence\n- top-7 seed cap enforced\n- empty seed set returns empty dict\n\nFORENSIC LOGGING: log_error on spread exceptions; INFO when spread depth exceeds expected node count.\n\nSCOPE: cortex.spreading_activation() + word_graph.spread() only. Do NOT change memory schema, TWM structure, BG dispatch, or cortex.search() ranking beyond inserting spreading_activation scores.",
+    "role": "worker",
+    "size": "M",
+    "title": "Spreading activation D233: two-layer heat field in cortex + word graph",
+    "result": "D233 spreading activation — two-layer heat propagation implemented. cortex.spreading_activation() + word_graph.spread() with exponential decay. Tests: 9/9 pass. All 363 suite tests pass. Forensic logging added per spec.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-25T17:29:28.105267+00:00",
+    "completed_at": "2026-03-25T17:32:18.727839+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

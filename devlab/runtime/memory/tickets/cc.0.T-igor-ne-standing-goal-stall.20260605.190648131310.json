@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-ne-standing-goal-stall.20260605.190648131310",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-ne-standing-goal-stall"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T19:06:48.131310",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-ne-standing-goal-stall"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-ne-standing-goal-stall",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Cognition",
+      "NE"
+    ],
+    "title": "Igor NE loops on blockage question instead of acting on standing goals",
+    "result": "Suppressed NE cognitive blockage gap loop when AGED_INTENT standing goals present: NE prompt guidance + _process_gaps() filter + flag_top_gap() defense layer in narrative_engine.py and learner.py",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.85,
+    "intention": "I intend that Igor acts on standing goals when idle rather than looping on a self-generated blockage question.",
+    "created_at": "2026-06-05T19:06:48.131310+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When standing goals (READ_CODEBASE, READ_QUEUE, READ_WEB, ASK_AKIEN_QUESTIONS, BUILD_QUESTION_LIST) are present in TWM at moderate salience, the NE should pick one and act. Instead it generates NARRATIVE_GAP observations asking 'What specific factors are contributing to the cognitive blockage?' at salience=0.98-1.00 and broadcasts them to the shared channel, looping indefinitely without executing any action.\n\nStanding goals are intentional — Igor is supposed to read, ask questions, and build context when idle. The NE treating them as a blockage signal rather than an action queue is the bug.\n\nLikely cause: NARRATIVE_GAP lever fires when the NE can't resolve an action from the TWM context, generating a question as a meta-response. That question then becomes the highest-salience item, crowding out the standing goals. The blockage question is self-reinforcing.\n\nAffected files: devices/igor/cognition/ (NE lever logic, narrative_gap handler), devices/igor/brainstem/ (standing goal dispatch)\n**Design rules:** NE must produce an action or stay silent — generating a meta-question that loops is a liveness failure\n**Scope boundary:** Fix NE to act on standing goals when nothing urgent is present; suppress NARRATIVE_GAP when the only gap is 'no urgent work'\n**Completion criteria:** When only standing goals are in TWM (no urgent chat, no high-priority impulses), Igor picks one and executes it rather than looping on a blockage question; shared channel shows reads/actions not repeated meta-questions\n\n**HIGH-INERTIA APPROVAL (2026-06-05):** Akien approved changes to narrative_engine.py and learner.py via re-issuing /sprint-ticket command. Changes: (1) NE prompt guidance for AGED_INTENT handling, (2) _process_gaps() blockage suppression filter, (3) flag_top_gap() defense layer.",
+    "completed_at": "2026-06-05T20:53:49.761138+00:00",
+    "deposited_at": "2026-06-05T13:07:37.326890",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

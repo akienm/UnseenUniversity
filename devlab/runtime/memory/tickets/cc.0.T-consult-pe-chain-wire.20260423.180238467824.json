@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consult-pe-chain-wire.20260423.180238467824",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-pe-chain-wire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T18:02:38.467824",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-primitive-2026-04-23"
+    ],
+    "tickets": [
+      "T-consult-pe-chain-wire",
+      "T-consult-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-pe-chain-wire",
+    "gate": "T-consult-primitive",
+    "size": "M",
+    "tags": [
+      "PEChain",
+      "Consult",
+      "Coding"
+    ],
+    "title": "Wire consult into pe_chain at stuck points (SITUATE / preflight / implement-fail)",
+    "result": "_maybe_consult_stuck helper + 3 hook sites (SITUATE-empty, pre-flight, close-loop attempt-2). Per-basket per-reason rate-limit. Additive only — original behavior preserved. 10 tests. 1b2238c5.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-23T17:57:28.476941+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-primitive-2026-04-23",
+    "description": "Wire ConsultSession into pe_chain at three stuck-point escape hatches: (1) SITUATE returns 0 files, (2) pre-flight blocks on a test unrelated to the ticket's touched files, (3) IMPLEMENT fails twice on the same ticket. Each stuck-point builds a ConsultState bundle (ticket desc + pe_chain log tail + last hypothesis + failure reason), starts a ConsultSession, asks the initial question, integrates hypotheses back into pe_chain hypothesis block for retry.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py, tests/test_pe_chain_consult.py\n**Design rules:** docs-live-in-code, test-plan-or-why-not\n**Scope boundary:** IN — three call sites + state-bundle builders + hypothesis re-integration. OUT — new pe_chain steps, changing escalate semantics otherwise, altering SITUATE filter logic.\n**Test plan:** unit tests per call site — verify ConsultSession constructed with appropriate state, ask() invoked, hypotheses integrated into basket['hypothesis'] for retry path; same-stuck-point-same-ticket repeat rate-limit honored.",
+    "completed_at": "2026-04-23T18:02:38.467824+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3b96f22d-476f-4b9a-b803-6ab9a13b5c74",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-adc-database-review-tools.20260508.204441470136",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-database-review-tools"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T20:44:41.470136",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-database-review-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-database-review-tools",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Database",
+      "Design",
+      "ADC"
+    ],
+    "title": "Design database review/edit tools (especially palace trees)",
+    "result": "design doc filed: D-adc-db-review-tools-2026-05-08; 2 child tickets: T-librarian-palace-mcp-tools (S) + T-palace-cli (M, gated)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-05-08T21:22:24.378052+00:00",
+    "created_at": "2026-05-08T20:44:41.470136+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Design a solution for Akien to review, search, browse, and edit the databases — particularly the palace tree structure. Igor has rich query/browse/edit capabilities for his memories; Akien needs equivalent tools for the shared databases (palace, instance tables, etc.). Off-the-shelf tools may work for flat tables, but the hierarchical tree structure of the palace needs custom thinking on traversal, visualization, and editing workflows.\n\n**Affected files:** TBD — discovery step in design phase\n**Design rules:** palace-rule-discovery during design; no-sqlite (Postgres only)\n**Scope boundary:** Focus on review/browse/edit workflows. Out of scope: real-time sync, multi-user locking, export formats (handle those in follow-up tickets).\n**Test plan:** Design doc with mockups/examples of the proposed UI/CLI interaction patterns. No code yet — design only.",
+    "completed_at": "2026-05-08T21:23:32.452211+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "926471f1-549d-4d08-8d45-42362917f10f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-python-diagnostic-base-class-repo.20260508.171019930942",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-python-diagnostic-base-class-repo"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:10:19.930942",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-python-diagnostic-base-class-repo"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-python-diagnostic-base-class-repo",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "SWADL",
+      "Observability",
+      "Logging"
+    ],
+    "title": "CLOSED: Create python_diagnostic_base_class repo — merged logging+perf base",
+    "result": "DiagnosticBase micro-package created at ~/dev/src/python_diagnostic_base_class — loguru+TaggedLogger+Stopwatch+CSV+gc naming, 36 tests green, dd981ed",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:19:35.047065+00:00",
+    "created_at": "2026-05-08T17:10:19.930942+00:00",
+    "related_to": null,
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Create a new standalone repo python_diagnostic_base_class with a single publishable micro-package. Merges the best of SWADL's base class (instance naming via gc.get_referrers, hierarchical get_name with parent traversal, substitution engine, dump/bannerize, lazy per-class logger, kwargs absorption, context manager pattern) and ADC log path conventions. No dependency on SWADL or ADC.\n\n**Logging backend:** loguru. Structured records, colored output, built-in rotation, and .bind() for tag routing — no LogRecord.extra gymnastics needed.\n\n**Tagged logging design:**\n- self.logger.debug/info/warning/error(msg) — standard levels, no tag\n- self.logger.perf('msg') — callable tag-scoped sub-logger, defaults to INFO, tag bound via loguru .bind()\n- self.logger.perf.debug('msg') — explicit level + tag\n- self.debug/info/warning/error(msg) — convenience passthroughs on base class, unchanged\n- __getattr__ on TaggedLogger proxy returns tag-scoped sub-logger on demand; no pre-registration needed\n- Handlers filter by tag (PerformanceHandler writes tag=perf rows to rolling CSV)\n\n**From SWADL:** instance naming (gc trick + hierarchical path), __str__ identity, lazy per-class logger, get_timestamp(), dump()/bannerize, apply_kwargs, resolve_substitutions, context manager, timeout_remaining\n**From ADC:** datacenter_logs/<device>/perf/YYYY-MM-DD.perf.csv convention, device_id stamping on perf rows\n\n**Affected files:** new repo — pyproject.toml, diagnostic_base/base.py, diagnostic_base/tagged_logger.py, diagnostic_base/perf.py, README.md\n**Design rules:** no-sqlite; CSV flat-file rolling log; pip-installable standalone; loguru as only logging dep\n**Scope boundary:** logging + perf + instance naming only; no automation or device/rack lifecycle logic\n**Test plan:** stopwatch (clean/exception/context-manager), CSV rolling+pruning, instance naming (gc), tagged logger routing, log output format",
+    "completed_at": "2026-05-08T18:27:13.367140+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "79f1630c-b056-4f22-aaf0-9ef5d669a765",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-librarian-research-capability.20260508.173947109347",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-research-capability"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:39:47.109347",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-rack-agent-2026-05-08"
+    ],
+    "tickets": [
+      "T-librarian-research-capability"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-research-capability",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Research"
+    ],
+    "title": "CLOSED: Librarian research and summarization workflows",
+    "result": "ResearchEngine + 3 MCP tools + manifest entries; 14 tests; 8f6411c",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T20:05:26.756134+00:00",
+    "created_at": "2026-05-08T17:39:47.109347+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "description": "Add research and summarization as first-class Librarian capabilities. Usable by CC, Igor, or Akien via channel or MCP.\n\nCapabilities:\n- summarize(text_or_url, style='brief|detailed|bullets') — uses Tier 1 model\n- research(query, depth='shallow|deep') — multi-step: search → fetch → synthesize\n- build_summary(ticket_id_or_topic) — summarize a ticket + linked context\n\nAll results posted back to the requesting channel or returned via MCP.\n\n**Affected files:** agent_datacenter/devices/librarian/research.py\n**Design rules:** no-sqlite; results posted via bus/channel\n**Scope boundary:** research + summarization only; no autonomous action-taking\n**Test plan:** summarize() returns non-empty for a known text; research() returns structured result dict",
+    "completed_at": "2026-05-08T20:07:47.591833+00:00",
+    "deposited_at": "2026-05-21T04:12:24.602812",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "88016401-f90a-48fd-b1d5-3436c7341025",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.333.20260322.005737211344",
+  "emitter": "cc.0",
+  "namespace": [
+    "333"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T00:57:37.211344",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "333"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "333",
+    "size": "S",
+    "notes": "Replace _log.warning() with log_error() from forensic_logger. Add: from ..cognition.forensic_logger import log_error. Two call sites in schema_runner.py. Close #333.",
+    "title": "schema_runner.py: add forensic logging",
+    "result": "schema_runner.py forensic logging: replaced all 4 _log.warning() calls with log_error() from forensic_logger. Removed logging import. Four sites: SCHEMA_CATALOG_LOAD (2×, load_primitives_catalog + load_missing_primitives), SCHEMA_PRIM_FAIL (primitive execution error), SCHEMA_UNKNOWN_PRIM (unknown primitive name). All routed to errors.log with kind/detail/source. Syntax OK, all run_habit tests pass.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-22T00:56:03.361302+00:00",
+    "completed_at": "2026-03-22T00:57:37.211344+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-stop-swarm-engram.20260403.192611000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stop-swarm-engram"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:11",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-stop-swarm-engram"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stop-swarm-engram",
+    "epic": "Operations",
+    "title": "stop_swarm engram",
+    "result": "stop_swarm() tool in cluster_ssh.py — drops exit.flag on all swarm instances via SSH + local. PROC_STOP_SWARM habit seeded with trigger phrases. twm_ttl_seconds=300.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-05T00:23:33.068757+00:00",
+    "created_at": "2026-04-03T19:26:11Z",
+    "description": "Build stop_swarm as an Igor engram — drops exit.flag on all remote instances via SSH (same path as update_swarm), drops locally too. Trigger: stop swarm, bring down all igors, maintenance window. No restart. Analogous to PROC_SWARM_UPDATE.",
+    "completed_at": "2026-04-05T00:25:25.901706+00:00",
+    "github_issue": 373,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a0e8e180-bc60-4184-ab43-0fb41e82982f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

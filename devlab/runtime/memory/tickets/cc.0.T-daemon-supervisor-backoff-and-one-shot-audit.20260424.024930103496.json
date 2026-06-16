@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-daemon-supervisor-backoff-and-one-shot-audit.20260424.024930103496",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-daemon-supervisor-backoff-and-one-shot-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:49:30.103496",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-daemon-supervisor-backoff-and-one-shot-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-daemon-supervisor-backoff-and-one-shot-audit",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Ops",
+      "Safety",
+      "DaemonSupervisor",
+      "RunawayLoop",
+      "Pass2"
+    ],
+    "title": "Daemon supervisor: exponential backoff on restart; verify one_shot tagging on critical threads",
+    "result": "Shipped in 86033984. New restart_guard.py ledger rate-limits restart.flag (default 5/600s, env-tunable); overflow writes restart_halt.flag and exits 0 instead of 42. Fixed one_shot=True on ne-worker + consolidation-worker registrations — they were in _DEFAULT_CRITICAL but the poll loop skipped them as one_shot, so the safety mechanism was disabled for exactly the threads it was meant to guard. 9 tests.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": "2026-04-24T02:49:00.778149+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 4 P1-8.4a (SHIP). Two coupled issues in daemon_supervisor + main.py:\n\n(1) No backoff on restart.flag — a critical thread that dies within poll_interval of every boot triggers an infinite restart loop with no observable signal beyond churn.\n\n(2) main.py:6932 and 7005 register ne-worker + consolidation-worker with one_shot=True, but they're also in _DEFAULT_CRITICAL. The _poll_loop explicitly skips alerts for one_shot threads (daemon_supervisor.py:145), so critical-thread restart detection was silently disabled for the only two threads it was meant to guard.\n\n**Affected files:** wild_igor/igor/restart_guard.py (new — testable backoff+halt logic), wild_igor/igor/main.py (ne-worker + consolidation-worker register calls drop one_shot=True; restart.flag branch calls record_and_check/write_halt instead of inline logic).\n**Design rules:** docs-in-code, test-plan-or-why-not, oop-first (functional shape fits a stateless file-rotating ledger).\n**Scope boundary:** IN — restart rate-limit (default 5 per 600s, env-tunable IGOR_MAX_RESTARTS + IGOR_RESTART_HALT_WINDOW_SECS); one_shot audit on the two critical workers. OUT — removing the restart path; changing poll_interval or _DEFAULT_CRITICAL; adding new critical threads.\n**Test plan:** 9 tests for restart_guard — first restart never halts; halt fires at N+1; window-aged entries drop off; history persisted; corrupt/non-list history resets; halt flag contents; halt_present default; clear_history. main.py import sanity.",
+    "completed_at": "2026-04-24T02:49:30.103496+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4c64ed8a-83ee-4e8b-b8a3-5bc4362393f1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

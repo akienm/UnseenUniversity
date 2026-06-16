@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-cc-human-routing.20260330.023850185411",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-human-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T02:38:50.185411",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-human-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-human-routing",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D259: author-aware cloud routing for CC and human turns",
+    "result": "D259: _bg_reason() now accepts is_user_turn+complexity; job dispatch lambda threads author→_HUMAN_AUTHORS check; claude-code and akien get is_user_turn=True+complexity=parsed.complexity for background jobs. _HUMAN_AUTHORS constant at module level. Syntax OK.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "When originating author is claude-code or human, all downstream inference (including background job synthesis) must set cloud_ok_override=True and is_user_turn=True, overriding background-mode suppression. Root cause: CC messages hit habits that dispatch background jobs with is_background=True, blocking OR escalation even when available and user is waiting. Fix: thread author through _process_inner into background job dispatch and InferenceContext.",
+    "completed_at": "2026-03-30T02:38:50.185411+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9687b1ac-e170-41bd-8fd4-3b0bc5c41882",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

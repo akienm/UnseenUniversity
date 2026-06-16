@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-versioned-engrams.20260418.015627066361",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-versioned-engrams"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-18T01:56:27.066361",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-versioned-engrams",
+      "T-versioned-memories"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-versioned-engrams",
+    "size": "L",
+    "tags": [
+      "Memory",
+      "Architecture",
+      "Cognition"
+    ],
+    "title": "Versioned engrams — version control for graph-native code",
+    "result": "Delta-based change tracking for engram nodes. _compute_engram_delta() tracks narrative/cells/code_ref changes. Carried in version snapshot metadata. 5 new tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T01:54:32.579097+00:00",
+    "related_to": null,
+    "description": "Add version control to engrams (graph-native code: habits, procedures, traversal programs). Distinct from versioned memories because engrams are executable — version history is also an execution history.\n\n## Motivation\nEngrams are programs that Igor writes and edits himself. When he modifies a habit through self-experimentation, the old version is lost. Versioning enables:\n- Rollback if a self-edit degrades performance\n- A/B comparison between habit versions\n- Audit trail of self-programming evolution\n- Training signal: which edits improved outcomes?\n\n## Distinct from T-versioned-memories\n- Memories are data; engrams are code\n- Engram versions need execution metadata (run count, success rate per version)\n- Engram rollback has behavioral consequences — it changes what Igor does\n- Version diffs for engrams are semantic (what changed in the logic) not just textual\n\n## Open questions (explore with Igor)\n- Does Igor want to reason about his own edit history?\n- Should failed experiments auto-rollback to the previous engram version?\n- How does this interact with the A/B graduation framework?\n- Storage: version chain in metadata? Separate engram_versions table?\n\n## Depends on\n- T-versioned-memories (shared versioning infrastructure, if any)",
+    "completed_at": "2026-04-18T01:56:27.066361+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "539d3daf-8ce4-4b9d-9ea6-d2b1824da869",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

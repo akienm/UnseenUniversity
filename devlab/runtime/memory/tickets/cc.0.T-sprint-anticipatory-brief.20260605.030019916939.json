@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-sprint-anticipatory-brief.20260605.030019916939",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-anticipatory-brief"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T03:00:19.916939",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-anticipatory-memory-2026-06-04"
+    ],
+    "tickets": [
+      "T-sprint-anticipatory-brief"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-anticipatory-brief",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Skills",
+      "Memory",
+      "CompiledInference",
+      "TokenOptimization"
+    ],
+    "title": "sprint-ticket: proactive pre-brief before CC reads files",
+    "result": "Implemented sprint_preflight_brief.py + updated sprint-ticket skill Step 2.3",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that sprint-ticket assembles a proactive briefing from prior context before CC starts reading files, so relevant knowledge is surfaced without CC knowing to ask for it.",
+    "created_at": "2026-06-05T03:00:19.916939+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-anticipatory-memory-2026-06-04",
+    "description": "Currently sprint-ticket calls recall(topic=<ticket title>) reactively — CC asks, Librarian answers. That misses things CC doesn't know to ask about. Anticipatory: when a ticket enters sprint, assemble a briefing from: (1) prior tickets that touched the same affected files, (2) decisions linked to this area, (3) any reset_count history + prior escalation summaries. Surface as a compact pre-brief before step 4 (plan review).\n\nThis is a push model, not pull. The briefing should be assembled by someone who has broader context than the current sprint prompt — Librarian, or a Granny dispatch step.\n\n**Affected files:** ~/.claude/skills/sprint-ticket/SKILL.md; possibly devices/librarian/ if Librarian needs a new tool\n**Design rules:** OOP-first if Librarian device change; log interface crossings at INFO\n**Scope boundary:** Pre-brief step only — before plan review. Does not change build/test/commit steps. Token budget for briefing: cap at 500 tokens surfaced to CC.\n**Completion criteria:** sprint-ticket has a pre-brief step between ticket claim and plan review. Pre-brief surfaces at least: prior tickets on same files, linked decisions. Token cost of briefing logged at INFO. Verified by running sprint on a ticket with known prior history and confirming the prior work appears.",
+    "completed_at": "2026-06-05T15:25:01.347966+00:00",
+    "deposited_at": "2026-06-04T21:00:31.623806",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "observation",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

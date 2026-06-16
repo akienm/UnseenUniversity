@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-rewind-output-contracts.20260616.203103014482",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rewind-output-contracts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T20:31:03.014482",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rewind-as-workflow-primitive",
+      "D-rewind-as-workflow-primitive-2026-06-16"
+    ],
+    "tickets": [
+      "T-rewind-output-contracts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rewind-output-contracts",
+    "title": "[sprint] Rewind output contracts — define what each workflow step must flush before it may rewind",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Process"
+    ],
+    "description": "Workstream 1 of D-rewind-as-workflow-primitive. Complete the contract table: per workflow step (/sorted, design-audit, ticketing, /sprint-ticket, advisor consult, ...), define what durable artifact it MUST flush, and where, before it may rewind. The rewind boundary is the forcing function — anything not flushed is lost — so this table is what makes the sorted->rewind->audit->rewind->ticketing->rewind->next chain safe. Known leaks to close: design-audit findings (no durable home today), advisor feedback (ephemeral today), 'what's next'. Also decompose savestate into a cheap frequent step-checkpoint vs the rare heavy session-summary.\n\n**Affected files:** TBD — the contract table lands in the decision doc / a process doc; downstream may touch skill definitions under skills/ and savestate tooling in lab/claudecode/.\n**Design rules:** docs-live-in-code, test-plan-or-why-not (process spec — 'no tests because: it is a specification artifact, enforcement is a downstream audit-check ticket').\n**Scope boundary:** IN — define the contracts (the table) + the savestate split design. OUT — building the rewind-cadence driver / send-keys automation / the /bookmark + /rewind-to-base skills (those come after the table exists). MANDATORY rule to encode: /export-chat before every rewind; conversation-only rewind, never code-restore.\n**Test plan:** no tests because: this is a specification deliverable (a contract table + savestate-split design). Enforcement becomes a downstream audit-check ticket once the spec is concrete.\n**Completion criteria:** A contract table covers every active workflow step (step -> durable output -> location) with no remaining leaks; the savestate split (cheap step-checkpoint vs rare session-summary) is designed; the export-chat-before-rewind + conversation-only-never-code-restore rules are encoded in the spec.",
+    "decision_id": "D-rewind-as-workflow-primitive-2026-06-16",
+    "created_at": "2026-06-16T20:31:03.014482+00:00",
+    "updated_at": "2026-06-16T14:31:03.027219-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.6,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that every workflow step has a defined durable output it must flush before it may rewind, so the conversation delta can be excised without losing knowledge.",
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

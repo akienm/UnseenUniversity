@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-sprint-skill.20260101.120033176906",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T12:00:33.176906",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sprint-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-skill",
+    "body": "Build ~/.claude/skills/sprint/SKILL.md. On invoke: (1) run context-load to get current state; (2) read cc_queue for next pending ticket (or accept ticket ID as arg); (3) announce on channel: tab/session name + ticket claimed; (4) work the ticket using workstep discipline; (5) on completion: write result to queue, post to channel, surface next ticket. Composites: context-load skill + channel client. Makes multi-session CC work: each tab runs /sprint, picks a ticket, works independently, all visible in channel. No scribe, no savestate ritual — result goes to queue + channel, that IS the record.",
+    "size": "S",
+    "title": "sprint skill — pick up a ticket, work it, report back",
+    "closed": "2026-03-19T10:23",
+    "result": "SKILL.md built and live. Queue-based ticket claim + channel post pattern defined.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "completed_at": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

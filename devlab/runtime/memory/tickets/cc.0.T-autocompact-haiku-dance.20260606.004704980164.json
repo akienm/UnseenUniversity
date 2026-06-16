@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-autocompact-haiku-dance.20260606.004704980164",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-autocompact-haiku-dance"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T00:47:04.980164",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-compact-cadence-hook-2026-06-05"
+    ],
+    "tickets": [
+      "T-autocompact-haiku-dance",
+      "T-autocompact-interruption-protocol",
+      "T-cc-compact-cadence-hook"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-autocompact-haiku-dance",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Claude"
+    ],
+    "title": "/autocompact runs compaction on Haiku (model haiku -> compact -> model sonnet)",
+    "result": "/autocompact step 2 does model haiku -> compact -> model sonnet; levers doc updated; repo+userSettings synced",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "intention": "I intend that /autocompact performs the compaction summarization on Haiku and returns the session to Sonnet afterward.",
+    "created_at": "2026-06-06T00:47:04.980164+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-compact-cadence-hook-2026-06-05",
+    "description": "Akien prefers Haiku for compaction — cheap, fast, and it works on standard context without 1M credits. /autocompact step 2 currently fires a bare /compact (which runs on the working model). Update it to do the model-switch dance: /model haiku -> /compact <preserve string> -> /model sonnet, via sequential tmux send-keys with delays long enough for the async /compact to finish before switching back. Keep the existing 3-Enter interrupt pattern before the command (T-autocompact-interruption-protocol).\n\n**Affected files:** skills/autocompact/SKILL.md (repo root — canonical), ~/.claude/skills/autocompact/SKILL.md (sync copy)\n**Design rules:** skills-in-repo (repo root is source of truth, sync to ~/.claude); no DB rules apply\n**Scope boundary:** In scope: the model-switch sequence inside /autocompact step 2 and its tmux send-keys sequencing. Out of scope: WHEN /autocompact fires (that is T-cc-compact-cadence-hook); the value of N.\n**Completion criteria:** /autocompact SKILL.md step 2 issues /model haiku, then /compact, then /model sonnet, with sequencing notes; both repo and ~/.claude copies match; levers doc docs/the_ownership_gap/4.Skills.md updated to describe the Haiku-dance behavior.",
+    "completed_at": "2026-06-06T00:59:26.122074+00:00",
+    "deposited_at": "2026-06-05T18:48:12.762863",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

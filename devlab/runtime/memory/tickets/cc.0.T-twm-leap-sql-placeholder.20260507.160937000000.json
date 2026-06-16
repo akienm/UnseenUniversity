@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-twm-leap-sql-placeholder.20260507.160937000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-leap-sql-placeholder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:09:37",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-twm-leap-sql-placeholder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-leap-sql-placeholder",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Database"
+    ],
+    "title": "CLOSED: twm_leap: ? placeholder syntax caused Postgres errors on boot",
+    "result": "Fixed in 0236d93a: replaced ? with %s at twm_leap.py:89,109. Part of 11-file SQLite placeholder sweep.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 3,
+    "claimed_at": null,
+    "created_at": "2026-05-07T16:09:37Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "twm_leap.py used SQLite-style ? parameter placeholders in two execute() calls (lines 89, 109), causing Postgres to throw 'syntax error at or near AND' on every twm_push since the leap sweep was introduced. Igor logged 'twm_leap sweep failed (non-fatal)' approximately every 600ms during boot. Fixed in commit 0236d93a as part of the broader SQLite→%s sweep across 11 files.\n\n**Affected files:** wild_igor/igor/memory/twm_leap.py (lines 89, 109)\n**Design rules:** no-sqlite (CLAUDE.md hard rule)\n**Scope boundary:** placeholder syntax fix only — no logic change; leap semantics unchanged\n**Test plan:** no dedicated test added (sweep commit); twm_leap covered by integration path via cortex.twm_push",
+    "completed_at": "2026-05-06T18:40:22.595322+00:00",
+    "done_summary": "Fixed in 0236d93a: replaced ? with %s at twm_leap.py:89 (SELECT) and :109 (UPDATE). Error was 'syntax error at or near AND' because Postgres received literal ? characters. Covered in the 11-file, 51-site SQLite placeholder sweep.",
+    "github_issue": 599,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0c47fc23-5348-4689-a139-622ae2211ecd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

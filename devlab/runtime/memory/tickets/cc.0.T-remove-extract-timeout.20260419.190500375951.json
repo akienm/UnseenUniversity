@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-remove-extract-timeout.20260419.190500375951",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-extract-timeout"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T19:05:00.375951",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-extract-prompt-zero-tolerance",
+      "T-reading-audit-qwen-complete",
+      "T-reading-worker-pool",
+      "T-remove-extract-timeout"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-extract-timeout",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Reading",
+      "Principle-alignment"
+    ],
+    "title": "Remove or drastically extend the 300s timeout on local reading extraction — honor 'slow on slow is ok'",
+    "result": "Removed urllib.urlopen timeouts on book_learner._extract_nodes_local AND after_action_reviewer._call_ollama. Both were clipping on cold qwen2.5:7b CPU starts. Principle: slow-on-slow-is-ok; hang safety will come from worker-pool layer later. Commit 698625ea.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Discovered 2026-04-19 12:26 via smoke test on real URL (Akien's blog post). ALL three chunks returned 0 nodes with summary='local inference error: timed out'. qwen2.5:7b on CPU under CC load consistently takes more than 300s per chunk — the urllib.request.urlopen timeout in book_learner._extract_nodes_local() silently clips the call and returns empty.\n\nDirectly contradicts Akien's stated principle (2026-04-18): 'we put things that can be slow on the slow resources (local when possible, no timeouts, slow is ok).' The 300s timeout is a load-bearing policy violation that produces silent failures no amount of prompt-tuning fixes.\n\n## The fix\n`book_learner._extract_nodes_local()` line ~481: `urllib.request.urlopen(req, timeout=300)`.\n\nOption A: remove the timeout entirely (`urlopen(req)` — no timeout = wait forever). Matches Akien's principle directly. Risk: if qwen hangs, the worker hangs. Mitigated because we're moving to a worker-pool (T-reading-worker-pool) where the pool manager can kill a truly-hung worker.\n\nOption B: raise to 1800s (30 min) per call. Practical middle ground. Still caps the worst case but stops clipping legitimately-slow extractions.\n\nLean: **A if T-reading-worker-pool lands first** (worker-pool provides the hang guard at a higher level). **B as standalone fix** until the worker-pool lands.\n\n## Also check the other timeouts\n- after_action_reviewer._call_ollama() has a 45s timeout — already flagged today as too short for cold qwen starts\n- inference_gateway and cluster_router _probe timeouts — shorter probes are OK (3s), they're for health checks not actual work\n\nStandard: ANY call labeled 'training' or 'reading' or 'bulk' should have no timeout OR a very generous one. Interactive calls can keep shorter timeouts for UX.\n\n## Acceptance\n- Smoke test against /tmp/run_smoke_read.py (or equivalent) completes with ≥1 node per chunk on at least one block\n- No extract-diag line saying 'local inference error: timed out' for a block that would complete given more time\n- Re-run on trainmymonkey post that timed out today produces real deposits\n\n## Related\n- T-reading-audit-qwen-complete (sibling — prompt/filter/gate fixes that all work but were masked by this)\n- T-reading-worker-pool (once it lands, timeout removal is safer)\n- T-extract-prompt-zero-tolerance (completed, now unmasked and testable)\n- after_action_reviewer timeout (flagged 2026-04-18, separate)\n\n## Provenance\nAkien 2026-04-19 smoke test with new extract-diag logger revealed timeout as the true cause of all recent zero-node results.",
+    "completed_at": "2026-04-19T19:05:00.375951+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9bcae028-c60b-4c9c-8345-4c0a5391b606",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

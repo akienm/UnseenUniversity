@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-deep-audit-parallel.20260403.161911412386",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-deep-audit-parallel"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T16:19:11.412386",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-deep-audit-parallel"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-deep-audit-parallel",
+    "epic": "Operations",
+    "size": "M",
+    "title": "Deep audit: parallel specialist review (weekly cadence)",
+    "result": "Built /deep-audit skill: 11 specialist panels (DB, Architect, Neuroscientist, Cognitive Scientist, AI Safety, Systems/Perf, Test, ML, Process/Meta, Systems Dynamics, SRE) run in parallel via Haiku agents, synthesized by Sonnet. Liveliness question added to panels 3+4, self-testing to panel 7, meta-questions (systems thinking, Igor-as-developer levers) added to synthesis. Weekly cadence, posts to cc_channel.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Weekly deep audit running 11 expert-persona reviews in parallel. Synthesize into a ranked issue list.\n\nSpecialist panels (Haiku per panel, run in parallel):\n\n1. DATABASE ENGINEER (30yr) — schema coherence, index coverage, query plans, N+1s, missing constraints, Postgres antipatterns, migration hygiene, connection pooling, jsonb usage. Also: is there a better way entirely? Are we over-engineering storage, or under-using Postgres (triggers, materialized views, LISTEN/NOTIFY, pg_cron)?\n\n2. SOFTWARE ARCHITECT (30yr) — coupling/cohesion, abstraction levels, inertia vs. churn, dead code, duplication, module boundaries, interface contracts, failure modes, scalability ceiling. Explicitly: do we have the right abstractions? Missing collection-of-concerns abstractions? Best practices not adopted? What would a clean-room redesign look like?\n\n3. NEUROSCIENTIST — biological fidelity of TWM/habit/milieu/gradient stack. Igor is not as lively as expected — what biological mechanisms produce spontaneous, animated behavior we are not implementing? (intrinsic excitability, spontaneous activity, oscillatory dynamics, predictive processing, affective coloring of all output)\n\n4. COGNITIVE SCIENTIST — does Igor exhibit expected cognitive phenomena (priming, spreading activation, attention limits, chunking)? Same liveliness question: what mechanisms (arousal-gated attention, curiosity-driven exploration, affective priming) would produce more dynamic behavior?\n\n5. AI SAFETY RESEARCHER — alignment and predictability: goal drift vectors, habit misfire taxonomy, runaway escalation paths, what could cause Igor to do something unintended? How can we do better?\n\n6. SYSTEMS / PERFORMANCE ENGINEER — thread hygiene, resource leaks, async correctness, timer drift, CPU/memory under load, what breaks at 10x message volume? How can we do better?\n\n7. TEST ENGINEER — coverage gaps, test quality (mocks vs. real), critical paths with zero coverage, flaky test risks. Key question: how can Igor test HIMSELF continuously — self-monitoring, invariant checking, behavioral regression detection from inside the runtime?\n\n8. ML RESEARCHER — is the learning loop actually learning? Training signal quality, gradient/weight meaningfulness, embedding usage patterns, when does the matrix stop improving?\n\n9. PROCESS / META ENGINEER — token efficiency across the dev loop, cost per feature delivered, what percentage of the build cycle could Igor do himself vs. requires Claude, remaining blockers to Igor-as-own-developer? How can we improve development and token use processes?\n\n10. SYSTEMS DYNAMICS ANALYST — feedback loops and emergent behavior: where does the system fight itself, unintended couplings, second-order effects at scale, delays causing oscillation, what recurrent loops are missing that would let context at one level reshape processing at another?\n\n11. PRODUCTION SRE — observability gaps, what cannot be diagnosed from current logs, what happens unattended at 3 AM, crash recovery paths, alerting blind spots.\n\nSynthesis step (Sonnet, after all panels):\n- Deduplicate findings across panels\n- Rank by: severity x likelihood x ease-of-fix\n- Flag anything two+ panels flagged independently (high signal)\n- Meta-questions: how do we make Igor think in systems? Can we push more reasoning/code into Igor now? Any levers missed?\n- Output: ranked issue list + top-3 recommended actions for next slate\n\nCadence: weekly, Sunday evening. Output posted to cc_channel.\nWorker: claude (Haiku for panels, Sonnet for synthesis).\nEstimated cost: ~$3-6/run.",
+    "completed_at": "2026-04-03T16:19:11.412386+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "313baa57-99bf-48ab-88a8-de5b78307ef4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

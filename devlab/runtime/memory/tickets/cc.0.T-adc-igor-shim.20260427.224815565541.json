@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-igor-shim.20260427.224815565541",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-igor-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:48:15.565541",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-igor-block-manual-only",
+      "T-adc-igor-device",
+      "T-adc-igor-shim",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-igor-shim",
+    "gate": "T-adc-igor-device",
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: Igor shim — subprocess launch, exit-42, tmux integration",
+    "result": "IgorShim shipped alongside IgorDevice in 0669cb5",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "IgorShim owns Igor's lifecycle: subprocess launch via the igor bash launcher, exit-42 awareness, tmux session integration.\n\nProposed shape:\n- agent_datacenter/devices/igor/shim.py:\n  class IgorShim(BaseShim):\n    device_id = 'igor-wild-0001'  # from IGOR_INSTANCE_NAME env var\n    start() → if IGOR_TMUX_SESSION set: tmux new-window -t {session} -n igor 'igor'; else subprocess.Popen(['igor'])\n    stop() → SIGTERM to igor process; wait up to 30s for clean shutdown\n    restart() → stop(); start() — skeleton uses this for normal restarts\n    self_test() → send 'rack.ping' to igor via comms://igor-wild-0001; expect 'rack.pong' within 5s\n    rollback() → SIGKILL igor process if start() times out\n  Exit-42 awareness: igor shim recognizes exit code 42 = intentional restart (not a failure)\n    record_failure() not called for exit-42 restarts — they don't count toward auto-block threshold\n    All other non-zero exits count as failures\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/igor/shim.py\n\nDesign rules:\n- docs-in-code: comment explaining exit-42 semantics (intentional restart, not failure)\n\nScope boundary:\nIN: start/stop/restart/self_test/rollback, exit-42 awareness, tmux integration\nOUT: manual-only block enforcement (T-adc-igor-block-manual-only)\n\nTest plan:\n- IgorShim.device_id == 'igor-wild-0001' (from env)\n- Exit code 42 does NOT trigger record_failure()\n- Exit code 1 DOES trigger record_failure()\n- self_test() returns {passed: False, details: 'igor not responding'} when igor is down (no exception)",
+    "completed_at": "2026-04-27T22:48:15.565541+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "07b0a931-87d9-4634-bc88-1968c4c16380",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

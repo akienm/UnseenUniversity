@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-seed-boredom-hardcoded-creds.20260609.164426379015",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-seed-boredom-hardcoded-creds"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:44:26.379015",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-seed-boredom-hardcoded-creds"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-seed-boredom-hardcoded-creds",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Security",
+      "Ops"
+    ],
+    "title": "Fix hardcoded DB password in seed_boredom_foreman.py",
+    "result": "false positive — file already uses os.environ.get(IGOR_HOME_DB_URL, ...) matching canonical pattern; choose_a_password only appears as fallback default",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that no production credential strings appear hardcoded in seed_boredom_foreman.py.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:44:26.379015+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Audit found `devices/igor/tools/seed_boredom_foreman.py:23` with a hardcoded `choose_a_password` connection string rather than reading from env var. All other callers use `os.environ.get(\"IGOR_HOME_DB_URL\", ...)` — this file is the outlier.\n\n**Affected files:** devices/igor/tools/seed_boredom_foreman.py\n**Design rules:** no live keys or passwords in source (CLAUDE.md hard rule)\n**Scope boundary:** IN — replace hardcoded URL with env var lookup; OUT — credential management system changes\n**Completion criteria:** grep for `choose_a_password` in seed_boredom_foreman.py returns empty; file reads DB URL from IGOR_HOME_DB_URL env var with same default pattern as other callers",
+    "completed_at": "2026-06-09T17:23:32.201257+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

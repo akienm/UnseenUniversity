@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-uurecall-db-url-fallback.20260614.232906792406",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uurecall-db-url-fallback"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T23:29:06.792406",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uurecall-db-url-fallback"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uurecall-db-url-fallback",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "Recall",
+      "Tooling"
+    ],
+    "title": "uurecall: fall back to IGOR_HOME_DB_URL when UU_HOME_DB_URL unset",
+    "result": "uurecall palace search now falls back to IGOR_HOME_DB_URL; .bashrc exports UU_HOME_DB_URL alias",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that uurecall palace search works in any session where IGOR_HOME_DB_URL is set, without requiring a separate UU_HOME_DB_URL export.",
+    "created_at": "2026-06-14T23:29:06.792406+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "uurecall.py _search_palace() checks os.environ.get(UU_HOME_DB_URL) and skips palace search when not set. But .bashrc only exports IGOR_HOME_DB_URL. Same DB, different name. Palace and semantic results silently empty every session.\n\nFix: fall back to IGOR_HOME_DB_URL when UU_HOME_DB_URL absent. Also add UU_HOME_DB_URL export to .bashrc as alias.\n\n**Affected files:** lab/claudecode/uurecall.py (_search_palace, _search_semantic); ~/.bashrc\n**Design rules:** none apply\n**Scope boundary:** IN: db_url fallback; .bashrc alias. OUT: changing search logic.\n**Completion criteria:** uurecall hubert in fresh shell returns palace node results, not skip message.",
+    "completed_at": "2026-06-15T00:35:18.263180+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-memory-provenance.20260405.011117721448",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-provenance"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T01:11:17.721448",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-provenance",
+      "T-urgency-provenance"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-provenance",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "memory provenance and validation status",
+    "result": "validate_memory/reject_memory/list_unvalidated_memories tools. NE promotion stores tagged provenance_source=ne_synthesis, validation_status=unvalidated.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Memories created by inference (NE synthesis, tool output, upstream injection, LLM deposits) should carry: (1) provenance_source = what system generated this, (2) reasoning_ref = turn trace ID that produced it (already logged), (3) validation_status = unvalidated|validated|rejected. Before relying on a memory in reasoning, check validation_status. Unvalidated memories are usable but should not be treated as ground truth. Validated = Akien confirmed or directly observed. Key: not about rejecting injected memories, about knowing their epistemic status. Connects to T-urgency-provenance — same question applies: where did this come from and can we trace it?",
+    "completed_at": "2026-04-05T01:11:17.721448+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "01c5c8dd-fafb-4f24-9482-5fe54ff769e1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-context-load-palace.20260508.023425542935",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-context-load-palace"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T02:34:25.542935",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-palace-session-memory-2026-05-07"
+    ],
+    "tickets": [
+      "T-adc-context-load-palace"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-context-load-palace",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "agent_datacenter",
+      "palace",
+      "workflow"
+    ],
+    "title": "Update context-load to read from palace instead of flat files",
+    "result": "step 2c (ADC palace snapshot, hash-gated) + step 3 (decisions from palace.decisions.*); smoke-tested; fallbacks in place",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-08T21:20:38.310523+00:00",
+    "created_at": "2026-05-08T02:34:25.542935+00:00",
+    "related_to": null,
+    "decision_id": "D-palace-session-memory-2026-05-07",
+    "description": "Replace context-load's flat-file reads with palace queries: palace.shared.rules.* (already partially done via psql), palace.shared.akien.*, palace.days.* (last 10 for the lookback layer), palace.projects.agent_datacenter.summary. The 2000-token budget constraint stays. Hash-gating stays for rules (unchanged). Decision hot-window moves from decisions_log.dsb tail to palace.decisions.* query.\n\n**Affected files:** ~/.claude/skills/context-load/SKILL.md, ADC skills/context-load/SKILL.md\n**Design rules:** palace DB always; context-load is HIGH-inertia (every session depends on it)\n**Scope boundary:** IN: palace queries replace flat-file reads for rules/akien/days/decisions. OUT: removing the slate read (slate stays flat-file — it's the daily working doc), removing the channel read, removing the approvals check.\n**Test plan:** context-load produces a valid briefing from palace queries with no flat-file reads for rules/akien/days; 2000-token budget preserved; graceful fallback when palace is unreachable.",
+    "completed_at": "2026-05-08T21:21:51.130720+00:00",
+    "github_issue": 666,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b119e075-e806-4423-8388-117bb5cb6ca6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

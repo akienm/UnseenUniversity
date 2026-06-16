@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-handoff-in-sprint.20260403.192603000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-handoff-in-sprint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:03",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-handoff-in-sprint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-handoff-in-sprint",
+    "epic": "Claude",
+    "size": "S",
+    "title": "Add handoff note to /sprint and /fixit for abrupt session ends (auto-compact + budget exhaustion)",
+    "result": "Added Step 2.5 (handoff note) to /sprint SKILL.md: writes in-flight state to today's dated slate immediately after claiming. Added matching step 3b.5 to /fixit SKILL.md. Both survive auto-compact and budget-exhaustion. Clean session close (Step 8) overwrites with done summary.",
+    "status": "done",
+    "claimed_at": "2026-04-03T23:01:01.878377+00:00",
+    "created_at": "2026-04-03T19:26:03Z",
+    "completed_at": "2026-04-03T23:10:24.142574+00:00",
+    "github_issue": 365,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

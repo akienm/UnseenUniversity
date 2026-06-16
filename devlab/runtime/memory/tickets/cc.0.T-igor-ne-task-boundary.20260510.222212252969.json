@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-igor-ne-task-boundary.20260510.222212252969",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-ne-task-boundary"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:12.252969",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-memory-depth-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-ne-task-boundary"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-ne-task-boundary",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "CLOSED: NE task boundary flush on focus displacement",
+    "result": "task_boundary_at on displacement; NE flushes last_narrative on task start; 10 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T23:06:22.341099+00:00",
+    "created_at": "2026-05-10T22:22:12.252969+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-memory-depth-2026-05-10",
+    "description": "When focus_state displacement occurs (new focus exceeds 1.2× hysteresis threshold), record task_boundary_at timestamptz on the focus_state row. NE checks at context assembly time: if task_boundary_at > last_ne_run_time, treat as task start (flush episodic, fresh TWM scan, no prior-turn context carried). If not, treat as step continuation (same focus, same context accumulation). Implements task vs. step distinction from AgentSPEX: task = fresh window on focus transition; step = accumulates within same focus.\n\n**Affected files:** `wild_igor/igor/cognition/focus_state.py` (task_boundary_at column + displacement update), `wild_igor/igor/cognition/narrative_engine.py` (task boundary check in context assembly), DB migration (task_boundary_at on instance.focus_state)\n**Design rules:** no-sqlite; direct psycopg2; no cortex.py touch; task_boundary_at is a timestamp (not a flag — avoids boolean state bugs); NE context flush is additive change only\n**Scope boundary:** IN — task_boundary_at, displacement signal in focus_state, NE context flush check. OUT — no changes to TWM scan queries, no changes to memory retrieval.\n**Test plan:** displacement triggers task_boundary_at update; NE sees task_boundary_at > last_run → fresh context assembly; no displacement → task_boundary_at not updated → step continuation",
+    "completed_at": "2026-05-10T23:08:48.626812+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b1c60d05-03e6-4f3b-92fa-60998fa29e73",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

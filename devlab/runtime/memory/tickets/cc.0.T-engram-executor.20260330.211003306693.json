@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-engram-executor.20260330.211003306693",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-executor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T21:10:03.306693",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-channel-registry",
+      "T-engram-executor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-executor",
+    "epic": "Cognition",
+    "title": "Implement NodeExecutor",
+    "result": "node_executor.py: execute_node(memory, fired_trigger, basket) → ExecutionResult. Full EMITIF/BRANCHIF/FORKIF/ENDIF instruction set. Condition eval via eval_gate. Value resolution (constant/basket/payload). Data guard via triggers dict. MAX_INSTRUCTIONS=200 guard. Smoke tested. 555 tests passing.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Walks a payload cell instruction list given a basket. Instructions: EMITIF [condition, value, channel], BRANCHIF [condition, target_node_id], END. Condition eval against basket/payload. Dispatches to ChannelRegistry. ~150 lines. Depends on T-channel-registry.",
+    "completed_at": "2026-03-30T21:10:03.306693+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "15e7d5c8-b4c3-4cec-ae0a-538e7e966340",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-traversal-context.20260320.122425895565",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-traversal-context"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T12:24:25.895565",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-os-primitives",
+      "T-traversal-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-traversal-context",
+    "size": "M",
+    "files": [
+      "wild_igor/igor/memory/cortex.py",
+      "wild_igor/igor/tools/traversal_context.py",
+      "claudecode/seed_traversal_context.py"
+    ],
+    "title": "Traversal context substrate — traversal_contexts table + cortex methods + tools module",
+    "result": "traversal_contexts table + cortex methods + tools/traversal_context.py. Committed in batch.",
+    "status": "done",
+    "claimed_at": "2026-03-20T01:56:36.283433+00:00",
+    "description": "Add traversal_contexts table (LOCAL SQLite, after traces). cortex methods: traversal_start(job_id)->context_id, traversal_get(ctx_id, key)->str|None, traversal_set(ctx_id, key, value). New tools/traversal_context.py: start_traversal(), ctx_get(ctx_id, key), ctx_set(ctx_id, key, value) — direct SQLite access via paths().instance/wild-0001.db. Registers 2 tools in registry. Seed script writes PROCEDURAL memory documenting TRAVERSAL_CTX_ID TWM convention. NOT touching main.py dispatch or basal_ganglia — storage substrate only. Prerequisite for T-os-primitives.",
+    "completed_at": "2026-03-20T12:24:25.895565+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0a74a733-6b56-4312-8847-c00ae706d78f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

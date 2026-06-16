@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-repo-auditor-structural.20260610.173345264406",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-repo-auditor-structural"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T17:33:45.264406",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-repo-auditor-device-2026-06-10"
+    ],
+    "tickets": [
+      "T-id",
+      "T-repo-auditor-structural"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-repo-auditor-structural",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Hygiene",
+      "Hubert",
+      "Infrastructure"
+    ],
+    "title": "Repo auditor: structural checker device component",
+    "result": "run_structural_audit() with NO_COMMIT/FILE_OVERLAP/DIFF_MAGNITUDE signals; flags persisted to ~/.unseen_university/hubert/audit_flags.jsonl with upsert; 16 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that the structural auditor produces a ranked flag list for all M/L closed tickets by checking commit presence, file overlap, and diff magnitude — building on completion_audit.py's criteria parser rather than duplicating it.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T17:33:45.264406+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-repo-auditor-device-2026-06-10",
+    "description": "Build `devices/hubert/repo_auditor.py` as a reusable device component. Build on `lab/claudecode/completion_audit.py`'s criteria parser (reuse its `_parse_affected_files()` if it exists, or extract that logic rather than duplicating it).\n\nThree structural signals per ticket:\n1. **No-commit flag**: `git log --all --grep=<ticket_id>` returns nothing → flag severity HIGH\n2. **File-overlap flag**: parse `Affected files:` from ticket description; compare to `git show --stat` file list; zero overlap on specific (non-TBD) file lists → flag severity MED\n3. **Diff-magnitude flag**: L/XL ticket with < 20 changed lines, M ticket with < 5 → flag severity LOW\n\nWrite flags to `hubert.audit_flags`. Skip tickets predating T-id commit convention (no T- prefix in description). Skip tickets tagged as coordination/tracking/doc-only (tags: Tracking, Decision, Doc).\n\nEntry point: `run_structural_audit(repo_path, size_filter=['M','L','XL']) -> list[AuditFlag]`\n\n**Affected files:** devices/hubert/repo_auditor.py (new), lab/claudecode/completion_audit.py (read only — reuse parser)\n**Design rules:** no-sqlite; flat-file for intermediate results during run\n**Scope boundary:** IN — structural signals, flag writing. OUT — semantic/embedding layer, web surface, cron scheduling.\n**Completion criteria:** `run_structural_audit('.')` on this repo returns a list of AuditFlag objects; flags are written to `hubert.audit_flags`; re-running is idempotent (same commit+ticket pair → upsert, not duplicate); at least 2 unit tests cover the three signal types.",
+    "completed_at": "2026-06-13T23:27:02.538924+00:00",
+    "deposited_at": "2026-06-10T11:36:11.947642",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T23:24:46.307194+00:00",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-06-10T17:33:45.264557+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

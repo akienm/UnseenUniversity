@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-uc-comms-module.20260417.192950651368",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-comms-module"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T19:29:50.651368",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-mcp-cc-bidirectional",
+      "T-uc-channel-tabs-redesign",
+      "T-uc-comms-module",
+      "T-uc-inference-channel",
+      "T-uc-named-channels",
+      "T-uc-rack-architecture"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-comms-module",
+    "size": "L",
+    "tags": [
+      "Operations",
+      "Architecture"
+    ],
+    "title": "Comms module: channel routing, envelopes, transports, logging",
+    "result": "CommsModule rack shelf: ChannelMessage envelope, Channel definitions, send/read/subscribe routing, MemoryTransport + PostgresTransport, conversation file logging. 35 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T19:25:19.529484+00:00",
+    "related_to": null,
+    "description": "Build the comms rack module for the utility closet — Lt Uhura's console.\n\n## Core\n- ChannelMessage envelope: id, channel (comms://), source, timestamp, content_type, payload, reply_to, metadata, retention\n- Channel definition: address, direction (R/W/RW), delivery (pull/push), notify, transport, retention, log_path, created/last_active\n- CommsModule API: register_channel, send, read, subscribe, unsubscribe, list_channels, channel_status\n- Channel persistence: definitions in Postgres (comms_channels table), conversation history in log files (~/.TheIgors/logs/comms/<channel>.conversation.log)\n- Retention tiers: forever (relationships), 1y (default), 30d (operational), ephemeral (debug)\n- Log files are JSON-per-line, human-readable and parseable. The log IS the persistence; Postgres indexes for fast search.\n\n## Auto-creation\n- On MCP/agent connect: check if comms://<agent-id> existed before → reconnect to same log + config. If new → create channel + log file.\n- Log path deterministic from channel address: comms://discord/dm-akien → discord--dm-akien.conversation.log\n\n## Notification dispatch\n- Per-channel notify flag + per-subscriber checkbox\n- MCP subscribers (CC, Igor) → queue in MCP inbox\n- WebSocket subscribers (browser) → push via WS, tab color change\n- TMUX subscribers → inject into target pane\n\n## Transports (pluggable backends)\n- websocket — Web UI channels (push, read/write)\n- mcp — CC hook reads, Igor channel_read (pull, read/write)\n- tmux — inject text into terminal pane (push, write-only)\n- file — log file output (pull, write-only)\n- discord — Discord bot bridge (push, read/write)\n- postgres — persistent history index (pull, read/write)\n\n## IgorBase integration\n- channel_log() method routes through comms instead of direct file write\n- Replaces scattered logger.info() with channel-routed logging\n\n## Files\n- lab/utility_closet/comms.py — CommsModule, Channel, ChannelMessage\n- lab/utility_closet/transports/ — one file per transport\n- tests/test_comms.py — unit tests with mock transports\n- UC server wires CommsModule on startup, registers default channels (Shared, per-agent)\n\n## Design for (but don't build yet)\n- comms://model/* channels for inference routing (T-uc-inference-channel)\n- reply_to correlation ID in envelope supports request/response patterns\n- content_type distinguishes chat/log/inference-request/inference-response\n\n## Depends on\n- T-uc-rack-architecture (module registration interface)\n\n## Related\n- T-uc-channel-tabs-redesign — web UI consumes comms channels\n- T-uc-named-channels (#403) — predecessor, subsumed by this\n- T-igor-mcp-cc-bidirectional (#461) — notification delivery uses comms",
+    "completed_at": "2026-04-17T19:29:50.651368+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "86745866-fb57-4719-a2f0-66a9ab680e79",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

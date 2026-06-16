@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-day-close-log-error-audit.20260529.120713017232",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-day-close-log-error-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T12:07:13.017232",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-day-close-log-error-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-day-close-log-error-audit",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Platform",
+      "Audit"
+    ],
+    "title": "Add log error/failure grep step to day-close audit",
+    "result": "Step 18.7 added to day-close-audit: grep last-2-day logs, suppress via allowlist; allowlist seeded with 12 known-ok patterns, 0 unsuppressed hits",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "created_at": "2026-05-29T12:07:13.017232+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Day-close audit currently misses runtime errors in Igor's logs. Add a step that greps Igor log files for 'error' and 'failed' (case-insensitive), deduplicates, and produces follow-on tickets for unknown failures.\n\nPhase 1 (CC): Claude analyses the first run — categorise each hit as known-ok (whitelist candidate) or real issue needing a ticket. Build the whitelist from that first pass.\n\nPhase 2 (Scraps): Compile the allowlist + pattern matching into a deterministic Scraps script so future runs don't need inference — only new/unrecognised patterns escalate to CC.\n\nLog paths to scan: ~/.TheIgors/logs/*.log, Igor channel messages (ring_memory), any device logs reachable from the rack.\n\n**Affected files:** ~/.claude/skills/day-close-audit/SKILL.md (new step), devices/scraps/ (new script), possibly lab/claudecode/audit_runner.py\n**Design rules:** compiled-inference pattern — rules-first, LLM only for novel patterns\n**Scope boundary:** grep + categorise + ticket generation. Not a real-time monitor — day-close batch only.\n**Test plan:** run audit step against current logs, verify known-ok entries are suppressed, verify novel errors produce draft tickets",
+    "completed_at": "2026-05-29T15:13:22.013269+00:00",
+    "github_issue": 813,
+    "required_files": [],
+    "scraps_validated": "2026-05-29T12:07:13.218666+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a30f3eb8-21f5-48b0-9125-10f41d063873",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

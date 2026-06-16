@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-proc-slate-habit.20260324.172817032732",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proc-slate-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T17:28:17.032732",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-proc-slate-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proc-slate-habit",
+    "size": "S",
+    "title": "Seed PROC_SLATE_RITUAL — Igor handles /slate: reads context, discusses priorities, coordinates with Claude",
+    "result": "seeded via claudecode/seed_process_habits.py (6712d67) — PROC_SLATE_RITUAL cognitive habit, trigger: /slate start slate plan the slate",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "description": "Seed a workflow habit PROC_SLATE_RITUAL triggered by '/slate' or 'start slate' or 'plan the slate'. Igor reads ~/.TheIgors/cc_channel/slate.md, reads recent channel, discusses open tickets and priorities with Akien, posts a coordination message to channel signaling Claude to engage. Gives Igor the vocabulary and steps for the slate ritual as if it were Claude running the /slate skill.",
+    "completed_at": "2026-03-24T17:28:17.032732+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3e87e6cf-af7a-474e-9e54-d8bde2a42bf1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-sonnet-1m-autocompact-bypass.20260605.152540343379",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sonnet-1m-autocompact-bypass"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T15:25:40.343379",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sonnet-1m-autocompact-bypass"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sonnet-1m-autocompact-bypass",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Infrastructure"
+    ],
+    "title": "Sonnet 1M context auto-promote silently bypasses /autocompact",
+    "result": "Added per-ticket count guard (fire /autocompact every 5 tickets) to sprint-batch SKILL.md; added hard rule; updated autocompact SKILL.md with 1M note",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "intention": "I intend that /autocompact fires reliably even when Sonnet uses a 1M context window.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T15:25:40.343379+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Sonnet automatically promotes to 1M context window, which causes /autocompact to be silently skipped (the context never hits the threshold that triggers compact). Sessions grow until they halt rather than rolling over cleanly. This is a new failure mode (observed 2026-06-05).\n\nNeeds investigation: does CC have a way to detect or limit the context window being used? Options: (1) enforce /autocompact after N turns regardless of context size, (2) log a warning when context > threshold, (3) add a turn counter to sprint-ticket that triggers /autocompact after K tickets.\n\n**Affected files:** ~/.claude/skills/sprint-batch/SKILL.md, ~/.claude/skills/sprint-ticket/SKILL.md, ~/.claude/skills/autocompact/SKILL.md\n**Design rules:** /autocompact is the block-end signal; must fire reliably\n**Scope boundary:** In scope: detect or work around 1M context auto-promote. Out of scope: changing Claude API behavior.\n**Completion criteria:** sprint-batch fires /autocompact after each N tickets regardless of context window size; or equivalent guard documented and tested.",
+    "completed_at": "2026-06-05T15:34:08.489392+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

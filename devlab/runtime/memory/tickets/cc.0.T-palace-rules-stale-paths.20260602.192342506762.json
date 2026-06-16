@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-palace-rules-stale-paths.20260602.192342506762",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-rules-stale-paths"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T19:23:42.506762",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-palace-rules-stale-paths"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-rules-stale-paths",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Memory",
+      "Palace"
+    ],
+    "title": "Palace rules: update .TheIgors refs to .unseen_university",
+    "result": "8 palace nodes updated via psql: .TheIgors→.unseen_university, ~/TheIgors→~/dev/src/UnseenUniversity, TheIgors work→UU project work; skills/* nodes untouched (reference skill files at ~/.claude which are correct)",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-06-02T19:23:42.506762+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "11 palace nodes under theigors/rules/* and theigors/skills/* contain .TheIgors or ~/TheIgors paths. Skills like audit-smell and audit-precode read these via memory_get() at sprint time — the stale paths send wrong guidance.\n\nCritical: theigors/rules/database says Runtime dir ~/.TheIgors/Igor-wild-0001/ (should be ~/.unseen_university/Igor-wild-0001/).\n\nAffected palace nodes:\n  theigors/rules/database, theigors/rules/cc-minion, theigors/rules/commits,\n  theigors/rules/igor-constraints, theigors/rules/safeguards,\n  theigors/skills (and subkeys), theigors/glossary, theigors/slates\n\n**Affected files:** Postgres memory_palace table (no source files)\n**Design rules:** no-sqlite; palace is the authoritative reference; update in-place via psql\n**Scope boundary:** IN: replace .TheIgors with .unseen_university in palace rule content. OUT: renaming the theigors/ palace namespace (keep the path prefix, only fix content)\n**Completion criteria:** no palace node under theigors/ contains .TheIgors in content; skills reading these rules get correct paths",
+    "completed_at": "2026-06-02T19:24:12.807279+00:00",
+    "deposited_at": "2026-06-02T13:24:30.352797",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "44b44862-78d8-48b6-b797-1704bac2b134",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

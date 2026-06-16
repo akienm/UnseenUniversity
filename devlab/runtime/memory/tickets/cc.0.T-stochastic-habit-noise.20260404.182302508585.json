@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-stochastic-habit-noise.20260404.182302508585",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stochastic-habit-noise"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:23:02.508585",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-stochastic-habit-noise"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stochastic-habit-noise",
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "Add epsilon-greedy noise to habit scoring for spontaneous exploration",
+    "result": "Added epsilon-greedy Gaussian noise (±0.05, 8% prob per habit) to BG scoring loop in basal_ganglia.py after inhibition penalty, before threshold comparison. Gated by IGOR_HABIT_NOISE_ENABLED (default off) with IGOR_HABIT_NOISE_PROB and IGOR_HABIT_NOISE_SIGMA env vars for tuning. Prevents winner-take-all lock-in on habitually dominant responses. All 1684 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-04T18:20:02.712413+00:00",
+    "related_to": null,
+    "description": "Habit selection is fully deterministic — when nothing triggers, nothing happens. Biological brains have ~1-2Hz baseline spontaneous firing. Fix: inject weak Gaussian noise (±0.05 jitter, ~5-10% probability per turn) into BG habit scores before threshold comparison; add occasional random-walk impulse injection from CuriositySource when TWM is below salience threshold. Makes Igor non-silent when idle. Neuro finding from deep-audit Panel 3.",
+    "completed_at": "2026-04-04T18:23:02.508585+00:00",
+    "deposited_at": "2026-06-05T18:11:01.652784",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "72fa7e53-e5fb-4985-ba0c-7a4726ae2371",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

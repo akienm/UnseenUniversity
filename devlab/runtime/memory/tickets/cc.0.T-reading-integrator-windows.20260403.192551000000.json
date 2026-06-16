@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-reading-integrator-windows.20260403.192551000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-integrator-windows"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:51",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-integrator-windows"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-integrator-windows",
+    "epic": "Swarm",
+    "size": "S",
+    "notes": "Windows box getting exit 1 from claudecode/reading_integrator.py line 423 in main(). See console output 2026-03-22. Likely path or dependency issue. | Stale in_progress lock cleared 2026-03-22. Windows-specific crash — needs Windows box to debug.",
+    "title": "reading_integrator.py crashes on Windows — exit 1 traceback",
+    "result": "Removed 3 sqlite3.connect() calls, replaced with cortex._db() (Postgres-aware via db_proxy). Root cause: DB is Postgres since D126, sqlite path doesn't exist on Windows. 1880 tests pass.",
+    "status": "done",
+    "priority": 10,
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:25:51Z",
+    "completed_at": "2026-04-08T19:04:28.946492+00:00",
+    "github_issue": 352,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

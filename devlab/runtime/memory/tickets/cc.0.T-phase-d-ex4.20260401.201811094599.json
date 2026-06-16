@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-phase-d-ex4.20260401.201811094599",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-phase-d-ex4"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T20:18:11.094599",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-db-wg-replace-cooccur",
+      "T-phase-d-ex4"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-phase-d-ex4",
+    "title": "Audit wg_cooccur callers — census before replacement (T-db-wg-replace-cooccur prerequisite)",
+    "result": "Superseded — T-db-wg-replace-cooccur already completed. This prerequisite audit is no longer needed.",
+    "status": "done",
+    "worker": "igor",
+    "grep_for": [
+      "wg_cooccur",
+      "wg_bigram"
+    ],
+    "priority": 2,
+    "claimed_at": "2026-04-01T18:05:37.997709+00:00",
+    "related_to": "T-db-wg-replace-cooccur",
+    "description": "Count and list all callers of wg_cooccur in the Igor codebase. This is the prerequisite survey for T-db-wg-replace-cooccur (replace wg_cooccur with embedding-proximity edges). grep_for: [\"wg_cooccur\", \"wg_bigram\"]",
+    "completed_at": "2026-04-01T20:18:11.094599+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b2cf7bc1-f017-47bd-97d2-ae0367cc04dd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-acurite-integrate-weather-html.20260615.180451022688",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-acurite-integrate-weather-html"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:04:51.022688",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-isolated-network-2026-06-15"
+    ],
+    "tickets": [
+      "T-acurite-integrate-weather-html"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-acurite-integrate-weather-html",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "AcuRite",
+      "Frontend"
+    ],
+    "title": "[pending] weather.html — point to isolated network CSV endpoint",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the weather.html dashboard displays live data from the isolated AcuRite daemon.",
+    "created_at": "2026-06-15T18:04:51.022688+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-acurite-isolated-network-2026-06-15",
+    "description": "weather.html currently fetches ./weather.csv (file:// URL). With isolated daemon, CSV is still at /home/akien/AcuRite/weather.csv on laptop. If weather.html is served via HTTP (e.g., from a simple file server on port 8000), it can fetch the CSV via HTTP. Alternatively, if weather.html is still accessed via file://, symlink or copy the CSV to the same directory as weather.html so relative path ./weather.csv works. Choose the simpler approach and update weather.html fetch URL if needed.\n\n**Affected files:** /home/akien/dev/src/acurite-free/weather.html, /home/akien/AcuRite/weather.csv (symlink or HTTP endpoint)\n**Design rules:** none apply\n**Scope boundary:** Integration only; daemon and dashboard code already exist\n**Completion criteria:** (1) weather.html can fetch and parse the isolated daemon's CSV; (2) Dashboard displays sensor data in real-time; (3) Data updates every 60s as per auto-refresh; (4) Both file:// access (symlink) and HTTP access (optional) work\n**Test plan:** (1) Run isolated daemon; (2) Open weather.html in browser; (3) Verify sensor cards render with live data; (4) Check that new CSV rows appear within 60s refresh cycle; (5) Verify outdoor sensors show wind/pressure/UV, indoor show temp/humidity",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

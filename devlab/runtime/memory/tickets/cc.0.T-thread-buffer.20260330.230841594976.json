@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-thread-buffer.20260330.230841594976",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-thread-buffer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T23:08:41.594976",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-thread-buffer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-thread-buffer",
+    "title": "Conversation thread buffer",
+    "result": "thread turns now pushed to TWM at high salience before each turn; 555 tests pass",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "Last N turns held at salience 1.0, injected into TWM before each turn; anchors pronoun resolution and topic tracking across exchanges",
+    "completed_at": "2026-03-30T23:08:41.594976+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0469e84b-372e-4207-87cd-0e0b992223b9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

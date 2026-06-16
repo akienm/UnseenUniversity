@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-granny-role-dispatch.20260604.230720842162",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-role-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T23:07:20.842162",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-role-dispatch",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-role-dispatch",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Queue",
+      "Infrastructure"
+    ],
+    "title": "Granny: route by role not worker; add escalation status",
+    "result": "DickSimnel escalation→status=escalated; Granny routes escalated→CC only; dispatched_cycle.json removed; set-worker '' clears worker",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-04T23:07:20.842162+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Granny currently routes by worker field (igor/claude/dicksimnel). This is wrong — routing should be by role (apprentice < builder < creator < master < guru). Worker is only an assignment record set at dispatch time, not a routing key.\n\nRole hierarchy: apprentice < builder < creator < master < guru.\n- DickSimnel = builder\n- CC = master (can handle creator and below)\n- Akien = guru\n\nWhen a builder fails → ticket becomes status=escalated, role bumps to creator, worker cleared. Master picks up creator-and-below escalations on next availability.\n\nGranny holds no dispatch state — all state lives in the ticket. dispatched_cycle.json, stale watchdog, per-worker circuit logic are all debt from the old worker-routing model.\n\n**Changes:**\n1. cc_queue.py set-worker: accept null/blank to clear worker\n2. Granny run_once(): query by role ≤ available tier instead of worker=name\n3. Add status=escalated to valid status list in cc_queue.py\n4. DickSimnel escalation path: sets status=escalated, bumps role, clears worker\n5. Remove dispatched_cycle.json tracking from Granny (ticket status IS the state)\n\n**Affected files:** lab/claudecode/cc_queue.py, devices/granny/daemon.py, devices/dicksimnel/shim.py\n**Design rules:** no-sqlite; state in ticket not in Granny\n**Scope boundary:** IN — role-based routing, escalation status, worker clearing. OUT — new role levels beyond current 5, cross-machine routing\n**Completion criteria:** `cc_queue.py set-worker \"\" T-xxx` clears worker; Granny dispatches by role tier; DickSimnel failure sets status=escalated and bumps role; master CC picks up creator-level escalations; no dispatched_cycle.json",
+    "completed_at": "2026-06-04T23:25:00.065585+00:00",
+    "deposited_at": "2026-06-04T17:08:26.645264",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "381c411f-70ed-4f5a-bd27-0933b823203f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

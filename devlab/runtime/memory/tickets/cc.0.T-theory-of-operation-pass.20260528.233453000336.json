@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-theory-of-operation-pass.20260528.233453000336",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theory-of-operation-pass"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T23:34:53.000336",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-theory-of-operation-2026-05-28"
+    ],
+    "tickets": [
+      "T-theory-of-operation-pass"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theory-of-operation-pass",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Documentation",
+      "Architecture",
+      "Workflow"
+    ],
+    "title": "TOO pass: add why to every architecture point",
+    "result": "TOO pass: why annotations added to UU CLAUDE.md rules, sprint-ticket/context-load hard rules, 5 palace rule nodes (coding/commits/database/budget/capability-protocol) via UPDATE",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "created_at": "2026-05-28T23:34:53.000336+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-theory-of-operation-2026-05-28",
+    "description": "Every architecture decision, design rule, palace node, skill, and CLAUDE.md entry should carry its why — Theory of Operation (TOO) pattern from radar/avionics systems docs where every circuit node has both what and why. Without the why, future models and humans revert or 'simplify' decisions they don't understand.\n\nThe /sorted hypothesis extraction does some of this at decision time. This ticket is the retroactive pass: audit existing architecture points and annotate any that lack a why.\n\nPriority targets:\n- palace nodes under theigors/rules/* — design rules without rationale\n- Skills (SKILL.md files) — steps without why comments\n- CLAUDE.md entries — rules stated without justification\n- lab/design_docs/decisions/* — decisions without hypothesis/measurement fields\n\nGoing forward: every new architecture point written by CC must include a why inline. The 5.Skills.md /sorted rename fix (2026-05-28) is the model — rule + why-for-the-rule.\n\n**Affected files:** palace nodes (DB), skills/*.md, CLAUDE.md, lab/design_docs/decisions/\n**Design rules:** none apply — this IS the design rule\n**Scope boundary:** annotation pass only; no structural changes; flag missing whys, add them\n**Test plan:** no automated test — review pass; done when top-20 highest-traffic palace rules have why fields",
+    "completed_at": "2026-05-29T15:18:11.176985+00:00",
+    "github_issue": 809,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T23:34:53.060952+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a4170a85-eb7c-4b48-8db8-829f9212043c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-codebase-refs-adc-to-uu.20260524.174819450017",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-codebase-refs-adc-to-uu"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-24T17:48:19.450017",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rename-adc-to-unseen-university-2026-05-24"
+    ],
+    "tickets": [
+      "T-codebase-refs-adc-to-uu",
+      "T-gh-rename-adc-to-uu"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-codebase-refs-adc-to-uu",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Rename"
+    ],
+    "title": "Update all agent_datacenter string references to UnseenUniversity",
+    "result": "All string refs updated: Python package→unseen_university, runtime dir→~/.unseen_university, env var→UNSEEN_UNIVERSITY_HOME, docs/configs/scripts both repos, dir renamed to UnseenUniversity, palace DB nodes updated",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-24T17:49:35.559427+00:00",
+    "created_at": "2026-05-24T17:48:19.450017+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-rename-adc-to-unseen-university-2026-05-24",
+    "description": "Replace all live string references to 'agent_datacenter' with 'UnseenUniversity' in CLAUDE.md, README, scripts, device configs, log path definitions, and any other source files. Check TheIgors scripts for hardcoded /home/akien/dev/src/agent_datacenter paths. Exclude git history and pure archival documentation.\n\n**Affected files:** CLAUDE.md, README.md, scripts/*.py/sh referencing agent_datacenter by string, device config files, any TheIgors scripts with hardcoded ADC path\n**Design rules:** none apply\n**Scope boundary:** String replacement in source files only; does not rename local directory or GitHub repo (that is T-gh-rename-adc-to-uu)\n**Test plan:** `grep -r 'agent_datacenter' . --include='*.py' --include='*.md' --include='*.json' --include='*.sh'` returns only historical/archive references, not live code paths",
+    "completed_at": "2026-05-24T18:24:00.741271+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-24T17:49:35.559427+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-24T17:48:19.450054+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "43981934-de2d-4198-adf2-c5ecded0eaa2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

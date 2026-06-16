@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-decision-rollup-preserves-narrative.20260421.201956755862",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decision-rollup-preserves-narrative"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T20:19:56.755862",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-workflow-optimizations-2026-04-21",
+      "D-scaffold-not-correct-2026-04-21",
+      "D-worker-mode-routing-2026-04-21"
+    ],
+    "tickets": [
+      "T-decision-rollup-preserves-narrative",
+      "T-decisions-into-palace-subtree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decision-rollup-preserves-narrative",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DevLoop",
+      "Decisions",
+      "DocsHygiene"
+    ],
+    "title": "Decision rollup preserves original narrative (don't overwrite)",
+    "result": "cc_queue.py:_decision_rollup now preserves existing narrative (appends ## Rollup section, flips status open→closed) or writes stub form if no narrative. 3 overwritten docs restored from git. 2 test scripts verify preserve + stub paths. Commit c6f388bb.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-21T20:17:05.926867+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Decision rollup at cc_queue.py:_decision_rollup (line 360) currently calls write_text() which wipes the original narrative decision doc. All three decisions closed so far (D-worker-mode-routing-2026-04-21, D-cc-workflow-optimizations-2026-04-21, D-scaffold-not-correct-2026-04-21) lost their design narratives — only the Closed-at + Shipped-via summary survives, making retrospective context recovery depend on git history.\n\nProposed: detect existing narrative (content not starting with `# Decision rollup —`). If present: append `## Rollup` section at end + flip frontmatter `status: open` → `status: closed`. If absent (decision had no narrative): keep current stub form.\n\nAlso restore the 3 already-overwritten docs from git history (git show <originating-commit>:<path> for each).\n\n**Affected files:** lab/claudecode/cc_queue.py (_decision_rollup function), lab/design_docs/decisions/D-worker-mode-routing-2026-04-21.md (restore), lab/design_docs/decisions/D-cc-workflow-optimizations-2026-04-21.md (restore), lab/design_docs/decisions/D-scaffold-not-correct-2026-04-21.md (restore)\n\n**Design rules:** test-plan-or-why-not (applies — plan below); docs-in-code (doesn't apply — glue code, not load-bearing subsystem); no-sqlite / oop-first / no-new-memory-schemas (don't apply)\n\n**Scope boundary:** In: _decision_rollup function logic + 3 doc restorations. Out: decision_manager.py, palace decision nodes, other cc_queue.py commands, /decided skill (narrative source is fine — it's the rollup that overwrites), T-decisions-into-palace-subtree (separate follow-up).\n\n**Test plan:** (a) apply fix to cc_queue.py; (b) restore 3 docs from git + append Rollup section using the new shape; (c) read each restored doc and confirm narrative + rollup both present; (d) unit-test _decision_rollup directly: call with a stubbed tasks list against a test file containing narrative, confirm narrative preserved.",
+    "completed_at": "2026-04-21T20:19:56.755862+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8fb65aa3-a855-45ab-8268-294647d0dc01",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

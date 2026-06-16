@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-human-first-cloud.20260328.014553636757",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-human-first-cloud"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-28T01:45:53.636757",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-human-first-cloud"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-human-first-cloud",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "D254: Human turns skip Ollama, route direct to cloud",
+    "result": "D254 implemented: is_user_turn gates Ollama skip in inference_gateway.py interactive section; last-resort retry allows human turns on budget exhaustion. Igor needs restart to pick up.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "D254. When a turn originates from a human (channel=web or repl, author is not a background job/cron), skip tier.2 Ollama entirely and route directly to tier.3+. Ollama stays for background tasks only. Cloud budget exhaustion is the only condition under which human turns fall back to Ollama. Root cause: Ollama busy with reading jobs causes 90s+ interactive latency and double cloud calls. Find the tier selection / prefrontal routing logic in cognition/ and add channel/author check before Ollama attempt.",
+    "completed_at": "2026-03-28T01:45:53.636757+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "aec7daa0-a375-45f5-af74-f7afd35dfb2e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

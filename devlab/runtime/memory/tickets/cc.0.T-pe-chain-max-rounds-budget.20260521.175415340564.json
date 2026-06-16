@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-pe-chain-max-rounds-budget.20260521.175415340564",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-max-rounds-budget"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340564",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-pe-chain-max-rounds-budget"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-max-rounds-budget",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "PeChain",
+      "Observability"
+    ],
+    "title": "Make pe_chain max_rounds a first-class monitored budget with logging and alert",
+    "result": "pe_chain removed entirely 2026-05-23 — ticket made obsolete by D-remove-pe_chain",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "blocked_at": "2026-05-22T22:27:07.788585+00:00",
+    "claimed_at": "2026-05-22T22:23:43.583533+00:00",
+    "created_at": "2026-05-21T17:54:15.340564+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "pe_chain has a retry limit but round consumption is invisible until exhaustion — a silent failure mode. Promote to first-class: log round consumption at each step (round N/max_rounds in basket telemetry), emit cc_inbox entry when >=80% of budget consumed mid-sprint so Akien can intervene, include round_count in pe_chain close telemetry. Goal: detectable signal with time to intervene, not a post-mortem discovery.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py\n**Design rules:** theigors/rules/coding\n**Scope boundary:** In scope: round-consumption logging, 80%-consumed cc_inbox alert, close telemetry. Out of scope: changing the retry limit value, changing escalation behavior.\n**Test plan:** Set max_rounds=3, run a ticket requiring 3 rounds; verify cc_inbox receives alert at round 2 (80%); verify close telemetry contains round_count=3.",
+    "completed_at": "2026-05-23T23:03:21.872318+00:00",
+    "github_issue": 783,
+    "dispatched_at": "2026-05-22T22:23:43.583533+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340580+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "211e2346-16e8-4361-a94c-8ad707fc39c8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

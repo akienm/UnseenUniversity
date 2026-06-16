@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-confabulation-scanner.20260423.155113014804",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-confabulation-scanner"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T15:51:13.014804",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-engram-engineering-toolkit-2026-04-23"
+    ],
+    "tickets": [
+      "T-confabulation-scanner",
+      "T-deposit-grounding-engram"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-confabulation-scanner",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "EngramEngineering",
+      "Tooling",
+      "Diagnostics",
+      "Confabulation"
+    ],
+    "title": "Engram tool: scan recent turns for confabulation tell-phrase signatures",
+    "result": "ConfabScanner with capability/self/fact detection. 19 tests covering both real 2026-04-23 cases (897ad9c0, fb274171). CLI entrypoint for standalone use. 965037d0.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-04-23T15:49:21.633264+00:00",
+    "related_to": null,
+    "decision_id": "D-engram-engineering-toolkit-2026-04-23",
+    "description": "Build CC-side scanner that reads last N turns and classifies confabulation tells by subtype: capability ('I can't access X from Y', 'I don't have direct access'), fact (temporal drift, wrong dates/versions), self ('I'm in the web channel', 'I'm just an LLM'). Returns matching turns with subtype + confidence + tell-phrase matched.\n\n**Affected files:** new lab/claudecode/engram_tools/confab_scanner.py, tests/test_confab_scanner.py\n**Design rules:** docs-in-code, test-plan-or-why-not\n**Scope boundary:** IN — regex/keyword classification on turn_trace text, three-subtype taxonomy. OUT — auto-remediation, auto-deposit of grounding engrams (that's T-deposit-grounding-engram territory).\n**Test plan:** unit tests: canned turn outputs for all three subtypes + clean baseline; verify 897ad9c0 ('web channel' tell) → capability subtype; verify fb274171 ('no direct access' + 'April 2025' date drift) → capability + fact subtypes.",
+    "completed_at": "2026-04-23T15:51:13.014804+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ce8b6d64-db14-4594-843f-3b6e0793bc34",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

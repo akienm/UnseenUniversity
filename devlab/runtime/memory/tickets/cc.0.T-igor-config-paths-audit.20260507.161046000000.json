@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-config-paths-audit.20260507.161046000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-config-paths-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:10:46",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-migration-2026-05-06"
+    ],
+    "tickets": [
+      "T-igor-config-paths-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-config-paths-audit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Migration",
+      "Igor",
+      "Audit"
+    ],
+    "title": "CLOSED: Audit Igor config/paths/logging — what stays vs. generalizes to datacenter",
+    "result": "all 7 files stay in Igor; logging_setup.py dead igor.network handler removed; decision doc written",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-07T03:26:19.227372+00:00",
+    "created_at": "2026-05-07T16:10:46Z",
+    "related_to": null,
+    "decision_id": "D-adc-migration-2026-05-06",
+    "description": "Igor has config.py, paths.py, logging_setup.py, boot_check.py, env_sync.py, restart_guard.py, first_start.py. Some of these are Igor-specific (paths.py for Igor's instance dirs), some are generic infrastructure (restart_guard, logging setup) that could live in agent_datacenter. Audit each, decide keep-in-Igor vs. generalize-to-datacenter.\n\n**Affected files:** wild_igor/igor/config.py, paths.py, logging_setup.py, boot_check.py, env_sync.py, restart_guard.py, first_start.py\n**Design rules:** no-sqlite\n**Scope boundary:** Audit + decision + ticket any moves. No implementation in this ticket.\n**Test plan:** Produce a one-page decision doc: each file, keep vs. move, reasoning.",
+    "completed_at": "2026-05-07T03:27:24.311599+00:00",
+    "github_issue": 609,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0ed11bc3-a275-416d-977e-c5091dbb04b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

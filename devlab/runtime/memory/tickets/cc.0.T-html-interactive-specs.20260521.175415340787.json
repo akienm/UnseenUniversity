@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-html-interactive-specs.20260521.175415340787",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-html-interactive-specs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340787",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-html-interactive-specs",
+      "T-html-planning-artifacts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-html-interactive-specs",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Planning",
+      "Workflow",
+      "Documentation"
+    ],
+    "title": "Build interactive HTML spec template with parameter editing and copy-as-prompt",
+    "result": "interactive levers spec with toggle controls, 3 presets, copy-as-JSON + copy-as-prompt export (ADC 877ae87)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-21T17:54:15.340787+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "Static HTML specs are better than Markdown but still one-directional. Full pattern from Anthropic blog (URL 20): sliders/toggles for adjusting design parameters, then 'copy as JSON' or 'copy as prompt' to reimport changes into Claude Code. Enables genuine two-way collaboration on specs rather than iterative prose conversations. Build a standard template; test with the levers document as proof of concept. Gated on T-html-planning-artifacts completing (basic HTML first, then interactive).\n\n**Affected files:** lab/docs/html_spec_template.html (new), lab/docs/Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.html (new interactive version)\n**Design rules:** none — frontend artifact, no server-side dependencies\n**Scope boundary:** In scope: tab navigation, parameter controls (checkboxes/toggles for lever activation), copy-as-JSON button, copy-as-prompt button. Out of scope: server-side rendering, build tooling, CI integration.\n**Test plan:** Open in browser; toggle a lever; click copy-as-prompt; verify clipboard contains valid prompt with adjusted parameters. Verify mobile-responsive layout.",
+    "completed_at": "2026-05-21T19:38:45.840554+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340803+00:00",
+    "target_difficulty": 3,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8c1f3167-f405-4565-a8ed-9f9fd5939319",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

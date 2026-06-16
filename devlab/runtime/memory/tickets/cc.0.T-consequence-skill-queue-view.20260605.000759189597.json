@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-skill-queue-view.20260605.000759189597",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-skill-queue-view"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T00:07:59.189597",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skill-queue-view-python-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-skill-queue-view",
+      "T-skill-queue-view-script"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-skill-queue-view",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Skills"
+    ],
+    "title": "Consequence check: queue_view.py compiled inference",
+    "result": "CLEAR: both views produce correct grouped output; skill files are one-liners; no edge cases found",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "intention": "I intend that this ticket verifies the compiled-inference gain was real and the skill output is correct.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T00:07:59.189597+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-skill-queue-view-python-2026-06-04",
+    "description": "**What changed:** /mytickets and /opentickets now call queue_view.py instead of cc_queue.py + bash pipes.\n**Predicted unintended effects:** queue_view.py may silently miss edge-case ticket states that the old grep approach caught (or didn't catch). The compiled output format may diverge from what CC expects in the skill's prose description.\n**Signals to watch:** Do /mytickets or /opentickets produce wrong output after the switch? Does any ticket fail to appear in a view it should? Is the output format stable across queue changes?\n**Gate condition:** Fires after T-skill-queue-view-script closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Run both skills; compare output to expected shape; annotate outcome as occurred / clear / partial and close.\n**Completion criteria:** Both skills run correctly; outcome annotated and ticket closed.",
+    "completed_at": "2026-06-05T03:45:06.473171+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

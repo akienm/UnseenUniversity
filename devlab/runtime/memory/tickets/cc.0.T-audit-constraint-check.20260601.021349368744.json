@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-audit-constraint-check.20260601.021349368744",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-constraint-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T02:13:49.368744",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-no-cc-auto-spawn",
+      "D-constraints-first-class-2026-05-31"
+    ],
+    "tickets": [
+      "T-audit-constraint-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-constraint-check",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Workflow"
+    ],
+    "title": "audit-design: add blackout-path question for dispatch/spawn designs",
+    "result": "added Check 11 (cc-blackout-path) to audit-design skill: triggers on spawn/dispatch/escalate keywords, AMEND when no explicit CC spend cap or block/hold routing; updated levers doc counts from 10 to 11",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.85,
+    "blocked_at": "2026-06-01T19:48:18.026607+00:00",
+    "claimed_at": "2026-06-01T20:08:58.276383+00:00",
+    "created_at": "2026-06-01T02:13:49.368744+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-constraints-first-class-2026-05-31",
+    "description": "Add a 10th check to audit-design: 'Does this design create a path to CC blackout?' Triggers when the design narrative mentions: dispatch, spawn, escalate, launch, worker, inference, CC. Requires: explicit cap on CC spend per failure mode; if unbounded, returns AMEND with 'add hard cap or replace with block/hold pattern.'\n\n**Affected files:** ~/.claude/skills/audit-design (or equivalent audit script)\n**Design rules:** constraint-query-first — check palace.constraints.* before ruling; behavioral constraint C-no-cc-auto-spawn must be checked for any spawn-adjacent design\n**Scope boundary:** in: one new check, triggered by keyword match in design narrative. out: full constraint graph traversal (future)\n**Completion criteria:** (1) audit-design returns AMEND on a design narrative containing 'escalate to CC' with no explicit cap; (2) PASS on a design that uses block/hold instead; (3) check documented in audit-design skill",
+    "completed_at": "2026-06-01T20:17:09.353081+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T20:08:58.276383+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ab345507-e026-4baa-b540-959baa18ae9e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

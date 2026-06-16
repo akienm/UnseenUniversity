@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-mcp-deprecate.20260508.173947109413",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-mcp-deprecate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:39:47.109413",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-rack-agent-2026-05-08"
+    ],
+    "tickets": [
+      "T-igor-mcp-deprecate",
+      "T-librarian-mcp-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-mcp-deprecate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Deprecate igor_mcp.py and cc_mcp_server.py once Librarian is live",
+    "result": "deprecation header added to igor_mcp.py; cc_mcp_server.py already gone; T-igor-mcp-delete filed; b644904f",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T20:08:04.206046+00:00",
+    "created_at": "2026-05-08T17:39:47.109413+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "description": "Once T-librarian-mcp-tools is complete and verified, deprecate the legacy MCP servers.\n\nSteps:\n1. Verify all tools ported and tested in Librarian\n2. Update ~/.claude.json to point 'igor' MCP entry at Librarian\n3. Remove 'cc_mcp' entry from ~/.claude.json\n4. Add deprecation notice to igor_mcp.py and cc_mcp_server.py headers\n5. File a follow-up ticket to delete both files after one sprint cycle without issues\n\n**Affected files:** TheIgors/lab/claudecode/igor_mcp.py, TheIgors/lab/claudecode/cc_mcp_server.py, ~/.claude.json\n**Design rules:** no-sqlite\n**Scope boundary:** deprecation notices + config redirect only; no deletion in this ticket\n**Test plan:** after redirect, `claude mcp list` shows Librarian healthy; db_query via MCP returns correct data",
+    "completed_at": "2026-05-08T20:09:31.306161+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e7384864-bc3f-4a92-959b-81b094c20080",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

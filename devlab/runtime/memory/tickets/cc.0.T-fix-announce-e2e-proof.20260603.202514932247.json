@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-fix-announce-e2e-proof.20260603.202514932247",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-announce-e2e-proof"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T20:25:14.932247",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-announce-proof-validation",
+      "T-fix-announce-e2e-proof"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-announce-e2e-proof",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Announce"
+    ],
+    "title": "Fix e2e test: [REDACTED-CREDENTIAL] after proof validation",
+    "result": "e2e + dispatch-chain tests aligned with proof validation — 15ddf029",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-06-03T20:25:14.932247+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "T-announce-proof-validation added proof field validation to the announce broker — protected agent_ids (igor, cc) now require a non-empty proof field. The e2e test `[REDACTED-CREDENTIAL]` (tests/e2e/test_rack_boot.py) still sends an announce without a proof field, so it now gets an error reply instead of a manifest reply and fails.\n\n**Affected files:** tests/e2e/test_rack_boot.py\n**Design rules:** none — test update only\n**Scope boundary:** In scope: update the test to either (a) send a valid proof, (b) use a non-protected agent_id, or (c) test the proof validation behavior explicitly. Out of scope: changing the announce broker or proof validation logic.\n**Completion criteria:** [REDACTED-CREDENTIAL] passes; all other announce tests continue to pass",
+    "completed_at": "2026-06-03T20:49:04.993272+00:00",
+    "deposited_at": "2026-06-03T14:25:38.475443",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "375d1f86-fdfa-4640-b6d7-3355dfd15723",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

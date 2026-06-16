@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-adc-postgres-device.20260427.214812907713",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-postgres-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:48:12.907713",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-postgres-block-clear-error",
+      "T-adc-postgres-device",
+      "T-adc-postgres-shim",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-postgres-device",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: Postgres device — full self-description and health contract",
+    "result": "PostgresDevice full BaseDevice impl in devices/postgres/device.py. health() live from pg_stat_activity. uptime() from pg_postmaster_start_time. where_and_how() from SHOW commands. Handles PG down gracefully. 28/28 contract tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-27T21:43:08.562746+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "First concrete device implementation: Postgres. Serves as the proof-of-concept that BaseDevice works and the design is right.\n\nProposed shape:\n- agent_datacenter/devices/postgres/device.py:\n  class PostgresDevice(BaseDevice):\n    who_am_i() → {'name': 'postgres', 'version': pg_version(), 'purpose': 'primary relational store'}\n    requirements() → {'port': 5432, 'user': env.POSTGRES_USER, 'db': env.POSTGRES_DB}\n    capabilities() → {'query': True, 'write': True, 'migrate': True}\n    comms() → {'read_write': True, 'push': False, 'pull': True, 'nudge': False}\n    interface_version() → INTERFACE_VERSION\n    health() → {'connected': bool, 'query_latency_ms': float, 'active_connections': int}\n    uptime() → seconds since pg process start (pg_postmaster_start_time)\n    startup_errors() → parse pg_log for ERROR lines in last 5min\n    logs() → {'path': pg_log_dir, 'format': 'postgresql-%Y-%m-%d.log'}\n    update_info() → {'method': 'pg_ctl or Docker', 'current_version': ...}\n    where_and_how() → {'socket': '/var/run/postgresql', 'config': pg_hba_conf, 'data_dir': ...}\n    Lifecycle methods (restart/block/halt) delegate to shim\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/postgres/device.py\n\nDesign rules:\n- oop-first: PostgresDevice is a class, not a module with functions; delegation pattern to shim\n- no-sqlite: PostgresDevice does NOT use sqlite3 for anything\n\nScope boundary:\nIN: full BaseDevice implementation for Postgres; all 16 methods\nOUT: pg_ctl/Docker lifecycle (T-adc-postgres-shim), block behavior on dependents (T-adc-postgres-block-clear-error)\n\nTest plan:\n- PostgresDevice() instantiates cleanly (all abstract methods implemented)\n- health() returns correct shape when Postgres is running\n- health() returns {connected: False, ...} when Postgres is not running (no exception raised)\n- where_and_how() returns non-None values for socket and data_dir",
+    "completed_at": "2026-04-27T21:48:12.907713+00:00",
+    "deposited_at": "2026-05-15T22:31:53.616340",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1e9c4ff6-22d5-488e-a7b2-d19adccfdf6b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

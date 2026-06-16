@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-audit-igorbase-violations.20260530.031447837747",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-igorbase-violations"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T03:14:47.837747",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-igorbase-violations"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-igorbase-violations",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "audit",
+      "Infrastructure"
+    ],
+    "title": "Fix AR-002: primary-classes-must-inherit-igorbase violations",
+    "result": "AR-002 already clean: audit_check_igorbase.py exits 0 — ToolRegistry exempted in c0b49afa, all other primary classes already inherit IgorBase",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "claimed_at": "2026-05-30T23:41:48.279945+00:00",
+    "created_at": "2026-05-30T03:14:47.837747+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "audit_runner.py --drain reports AR-002 failures: classes in devices/igor/cognition,memory,tools,network,brainstem that don't inherit IgorBase and aren't exempt. Run `python3 lab/claudecode/audit_check_igorbase.py` to get the full list.\n\n**Affected files:** devices/igor/ (specific files from audit output)\n**Design rules:** D125 — primary component classes must inherit IgorBase\n**Scope boundary:** IN — add IgorBase to the violating classes or add them to EXEMPT_CLASS_NAMES with justification; OUT — don't change IgorBase itself\n**Completion criteria:** `python3 lab/claudecode/audit_check_igorbase.py` exits 0 with no output",
+    "completed_at": "2026-05-30T23:43:41.713240+00:00",
+    "deposited_at": "2026-05-30T02:45:54.213720",
+    "deposited_by": "cc_queue",
+    "github_issue": 817,
+    "dispatched_at": "2026-05-30T23:41:48.279945+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T03:14:47.890721+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2cb7933b-797e-430e-9019-655cf32bab7f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

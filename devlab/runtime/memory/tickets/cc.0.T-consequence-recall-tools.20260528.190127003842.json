@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-consequence-recall-tools.20260528.190127003842",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-recall-tools"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:27.003842",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-and-book-2026-05-28"
+    ],
+    "tickets": [
+      "T-consequence-recall-tools",
+      "T-librarian-retrieval-service",
+      "T-memory-write-path",
+      "T-recall-in-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-recall-tools",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: recall-first tooling in skills",
+    "result": "Observation: recall(X) calls wired into skills. Effect (1) confirmed: recall returns empty until T-librarian-retrieval-service ships (in this batch). No latency issues observed. Status: partial — will clear when retrieval service lands.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-05-28T20:01:14.066547+00:00",
+    "created_at": "2026-05-28T19:01:27.003842+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-and-book-2026-05-28",
+    "description": "**What changed:** Added mandatory recall(X) calls to sprint-ticket, context-load, and sorted skills — recall before bash as the default pattern.\n**Predicted unintended effects:** (1) recall(X) returning empty results for every query until T-librarian-retrieval-service ships — the step exists but adds latency with no benefit; skills should gracefully handle empty/unavailable recall. (2) recall queries may be too broad (ticket title) and return noise rather than signal — making the step feel useless and encouraging bypass. (3) Skills calling recall before T-memory-write-path ships means querying a store that isn't being populated correctly yet — stale data could mislead.\n**Signals to watch:** recall step latency in sprint-ticket logs; whether recall results actually influence the sprint plan (do we cite them?); recall returning useful vs empty results ratio.\n**Gate condition:** After T-recall-in-skills ships.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": "2026-05-28T20:01:19.712718+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:01:14.066547+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:27.003871+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "37d82372-dfd3-4a1e-9478-e7a17604a276",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

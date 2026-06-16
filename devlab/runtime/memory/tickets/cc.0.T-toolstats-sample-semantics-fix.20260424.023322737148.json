@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-toolstats-sample-semantics-fix.20260424.023322737148",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-toolstats-sample-semantics-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:33:22.737148",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-toolstats-sample-semantics-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-toolstats-sample-semantics-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Tools",
+      "Stats",
+      "Observability",
+      "Pass2"
+    ],
+    "title": "ToolStats._samples should be newest-N, not sorted-N",
+    "result": "Shipped in e6b0539d. Replaced bisect.insort + pop(0) pattern (which evicted fastest, not oldest) with collections.deque(maxlen=1000) for insertion-order eviction. Percentile math sorts a snapshot on demand. Regression test: 500 slow + 1500 fast samples → p50/p95 = 10 (reflects newest-1000 fast tail, not sorted-top-1000 slow bias). 18 tool_registry tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-24T02:31:49.013331+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 5 Gap 2 (SHIP). `ToolStats` in lab/utility_closet/registry.py uses `bisect.insort` to maintain sorted order then `pop(0)` when full — this drops the fastest call, not the oldest. Over 1000+ calls with mixed latencies, kept set skews toward slow; p50/p95 biased high. Fix: use collections.deque(maxlen=1000) for insertion-order + fixed capacity, compute percentiles on demand from a sorted copy.\n\n**Affected files:** lab/utility_closet/registry.py (ToolStats), tests/test_tool_registry.py (if exists).\n**Design rules:** test-plan-or-why-not.\n**Scope boundary:** IN — ToolStats internals + percentile math. OUT — altering Tool interface, altering ToolRegistry API, changing sample cap from 1000.\n**Test plan:** record 2000 samples of known distribution (alternating slow/fast); assert p50/p95 reflect the last-1000 window rather than the sorted-top-1000 (pre-fix, newest-slow sample would push p50 up even though half the recent calls are fast).",
+    "completed_at": "2026-04-24T02:33:22.737148+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f620e1e1-814c-426c-887b-892cccf4ed68",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

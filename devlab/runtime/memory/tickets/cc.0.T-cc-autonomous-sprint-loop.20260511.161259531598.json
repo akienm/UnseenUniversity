@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-autonomous-sprint-loop.20260511.161259531598",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-autonomous-sprint-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T16:12:59.531598",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-sprint-improvements-2026-05-11"
+    ],
+    "tickets": [
+      "T-cc-autonomous-sprint-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-autonomous-sprint-loop",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Automation",
+      "Operations"
+    ],
+    "title": "CLOSED: /sprint-loop autonomous queue drain skill",
+    "result": "sprint-loop skill created in agent_datacenter + deployed to ~/.claude/skills/sprint-loop",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 4,
+    "claimed_at": "2026-05-11T18:57:53.374343+00:00",
+    "created_at": "2026-05-11T16:12:59.531598+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-sprint-improvements-2026-05-11",
+    "description": "When a full queue is ready to sprint, manual nudging between batches is the bottleneck. /sprint-batch sprints all current tickets then /autocompact fires compact — but after compact, someone has to say 'keep going.' With a design day filling the queue, this becomes painful.\n\nCreate ~/.claude/skills/sprint-loop skill. Core loop:\n1. Check queue for pending items (cc_queue.py list, filter status=triage or sprint)\n2. If empty → print 'queue drained — sprint-loop complete' → do NOT schedule wakeup (terminates)\n3. If items → ScheduleWakeup(delaySeconds=90, prompt='/sprint-loop [selector]', reason='continuing queue drain') FIRST — before sprinting, so compact mid-sprint does not lose the loop\n4. Invoke /sprint-batch [selector] for all currently pending items\n5. /autocompact fires naturally at batch end; when CC wakes from the scheduled wakeup, back to step 1\n\nAccepts the same selectors as /sprint-batch (default: today-slate; also decision:D-..., tag:..., explicit ids). The 90s delay is shorter than a typical ticket sprint — the wakeup queues up and fires when CC is next idle after compact.\n\n**Affected files:** ~/.claude/skills/sprint-loop (new skill file)\n**Design rules:** schedule wakeup before batch (not after) — survivable through compact; termination is queue-empty (no wakeup scheduled); selector must be passed through to /sprint-batch\n**Scope boundary:** In: skill file, ScheduleWakeup loop, selector passthrough, empty-queue termination. Out: modifying /sprint-batch or /autocompact internals.\n**Test plan:** /sprint-loop with empty queue → no wakeup scheduled, prints 'queue drained'. /sprint-loop with 1 pending ticket → wakeup scheduled, ticket sprinted. Selector argument passed through to /sprint-batch correctly.",
+    "completed_at": "2026-05-11T18:58:29.372612+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5b123189-3892-4fa9-8511-f298125a5af9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

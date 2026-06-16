@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-readme-merge-fix.20260530.174219726512",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-readme-merge-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:42:19.726512",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-readme-merge-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-readme-merge-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform"
+    ],
+    "title": "Resolve README.md merge conflict markers",
+    "result": "pre-resolved — README.md is clean at HEAD, no conflict markers present; no code change needed",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.9,
+    "claimed_at": "2026-05-30T23:36:52.913652+00:00",
+    "created_at": "2026-05-30T17:42:19.726512+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "README.md has <<<<<<< HEAD conflict markers from a manual edit during the docs pass. External readers hit this immediately. Resolve the conflict by keeping the correct content, commit.\n\n**Affected files:** README.md\n**Design rules:** none\n**Scope boundary:** IN — resolve conflict markers, keep intended content; OUT — new content changes\n**Completion criteria:** git diff shows no conflict markers in README.md; file renders cleanly on GitHub",
+    "completed_at": "2026-05-31T02:05:55.162530+00:00",
+    "deposited_at": "2026-05-30T11:43:11.403906",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:36:52.913652+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T17:42:19.811028+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8f0e1248-7a2e-429b-a497-c9ca1f86205c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

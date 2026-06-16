@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-node-primitives.20260101.141104482250",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-node-primitives"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T14:11:04.482250",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-node-primitives"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-node-primitives",
+    "size": "M",
+    "title": "Node operation primitives: node_create, node_link, search_from, twm_push",
+    "result": "Implemented: prim_node_create, prim_node_link, prim_node_search, prim_twm_push. All registered + seeded. Unblocks PROC_PORTABILITY (node_search filters by type).",
+    "status": "done",
+    "priority": 7,
+    "claimed_at": null,
+    "description": "4 primitives for graph manipulation from within a habit. prim_node_create(narrative_key, type, parent_id_key, out_id_key) -> creates memory node, stores id in basket. prim_node_link(from_key, to_key, weight) -> adds interpretive edge. prim_search_from(node_id_key, query_key, out_key) -> traverse from specific node not CP roots. prim_twm_push(content_key, salience, urgency) -> thin wrapper on cortex.twm_push. These let habits build the graph, not just read it.",
+    "completed_at": null,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "88353508-4491-4fee-948e-d3ef6f342a1e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

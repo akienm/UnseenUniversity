@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-channel-messages-schema.20260414.014755000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-channel-messages-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:47:55",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-channel-messages-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-channel-messages-schema",
+    "epic": "Database",
+    "size": "S",
+    "title": "channel_messages: add channel column for real per-channel filtering",
+    "result": "Added channel column (DEFAULT 'shared') + index. 5 INSERT sites updated. MCP channel_read filters by channel. DB migration applied.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": "2026-04-16T19:27:40.451883+00:00",
+    "created_at": "2026-04-14T01:47:55Z",
+    "related_to": null,
+    "description": "Add a `channel` TEXT column to the channel_messages Postgres table (default 'shared'). Update UC's _channel_append to accept+store channel. Update _api_agent_send and _ws_endpoint to carry channel through. Update igor_mcp _channel_read to filter by channel. Then mcp__igor__channel_read(channel='igor') returns only IGOR-channel messages, enabling the notification routing Akien described (CC notified on SHARED, not IGOR).",
+    "completed_at": "2026-04-16T19:30:25.838704+00:00",
+    "github_issue": 412,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "20050eb8-1506-4222-aa3b-1bbdafeff1e1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

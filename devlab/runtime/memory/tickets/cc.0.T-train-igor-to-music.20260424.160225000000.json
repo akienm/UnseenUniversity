@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-train-igor-to-music.20260424.160225000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-train-igor-to-music"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:25",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-train-igor-to-music"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-train-igor-to-music",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Cognition",
+      "Modality",
+      "Music"
+    ],
+    "title": "Train Igor to music — musical cognition as modality",
+    "result": "Closed per Akien 2026-05-01: another party already did musical-cognition training; their AI will train Igor on it later. Ticket archived to keep queue focused.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-04-24T16:02:25Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Akien's idea (2026-04-22): 'Train igor to music.'\n\nThis is a vision-level placeholder, not a build-ready ticket. Before sprinting, we need a design conversation about scope and shape. Candidate interpretations:\n- Musical training-data ingestion (MIDI, scores, audio features) as a corpus alongside text — Igor learns musical structure like he learns language\n- Rhythm/timing/meter as a cognitive primitive (Igor perceives cadence/beat in conversation, actions, habits — a new modality of pattern recognition)\n- Performance affordances (Igor playing/composing, not just perceiving) — output channel into music\n- Motivational/affective coupling — music as a bliss-integrator input, emotional shape via musical harmony/dissonance\n\nAkien's likely direction (inferred from bliss integrator + Pursuits + milieu work): music as an affective/structural modality that couples to existing cognition, not a new black box. But scope is genuinely open.\n\nDo not sprint until design conversation has narrowed this. Candidate next step: /design session producing a design doc (scope + minimum viable modality + which existing subsystems couple) → /decided spawns 2-4 child tickets.\n\n**Affected files:** TBD — discovery step in design conversation, not in sprint.\n**Design rules:** test-plan-or-why-not is TBD until scope is defined — flagged 'design-first, scope-second' per this ticket shape.\n**Scope boundary:** IN — parent/placeholder tracking the intent; seeds a /design session. OUT — any implementation code before scope is agreed.\n**Test plan:** no tests because: design-phase ticket. Acceptance = a /design doc lands that makes the scope concrete, then this ticket closes with 'decomposed → <child-ticket-ids>'.",
+    "completed_at": "2026-05-01T16:12:22.271824+00:00",
+    "github_issue": 524,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "18d3fb14-e0bf-46fe-a132-0219f08eca7b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

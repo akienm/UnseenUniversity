@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-memory-librarian.20260510.204021278492",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-memory-librarian"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T20:40:21.278492",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dreaming-patterns-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-dreaming-module",
+      "T-igor-memory-librarian",
+      "T-igor-proposals-queue"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-memory-librarian",
+    "gate": "T-igor-dreaming-module,T-igor-proposals-queue",
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Cognition"
+    ],
+    "title": "CLOSED: Igor memory librarian — redirected to T-librarian-curation-tools",
+    "result": "redirected to T-librarian-curation-tools — curation belongs in ADC Librarian device, not Igor cognition stack; proposals queue (T-igor-proposals-queue) remains the interface",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-10T20:40:21.278492+00:00",
+    "related_to": null,
+    "decision_id": "D-dreaming-patterns-2026-05-10",
+    "description": "New module `wild_igor/igor/cognition/librarian.py`. Scheduled curation pass (piggybacks on dreaming interval or separate IGOR_LIBRARIAN_INTERVAL). Responsibilities: (1) identify duplicate/highly-similar clan.memories entries (same code_ref, same semantic fingerprint); (2) prune stale SEMANTIC memories with no access in N days (configurable, default 30); (3) merge overlapping PROCEDURAL habits where safe (same code_ref, slightly different conditions — merge into single entry, record provenance); (4) mark merged/pruned as archived (never hard-delete). All curation decisions logged to a librarian_log table or JSONL.\n\n**Affected files:** `wild_igor/igor/cognition/librarian.py` (new), `wild_igor/igor/cognition/dreaming.py` (wire librarian.run() call)\n**Design rules:** no-sqlite; direct psycopg2; never hard-delete (archived flag or soft-delete column); all curation decisions logged with reason; librarian disabled when IGOR_LIBRARIAN_INTERVAL=0; no cortex.py touch\n**Scope boundary:** IN — clan.memories analysis + proposals to instance.proposals, curation log, dreaming wiring. OUT add: no direct clan.memories writes (proposals queue only). OUT — no instance.watch_problems pruning (separate), no cross-instance curation, no UI.\n**Test plan:** librarian identifies and archives seeded duplicate memory pair; prune skips recently-accessed memories; merged memory preserves both source IDs in metadata field; curation log records each action",
+    "completed_at": "2026-05-10T22:22:19.206377+00:00",
+    "deposited_at": "2026-05-29T14:35:28.037361",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "108e0b59-1b8e-4e1b-8bde-d35bc1582a9b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

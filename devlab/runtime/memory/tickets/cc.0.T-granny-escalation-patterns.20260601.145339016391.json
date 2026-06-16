@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-granny-escalation-patterns.20260601.145339016391",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-escalation-patterns"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T14:53:39.016391",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tool-loop-advisor-2026-06-01"
+    ],
+    "tickets": [
+      "T-granny-escalation-patterns",
+      "T-inference-outcome-learner"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-escalation-patterns",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure",
+      "Granny"
+    ],
+    "title": "GrannyDaemon: escalation pattern tracker (PA2.0 Layer 1→2)",
+    "result": "VALIDATED: PatternTracker ships with PATTERN_REPORT + per-tag DONE/ESCALATE rates; 22+ tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1.6,
+    "blocked_at": "2026-06-01T15:07:59.636257+00:00",
+    "claimed_at": "2026-06-01T15:06:29.825079+00:00",
+    "created_at": "2026-06-01T14:53:39.016391+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-tool-loop-advisor-2026-06-01",
+    "description": "GrannyDaemon dispatches tickets but accumulates no signal about which classes of tickets succeed or fail. This is the PA2.0 Layer 1→2 gap: we observe (MINION_RESULT posts) but don't discover relationships ('Platform/M/worker tier escalates 80% of the time').\n\nAdd a PatternTracker to GrannyDaemon that:\n1. Receives outcome signal after each inference_dispatch_fn call (DONE / ESCALATE / BLOCKED / REPROMPT / UPGRADE / CONFUSED + tag, task_class, size)\n2. Aggregates rate by tag, task_class (tier), and size\n3. Persists to flat-file JSONL at ~/.granny/patterns.jsonl (append-only, no SQLite)\n4. Posts a PATTERN_REPORT to shared channel every N=50 dispatches (GRANNY_PATTERN_REPORT_INTERVAL env var)\n5. Exposes pattern_summary() → dict for context-load integration\n\n**Affected files:** devices/granny/daemon.py, new devices/granny/pattern_tracker.py, tests/test_granny_inference_dispatch.py\n**Design rules:** no-sqlite (flat JSONL only); log at INFO; no-hardcoded-instance-refs per AR-004\n**Scope boundary:** Tracking and reporting only. Out of scope: automatically updating rules_engine routing from patterns (that is T-inference-outcome-learner in D3).\n**Completion criteria:** `.venv/bin/pytest tests/ -q -k pattern` passes; after 5 simulated dispatches PatternTracker.pattern_summary() returns a dict with per-tag DONE/ESCALATE rates; PATTERN_REPORT string appears in a channel post after N dispatches in integration test",
+    "completed_at": "2026-06-02T21:46:41.786950+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T15:06:29.825079+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f07fc60-5766-4a5f-80b6-ef7e90f5c58c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

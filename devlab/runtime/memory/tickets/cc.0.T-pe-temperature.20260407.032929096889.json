@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-pe-temperature.20260407.032929096889",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-temperature"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:29:29.096889",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-temperature"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-temperature",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "PE chain temperature: 0.2 for HYPOTHESIZE/REPLAN, 0.7 for PLAN/SITUATE",
+    "result": "CC implemented temperature split: HYPOTHESIZE/REPLAN=0.2, PLAN/SITUATE=0.7; also stripped think/function_calls blocks in _parse_hypothesis",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "blocked_at": "2026-04-07T03:25:23.891460+00:00",
+    "claimed_at": "2026-04-07T03:01:56.804814+00:00",
+    "related_to": null,
+    "description": "All _call_tier2* calls in pe_chain.py currently use model default temperature. Split by phase: HYPOTHESIZE + REPLAN = 0.2 (deterministic code edits, less random = fewer hallucinations). PLAN + SITUATE = 0.7 (creative file search and design reasoning). Pass temperature param through _call_tier2() and _call_cloud_programming(). File: wild_igor/igor/tools/pe_chain.py (LOW inertia).",
+    "completed_at": "2026-04-07T03:29:29.096889+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eb953a07-0e96-4be9-b7f2-d4350ff11c5a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-diagnose-skill.20260526.025652211400",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-diagnose-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T02:56:52.211400",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rack-diagnostic-trace-2026-05-25"
+    ],
+    "tickets": [
+      "T-diagnose-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-diagnose-skill",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Observability",
+      "Skills"
+    ],
+    "title": "Create /diagnose skill; add DEPRECATED header to old device debug skills",
+    "result": "/diagnose skill created (device-agnostic Steps 1-3); DEPRECATED headers on debug-pe-chain, igor-diagnose, cognition-debug; cc_skills mirrored",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-26T02:56:52.211400+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-rack-diagnostic-trace-2026-05-25",
+    "description": "Create a unified /diagnose <device> skill that works for any rack device. Usage: `/diagnose igor`, `/diagnose queue`, `/diagnose librarian`.\n\nSkill steps:\n1. Read device name from arg (default: igor). Call DiagnosticBase.last_traces(n=20) for that device — surface as a timeline of recent events.\n2. If device is `igor`: also show pe_chain basket last-state (reuse the key steps from /debug-pe-chain — basket init + phase inspection). For any device: if debug_mode is not set, suggest enabling it for richer trace.\n3. Categorize the presenting issue as: A (code bug — exception/assertion in trace), B (state corruption — unexpected values in data fields), C (external noise — network/DB/env), or D (unknown). Suggest one targeted action.\n\nDeprecate old skills by adding DEPRECATED header to:\n- ~/.claude/skills/debug-pe-chain/SKILL.md\n- ~/.claude/skills/igor-diagnose/SKILL.md\n- ~/.claude/skills/cognition-debug/SKILL.md\n\n**Affected files:** ~/.claude/skills/diagnose/SKILL.md (new), ~/.claude/skills/debug-pe-chain/SKILL.md (DEPRECATED header), ~/.claude/skills/igor-diagnose/SKILL.md (DEPRECATED header), ~/.claude/skills/cognition-debug/SKILL.md (DEPRECATED header), ~/dev/src/UnseenUniversity/lab/claudecode/cc_skills/ mirrors of all four\n**Design rules:** skill must gracefully degrade when device is offline (last_traces may return empty); MCP-first approach\n**Scope boundary:** /diagnose creation + DEPRECATED headers; NOT remove old skill files (stubs remain for one sprint cycle as redirect markers)\n**Test plan:** no automated tests (skill files); visual verify: diagnose/SKILL.md exists with Steps 1-3; all three deprecated skills show DEPRECATED header with pointer to `/diagnose <device>`",
+    "completed_at": "2026-05-26T03:05:29.590497+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T02:56:52.211435+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bc592034-bd4c-4199-8367-b47017f35a37",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

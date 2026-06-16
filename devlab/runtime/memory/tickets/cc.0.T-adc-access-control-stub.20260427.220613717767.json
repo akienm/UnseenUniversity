@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-access-control-stub.20260427.220613717767",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-access-control-stub"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:06:13.717767",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-access-control-stub",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-access-control-stub",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: v1 access control — halt and block require rack.* or self",
+    "result": "AuthError added to exceptions.py. Skeleton._check_caller_auth() enforces from_device==skeleton|self for halt/block. {did}_halt and {did}_block MCP tools registered per device. v1 localhost trust noted in docstring.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T21:37:56.612955+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Enforce that halt() and block() can only be called by rack.* (the skeleton) or the device itself. Stub — full auth is Phase 5+. Enforce from day one because adding auth later to an unauthed system is painful.\n\nProposed shape:\n- In Skeleton: intercept incoming halt() and block() calls\n  Check envelope.from_device: must be 'skeleton' or the target device_id\n  Otherwise: raise AuthError('Unauthorized: halt/block requires rack.* or self')\n  AuthError is logged with from_device, target, and timestamp\n- Stub: no cryptographic verification — caller identity is from envelope.from_device (trust on localhost for v1)\n- Note stub limitation in docs: 'v1 trusts caller identity from envelope; cryptographic ACL is Phase 5+'\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py (intercept halt/block)\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/exceptions.py (AuthError)\n\nDesign rules:\n- docs-in-code: comment noting v1 trust model and Phase 5 upgrade path\n\nScope boundary:\nIN: from_device check on halt/block, AuthError exception\nOUT: cryptographic verification (Phase 5+), other operation auth (restart, recovery allowed for all callers in v1)\n\nTest plan:\n- Envelope(from_device='skeleton', ...) calling halt() → allowed\n- Envelope(from_device='igor-wild-0001', ...) calling halt() on igor → allowed (self)\n- Envelope(from_device='CC.0', ...) calling halt() on igor → AuthError raised\n- AuthError is logged",
+    "completed_at": "2026-04-27T22:06:13.717767+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fc6ebcb4-19e5-473c-9fd0-bfd0a5316d8f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

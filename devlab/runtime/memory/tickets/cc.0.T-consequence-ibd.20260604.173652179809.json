@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-ibd.20260604.173652179809",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-ibd"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T17:36:52.179809",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-based-development-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-ibd",
+      "T-fake-done"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-ibd",
+    "gate": "2026-06-18",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Intention-Based Development adoption",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-04T17:36:52.179809+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-intention-based-development-2026-06-04",
+    "description": "**What changed:** Adopted Intention-Based Development — intention: field on tickets, IBD preamble in DickSimnel ToolLoop, TOO annotated with I-intend-that headers.\n\n**Predicted unintended effects:**\n- intention: field adds a required step that could slow /sorted if integration is awkward or the field prompt is unclear\n- DickSimnel IBD preamble could cause turn-1 to be consumed by intention-statement boilerplate instead of productive work (longer time-to-first-tool-call)\n- TOO annotation pass could drift stale faster than architecture notes if intention statements are vague (unfalsifiable intentions rot)\n- 'Losing fewer points' signal is subjective — if no fake-DONEs occur anyway, the signal is ambiguous\n\n**Signals to watch:**\n- /sorted usage: does intention: field get populated with real content or boilerplate 'I intend that this ticket is done'?\n- DickSimnel turn logs: does turn 1 show genuine hypothesis statements before tool calls begin?\n- Akien friction: does IBD language feel natural or forced in conversation?\n- Fake-DONE rate (T-fake-done count): lower after IBD preamble ships?\n\n**Gate condition:** Check by 2026-06-18 or when 5 DickSimnel tickets have shipped post-preamble, whichever comes first.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6a790e5e-b028-40d6-aeba-84582635a066",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

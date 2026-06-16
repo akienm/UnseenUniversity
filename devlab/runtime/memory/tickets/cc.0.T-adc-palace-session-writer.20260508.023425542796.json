@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-palace-session-writer.20260508.023425542796",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-palace-session-writer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T02:34:25.542796",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-palace-session-memory-2026-05-07"
+    ],
+    "tickets": [
+      "T-adc-palace-session-writer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-palace-session-writer",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "agent_datacenter",
+      "palace",
+      "workflow"
+    ],
+    "title": "Wire savestate to write palace.sessions.* + palace.transcripts.*",
+    "result": "session_capture.py + savestate step 4; 10 tests; strips tool calls/thinking; writes sessions+transcripts to palace",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-05-08T21:18:22.029306+00:00",
+    "created_at": "2026-05-08T02:34:25.542796+00:00",
+    "related_to": null,
+    "decision_id": "D-palace-session-memory-2026-05-07",
+    "description": "Two parts: (1) a session_capture.py script that filters the current session JSONL to text-only messages (no tool calls, no tool results) and writes the result to palace.transcripts.<YYYYMMDD-N>; (2) update savestate SKILL.md to also write a palace.sessions.<YYYYMMDD-N> summary node (5-10 lines: decisions made, tickets closed, tickets filed, in-flight at end). Both write a flat-file echo alongside the DB write for disaster recovery.\n\n**Affected files:** new scripts/session_capture.py, ~/.claude/skills/savestate/SKILL.md, ADC skills/savestate/SKILL.md\n**Design rules:** palace DB always, files as echo; savestate is MEDIUM-inertia skill\n**Scope boundary:** IN: session JSONL → stripped transcript node, savestate → session summary node, file echo for both. OUT: day-close changes (separate ticket), context-load changes (separate ticket).\n**Test plan:** session_capture.py produces text-only output from a test JSONL fixture; savestate produces a queryable palace.sessions.* node; echo files written alongside.",
+    "completed_at": "2026-05-08T21:20:24.097276+00:00",
+    "github_issue": 656,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "394a5aa2-ccba-4286-88cb-0287cf3b7b38",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

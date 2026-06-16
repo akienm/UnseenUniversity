@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-task-set-short-ttl.20260507.161117000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-task-set-short-ttl"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:11:17",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-noise-2026-05-06"
+    ],
+    "tickets": [
+      "T-igor-task-set-short-ttl"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-task-set-short-ttl",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Cognition",
+      "Memory",
+      "WorkingMemory"
+    ],
+    "title": "CLOSED: TASK_SET short TTL + upsert",
+    "result": "TASK_SET upsert (twm_clear_task_set before push) + TTL 600s; HeartbeatSource+MilieuSource already at 600s",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-06T23:56:15.873756+00:00",
+    "created_at": "2026-05-07T16:11:17Z",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-noise-2026-05-06",
+    "description": "TASK_SET observations accumulate across a session (5+ copies visible in search) because each action_request intent pushes a new one without expiring the old. The TTL is set to _nexus_twm_ttl() (session-length). These exist for restart-rebuild (letting Igor reconstruct context after crash), so their TTL should match the restart window (5-10 min), not the session. After that window they're stale — the user has moved on. Same issue applies to other periodic push sources (HeartbeatSource ticks, MilieuSource snapshots).\n\n**Affected files:** wild_igor/igor/main.py (TASK_SET push at ~line 3867-3878, HIGH inertia — pre-approved); wild_igor/igor/cognition/push_sources.py (HeartbeatSource, MilieuSource TTLs)\n**Design rules:** no-sqlite; safeguards (main.py HIGH inertia — pre-approved inline)\n**Scope boundary:** In scope: (1) change TASK_SET push TTL to 600s; (2) add clear-existing-TASK_SET step before pushing new one for same thread (upsert behavior); (3) audit HeartbeatSource and MilieuSource for appropriate short TTLs. Out of scope: changing goal extraction logic; changing urgency/salience values; removing TASK_SET mechanism.\n**Test plan:** Send two action_request turns in sequence. Assert only one TASK_SET observation exists in TWM for that thread after the second turn. Assert TASK_SET TTL expires before 15 minutes. Verify restart-rebuild path still works when Igor restarts within the TTL window.\n**Pass condition:** After 10 minutes of idle, twm_read() for category=task_set returns empty. During an active conversation, only one TASK_SET exists per thread at any time.",
+    "completed_at": "2026-05-07T00:01:27.570978+00:00",
+    "github_issue": 612,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8a689fe9-b0e9-4278-95de-294772734ecd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

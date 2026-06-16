@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-carve-holdout-test-fragile.20260615.163516764865",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-carve-holdout-test-fragile"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T16:35:16.764865",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-carve-holdout-test-fragile"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-carve-holdout-test-fragile",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Test",
+      "Competition"
+    ],
+    "title": "Fix test_stratified_split_approximately_twenty_percent — fragile row-count assumption",
+    "result": "Fixed: changed absolute holdout count assertion to ratio check (10%–30% tolerance). 3/3 tests pass. Commit 5467f23b.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that the holdout test validates proportional split logic without depending on exact DB row counts.",
+    "created_at": "2026-06-15T16:35:16.764865+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "test_stratified_split_approximately_twenty_percent asserts holdout <= 3 but actual data has more than 10 rows per type, causing the test to get 6 holdout rows and fail.\n\nThe test was written assuming exactly 10 rows per type in the competition.memories DB. Actual data has grown beyond that. Fix: either mock the data layer to return exactly N rows, or change the assertion to check a ratio (holdout / total) rather than an absolute count.\n\n**Affected files:** tests/competition/test_carve_holdout.py\n**Design rules:** no mocks on DB — use a fixture with controlled input, or assert ratio\n**Scope boundary:** IN — fix the single failing assertion. OUT — changing the carve logic itself.\n**Completion criteria:** python -m pytest tests/competition/test_carve_holdout.py passes on CI regardless of actual DB row count.",
+    "completed_at": "2026-06-15T20:40:47.428671+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

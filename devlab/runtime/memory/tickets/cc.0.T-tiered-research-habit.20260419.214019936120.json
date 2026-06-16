@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-tiered-research-habit.20260419.214019936120",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tiered-research-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T21:40:19.936120",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tiered-research-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tiered-research-habit",
+    "size": "S",
+    "notes": "Spun out from GH-255 close 2026-04-19. The tiered_research() tool is already live (graph → web search → local LLM → cloud LLM synthesis, commit 119710ef). What remains is the habit-level automation: seed a PROCEDURAL habit (PROC_TIERED_RESEARCH) that matches question-shaped inputs, fires tiered_research, and deposits the synthesis back into the cortex as FACTUAL memories so future graph searches pick them up without re-invoking the tool. Related: watchlist habits pattern (GH-299 territory) is the template. Scope: small — one seeder script + one habit node + deposit wrapper.",
+    "title": "PROC_TIERED_RESEARCH habit — fire tiered_research on question-shape triggers + deposit",
+    "result": "Shipped ac6fea45. research_and_deposit(query) wrapper + PROC_TIERED_RESEARCH habit seeded (id in DB). Habit auto-dispatches on 'research X' / 'look up X' / 'tell me about X' etc., runs tiered_research (memory→web→local→cloud), deposits Q/A as FACTUAL memory with tags=research,tiered_research. Picks up after next Igor restart (habit table re-read at boot).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T21:35:57.361463+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-19T21:40:19.936120+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

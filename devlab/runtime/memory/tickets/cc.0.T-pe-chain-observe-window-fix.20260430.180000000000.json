@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-pe-chain-observe-window-fix.20260430.180000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-observe-window-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T18:00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-consult-confidence-threshold-raise",
+      "T-pe-chain-observe-window-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-observe-window-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "pe_chain",
+      "OBSERVE",
+      "cert-driven"
+    ],
+    "title": "pe_chain OBSERVE window collapses near file boundaries — relevant code falls outside slice",
+    "result": "Bumped _OBSERVE_CONTEXT_LINES 40→150, _OBSERVE_MAX_SECTION 120→300, added _OBSERVE_FULL_FILE_THRESHOLD=300 (small files read whole), and _read_file_section rebalances when one edge clips a file boundary. Cert walk-02 dump confirms HYPOTHESIZE now anchors on real constants instead of docstrings.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": "2026-04-30T18:14:58.672272+00:00",
+    "created_at": "2026-04-30T18:00:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Cert walk-02 (T-consult-confidence-threshold-raise) attempt 1 exposed an OBSERVE bug. _grep_file picked first match (line 13 of consult.py — docstring); _read_file_section centered window on line 13 with ±40 line context; max(0, 13-41) clipped lower edge to 0 but did not extend the upper edge to compensate. Result: window covered lines 1-53 but the actual constant DEFAULT_MIN_CONFIDENCE = 0.55 lives at line 70 — outside the slice. HYPOTHESIZE saw only the docstring + imports, hallucinated `\"confidence\": 0.62` from ticket text rather than reading actual constant.\n\nFix shipped uncommitted in this branch:\n- _OBSERVE_CONTEXT_LINES bumped 40 → 150\n- _OBSERVE_MAX_SECTION bumped 120 → 300\n- _OBSERVE_FULL_FILE_THRESHOLD added (300 lines): files at/below threshold read whole\n- _read_file_section rebalances window when one edge clips a file boundary (shifts the unclipped edge to keep budget)\n\nEvidence: cert_walk_02_attempt_1_observe_miss.json (lost to overwrite — captured the symptom in the cert walk report already) and cert_walk_02_attempt_2_regressive_edit.json (preserved at ~/.TheIgors/local/logs/) shows the fix correctly anchors hypothesis at the real DEFAULT_MIN_CONFIDENCE constant, exposing a second engram bug (regressive-edit direction) for separate investigation.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (_OBSERVE_* constants + _read_file_section)\n**Design rules:** test-plan-or-why-not\n**Scope boundary:** IN — OBSERVE window heuristic. OUT — HYPOTHESIZE prompt, multi-range observation, large-file (>300 line) handling beyond budget+rebalance.\n**Test plan:** existing 91 pe_chain tests pass with new constants. Cert walk-02 attempt 2 is the live integration test — confirms HYPOTHESIZE now reads actual constant.\n",
+    "completed_at": "2026-04-30T18:15:21.265593+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e58a7e76-2468-41a9-a8ab-dffb71b5f7e6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

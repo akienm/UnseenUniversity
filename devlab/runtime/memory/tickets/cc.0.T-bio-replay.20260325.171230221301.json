@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-bio-replay.20260325.171230221301",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bio-replay"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:12:30.221301",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bio-replay"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bio-replay",
+    "title": "Consolidation replay — integrate FACT_CLOUD nodes into graph topology",
+    "result": "Consolidation replay implemented: quiet-period background source that discovers FACT_CLOUD nodes, groups by session, and strengthens co-occurrence edges. 8 tests passing, 337 total tests pass. Registered as push source in run_background_sources.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-25T17:08:07.863727+00:00",
+    "description": "Build a quiet-period habit that re-traverses recently deposited FACT_CLOUD nodes and strengthens co-occurrence edges between them. This is G-BIO-REPLAY1 and the prerequisite for Igor discussing Making Money coherently.\n\nSpec (D228):\n- Trigger: no user activity for 10 min AND unprocessed FACT_CLOUD nodes exist\n- Query: SELECT nodes WHERE memory_type='FACTUAL' AND source='reading' AND id LIKE 'FACT_CLOUD_%' AND (last_replay_ts IS NULL OR timestamp > last_replay_ts)\n- For each pair of nodes from the same reading session (same context tag or timestamp within 120s of each other): upsert interpretive_edge(src, dst, relation='co_deposited', weight+=0.1, cap=1.0)\n- Track progress: store last_replay_ts as a PROCEDURAL memory node 'PROC_REPLAY_CURSOR'\n- Max 50 node-pairs per pass to avoid blocking\n- Log: forensic log each pass with nodes_processed, edges_created, edges_strengthened\n- Inertia: LOW (new file, not touching brainstem)\n- File: wild_igor/igor/cognition/replay.py (new) + register quiet-period habit in cognition/ne.py or a new background source\n- Tests: test that edges are created between co-deposited nodes; test that cursor advances; test that max-pairs limit is respected",
+    "completed_at": "2026-03-25T17:12:30.221301+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cb3b8276-9a00-4c74-a2ed-99b55409965c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

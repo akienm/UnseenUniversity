@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-challenge-step.20260518.164429530522",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-challenge-step"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530522",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-challenge-step"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-challenge-step",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Audit",
+      "Skills"
+    ],
+    "title": "Add 'is there a better way?' challenge to all 4 audit skills",
+    "result": "Added CHALLENGE section to audit-design and audit-ticket",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530522+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "Each audit skill currently checks whether the thing is correct, not whether it's the best approach. Adding one challenge question at the end of each audit bakes 'is there a better way?' into every step of the workflow.\n\n**Affected files:** agent_datacenter/skills/audit-design/SKILL.md, agent_datacenter/skills/audit-ticket/SKILL.md (plus audit-goal and audit-hypothesis are new and include it by design)\n**Design rules:** challenge is advisory — it surfaces as a note, not an AMEND gate; Akien can proceed without answering it\n**Scope boundary:** in scope: add one final section to audit-design and audit-ticket: 'Challenge: Is there a better [architectural approach / implementation] for achieving this goal? Name one alternative and why this path won.' Output labeled CHALLENGE: not AMEND. Out of scope: adding challenge to audit-smell, audit-debris, audit-day (those are hygiene checks, not design checks).\n**Test plan:** skill file changes; verify challenge section appears in next /decided run.",
+    "completed_at": "2026-05-18T16:59:02.576683+00:00",
+    "github_issue": 748,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9ecf7a53-40a6-4e54-9480-7e979c1e2e15",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

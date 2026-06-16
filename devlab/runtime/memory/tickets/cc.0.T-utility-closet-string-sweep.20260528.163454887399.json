@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-utility-closet-string-sweep.20260528.163454887399",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-utility-closet-string-sweep"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:34:54.887399",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-utility-closet-string-sweep"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-utility-closet-string-sweep",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Rename"
+    ],
+    "title": "Replace remaining utility closet string references with rack server",
+    "result": "replaced all utility closet string refs with rack server in log messages, docstrings, comments, and HTML; fixed stale test_adc_shim assertion",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-28T16:35:53.093441+00:00",
+    "created_at": "2026-05-28T16:34:54.887399+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "27 string references to 'utility closet'/'utility_closet' remain in source code after the D335 rename to 'rack server'. Pure string replacement in log messages, docstrings, and comments — no behavior change.\n\n**Affected files:** devices/web_server/server.py (~2 refs), devices/igor/web/adc_client.py (~15 refs), devices/igor/cognition/SUBSYSTEMS.md (1 ref), devices/igor/memory/cortex.py (1 ref), lab/claudecode/cc_queue.py (check for more). Run: grep -rn 'utility.closet\\|utility_closet' devices/ lab/ --include='*.py' to get full list.\n**Design rules:** none\n**Scope boundary:** IN — rename string literals only (log messages, docstrings, comments, variable names where they are internal); OUT — do not rename DB column names or external API paths without a separate ticket\n**Test plan:** grep -rn 'utility.closet\\|utility_closet' devices/ lab/ --include='*.py' returns 0 hits after fix; pytest passes",
+    "completed_at": "2026-05-28T16:40:45.422721+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T16:35:53.093441+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T16:34:54.940160+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "974cb45d-d7b4-4cc0-936d-582d9f2a4fd2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

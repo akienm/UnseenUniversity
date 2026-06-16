@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-dicksimnel-double-close.20260606.224527340719",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-double-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T22:45:27.340719",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-double-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-double-close",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Bug",
+      "Reliability"
+    ],
+    "title": "DickSimnel: double-close bug — already-closed ticket escalates instead of succeeds",
+    "result": "_post_result: show() check before escalate when close returns None; 2 tests (closed+done both succeed)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.62,
+    "intention": "I intend that a ticket the model closes via Bash tool during the ToolLoop is treated as a success by _post_result(), not escalated.",
+    "claimed_at": "2026-06-06T23:33:34.857785+00:00",
+    "created_at": "2026-06-06T22:45:27.340719+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** The sprint-ticket skill instructs DickSimnel to call `cc_queue.py close <id> '...'` via Bash tool (step 11). When that succeeds, the model writes 'DONE: ...'. Then _post_result() calls cc_queue.py close AGAIN on the already-closed ticket. cc_queue returns None (ticket not found or already closed) → _post_result() treats None as close failure → escalates. Result: ticket closed AND escalated.\n\n**What to build:** In `_post_result()`, before calling cc_queue close, check if the ticket is already closed. If `cc_queue show <id>` returns status in ('done', 'closed'), treat as success and increment _tickets_processed rather than escalating.\n\nAlternatively: make cc_queue.py close idempotent (already-closed returns success JSON instead of None/error).\n\n**Affected files:** devices/dicksimnel/device.py (_post_result method), tests/inference/test_dicksimnel.py\n**Design rules:** none apply\n**Scope boundary:** Fix _post_result() double-close handling only; do not change ToolLoop or other methods\n**Completion criteria:** Test shows: ticket already in done/closed status → _post_result() increments _tickets_processed, does NOT call _escalate_ticket(). 1 new test.",
+    "completed_at": "2026-06-07T01:43:14.576083+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

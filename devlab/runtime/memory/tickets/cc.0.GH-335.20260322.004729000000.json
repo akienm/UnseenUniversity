@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-335.20260322.004729000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-335"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T00:47:29",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-335"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-335",
+    "title": "Memory/habit unified schema — payload-as-program, START_AT, branch-to-ID",
+    "result": "All 3 pieces shipped (verified 2026-04-19 audit). (1) payload-as-program: node_executor.execute_node reads bytecode cells from memory.payload; 12 coding engrams live. (2) branch-to-ID: BRANCHIF opcode targets another memory_id or memory_id#trigger syntax (D296). (3) START_AT as trigger: memory.metadata.triggers is {trigger_name: cell_name}; multi-trigger memories routing to shared or distinct cells is the mechanism — no schema change needed. Design doc issue-335.csb.txt framed START_AT as a new timestamp column, which contradicts the 'memory schema never changes, use metadata/triggers' rule — doc deleted as part of this close.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-22T00:47:29Z",
+    "description": "GitHub issue #335. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-19T21:24:02.849429+00:00",
+    "github_issue": 335,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "745ce5f7-12f0-4115-9d04-c5d21c7654e5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

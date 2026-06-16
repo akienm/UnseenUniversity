@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-librarian-igor-growth-loop.20260517.213001418698",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-igor-growth-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T21:30:01.418698",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-peer-agent-architecture-2026-05-17"
+    ],
+    "tickets": [
+      "T-librarian-constitutional-layer",
+      "T-librarian-igor-growth-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-igor-growth-loop",
+    "gate": "T-librarian-constitutional-layer",
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "Igor",
+      "Architecture",
+      "SelfImprovement"
+    ],
+    "title": "CLOSED: Design Librarian→Igor behavioral observation mechanism",
+    "result": "design spec written: instance.proposals as observation bus, 2 impl tickets defined (T-librarian-behavioral-emit S, T-dreaming-librarian-input M)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-17T21:30:01.418698+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-peer-agent-architecture-2026-05-17",
+    "description": "The Librarian and Igor share a constitutional layer but run different cognitive architectures (Librarian = best-of-agentic; Igor = biomimetic). Their behavioral divergences and convergences are signal: where they agree, the belief is well-anchored; where they diverge, one has a blind spot or better information.\n\nThis design ticket answers three questions and produces a spec:\n1. What data does the Librarian expose as behavioral output? (synthesis history, palace write log, confidence evolution over time, patterns of what it researches vs. what it can't answer)\n2. How does Igor's dreaming pass consume it? (does it read from a Librarian-specific palace branch? a dedicated table? a shared observation bus?)\n3. What does Igor do with Librarian behavioral patterns? (feed into schema extraction, feed into watch_problems, feed into NE context as a second cognitive voice?)\n\nOutput: a decision document + spec for the implementation ticket(s). Must respect: no new memory types; Librarian and Igor share the same Postgres instance (Igor-wild-0001); any observation bus must use existing table infrastructure.\n\n**Affected files:** design only — no code changes in this ticket\n**Design rules:** theigors/rules/memory (no new memory types); theigors/rules/database (Postgres only, existing schemas)\n**Scope boundary:** In scope: design doc answering the 3 questions, ready to /decided into impl tickets. Out of scope: implementation; changes to Igor's dreaming module (that's the impl ticket).\n**Test plan:** Output is a design document that answers all three questions with enough specificity to ticket the implementation without further design.",
+    "completed_at": "2026-05-17T22:08:34.339644+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9f7c7928-8410-449b-a695-4eecb2d892a3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

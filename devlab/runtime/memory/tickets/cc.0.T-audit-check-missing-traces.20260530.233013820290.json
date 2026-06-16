@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-audit-check-missing-traces.20260530.233013820290",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-check-missing-traces"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T23:30:13.820290",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-check-missing-traces"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-check-missing-traces",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Audit check: flag devices missing structured trace emission",
+    "result": "AR-008 check registered; granny/device.py fixed with trace_record at 4 decision points; audit_check_missing_traces.py committed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": "2026-05-31T14:17:49.414830+00:00",
+    "created_at": "2026-05-30T23:30:13.820290+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The /diagnose skill fell back to log-grepping Granny because no structured traces existed in datacenter_logs/granny-weatherwax/trace/. Every rack device should emit structured JSONL trace events via DiagnosticBase so /diagnose works uniformly. Add a forever audit check that detects devices inheriting BaseDevice but NOT emitting traces (no DiagnosticBase inheritance, or no trace_record() calls in device code).\n\nRegister via audit_add.py as a shell/python kind check. On each audit sweep: find all classes in devices/ that inherit BaseDevice, verify each has DiagnosticBase in its MRO or calls trace_record(), flag any that don't. Severity: MED (traces are observability infrastructure, not blocking).\n\n**Affected files:** lab/claudecode/audit_add.py (register the check), lab/claudecode/audit_runner.py (runs it), devices/granny/device.py is the immediate offender to fix after check is registered\n**Design rules:** audit checks are registered forever unless explicitly removed; MED severity = ticket if not trivial\n**Scope boundary:** IN — register the audit check; fix granny/device.py to inherit DiagnosticBase as the first example; OUT — fixing all other devices (each gets its own pass)\n**Completion criteria:** `python3 lab/claudecode/audit_runner.py --drain` flags devices missing trace emission; granny/device.py no longer flagged (DiagnosticBase added); check persists across future audit runs",
+    "completed_at": "2026-05-31T14:38:25.434778+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T14:17:49.414830+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T23:30:13.893262+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "730b95fc-084e-43ff-8282-c584a2a54ae9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

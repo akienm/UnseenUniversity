@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-provenance-gap-metric-memories.20260419.190655223710",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-provenance-gap-metric-memories"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T19:06:55.223710",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-provenance-gap-metric-memories",
+      "T-reading-audit-qwen-complete",
+      "T-seed-memories-deposited-by"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-provenance-gap-metric-memories",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Provenance"
+    ],
+    "title": "METRIC memories (routing_signal, etc.) still deposit without deposited_by",
+    "result": "Stamped observer.observe() with source='runtime:observer' + deposited_by — covers METRIC|routing_signal|speed_pressure (the one Akien saw). Also stamped the interaction-outcome metric in main.py. Commit 2169f297. After Igor restart: PROVENANCE_GAP should be silent on steady-state.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T19:05:10.537875+00:00",
+    "related_to": null,
+    "description": "Akien 2026-04-19 12:01:53 paste shows: PROVENANCE_GAP gap #1, narrative: METRIC|routing_signal|speed_pressure|reason=quick_followup|...\n\nYesterday's T-seed-memories-deposited-by fix (cd624a7d) covered CRED_* and PROC_* builtin seeds, but there are other deposit sites — metric memories produced at runtime — that still don't stamp deposited_by. The gate falls back to 'unknown' and logs the warning.\n\n## Candidate sites\n- wild_igor/igor/main.py around line 6412 (_metric_mem = Memory(...)) and 7557, 8460, 8995, 9347, 9471 (self.cortex.store(mem)) — per yesterday's grep\n- Any call site where the code constructs a Memory() and passes to cortex.store without setting .source or metadata.deposited_by\n\n## Fix pattern\nFor each site identified: stamp a source label that identifies the SUBSYSTEM producing the memory (e.g. 'runtime:metric', 'runtime:episodic', 'runtime:pr_accretion'). Same shape as yesterday's seed:credentials / seed:habits labels — terse, subsystem-scoped, audit-useful.\n\n## Acceptance\n- No PROVENANCE_GAP warnings at steady-state conversation turn\n- Existing metric memories aren't modified (leave the historical 'unknown' alone)\n\n## Related\n- T-seed-memories-deposited-by (cd624a7d, done — same pattern, different sites)\n- T-reading-audit-qwen-complete (model_used threading — same goal for the reading subsystem)",
+    "completed_at": "2026-04-19T19:06:55.223710+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7a5ade56-89d4-45fc-a81e-fd71ec2d64f5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

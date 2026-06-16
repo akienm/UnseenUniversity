@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-audit-feedback.20260521.014103832162",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-audit-feedback"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T01:41:03.832162",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-feedback-2026-05-20"
+    ],
+    "tickets": [
+      "T-consequence-audit-feedback"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-audit-feedback",
+    "gate": "2026-06-03",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: /audit-feedback skill adoption",
+    "result": "CLEAR — no AMEND fatigue or false-positive floods observed over ~2 weeks; skill runs cleanly on skill-touching tickets",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-21T01:41:03.832162+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-audit-feedback-2026-05-20",
+    "description": "**What changed:** /audit-feedback skill added; /audit-ticket now calls it for skill-touching tickets.\n\n**Predicted unintended effects:**\n- AMEND fatigue: if most existing skills fail all 5 checks, every skill ticket generates noise. Could lead to reflexive dismissal of AMEND results.\n- False-positive 'present': the run script does text-matching for patterns like 'print' or 'try/except' — could mark a property satisfied when the code path never actually executes.\n- Integration overhead: /audit-ticket already has multiple audit calls; adding another may slow the filing flow noticeably if check-all is slow.\n- Scope creep: 'learning preservation' is the hardest property to detect mechanically; LLM interpretation of 'unclear' entries may vary session to session.\n\n**Signals to watch:**\n- First 5 /audit-ticket runs on skill-touching tickets: how many produce AMEND from /audit-feedback? If >3 of 5, consider raising the baseline or adjusting the 5 properties.\n- Any ticket where /audit-feedback AMEND was overridden: record why — if the same reason appears twice, update the detection heuristic.\n- run script check time: if `python run check-all` takes >10s, optimize or cache.\n\n**Gate condition:** Check by 2026-06-03 or after 5 skill-touching tickets have been filed through /audit-ticket, whichever comes first.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": "2026-06-05T15:33:04.269838+00:00",
+    "github_issue": 767,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T01:41:03.832199+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f62f82c4-6317-4ff8-81d2-1db3bcdf1540",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

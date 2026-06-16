@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-seed-memories-deposited-by.20260419.031153965618",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-seed-memories-deposited-by"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T03:11:53.965618",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-seed-memories-deposited-by"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-seed-memories-deposited-by",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Provenance"
+    ],
+    "title": "Seed memories in main.py stored without deposited_by — fill provenance at boot",
+    "result": "Seed-time deposits now stamp source + metadata.deposited_by. Two label variants: 'seed:credentials' (CRED_* at main.py:975) and 'seed:habits' (PROC_* builtin loop at main.py:1141). Syntax-check passes. Commit cd624a7d. Next Igor restart should silence boot-time PROVENANCE_GAP 1-10.",
+    "status": "done",
+    "worker": "claude",
+    "blocked_at": null,
+    "claimed_at": "2026-04-19T03:10:47.189217+00:00",
+    "related_to": null,
+    "description": "The provenance gate in cortex.store() logs PROVENANCE_GAP when memories land without deposited_by and falls back to 'unknown'. At Igor boot, ~10+ seed Memory objects in wild_igor/igor/main.py (credential refs, PROC_* habits, config nodes) trip the gate. Akien 2026-04-18b saw gaps #1-#10 in the log.\n\n## Sample narratives (from log)\n- 'OpenRouter API key — in .env OPENROUTER_API_KEY...'\n- 'Confluence login email — in .env CONFLUENCE_EMAIL...'\n- 'Discord bot token — in .env DISCORD_BOT_TOKEN...'\n- 'Periodically check when the last backup was made and trigger...'\n- 'Back up Igor's runtime state: DB, milieu, warm context, SOUL...'\n- 'Check disk space when asked or after large ingestion tasks.'\n- 'Word graph preparse routing — controls when word graph repla...'\n- 'Adaptive routing from latency history...'\n- 'Tune when Ollama preparse is skipped vs used. Low/high compl...'\n- 'Save content to the active user's personal notebook when the...'\n\n## Scope\n- Find the seeding function(s) in wild_igor/igor/main.py that construct these Memory objects\n- Stamp each with deposited_by='seed:main' (or a more specific label: seed:habits, seed:credentials, seed:config)\n- Optionally set memory.source='seed' for query-friendliness — the existing 'seed' source is in the provenance module's NO_INFERENCE_SOURCES whitelist, so it won't trigger the no-inference warnings\n\n## Implementation sketch\nAdd a single line like:\n    for m in [mem1, mem2, ...]:\n        m.metadata = (m.metadata or {}) | {'deposited_by': 'seed:main'}\nright before the batch store, OR thread a source param through the store call.\n\n## Success criteria\n- Boot is silent on PROVENANCE_GAP for the seed path\n- `SELECT metadata->>'deposited_by' FROM clan.memories WHERE id LIKE 'PROC_%' OR id LIKE 'CRED_%' LIMIT 10` shows 'seed:...' values, not 'unknown'\n\n## Provenance\nAkien-Claude 2026-04-18b, during /readigor follow-up observation.",
+    "completed_at": "2026-04-19T03:11:53.965618+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7114481a-2fc3-4b7a-b37b-80e0db2c2ce4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

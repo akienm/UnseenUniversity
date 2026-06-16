@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-audit-ticket-skill.20260429.182036154354",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-ticket-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:20:36.154354",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-rename-pyramid",
+      "T-audit-ticket-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-ticket-skill",
+    "gate": "T-audit-rename-pyramid",
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Skills",
+      "Ticket"
+    ],
+    "title": "Extend audit-ticket (formerly /review filing-time) — validation/remediation/observability",
+    "result": "Created ~/.claude/skills/audit-ticket/SKILL.md: inherits /review + 7 new checks (validation steps, remediation, rollback for HIGH-inertia, logging requirements, observability assertion, split test, audit-emphasis tag). Model: Haiku.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T18:11:31.004020+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "audit-ticket inherits all current /review filing-time checks. Add: validation steps (how do we observe success in runtime, not just unit tests); validation remediation (cleanup steps after tests — DB rows, fixtures, file artifacts, log noise); rollback plan (HIGH-inertia only); logging requirements (try/except logs, silent-return-False / fanout=0 sites WARN with surrounding state); observability assertion ('if this breaks in prod, this log line points at it'); split test (size > S + ≥2 distinct verbs in check_body → propose split + AMEND); audit-emphasis tag (ticket can declare 'needs deep audit-smell' / 'doc-only, skip').\n\nEmits per-run record.\n\nModel: Haiku (declarative checks).\n\n**Affected files:** ~/.claude/skills/audit-ticket/SKILL.md, palace check shapes in theigors/rules/ticket_design_checks/*.\n**Design rules:** no persistence beyond palace telemetry.\n**Test plan:** draft a ticket missing validation-remediation → AMEND. Draft an XL ticket with 4 verbs → SPLIT. Telemetry recorded.",
+    "completed_at": "2026-04-29T18:20:36.154354+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "627c621c-ff85-46e7-acf9-f2b62f0af85e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

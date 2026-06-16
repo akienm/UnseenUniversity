@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-experiment-primitive-scheduler.20260415.161559536614",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-primitive-scheduler"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T16:15:59.536614",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-primitive",
+      "T-experiment-primitive-scheduler"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-primitive-scheduler",
+    "body": "Sub-slice of T-experiment-primitive (#456). Build the scheduler/runner that takes Experiment objects from the schema (shipped 2026-04-14 as T-experiment-primitive-schema, commit 64e1d472) and actually executes them.\n\n## Scope (MVP)\n\n- `ExperimentScheduler` class in `wild_igor/igor/cognition/experiment_scheduler.py`\n- Enqueue: accept an Experiment in status=PROPOSED, persist to a queue\n- Tick: pick next ready experiment, advance to RUNNING, dispatch probe, record Observation, mark OBSERVED\n- Probe dispatch by ProbeKind:\n  - memory_query → cortex search (cheap, always allowed)\n  - db_query → db_proxy execute_read (cheap, always allowed)\n  - tool_call → registry lookup + invocation (medium cost; whitelist enforced)\n  - habit_dryrun → not yet implemented (defer, ABORT with reason)\n  - channel_send → defer in MVP (ABORT with reason)\n  - sim_turn → defer (ABORT with reason)\n- Cost/timeout: per-experiment soft timeout (default 30s); on timeout → abort\n- TWM push of OBSERVED experiment outcome at salience 0.6 with cp1_provisional=True\n- Persistence: Postgres `experiment_queue` table — id, experiment_json, status, enqueued_at, started_at, completed_at\n\n## Out of scope (later sub-slices)\n\n- Outcome → engram update (that's T-experiment-primitive-outcome-feedback)\n- Mode-aware scheduling (AWAKE foreground vs BACKGROUND batch vs SLEEP consolidation) — pick simplest first\n- Risk tier gating to Akien approval — flag in the code, don't implement until Akien decides\n- Cockpit integration (T-experiment-primitive-cockpit-integration)\n- CP-axiom audit check (T-experiment-primitive-cp-check)\n\n## Open design choices made under CP2 (revise later if needed)\n\n- Storage: dedicated `experiment_queue` table, NOT main memories table. Reason: experiments are operational state during their lifecycle; the OBSERVED outcome can be deposited as a memory after the fact (in the outcome-feedback sub-slice). Keeps the memories table from churning with mid-flight experiments.\n- Lifecycle: experiments CAN be aborted mid-probe (CP2 license; biology says abandon freely)\n- Outcome judgment: Igor decides via Observation(outcome=...) on his own. External oracle path is later.\n- Risk tiers: MVP whitelist of safe probe kinds; flag higher tiers for later.\n\n## Dependencies\n\n- T-experiment-primitive-schema ✅ (Experiment dataclass quartet shipped 2026-04-14)\n\n## Tests\n\n- enqueue + tick happy path (memory_query probe)\n- tick on empty queue is no-op\n- failed probe → Observation(outcome=MISMATCH) with error captured\n- timeout → ABORTED with reason\n- whitelist enforcement: unsupported probe kind → ABORT (not crash)\n- TWM push fires on OBSERVED with cp1_provisional flag\n- Persistence roundtrip (enqueue, restart scheduler, ensure experiment is recovered)",
+    "deps": [
+      "T-experiment-primitive-schema"
+    ],
+    "size": "M",
+    "tags": [
+      "epic-child",
+      "experiment-primitive",
+      "cognition",
+      "scheduler",
+      "cp-axioms"
+    ],
+    "title": "Experiment primitive: queue + runner (sub-slice of #456)",
+    "result": "ExperimentScheduler with Postgres queue + probe dispatch (memory/db/tool) + CP6 whitelist + INCONCLUSIVE-on-error + timeout abort + TWM push w/ cp1_provisional. 17 tests, 2284 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T16:06:08.949169+00:00",
+    "related_to": "T-experiment-primitive",
+    "completed_at": "2026-04-15T16:15:59.536614+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

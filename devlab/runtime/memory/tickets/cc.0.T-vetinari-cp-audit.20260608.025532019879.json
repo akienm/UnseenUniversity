@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-vetinari-cp-audit.20260608.025532019879",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-cp-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T02:55:32.019879",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-gap-map-2026-06-08"
+    ],
+    "tickets": [
+      "T-vetinari-cp-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-cp-audit",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Vetinari",
+      "Orchestration",
+      "CP3",
+      "CP6"
+    ],
+    "title": "Vetinari: CP3/CP6 decision audit log per dispatch action",
+    "result": "_audit_log() JSONL append + get_audit_log(); wired into decompose+escalate; 7 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that every dispatch decision Vetinari makes is logged with a structured 'why' entry so the reasoning is auditable (CP3) and safety escalations are traceable (CP6).",
+    "claimed_at": null,
+    "created_at": "2026-06-08T02:55:32.019879+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-vetinari-gap-map-2026-06-08",
+    "description": "CP3: explain each dispatch decision. CP6: safety-conscious escalation. Currently nothing is logged about why Vetinari took a particular routing or escalation decision.\n\nAdd _audit_log(event: str, reason: str, context: dict) to VetinariDevice: appends JSONL entry {ts, directive_id, event, reason, context} to ~/.unseen_university/vetinari/audit.jsonl. Wire into: decompose (log 'DECOMPOSE' + confidence score), route (log 'ROUTE' + why), clarification (log 'CLARIFY' + what was ambiguous), escalation (log existing _escalate_to_akien as 'ESCALATE'). Add get_audit_log(directive_id=None) for querying.\n\n**Affected files:** devices/vetinari/device.py (add _audit_log(), get_audit_log()), tests/test_vetinari_audit.py (NEW)\n**Design rules:** JSONL (one JSON object per line); audit log is append-only; never delete entries; file at IGOR_HOME/vetinari/audit.jsonl\n**Scope boundary:** IN — _audit_log(), JSONL writer, get_audit_log(), wire into decompose/route/clarify/escalate; OUT — UI for browsing audit log, log rotation\n**Completion criteria:** _audit_log('ROUTE', 'tag=Build matched claude', {...}) appends valid JSONL; get_audit_log(directive_id='x') returns only entries for x; after decompose_directive() runs, audit.jsonl has ≥1 DECOMPOSE entry; 4+ tests",
+    "completed_at": "2026-06-08T03:38:33.589438+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

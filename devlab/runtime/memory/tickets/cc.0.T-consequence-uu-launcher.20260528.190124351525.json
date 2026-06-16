@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-uu-launcher.20260528.190124351525",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-uu-launcher"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:24.351525",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-launcher-config-2026-05-28"
+    ],
+    "tickets": [
+      "T-consequence-uu-launcher"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-uu-launcher",
+    "gate": "2026-06-11",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: UU launcher config + Librarian chat shim",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-28T19:01:24.351525+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-uu-launcher-config-2026-05-28",
+    "description": "**What changed:** Added ~/.UnseenUniversity/uu.cfg global config layout, per-device config.cfg convention, and ./uu launcher with configurable frontend shim pointing at Librarian chat.\n**Predicted unintended effects:** (1) uu.cfg default_frontend silently overriding per-device config if precedence isn't implemented correctly — Librarian might launch in wrong mode. (2) Third-party terminal chat library (opencode-style) may have breaking updates that silently degrade the ./uu experience. (3) ./uu bootstrap may diverge from ./igor bootstrap over time if they're separate scripts rather than shared — config discovery bugs fixed in one but not the other. (4) Non-technical users attempting ./uu before Librarian is fully running may see unhelpful errors if the bootstrap doesn't check service health.\n**Signals to watch:** ./uu launch errors on fresh clone; frontend config precedence working correctly; ./uu vs ./igor bootstrap divergence in git history; user support requests about ./uu startup.\n**Gate condition:** Check by 2026-06-11.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": 802,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:24.351569+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5be0c133-9dda-45bc-8f4f-2dcf00854bd4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

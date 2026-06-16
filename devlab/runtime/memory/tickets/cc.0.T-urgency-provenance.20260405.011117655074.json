@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-urgency-provenance.20260405.011117655074",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-urgency-provenance"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T01:11:17.655074",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-urgency-provenance"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-urgency-provenance",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "urgency-provenance habit — why is that important?",
+    "result": "trace_urgency_provenance() tool + PROC_WHY_IMPORTANT habit. Classifies hot TWM items grounded vs manufactured, auto-lowers manufactured urgency in range 0.31-0.64. cortex.twm_lower_urgency() added.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-05T01:08:32.336404+00:00",
+    "related_to": null,
+    "description": "Trigger: why is that important / why does that matter / what makes that urgent. Reads hot TWM items, traces source+interpretive edges, classifies grounded (user message, goal, high-importance memory) vs manufactured (push source default, scheduler, NE arc). Auto-lowers urgency on ungrounded items. Design principle: urgency must be grounded in content not delivery mechanism — Igor is built to resist phone-addiction dynamics not replicate them.",
+    "completed_at": "2026-04-05T01:11:17.655074+00:00",
+    "deposited_at": "2026-05-13T09:10:11.656516",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1df5664b-0050-4655-a355-df953ddb4d34",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

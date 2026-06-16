@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-inference-migrate-igor-to-datacenter-device.20260501.180000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-migrate-igor-to-datacenter-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T18:00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-capability-extraction-from-igor",
+      "T-inference-migrate-igor-to-datacenter-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-migrate-igor-to-datacenter-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "AgentDatacenter",
+      "CapabilityExtraction",
+      "Inference"
+    ],
+    "title": "CLOSED: InferenceDevice dispatch + bus envelopes (Stage 1)",
+    "result": "Stage 1: InferenceDevice.dispatch + InferenceRequest/InferenceResponse envelope types; 16 tests; pushed to agent_datacenter",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-05T00:55:57.748313+00:00",
+    "created_at": "2026-05-01T18:00:00Z",
+    "related_to": "T-capability-extraction-from-igor",
+    "decision_id": null,
+    "description": "## RE-SIZE + STAGED PLAN 2026-05-03 (CC surfaced before sprinting)\n\n**Re-size: M → L.** Investigation while claiming this ticket showed the actual scope is bigger than the M estimate:\n- agent_datacenter inference device today is registration/health-only (183 lines, no dispatch)\n- Adding real dispatch means extracting the OR client + ollama HTTP client logic from wild_igor/igor/cognition/inference_openrouter.py into agent_datacenter\n- Then migrating Igor call sites (cognition/local_preparse.py, cognition/consult.py, main.py, boot_check.py)\n- inference_openrouter.py is HIGH-inertia (cognition path); editing it during the autonomous queue-clear phase risks Igor's primary inference. Per slate strategic shift: \"we stop trying to make Igor self-code right now and instead clear everything else first\" — leaving Igor cognition path edits for the post-queue-clear work.\n\n**Suggested staged migration (Akien call):**\n\n- **Stage 1** (M): in agent_datacenter, extract the OR + ollama client logic from inference_openrouter into a new shared module the InferenceDevice owns. InferenceDevice gains `dispatch(InferenceRequest) -> InferenceResponse`. Tests cover both modes (mocked HTTP). Igor's path unchanged — both paths exist side-by-side.\n- **Stage 2** (M): migrate Igor call sites one-at-a-time to use the datacenter dispatch via `comms://inference` envelopes through the announce/manifest path. Each migration is its own commit; test-and-validate before the next.\n- **Stage 3** (S): delete the duplicated logic in inference_openrouter.py once all sites are migrated. Inference_openrouter becomes a thin compat shim or is deleted.\n\n**Why surfacing not sprinting:** L+HIGH-inertia + sequential cutover risk to Igor's cognition path. CC's autonomous-sprint stop condition is \"surface real design blocks instead of guessing.\" This is one — Akien picks when stage 1 sprints, and whether to chunk further.\n\n**No code changed in this claim cycle.** Ticket reset to pending.\n\n---\n\n## Status 2026-05-03 — READY TO SPRINT (P1)\nAkien clearance: this ticket is well-scoped as written; no further design input needed. CC overclassified it as \"needs design judgment\" because it touches Igor inference; it does not — the architectural North Star already settled the shape. P1 as a child of T-capability-extraction-from-igor (also P1).\n\n---\n\nPer Akien architectural North Star (2026-05-01): the datacenter is the agent-as-pieces (capability appliances), Igor is the master reasoning model. Inference is a capability appliance — it should live in the datacenter, not in Igor's tree. Phase 2-3 of agent_datacenter shipped an `InferenceDevice` (commit 0669cb5) but it's currently a registration/health shell — its docstring says 'The device does not own the inference connection — it provides health reporting and comms:// registration so other devices can dispatch via the bus.' Meanwhile Igor's actual inference still lives at `wild_igor/igor/cognition/inference_openrouter.py` with no `agent_datacenter` imports anywhere in `wild_igor/igor/`. This ticket closes that gap.\n\n**Affected files:** `/home/akien/dev/src/agent_datacenter/devices/inference/device.py` (extend to actually own dispatch — accept inference envelopes, route to OR/Ollama based on INFERENCE_MODE); `/home/akien/dev/src/agent_datacenter/devices/inference/shim.py` (envelope shape for bus clients); `wild_igor/igor/cognition/inference_openrouter.py` (thin to a bus client that emits `comms://inference` envelopes; or delete if everything migrates cleanly); call sites of inference inside Igor (cognition/local_preparse.py, cognition/consult.py, main.py, boot_check.py — verify each).\n\n**Design rules:** docs-in-code (inference device + shim are load-bearing — refresh top-of-file docstrings); test-plan-or-why-not; budget-respect (route preserves existing OR vs Ollama selection logic); no-secrets-in-repo (OR API key stays in env).\n\n**Scope boundary:** IN — datacenter inference device dispatches actual inference calls; Igor calls inference via the bus; existing INFERENCE_MODE/INFERENCE_ENDPOINT envs preserved; OR + Ollama both work via the device. OUT — load-balancing across multiple inference endpoints (later); inference cache layer (later); changing the prompt-shape contracts (purely a transport migration).\n\n**Test plan:** `tests/test_inference_via_bus.py` in agent_datacenter — assert envelope sent to comms://inference produces a valid completion (mocked OR + mocked Ollama, both modes). Igor-side: `tests/test_igor_inference_bus_client.py` — assert the bus client emits the correct envelope shape and consumes the response. Integration smoke test: a real Igor turn end-to-end with inference routed through the bus, asserting equivalent output to the legacy direct path.\n\n**Why this matters (architectural):** This is the first concrete step of T-capability-extraction-from-igor. Once inference routes through the bus, debugging inference happens in isolation (one device, observable via comms:// traffic), not entangled with Igor's cognition. Future agents (CC, Discord bot, swarm peers) reuse the same inference device through the same bus.",
+    "completed_at": "2026-05-05T01:01:05.348547+00:00",
+    "github_issue": 577,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "62ef686f-f9e5-47bb-a3ef-6139233dd1a4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

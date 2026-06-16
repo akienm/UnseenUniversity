@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-metrics-store.20260414.014754000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-metrics-store"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:47:54",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-metrics-store"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-metrics-store",
+    "title": "Metrics store: Postgres table + IgorBase methods + tool",
+    "result": "infra.metrics table + metrics_store.py API (record/query/latest/list/snapshot). 7 tests.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-04-18T01:33:35.297836+00:00",
+    "created_at": "2026-04-14T01:47:54Z",
+    "description": "Time-series metrics store. Table: metrics(timestamp, name, value, tags jsonb). record_metric() and query_metrics() on IgorBase (the existing one at igor_base.py:132). Tool: get_metrics_query so Igor can examine his own data. Existing metrics.py becomes a reader of the table instead of scraping log files. Forensic logger, push sources, gateway push via record_metric(). Goes through db_proxy like a good citizen.",
+    "completed_at": "2026-04-18T01:35:17.478163+00:00",
+    "github_issue": 411,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "70240203-2340-43f3-ab7f-57eff8f3ae3c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

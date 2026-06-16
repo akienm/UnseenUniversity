@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-glossary-de-sqlite.20260424.025115047978",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-glossary-de-sqlite"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:51:15.047978",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-glossary-de-sqlite",
+      "T-glossary-into-palace"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-glossary-de-sqlite",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Docs",
+      "Drift",
+      "Pass2"
+    ],
+    "title": "Scrub SQLite language from glossary.md; point at palace",
+    "result": "Shipped in 4e5e9099. LTM/word-graph/db_proxy/Live-DB lines now reflect Postgres reality instead of SQLite legacy. Added Palace section with psql one-liner + 'palace wins on conflict' note.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.35,
+    "claimed_at": "2026-04-24T02:50:11.801926+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 7 Finding 11-glossary-drift (SHIP). lab/docs/glossary.md still says LTM is SQLite, word graph is SQLite, db_proxy wraps SQLite, and live DB is wild-0001.db — SQLite has been dead for weeks; real live DB is Postgres Igor-wild-0001. Four drift sites. Fix in-place; add a palace link and 'palace wins on conflict' note.\n\n**Affected files:** lab/docs/glossary.md.\n**Design rules:** test-plan-or-why-not (no tests because: docstring-only).\n**Scope boundary:** IN — scrub SQLite references + palace pointer. OUT — relocating glossary to palace (separate T-glossary-into-palace).\n**Test plan:** no tests — doc edit. Verify grep -i sqlite returns only intentional historical mentions if any.",
+    "completed_at": "2026-04-24T02:51:15.047978+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fb080f9f-4e15-4d59-8ae2-4f2f443240ab",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

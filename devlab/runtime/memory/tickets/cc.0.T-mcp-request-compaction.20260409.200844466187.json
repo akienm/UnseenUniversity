@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-mcp-request-compaction.20260409.200844466187",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-request-compaction"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T20:08:44.466187",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-mcp-request-compaction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-request-compaction",
+    "tags": [
+      "Operations",
+      "Claude"
+    ],
+    "title": "Fix MCP request_compaction — move to igor_mcp.py",
+    "result": "Moved request_compaction from dead cc_mcp_server.py (hand-rolled protocol) into igor_mcp.py (real MCP SDK). Tool registered, dispatch wired, tests pass. Needs CC restart to load.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "request_compaction was defined in cc_mcp_server.py using a hand-rolled protocol that Claude Code never loaded. Moved to igor_mcp.py (the real MCP server). cc_mcp_server.py is now dead code.",
+    "completed_at": "2026-04-09T20:08:44.466187+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2be6b05f-f59e-40a4-a177-090fdd1b7d9d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

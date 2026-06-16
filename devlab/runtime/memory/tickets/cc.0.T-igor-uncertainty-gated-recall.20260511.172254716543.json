@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-igor-uncertainty-gated-recall.20260511.172254716543",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-uncertainty-gated-recall"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T17:22:54.716543",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-xmemory-patterns-2026-05-11"
+    ],
+    "tickets": [
+      "T-igor-uncertainty-gated-recall"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-uncertainty-gated-recall",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Cognition",
+      "Research"
+    ],
+    "title": "Uncertainty-gated recall in activate.py — drill to episode level when confidence is low",
+    "result": "recall() in activate.py: top-K fetch, mean_score confidence gate, trace expansion on low confidence; 4 tests green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 5,
+    "claimed_at": "2026-05-23T21:29:20.832725+00:00",
+    "created_at": "2026-05-11T17:22:54.716543+00:00",
+    "related_to": null,
+    "decision_id": "D-xmemory-patterns-2026-05-11",
+    "description": "activate.py fetches memories by cosine similarity alone. xMemory names this the missing piece: 'similarity is a candidate-generation signal; uncertainty is a decision signal.' When the top-K semantic matches are high-confidence (mean similarity > IGOR_RECALL_CONFIDENCE_THRESHOLD, default 0.6), return them as-is. When confidence is low, expand: additionally query clan.traces for turns that co-activated the matched memory nodes, and include those trace rows as episode-level context alongside the memory results.\n\nImplementation:\n1. After the existing top-K similarity fetch in activate.py, compute mean activation_score of returned nodes.\n2. If mean < threshold (env IGOR_RECALL_CONFIDENCE_THRESHOLD, default 0.6): query clan.traces WHERE nodes @> jsonb_build_array(jsonb_build_object('node_id', m.id)) for matched memory ids, LIMIT 5 most recent per node.\n3. Return both memory nodes AND trace rows (or empty trace list on failure) — callers get richer context when needed, lean context when not.\n4. Log whether expansion was triggered (for observability).\nNon-blocking: if traces query fails, log and return memory-only result.\n\n**Affected files:** wild_igor/igor/cognition/activate.py\n**Design rules:** non-blocking on trace query failure; configurable threshold via env; no new DB tables — uses existing clan.traces and clan.memories\n**Scope boundary:** In: confidence check, conditional trace expansion, log, returned trace rows. Out: changing consolidation, changing how callers use activate, modifying clan.traces schema.\n**Test plan:** activate() with high-similarity match (score > 0.6) returns traces=[]. activate() with low-similarity match triggers trace query; result contains trace rows for those nodes. Trace query failure returns memory-only result without raising.",
+    "completed_at": "2026-05-28T14:58:24.451257+00:00",
+    "github_issue": 718,
+    "dispatched_at": "2026-05-23T21:29:20.832725+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2fff9dd7-9a1f-4770-9d9a-372903d53491",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

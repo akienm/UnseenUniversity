@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-discord-phase5.20260507.161107000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-discord-phase5"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:11:07",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-migration-2026-05-06"
+    ],
+    "tickets": [
+      "T-adc-discord-phase5"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-discord-phase5",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Migration",
+      "Discord",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Phase 5: Relocate discord_bot.py code to agent_datacenter device",
+    "result": "discord bot code relocated to devices/discord_bot/bot.py; DiscordBotDevice Phase 5 manages thread; discord_bot.start() removed from Igor boot",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-07T16:11:07Z",
+    "related_to": null,
+    "decision_id": "D-adc-migration-2026-05-06",
+    "description": "DiscordBotDevice (devices/discord_bot/device.py) currently just health-monitors the bot embedded in Igor's process (Phase 4). Phase 5 moves the actual bot code from wild_igor/igor/network/discord_bot.py into devices/discord_bot/ so Discord runs as a standalone agent_datacenter process, not embedded in Igor. Igor's main.py removes the discord_bot.start() call at line 745.\n\n**Affected files:** devices/discord_bot/device.py (implement actual bot), wild_igor/igor/network/discord_bot.py (delete after), wild_igor/igor/main.py (remove discord_bot.start())\n**Design rules:** no-sqlite; no-TheIgors-imports from agent_datacenter\n**Scope boundary:** In scope: copy+adapt discord_bot.py to run standalone as a device, update DiscordBotDevice to manage it, remove from Igor. Out of scope: changing Discord API, adding inbound routing.\n**Test plan:** Discord messages still send after relocation. Igor boots without discord_bot import. DiscordBotDevice health shows healthy.",
+    "completed_at": "2026-05-07T03:18:17.981025+00:00",
+    "github_issue": 611,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b6b1060e-6a4f-4c20-b0b0-344d4775f651",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

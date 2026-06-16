@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-self-training-metrics.20260403.192554000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-training-metrics"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:54",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-self-training-metrics"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-training-metrics",
+    "epic": "Training",
+    "title": "Self-training metrics on dashboard",
+    "result": "Added _self_training_stats() to metrics.py: parses cognition_metrics.log for self_training_pass entries, returns last_run, scanned/gaps/deposited per pass, total_deposited all-time, 7-day gap rate (4.9% → densifying), daily gap rates sparkline. Wired into build_report() SELF-TRAINING section and /api/metrics JSON payload.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-04-04T22:37:58.143100+00:00",
+    "created_at": "2026-04-03T19:25:54Z",
+    "description": "Expose self-training loop stats on metrics page: last run ts, scanned/covered/gaps/deposited per run, gap rate (gaps/scanned) trend toward 0 as matrix densifies, total self_training deposits all-time, 7-day avg gap rate as weaning trend line. Source: cognition_metrics.log entries where metric=self_training_pass or self_training_deposit.",
+    "completed_at": "2026-04-04T22:40:26.255538+00:00",
+    "github_issue": 356,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1c7b7bae-7727-4a0e-a151-db8a05a6970a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

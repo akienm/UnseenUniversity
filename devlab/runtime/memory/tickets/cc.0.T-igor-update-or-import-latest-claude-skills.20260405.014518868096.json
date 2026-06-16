@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-igor-update-or-import-latest-claude-skills.20260405.014518868096",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-update-or-import-latest-claude-skills"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T01:45:18.868096",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-update-or-import-latest-claude-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-update-or-import-latest-claude-skills",
+    "epic": "Cognition",
+    "size": "L",
+    "title": "Igor can import and run Claude Code skills as his own tools",
+    "result": "Superseded by T-skill-to-engram-filter + T-skill-to-engram-generalise — split into prove-then-generalise two-pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Claude Code skills (filter, audit, sprint, commit, etc.) live in ~/.claude/skills/ as markdown. Igor should be able to: (1) read the current skill files, (2) import them as runnable PROCEDURAL memories or engrams, (3) execute them via his own tool dispatch. This closes the loop: when Claude updates a skill, Igor picks it up. When Igor runs /filter or /audit himself, he's using the same logic Claude uses. The lever for moving more process into Igor one step at a time.",
+    "completed_at": "2026-04-05T01:45:18.868096+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a028c1df-a568-4047-8a7b-c693b6da6494",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-inbox-storage.20260423.173241446651",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-inbox-storage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T17:32:41.446651",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-inbox-2026-04-23"
+    ],
+    "tickets": [
+      "T-cc-inbox-consumer",
+      "T-cc-inbox-producer",
+      "T-cc-inbox-storage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-inbox-storage",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "CCInbox"
+    ],
+    "title": "CC inbox storage: append-only JSONL at ~/.TheIgors/cc_inbox.jsonl",
+    "result": "JSONL storage layer + 24 tests. append() non-fatal on I/O; read_unread() newest-first by monotonic id; mark_read; TTL purge 30d. 6ca2fec6.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-23T17:30:31.894190+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-inbox-2026-04-23",
+    "description": "Create lab/claudecode/cc_inbox.py implementing the storage layer for CC's notification inbox. Append-only JSONL at ~/.TheIgors/cc_inbox.jsonl. Schema per entry: {ts, kind, ticket_id?, summary, body, urgency, response_expected, read, id}. Writer: append(kind, summary, body, ticket_id=None, urgency='normal', response_expected=False). Reader: read_unread() → list[entry]; mark_read(entry_id) advances per-entry read flag. Cursor cleanup: read_unread drops entries older than 30 days to bound file size.\n\n**Affected files:** new lab/claudecode/cc_inbox.py, tests/test_cc_inbox.py\n**Design rules:** docs-live-in-code, test-plan-or-why-not, no-sqlite (JSONL, not sqlite)\n**Scope boundary:** IN — append, read_unread, mark_read functions + schema. OUT — producer hook (T-cc-inbox-producer), consumer hook (T-cc-inbox-consumer), email bridge.\n**Test plan:** unit tests against tmp_path: append writes JSONL row; read_unread returns only entries with read=False; mark_read flips the flag; TTL purge drops >30d entries.",
+    "completed_at": "2026-04-23T17:32:41.446651+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4aed330d-675a-4cbc-8347-1ac36cb4f3fc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

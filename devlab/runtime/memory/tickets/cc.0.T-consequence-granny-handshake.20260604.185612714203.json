@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-granny-handshake.20260604.185612714203",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-granny-handshake"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T18:56:12.714203",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-shim-dispatch-handshake-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-granny-handshake",
+      "T-granny-bus-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-granny-handshake",
+    "gate": "2026-06-18",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Granny bus dispatch handshake",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that predicted side effects of the bus dispatch switch are tracked and annotated within two weeks so nothing silently regresses.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T18:56:12.714203+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-shim-dispatch-handshake-2026-06-04",
+    "description": "**What changed:** Granny dispatch switched from tmux send-keys to bus envelope with two-phase shim handshake.\n**Predicted unintended effects:** (1) cc_task_listener.py still running and consuming GRANNY_DISPATCH channel messages that no longer exist — may cause confusion or errors; (2) orphan watchdog timeouts may conflict with new `acked` status (orphan check may not know `acked` is a live state); (3) DickSimnel.0 shim may not inherit handshake if it uses a custom dispatch path.\n**Signals to watch:** Any ticket stuck in `dispatched` or `acked` more than 15 minutes after handshake ships; cc_task_listener log errors; orphan watchdog falsely resetting `acked` tickets.\n**Gate condition:** Check by 2026-06-18 or when T-granny-bus-dispatch closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe and annotate predicted effects as occurred / clear / partial; close when annotated.\n**Completion criteria:** No automated verification — observation ticket; done when all three predicted effects annotated.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

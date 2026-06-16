@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-tier-escalation-summary.20260605.025123856430",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-tier-escalation-summary"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T02:51:23.856430",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-escalation-handoff-protocol-2026-06-04"
+    ],
+    "tickets": [
+      "T-inference-tier-escalation-summary"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-tier-escalation-summary",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Escalation",
+      "CompiledInference"
+    ],
+    "title": "Inference device: structured summary handoff between model tiers",
+    "result": "escalation_hop+prior_attempt on InferenceRequest; dispatch prepends handoff to system; 2-hop ceiling; 6 tests green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "intention": "I intend that when the inference device escalates from a cheaper model to a more expensive one, it passes the cheaper model's attempt summary plus what now? rather than re-sending the original prompt cold.",
+    "created_at": "2026-06-05T02:51:23.856430+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-escalation-handoff-protocol-2026-06-04",
+    "description": "Tiered inference (start cheap, escalate if stuck) is incomplete without a handoff artifact. Currently a cheap model failure sends the original prompt cold to the expensive model — re-deriving what was already tried.\n\nDesign and implement: (1) cheap model attempt produces structured summary when it cannot close the task; (2) inference device assembles [original context] + [attempt summary] + What now?; (3) expensive model receives this and picks up informed. Pattern mirrors advisor() but adds the structured summary layer. Hard ceiling: max 2 escalation hops — enforce in device code.\n\n**Affected files:** devices/inference/ (specific files TBD in sprint — discovery step)\n**Design rules:** OOP-first (BaseDevice); log every tier transition at INFO with model-from, model-to, summary-length\n**Scope boundary:** Inference device internal tier escalation only. External API unchanged. DickSimnel agent escalation is a separate ticket.\n**Completion criteria:** Tier escalation logs INFO line with model-from/to/summary-length. Expensive model prompt includes attempt summary section. Max 2 hops enforced. Integration test covers the escalation path.",
+    "completed_at": "2026-06-05T03:59:35.937672+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

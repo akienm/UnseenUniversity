@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-experts-md-spec.20260521.021724323959",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experts-md-spec"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T02:17:24.323959",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-experts-per-project-2026-05-20"
+    ],
+    "tickets": [
+      "T-experts-md-spec"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experts-md-spec",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AuditExpert",
+      "Workflow"
+    ],
+    "title": "Define EXPERTS.md format + create initial files for ADC and TheIgors",
+    "result": "created EXPERTS.md for TheIgors (11 experts) and agent_datacenter (6 ADC experts); both committed and pushed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "claimed_at": "2026-05-21T02:18:58.187398+00:00",
+    "created_at": "2026-05-21T02:17:24.323959+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-experts-per-project-2026-05-20",
+    "description": "Define the EXPERTS.md format and create the initial files for both repos.\n\nFormat (EXPERTS.md at repo root):\n  # Experts for <project>\n  ## <Expert Name>\n  **Lens:** <one sentence>\n  **Key questions:** <2-3 bullet questions this expert asks>\n  (repeat per expert)\n\nADC experts: Systems Architect, Security Engineer, Process/Meta Engineer, Product Manager, Reliability Engineer, HCI (5-7 total — software factory focused).\nTheIgors experts: Cognitive Scientist, ML Engineer, Safety Engineer, plus the universal ones — keep neurology/psychology experts here, not in ADC.\n\n**Affected files:** agent_datacenter/EXPERTS.md (new), TheIgors/EXPERTS.md (new)\n**Design rules:** none apply\n**Scope boundary:** File creation only; audit-expert skill not yet modified\n**Test plan:** no tests — content files; spot-check that each entry has Lens + Key questions fields",
+    "completed_at": "2026-05-21T02:30:05.494055+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T02:17:24.370152+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c6c6aaec-e85a-4452-b9e6-a1fbe0285a47",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

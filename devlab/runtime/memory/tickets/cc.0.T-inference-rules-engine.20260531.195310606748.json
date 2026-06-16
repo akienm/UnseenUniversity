@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-inference-rules-engine.20260531.195310606748",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-rules-engine"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:53:10.606748",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-rules-engine"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-rules-engine",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Inference proxy: Rules engine (task class → model routing)",
+    "result": "Built in 715eca0a — sources/models/rules/health all in devices/inference/, 14 tests passing",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 2.0,
+    "claimed_at": null,
+    "created_at": "2026-05-31T19:53:10.606748+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Priority-ordered routing rules: given a request with caller_id and task_class (minion/worker/analyst/designer), select Source + Model. Rules checked in order, first match wins. Initial rules: minion→qwen3.5-9b/OR, worker→deepseek-v4-flash/OR, analyst→qwen3.6-35b-a3b/OR, designer→claude-haiku/Anthropic. Health-aware: skip unavailable sources. Session-affinity: same session_id stays on same model.\n\n**Affected files:** devices/inference/rules_engine.py\n**Design rules:** none apply\n**Scope boundary:** In scope: rule matching, health-aware selection, session affinity. Out of scope: graph tree rules (phase 2), UI.\n**Completion criteria:** minion task routes to Qwen, designer task routes to Claude. Unavailable source skipped automatically.",
+    "completed_at": "2026-05-31T20:02:28.111734+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T19:53:10.664377+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6e5b6bc6-a467-46f1-9404-59f83e254e58",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-daemon-supervisor-file-pattern.20260615.182303119761",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-daemon-supervisor-file-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:23:03.119761",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-unified-daemon-supervisor-2026-06-15"
+    ],
+    "tickets": [
+      "T-daemon-supervisor-file-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-daemon-supervisor-file-pattern",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Daemon",
+      "Orchestration"
+    ],
+    "title": "[pending] Daemon supervisor — runme.py hot-reload, .borkedpy error handling",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that Ground Loop's file-pattern supervisor is robust, transparent, and requires no code changes to add new daemons.",
+    "created_at": "2026-06-15T18:23:03.119761+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-unified-daemon-supervisor-2026-06-15",
+    "description": "Implement Ground Loop's file-pattern supervisor. (1) Discover: scan `devices/*/groundloop/runme.py`; ignore `*.borkedpy`, skip if path unchanged since last load. (2) Import: `importlib.reload()` on each runme.py; catch import errors → log to datacenter_logs/ground_loop/ and rename to .borkedpy. (3) Run: call runme.start() or equivalent entrypoint; catch runtime errors → log + rename to .borkedpy. (4) Config: load `devices/*/groundloop/config.yaml` (launch frequency, timeout, restart policy, etc.); apply per daemon. (5) Recovery: detect stale .borkedpy files (not touched in 24h) and log them for manual review. (6) Lifecycle: on Ground Loop startup, load all runme.py; on SIGHUP, reload all; on shutdown, call runme.stop() for each.\n\n**Affected files:** devices/ground_loop/supervisor.py (new), devices/*/groundloop/runme.py (pattern), devices/*/groundloop/config.yaml (pattern)\n**Design rules:** external-state-principle (state in .borkedpy filenames, not memory), log-state-changes (every load/crash/rename)\n**Scope boundary:** Supervisor pattern only; Ground Loop daemon process is separate; individual runme implementations are separate\n**Completion criteria:** (1) Discovers all runme.py files; (2) hot-reloads on filesystem changes; (3) renames to .borkedpy on error; (4) loads config.yaml per daemon; (5) logs all transitions; (6) graceful shutdown calls runme.stop(); (7) SIGHUP reloads; (8) stale .borkedpy detection\n**Test plan:** (1) Create test runme.py, verify Ground Loop discovers it; (2) Modify runme.py, verify hot-reload; (3) Inject error in runme.py, verify rename to .borkedpy; (4) Fix and rename back, verify reload; (5) Test config.yaml parsing; (6) Verify logs in datacenter_logs/ground_loop/supervisor.log",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

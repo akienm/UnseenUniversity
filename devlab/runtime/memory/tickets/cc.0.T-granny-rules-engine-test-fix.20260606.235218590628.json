@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-granny-rules-engine-test-fix.20260606.235218590628",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-rules-engine-test-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T23:52:18.590628",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-rules-engine-test-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-rules-engine-test-fix",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Granny"
+    ],
+    "title": "Fix granny rules engine tests: patch _dispatch_cc0 which no longer exists",
+    "result": "9 TestRunOnce tests updated: _dispatch_cc0 → _dispatch_bus with imap=MagicMock(); all 23 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that the 9 TestRunOnce tests in test_granny_rules_engine.py use actual dispatch functions (_dispatch_bus, _dispatch_akien) instead of the deleted _dispatch_cc0.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T23:52:18.590628+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "9 tests in tests/test_granny_rules_engine.py patch devices.granny.daemon._dispatch_cc0 which was removed when bus dispatch replaced the tmux_send_keys path. Pre-existing; confirmed by stash-and-run.\n\nFailing tests (all in TestRunOnce): test_skips_when_worker_unavailable, test_skips_cc0_when_busy, test_dispatches_to_cc0_via_send_keys, test_dispatch_failure_does_not_raise, test_guru_ticket_dispatches_to_akien_not_cc_or_ds, test_dispatch_cc0_marks_ticket_in_progress, test_one_at_a_time_prevents_second_dispatch_same_cycle, test_high_inertia_ticket_routes_to_cc_not_dicksimnel, test_escalated_ticket_routes_to_cc_not_dicksimnel.\n\n**Affected files:** tests/test_granny_rules_engine.py\n**Design rules:** none apply\n**Scope boundary:** IN: update tests to patch _dispatch_bus (with FakeIMAP or MagicMock) instead of _dispatch_cc0. OUT: changing daemon.py.\n**Completion criteria:** All 9 tests pass. No new failures introduced.",
+    "completed_at": "2026-06-07T00:52:17.303503+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-base-class-extract.20260427.224829415981",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-base-class-extract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:48:29.415981",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-base-class-extract",
+      "T-adc-base-device-contract",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-base-class-extract",
+    "gate": "T-adc-base-device-contract",
+    "size": "L",
+    "tags": [
+      "AgentDatacenter",
+      "Architecture",
+      "HighInertia"
+    ],
+    "title": "agent_datacenter: extract IgorBase/AgentBase into agent_datacenter.device, Igor imports back",
+    "result": "BaseDevice already lives in agent_datacenter/device.py; IgorBase extraction is a TheIgors-side import change — deferred until Igor comes back up",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "**Pre-approved by Akien 2026-04-27 for restructuring IgorBase/AgentBase. Reason: base class architecturally belongs in agent_datacenter (it IS the device contract); Igor is one consumer. HIGH-inertia label is for Igor autonomous loop — not a human/CC restriction. Haiku can drive.**\n\nRefactor IgorBase and its parent AgentBase to live in agent_datacenter, not inside Igor. Igor imports back. No behavior change — structural move only.\n\nProblem: IgorBase is Igor's base class, but the whole point of agent_datacenter is that this contract is shared across all agents. It can't live inside Igor if Igor is one of many implementors.\n\nProposed shape:\n1. Inventory: `git grep 'IgorBase\\|AgentBase' ~/TheIgors/wild_igor/` — record all import sites (expected: ~30 subclasses in cognition/, brainstem/, memory/, tools/)\n2. Move lab/utility_closet/agent_base.py → agent_datacenter/agent_datacenter/device.py as BaseDevice (merged with existing abstract BaseDevice stub from T-adc-base-device-contract)\n3. Update wild_igor/igor/igor_base.py: from agent_datacenter.device import BaseDevice, get_logger; class IgorBase(BaseDevice): (thin wrapper — adds log_dir and get_timer())\n4. All subclass import paths unchanged — they still import from wild_igor.igor.igor_base; only igor_base.py itself changes its parent import\n5. Install agent_datacenter as editable dep in TheIgors venv: pip install -e ~/dev/src/agent_datacenter\n6. pytest tests/ must pass before and after\n7. lab/utility_closet/agent_base.py: keep as re-export shim pointing to agent_datacenter (backward compat for non-Igor uses)\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/device.py (receive AgentBase content)\n- ~/TheIgors/wild_igor/igor/igor_base.py (update parent import to agent_datacenter.device)\n- ~/TheIgors/lab/utility_closet/agent_base.py (re-export shim)\n- ~/TheIgors/wild_igor/requirements.txt (add agent_datacenter dep)\n\nDesign rules:\n- oop-first: IgorBase stays as a thin subclass of BaseDevice; all subclasses unchanged\n- no-sqlite: not applicable\n- docs-in-code: igor_base.py module docstring updated to note the import now comes from agent_datacenter\n\nScope boundary:\nIN: structural move of AgentBase → agent_datacenter.device; IgorBase import update; venv dep; backward compat shim\nOUT: any behavior changes; updating all ~30 subclass import paths (they all go through igor_base, not agent_base)\n\nTest plan:\n- pytest ~/TheIgors/tests/ passes identically before the move\n- pip install -e agent_datacenter; pytest ~/TheIgors/tests/ passes identically after\n- from agent_datacenter.device import BaseDevice succeeds\n- from wild_igor.igor.igor_base import IgorBase still works (backward compat)",
+    "completed_at": "2026-04-27T22:48:29.415981+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a4691684-234b-4bea-b6ba-18f3895595e2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

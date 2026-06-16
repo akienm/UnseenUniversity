@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-akien-google-api-key.20260602.224714411219",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-akien-google-api-key"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T22:47:14.411219",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-akien-google-api-key"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-akien-google-api-key",
+    "gate": null,
+    "role": "guru",
+    "size": "S",
+    "tags": [
+      "Akien",
+      "Action",
+      "Credentials"
+    ],
+    "title": "Akien: create Google AI Studio API key for inference proxy",
+    "result": "done — Google AI Studio API key created; credentials in Igor's creds file",
+    "status": "closed",
+    "worker": "akien",
+    "purpose": "",
+    "priority": 0.9,
+    "blocked_at": "2026-06-02T22:49:48.086075+00:00",
+    "claimed_at": "2026-06-02T22:47:54.253446+00:00",
+    "created_at": "2026-06-02T22:47:14.411219+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The inference proxy now has a native GoogleSource that bypasses OpenRouter to get the 75% prompt caching discount on long payloads and access the free tier safety valve.\n\nAkien needs to create a Google AI Studio API key and set it in the environment.\n\n**Steps:**\n1. Go to https://aistudio.google.com/app/apikey\n2. Create a new API key\n3. Add to ~/.unseen_university/.env: GOOGLE_AI_STUDIO_API_KEY=<your-key>\n4. Verify with: python3 -c \"from devices.inference.sources import GoogleSource; s=GoogleSource(); print(s.ping())\"\n\n**Affected files:** ~/.unseen_university/.env (gitignored)\n**Design rules:** No live keys in source. .env is gitignored.\n**Scope boundary:** Key creation and .env update only. No code changes.\n**Completion criteria:** GoogleSource().ping() returns True and GoogleSource()._api_key() does not raise.",
+    "completed_at": "2026-06-03T23:59:42.570393+00:00",
+    "deposited_at": "2026-06-02T16:50:08.995151",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T22:47:54.253446+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "47bdb25c-9fa2-4def-a86d-299f276ee454",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

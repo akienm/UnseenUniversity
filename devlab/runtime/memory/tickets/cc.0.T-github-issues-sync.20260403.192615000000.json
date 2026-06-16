@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-github-issues-sync.20260403.192615000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-github-issues-sync"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:15",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-github-issues-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-github-issues-sync",
+    "epic": "Claude",
+    "size": "M",
+    "title": "day-close: create GitHub Issues for tickets missing github_issue",
+    "result": "push-queue command in github_sync.py creates GH Issues for all non-done tickets missing github_issue; writes numbers back via set-github-issue. Created 35 issues (#344-#378). day-close Step 6 added.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-03T19:23:32.529959+00:00",
+    "created_at": "2026-04-03T19:26:15Z",
+    "related_to": null,
+    "description": "In /day-close, for each cc_queue ticket missing github_issue field, create a GitHub Issue (title = slug + title) via gh CLI and write the issue number back to the ticket. Cloud backup for local queue.",
+    "completed_at": "2026-04-03T19:26:23.900107+00:00",
+    "github_issue": 378,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "56ef7700-35f7-4972-b834-a187c1efecbc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

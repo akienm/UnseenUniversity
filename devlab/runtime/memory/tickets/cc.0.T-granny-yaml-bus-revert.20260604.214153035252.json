@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-yaml-bus-revert.20260604.214153035252",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-yaml-bus-revert"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T21:41:53.035252",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-yaml-bus-revert"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-yaml-bus-revert",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Infrastructure"
+    ],
+    "title": "Granny: revert CC.0 to tmux_send_keys — Dovecot not installed",
+    "result": "config revert committed in 04f73c58; Dovecot setup is prerequisite for bus dispatch",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "intention": "I intend that the Dovecot installation is a prerequisite before re-enabling bus dispatch.",
+    "claimed_at": null,
+    "close_note": "Committed in 04f73c58 as incidental — bus dispatch requires Dovecot installation first",
+    "created_at": "2026-06-04T21:41:53.035252+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Reverted dispatch: bus → tmux_send_keys in config/granny.yaml. Bus dispatch requires Dovecot IMAP which is not yet installed on this machine.\n\n**Affected files:** config/granny.yaml\n**Design rules:** none\n**Scope boundary:** Config revert only\n**Completion criteria:** granny.yaml has tmux_send_keys for CC.0",
+    "completed_at": "2026-06-04T21:41:56.193008+00:00",
+    "deposited_at": "2026-06-04T15:51:53.924824",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

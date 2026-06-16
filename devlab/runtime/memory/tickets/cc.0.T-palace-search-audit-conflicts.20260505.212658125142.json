@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-palace-search-audit-conflicts.20260505.212658125142",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-search-audit-conflicts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T21:26:58.125142",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-log-logcontrol-conformance",
+      "D-semantic-palace-search-injection-2026-05-05"
+    ],
+    "tickets": [
+      "T-palace-search-audit-conflicts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-search-audit-conflicts",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CC",
+      "Workflow",
+      "palace"
+    ],
+    "title": "CLOSED: Semantic conflict detection in /decided and /audit-ticket",
+    "result": "added memory_search to /decided Step 2.5 (before audit-design) and /audit-ticket Step 0 (semantic duplicate check)",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-05T21:26:11.209898+00:00",
+    "related_to": null,
+    "decision_id": "D-semantic-palace-search-injection-2026-05-05",
+    "description": "The /decided audit step 2.5 'conflicts with last-30d decisions' check is currently manual — reads decisions_log.dsb by eye. /audit-ticket duplicate check similarly requires a grep. Semantic search makes both automatic and comprehensive.\n\nProposed shape: (a) In /decided Step 2.5 audit, add: call mcp__igor__memory_search(query=decision_summary, limit=5), review results for conflicts before proceeding. (b) In /audit-ticket Step 1, add: call mcp__igor__memory_search(query=ticket_description, limit=5), flag any semantically close prior decisions or tickets found. Both are advisory — results inform judgment, don't block.\n\n**Affected files:** ~/.claude/skills/decided (Step 2.5), ~/.claude/skills/audit-ticket (Step 1)\n**Design rules:** none\n**Scope boundary:** adds semantic lookup to two existing audit steps. Not replacing grep/log checks — augmenting them.\n**Test plan:** file a decision related to D-cc-log-logcontrol-conformance; verify the semantic search surfaces that prior decision during the audit step.\n**Pass condition:** /decided on a CC-logging topic surfaces D-cc-log-logcontrol-conformance via semantic match before ticket drafting begins.",
+    "completed_at": "2026-05-05T21:26:58.125142+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7a105e53-b0dd-43b6-970d-ea3236fe21cb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

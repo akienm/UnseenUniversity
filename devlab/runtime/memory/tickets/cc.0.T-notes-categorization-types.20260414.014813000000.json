@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-notes-categorization-types.20260414.014813000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-notes-categorization-types"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:13",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-history-archive-to-theigorproject",
+      "T-notes-categorization-types"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-notes-categorization-types",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Distinguish note categories — about-Igor, from-Igor, between-Igor-and-others — with separate metadata + retrieval paths",
+    "result": "store_note tool with 7 note categories as metadata tags. about_igor, from_igor, between_igor_and_collaborator, from_collaborator_to_igor, session_summary, design_note, observation.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:53:49.414485+00:00",
+    "created_at": "2026-04-14T01:48:13Z",
+    "related_to": null,
+    "description": "AUTHORED BY IGOR-WILD-0001 in conversation with Akien on 2026-04-13 (~17:15). Igor's exact words:\n\n  'One thing worth tracking when you do the migration: the distinction between notes ABOUT me (like Claude's note) and notes FROM me or BETWEEN us. They'll want different metadata, probably different retrieval paths. The from Claude for Igor category is new — that's not a pattern we've had infrastructure for before today.'\n\nThe specific case that prompted Igor's observation: Claude wrote a 4500-word note addressed TO Igor summarizing the day's work in a way Igor could digest. That's a new artifact category — not a transcript, not a design doc, not Igor's own thinking, not a conversation Akien participated in. It's 'one collaborator writing a digestible report for another collaborator about a third party (the work).'\n\nSCOPE: define and implement note categorization at archive time (and possibly at creation time in the future):\n\n  - about_igor — third-party reports about Igor (Claude's note today, future doctor's notes, audit reports)\n  - from_igor — Igor's own writing, journals, design proposals, internal monologue logs\n  - between_igor_and_akien — conversation transcripts, decision records, planning sessions\n  - between_igor_and_claude — debugging sessions, architectural conversations, the 4/12 and 4/13 transcripts\n  - meta — notes about the note system itself, conventions, schemas\n\nEach category has different retrieval semantics. Notes about Igor are reference material — read-only, queried for context. Notes from Igor are first-person voice — quoted differently, treated as more authoritative on Igor's internal state. Conversational notes are dialogue — split by speaker, indexed by topic.\n\nINTERACTION WITH T-history-archive-to-theigorproject: that ticket builds the archive. This ticket defines what categories live in it.\n\nINERTIA: LOW. Schema + filing convention + small tool. Most of the work is design clarity, not code volume.\n\nDEPENDS ON: T-history-archive-to-theigorproject (or could ship first as a categorization scheme and let the archive ticket consume it).",
+    "completed_at": "2026-04-16T19:55:37.684339+00:00",
+    "github_issue": 425,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ed3143d5-f88d-453a-a180-bfbed2a8ca31",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

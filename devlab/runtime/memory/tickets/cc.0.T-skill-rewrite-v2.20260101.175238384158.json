@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-skill-rewrite-v2.20260101.175238384158",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-rewrite-v2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T17:52:38.384158",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skill-rewrite-v2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-rewrite-v2",
+    "title": "Rewrite CC skills: 14 skills, 70% token reduction",
+    "result": "15 skills (from 21), 47K bytes (from 102K). New: /ticket /note /savestateauto /fixit. Rewrote: /sprint /savestate /commit /day-close /context-load /review. Removed 8 deprecated skills. Added cleanup step to /sprint.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-04-11T00:00",
+    "description": "New: /ticket /note /savestateauto /fixit. Rewrite: /sprint /savestate /commit /day-close /context-load /review. Remove: /notethat /igor /probe /slate /slateclose /sprint-minion /filter /decided. Add cleanup step to sprint.",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6fed2c8e-f862-42d9-841e-80590403588d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

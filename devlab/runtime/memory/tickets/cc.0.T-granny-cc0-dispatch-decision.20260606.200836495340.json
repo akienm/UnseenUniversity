@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-granny-cc0-dispatch-decision.20260606.200836495340",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-cc0-dispatch-decision"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:08:36.495340",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-granny-bus-flip-fake-completion",
+      "T-granny-cc0-dispatch-decision"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-cc0-dispatch-decision",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Dispatch"
+    ],
+    "title": "Granny CC.0 dispatch: resolve bus vs send-keys, fix lying docstring",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-06T20:08:36.495340+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** T-granny-bus-flip-fake-completion (currently on HOLD) identified that daemon.py docstring claims bus dispatch for CC.0 but the code uses tmux_send_keys. The ack→started→timeout handshake never runs for CC.0.\n\n**Decision (from Akien 2026-06-06):** CC.0 is an interactive tmux session, not a daemon. The pragmatic model is: send-keys delivers /sprint-ticket, CCWorkerListener handles the bus-side handshake. tmux_send_keys is the correct mechanism for interactive CC. Accept this and make the code and docstring agree.\n\n**What to do:** (a) Update daemon.py docstring to accurately describe CC.0 dispatch (tmux send-keys + availability gate, not pure bus). (b) Verify CCWorkerListener is wired correctly so ack IS recorded after send-keys delivery. (c) Close T-granny-bus-flip-fake-completion.\n\n**Affected files:** devices/granny/daemon.py, devices/granny/cc_worker_listener.py\n**Design rules:** Docstrings are load-bearing; lying docstrings cause fake-completion tickets\n**Scope boundary:** Docstring + wiring correctness. No new dispatch mechanisms.\n**Completion criteria:** daemon.py docstring accurately describes the send-keys + availability-gate model. T-granny-bus-flip-fake-completion closed. Test verifying ack is recorded after dispatch.",
+    "completed_at": null,
+    "deposited_at": "2026-06-06T14:12:11.017913",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "06b9e29a-391f-4f50-ac55-5a1285a7797c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

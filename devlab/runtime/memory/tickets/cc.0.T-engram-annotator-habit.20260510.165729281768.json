@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-engram-annotator-habit.20260510.165729281768",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-annotator-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T16:57:29.281768",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reasoning-inspection-2026-05-10"
+    ],
+    "tickets": [
+      "T-engram-annotator-habit",
+      "T-engram-purpose-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-annotator-habit",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Memory",
+      "Habits"
+    ],
+    "title": "Procedural habit: annotate new and existing engrams with purpose fields",
+    "result": "purpose_annotator.py + coa.py wiring + PROC_PURPOSE_ANNOTATOR seeded; annotates 2 engrams per NE run",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-10T16:57:29.281768+00:00",
+    "related_to": null,
+    "decision_id": "D-reasoning-inspection-2026-05-10",
+    "description": "Igor needs a self-annotation habit that fires at engram creation time and writes purpose, purpose_category, and purpose_embedding by reasoning about the engram's content. The same habit provides a retroactive sweep mode that processes existing unannotated engrams in batches (paced to avoid overwhelming LLM budget).\n\nThe habit is itself an engram — Igor's self-knowledge about how to annotate his own knowledge structures lives inside his knowledge system.\n\n**Affected files:** wild_igor/igor/habits/ (new habit), wild_igor/igor/memory/ (creation hook wiring), wild_igor/igor/cognition/ (possibly NE integration for LLM call)\n**Design rules:** theigors/rules/memory; theigors/rules/database; theigors/rules/budget (LLM call per engram — pacing required)\n**Scope boundary:** In scope: habit definition + creation-time hook + retroactive sweep mode + budget pacing. Out of scope: changing engram schema (T-engram-purpose-schema), changing audit tooling.\n**Test plan:** New engram created → purpose fields populated; retroactive sweep processes N unannotated engrams in one call; budget pacing respected (configurable batch size); unit test habit fires correctly.",
+    "completed_at": "2026-05-10T17:49:56.983938+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "73bcb048-c892-4239-a153-37a38af2e031",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

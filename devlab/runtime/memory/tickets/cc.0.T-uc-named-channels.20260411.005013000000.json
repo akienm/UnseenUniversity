@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-uc-named-channels.20260411.005013000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-named-channels"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-11T00:50:13",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-channel-migration",
+      "T-uc-named-channels"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-named-channels",
+    "size": "L",
+    "title": "D335: Named channels in utility closet with provenance",
+    "result": "Superseded by T-uc-comms-module (completed 2026-04-17). Comms channels with full routing, envelopes, transports.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "created_at": "2026-04-11T00:50:13Z",
+    "related_to": null,
+    "description": "Utility closet manages named channels (discord, gmail, web, cc, etc). Messages carry channel provenance. Igor receives from and replies to each channel individually. Memory provenance includes source channel. WebSocket sessions become channel subscriptions. Future: namespace scheme (e.g. discord:general, gmail:inbox) for routing control. Dovetails with T-uc-channel-migration.",
+    "completed_at": "2026-04-17T19:56:54.670810+00:00",
+    "github_issue": 403,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9f0f59e1-a423-4c41-9b4c-73f0d5587ff8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-provider-health-classifier.20260612.193144804713",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-provider-health-classifier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T19:31:44.804713",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-classifier-device-architecture-2026-06-12",
+      "D-provider-health-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-provider-health-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-provider-health-classifier",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Observability",
+      "Cost"
+    ],
+    "title": "ProviderHealthClassifier — classify ping failures before fallthrough",
+    "result": "ProviderHealthClassifier: unified exception classification for ping failures (local_bug, auth_error, unreachable, unknown)",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.7,
+    "intention": "I intend that ping failures are categorized by exception type and logged before fallthrough, so we can immediately distinguish our bugs from provider outages.",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-06-12T19:31:44.804713+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-provider-health-classifier-2026-06-12",
+    "description": "When a source ping fails, ToolLoop/HealthMonitor currently logs only 'unavailable — falling through' before routing to a more expensive source. This masks whether the failure is our bug (DNS, auth) or a real outage and caused at least one mis-route from flat-rate Ollama to paid OR on 2026-06-11.\n\nAdd devices/inference/provider_health.py with ProviderHealthClassifier class:\n  classify(source_name, failure_exc) -> str\n  Returns: local_bug (socket.gaierror/DNS, connection refused), auth_error (HTTPError 401/403), unreachable (timeout, other connection errors), unknown (anything else)\n\nAdd Source._classify_ping_failure(exc) -> str to the Source base class in sources.py. Each subclass ping() except block calls self._classify_ping_failure(exc) before returning False. This is the ONLY correct injection point — ping() swallows exceptions before they reach HealthMonitor, so the classifier must live inside the except blocks.\n\nLog at INFO inside _classify_ping_failure:\n  log.info('source %s unavailable: failure_category=%s', self.name, category)\n\nSource.ping() return type stays bool. Status-page fetch is explicitly NOT in scope (separate background enrichment if ever needed). provider_health.py is a helper module local to devices/inference/ — not part of the Classifier rack device (D-classifier-device-architecture-2026-06-12).\n\n**Affected files:** new devices/inference/provider_health.py (LOW inertia); devices/inference/sources.py — Source base class + subclass except blocks (MEDIUM inertia)\n**Design rules:** OOP-first (ProviderHealthClassifier class, not standalone fns); log every interface crossing; urllib-only (no requests import)\n**Scope boundary:** In: exception-type classifier + log line in ping() failure path. Out: status-page fetch, changing Source.ping() return type, changing fallthrough routing logic.\n**Completion criteria:** pytest tests/inference/test_provider_health.py passes; grep 'failure_category=' in source logs fires on next DS run against currently-failing source.\n**Observable via:** log.info('source %s unavailable: failure_category=%s', source_name, category) in Source._classify_ping_failure().\n**Validation:** after any ping() failure, datacenter_logs/inference/ contains 'failure_category=' line. Acceptable via next DS run against failing provider OR targeted test with mock-unreachable source.\n**Cleanup:** pytest fixture sets caplog level to WARNING for devices.inference.sources so INFO classification lines are suppressed; no DB rows or channel posts generated.",
+    "completed_at": "2026-06-13T01:43:33.251373+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

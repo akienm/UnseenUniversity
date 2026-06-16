@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-json-envelope.20260612.164812526763",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-json-envelope"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T16:48:12.526763",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-json-envelope-principle-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-json-envelope",
+      "T-cost-to-close-metric",
+      "T-json-envelope-inference"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-json-envelope",
+    "gate": "2026-06-26",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: JSON envelope principle",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to verify that JSON envelope adoption produced measurable cost reduction with no regressions in DS tool parsing.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T16:48:12.526763+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-json-envelope-principle-2026-06-12",
+    "description": "**What changed:** All agent-to-agent inference responses and slate files now use JSON envelopes; ProseVersion carried forward when already present.\n**Predicted unintended effects:** (1) Models that don't reliably emit valid JSON break the parser silently — check for fallback coverage. (2) Slate migration may break older tooling that reads prose format. (3) DS may emit JSON-looking prose that's not actually parsed — check toolloop.py still works with non-compliant models.\n**Signals to watch:** DS error rate post-deploy; token counts in cost_usd per ticket (T-cost-to-close-metric); any 'DONE:' grep hits reappearing in toolloop.py.\n**Gate condition:** Check by 2026-06-26 or when T-json-envelope-inference closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate as occurred/clear/partial and close\n**Completion criteria:** Annotated with outcome and closed.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

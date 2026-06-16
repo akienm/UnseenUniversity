@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-nightly-classifier.20260612.164839842484",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-nightly-classifier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T16:48:39.842484",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-nightly-chat-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-nightly-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-nightly-classifier",
+    "gate": "2026-06-26",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Training"
+    ],
+    "title": "[sprint] Consequence check: nightly chat classifier",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to verify nightly classifier deposits are enriching the memory graph without noise flooding.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T16:48:39.842484+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-nightly-chat-classifier-2026-06-12",
+    "description": "**What changed:** Nightly classifier now ingests CC chat transcripts and deposits classified nodes.\n**Predicted unintended effects:** (1) Low-confidence classifications deposit noise into the palace — check confidence threshold gate. (2) Duplicate nodes from repeated transcripts — check dedup logic. (3) Classifier cost spike if LLM variant runs on all turns without cache hits.\n**Signals to watch:** Palace node count growth rate; classification confidence distribution in logs; cloud_calls_count in competition.classifications_cache; Nanny cron log for errors.\n**Gate condition:** Check by 2026-06-26 or 7 days after first successful nightly run.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate as occurred/clear/partial and close\n**Completion criteria:** Annotated with outcome and closed.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

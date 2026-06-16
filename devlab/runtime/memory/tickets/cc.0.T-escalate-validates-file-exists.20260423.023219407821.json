@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-escalate-validates-file-exists.20260423.023219407821",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-escalate-validates-file-exists"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T02:32:19.407821",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-escalate-validates-file-exists",
+      "T-situate-kernel-hallucination-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-escalate-validates-file-exists",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "PeChain",
+      "HallucinationDefense",
+      "ErrorReporting"
+    ],
+    "title": "_pe_escalate HIGH-inertia branch — verify target_file exists before proposing",
+    "result": "Added file-existence precondition to _pe_escalate HIGH-inertia branch (pe_chain.py:2082-2094). If target_file doesn't resolve under _REPO_ROOT, rewrites reason to 'hallucinated file: <path>' and falls through to the block branch (cc_queue.py block, not propose). Updated test_scope_guard kernel.py refs → core_patterns.py. 2 new tests + 2 updated. 139 tests pass. Commit e3c41813.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-23T02:26:59.174610+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Observed: Igor emits '[DESIGN PROPOSAL] ...: Igor wants to edit wild_igor/igor/brainstem/kernel.py (HIGH inertia)' for a file that does not exist anywhere in the repo (confirmed via find ~ and git log --all). The proposal reaches CC as a HIGH-inertia approval request, masking the real root cause (hallucinated file path).\n\nThe file-existence check SHOULD be enforced at HYPOTHESIZE validation (pe_chain.py:1408-1410), but proposals for nonexistent files still reach the channel — meaning some path bypasses validation, OR validation passes on a path that resolves to something unexpected. Either way, the DESIGN_PROPOSAL branch in _pe_escalate should be the belt-and-suspenders backstop.\n\nFix: in pe_chain.py:2076-2094 (the 'is_high_inertia and ticket_id' branch of _pe_escalate), add a precondition check: before posting the DESIGN PROPOSAL, verify (_REPO_ROOT / target_file).exists(). If not, post a diagnostic message instead ('[pe_chain] ✗ {ticket_id}: tier2 proposed nonexistent file {target_file} — hallucination, blocking without CC escalation'), block the ticket with reason 'hallucinated file: <path>', and return.\n\nRationale: asking CC to approve editing a nonexistent file is noise, not a real decision. Better diagnostic = faster root-cause identification of any future recurrence. Companion defense to T-situate-kernel-hallucination-fix (which cuts off the SITUATE source of hallucinations); this ticket catches the same class of bug if it enters via HYPOTHESIZE or any other path.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (_pe_escalate, lines ~2076-2094), tests/test_pe_entry_nodes.py (new test).\n**Design rules:** docs-in-code (_pe_escalate docstring should describe the guard), test-plan-or-why-not (test required).\n**Scope boundary:** IN — _pe_escalate HIGH-inertia branch, file-existence precondition, channel message shape. OUT — rearchitecting escalation, adding new reason kinds, changing MEDIUM-inertia branch.\n**Test plan:** (a) test _pe_escalate with target_file='wild_igor/igor/brainstem/kernel.py' (nonexistent) and HIGH-inertia reason posts the hallucination-diagnostic message and does NOT post DESIGN PROPOSAL; (b) test _pe_escalate with a real HIGH-inertia file (e.g. core_patterns.py) still posts the DESIGN PROPOSAL normally.",
+    "completed_at": "2026-04-23T02:32:19.407821+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4ea7829c-4cfa-4ac0-9e1e-05ab75ca5655",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

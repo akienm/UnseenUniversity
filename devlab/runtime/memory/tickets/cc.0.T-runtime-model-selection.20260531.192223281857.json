@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-runtime-model-selection.20260531.192223281857",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-runtime-model-selection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:22:23.281857",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-proxy-mini-rack",
+      "T-model-eval-harness",
+      "T-runtime-model-selection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-runtime-model-selection",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Platform",
+      "Research"
+    ],
+    "title": "Inference proxy: runtime model selection from capability graph",
+    "result": "Three-stack inference proxy: providers, model options, rules engine. Auto-selects by semantics. Protocol defined, metrics infrastructure in place.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.2,
+    "claimed_at": null,
+    "created_at": "2026-05-31T19:22:23.281857+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Long-term goal: inference proxy selects the best model at runtime based on task characteristics, cost constraints, and accumulated evaluation data. Capability graph (populated by T-model-eval-harness) maps task-class → best model/provider. Includes free inference via browser automation for models accessible via web UI. Proxy decides — callers just describe the task, never the model.\n\n**Affected files:** devices/inference/ (capability graph + selector), depends on T-inference-proxy-mini-rack and T-model-eval-harness\n**Design rules:** none apply\n**Scope boundary:** In scope: capability graph schema, selector logic, fallback chain. Out of scope: eval data collection (T-model-eval-harness), browser inference (separate ticket).\n**Completion criteria:** Given a task description, proxy selects model without caller input. Selection traceable in logs. Beats random baseline on cost for a 10-ticket batch.",
+    "completed_at": "2026-06-07T18:35:37.108902+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T19:22:23.331589+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3f11de93-b038-4f74-9d5a-29eaee4def2c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

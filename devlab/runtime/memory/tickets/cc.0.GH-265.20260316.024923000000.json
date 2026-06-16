@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-265.20260316.024923000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-265"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T02:49:23",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-265"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-265",
+    "title": "D093-W1: db_proxy network service (server + NetworkDatabaseProxy client)",
+    "result": "Superseded by T-uc-db-proxy-shelf. db_proxy moved to UC with make_infra_proxy() for UC-only access.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-16T02:49:23Z",
+    "description": "GitHub issue #265. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-17T22:15:23.180065+00:00",
+    "github_issue": 265,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5c5f6be8-b69a-4cbe-bd67-8d1dcc647096",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

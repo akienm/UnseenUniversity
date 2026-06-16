@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-uucompactclaude-double-enter.20260609.172709639070",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uucompactclaude-double-enter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T17:27:09.639070",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uucompactclaude-double-enter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uucompactclaude-double-enter",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Ops",
+      "Workflow"
+    ],
+    "title": "uucompactclaude: add second Enter after /model haiku for idle robustness",
+    "result": "shipped in 3036e9d1 alongside T-log-rotation-policy",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the model-switch command reliably sends in tmux even when the pane is in an idle state.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T17:27:09.639070+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "uucompactclaude sends /model haiku + Enter but single Enter can be swallowed when the pane is mid-idle. Adding a second Enter after 1s sleep makes the command reliable.\n\n**Affected files:** lab/claudecode/uucompactclaude\n**Design rules:** none\n**Scope boundary:** IN — add second Enter keypress; OUT — any other autocompact logic\n**Completion criteria:** uucompactclaude script has two Enter keypresses after /model haiku",
+    "completed_at": "2026-06-09T17:27:17.131518+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

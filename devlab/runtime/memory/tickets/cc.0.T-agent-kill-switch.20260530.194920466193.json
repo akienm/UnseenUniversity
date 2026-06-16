@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-agent-kill-switch.20260530.194920466193",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agent-kill-switch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T19:49:20.466193",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-agent-kill-switch",
+      "T-shim-policy-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-agent-kill-switch",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Generalized agent kill switch: halt any registered agent via MCP",
+    "result": "HaltRegistry (agent_id-keyed flat file), PolicyGate check #0, Skeleton agent_halt/agent_resume MCP tools, 18 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-31T14:24:57.844471+00:00",
+    "created_at": "2026-05-30T19:49:20.466193+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Igor has safe mode via igor.switches.cfg. There is no generalized mechanism to halt any registered agent. Add an MCP tool (on the skeleton or policy device): agent_halt(agent_id, reason) — marks the agent's registry entry as halted, shim policy gate denies all further tool calls from that agent, agent receives a halt notification on its mailbox.\n\nagent_resume(agent_id) clears the halt. Both actions write to the decision bill of materials (T-shim-policy-gate). Halt state survives rack restart (written to flat-file registry).\n\n**Affected files:** unseen_university/skeleton/ (halt MCP tool), ~/.unseen_university/registry/ (halted field), unseen_university/skeleton/base_shim.py (check halted before dispatch)\n**Design rules:** flat-file registry survives DB outage; halt must work even if Postgres is down\n**Scope boundary:** IN — halt/resume any registered agent, shim enforcement, flat-file persistence, decision log entry; OUT — graceful drain (in-flight calls complete), cascading halt to dependent agents\n**Completion criteria:** agent_halt('test-agent', 'reason') causes all subsequent tool calls from test-agent to be denied; agent_resume restores normal operation; halt state persists across rack restart",
+    "completed_at": "2026-05-31T14:41:43.833309+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T14:24:57.844471+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T19:49:20.466237+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7742c4f0-9c51-495d-bc57-2d865ce5a8a9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

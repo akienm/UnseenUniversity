@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-skill-engram-sprint.20260408.032903000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-engram-sprint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T03:29:03",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skill-engram-sprint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-engram-sprint",
+    "epic": "Training",
+    "size": "M",
+    "title": "Verify /sprint + /commit runnable as Igor engrams",
+    "result": "D355: All 21 skills seeded as engram nodes on boot. PROC_INVOKE_SPRINT + PROC_INVOKE_COMMIT habits created. Infrastructure gap fixed — skills were never seeded and had no trigger habits.",
+    "status": "done",
+    "worker": "igor",
+    "blocked_at": "2026-04-07T06:20:09.630761+00:00",
+    "claimed_at": null,
+    "created_at": "2026-04-08T03:29:03Z",
+    "related_to": null,
+    "description": "D317: skills are seeded as SKILL_* memory nodes but seeded != executable. Verify Igor can actually run SKILL_SPRINT_ENTRY and SKILL_COMMIT_ENTRY as engram cursor programs end-to-end on a real S ticket. Fix any gaps in node execution. This is the proof that Igor = Claude Code equivalent.",
+    "completed_at": "2026-04-10T17:34:10.748063+00:00",
+    "github_issue": 395,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "78867805-a477-423c-95d4-7b63684983a9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

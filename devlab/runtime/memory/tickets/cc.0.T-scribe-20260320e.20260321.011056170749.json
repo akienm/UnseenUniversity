@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320e.20260321.011056170749",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320e"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:56.170749",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320e"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320e",
+    "body": "Decisions: D166-D169. Gaps closed: #294, #291, #248, #258, #259, #260, #261, #293. New: T-memory-sync built (memory_sync.py). Session theme: ticket sweep. Subsystems touched: push_sources.py (env hot-reload), igor_mcp.py (traces_get), cortex.py (updated_at), tools/memory_sync.py (new).",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-20c",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:56.170749+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

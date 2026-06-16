@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-10-confab-wiring.20260429.161056000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-10-confab-wiring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:10:56",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-cc-walk-10-confab-wiring",
+      "T-consult-confab-scan-wiring-verify",
+      "T-igor-programs-himself"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-10-confab-wiring",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor verifies confab_scanner wiring in ConsultSession",
+    "result": "Target ticket already done. Walk admin close.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.73,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:10:56Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-consult-confab-scan-wiring-verify. Stale proposal+approved_plan cleared. Touches consult.py + engram_tools/.\n\nChecklist:\n1. Set priority=0.95 on target; watch Igor claim\n2. PLAN: consult.py + engram_tools/ — not HIGH-inertia\n3. Watch: deposit_engram → synthetic consult → assert confab_flags non-empty\n4. If wiring broken: trace ConsultSession.ask() → fix scanner hookup\n5. Commit + done\n\n**Affected files:** wild_igor/igor/cognition/consult.py, lab/claudecode/engram_tools/\n**Design rules:** none\n**Scope boundary:** IN — scaffold T-consult-confab-scan-wiring-verify\n**Test plan:** target done.",
+    "completed_at": "2026-05-02T03:44:17.002049+00:00",
+    "github_issue": 548,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3e6f0a8d-de4d-412c-ae78-ff63698d67f0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

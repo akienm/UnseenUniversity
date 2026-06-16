@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-process-inner-dismantle.20260505.153701000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-process-inner-dismantle"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T15:37:01",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-process-inner-dismantle"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-process-inner-dismantle",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "cognition",
+      "refactor",
+      "technical-debt",
+      "investigation"
+    ],
+    "title": "DESIGNED: Map and plan _process_inner dismantle — 3445-line method in main.py",
+    "result": "Design doc at lab/design_docs/_process_inner_dismantle.md. 11-phase map (LOC ranges), data handoffs, 8-module split proposal, A→G extraction sequence. Commit f7df1ab3.",
+    "status": "done",
+    "worker": "cc",
+    "claimed_at": null,
+    "created_at": "2026-05-05T15:37:01Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "main.py._process_inner runs from line 3531 to ~6976 — 3445 lines. This is independently a problem: blocks future audits, blocks Igor reasoning about his own loop, blocks any move toward concurrent settling. This is an INVESTIGATE ticket: map what is in there, identify natural seam lines, write a phased refactor plan as a design doc. Do not implement in this ticket.\n\n**Affected files:** wild_igor/igor/main.py (lines 3531-6976) — read-only investigation; output is a design doc in lab/design_docs/\n**Design rules:** none-apply (investigation only)\n**Scope boundary:** IN: read _process_inner end-to-end; identify phase boundaries and data dependencies; produce refactor plan with proposed module splits. OUT: do not touch any code in this ticket.\n**Test plan:** no tests — this ticket produces a design doc, not code.\n**Pass condition:** A design doc exists at lab/design_docs/_process_inner_dismantle.md naming the proposed phases, their boundaries, and the sequencing for extraction.",
+    "completed_at": "2026-05-05T18:46:01.250259+00:00",
+    "github_issue": 590,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7c4c62aa-c46e-4301-8f6b-b8cbc3b171af",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

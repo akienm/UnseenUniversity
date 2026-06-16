@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-slate-done-first-ordering.20260508.000700812463",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slate-done-first-ordering"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T00:07:00.812463",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-slate-done-first-2026-05-07"
+    ],
+    "tickets": [
+      "T-slate-done-first-ordering"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slate-done-first-ordering",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Day-close: rearrange slate so Done section appears first",
+    "result": "day-close SKILL.md step 3: Done-first section ordering at close-time (Done→Notes→SessionClose→In-flight→Ad hoc→Planned→CLOSED). Empty sections omitted. Commit 6ac30b0.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-08T00:07:00.812463+00:00",
+    "related_to": null,
+    "decision_id": "D-slate-done-first-2026-05-07",
+    "description": "Day-close currently closes the slate with Done section at the bottom (order: Notes, In-flight, Planned, Ad hoc, Done today). For future CC sessions reading old slates, Done-first ordering is more useful — it immediately answers 'what shipped?' without reading the whole file.\n\nUpdate day-close step 3 (Close the slate) to rearrange sections before writing the CLOSED marker: Done today → Notes → Decided/Ticketed → everything else. The rearrangement applies only at close-time, not during the day (daily work keeps current order).\n\nAlso update SKILL.md day-close step 3 documentation to describe the reordering.\n\n**Affected files:** ~/.claude/skills/day-close/SKILL.md\n**Design rules:** None (skill doc only — no source code change).\n**Scope boundary:** day-close SKILL.md step 3 only. No changes to context-load, no changes to slate creation (step 1). Out of scope: migrating existing closed slates.\n**Test plan:** Manual test at next day-close — verify closed slate has Done section at top.",
+    "completed_at": "2026-05-08T00:20:37.988439+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a8c1345c-5381-49bd-999d-2a5eb9f20e27",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

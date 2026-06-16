@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-scope-guard-reattempt-loop.20260420.184455000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scope-guard-reattempt-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:55",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scope-guard-echo-dedup",
+      "T-scope-guard-reattempt-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scope-guard-reattempt-loop",
+    "size": "M",
+    "tags": [
+      "Bug",
+      "Cognition",
+      "RootCause"
+    ],
+    "title": "Identify what keeps re-firing blocked HIGH-inertia writes — habit or goal stuck in re-attempt loop",
+    "result": "Root cause: goal_continuation step 4 re-emitted GOAL_READY even when ticket was awaiting_approval/blocked, causing PROC_CODING_SPRINT → pe_chain → SCOPE_GUARD escalate loop every 2 min. Fix: check _load_ticket status before re-emitting; skip if blocked or awaiting_approval. 2 new regression tests.",
+    "status": "done",
+    "worker": "claude",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T17:12:53.414474+00:00",
+    "created_at": "2026-04-20T18:44:55Z",
+    "related_to": null,
+    "description": "T-scope-guard-echo-dedup (d121605f) silenced the echo. This ticket attacks the underlying re-attempt.\n\n## Observation\nThree operations keep firing at 10-60 min intervals even though they're always blocked:\n- write wild_igor/igor/cognition/thalamus.py (MEDIUM inertia, warning)\n- write wild_igor/igor/brainstem/kernel.py (HIGH inertia, blocked)\n- delete wild_igor/igor/memory/models.py (HIGH inertia, blocked)\n\nEach attempt goes through SCOPE_GUARD → escalate → pe_chain close-goal. The goal close SHOULD prevent re-firing (see pe_chain.py:1777-1786 close_goal_by_ticket), but something is re-creating an equivalent goal each cycle.\n\n## Suspect paths to investigate\n1. Is there a habit (PROC_*) that's hardcoded to produce these particular edit intentions? Check habit chunker + seed-habit data for anything mentioning brainstem/kernel or memory/models.\n2. Is close_goal_by_ticket actually succeeding? The pe_chain line 1781 passes the ticket_id; check whether the close is logging an error silently, and whether the goal table still shows matching active goals post-close.\n3. Is an LLM-generated 'next step' producing these intents? A self-improvement habit that keeps choosing the same files would do this. Look at recent traces (mcp__igor__traces_recent) around the block-message timestamps.\n4. Is the ticket_id stable across re-attempts? If each attempt gets a fresh UUID-style ticket_id, close_goal can't match and the suppression doesn't stick. If it IS stable (likely, from log output 'unknown'), see #2.\n\n## Starter query\nAfter Igor restart, run:\n  SELECT * FROM clan.memories WHERE memory_type = 'EPISODIC' AND metadata::text ILIKE '%brainstem%' AND timestamp > (now() - interval '24 hours')::text ORDER BY timestamp DESC LIMIT 10;\n\nShould show the goal/habit nodes firing these attempts. The narrative + metadata together should identify the source.\n\n## Success criteria\n- No more re-attempts of the same (file, op) after a reasonable window\n- Forensic log shows WHY it was firing (habit id, goal lineage)\n- If it's a legitimate habit with a bad target — fix the target. If it's a runaway — close the underlying attractor.\n\n## Provenance\nAkien + CC 2026-04-18b, during /readigor diagnosis. Parent: T-scope-guard-echo-dedup (symptom fix).",
+    "completed_at": "2026-04-29T17:18:30.034203+00:00",
+    "deposited_at": "2026-04-21T20:58:02.768229",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": 482,
+    "superseded_by": "T-situate-kernel-hallucination-fix",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6bb54517-bf2c-4c50-a9fa-19af98d7a711",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

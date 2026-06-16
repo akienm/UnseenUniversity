@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-rule-preferred-paths-code-scan.20260429.182058239750",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rule-preferred-paths-code-scan"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:20:58.239750",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-rule-preferred-paths-code-scan",
+      "T-rule-preferred-paths-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rule-preferred-paths-code-scan",
+    "gate": "T-rule-preferred-paths-seed",
+    "size": "M",
+    "tags": [
+      "Rules",
+      "Audit",
+      "Sonnet-Constraints"
+    ],
+    "title": "Augment preferred_paths via scan of recent Sonnet diffs",
+    "result": "Created lab/claudecode/preferred_paths_scan.py: PathScanReport scans 60d git history for 6 deprecated patterns (raw-psql, channel-direct, print, new-MemoryType, feature-flag, direct-db-write). Outputs candidates for Akien review before any palace node is added. Smoke test found 6 psycopg2 hits in 7 days.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-29T18:20:47.229060+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "Scan the last ~60 days of git history for fallback-pattern hits — places where Sonnet wrote a deprecated form when a preferred form existed. Use git log --grep + diff inspection to find candidates. For each candidate pattern that recurs ≥3 times, draft an addition to theigors/rules/preferred_paths/.\n\nOutput is a draft list of pairs Akien reviews before merge. Tool lives at lab/claudecode/preferred_paths_scan.py.\n\n**Affected files:** new lab/claudecode/preferred_paths_scan.py. Adds palace nodes after Akien review.\n**Design rules:** no persistence (read-only git scan). oop-first: PathScanReport class. docs-in-code: top-of-file docstring.\n**Test plan:** scan produces a candidate list with ≥3 occurrences each on the current repo. Manual review confirms each candidate is a real fallback pattern (not a false positive).",
+    "completed_at": "2026-04-29T18:20:58.239750+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f2bc99ec-e4f0-4b91-91ae-06022c4b1c4b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

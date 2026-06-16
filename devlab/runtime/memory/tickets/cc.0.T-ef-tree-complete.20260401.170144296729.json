@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-ef-tree-complete.20260401.170144296729",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ef-tree-complete"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T17:01:44.296729",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ef-tree-complete"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ef-tree-complete",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "EF questions tree — seed 4 missing nodes + facia",
+    "result": "Seeded EF_FACIA + EF_Q1-Q4 as INTERPRETIVE nodes in Postgres. EF_FACIA parented to CP1. Four questions: (1) What does it mean to me? (2) What does that mean? (3) How must that work? (4) What is the first thing I say in response to that? All include D276 persistence-hunting context. seed_ef_questions_tree.py created for repeatability.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-01T16:59:37.767209+00:00",
+    "description": "Seed 4 missing EF questions as INTERPRETIVE nodes (same cluster style as 755182-755190): What does it mean to me?, What does that mean?, How must that work?, What is the first thing I say in response to that? Add EF tree facia node. Part of D272 boredom idle loop.",
+    "completed_at": "2026-04-01T17:01:44.296729+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "13ef757c-06d6-474e-b538-b02d551ff607",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

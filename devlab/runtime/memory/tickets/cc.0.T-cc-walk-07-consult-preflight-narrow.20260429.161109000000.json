@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-07-consult-preflight-narrow.20260429.161109000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-07-consult-preflight-narrow"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:09",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-cc-walk-07-consult-preflight-narrow",
+      "T-consult-preflight-trigger-narrow",
+      "T-igor-programs-himself"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-07-consult-preflight-narrow",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor narrows pre-flight consult trigger",
+    "result": "Target ticket already done. Walk admin close.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.79,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:11:09Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-consult-preflight-trigger-narrow. Stale proposal cleared. Touches pe_chain.py (_maybe_consult_stuck).\n\nChecklist:\n1. Read pe_chain.py _maybe_consult_stuck\n2. Set priority=0.95 on target; watch Igor claim\n3. PLAN: pe_chain.py — not HIGH-inertia\n4. If false brainstem proposal: reset+inject decision: remove the trigger (simpler than narrowing)\n5. Verify tests + commit + done\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py\n**Design rules:** none\n**Scope boundary:** IN — scaffold T-consult-preflight-trigger-narrow\n**Test plan:** target done.",
+    "completed_at": "2026-05-02T03:44:11.574292+00:00",
+    "github_issue": 553,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d15a4615-3cdf-4005-9d6f-4d10d7c4fc9c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-mcp-channel-read.20260321.185017660338",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-channel-read"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T18:50:17.660338",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-mcp-channel-read"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-channel-read",
+    "size": "S",
+    "notes": "igor_mcp.py needs channel_read(since_id, limit) tool. CC already pushes via cc_send; Igor already posts responses to channel. Missing: CC pull. With this tool, CC sends via cc_send then reads response via channel_read — full bidirectional loop without human relay.",
+    "title": "Add channel_read MCP tool — bidirectional CC↔Igor pub-sub",
+    "result": "channel_read MCP tool was already fully implemented in igor_mcp.py: tool registration (lines 295-320), dispatch handler (lines 365-368), and _channel_read() implementation (lines 770-794). Queries channel_messages Postgres table with limit/since_id/author filters. Smoke tested: all three modes work. channel_messages table is live with recent cc-tab posts. No code changes needed — ticket was already complete.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-21T18:39:01.163302+00:00",
+    "completed_at": "2026-03-21T18:50:17.660338+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

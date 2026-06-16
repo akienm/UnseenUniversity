@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-test-debt-tooling.20260101.152944382739",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-debt-tooling"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T15:29:44.382739",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-debt-tooling"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-debt-tooling",
+    "size": "S",
+    "title": "Tests for session_manager.py + decision_manager.py",
+    "result": "tests/test_claudecode_managers.py already existed with 16 passing tests covering session_manager + decision_manager. All pass.",
+    "status": "done",
+    "priority": 7,
+    "claimed_at": null,
+    "description": "session_manager.py and decision_manager.py shipped with no tests. Both have real logic (session ID parsing, migration guard, decision flush). S-size: write pytest unit tests covering: start/finalize session roundtrip, decision add idempotency, flush_session payload shape, current_session.txt state file read/write. No Igor dependency needed — use temp SQLite DB in fixture.",
+    "completed_at": null,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5899a81c-f9c6-4907-adc4-925e640084eb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

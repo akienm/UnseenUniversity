@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-librarian-index-paths.20260603.161947438014",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-index-paths"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T16:19:47.438014",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-librarian-fulltext-search",
+      "T-librarian-index-paths"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-index-paths",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "Search",
+      "Platform"
+    ],
+    "title": "Librarian: background folder indexer + git history search",
+    "result": "FolderIndexer + search_indexed + search_git backends; 12 tests; config/librarian.yaml",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.45,
+    "claimed_at": "2026-06-04T19:41:02.679983+00:00",
+    "created_at": "2026-06-03T16:19:47.438014+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Extend Librarian search (T-librarian-fulltext-search) with: (1) configurable folder indexer — declare paths in librarian config, Scraps background job chunks files and stores in Postgres with tsvector; enables 'index everything in devices/', 'index ~/notes/'. (2) git history search — git log -S / git log --grep via subprocess, returns commit+message+file context. Together these make the search(query) tool complete: structured DB knowledge + live repo files (rg) + indexed external folders + commit history.\n\nIndexer design: Scraps periodic job, file chunks stored in adc.palace or a dedicated search_index table (path, chunk_text, tsvector, updated_at). GIN index on tsvector. Incremental: only re-index files newer than last indexed mtime.\n\n**Affected files:** devices/librarian/tools/search_tool.py (add git+indexed backends), devices/scraps/ (new indexer job), palace_bootstrap.py or migration (search_index table if needed), config (indexer_paths list)\n**Design rules:** no-sqlite; Postgres for index store; incremental by mtime; config-driven paths (not hardcoded)\n**Scope boundary:** IN: folder indexer job, git log search, config for watched paths. OUT: web crawl, vector/semantic search, real-time file watching (polling only).\n**Completion criteria:** indexer job runs, re-indexes only changed files; search(query, source='indexed') hits content from a configured folder; search(query, source='git') returns matching commits with message+file; config has indexer_paths list; 5+ tests",
+    "completed_at": "2026-06-04T21:25:18.336359+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:08:04.700046+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6d1806ee-28c9-4c40-8fc9-fe4ff9a2f110",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

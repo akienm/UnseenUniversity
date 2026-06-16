@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-situate.20260402.225556542949",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-situate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T22:55:56.542949",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-situate",
+      "T-programming-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-situate",
+    "epic": "Training",
+    "size": "M",
+    "title": "pe: Seed SITUATE node — tier.2 finds files from ticket description",
+    "result": "SITUATE step added to pe_chain.py: fast path uses ticket required_files, slow path calls tier.2 Ollama + _parse_file_list fallback. Chain now ENTRY→CLAIM→READ_TICKET→SITUATE. 32 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": "T-programming-engrams",
+    "description": "Tier.2 call: given basket[ticket_description], emit basket[plan_files] (list of file paths). Uses L3 SITUATE template with code_ref=situate_files tool. Tests: plan_files is non-empty list for a sample ticket.",
+    "completed_at": "2026-04-02T22:55:56.542949+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "43285534-5b21-45d0-a5af-3aeadb5e61b2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

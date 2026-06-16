@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-cloud-escape-plugs.20260406.011910609705",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cloud-escape-plugs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-06T01:19:10.609705",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cloud-escape-plugs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cloud-escape-plugs",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Plug cloud escape gaps: analyze recent un-habited escalations and build habits",
+    "result": "Seeded three cloud escape plugs: (1) Fixed book-project habit (20260325120926040135) — added habit_type='response' (was NULL, caused 49 escapes), (2) Seeded PROC_GREET_AKIEN response habit for greeting inputs, (3) Seeded PROC_CC_INFO_ACK response habit for CC info messages. All live in Postgres. Expected to close ~70% (130 of 189) current un-habited escalations. 1852 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-06T01:17:03.714666+00:00",
+    "related_to": null,
+    "description": "Igor has been self-observing cloud escalations without habits firing. Run the plug-building loop: read escalation_stats topics from the last 48h, identify the 3-5 most common patterns, and seed habits that intercept them locally before reaching tier.2. Use memory_search + find_tool for factual/tool queries. Forensic log to ~/.TheIgors/logs/plug_building.log. Not changing: tier routing logic, escalation thresholds.",
+    "completed_at": "2026-04-06T01:19:10.609705+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2fa61f70-68b4-496b-bd04-dfbecad7342f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

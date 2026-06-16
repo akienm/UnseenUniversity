@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-librarian-palace-mcp-tools.20260508.212315257841",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-palace-mcp-tools"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T21:23:15.257841",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-db-review-tools-2026-05-08"
+    ],
+    "tickets": [
+      "T-librarian-palace-mcp-tools",
+      "T-palace-cli"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-palace-mcp-tools",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "Palace",
+      "MCP",
+      "AgentDatacenter"
+    ],
+    "title": "CLOSED: Add palace_ls/read/write/search MCP tools to Librarian",
+    "result": "palace_ls/read/write/search added to Librarian tools; 22 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-08T21:23:38.807374+00:00",
+    "created_at": "2026-05-08T21:23:15.257841+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-db-review-tools-2026-05-08",
+    "description": "Add 4 MCP tools to agent_datacenter/devices/librarian/tools/palace_tools.py: palace_ls(prefix, limit) — indented tree listing; palace_read(path) — full node content; palace_write(path, title, content, node_type, tags) — upsert; palace_search(query, tags, limit) — GIN full-text + tag filter. Wire into tools/__init__.py SCHEMAS + dispatch. All hit adc.palace via psycopg2.\n\n**Affected files:** agent_datacenter/devices/librarian/tools/palace_tools.py (new), agent_datacenter/devices/librarian/tools/__init__.py\n**Design rules:** palace DB always; no SQLite; palace_write uses ON CONFLICT upsert\n**Scope boundary:** IN: 4 palace tools wired into Librarian MCP. OUT: CLI script (T-palace-cli), palace_delete (add later), auth/multi-user.\n**Test plan:** palace_ls returns indented tree for known prefix; palace_read returns full content; palace_write upserts and palace_read confirms; palace_search returns matches via GIN index.",
+    "completed_at": "2026-05-08T21:27:40.772517+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "699ed54d-730c-44f1-885b-a6b47efb5dd1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-acurite-usb-isolated-config.20260615.180451021291",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-acurite-usb-isolated-config"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:04:51.021291",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-isolated-network-2026-06-15"
+    ],
+    "tickets": [
+      "T-acurite-usb-isolated-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-acurite-usb-isolated-config",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "AcuRite",
+      "Network"
+    ],
+    "title": "[pending] Configure USB Ethernet port for AcuRite isolated network",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the AcuRite device has an isolated, local network segment with DNS redirection so it can be captured without touching the main network.",
+    "created_at": "2026-06-15T18:04:51.021291+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-acurite-isolated-network-2026-06-15",
+    "description": "Set up isolated network segment on USB Ethernet port for direct AcuRite device connection. Assign static IP 10.0.0.230 to port. Configure DHCP server to serve 10.0.0.231–240 range with gateway 10.0.0.230 (no internet routing). Install/configure dnsmasq on 10.0.0.230:53 to resolve *.myacurite.com (and variants like atlasapi.myacurite.com, hubapi.myacurite.com) to 10.0.0.230. Disable internet access on this segment to ensure device traffic stays local.\n\n**Affected files:** N/A (system configuration, no code changes)\n**Design rules:** none apply\n**Scope boundary:** Network configuration only; daemon implementation is separate ticket\n**Completion criteria:** (1) USB Ethernet port has static IP 10.0.0.230; (2) DHCP server running, assigns IPs in 10.0.0.231–240; (3) dnsmasq running on 10.0.0.230:53, resolves *.myacurite.com to 10.0.0.230; (4) No internet routing from isolated segment; (5) Device can connect and get IP via DHCP\n**Test plan:** Connect device via USB Ethernet, verify DHCP assigns IP, ping 10.0.0.230 from device, query dnsmasq for myacurite.com and verify 10.0.0.230 response",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-granny-web-registration.20260529.122348996642",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-web-registration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T12:23:48.996642",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-web-registration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-web-registration",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform"
+    ],
+    "title": "Granny Weatherwax: register with web server so she appears in UI",
+    "result": "GrannyShim.start/stop register/deregister with /api/agents/register; 10 existing tests green",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.6,
+    "created_at": "2026-05-29T12:23:48.996642+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "GrannyWeatherwaxDevice is not visible in the web interface because GrannyShim.start() never calls POST /api/agents/register. Every other rack device that appears in the web UI registers via the adc_client pattern (devices/igor/web/adc_client.py:252). Granny is currently a library (not a daemon), so registration must happen in GrannyShim.start() via a direct HTTP call or by using the adc_client.\n\nFix: in GrannyShim.start(), POST to the web server's /api/agents/register with agent_id='granny-weatherwax' and capabilities=['intake_ticket', 'route_ticket', 'escalate_to_cc']. Mirror the pattern in igor's adc_client. In GrannyShim.stop(), call /api/agents/deregister.\n\n**Affected files:** devices/granny/shim.py\n**Design rules:** none — shim registration is infrastructure, not cognition\n**Scope boundary:** only GrannyShim.start/stop. Do not change GrannyWeatherwaxDevice.\n**Test plan:** after fix, start Granny shim and verify GET /health shows granny-weatherwax in attached_agents list",
+    "completed_at": "2026-05-29T14:56:42.370825+00:00",
+    "deposited_at": "2026-05-29T06:34:07.651761",
+    "deposited_by": "cc_queue",
+    "github_issue": 805,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-29T12:23:49.126056+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6ff3affd-674a-458d-b0e1-06706d9aa63b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

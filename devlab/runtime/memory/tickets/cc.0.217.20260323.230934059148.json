@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.217.20260323.230934059148",
+  "emitter": "cc.0",
+  "namespace": [
+    "217"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T23:09:34.059148",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "217"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "217",
+    "size": "S",
+    "title": "Ebook library index — Calibre scan + CSV catalog with topic tags",
+    "result": "calibre_catalog.py written — scans all 6404 metadata.opf files in the Calibre Portable library, extracts title/authors/year/subjects/rating/formats, infers 15 topic tags (ai_ml, neuroscience, fiction_sf, fiction_fantasy, computing, linguistics, etc.) from keyword rules, writes CSV. calibre_catalog.csv committed. Untagged books (3879) have empty Calibre subjects — the rules fire correctly where metadata exists.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-23T23:00:22.245857+00:00",
+    "description": "Full Calibre scan, produce CSV catalog with topic tags for reading queue planning. #217",
+    "completed_at": "2026-03-23T23:09:34.059148+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b03cb265-d436-4953-83d3-88d31b6e3f71",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

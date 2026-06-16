@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-blame-with-model.20260430.002127387654",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-blame-with-model"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T00:21:27.387654",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-author-model-header",
+      "T-blame-with-model"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-blame-with-model",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Tooling",
+      "Attribution"
+    ],
+    "title": "blame_with_model.py — git blame enriched with Co-Authored-By model attribution",
+    "result": "blame_with_model.py — git blame + Co-Authored-By → model attribution (opus/sonnet/haiku detection, fallback to coauthor name). --model-only filter, --json output, message cache. 16 tests, 4165 regression pass. Live spot-check on consult.py confirms working.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-30T00:14:20.405721+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Multi-model debugging requires knowing which model authored a given chunk of code. Co-Authored-By trailers already capture this in commits (e.g. 'Co-Authored-By: Claude Opus 4.7 (1M context)'). Build lab/claudecode/blame_with_model.py that runs git blame on a file (or a line range), looks up each commit's Co-Authored-By trailer, and outputs blame inline with model attribution.\n\nOutput format:\n  <line>  <commit-short>  <author>  <model>  <code>\n\nOptional --model-only flag to filter to lines from a specific model (e.g. --model-only sonnet to find Sonnet-authored hot spots).\n\n**Affected files:** new lab/claudecode/blame_with_model.py + tests/test_blame_with_model.py.\n**Design rules:** none apply (read-only diagnostic).\n**Scope boundary:** in scope: blame enrichment script + tests. Out of scope: editing source files to add per-line attribution comments (separate ticket — T-author-model-header).\n**Test plan:** unit tests with mocked git commands; one integration test against the actual repo's git log.",
+    "completed_at": "2026-04-30T00:21:27.387654+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3394097f-16cd-4678-991c-b25d24e3536e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

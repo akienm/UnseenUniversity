@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-daemon-supervisor-spawn-liveness.20260424.165545683651",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-daemon-supervisor-spawn-liveness"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:55:45.683651",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ne-worker-revert-oneshot-2026-04-24"
+    ],
+    "tickets": [
+      "T-daemon-supervisor-backoff-and-one-shot-audit",
+      "T-daemon-supervisor-spawn-liveness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-daemon-supervisor-spawn-liveness",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Observability",
+      "Hygiene"
+    ],
+    "title": "Daemon supervisor: last-spawn-timestamp liveness check for one-shot-per-tick workers",
+    "result": "heartbeat-based liveness check: supervisor.heartbeat(name) at spawn-hook entry, staleness_threshold_secs per entry, stale flagged in report_str. one-shot entries no longer in dead-thread warning. report-only, no restart.flag. ne-worker=600s, consolidation=7200s. 9 new tests in test_daemon_supervisor.py, 3947 pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "claimed_at": "2026-04-24T16:45:26.259127+00:00",
+    "related_to": null,
+    "decision_id": "D-ne-worker-revert-oneshot-2026-04-24",
+    "description": "ne-worker and consolidation-worker are one-shot-per-tick: the Igor main loop spawns a fresh thread each tick, runs the work once, thread exits. Registering them with one_shot=True (current state, post-revert) silences the supervisor's DAEMON_DEAD alert — which was the right call because natural exit is the design — but leaves a real hole: if the main loop stops calling the spawn entrypoint (stuck, deadlocked, exception in the spawn guard), no thread is dying, so is_alive() never fires, so the supervisor never notices. The original T-daemon-supervisor-backoff-and-one-shot-audit tried to close this hole by removing one_shot=True; that broke boot instead (see the 2026-04-24 crash loop). Correct fix: keep one_shot=True, add a separate liveness_fn per entry. For one-shot-per-tick workers, liveness_fn checks (now - last_spawn_ts) < threshold. Supervisor reports unhealthy (not DEAD) if liveness fails.\n\n**Affected files:** wild_igor/igor/cognition/daemon_supervisor.py (add last_spawn_ts field + liveness_fn registration API), wild_igor/igor/main.py (thread the last-spawn-ts update into _maybe_run_ne and _run_consolidation_background), tests/test_daemon_supervisor.py (new or extend). **Design rules:** docs-live-in-code (module docstring update), test-plan-or-why-not. **Scope boundary:** IN — supervisor API extension, two call-site updates, liveness_fn that compares wall-clock to stored last-spawn-ts, report_str() shows stale status. OUT — changing ne-worker/consolidation to a true long-running while-loop (separate design), auto-restart on staleness (just report, don't act). **Test plan:** unit test supervisor: register with last_spawn_ts getter, advance mock clock past threshold, assert report shows stale; advance clock under threshold, assert healthy.",
+    "proposed_at": "2026-04-24T16:55:11.552893+00:00",
+    "completed_at": "2026-04-24T16:55:45.683651+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "afa8632a-1316-4c58-84c0-e2477a4a886c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

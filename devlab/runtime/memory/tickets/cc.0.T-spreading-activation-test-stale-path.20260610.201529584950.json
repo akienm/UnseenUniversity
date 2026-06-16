@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-spreading-activation-test-stale-path.20260610.201529584950",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-spreading-activation-test-stale-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T20:15:29.584950",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-spreading-activation-test-stale-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-spreading-activation-test-stale-path",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Test",
+      "Igor"
+    ],
+    "title": "Fix stale mock path in test_spreading_activation.py",
+    "result": "DickSimnel.0: DONE: Fixed stale mock path in test_spreading_activation.py from igor.cognition.word_graph.tokenize to devices.igor.cognition.word_graph.tokenize",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "purpose": "",
+    "priority": 0.2,
+    "intention": "I intend that [REDACTED-CREDENTIAL] passes by updating its patch target from the old igor.cognition.word_graph path to devices.igor.cognition.word_graph.",
+    "claimed_at": "2026-06-11T22:42:44.457255+00:00",
+    "created_at": "2026-06-10T20:15:29.584950+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "test_spreading_activation.py fails with AttributeError: module 'igor' has no attribute 'cognition'. The patch target on line 220 of tests/igor/test_spreading_activation.py uses the old module path `igor.cognition.word_graph.tokenize` instead of the current `devices.igor.cognition.word_graph.tokenize`. Stale path left over from the igor→devices.igor migration.\n\n**Affected files:** tests/igor/test_spreading_activation.py:220\n**Design rules:** none apply\n**Scope boundary:** IN — fix the one stale patch path. OUT — no other test changes.\n**Completion criteria:** `python -m pytest tests/igor/test_spreading_activation.py -x -q` passes with 0 failures.",
+    "completed_at": "2026-06-11T23:44:31.786468+00:00",
+    "deposited_at": "2026-06-10T14:16:10.792118",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-11T22:42:44.457255+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

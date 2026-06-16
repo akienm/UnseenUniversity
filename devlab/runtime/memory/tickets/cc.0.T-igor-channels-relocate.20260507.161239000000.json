@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-channels-relocate.20260507.161239000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-channels-relocate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:12:39",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-migration-2026-05-06"
+    ],
+    "tickets": [
+      "T-igor-channels-relocate",
+      "T-igor-network-remove"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-channels-relocate",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Migration",
+      "Infrastructure",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Relocate network/channels + proxy + system_proxy to acquisition/ + tools/",
+    "result": "channels→acquisition/, proxy→tools/network_proxy.py, system_proxy→tools/system_proxy.py shim; 3 test files re-enabled (60 tests green)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-07T03:28:07.382668+00:00",
+    "created_at": "2026-05-07T16:12:39Z",
+    "related_to": null,
+    "decision_id": "D-adc-migration-2026-05-06",
+    "description": "network/ deletion (T-igor-network-remove) skipped 3 test files: test_channels.py (D230/D231 acquisition channel framework), test_network_proxy.py (NetworkProxy + HostStats), test_system_proxy.py (SystemProxy facade). These modules need to relocate to agent_datacenter devices or igor/cognition before tests can be re-enabled.\n\n**Affected files:** wild_igor/igor/network/channels/ → agent_datacenter/devices/ or igor/cognition/channels/, wild_igor/igor/network/proxy.py, wild_igor/igor/network/system_proxy.py, tests/test_channels.py, tests/test_network_proxy.py, tests/test_system_proxy.py\n**Design rules:** no-sqlite; no-TheIgors-imports from agent_datacenter\n**Scope boundary:** In scope: relocate 3 modules and re-enable their tests. Out of scope: changing acquisition channel behavior.\n**Test plan:** Remove pytest.skip() from 3 test files; all tests pass after relocation.",
+    "completed_at": "2026-05-07T03:32:29.047493+00:00",
+    "github_issue": 624,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dfaf8438-d53c-4c69-96b9-5a3a888dc714",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

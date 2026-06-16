@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-pursuit-engram-programming-docs.20260422.173822418113",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pursuit-engram-programming-docs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T17:38:22.418113",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pursuit-layer-2026-04-22"
+    ],
+    "tickets": [
+      "T-pursuit-engram-programming-docs",
+      "T-pursuit-layer-design-doc",
+      "T-reply-forms-pursuit",
+      "T-single-pursuit-test-case"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pursuit-engram-programming-docs",
+    "gate": "T-pursuit-layer-design-doc",
+    "size": "M",
+    "tags": [
+      "Docs",
+      "Engrams",
+      "Pursuits",
+      "Architecture"
+    ],
+    "title": "Engram programming docs: Pursuit as first-class architectural concept",
+    "result": "Programming guide companion to pursuit_layer.md. Goal-is-everywhere principle, wrap/skip criteria, minimal template, two worked examples (reply, BOREDOM-nested), common mistakes section, MVP spec for test-case. lab/design_docs/pursuit_programming.md + .dsb companion. Commit ef4fa78d.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-22T17:36:18.731105+00:00",
+    "related_to": null,
+    "decision_id": "D-pursuit-layer-2026-04-22",
+    "description": "Write Pursuit into Igor's engram programming docs as a first-class architectural concept. This is the practitioner-facing complement to T-pursuit-layer-design-doc (which is the architectural design reference).\n\nThis doc is the 'how to write Pursuits' guide — not just what they are, but when to use them and what the pattern looks like.\n\nDoc must cover:\n\n1. When a behavior needs a Pursuit (not just an engram)\n   - Rule of thumb: if the behavior involves committing to a goal across more than one sub-action, it's a Pursuit\n   - Heuristic: 'would a human get a small dopamine hit from starting this?' → needs a Pursuit\n   - Examples: scanning for work, taking on a ticket, replying when there's context to preserve, checking logs, etc.\n\n2. The Pursuit template pattern\n   - How to write the goal-facia formation step\n   - How to emit the anticipation event (what shape, what metadata)\n   - How to spawn sub-Pursuits\n   - How to write the completion test + ding\n\n3. Worked examples (based on T-single-pursuit-test-case output)\n   - BOREDOM → scan-for-work Pursuit → foreman_scan → found-work → do-ticket Pursuit\n   - Reply Pursuit (T-reply-forms-pursuit)\n\n4. The goal-is-everywhere principle\n   - Recalibrate expectations: goals are not just epics. The word 'goal' now means any Pursuit's target.\n   - Old mental model: goals = big ambitions\n   - New mental model: goals = everywhere, at every layer of commitment\n\n5. Layer table\n   | Layer | Unit | Analogy | Igor primitive |\n   | Cells | engram cell | assembly instruction | BRANCHIF, FORKIF |\n   | Engrams | engram chain | function / high-level code | pe_* tools |\n   | Pursuits | Pursuit | process / goal-bound unit | goal_facia + dopamine events |\n\nFile location: adjacent to existing engram docs (find and confirm location before writing).\nGates: T-pursuit-layer-design-doc must be complete — programming docs reference the design doc.\n\nTest plan:\n- All 5 sections present\n- Worked examples runnable / verifiable\n- Goal-is-everywhere section clear — no residual 'goals = big things' language\n- Reviewed by Akien",
+    "completed_at": "2026-04-22T17:38:22.418113+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7bb32bb5-8802-4ef1-b0be-1271c21f61e9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

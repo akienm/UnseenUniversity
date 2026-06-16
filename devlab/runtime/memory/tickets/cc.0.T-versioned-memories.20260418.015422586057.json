@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-versioned-memories.20260418.015422586057",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-versioned-memories"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-18T01:54:22.586057",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-versioned-memories"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-versioned-memories",
+    "size": "L",
+    "tags": [
+      "Memory",
+      "Architecture"
+    ],
+    "title": "Versioned memories — version control for memory nodes",
+    "result": "Child-chain version history: version_before_update() snapshots current state as child. Wired into cortex.store(). get_version_history() for querying. 7 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T01:52:11.784789+00:00",
+    "related_to": null,
+    "description": "Add version control to memory nodes. Each edit creates a new version; previous versions are preserved and queryable. Like git for individual memories.\n\n## Motivation\nMemories evolve — facts get corrected, interpretations deepen, procedures improve. Currently edits overwrite in place, losing history. Versioning preserves the evolution and enables rollback.\n\n## Examples\n- IDENTITY.md is versioned via github — but the graph-native equivalent has no history\n- A FACTUAL memory about a tool's API gets updated when the API changes — old version is useful context\n- A PROCEDURAL habit gets refined through experimentation — seeing the evolution helps understand why\n\n## Open questions (explore with Igor)\n- Does Igor find this useful? Would he use version history in reasoning?\n- Storage: versions as child nodes? Separate versions table? JSONB array in metadata?\n- Granularity: every edit, or only significant changes?\n- Retention: keep all versions forever, or prune old versions of low-value memories?\n\n## Depends on\n- Nothing specific — but benefits from the three-schema architecture (clan schema)",
+    "completed_at": "2026-04-18T01:54:22.586057+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d74ce30c-6d46-4cd5-a57e-e9ad08962f5a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

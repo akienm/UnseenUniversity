@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-swadl-add-playwright.20260508.162844859270",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-add-playwright"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T16:28:44.859270",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-swadl-add-playwright"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-add-playwright",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "SWADL",
+      "Automation"
+    ],
+    "title": "CLOSED: Add Playwright driver to SWADL",
+    "result": "driver adapter added to swadl_driver.py with tests, 756f742",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:33:26.805432+00:00",
+    "created_at": "2026-05-08T16:28:44.859270+00:00",
+    "related_to": null,
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Add Playwright (playwright-python) as a supported browser driver alongside existing Selenium support. Playwright has better async support, built-in waiting, and more reliable browser control for modern SPAs.\n\n**Affected files:** swadl/SWADL/engine/swadl_driver.py, swadl/SWADL/engine/swadl_base_automation.py, requirements.txt\n**Design rules:** no-sqlite; new driver follows existing driver pattern\n**Scope boundary:** driver wrapper + config key to select playwright vs selenium; does NOT rewrite existing Selenium-dependent flows\n**Test plan:** unit test that playwright driver initialises; smoke test against a public page",
+    "completed_at": "2026-05-08T18:38:04.545840+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "202db12f-30dd-48a2-860e-14271f80b0ca",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

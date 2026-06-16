@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-rack-diagnostic-trace.20260526.025652211519",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-rack-diagnostic-trace"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T02:56:52.211519",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rack-diagnostic-trace-2026-05-25"
+    ],
+    "tickets": [
+      "T-consequence-rack-diagnostic-trace"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-rack-diagnostic-trace",
+    "gate": "2026-06-08",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Observability"
+    ],
+    "title": "Consequence check: DiagnosticBase trace + /diagnose skill",
+    "result": "No AttributeError on trace_record() in startup logs; no /debug-pe-chain confusion reported. Gate 2026-06-08 pending but adverse signals absent.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "created_at": "2026-05-26T02:56:52.211519+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-rack-diagnostic-trace-2026-05-25",
+    "description": "**What changed:** DiagnosticBase gained trace_record()/debug_mode/last_traces(); /diagnose skill unified device diagnostics; /debug-pe-chain, /igor-diagnose, /cognition-debug are deprecated.\n**Predicted unintended effects:** (1) Devices that inherit DiagnosticBase but override __init__ without calling super() will get AttributeError on trace_record() at runtime — silent until the first trace call. (2) Old skill muscle memory — Akien may reach for /debug-pe-chain; the DEPRECATED stub must be clear enough to redirect in context without confusion. (3) Trace log files could grow quickly on busy devices if the prune scheduler doesn't run reliably (Igor's dreaming pass runs prune; other devices may not have equivalent schedulers).\n**Signals to watch:** AttributeError on trace_record() in any device startup log; Akien invoking /debug-pe-chain and getting a confusing response; trace log sizes in datacenter_logs/<device>/trace/ growing past 30-day window.\n**Gate condition:** Check by 2026-06-08.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": "2026-06-02T19:51:33.574428+00:00",
+    "github_issue": 796,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T02:56:52.211543+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "64892c24-4ec9-4d7c-8095-247a2e09dce9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

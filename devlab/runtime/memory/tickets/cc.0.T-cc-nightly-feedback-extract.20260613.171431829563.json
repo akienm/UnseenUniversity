@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-cc-nightly-feedback-extract.20260613.171431829563",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-nightly-feedback-extract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T17:14:31.829563",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-nightly-learning-2026-06-13"
+    ],
+    "tickets": [
+      "T-cc-nightly-feedback-extract"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-nightly-feedback-extract",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Autonomy",
+      "Learning",
+      "CC System"
+    ],
+    "title": "CC Nightly: feedback extraction from transcripts",
+    "result": "cc_nightly_learning.py: parses JSONL transcripts, 14-pattern detector, 9 signals from today's session, idempotent, writes memory/*.md files",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.7,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-13T17:14:31.829563+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-nightly-learning-2026-06-13",
+    "description": "Extract feedback signals from session transcripts and update memory tree.\n\n**Affected files:** lab/claudecode/cc_nightly_learning.py (new), memory/*.md (updated by script)\n**Design rules:** autonomous-learning, memory-update-safety, transcript-processing\n**Scope boundary:**\n  IN: Load transcript, find feedback signals (explicit: 'good work', implicit: approved design), extract context, update feedback tree\n  OUT: Decision classification, metrics collection, pattern generalization\n**Completion criteria:**\n  1. Load daily transcript (from session log or Claude Code history)\n  2. Find explicit feedback: 'good work', 'stop doing X', 'CC++', corrective comments\n  3. Find implicit feedback: user approved design → tag as validated pattern\n  4. Extract context for each feedback item\n  5. Append to memory/feedback_*.md files\n  6. Test: run on today's transcript, verify 8+ feedback items extracted, all formatted correctly",
+    "completed_at": "2026-06-13T22:21:50.617984+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T22:15:02.190826+00:00",
+    "required_files": [],
+    "scraps_validated": "2026-06-13T17:14:31.829586+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ef5f4e32-2f5c-4b6e-a84d-c485fb91c2a6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

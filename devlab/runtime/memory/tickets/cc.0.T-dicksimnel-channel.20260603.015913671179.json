@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-dicksimnel-channel.20260603.015913671179",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-channel"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T01:59:13.671179",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-channel"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-channel",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Observability",
+      "Channel"
+    ],
+    "title": "DickSimnel: WORKING/DONE/ESCALATE events to shared channel",
+    "result": "DickSimnel WORKING/DONE/DECLINE/ESCALATE channel events; _channel_event() helper; 12 tests (c2f228a5)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "blocked_at": "2026-06-03T03:01:19.296597+00:00",
+    "claimed_at": "2026-06-03T03:00:18.473973+00:00",
+    "created_at": "2026-06-03T01:59:13.671179+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "DickSimnel currently works silently — Akien and CC have no visibility into what it's doing. This ticket adds WORKING/DONE/ESCALATE channel events posted to the shared channel at key lifecycle points.\n\nEvents: DICKSIMNEL_WORKING (posted on ticket claim with ticket id + title), DICKSIMNEL_DONE (posted on close with ticket id + summary), DICKSIMNEL_ESCALATE (posted on escalation with ticket id + reason).\n\nThis is the observability foundation for the 2-week training period where Akien monitors Dick's work.\n\n**Affected files:** devices/dicksimnel/device.py\n\n**Design rules:** no-sqlite; log every state change per AR-009; use unseen_university.channel.post_to_channel (same pattern as other devices).\n\n**Scope boundary:** In scope: three channel posts (WORKING on claim, DONE on close, ESCALATE on escalate/decline); author='dicksimnel'; channel='shared'. Out of scope: web UI display, IMAP routing, structured event parsing.\n\n**Completion criteria:** test_dicksimnel_channel.py passes; monkeypatched post_to_channel is called at claim, close, and decline with correct author and event keyword; log records match expected pattern.",
+    "completed_at": "2026-06-03T03:36:02.794142+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T03:00:18.473973+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cccec576-9f97-46b5-b16b-8d37f35ef9c7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

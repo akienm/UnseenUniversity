@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-skill-telemetry-logger.20260521.015856587791",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-telemetry-logger"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T01:58:56.587791",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skill-telemetry-2026-05-20"
+    ],
+    "tickets": [
+      "T-skill-telemetry-logger"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-telemetry-logger",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "SkillTelemetry",
+      "Workflow"
+    ],
+    "title": "Build skill violation logger + outcome store",
+    "result": "append_violation/append_outcome/top_violations/skill_outcome_trend/monthly_rollup added to skill_telemetry.py; JSONL storage; 12 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-21T01:58:56.587791+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-skill-telemetry-2026-05-20",
+    "description": "Build violation logger + outcome store: the infrastructure that skill executions emit to, and the rollup query that surfaces reinforcement targets.\n\n**Proposed shape:**\n- lab/claudecode/skill_telemetry.py gains: append_violation(), append_outcome(), top_violations(n, days), skill_outcome_trend(skill, days)\n- Storage: IGOR_HOME/claudecode/violation_log.jsonl + outcome_log.jsonl (JSONL, append-only)\n- monthly_rollup() returns top N forget-flags by frequency, sorted by recurrence\n\n**Affected files:** lab/claudecode/skill_telemetry.py (extend), no new files\n**Design rules:** no-sqlite, docs-live-in-code\n**Scope boundary:** Logger + query only; does not retrofit skills or modify SKILL.md files\n**Test plan:** Unit tests for append/query round-trip; test top_violations with fixture data",
+    "completed_at": "2026-05-21T02:39:04.619422+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T01:58:56.587814+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e0f724b8-5c85-451c-8c8c-67a5e3fcde87",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

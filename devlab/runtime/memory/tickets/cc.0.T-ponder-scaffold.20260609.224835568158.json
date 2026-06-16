@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-ponder-scaffold.20260609.224835568158",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ponder-scaffold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:35.568158",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ponder-stibbons-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-ponder-scaffold"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ponder-scaffold",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Device",
+      "Ponder",
+      "Scaffold"
+    ],
+    "title": "Ponder Stibbons device scaffold — human-facing coordinator",
+    "result": "Ponder scaffold at devices/ponder/; BaseDevice/BaseShim + registry registration in main()",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that Ponder Stibbons appears as a first-class device in the rack, named and described so his role as human-facing coordinator is clear to future sprints.",
+    "claimed_at": "2026-06-09T23:03:04.218525+00:00",
+    "created_at": "2026-06-09T22:48:35.568158+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-ponder-stibbons-device-2026-06-09",
+    "description": "Create devices/ponder/ with BaseDevice + BaseShim. Ponder is the Radar O'Reilly of UU: human-facing coordinator, bridges human<->system without needing to know internals, personable, not a leader. Register in skeleton flat-file registry. His fascia page will be the place for natural-language system-state queries in a future sprint.\n\n**Affected files:** devices/ponder/__init__.py, devices/ponder/device.py, devices/ponder/shim.py\n**Design rules:** no-sqlite; BaseDevice/BaseShim inheritance required\n**Scope boundary:** Scaffold + role documentation only. No routing logic, no NLP, no system-state query handling. Out of scope: any actual coordinator functionality (that is a future M ticket once we design the query routing).\n**Completion criteria:** `pip install -e .` succeeds; GET /api/device/list includes ponder; web UI shows Ponder tab with basic fascia; __init__.py docstring accurately describes the Radar equivalent role.",
+    "completed_at": "2026-06-09T23:03:05.095069+00:00",
+    "deposited_at": "2026-06-09T16:48:51.992435",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-09T23:03:04.218525+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

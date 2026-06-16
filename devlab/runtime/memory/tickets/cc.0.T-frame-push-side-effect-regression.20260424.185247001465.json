@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-frame-push-side-effect-regression.20260424.185247001465",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-frame-push-side-effect-regression"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T18:52:47.001465",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-frame-push-side-effect-regression"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-frame-push-side-effect-regression",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Tests",
+      "Regression"
+    ],
+    "title": "test_frame_push_does_not_flood_other_twm_categories deterministic fail — self.capabilities leakage",
+    "result": "Investigated: test passes in full file (9/9), fails in isolation — classic shared-TWM-state, already covered by T-test-ordering-flakes and T-test-postgres-schema. NOT a real regression. More interestingly: pe_chain preflight runs 'pytest tests/ -x -q' with 120s timeout but 3988 tests can't fit — preflight likely always TIMES OUT and misreads that as failure. Filed T-pe-chain-preflight-timeout-misdiagnosis as the real issue.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.95,
+    "claimed_at": "2026-04-24T18:47:56.268957+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "tests/test_pr_load_as_primary_attractor.py::test_frame_push_does_not_flood_other_twm_categories fails deterministically. Snapshot diff shows `_push_relationship_frame` leaks observations to other categories: +1 `self.capabilities` and +1 `observation`. Test asserts non-frame categories unchanged after frame push.\n\nLikely cause: CapabilityAwareness push_source (push_sources.py:2576) or a side-effect call chain during `_push_relationship_frame` (main.py:2166) — maybe via `cortex.get(facia_id)` activation logging or `pr_touch()`. This is the pe_chain pre-flight blocker Igor has been hitting all afternoon.\n\n**Affected files:** wild_igor/igor/main.py:2166 (_push_relationship_frame), wild_igor/igor/cognition/push_sources.py:2576 (CapabilityAwareness), tests/test_pr_load_as_primary_attractor.py.\n**Design rules:** test-plan-or-why-not — test already exists, just needs to pass again.\n**Scope boundary:** IN — find the leakage path + fix so the non-flood test passes. OUT — redesigning CapabilityAwareness scheduling, refactoring frame push.\n**Test plan:** existing test_frame_push_does_not_flood_other_twm_categories passes; no new regressions.",
+    "completed_at": "2026-04-24T18:52:47.001465+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a0592408-d40f-4987-9ec6-e231a8aa9c1a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

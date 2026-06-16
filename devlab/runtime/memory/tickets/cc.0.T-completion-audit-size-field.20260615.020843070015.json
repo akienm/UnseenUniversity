@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-completion-audit-size-field.20260615.020843070015",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-completion-audit-size-field"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T02:08:43.070015",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-completion-audit-size-field",
+      "T-repo-auditor-semantic-eval"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-completion-audit-size-field",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Hygiene",
+      "Hubert",
+      "Tooling"
+    ],
+    "title": "Fix get_closed_tickets() — size field returns None for all tickets",
+    "result": "get_closed_tickets() now returns size and status fields from metadata; structural auditor sees M/L/XL tickets correctly",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that get_closed_tickets() returns the actual ticket size (S/M/L/XL) so the structural auditor can filter M/L/XL tickets correctly.",
+    "created_at": "2026-06-15T02:08:43.070015+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "lab/claudecode/completion_audit.py get_closed_tickets() returns dicts where 'size' is None and 'status' is None for all tickets. The repo_auditor filters on size M/L/XL and gets 0 matches, making T-repo-auditor-semantic-eval unable to run. Discovered when run_structural_audit() returned 0 flags despite 1800+ closed tickets in the queue.\n\nInvestigate: does get_closed_tickets() read from the correct source? Does it map the metadata fields correctly? The cc_queue stores size in the ticket JSON — check if it's being deserialized into the return dict.\n\n**Affected files:** lab/claudecode/completion_audit.py (get_closed_tickets function)\n**Design rules:** no SQLite\n**Scope boundary:** IN — fix size/status field return. OUT — changes to repo_auditor logic or ticket schema.\n**Completion criteria:** get_closed_tickets() returns dicts with correct 'size' and 'status' values; run_structural_audit() returns >0 flags against the real ticket set.",
+    "completed_at": "2026-06-15T02:38:54.647173+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-15T02:08:43.121784+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

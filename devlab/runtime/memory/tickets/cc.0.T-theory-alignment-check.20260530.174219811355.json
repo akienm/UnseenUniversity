@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-theory-alignment-check.20260530.174219811355",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theory-alignment-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:42:19.811355",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-theory-alignment-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theory-alignment-check",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Research"
+    ],
+    "title": "Run TheoryOfOperation §8 alignment queries and file gap tickets",
+    "result": "Ran all 4 §8 alignment queries; added 2 new checks (BaseDevice contract, log hierarchy) to §8; filed 4 gap tickets: T-theory-doc-memory-types, T-theory-safety-gates-in-db, T-theory-basedevice-contract-mismatch, T-theory-log-hierarchy-anomalies",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.75,
+    "created_at": "2026-05-30T17:42:19.811355+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "docs/TheoryOfOperation.md §8 defines 4 DB queries to verify the doc matches the live system. Run all 4, compare results to doc claims, file a ticket for each gap found. This is the intended use of the doc as an alignment artifact.\n\nQueries to run:\n1. SELECT memory_type, count(*) FROM clan.memories GROUP BY memory_type — compare to §3.4 type table\n2. SELECT id FROM clan.memories WHERE id IN ('SYSCFG_IGOR_TIER5_ENABLED','SYSCFG_IGOR_ARBITER_ENABLED','SYSCFG_IGOR_SELF_EDIT_ENABLED') — should return 0 rows\n3. Verify BaseDevice contract fields (start/stop/health/self_test) exist on at least 3 device classes\n4. Verify datacenter_logs/<device>/<subsystem>/ hierarchy in use (no flat root logs)\n\n**Affected files:** docs/TheoryOfOperation.md (update §8 with query results), tickets filed for any gaps\n**Design rules:** none — this is a doc alignment check\n**Scope boundary:** IN — run 4 queries, document results, file gap tickets; OUT — fix the gaps (those get their own tickets)\n**Completion criteria:** §8 updated with actual query results dated today; any mismatches between doc and reality have filed tickets",
+    "completed_at": "2026-05-30T18:00:40.862764+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T17:57:42.437614+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:42:19.811422+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "54cf6c01-137b-426a-98af-9936f3e12cef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

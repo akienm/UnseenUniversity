@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-hook-autonomics.20260421.173242019920",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-hook-autonomics"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T17:32:42.019920",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-workflow-optimizations-2026-04-21"
+    ],
+    "tickets": [
+      "T-cc-admin-consolidation",
+      "T-cc-hook-autonomics"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-hook-autonomics",
+    "gate": "T-cc-admin-consolidation",
+    "size": "M",
+    "tags": [
+      "CCWorkflow",
+      "Automation",
+      "Safety"
+    ],
+    "title": "Wire autonomic rule-enforcement hooks into session startup and pre-commit",
+    "result": "SessionStart hook installed at ~/.claude/settings.json + lab/claudecode/hooks/session-start/igor-env-check.sh. Pre-commit guards shipped as follow-up T-cc-pre-commit-guards (7f27583d).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-21T16:49:00.296456+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-workflow-optimizations-2026-04-21",
+    "description": "Enforce CLAUDE.md rules via hooks so violations surface before damage: (1) Session-start hook (context-load or cc_bridge) validates Postgres connectivity (error if unreachable) and that IGOR_HOME_DB_URL is set. (2) Pre-commit git hook rejects staged .env, *.db, ~/.TheIgors/* runtime paths, direct writes to decisions_log.dsb, use of `git commit --amend`. Scope: autonomic enforcement via hooks. Files: ~/.claude/settings.json (hook declarations), lab/claudecode/hooks/pre-commit/*.sh. Follows T-cc-admin-consolidation (consolidation provides shared env setup that hooks consume).\n\ntest_plan: (1) Attempt to stage .env — pre-commit hook rejects with clear message. (2) Attempt `git commit --amend` — hook rejects. (3) Run context-load with Postgres down — startup hook reports error inline. (4) Normal commit + context-load flow unaffected.",
+    "completed_at": "2026-04-21T17:32:42.019920+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "baa568aa-accb-4697-ab0d-e5274f66d159",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

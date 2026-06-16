@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-ebook-master-index.20260403.192604000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ebook-master-index"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:04",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ebook-master-index"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ebook-master-index",
+    "epic": "Training",
+    "size": "M",
+    "title": "Master ebook index across all 4 folder trees: Calibre, Kindle, SORTUS-EBOOKS, TheIgorsProject/Readings",
+    "result": "tools/build_ebook_index.py: scans Calibre Library (3702 via metadata.db), Kindle (129), SORTUS-EBOOKS (57), TheIgorsProject/Readings (72). Cross-refs reading_list. Output: ~/.TheIgors/local/ebooks/master_index.json (1.8MB) + summary.txt. Results: 3960 total, 121 completed, 3837 untracked. Top formats: epub/zip/azw/txt/mobi.",
+    "status": "done",
+    "claimed_at": "2026-04-04T22:44:38.480084+00:00",
+    "created_at": "2026-04-03T19:26:04Z",
+    "completed_at": "2026-04-04T22:47:02.708551+00:00",
+    "github_issue": 366,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

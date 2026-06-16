@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-gmail-flow-integration-test.20260505.153713000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gmail-flow-integration-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T15:37:13",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gmail-flow-integration-test",
+      "T-gmail-flow-layer",
+      "T-gmail-pages-build-to-flow-spec"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gmail-flow-integration-test",
+    "gate": null,
+    "role": "guru",
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Web",
+      "IntegrationTest"
+    ],
+    "title": "[akien] Gmail flow integration test — end-to-end against throwaway Gmail account",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "akien_tier": "P3",
+    "claimed_at": null,
+    "created_at": "2026-05-05T15:37:13Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Follow-on to T-gmail-flow-layer (shipped 2026-05-03). End-to-end smoke against a real Gmail account.\n\n**Pre-req: throwaway test Gmail account.** Must NOT use Akien's production account. Akien creates the throwaway, populates SELENIUM_USER_DATA_DIR with a profile pre-logged-into that account, and provides the path.\n\n**Pre-req: pages built (T-gmail-pages-build-to-flow-spec).** Without pages there's nothing for the flow to drive.\n\n**Test scope:**\n- send_email — send a message to a self-address; verify it appears in inbox via read_inbox shortly after\n- read_inbox — fetch first N messages; assert sane shape (non-empty subjects/from_addrs)\n- archive — archive a known message id; verify it disappears from inbox\n\n**Affected files:** tests/test_swadl_flows_gmail_integration.py (NEW). Marked with a pytest skipif that bails when SELENIUM_USER_DATA_DIR is unset (CI runs without it).\n\n**Test plan:** the test IS the deliverable. Acceptance: locally with profile set, the three integration tests run green; in CI without profile, they skip cleanly.\n\n**Why split from parent:** the flow layer + page interface ship cleanly without a real Gmail account. This integration ticket carries the account dependency separately.\n\n**Pass condition:** Igor's browser profile opens gmail.com, navigates to inbox, and extracts sender + subject from the newest unread email — without CC involvement.",
+    "completed_at": null,
+    "github_issue": 594,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "13d6d84a-6dda-40b8-afe2-a19c1db0600a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

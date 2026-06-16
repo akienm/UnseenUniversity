@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-trace-lesson-extraction.20260521.175415340461",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-trace-lesson-extraction"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340461",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-trace-lesson-extraction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-trace-lesson-extraction",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Cognition",
+      "MemorySystem",
+      "SelfImprovement",
+      "PeChain"
+    ],
+    "title": "Extract generalizable lessons from pe_chain traces and surface as palace proposals",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-23T21:29:27.690934+00:00",
+    "created_at": "2026-05-21T17:54:15.340461+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "pe_chain runs leave rich execution traces (basket state, hypotheses generated, edits applied, test results). Non-obvious design choices, hidden invariants, and workarounds discovered during execution should be surfaced as proposed palace nodes for Akien approval — not discarded. Current gap: lessons are captured only when CC manually proposes them at sprint close. Target: after pe_chain closes, a lightweight extraction pass proposes 0-N palace nodes (path + title + content); Akien approves via cc_inbox with response_expected=True; approved nodes are written.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (_pe_close phase), wild_igor/igor/tools/lesson_extractor.py (new)\n**Design rules:** theigors/rules/coding, theigors/rules/docs-live-in-code, theigors/rules/database\n**Scope boundary:** In scope: extraction pass at _pe_close; surface proposed nodes via cc_inbox; write on approval. Out of scope: automated approval (Akien always approves), retroactive extraction from old traces.\n**Test plan:** Run pe_chain on a ticket with a non-trivial implementation choice; verify cc_inbox contains a proposed palace node with response_expected=True; approve; verify node written to palace. Verify cc_inbox empty when extraction finds nothing notable.",
+    "completed_at": "2026-05-23T22:08:57.451622+00:00",
+    "github_issue": 781,
+    "dispatched_at": "2026-05-23T21:29:27.690934+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340489+00:00",
+    "target_difficulty": 3,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d5f1f892-be50-42c3-ada9-4af5e3d095d1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

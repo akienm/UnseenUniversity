@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-cached-probe.20260324.063634356786",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cached-probe"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T06:36:34.356786",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cached-probe"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cached-probe",
+    "body": "Implement CACHED_PROBE as an Engram template and migrate all bespoke resource monitors to it.\n\nPattern (Engram #21, Akien 2026-03-23):\n  trigger → check cached_at age\n    if age > cache_ttl: cached_data = source.run(); update cached_at\n    if invocation == explicit: surface(cached_data)\n    if worry_after and age > worry_after: worry(cached_data)\n  end\n\nPayload slots: source, cache_ttl, worry_after (optional), cached_data, cached_at.\nTwo invocation modes: explicit (always surface) / heartbeat (silent unless worry).\nConfig lives in the node payload — no separate evaluator needed.\n\nMigration targets:\n- PROC_DISK_USAGE_CHECK → CACHED_PROBE(source=disk_check, cache_ttl=60s, worry_after=none)\n- PROC_WORKER_FOREMAN queue scan → CACHED_PROBE(source=cc_queue.list, cache_ttl=30s, worry_after=5min)\n- PROC_RESOURCE_AWARENESS (cpu/mem) → CACHED_PROBE instances\n\nPrereq: T-template-schema (TEMPLATE node structure must be defined first).\nPart of Engram language epic — seed alongside T-template-seed-patterns.",
+    "size": "M",
+    "title": "CACHED_PROBE: refactor resource monitors to payload-configured cache pattern",
+    "result": "tpl-cached-probe confirmed in DB (from seed_templates.py). seed_cached_probe_instances.py seeds 6 habits: PROC_PROBE_DISK_USAGE_{CHECK,SURFACE}, PROC_PROBE_RESOURCE_LOAD_{CHECK,SURFACE}, PROC_PROBE_WORKER_QUEUE_{CHECK,SURFACE}. Migrates PROC_DISK_USAGE_CHECK + archived PROC_RESOURCE_AWARENESS to CACHED_PROBE pattern. Worker-queue probe uses check_worker_queue with worry_after=300s. 161 tests pass. Pushed 720405f.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T06:30:46.985283+00:00",
+    "completed_at": "2026-03-24T06:36:34.356786+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

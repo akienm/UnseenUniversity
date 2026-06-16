@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-swadl-readme-interface-libs.20260508.162844859340",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-readme-interface-libs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T16:28:44.859340",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-swadl-readme-interface-libs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-readme-interface-libs",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "SWADL",
+      "Docs"
+    ],
+    "title": "CLOSED: Document interface library pros/cons in SWADL README",
+    "result": "README Interface Support section expanded with comparison table, when-to-use prose, tradeoffs, 3283028",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:41:16.807915+00:00",
+    "created_at": "2026-05-08T16:28:44.859340+00:00",
+    "related_to": null,
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Update README.md with a comparison table and prose covering when to use each supported interface library: Selenium, Playwright, pyautogui, dogtail. Tradeoffs: browser vs desktop, accessibility-tree vs coordinate-based, Linux vs cross-platform, AT-SPI coverage gaps.\n\n**Affected files:** swadl/README.md\n**Design rules:** none\n**Scope boundary:** README only; no code changes\n**Test plan:** no tests — doc change; review for accuracy against the actual driver implementations",
+    "completed_at": "2026-05-08T18:42:05.902981+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1ac704d7-c93f-4b58-a65f-03ef1bc6a49d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

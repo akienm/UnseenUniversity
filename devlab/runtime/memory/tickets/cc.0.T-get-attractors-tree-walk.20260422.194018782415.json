@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-get-attractors-tree-walk.20260422.194018782415",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-get-attractors-tree-walk"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T19:40:18.782415",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-slow-query-triage-2026-04-22"
+    ],
+    "tickets": [
+      "T-get-attractors-tree-walk"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-get-attractors-tree-walk",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Database",
+      "Performance",
+      "Cognition"
+    ],
+    "title": "Replace get_attractors() full-table-scan with hot_attractors/TWM read",
+    "result": "d8d80b2b — module-level _ATTRACTOR_CACHE with 60s TTL. Follow-on for proper hot_attractors subsystem flagged in docstring. 5 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-22T19:37:52.334378+00:00",
+    "related_to": null,
+    "decision_id": "D-slow-query-triage-2026-04-22",
+    "description": "cortex.get_attractors() (cortex.py:5249) does a full-table scan: SELECT m.id FROM memories LEFT JOIN interpretive_edges WHERE memory_type NOT IN ('PROCEDURAL') ORDER BY activation_count * (1 + COUNT(ie.id)). Fires 891 times (avg 181ms, worst 807ms). A comment on cortex.py:1635 already names the fix: 'Real fix: read from hot_attractors/TWM'. Replace the full scan with a TWM read — cortex.twm_get_attractor() or the hot_attractors index — so attractor lookup is O(1) not O(n). Pre-approved by Akien 2026-04-22 for touching cortex.py (HIGH-inertia) — reason: performance blocker for Igor helpfulness goal.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (get_attractors at line 5249, internal call at 5321). Update cortex.py top-of-file docstring to document the TWM-backed attractor path and remove the 'Real fix' TODO comment. graph_ops.py:32 calls get_attractors as a tool — no change needed there, just calls the new impl.\n**Design rules:** no-sqlite: reads TWM (in-process) and hot_attractors (Postgres via existing table) — no SQLite, no new tables. oop-first: replacing one read strategy inside existing method, no new shared state. docs-in-code: update cortex.py:5249 docstring. test-plan-or-why-not: applies.\n**Scope boundary:** IN — replace the full-scan inside get_attractors(). OUT — restructuring hot_attractors/TWM, changing what 'attractor' means semantically, callers (graph_ops.py tool stays unchanged).\n**Test plan:** Integration test on real Postgres — after fix, db_queries.log shows 0 new entries matching the full-scan pattern per session. Unit test — mock hot_attractors/TWM with 5 known IDs, assert get_attractors() returns them without hitting memories table.",
+    "completed_at": "2026-04-22T19:40:18.782415+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f690415-f1ce-48c8-9a28-b8634f0dd99f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

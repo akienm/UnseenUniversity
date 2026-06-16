@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-escalation-stats.20260403.192528000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-escalation-stats"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:28",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-escalation-stats"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-escalation-stats",
+    "title": "D279 companion: cloud escalation monitoring tool",
+    "result": "Already fully implemented: escalation_stats.py parses turn_trace + escalation.log, groups cloud-tier calls by topic keyword, reports this-week vs prev-week delta. 43 tests in test_escalation_stats.py all pass. Tool registered as get_escalation_stats.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T19:28:54.044478+00:00",
+    "created_at": "2026-04-03T19:25:28Z",
+    "related_to": null,
+    "description": "tools/escalation_stats.py — queries turn_traces for cloud-tier calls, groups by topic/keyword, returns this-week vs last-week trend. Log errors to escalation_stats.log. Tests: test_escalation_stats.py. NOT changing: turn_trace schema.",
+    "completed_at": "2026-04-04T19:30:16.094458+00:00",
+    "github_issue": 350,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6e97fa1e-6b0c-4106-be36-266bb133c8b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

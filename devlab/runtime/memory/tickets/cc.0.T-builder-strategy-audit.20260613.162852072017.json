@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-builder-strategy-audit.20260613.162852072017",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-builder-strategy-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T16:28:52.072017",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-builder-learning-blockade-2026-06-13"
+    ],
+    "tickets": [
+      "T-builder-strategy-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-builder-strategy-audit",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Builder",
+      "Strategy"
+    ],
+    "title": "Builder strategy audit — why can't build recurs",
+    "result": "Decision doc written as D-builder-learning-blockade-2026-06-13.md — root cause: Critic exists in devices/critic/ but not wired into DickSimnel ToolLoop; roadmap: simulator → wire Critic → pattern mining",
+    "status": "closed",
+    "worker": "claude",
+    "intention": "I intend that we understand why the 'can't build' failure recurred twice (March Igor, June DickSimnel) and identify the structural pattern.",
+    "claimed_at": null,
+    "created_at": "2026-06-13T16:28:52.072017+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The 'can't build' bug has appeared twice: March in Igor, June in DickSimnel. Both times: builder could execute but couldn't learn (MCP write-blocked). This is not a code bug — it's a design pattern recurring across iterations. ChatGPT pattern analysis shows we have: ReAct, tier-cascade, escalation-as-protocol, skill-compilation. Missing: Critic/Verifier, Event-Sourcing, DAG-workflows, Pattern-Mining.\n\n**Affected files:** Decision document (palace path TBD)\n**Design rules:** none apply — this is architecture analysis, not implementation\n**Scope boundary:** In: why pattern recurs, what structural fix. Out: implementing the fix (separate tickets)\n**Completion criteria:** Decision doc written with: pattern analysis (why recurring), industry patterns we have/miss, critical gap (Critic/Verifier is keystone), integration roadmap (simulator → critic → pattern-mining). Akien reviews and approves as D-builder-learning-blockade-2026-06-13.",
+    "completed_at": "2026-06-13T22:02:55.202937+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

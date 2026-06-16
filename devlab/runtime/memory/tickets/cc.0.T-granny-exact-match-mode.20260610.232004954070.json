@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-granny-exact-match-mode.20260610.232004954070",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-exact-match-mode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T23:20:04.954070",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-tier-dispatch-2026-06-10"
+    ],
+    "tickets": [
+      "T-granny-exact-match-mode",
+      "T-granny-tier-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-exact-match-mode",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Dispatch",
+      "Infrastructure"
+    ],
+    "title": "Granny: exact-match dispatch mode for agent testing",
+    "result": "exact_match flag in granny.yaml + match_rule returns None + run_once defers with warning; 9 tests",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.4,
+    "intention": "I intend that exact-match mode prevents any cross-tier dispatch so individual agent tiers can be tested in isolation.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T23:20:04.954070+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-tier-dispatch-2026-06-10",
+    "description": "Add `exact_match: true` top-level flag to granny.yaml (default: false). When true, the role rules only match exact role values — no cascade, no default fallback to CC. Tickets with no matching device are deferred (log warning, no action).\n\n**Affected files:** devices/granny/daemon.py, config/granny.yaml\n**Design rules:** none apply\n**Scope boundary:** IN — exact_match flag, modified match_rule/run_once. OUT — cascade logic (T-granny-tier-cascade).\n**Completion criteria:** With `exact_match: true`, a master-role ticket does not route to DickSimnel; an apprentice-role ticket with no matching device is skipped with a log warning rather than defaulting to CC.0. Test: unit test.",
+    "completed_at": "2026-06-13T23:16:57.955570+00:00",
+    "deposited_at": "2026-06-10T17:23:29.149239",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T23:11:49.833031+00:00",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

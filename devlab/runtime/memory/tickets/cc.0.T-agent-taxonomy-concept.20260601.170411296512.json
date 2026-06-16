@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-agent-taxonomy-concept.20260601.170411296512",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agent-taxonomy-concept"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T17:04:11.296512",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-agent-taxonomy",
+      "D-agent-taxonomy-2026-06-01"
+    ],
+    "tickets": [
+      "T-agent-taxonomy-concept",
+      "T-device-registry-agent-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-agent-taxonomy-concept",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Palace",
+      "Concepts",
+      "Device"
+    ],
+    "title": "Palace: C-agent-taxonomy concept node",
+    "result": "palace.concepts.agent-taxonomy node created with three-class definitions + Librarian annotation; C-agent-taxonomy.md stub added to lab/design_docs/decisions/",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.45,
+    "blocked_at": "2026-06-01T17:18:27.938880+00:00",
+    "claimed_at": "2026-06-01T19:47:13.011107+00:00",
+    "created_at": "2026-06-01T17:04:11.296512+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agent-taxonomy-2026-06-01",
+    "description": "Create palace concept node C-agent-taxonomy defining the three formal agent classes used in UU. This is shared vocabulary — when Akien or CC say 'utility agent' there's a canonical definition to point at.\n\nThree classes:\n- **utility** — single bounded capability, composable, called like a function. Low autonomy, high reliability within scope. Examples: Scraps, GoogleSecretary.\n- **specialized** — domain workflow expert. Knows its lane deeply, orchestrates multi-step work within it, doesn't generalize. Examples: Granny (dispatch), Nanny.\n- **general** — broad reasoning, novel problem-solving, high context. Examples: Igor, CC, OpenClaw-style agents.\n\nLibrarian note in concept: wider scope than a typical utility agent but not autonomous — classify as utility with a 'platform utility' annotation.\n\n**Affected files:** lab/design_docs/decisions/C-agent-taxonomy.md (new concept stub); adc.palace INSERT via psql\n\n**Design rules:** palace-first — concept lives in DB + .md stub; no code changes in this ticket\n\n**Scope boundary:** IN — concept node with three-class definitions + Librarian annotation. OUT — registry field changes (T-device-registry-agent-class); routing changes based on class.\n\n**Completion criteria:** (1) `SELECT path FROM adc.palace WHERE path = 'palace.concepts.agent-taxonomy'` returns one row; (2) concept content includes all three class definitions; (3) C-agent-taxonomy.md stub exists in lab/design_docs/",
+    "completed_at": "2026-06-01T19:51:06.207409+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T19:47:13.011107+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9314269b-5c46-42f0-a456-e2100261a934",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

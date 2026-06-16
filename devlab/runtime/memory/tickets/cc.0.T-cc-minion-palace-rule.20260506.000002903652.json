@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-minion-palace-rule.20260506.000002903652",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-minion-palace-rule"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T00:00:02.903652",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-shared-coding-subagent-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-minion-palace-rule",
+      "T-coding-subagent-igor-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-minion-palace-rule",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Palace"
+    ],
+    "title": "CLOSED: Write three-coding-paths + CC-minion-last rule into palace",
+    "result": "Palace node theigors/rules/cc-minion written: three coding paths + CC-minion-last rule + Igor-coding-last rule",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-05T23:58:14.125922+00:00",
+    "related_to": null,
+    "decision_id": "D-shared-coding-subagent-2026-05-05",
+    "description": "The three-coding-paths strategy (CC foreground / CC minion / Igor minion) and the Igor-coding-last rule need to be durable in Igor's palace, not just in CC's auto-memory. Write a palace node at theigors/rules/cc-minion. Decision D-shared-coding-subagent-2026-05-05.\n\n**Affected files:** palace node theigors/rules/cc-minion (via mcp__igor__db_dispatch or psql INSERT)\n**Design rules:** docs-live-in-code (palace is the canonical home for workflow rules)\n**Scope boundary:** IN: palace node with three-coding-paths rule, Igor-coding-last rule, CC minion = Agent(isolation:worktree) for mechanical code edits. OUT: Igor-side subagent invocation (T-coding-subagent-igor-path).\n**Test plan:** mcp__igor__memory_get(path='theigors/rules/cc-minion') returns the rule content.\n**Pass condition:** Rule readable from palace via memory_get; context-load can surface it.",
+    "completed_at": "2026-05-06T00:00:02.903652+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b3d97486-2a76-4bba-a379-309ea19f06d5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

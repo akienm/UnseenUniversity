@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-engram-trigger-cell-name-mismatch.20260421.160054366584",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-trigger-cell-name-mismatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T16:00:54.366584",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-worker-mode-routing-2026-04-21"
+    ],
+    "tickets": [
+      "T-engram-mcpcall-register-pe-steps",
+      "T-engram-trigger-cell-name-mismatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-trigger-cell-name-mismatch",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Engrams",
+      "pe_chain",
+      "Critical",
+      "Dead-code"
+    ],
+    "title": "Fix ENGRAM_CODE_* triggers to point at 'cells' payload key",
+    "result": "ENGRAM_CODE_* trigger key now matches payload 'cells'; run_engram_cursor wrapper added; re-seeded; test passes",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-04-21T15:55:05.187898+00:00",
+    "related_to": null,
+    "decision_id": "D-worker-mode-routing-2026-04-21",
+    "description": "Two structural bugs make the engram coding chain dead-on-arrival: (1) seed_coding_engrams writes triggers={'__entry__': 'coding sprint entry'} but payload key is 'cells' — node_executor looks up payload.get('coding sprint entry'), finds nothing, logs WARN and no-ops silently (node_executor.py:136-146, seed_coding_engrams.py:118,121); (2) two habits (PROC_INVOKE_SPRINT, PROC_INVOKE_COMMIT) reference code_ref='pe_chain:run_engram_cursor' which doesn't exist in pe_chain.py. Fix shape: change seed to triggers={'__entry__': 'cells'} (match node_executor's convention), re-seed all ENGRAM_CODE_* rows, then add run_engram_cursor as thin wrapper in pe_chain.py that loads the entry engram and calls cursor_runtime.run_cursor. Scope: seed script + re-seed + thin wrapper in pe_chain.py. Does not register pe_* per-step functions as MCPCALL tools (separate ticket T-engram-mcpcall-register-pe-steps). Not HIGH-inertia. Test plan: seed a test engram in-memory, call execute_node, assert instructions_run > 0. No mocks — real DB.",
+    "completed_at": "2026-04-21T16:00:54.366584+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "660d3b9d-c768-4a48-b34a-801781cf04ad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-thread-to-fallthrough.20260404.231859737950",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-thread-to-fallthrough"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T23:18:59.737950",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-thread-to-fallthrough"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-thread-to-fallthrough",
+    "epic": "Cognition",
+    "size": "L",
+    "title": "Implement thread-to-fallthrough architecture for context continuity",
+    "result": "Thread anchor architecture implemented. write_thread_anchor() in main.py writes compact EPISODIC memory (thread_anchor=true metadata) after each turn. read_thread_anchor() in base._build_session_context() queries by recency and prepends as orientation header before all other context — so Igor survives context window trimming. Clean functional boundary: context assembly stays in code (base.py), not split into habits.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-05T00:01:04.701358+00:00",
+    "created_at": "2026-04-04T23:18:59.737950+00:00",
+    "assigned_to": null,
+    "description": "Igor insight (2026-04-04): core issue is statelessness between turns. Solution: explicit thread anchors written to memory at turn boundaries so fallthrough nodes can reconstruct 'what we're doing' without depending on context window assembly. Externalize thread state into graph so context window only carries what's immediately active.",
+    "completed_at": "2026-04-05T00:05:29.588915+00:00",
+    "github_issue": null,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "810f2fc9-5448-42ad-bc57-ec2a609b41bc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

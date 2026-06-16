@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-logging-control-center.20260427.214808130604",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-logging-control-center"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:48:08.130604",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-logging-control-center",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-logging-control-center",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: master logging control center — hierarchical datacenter_logs layout",
+    "result": "LoggingControlCenter singleton in agent_datacenter/logcontrol/control_center.py. Hierarchy: datacenter_logs/<device>/<subsystem>/. RotatingFileHandler 10MB. Renamed from logging/ to logcontrol/ to avoid stdlib shadow. IgorBase integration deferred to Phase 2 T-adc-base-class-extract (same file touch).",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-27T21:43:05.684911+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "Implement the master logging control center with a hierarchical log layout rooted at datacenter_logs/. All devices route log records here.\n\nDesign decision (Akien 2026-04-27): Logs by default should make sense relative to the datacenter. datacenter_logs/<device>/<subsystem>/... — so datacenter_logs/igor/cognition/, datacenter_logs/postgres/, etc.\n\nProposed shape:\n- agent_datacenter/logging/control_center.py:\n  class LoggingControlCenter:\n    _root: Path  # datacenter_logs/ dir (set by agentctl init or caller)\n    def get_logger(self, device_id: str, subsystem: str | None = None) -> logging.Logger:\n      # Logger name: {device_id}.{subsystem} if subsystem else device_id\n      # Log file: datacenter_logs/{device_id}/{subsystem}/{device_id}.log or datacenter_logs/{device_id}/{device_id}.log\n      # Creates dirs as needed\n      # Returns Python logger with RotatingFileHandler (max 10MB, 5 backups)\n  def configure_root(datacenter_logs_path: Path) -> None: sets _root on the singleton\n  Singleton: LoggingControlCenter.instance() returns the configured instance\n- Integration: IgorBase.log property uses LoggingControlCenter.instance().get_logger(device_id='igor', subsystem=module_name)\n- Igor subsystem example: datacenter_logs/igor/cognition/cognition.log, datacenter_logs/igor/memory/memory.log\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/logging/control_center.py\n- ~/TheIgors/wild_igor/igor/igor_base.py (update log property to use LoggingControlCenter)\n\nDesign rules:\n- oop-first: LoggingControlCenter class with get_logger method; not a module-level configure function\n- docs-in-code: module docstring shows the datacenter_logs/<device>/<subsystem>/ layout with an example tree\n\nScope boundary:\nIN: LoggingControlCenter, hierarchical log path resolution, RotatingFileHandler, IgorBase integration\nOUT: log shipping, centralized log aggregation (that's a future ticket)\n\nTest plan:\n- get_logger('igor', 'cognition') returns a logger whose records go to datacenter_logs/igor/cognition/igor.log\n- get_logger('postgres') returns a logger writing to datacenter_logs/postgres/postgres.log\n- Dirs created automatically if they don't exist\n- IgorBase.log routes through LoggingControlCenter after the integration",
+    "completed_at": "2026-04-27T21:48:08.130604+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fd4d9971-2952-455e-b18d-5af7144c7fa6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

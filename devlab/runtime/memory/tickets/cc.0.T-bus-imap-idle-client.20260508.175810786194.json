@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-bus-imap-idle-client.20260508.175810786194",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bus-imap-idle-client"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:58:10.786194",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-imap-idle-heartbeat-2026-05-08"
+    ],
+    "tickets": [
+      "T-bus-imap-idle-client"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bus-imap-idle-client",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Bus",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Implement IMAP IDLE on bus client/listener side",
+    "result": "idle_wait + run_forever — sub-ms wakeup in stub, 2s-poll fallback in prod, 6 tests, ca0077b",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:29:47.288722+00:00",
+    "created_at": "2026-05-08T17:58:10.786194+00:00",
+    "related_to": null,
+    "decision_id": "D-imap-idle-heartbeat-2026-05-08",
+    "description": "Implement IMAP IDLE on the client side of the bus router/listener. Currently the router polls on a timer; IDLE gives true server-push behavior.\n\nIDLE pattern: client sends IDLE, connection stays open, server pushes unsolicited EXISTS when a message arrives, client wakes, sends DONE, fetches, processes. Zero CPU cost at rest. Sub-millisecond wakeup.\n\nRFC 2177: server may drop IDLE after 29 minutes — client must periodically send DONE + re-enter IDLE to keep alive. Handle this automatically.\n\nLibrary: aioimaplib (async) or imapclient (sync, has idle() context manager).\n\nBoth Igor and the Librarian inherit this — any rack participant sitting on a mailbox gets event-driven wakeup instead of a poll loop.\n\n**Affected files:** agent_datacenter/bus/router.py, agent_datacenter/announce/listener.py\n**Design rules:** no-sqlite; bus/ owns comms:// routing\n**Scope boundary:** client-side IDLE only; stub already implements server-side\n**Test plan:** listener wakes within 100ms of message arrival; 29-minute keepalive re-enters IDLE correctly; disconnect handled cleanly",
+    "completed_at": "2026-05-08T18:33:06.211047+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0a68e535-5cd3-496b-8651-82f858754db3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-theigors-archive.20260518.221451137589",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theigors-archive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:14:51.137589",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-into-adc-device",
+      "T-theigors-archive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theigors-archive",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Architecture"
+    ],
+    "title": "Delete DB-mirrored paper echoes from active repos",
+    "result": "2 June 3 decisions + 13 decisions_log entries merged to TheIgorsProject; Igor confirmed running from devices/igor/",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "blocked_at": "2026-06-03T20:52:06.900861+00:00",
+    "created_at": "2026-05-18T22:14:51.137589+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Once T-igor-into-adc-device ships, ~/TheIgors becomes a code-free history archive. Move the non-code layers to ~/TheIgorsProject to make the boundary explicit: that repo is the project record, not a running system.\n\nContents to move: lab/design_docs/, lab/docs/, lab/design_docs_for_igor/, decisions_log.dsb, lab/notes.log, lab/claudecode/ (skills stay where they are — ~/.claude/skills/ is already their canonical home).\n\nThe venv, requirements.txt, and wild_igor/ in ~/TheIgors are removed once devices/igor/ is the live location.\n\n**Affected files:** ~/TheIgors/lab/ (move to ~/TheIgorsProject/), ~/TheIgors venv (remove after migration)\n**Design rules:** none — this is filesystem housekeeping, not code\n**Scope boundary:** Git history in ~/TheIgors stays intact as a read-only archive. No palace nodes change — they reference content, not file paths. Gated on T-igor-into-adc-device.\n**Completion criteria:** Igor runs from devices/igor/ with no reference to ~/TheIgors paths. All slate/skill paths still resolve. ~/TheIgors/lab/ contents exist under ~/TheIgorsProject/.",
+    "completed_at": "2026-06-05T21:49:46.436818+00:00",
+    "github_issue": 755,
+    "dispatched_at": "2026-06-03T19:42:11.473669+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5fe5197c-4a08-42a6-a0ea-605c5e9f6554",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

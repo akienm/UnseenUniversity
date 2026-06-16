@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-cc-stale-compact-request-leak.20260419.003239483001",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-stale-compact-request-leak"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T00:32:39.483001",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-stale-compact-request-leak"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-stale-compact-request-leak",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "CC-infra"
+    ],
+    "title": "Stale /compact request fires with wrong session ID",
+    "result": "10min mtime staleness check in _check_compact_pending drops abandoned pending files without firing the reminder. New test test_drops_stale_file covers it. Commit 5ab111be.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T00:30:51.976549+00:00",
+    "related_to": null,
+    "description": "Mid-sprint on 2026-04-18 (session 2026-04-18b), a UserPromptSubmit hook reminder fired:\n\n```\n--- COMPACT REQUESTED ---\nA /compact was requested by the prior turn but couldn't execute mid-response.\nRun /compact now with this preserve string:\npreserve: session=2026-04-16a\n--- end compact request ---\n```\n\n## Problem\n- Preserve string references session 2026-04-16a — TWO DAYS OLD, from a different session\n- Active session was 2026-04-18b\n- No /compact was requested in the active session\n- Looks like leaked state from a hook that persists compact-request markers across sessions without scoping them\n\n## Impact\n- Misleading reminder. Ignored in this instance, but if CC trusted it and ran /compact with a stale preserve string, the wrong state would be retained\n- Suggests a persistent flag or file that was written during 2026-04-16a and never cleared\n\n## First steps\n- Find what writes the COMPACT REQUESTED marker. Likely one of the hooks in ~/.claude/settings.json — probably cc_hook_pending.py at /home/akien/TheIgors/lab/claudecode/cc_hook_pending.py\n- Check if the marker file is session-scoped or global\n- Make sure it gets cleared at /savestate or session start\n\n## Workaround\n- Ignore compact reminders that reference a different session than your current one",
+    "completed_at": "2026-04-19T00:32:39.483001+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f6530bbf-6e16-441e-8e98-28d23a57567c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

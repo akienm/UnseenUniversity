@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-too-intentions-annotation.20260604.173652179616",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-too-intentions-annotation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T17:36:52.179616",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-based-development-2026-06-04"
+    ],
+    "tickets": [
+      "T-too-intentions-annotation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-too-intentions-annotation",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Docs",
+      "IBD"
+    ],
+    "title": "Theory of Operation: annotate each section with I-intend-that header",
+    "result": "added 8 intention openers to TOO ##-sections (§1–§8), italic format, additive only",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-06-04T17:36:52.179616+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-intention-based-development-2026-06-04",
+    "description": "Annotate each major section of docs/TheoryOfOperation.md with an 'I intend that...' opening statement — making the TOO the first-pass intentions map for the system. This is an additive overlay, not a rewrite: no architecture notes are removed, no section structure changes.\n\nShape: for each major section (## heading), add one sentence immediately after the heading: 'I intend that [what this section achieves from the user/system perspective].' The intention should be falsifiable — it should be possible to check whether the architecture achieves it.\n\n**Affected files:** docs/TheoryOfOperation.md\n**Design rules:** TOO versioning pattern (§3.8 facia pattern from 171e26fe applies — section headers are versioned anchors; don't rename them)\n**Scope boundary:** additive annotation only; one 'I intend that...' line per ## section; no deletions; no structural reorg\n**Completion criteria:** `grep -c 'I intend that' docs/TheoryOfOperation.md` equals number of ## sections in the file; git diff shows only additions; no existing lines removed",
+    "completed_at": "2026-06-04T18:29:53.579548+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5ba273e2-5003-4e91-bc51-6dce439d33ff",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

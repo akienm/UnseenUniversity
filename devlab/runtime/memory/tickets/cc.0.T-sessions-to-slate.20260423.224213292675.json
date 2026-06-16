@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-sessions-to-slate.20260423.224213292675",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sessions-to-slate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T22:42:13.292675",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sessions-to-slate-2026-04-23"
+    ],
+    "tickets": [
+      "T-sessions-to-slate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sessions-to-slate",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Simplification"
+    ],
+    "title": "Remove sessions — move in-flight/theme/notes to slate, drop session_manager from all skills",
+    "result": "Shipped in a227e6d0. Removed session_manager.py calls from 9 skill files: savestateauto, context-load, decided, sprint, sprint-batch, day-close, deep-audit, design, note. /savestateauto now writes '## In-flight: ...' to slate. /context-load drops show/start session steps and reads In-flight from slate. /decided scope-boundary now greps slate ## Notes for DESIGN_START markers. infra.sessions table left orphaned. session_manager.py left as dead code. 2-day-stale session_id bug class eliminated.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-23T22:38:03.468840+00:00",
+    "related_to": null,
+    "decision_id": "D-sessions-to-slate-2026-04-23",
+    "description": "Sessions are redundant with the slate (Akien 2026-04-23). The only unique fields — in_flight hypothesis, theme, and key_changes discussion notes — move to new sections on the slate. All session_manager.py calls removed from skill files. Preserves everything useful, eliminates the 2-day-stale session_id class of bugs.\n\nNew slate template sections: ## Theme (title line), ## In-flight (default NONE), ## Notes (after ## Done today). Compact preserve string becomes: read YYYYMMDD.slate.txt — no session_manager show.\n\n**Affected files:** lab/claudecode/cc_skills/{context-load,day-close,decided,deep-audit,design,note,savestateauto,sprint-batch,sprint}/SKILL.md — remove session_manager calls, wire slate reads/writes instead. Sync to ~/.claude/skills/ after edits.\n\n**Design rules:** docs-in-code (skill procedure text IS the docs), test-plan-or-why-not.\n\n**Scope boundary:** IN — 9 skill file rewrites, slate template update, ~/.claude/skills/ rsync. OUT — dropping infra.sessions table (leave orphaned for now), modifying session_manager.py itself (leave file as dead code), cc_queue.py, Igor-internal changes.\n\n**Test plan:** manual: run /context-load → verify ## In-flight section visible in briefing, no session_manager calls fire. Run /savestateauto → verify hypothesis written to slate ## In-flight. Run /sprint done step → verify entry in slate ## Done today, not session DB.",
+    "completed_at": "2026-04-23T22:42:13.292675+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b5ae8668-764c-4eb3-aaf8-af3ac67f240b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

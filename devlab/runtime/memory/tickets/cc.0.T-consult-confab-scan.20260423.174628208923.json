@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consult-confab-scan.20260423.174628208923",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-confab-scan"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T17:46:28.208923",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-primitive-2026-04-23"
+    ],
+    "tickets": [
+      "T-consult-confab-scan",
+      "T-consult-observe-and-tune",
+      "T-consult-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-confab-scan",
+    "gate": "T-consult-primitive",
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Consult",
+      "Confabulation"
+    ],
+    "title": "Run confab_scanner on consult raw_text before TWM integration",
+    "result": "confab_flags field added to ConsultResult; scan_turns runs on raw_text in ask(); forensic 'confab_flag' event emitted on match. Detection-only v1. 8 tests. 045aa69b.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-23T17:43:25.191130+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-primitive-2026-04-23",
+    "description": "Hook confab_scanner (shipped 965037d0) into consult result processing. Every ConsultResult.raw_text passes through the scanner before TWM integration. Flagged results are logged with subtype but NOT salience-halved — keep behavior visible while we observe. Tune (halve/drop/whatever) comes from T-consult-observe-and-tune when there's data.\n\n**Affected files:** wild_igor/igor/cognition/consult.py (add scanner call in the consult result processing path), tests/test_consult_confab_scan.py\n**Design rules:** docs-live-in-code, test-plan-or-why-not\n**Scope boundary:** IN — scanner invocation + flagged-log. OUT — altering consult behavior based on flag result (that waits for observe data).\n**Test plan:** mock a consult result whose raw_text contains 'I don't have direct access' — verify confab_scanner flags it, log line emitted, TWM integration still happens (behavior unchanged for now).",
+    "completed_at": "2026-04-23T17:46:28.208923+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e571e96c-328d-4507-9a37-aa8fdf3d8fe2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

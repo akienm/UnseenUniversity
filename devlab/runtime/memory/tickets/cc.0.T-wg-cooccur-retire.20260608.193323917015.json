@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-wg-cooccur-retire.20260608.193323917015",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wg-cooccur-retire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T19:33:23.917015",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wg-node-tree-architecture-2026-06-08"
+    ],
+    "tickets": [
+      "T-wg-cooccur-retire",
+      "T-wg-spread-via-cortex"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wg-cooccur-retire",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "WordGraph",
+      "Database",
+      "Cleanup"
+    ],
+    "title": "Retire wg_cooccur, wg_edges, and graph_cache write paths",
+    "result": "reinforce_text() no-op; top_hubs/bridge_words return []; graph_cache.py deleted; m062 archives wg_cooccur+wg_edges tables",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.35,
+    "intention": "I intend that wg_cooccur and wg_edges are fully retired once spreading activation runs through the memory graph.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T19:33:23.917015+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-wg-node-tree-architecture-2026-06-08",
+    "description": "After T-wg-spread-via-cortex closes, retire the flat wg_cooccur (29M rows) and wg_edges (1.1M rows) tables plus the graph_cache Redis layer. Key scope: kill all WRITE paths — reinforce_text() in word_graph.py, callers in voice_ab.py, coactivation_counter.py, and main.py — not just reads. Archive tables (rename to _archive) for 90 days before proposing DROP.\n\n**Affected files:** devices/igor/cognition/word_graph.py (remove reinforce_text wg_cooccur writes; redirect reinforcement to links_weighted update on WORD_GRAPH memory nodes), devices/igor/memory/graph_cache.py (retire — no-op stub or delete), devices/igor/cognition/voice_ab.py (remove reinforce_text call or redirect), devices/igor/cognition/coactivation_counter.py (same), devices/igor/main.py (same), devices/igor/memory/cortex.py (migration: ALTER TABLE wg_cooccur RENAME TO wg_cooccur_archive)\n**Design rules:** no-sqlite; archive before drop (90-day window); kill write paths, not just reads\n**Scope boundary:** IN: remove wg_cooccur/wg_edges read+write paths; retire graph_cache.py; rename tables to _archive. OUT: DROP TABLE (separate ops ticket after 90 days)\n**Completion criteria:** grep confirms no direct SELECT/UPDATE on wg_cooccur or wg_edges in word_graph.py; graph_cache.py deleted or no-op; reinforcement (voice_ab, coactivation_counter, main.py) routes to WORD_GRAPH memory node updates or is explicitly removed; full igor test suite passes.",
+    "completed_at": "2026-06-09T00:09:25.351272+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-reply-obligation-fork.20260413.011434165955",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reply-obligation-fork"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T01:14:34.165955",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-if-fork",
+      "T-on-it-fork",
+      "T-onit-rebuild",
+      "T-reply-obligation-fork"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reply-obligation-fork",
+    "tag": "Cognition",
+    "size": "L",
+    "owner": "cc",
+    "title": "Reply-obligation forking — commit-to-look phrases adopt tracked goals with completion→reply pipeline",
+    "result": "59a7184c — bouquet-to-TWM for commit-to-look phrases. goal_adopt extended w/ origin context (thread_id, turn_id, question, awaiting_reply); submit_background propagates goal_id through completion item; fork_bg dispatch adopts goal first when awaiting_reply set; completion drain pushes bouquet (origin_question 0.92 + active_goal refresh 0.93 + pending_reply marker 0.90) instead of composing reply. New habit PROC_REPLY_OBLIGATION_LOOK with narrow commit-to-look triggers, conversation_eligible, intent-gated. Forensic log at logs/reply_obligations.log. 6 unit tests + 1966 regression tests pass. CLAUDE.md persona section added (biomimicry engineer) — meta-fix that produced the better plan.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-12T23:52:14.213890+00:00",
+    "related_to": null,
+    "description": "Diagnosed from /home/akien/.TheIgors/akien/outbox/20260412.IkienIgorChatWThreadProblems.txt — Igor lost track three times in one conversation. Akien had to prompt 'what did you find?' because nothing pulled Igor back to deliver answers he committed to.\n\nROOT CAUSE: When Igor says 'let me look at the ticket list' or 'thinking about that,' he forks the work but not a tracked reply-obligation. No goal hangs in the salience field demanding completion, so when the work resolves nothing composes a reply into the originating thread.\n\nT-onit-rebuild already added goal_adopt + TWM-pushed GOAL memory (salience=0.85 ttl=7200s). T-on-it-fork added fork_bg:true. But two gaps remain:\n\n1) TRIGGER SURFACE TOO NARROW. PROC_ON_IT_TWM_PUSH only matches 'On it'-class task-assignment phrases. Igor said 'let me look at my ticket list and the relevant facia memories' — that didn't match. Need broadened triggers covering: 'let me look/check/find/see,' 'I'll look/check,' 'thinking about that,' 'let me find out,' 'I should check.' All conversational commitments to look/check/think should adopt a reply-obligation goal.\n\n2) NO COMPLETION→REPLY PIPELINE. Goals get adopted but nothing wires 'underlying task resolved → compose reply into originating thread.' record_completion() hookpoint exists in anticipation.py (per T-if-fork notes). Wire it to: scan active reply-obligation goals, find any whose dependent task just resolved, fire a habit that composes a reply into the originating thread/turn.\n\n3) GOALS CARRY ORIGINATING CONTEXT. Reply-obligation goals must record (thread_id, turn_id, original_question, what_I_promised_to_check) so composition has the context to land the reply correctly.\n\nFALLOUT BENEFIT: An unfulfilled reply-obligation goal becomes the dominant attractor (salience 0.85). 'What did you find?' two turns later routes naturally via active goal context — no separate intent-routing fix needed. This subsumes the conversational-primacy bug.\n\nINERTIA: HIGH-MEDIUM. Touches habit dispatch (main.py), goal system (ops.py / models.py GOAL type), composition pipeline (anticipation.py record_completion), possibly intent classifier. CC-owned per CLAUDE.md HIGH-inertia rule.\n\nTESTS REQUIRED:\n- Habit fires on broadened trigger phrases ('let me look at,' 'thinking about that,' 'I'll check')\n- goal_adopt records originating thread/turn/question metadata\n- record_completion fires reply-composition habit when task resolves with active reply-obligation\n- end-to-end: simulate 'let me look at X' → background task completes → reply composed and emitted into originating thread without external prompt\n- regression: 'On it' / T-onit-rebuild path still works\n\nFORENSIC LOGGING: Log every reply-obligation adoption (trigger phrase, goal id, thread/turn ids), every completion fire (goal id, elapsed since adoption, dependent task id), every composition (goal id → reply text). Lets us verify the loop closes and measure how long obligations stay open.\n\nSCOPE BOUNDARY: This ticket only handles spoken commitments to look/check/think. Does NOT handle: (a) implicit obligations from questions Igor doesn't acknowledge, (b) multi-step plans where Igor commits to several things, (c) reply-obligations that span Igor restarts. Those are separate tickets if needed.\n\nDEPENDENCY: None blocking. Built on T-onit-rebuild (goal_adopt), T-on-it-fork (fork_bg flag), record_completion hookpoint.",
+    "completed_at": "2026-04-13T01:14:34.165955+00:00",
+    "deposited_at": "2026-05-28T12:14:40.562880",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c77dd75e-2895-4db4-8e79-4fe44eab3ebe",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-facia-query-pattern.20260331.211301289890",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-facia-query-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T21:13:01.289890",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-facia-query-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-facia-query-pattern",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Facia memory query pattern — Igor can find his facia nodes",
+    "result": "Created memory_query.py with list_facia_memories and get_tool_registry_report tools. Seeded INTERP_FACIA_DISCOVERY memory explaining facia query pattern and PROC_QUERY_FACIA habit (fires on 'what facia' intent). Igor can now query his own facia entry points. 567 tests pass. Commit: 1a36cbf1.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-31T21:11:52.449933+00:00",
+    "description": "Igor has facia memories (INTERP_FACIA_* ID prefix, INTERPRETIVE type, narrative starts with 'Tool:') but doesn't know the naming convention to query them. Confirmed in DB: INTERP_FACIA_ADD_INTERPRETIVE_EDGE, INTERP_FACIA_ANALYZE_WORD_GRAPH etc. Fix: (1) seed INTERPRETIVE memory explaining facia naming convention (id LIKE 'INTERP_FACIA_%', or memory_search('facia')), (2) optionally add list_facia_memories tool.",
+    "completed_at": "2026-03-31T21:13:01.289890+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "05c3b90a-5297-4a56-bba2-ac4b3466a2a1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

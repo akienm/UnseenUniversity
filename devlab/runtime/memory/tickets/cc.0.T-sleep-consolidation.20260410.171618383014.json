@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-sleep-consolidation.20260410.171618383014",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sleep-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-10T17:16:18.383014",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sleep-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sleep-consolidation",
+    "size": "L",
+    "tags": [
+      "Cognition",
+      "Training"
+    ],
+    "title": "Sleep consolidation: idle-time network wandering + connection discovery",
+    "result": "D353: idle-time network wandering. Discovers co-activated pairs lacking edges, creates Hebbian bindings during quiet periods.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "During idle periods, Igor walks recently-activated nodes (from tails) looking for missing connections. Algorithm: find pairs of recently-co-activated nodes with high cosine similarity but no interpretive_edge → create edge. Also: find frequently-activated but low-connectivity nodes → candidates for integration. Walk seeds: watchlist items, levers, how-things-might-work questions (D176). Biology: hippocampal replay + synaptic homeostasis. Also includes habit health review during idle — scan recent conversations for thread drops, bare acknowledgments, habit misfires. Related: D104 (the-watcher), D082 (curiosity), D272 (boredom-idle-loop).",
+    "completed_at": "2026-04-10T17:16:18.383014+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "97cb83d4-c175-4ea7-9a7d-948358ca6df0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

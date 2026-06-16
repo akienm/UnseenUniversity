@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-adc-discord-shim.20260428.031542608487",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-discord-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T03:15:42.608487",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-4-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-discord-device",
+      "T-adc-discord-shim",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-discord-shim",
+    "gate": "T-adc-discord-device",
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: Discord shim — token management, reconnect backoff, self-test",
+    "result": "DiscordBotShim implemented in agent_datacenter/devices/discord_bot/shim.py — no-op Phase 4 proxy; self_test verifies DISCORD_BOT_TOKEN + discord.log recency. Commit 3850610.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-28T03:15:38.764311+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "approved_at": "2026-04-28T03:15:34.101861+00:00",
+    "decision_id": "D-adc-phase-4-2026-04-27",
+    "description": "Discord shim: lifecycle management for the Discord bot. Token from env; reconnect with backoff; self-test via test channel send.\n\nProposed shape:\n- agent_datacenter/devices/discord_bot/shim.py:\n  class DiscordShim(BaseShim):\n    device_id = 'discord'\n    start() → connect Discord bot via discord.py; authenticate with DISCORD_BOT_TOKEN; return bool\n    stop() → bot.close(); return bool\n    restart() → stop(); exponential backoff (1s, 2s, 4s, 8s, max 5 attempts); start()\n    self_test() → send message to DISCORD_TEST_CHANNEL_ID; confirm receipt via message_id returned\n      returns {passed: bool, details: 'Sent to #{channel}: {message_id}'}\n    rollback() → bot.close() if start() fails mid-auth\n  Reconnect backoff: configurable via DeviceConfig (uses restart_backoff_seconds)\n  Token management: reads DISCORD_BOT_TOKEN from env (never hardcoded)\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/discord_bot/shim.py\n\nDesign rules:\n- no credential hardcoding: DISCORD_BOT_TOKEN from env only\n- docs-in-code: comment on test channel env var (DISCORD_TEST_CHANNEL_ID)\n\nScope boundary:\nIN: start/stop/restart with backoff, self_test via test channel, token from env\nOUT: message routing logic (that's in DiscordDevice.send())\n\nTest plan:\n- DiscordShim() without DISCORD_BOT_TOKEN: start() returns False (not an exception)\n- self_test() with mock Discord API: returns {passed: True, details: '...'}\n- Reconnect backoff: 5 failed attempts → auto-block (via restart-loop-protection)",
+    "proposed_at": "2026-04-28T01:33:10.357699+00:00",
+    "completed_at": "2026-04-28T03:15:42.608487+00:00",
+    "github_issue": null,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Phase 4 proxy shim pattern approved — no-op start/stop, self_test checks token + log recency. The core_patterns.py proposal was the P1 hallucination bug; actual shim doesn't touch HIGH-inertia files.",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c07156bc-a3a6-4251-86cc-98c860c816da",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

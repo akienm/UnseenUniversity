@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-sorted-advisor-probe.20260606.172916654512",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sorted-advisor-probe"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T17:29:16.654512",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sorted-advisor-probe-2026-06-06",
+      "D-ticket-quality-verification-loop-2026-06-06"
+    ],
+    "tickets": [
+      "T-sorted-advisor-probe"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sorted-advisor-probe",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Quality"
+    ],
+    "title": "/sorted: call advisor() for L/XL ticket drafts before filing",
+    "result": "Step 3.5 added to /sorted: advisor() called for L/XL drafts before /audit-ticket; invariant added to Invariants section; synced to ~/.claude/skills/",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that L/XL ticket drafts in /sorted have advisor-reviewed completion criteria before they reach the queue.",
+    "claimed_at": "2026-06-06T17:36:09.841283+00:00",
+    "created_at": "2026-06-06T17:29:16.654512+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-sorted-advisor-probe-2026-06-06",
+    "description": "**Problem:** /sorted drafts L/XL tickets without advisor review; completion criteria gaps survive to the queue and surface only at sprint time (reset cycles).\n\n**Proposed shape:** In /sorted Step 3 flow, after drafting an L/XL ticket and before /audit-ticket: call advisor() with the draft ticket as context; apply any feedback (especially to completion criteria and scope boundaries). One conditional block in the skill text. Skip for S tickets (overhead > benefit).\n\n**Affected files:** skills/sorted.md\n\n**Design rules:** Sonnet drives, Opus advisor at decision points (D-ticket-quality-verification-loop-2026-06-06). Never call advisor() for S-ticket batches.\n\n**Scope boundary:** Skill text edit only — no code changes.\n\n**Completion criteria:** skills/sorted.md contains an explicit step calling advisor() for L/XL drafts before /audit-ticket; next L/XL ticket filed via /sorted shows advisor() call in transcript; feedback is applied before the ticket reaches cc_queue.",
+    "completed_at": "2026-06-06T17:39:30.412197+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

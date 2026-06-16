@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-cc-concurrency-shim-setting.20260602.201957699279",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-concurrency-shim-setting"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T20:19:57.699279",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-concurrency-shim-setting",
+      "T-granny-cc1-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-concurrency-shim-setting",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "CC shim: cc_mode setting (CC.0 only / CC.0+CC.1 / max=n)",
+    "result": "cc_concurrency_mode in cc.yaml drives Granny max-concurrent; cc0_only blocks second dispatch; 8 new tests",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "blocked_at": "2026-06-02T20:21:37.047331+00:00",
+    "claimed_at": "2026-06-02T20:20:06.507938+00:00",
+    "created_at": "2026-06-02T20:19:57.699279+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "CC concurrency is currently hardcoded as CC.0-only via granny.yaml max_concurrent: 1.\n\nDesign: move the concurrency mode into CC shim config (not Granny config — the shim knows its own session identity). Three modes:\n  [ ] CC.0 only — this session is the sole CC; no background workers\n  [ ] CC.0 + CC.1 — one interactive (CC.0) plus one background (CC.1)\n  [ ] max=n — up to n concurrent CC sessions\n\nCurrent setting: CC.0 only (context load is noticeably heavier with multiple sessions).\n\nRationale: context load overhead is real and measurable — running CC.0 + CC.1 for background work costs ~25% more context per turn. CC.0-only is the right default until a specific use case justifies the cost.\n\nSetting lives in: config/profiles/cc.yaml under cc_concurrency_mode.\nGranny reads this when deciding whether to offer a ticket to a background CC session.\n\n**Affected files:** config/profiles/cc.yaml (add cc_concurrency_mode field), devices/granny/daemon.py (read setting before cc0 dispatch), granny.yaml (remove max_concurrent: 1 — now derived from cc profile)\n**Design rules:** no-sqlite; shim config is canonical source for worker identity settings\n**Scope boundary:** IN: cc_concurrency_mode field + Granny reads it. OUT: actual CC.1 session management (that is T-granny-cc1-dispatch, follow-on)\n**Completion criteria:** granny.yaml no longer hardcodes max_concurrent; cc.yaml has cc_concurrency_mode: cc0_only; Granny respects it; test covers cc0_only blocks a second dispatch",
+    "completed_at": "2026-06-02T21:47:41.844850+00:00",
+    "deposited_at": "2026-06-02T14:20:57.801238",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T20:20:06.507938+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5395daf2-19b8-49a8-8912-bb542a223571",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

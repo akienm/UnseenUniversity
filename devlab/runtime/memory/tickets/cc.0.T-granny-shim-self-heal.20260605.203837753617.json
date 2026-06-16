@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-granny-shim-self-heal.20260605.203837753617",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-shim-self-heal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T20:38:37.753617",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-shim-self-heal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-shim-self-heal",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Operational",
+      "Workflow"
+    ],
+    "title": "Granny shim: self-heal when tickets in queue but daemon dead",
+    "result": "watchdog thread in GrannyShim.start(): stale PID + sprint tickets → kill session + restart daemon; 12 tests",
+    "status": "closed",
+    "worker": null,
+    "purpose": "",
+    "priority": 0.7,
+    "intention": "I intend that Granny's shim restarts the daemon automatically when sprint tickets exist in the queue but the daemon is not running, so CC never has to manually restart Granny.",
+    "created_at": "2026-06-05T20:38:37.753617+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Granny was dead (daemon killed 2026-06-04, session stale) with sprint tickets in queue. The session existed but the process was gone. CC had to manually restart her — that's wrong. Granny's shim should detect: daemon PID not running + sprint tickets exist → auto-restart the daemon. This is the same self-heal pattern BaseDevice uses for lifecycle management.\n\n**Affected files:** devices/granny/shim.py (or wherever Granny's shim lifecycle is defined), devices/granny/daemon.py\n\n**Design rules:** BaseDevice/BaseShim lifecycle pattern (start/stop/self_test); external state principle (shim must not hold restart state in memory)\n\n**Scope boundary:** In scope: shim detects dead daemon + non-empty sprint queue → restart. Out of scope: changing dispatch logic, changing queue format, auto-starting Granny from scratch on boot (that's a separate concern).\n\n**Completion criteria:** Kill Granny daemon process while sprint tickets exist; within 2 poll cycles the daemon restarts automatically and dispatches the ticket; no manual intervention required.",
+    "completed_at": "2026-06-05T21:28:05.687749+00:00",
+    "deposited_at": "2026-06-05T14:38:48.673942",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "description_addendum": "Granny restart command (from feedback_granny_restart memory): `tmux kill-session -t granny && ./granny --no-attach`",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

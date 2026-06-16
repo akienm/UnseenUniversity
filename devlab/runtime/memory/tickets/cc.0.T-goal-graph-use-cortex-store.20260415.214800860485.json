@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-goal-graph-use-cortex-store.20260415.214800860485",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-graph-use-cortex-store"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T21:48:00.860485",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-graph-use-cortex-store"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-graph-use-cortex-store",
+    "body": "Surfaced during T-test-data-lifecycle sprint 2026-04-15. goal_graph._store_memory does a raw INSERT INTO memories via cortex._conn() instead of cortex.store(). This violates the single-chokepoint principle from CLAUDE.md (DP4: all r/w through Cortex only). It also means any metadata-stamping done at cortex.store() level (like the new IGOR_TEST_MODE=1 test-data tagging) is bypassed.\n\n## Why it matters\n\ncortex.store() is the single place where per-memory stamps like test_data, scrub, credential leakage filtering happen. Anything bypassing it is an untagged hole in those systems.\n\nCurrent workaround (committed in T-test-data-lifecycle): manual stamp_metadata_for_test_mode call inside _store_memory. This works but duplicates the logic that should live in one place.\n\n## Scope\n\n1. Convert goal_graph._store_memory to construct a Memory object with memory_type=REFERENCE + narrative + metadata, then call cortex.store()\n2. Remove the manual test-data stamp workaround (it becomes redundant)\n3. Check _store_metadata (the UPDATE path) — may need a similar conversion if it's still raw\n4. Grep for other `cortex._conn()` direct writes in tools/ and file separate tickets if found\n\n## Tests\n\n- Existing test_goal_graph tests should pass unchanged\n- Verify test_data tag applies automatically (no manual stamp path needed)\n- Scrub still applies (it was applied by the raw-INSERT path via earlier logic? verify)\n\n## Follow-up\n\nA broader audit: find every direct cortex._conn() INSERT in tools/ — each one is a potential bypass. Could be a separate S ticket or an audit check registered with audit_add.",
+    "size": "S",
+    "tags": [
+      "refactor",
+      "cortex",
+      "single-chokepoint",
+      "hygiene"
+    ],
+    "title": "goal_graph._store_memory bypasses cortex.store — convert to single chokepoint",
+    "result": "Converted _store_memory to cortex.store() via Memory(REFERENCE). Auto-gains scrub + test_data stamping from single chokepoint. Removed duplicated stamp_metadata_for_test_mode workaround. 18 goal_graph tests + 2484 total pass. Runtime bypass audit filed as T-cortex-store-bypass-audit.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T21:41:53.703542+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-15T21:48:00.860485+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-logging-archive-decision.20260429.224457177668",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-logging-archive-decision"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T22:44:57.177668",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-detailed-logging-audit",
+      "T-logging-archive-decision"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-logging-archive-decision",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Logging",
+      "Migration",
+      "Archive"
+    ],
+    "title": "Decide migrate-or-delete for lab/claudecode/archive seed scripts",
+    "result": "Decision: exempt archive/ from audit (don't delete, don't migrate). README protects rebuild capability. Added 'archive' to EXCLUDED_PARTS in audit_logging.py. Files scanned: 458→418, callsites: 2522→2388.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-29T22:44:13.032665+00:00",
+    "related_to": "T-detailed-logging-audit",
+    "decision_id": null,
+    "description": "Archive directory `lab/claudecode/archive/` has ~120 print() callsites across ~40 archived seed scripts (audit found in 2026-04-29 logging audit, see lab/claudecode/reports/logging_audit_20260429-211639.md). These are old seeding scripts already moved to archive/. Decision: delete (already archived means unused), migrate to get_logger() (preserve runnable history), or leave as-is + add archive/ to audit exemption list.\n\n**Affected files:** lab/claudecode/archive/seed_*.py + lab/claudecode/archive/local_pool.py.\n**Design rules:** none apply (archive policy decision).\n**Scope boundary:** in scope: pick policy + apply (delete OR exempt from audit OR migrate). Out of scope: actual seed-script content review.\n**Test plan:** if delete chosen, re-run audit_logging.py and confirm archive/ no longer in punch list. If exempt chosen, add to EXCLUDED_PARTS and confirm. No new tests needed.",
+    "completed_at": "2026-04-29T22:44:57.177668+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b4ae5456-6b1a-4d84-ac2a-4ee67eb11137",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

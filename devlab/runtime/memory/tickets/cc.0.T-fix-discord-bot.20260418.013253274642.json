@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-fix-discord-bot.20260418.013253274642",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-discord-bot"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-18T01:32:53.274642",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-discord-bot",
+      "T-uc-channel-migration",
+      "T-uc-comms-default-channels",
+      "T-uc-comms-module"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-discord-bot",
+    "size": "M",
+    "tags": [
+      "Operations"
+    ],
+    "title": "Fix Discord bot — reconnect/stability after utility closet work lands",
+    "result": "Auto-reconnect with exponential backoff. on_disconnect + on_error handlers. Fixed queue.Empty SILENT_EXCEPT spam.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-18T01:30:28.532208+00:00",
+    "related_to": null,
+    "description": "Fix Discord bot issues. Must wait until today's utility closet architecture work lands, since Discord will become a comms transport (T-uc-comms-module).\n\n## Known issues\n- Bot may not be reconnecting reliably after disconnects\n- Channel routing may need updating for new comms architecture\n- Discord as comms transport (comms://discord/*) changes the integration pattern\n\n## Sequence\n- AFTER T-uc-comms-module lands: adapt Discord bot as a comms transport\n- AFTER T-uc-comms-default-channels: wire Discord channels into tab UI\n- This ticket covers the immediate stability fixes\n\n## Related\n- T-uc-channel-migration (#401) — move Discord to utility closet\n- T-uc-comms-module — Discord becomes a transport",
+    "completed_at": "2026-04-18T01:32:53.274642+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "09927a7f-ca1a-41f8-b2bf-65c37e51cb4e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

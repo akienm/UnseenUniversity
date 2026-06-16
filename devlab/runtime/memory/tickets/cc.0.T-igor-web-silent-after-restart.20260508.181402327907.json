@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-igor-web-silent-after-restart.20260508.181402327907",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-web-silent-after-restart"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T18:14:02.327907",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-web-silent-after-restart"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-web-silent-after-restart",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Operations",
+      "Bug"
+    ],
+    "title": "Igor silent on web after restart — channel not receiving output",
+    "result": "register() missing from web/server.start() — one-line fix, a31f5104",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:15:23.906870+00:00",
+    "created_at": "2026-05-08T18:14:02.327907+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "After Igor restart, the web interface shows no output from him. Igor is running but nothing appears on the web channel. Likely causes: channel post not firing on startup, IMAP route not re-established after restart, or web→channel bridge broken.\n\n**Affected files:** wild_igor/igor/main.py (startup sequence), lab/claudecode/channel.py, possibly bus/router.py reconnect logic\n**Design rules:** no-sqlite\n**Scope boundary:** diagnose and fix the startup→web-channel gap only; not a full channel rewrite\n**Test plan:** restart Igor; verify a startup message appears on web within 30s; channel_read via MCP returns recent Igor output",
+    "completed_at": "2026-05-08T18:17:40.176060+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9647bd6f-2b9c-4ff8-a56c-91de95038a5c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

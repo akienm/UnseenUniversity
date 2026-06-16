@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260319e.20260321.011054810430",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260319e"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:54.810430",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260319e"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260319e",
+    "body": "Decisions: D141, D142, D143. Gaps closed: T-db-type-routing, T-db-spreading-activation, T-tails-infra, T-traces-infra, T-temporal-gradient, T-book-mechanism-extraction. New gaps: T-mcp-pipeline (now top priority after reading POC diagnostic). Session theme: Slate 0 + Layer 1 complete; reading POC initiated with William James Habit chapter; wg_cooccur removed from book_learner. Subsystems touched: cortex.py, book_learner.py, temporal_gradient.py (new), local_pool.py (deleted), decisions_log.dsb. Also: PROC_READING_DEPOSIT deleted from DB.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-19e (continuation)",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:54.810430+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

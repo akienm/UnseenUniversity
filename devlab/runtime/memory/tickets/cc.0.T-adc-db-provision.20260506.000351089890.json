@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-adc-db-provision.20260506.000351089890",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-db-provision"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T00:03:51.089890",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-datacenter-agent-infra-2026-05-05",
+      "D-datacenter-own-db-2026-05-05"
+    ],
+    "tickets": [
+      "T-adc-db-provision",
+      "T-adc-db-proxy-wire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-db-provision",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Database"
+    ],
+    "title": "CLOSED: Provision agent-datacenter-0001 Postgres DB + datacenter role + schema",
+    "result": "agent-datacenter-0001 created: datacenter role + memory_palace + memories tables. Verified via psql connection.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-05T23:58:10.100072+00:00",
+    "related_to": null,
+    "decision_id": "D-datacenter-agent-infra-2026-05-05",
+    "description": "agent_datacenter needs its own Postgres database (agent-datacenter-0001) within the same Postgres instance as Igor (127.0.0.1:5432), with a separate `datacenter` role and password. No Igor dependency for any datacenter operation. Decision D-datacenter-own-db-2026-05-05.\n\n**Affected files:** agent_datacenter/scripts/provision_dc_db.sql (new), agent_datacenter/.env.example (new or update), lab/design_docs/decisions/D-datacenter-own-db-2026-05-05.md\n**Design rules:** no-sqlite, separate-credentials\n**Scope boundary:** IN: create DB, create role, grant permissions, create memory_palace table (path TEXT PK, title TEXT, content TEXT, node_type TEXT, metadata JSONB, tags TEXT[]). OUT: populating the palace, wiring app code (T-adc-db-proxy-wire).\n**Test plan:** psql as datacenter user to agent-datacenter-0001; verify memory_palace table exists; verify Igor credentials cannot connect.\n**Pass condition:** `psql postgresql://datacenter:<pass>@127.0.0.1/agent-datacenter-0001 -c '\\dt'` shows memory_palace; Igor's IGOR_HOME_DB_URL credentials rejected.",
+    "completed_at": "2026-05-06T00:03:51.089890+00:00",
+    "deposited_at": "2026-05-13T14:59:20.229601",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bf8bc9cf-e6ac-4929-a4a6-5b2d776a1633",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

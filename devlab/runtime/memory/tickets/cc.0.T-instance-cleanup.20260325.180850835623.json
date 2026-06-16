@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-instance-cleanup.20260325.180850835623",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-instance-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T18:08:50.835623",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-instance-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-instance-cleanup",
+    "body": "Audit found stale instance folders at ~/.TheIgors/ root:\n- Igor-wild-0001/ (capitalized — old naming)\n- igor_wild-0001/ (dash variant — old naming)\n- igor_Igor_wild_0001/ (malformed)\nActive instance: igor_wild_0001/ (underscore, lowercase)\n\nTASK: For each stale folder:\n1. Check last-modified date and contents\n2. Verify nothing active points to it (grep source for the folder name)\n3. Report findings — do NOT delete without confirming with Akien\n4. If clearly safe (empty, or only stale logs): list as deletion candidate\n\nSCOPE: read-only investigation + report. No deletions without explicit approval.\nOUTPUT: candidate list with risk assessment per folder.",
+    "role": "worker",
+    "size": "S",
+    "title": "Investigate and clean stale instance folders at ~/.TheIgors/ root",
+    "result": "Instance cleanup investigation complete. Found 4 stale folders at ~/.TheIgors/ root: (1) Igor-wild-0001 — contains old DB + runtime data, referenced by 8 active source files + CHROME_PROFILE_PATH env var — HIGH risk, requires path migration (D181 debt) before deletion. (2-4) Three malformed folders (igor_Igor_wild_0001, igor_igor_wild_0001, igor_wild-0001) — no code references, minimal content, safe to delete (74K total). Deletion candidates identified. Awaiting approval before removal.",
+    "status": "done",
+    "priority": 5,
+    "claimed_at": "2026-03-25T18:08:00.471779+00:00",
+    "completed_at": "2026-03-25T18:08:50.835623+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

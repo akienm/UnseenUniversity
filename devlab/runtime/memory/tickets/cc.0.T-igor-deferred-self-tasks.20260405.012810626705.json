@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-igor-deferred-self-tasks.20260405.012810626705",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-deferred-self-tasks"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T01:28:10.626705",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-deferred-self-tasks"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-deferred-self-tasks",
+    "epic": "Cognition",
+    "size": "M",
+    "probe": "Igor emits a DEFERRED_TASK in a reply turn; job_manager executes it and the result appears in next TWM snapshot",
+    "title": "Igor emits structured deferred self-addressed tasks",
+    "result": "DEFERRED_TASK|type|payload format added. parse_deferred_tasks+strip+dispatch+push_result pipeline in main.py. 5 job types: memory_search, twm_read, ring_read, tool_call, note. Results route to TWM as deferred_self_task source, salience=0.85, skipping ACTION_IMPULSE. PROC_DEFERRED_SELF_TASK context_inject habit seeded. 21 tests, 1719 total green.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-05T01:25:13.413039+00:00",
+    "related_to": null,
+    "description": "Igor is a single-pass system. After diagnosing a gap, he can't fetch context and re-enter. Need: a structured DEFERRED_TASK output format Igor emits from a reply turn (type, target, payload), plus a job_manager hook that picks these up and injects results into his next context via TWM push or memory deposit. Enables: 'fetch reading list and inject into next context', 'search memory for X and surface on next turn', pre-loading diagnostic context before a reasoning turn.",
+    "completed_at": "2026-04-05T01:28:10.626705+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d119e71-b316-4724-b9ee-ca4fa2ae652c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

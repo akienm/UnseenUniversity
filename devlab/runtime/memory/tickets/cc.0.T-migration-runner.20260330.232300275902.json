@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-migration-runner.20260330.232300275902",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-migration-runner"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T23:23:00.275902",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-migration-runner"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-migration-runner",
+    "title": "Versioned migration runner",
+    "result": "versioned _SCHEMA_MIGRATIONS list + _run_schema_migrations() — 26 migrations, both paths, 555 tests pass",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Replace ad-hoc try/except ALTER TABLE lists with versioned _MIGRATIONS list checked against _migrations table; single boot-time loop works for Postgres + SQLite + swarm boxes",
+    "completed_at": "2026-03-30T23:23:00.275902+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "33f039f6-3503-464f-babc-ddcfa3e6ff24",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

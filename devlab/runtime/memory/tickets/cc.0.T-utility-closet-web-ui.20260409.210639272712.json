@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-utility-closet-web-ui.20260409.210639272712",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-utility-closet-web-ui"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T21:06:39.272712",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-utility-closet-web-ui"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-utility-closet-web-ui",
+    "size": "M",
+    "title": "D335 Phase 4: Web UI shows agent attach/detach state",
+    "result": "Already implemented in Phase 1: fallback HTML shows agent attach/detach state via agent_status/platform_status WebSocket messages. Dashboard shows 'No agent attached' without Igor, agent name + stats when registered. No additional work needed.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-09T21:06:23.405172+00:00",
+    "related_to": null,
+    "description": "Update fallback HTML in utility_closet_server.py: dashboard panel shows No agent when none attached, agent name + stats when attached. Chat panel shows agent offline when no agent registered. WebSocket agent_status messages drive the UI state.",
+    "completed_at": "2026-04-09T21:06:39.272712+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "96f759e5-574a-4a1c-ac63-d671b583a415",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

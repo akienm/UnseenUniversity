@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-post-sprint-grader.20260510.204021278557",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-post-sprint-grader"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T20:40:21.278557",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dreaming-patterns-2026-05-10"
+    ],
+    "tickets": [
+      "T-cc-post-sprint-grader"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-post-sprint-grader",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "WorkflowTools",
+      "Quality"
+    ],
+    "title": "CLOSED: post-sprint grader in sprint-ticket skill",
+    "result": "grader step 8.5 added to sprint-ticket skill; Haiku subagent grades diff vs Test plan, advisory only",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T23:00:35.649814+00:00",
+    "created_at": "2026-05-10T20:40:21.278557+00:00",
+    "related_to": null,
+    "decision_id": "D-dreaming-patterns-2026-05-10",
+    "description": "Add a grader step to /sprint-ticket (after step 8 tests, before step 10 commit). Spawn a fresh CC subagent context with: the staged diff (`git diff --staged`) and the ticket's Test plan section. Grader checks: are the tests described in Test plan present in the diff? Surface any gaps inline. Grader is advisory only — does not block the close. Catches 'tests written but not actually covering the described scenario' before it compounds.\n\n**Affected files:** `~/.claude/skills/sprint-ticket` (add grader step between step 8 and step 10)\n**Design rules:** grader is advisory (never blocks close); fresh subagent context only sees diff + test plan (no full session state); grader prompt minimal; if Test plan says 'no tests because: <reason>' grader skips silently\n**Scope boundary:** IN — grader step in sprint-ticket, surface gaps inline. OUT — no auto-fix of test gaps, no grader for design-rule quality (test plan only), no change to commit/push flow.\n**Test plan:** manual verification — run sprint on a ticket whose Test plan names a specific test; confirm grader fires and correctly identifies whether that test appears in the diff",
+    "completed_at": "2026-05-10T23:06:55.907837+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3c37a268-9e62-4d2c-bb22-f1ea4c36a1a7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

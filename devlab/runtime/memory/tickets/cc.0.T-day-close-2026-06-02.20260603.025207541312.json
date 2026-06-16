@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-day-close-2026-06-02.20260603.025207541312",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-day-close-2026-06-02"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T02:52:07.541312",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-day-close-2026-06-02"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-day-close-2026-06-02",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DayClose",
+      "Workflow"
+    ],
+    "title": "Day close: 2026-06-02",
+    "result": "Day close complete: 10 tickets closed, DickSimnel suite ships, palace.days.20260602 written, GH Discussion #12 created",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.05,
+    "blocked_at": "2026-06-03T02:54:03.971725+00:00",
+    "claimed_at": "2026-06-03T03:00:31.653976+00:00",
+    "created_at": "2026-06-03T02:52:07.541312+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Run /day-close for 2026-06-02.\n\nThis is an automatically-filed EOD housekeeping ticket. When CC picks this up, run the full /day-close skill procedure through all steps including /autocompact.\n\n**Affected files:** slate, palace, decisions log, GitHub discussion\n**Design rules:** none apply\n**Scope boundary:** In scope: full /day-close execution (slate close, audit, docs sync, palace.days node, GitHub discussion, /autocompact). Out of scope: new feature work.\n**Completion criteria:** /day-close completes through step 15 (/autocompact fires); palace.days.20260602 node written; GitHub Discussion created for 2026-06-02.",
+    "completed_at": "2026-06-03T03:19:12.741755+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T02:53:02.267271+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3b35a4ad-3feb-43d3-b3ed-acb479584c1a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-minion-model-upgrade.20260609.203210211608",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-minion-model-upgrade"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:32:10.211608",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-minion-model-upgrade-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-minion-model-upgrade",
+      "T-minion-model-upgrade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-minion-model-upgrade",
+    "gate": "2026-06-23",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Inference"
+    ],
+    "title": "[sprint] Consequence check: minion model registry current",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that minion inference uses the benchmark-validated model list shipped in T-minion-model-upgrade.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:32:10.211608+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-minion-model-upgrade-2026-06-01",
+    "description": "D-minion-model-upgrade-2026-06-01 shipped T-minion-model-upgrade (closed), but no consequence check was filed.\n\n**What changed:** Inference model lineup upgraded to coding-benchmark-validated models — minion tier uses updated model names.\n\n**Predicted unintended effects:** Model names may have been updated in the registry file but live inference may still use hardcoded or env-var overridden names. Benchmark-validated models may have since been updated or renamed upstream.\n\n**Signals to watch:** Check the live model registry against what's actually dispatched in a minion inference call. Any CUDA/OOM errors that indicate model is too large for available hardware.\n\n**Gate condition:** Check by 2026-06-23\n\n**Affected files:** None — observation and registry review\n**Design rules:** none apply\n**Scope boundary:** Verify live minion inference uses updated registry models, not stale names. Out of scope: benchmark re-running.\n**Test plan:** no tests — registry inspection and live test call\n**Completion criteria:** Read model registry, run one minion inference call, verify model used matches registry. Record: current / stale (list discrepancies).",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

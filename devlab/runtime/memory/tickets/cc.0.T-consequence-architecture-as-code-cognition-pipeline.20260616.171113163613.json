@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-architecture-as-code-cognition-pipeline.20260616.171113163613",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-architecture-as-code-cognition-pipeline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T17:11:13.163613",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-architecture-as-code-cognition-pipeline-2026-06-16"
+    ],
+    "tickets": [
+      "T-consequence-architecture-as-code-cognition-pipeline",
+      "T-per-ticket-checkpoint",
+      "T-why-sorter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-architecture-as-code-cognition-pipeline",
+    "title": "[sprint] Consequence check: why-sorter + per-ticket checkpoint",
+    "status": "sprint",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** Added a `rationale` column + debris-flag to constraints/patterns (why-sorter), and a clear-to-base context mechanism -- native `/rewind` -> \"Restore conversation\" driven by tmux send-keys between tickets (fork backend deferred) -- which REPLACED the originally-planned summarize-and-rehydrate/checkpoint-file approach.\n**Predicted unintended effects:** (1) The `devlab.constraints` migration (why-sorter) could break `constraint_normalizer.ingest()` idempotency or `get_constraints()` callers if the new column isn't defaulted NULL-safe. (2) Debris-flagging every rationale-less constraint at once (why-sorter) could flood the channel/logs on first run (most constraints have no `Rationale:` yet) -- noise, not signal. (3) clear-to-base: send-keys menu navigation could select the WRONG /rewind entry -- rewinding too far (losing the base) or not enough (keeping the ticket delta) -- especially as session history grows and menu positions shift. (4) clear-to-base: although \"Restore conversation\" keeps code, uncommitted Edit/Write changes NOT yet `git commit`-ed at rewind time could be reverted by checkpointing -- the builder must always commit before clear_to_base. (5) clear-to-base: send-keys timing flakiness (the uucompactclaude pattern needs the sleep to outlast the operation) could fire the menu selection before the menu renders.\n**Signals to watch:** constraint_normalizer ingest count unchanged after migration; first-run debris-flag volume (expect high, should be batchable/suppressible); clear_to_base lands on the correct base entry across N consecutive tickets; `git log` + working files intact after every rewind; no half-rewound sessions.\n**Gate condition:** Check by 2026-06-30 or when both T-why-sorter and the clear-to-base ticket (T-per-ticket-checkpoint) have shipped and run through at least one real builder cycle.\n\n**Affected files:** None -- observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests -- this is an observation ticket\n\n**Completion criteria:**\n- Each predicted effect annotated as occurred / clear / partial by the gate date (2026-06-30) or after one real builder cycle post-ship.\n- Ticket closed with the outcome recorded.",
+    "decision_id": "D-architecture-as-code-cognition-pipeline-2026-06-16",
+    "created_at": "2026-06-16T17:11:13.163613+00:00",
+    "updated_at": "2026-06-16T11:11:13.174848-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.3,
+    "gate": "2026-06-30",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that the predicted side-effects of the why-sorter and per-ticket-checkpoint changes are observed and annotated before this decision is considered closed.",
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

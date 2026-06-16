@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-repo-map-context.20260531.192214255462",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-repo-map-context"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:22:14.255462",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-repo-map-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-repo-map-context",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Steal Aider repo-map + SEARCH/REPLACE patterns for sprint-ticket",
+    "result": "repo_map.py: stdlib AST symbol map (classes/methods/fns), 14 tests, wired into sprint-ticket SKILL.md step 5; SEARCH/REPLACE already satisfied by Edit tool",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.9,
+    "claimed_at": "2026-05-31T19:23:42.805948+00:00",
+    "created_at": "2026-05-31T19:22:14.255462+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Aider has two patterns worth copying: (1) repo-map — builds a compact symbol map of the codebase so the LLM gets relevant context without full source, keeping tokens low; (2) SEARCH/REPLACE diff format — more reliable than unified diffs for LLM-generated edits, fewer misapplied hunks. Both improve sprint-ticket success rate and reduce cost. No Aider dependency needed — just the patterns.\n\n**Affected files:** lab/claudecode/sprint_ticket.py (or equivalent sprint runner), new lib/repo_map.py\n**Design rules:** none apply\n**Scope boundary:** In scope: repo-map generation (symbol index from AST/grep), SEARCH/REPLACE output format in sprint runner. Out of scope: full Aider integration, any new device or rack component.\n**Completion criteria:** (1) Sprint runner builds a repo-map and includes it in context. (2) LLM output uses SEARCH/REPLACE blocks. (3) Edit success rate measurably better on a 5-ticket sample vs baseline.",
+    "completed_at": "2026-05-31T19:35:00.365612+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T19:23:42.805948+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-31T19:23:20.088762+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "32fc8f8a-1d15-4fc9-8458-074c86cb4114",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

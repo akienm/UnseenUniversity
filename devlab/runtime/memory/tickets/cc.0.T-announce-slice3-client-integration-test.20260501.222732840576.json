@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-announce-slice3-client-integration-test.20260501.222732840576",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice3-client-integration-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:27:32.840576",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice3-client-integration-test",
+      "T-announce-slice3-datacenter-client"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice3-client-integration-test",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice3",
+      "Datacenter",
+      "IntegrationTest"
+    ],
+    "title": "End-to-end integration: DatacenterClient + Skeleton round-trip via IMAP stub",
+    "result": "Slice 3 green-test ships: 3 end-to-end cases (Igor round-trip, unknown agent rejected, CC profile round-trip) verify DatacenterClient↔Skeleton over IMAP stub. Background pumper drives skeleton.announce_pump() during client poll. 165 passed. agent_datacenter commit 44d97b0.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T22:25:55.397121+00:00",
+    "related_to": "T-announce-slice3-datacenter-client",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Slice 3 green-test: a real Skeleton boots with the canonical Igor profile and an IMAPServer (stub mode); a DatacenterClient instance with an Igor IdentityEnvelope is wired to the same IMAPServer; client.announce() posts to comms://announce, the test drives skeleton.announce_pump() once, and the client polls comms://announce-events to pick up the Manifest. Asserts cache is populated, accessor methods return expected bindings/state_refs/channels for Igor's profile (inference + postgres + swadl tools, twm/ne/milieu state_refs, shared+igor-cc channels, console+inference surfaces).\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/tests/test_announce_client_integration.py (NEW)\n**Design rules:** uses real Skeleton + real IMAPServer (stub mode) — no mocks; bounded timeout on poll so a hung pipe fails fast; test failure = slice 3 doesn't ship.\n**Scope boundary:** in — single end-to-end round-trip test using DatacenterClient against booted Skeleton. Out — multi-agent concurrent test, persistence across client recreations, cross-process test (separate Skeleton process).\n**Test plan:** test_client_round_trip_via_skeleton (Igor announces, manifest cached, accessors return expected items); test_client_announce_unknown_agent_raises_via_error_envelope (post envelope for an agent without a profile, broker publishes kind=error, client surfaces it as exception).",
+    "completed_at": "2026-05-01T22:27:32.840576+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8c63cd1b-7395-4c95-a7a3-e6c17f78470f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

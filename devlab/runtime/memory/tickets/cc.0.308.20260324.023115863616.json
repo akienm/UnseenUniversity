@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.308.20260324.023115863616",
+  "emitter": "cc.0",
+  "namespace": [
+    "308"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T02:31:15.863616",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "308"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "308",
+    "size": "L",
+    "title": "Bridge word graph and memory graph — Hebbian substrate unification",
+    "result": "Hebbian bridge implemented in cognition/hebbian_bridge.py (gated by IGOR_HEBBIAN_BRIDGE=true). Three functions: wg_boost_search() uses predict_next() to boost memory candidate scores by predicted-word overlap before embedding rerank; record_retrieval_boost() feeds high-importance retrieved nodes back into word graph proportional to arousal; wg_predict_for_activation() fires word graph queries per spreading-activation node to widen neighbor scoring. cortex.search() gains word_graph= param wiring all three in. 16 tests, 143 total pass.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T02:24:00.262429+00:00",
+    "description": "Unify word graph and memory graph on a single Hebbian substrate. #308",
+    "completed_at": "2026-03-24T02:31:15.863616+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1e3dcebc-70fd-4058-9500-3c684f492607",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

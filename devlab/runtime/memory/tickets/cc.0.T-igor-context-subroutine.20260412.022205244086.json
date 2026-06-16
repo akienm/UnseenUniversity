@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-igor-context-subroutine.20260412.022205244086",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-context-subroutine"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-12T02:22:05.244086",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-context-subroutine",
+      "T-igor-modes"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-context-subroutine",
+    "title": "Igor context management: summarize-and-swap instead of truncate",
+    "result": "Thread context compaction implemented. When buffer hits 8 exchanges, oldest half summarized via local Ollama (qwen2.5:7b) in background thread. Summary prepended to thread prefix. No restart needed. 156 tests pass.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-04-12T02:16:25.858797+00:00",
+    "description": "Igor loses context mid-conversation (observed 2026-04-11 — Akien told him about cluster/programming/manifest, Igor lost it and responded with canned word-graph answer). When context fills: detect, spawn cheap local summarization call (qwen 7b), replace old context with summary, continue. Like CC compact but for Igor. Connects to T-igor-modes (Awake mode needs good context management).",
+    "completed_at": "2026-04-12T02:22:05.244086+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "93490d05-c4c5-4a2b-bca8-d5edc701da51",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

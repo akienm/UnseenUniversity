@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-palace-ticket-design-rules.20260421.195031172673",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-ticket-design-rules"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T19:50:31.172673",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-scaffold-not-correct-2026-04-21"
+    ],
+    "tickets": [
+      "T-palace-ticket-design-rules"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-ticket-design-rules",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Palace",
+      "Review",
+      "PreP3"
+    ],
+    "title": "Palace-ize Akien's design rules as filing-time checks",
+    "result": "5 check-shape palace nodes + index under theigors/rules/ticket_design_checks/ (applies_when/check_body/failure_message) + bidirectional narrative backlinks. Commit 07b1c6cf. Unblocks T-ticket-template-structured + T-review-loads-palace-rules.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-21T19:39:56.267303+00:00",
+    "related_to": null,
+    "decision_id": "D-scaffold-not-correct-2026-04-21",
+    "description": "Audit Akien's implicit design rules and ensure they live in theigors/rules/* as CHECK-SHAPED entries that /review can load and verify tickets against positively. Rules to cover: no-sqlite (data persistence must name the Postgres table), OOP-first (if ticket adds shared state across multiple functions, propose a class), docs-in-code (ticket names where docstring lives), no-new-memory-schemas (memory tickets use existing clan.memories / memory_palace tables), test-plan-or-why-not (tickets declare tests or justify absence).\n\nSome of these likely already have palace entries (e.g., theigors/rules/docs-live-in-code, theigors/rules/database) but in narrative form, not check shape. Audit first — inventory what exists and what is missing — then restructure to check-shape. New check entries should follow a consistent shape with: title, applies_when (predicate), check_body (what to look for in a ticket draft), failure_message (amend guidance).\n\nProposed palace path: theigors/rules/ticket_design_checks/<check-slug>; leave the existing narrative rules as the human-reading source, with pointers between the two.\n\nWhy: see feedback_scaffold_not_correct.md. Making rules visible at filing-time so the build naturally falls within them; scaffold not correction.\n\ntest_plan: after restructuring, verify that palace_tree returns N check-shaped entries under theigors/rules/ticket_design_checks; dry-run consumption from a /review prototype against one sample ticket.",
+    "completed_at": "2026-04-21T19:50:31.172673+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2930c8b1-d6d7-4c45-834c-b75b616e70c9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

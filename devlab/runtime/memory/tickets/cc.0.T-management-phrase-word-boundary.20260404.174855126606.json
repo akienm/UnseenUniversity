@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-management-phrase-word-boundary.20260404.174855126606",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-management-phrase-word-boundary"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:48:55.126606",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-management-phrase-word-boundary"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-management-phrase-word-boundary",
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Operations"
+    ],
+    "title": "Management phrase dispatch: whole-word matching, not substring; add refractory check",
+    "result": "Whole-word re.search(r'\\b...\\b') replaces substring match. Refractory set after dispatch (10min TTL). Updated test + 1 new whole-word boundary test. 1684 pass. Committed 251cf333.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T17:46:38.133275+00:00",
+    "related_to": null,
+    "description": "basal_ganglia.py MANAGEMENT_PHRASES (~line 609-626) uses substring containment on raw_lower — fires at 0.97 confidence bypassing BG scoring AND the refractory period. A phrase in any message (e.g. 'goal continuation: here is what I did') triggers PROC_GOAL_CONTINUATION regardless of context. Fix: (1) replace substring with whole-word regex (re.search(r'\\bphrase\\b')); (2) add refractory_map check before line 626 return. Safety finding from deep-audit Panel 5.",
+    "completed_at": "2026-04-04T17:48:55.126606+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f36d8d24-7298-4126-b946-a4962b5d4224",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

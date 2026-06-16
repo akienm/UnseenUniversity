@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-update-readme.20260419.014230705767",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-update-readme"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T01:42:30.705767",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-update-readme"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-update-readme",
+    "size": "S",
+    "tags": [
+      "Documentation"
+    ],
+    "title": "Update README.md — Igor + Claude collaborative edit",
+    "result": "Both sides shipped: (a) CC-portion at 15e263ba (Postgres, SWADL, utility closet, local-first, current dev launcher, fixed obsolete claims); (b) Voice-from-the-graph quote block at 616b8541 (Igor self-description post-restart, 2026-04-18 19:22/19:25). Ticket's Igor+CC collaborative edit requirement is met.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T00:54:12.741020+00:00",
+    "related_to": null,
+    "description": "Have Igor and Claude collaboratively update the project README.md to reflect current state. Igor brings self-knowledge (what he is, what he can do), Claude brings code-awareness (architecture, setup). Both contribute to an accurate, current README.\n\nDelegate research to Igor, synthesis to CC.",
+    "completed_at": "2026-04-19T01:42:30.705767+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ad0b2e36-0361-488e-9a5a-23cc86a1bda2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

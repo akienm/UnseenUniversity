@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-dsimnel-pre-inference-parity.20260605.195630119859",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dsimnel-pre-inference-parity"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T19:56:30.119859",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pre-inference-assembly-2026-06-05"
+    ],
+    "tickets": [
+      "T-dsimnel-pre-inference-parity"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dsimnel-pre-inference-parity",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Workflow"
+    ],
+    "title": "DickSimnel: wire pre-inference assembler",
+    "result": "DickSimnel loads sprint-ticket/SKILL.md as system prompt — already includes pre_inference_assemble.py call; parity automatic",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that DickSimnel's sprint process calls the same pre-inference assembler as CC so both agents start each sprint with identical pre-assembled context.",
+    "created_at": "2026-06-05T19:56:30.119859+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-pre-inference-assembly-2026-06-05",
+    "description": "Wire pre_inference_assemble.py into DickSimnel's sprint skill (wherever it lives — discovery step in sprint). DickSimnel and CC should call the same assembler script; no DickSimnel-specific logic needed beyond the call.\n\n**Affected files:** TBD — DickSimnel sprint skill location (discovery step in sprint)\n\n**Design rules:** none apply\n\n**Scope boundary:** In scope: call assembler from DickSimnel sprint, verify output matches CC format. Out of scope: DickSimnel-specific context additions, any changes to the assembler itself.\n\n**Completion criteria:** DickSimnel sprint transcript shows the same pre-assembled context block format as CC sprint; confirmed by running a DickSimnel sprint on a known ticket and reading the transcript.",
+    "completed_at": "2026-06-05T21:54:29.796798+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

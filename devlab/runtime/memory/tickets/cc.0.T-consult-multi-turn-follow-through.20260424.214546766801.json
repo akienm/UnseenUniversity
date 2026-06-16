@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consult-multi-turn-follow-through.20260424.214546766801",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-multi-turn-follow-through"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T21:45:46.766801",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24",
+      "D-consult-primitive"
+    ],
+    "tickets": [
+      "T-consult-multi-turn-follow-through"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-multi-turn-follow-through",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Consult",
+      "Design"
+    ],
+    "title": "Consult sessions follow through multi-turn — today every session closes at turn 1",
+    "result": "ConsultSession now basket-persistent — first stuck event opens; different stuck_reasons on same basket re-use the session (multi-turn). Conclude runs at _pe_close + _pe_escalate. New consult_sessions_recent MCP tool gives CC step-through observability. 5 new tests + 1 updated. Commit bfc4852b. Igor needs restart for MCP tool to register.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-24T21:38:33.719007+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "Per D-consult-primitive design: 'Consult is conversation-shaped, not query/reply — Igor may follow up, reason over intermediate results, or conclude.' Observed 2026-04-24: every session in consults.log closes at turn 1. Design says multi-turn; implementation is effectively one-shot. Igor gets a next_question back from the peer LLM but has no mechanism to return to the same ConsultSession with new evidence.\n\nWhat's missing: a trip condition that makes Igor continue the same session instead of closing. Candidates: if hypotheses are still too vague, if next_question is unanswered, if confidence threshold barely clears. Needs a design conversation before build.\n\n**Affected files:** wild_igor/igor/cognition/consult.py (session-close logic), wild_igor/igor/tools/pe_chain.py (_maybe_consult_stuck may need to hold a session handle), TBD in design.\n**Design rules:** test-plan-or-why-not — design first, tests flow from that.\n**Scope boundary:** IN — design + ship multi-turn trip condition. OUT — new consult problem-kinds, tier changes.\n**Test plan:** new tests: multi-turn session with follow-up raw_text, assertions on hypothesis evolution across turns. Existing single-turn behaviour preserved as default.",
+    "completed_at": "2026-04-24T21:45:46.766801+00:00",
+    "github_issue": null,
+    "rejection_note": "Igor proposal rejected — targeted brainstem/core_patterns.py (wrong file per ticket description) with empty Plan. CC authoring correct implementation in consult.py + pe_chain.py.",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ced4c12e-f7de-43d8-b09c-3f44739c9cad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-acurite-isolated-network.20260615.180451022872",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-acurite-isolated-network"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:04:51.022872",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-isolated-network-2026-06-15"
+    ],
+    "tickets": [
+      "T-consequence-acurite-isolated-network"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-acurite-isolated-network",
+    "gate": "2026-06-29",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "AcuRite"
+    ],
+    "title": "[pending] Consequence check: AcuRite isolated network data flow",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the isolated network daemon reliably captures weather data without regressing cloud sync or creating silent data loss.",
+    "created_at": "2026-06-15T18:04:51.022872+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-acurite-isolated-network-2026-06-15",
+    "description": "**What changed:** AcuRite device now sends data to isolated network segment with local daemon listener; data no longer routed through main network or cloud.\n\n**Predicted unintended effects:**\n- Device cannot reach actual myacurite.com (intentional isolation), so no cloud sync; if user expects cloud backup, this breaks that expectation\n- dnsmasq misconfiguration could cause device to hang on DNS lookups\n- CSV path hardcoded to /home/akien/AcuRite/weather.csv; if laptop path changes, dashboard breaks\n- If device sends unexpected WU format variants (different field names), parser fails silently and data loss occurs\n- Daemon crash → weather.csv stops updating; no alert to user\n\n**Signals to watch:**\n- CSV file growing at expected rate (new rows every ~20s per device cycle)\n- weather.html dashboard showing live data without stale timestamps (>10min old for outdoor sensors)\n- Daemon logs show expected request count and merge pattern (one request + one request = one CSV row)\n- No errors in datacenter_logs/acurite_device/daemon.log\n\n**Gate condition:** Check by 2026-06-29 (14 days) or when device has been running for 24h continuous.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

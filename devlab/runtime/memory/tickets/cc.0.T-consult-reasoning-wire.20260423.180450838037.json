@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consult-reasoning-wire.20260423.180450838037",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-reasoning-wire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T18:04:50.838037",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-primitive-2026-04-23"
+    ],
+    "tickets": [
+      "T-consult-primitive",
+      "T-consult-reasoning-wire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-reasoning-wire",
+    "gate": "T-consult-primitive",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Consult",
+      "Reasoning"
+    ],
+    "title": "Wire consult into _process_network_msg for near-zero-confidence reasoning",
+    "result": "Inline hook in _process_network_msg at empty-response branch. ConsultState built from user_turn+thread_excerpt. Hypotheses→TWM with consult_hypothesis category + pursuit_id metadata. Non-fatal on consult/TWM failure. 5 tests. 0939efd5.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-23T18:02:46.676877+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-primitive-2026-04-23",
+    "description": "Wire ConsultSession into _process_network_msg. Trigger: BG WINNOW fires with confidence below threshold (handful of habits all sub-0.3) on a non-habit tier fallthrough. Build ConsultState from user turn + thread context + TWM top-K; ask the consult prompt; push hypotheses + next_question into TWM as markers with category='consult_hypothesis', metadata includes active pursuit_id so the reasoning path has scaffolding for the next turn. Consult happens BEFORE tier.2 fallthrough — it shapes what reasoning sees, not what reasoning produces.\n\n**Affected files:** wild_igor/igor/main.py (_process_network_msg), tests/test_reasoning_consult.py\n**Design rules:** docs-live-in-code, test-plan-or-why-not\n**Scope boundary:** IN — confidence-gated consult trigger at BG fallthrough + TWM marker integration. OUT — changing BG scoring, tier selection logic, reply suppressors. Same-thread-same-kind rate-limit applies.\n**Test plan:** integration-ish test with mocked inference_gateway: BG fallthrough with low confidence triggers consult; TWM markers appear with correct category + pursuit_id metadata. Control case: habit fires above threshold, no consult triggered.",
+    "completed_at": "2026-04-23T18:04:50.838037+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a8b4da76-80d0-4d61-9889-ce0a2a2f743b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

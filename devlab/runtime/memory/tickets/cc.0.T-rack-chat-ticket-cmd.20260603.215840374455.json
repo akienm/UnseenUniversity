@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-rack-chat-ticket-cmd.20260603.215840374455",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rack-chat-ticket-cmd"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.374455",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-id",
+      "T-rack-chat-ticket-cmd",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rack-chat-ticket-cmd",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "UX",
+      "WebServer",
+      "Observability"
+    ],
+    "title": "Rack devices: /ticket command in chat window",
+    "result": "/ticket command wired in chat POST; _handle_chat_slash_commands() reusable; 4 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "claimed_at": "2026-06-04T19:27:27.487252+00:00",
+    "created_at": "2026-06-03T21:58:40.374455+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When a human is working with a rack device (via its web chat window) and encounters an issue, there is no easy feedback path — they have to go to the queue manually. Every device chat window should accept /ticket <description> as a command that files the ticket to cc_queue.py and responds with a confirmation (even if the response is just 'Bark! Ticket filed: T-xxx'). This provides a human-in-the-loop feedback method at the point of encounter without requiring the user to know the queue tooling.\n\n**Affected files:** devices/web_server/server.py (chat route handler), possibly a shared command parser utility\n**Design rules:** OOP-first; no-sqlite; log every /ticket command (interface crossing)\n**Scope boundary:** In scope: /ticket <description> parsed in all device chat POST handlers; delegates to cc_queue.py add; returns T-id in response. Out of scope: /sprint, /close or other slash commands (future), per-device ticket tagging beyond device name.\n**Completion criteria:** (1) POST to any device chat with message '/ticket some problem description' creates a queue entry and returns the T-id; (2) ticket is tagged with the device name; (3) non-/ticket messages unaffected; (4) tests: /ticket command creates entry; response contains T-id; regular message unaffected",
+    "completed_at": "2026-06-04T21:21:32.026262+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:59:47.068031+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f78d9897-b505-4147-9ee1-b68bad1613dc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-rename-uc-client.20260526.234623512046",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rename-uc-client"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T23:46:23.512046",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-rename-uc-client"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rename-uc-client",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Cleanup"
+    ],
+    "title": "Rename utility_closet_client.py → adc_client.py",
+    "result": "renamed utility_closet_client.py → adc_client.py; class renamed; server.py updated; test file renamed; 35 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-26T23:46:23.512046+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "devices/igor/web/utility_closet_client.py is a REST client that Igor uses to register with the ADC web server. The name is stale — it should be adc_client.py since utility_closet_server is now web_server device. The docstring also says 'utility closet client'. web/server.py imports it as `from .utility_closet_client import uc_client`.\n\n**Affected files:** devices/igor/web/utility_closet_client.py (rename to adc_client.py), devices/igor/web/server.py (update import)\n**Design rules:** none — rename only\n**Scope boundary:** Rename file, update import in server.py, update docstring. No functional changes.\n**Test plan:** Igor starts and web UI registers successfully after rename",
+    "completed_at": "2026-05-26T23:50:17.825392+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T23:46:23.615509+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "17009d35-34ab-4b01-aa82-c2dfd7098aa2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

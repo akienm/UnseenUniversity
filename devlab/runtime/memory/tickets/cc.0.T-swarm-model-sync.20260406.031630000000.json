@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-swarm-model-sync.20260406.031630000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-model-sync"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-06T03:16:30",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-coding-model",
+      "T-swarm-model-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-model-sync",
+    "epic": "Swarm",
+    "size": "M",
+    "title": "Igor habit: SSH pull configured Ollama models to all online swarm machines",
+    "result": "run_swarm_model_sync tool fixed in cluster_ssh.py — removed two broken Igor-generated duplicates (cortex.tool + bad imports), replaced with clean implementation using _load_machines() + _ssh_exec() + registry.register(). 1868 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "blocked_at": "2026-04-07T00:35:18.493852+00:00",
+    "claimed_at": null,
+    "created_at": "2026-04-06T03:16:30Z",
+    "related_to": "T-pe-coding-model",
+    "description": "Create run_swarm_model_sync() tool + PROC_SWARM_MODEL_SYNC habit (nightly, schedule_interval_sec=86400). For each online machine in machines DB: SSH to it, run 'ollama pull <ollama_model>' and if ollama_model_batch set, also pull that. Use existing ssh_exec tool. Log results to ring category=swarm_model_sync. Igor owns this — no human needed to keep models in sync across the cluster.",
+    "completed_at": "2026-04-07T00:58:59.596418+00:00",
+    "github_issue": 386,
+    "required_files": [
+      "wild_igor/igor/tools/cluster_ssh.py",
+      "wild_igor/igor/cognition/machine_manager.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "43b9da46-edd2-462c-a432-181727798562",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

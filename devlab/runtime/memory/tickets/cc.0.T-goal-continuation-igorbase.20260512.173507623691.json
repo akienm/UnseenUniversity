@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-goal-continuation-igorbase.20260512.173507623691",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-continuation-igorbase"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T17:35:07.623691",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-pipeline-observability-2026-05-12"
+    ],
+    "tickets": [
+      "T-goal-continuation-igorbase",
+      "T-pe-chain-igorbase"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-continuation-igorbase",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "GoalContinuation",
+      "Observability"
+    ],
+    "title": "CLOSED: Refactor goal_continuation.py into GoalContinuation(IgorBase)",
+    "result": "GoalContinuation(IgorBase) refactor: 2KB bash cap, self.log, forensic_logger replaced; tests updated",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-12T17:35:07.623691+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "description": "goal_continuation.py uses standalone functions and logging.getLogger() — the same pattern pe_chain had before T-pe-chain-igorbase. The _run_bash() helper truncates output to 500 chars and logs only via Python stdlib logging; claim/show failures are silently truncated.\n\nRefactor into GoalContinuation(IgorBase):\n- run_goal_continuation() and _run_bash(), _extract_ticket_id(), etc. become methods\n- Module-level run_goal_continuation(**_) stays as a thin wrapper for registry compatibility (the Tool registration at the bottom of the file must continue to work)\n- _run_bash() output logged via self.log.info('BASH cmd=%s out=%s', cmd, out[:2000]) — 2KB cap (was 500 chars), logged to standard log not lost\n- Replace logging.getLogger(__name__) with self.log throughout\n- Replace forensic_logger lazy imports (there are ~2 in this file) with self.log.error\n- Update module docstring: add GoalContinuation class to the overview section\n\n**Affected files:** wild_igor/igor/tools/goal_continuation.py\n**Design rules:** OOP-first (class required), docs-live-in-code (module docstring must mention GoalContinuation class)\n**Scope boundary:** goal_continuation.py only. The module-level run_goal_continuation(**_) wrapper keeps the Tool registry hook working unchanged — the registered fn must still be callable with no args.\n**Test plan:** Existing goal_continuation behavior unchanged. Add one test: mock _run_bash (or the subprocess call) to return a 600-char string and verify the logged output is NOT truncated to 500 chars. Run full test suite — green required.",
+    "completed_at": "2026-05-12T17:53:29.381632+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "132f9254-b296-4470-aef2-9019229d39ad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

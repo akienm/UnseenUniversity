@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-router-off-limits-violation.20260414.232235000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-router-off-limits-violation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:35",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-router-off-limits-violation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-router-off-limits-violation",
+    "body": "From Akien 2026-04-14 ~1115: 'igor keeps reading for inference on akienyoga9i the last couple of nights between 2100 and 2300. and just now, i noticed akiendell is running ollama and pulling 50%. akiendell is supposed to be off limits now at 1115. so the router isn't routing the way it's supposed to be. i expect this is a training mode issue.'\n\nTWO OBSERVATIONS:\n1. **akienyoga9i nightly 2100-2300**: Igor keeps using it for inference. Is this OK or off-limits for those hours? Verify intent.\n2. **akiendell at 1115 (2026-04-14)**: Running Ollama at 50% CPU. Akien says 'off limits now at 1115.' Cluster router should have excluded it.\n\nHYPOTHESIS (Akien's): training mode issue. The training pass or reading pipeline may be bypassing the normal cluster routing gates that enforce time-of-day / availability windows.\n\nEXISTING WORK TO CHECK:\n- wild_igor/igor/cognition/cluster_router.py — route() / route_batch() — does it check per-box off-limits schedules?\n- Cluster score formula: network/ram/db/load/override/capability — is there an 'availability window' term?\n- tools/cluster_ssh.py — cluster_status + ssh_exec_all — do they respect off-limits?\n- Training pass (tools/self_trainer.py, output_trainer.py) — does it call cluster_router or route directly?\n- Reading pipeline (tools/reading_tool.py, claudecode/book_learner.py) — check how it picks inference targets\n- Anywhere ollama is invoked — look for direct SSH bypassing the router\n- Off-limits configuration: where does akiendell's 'off limits now' live? Env var? DB? Hardcoded schedule?\n\nINVESTIGATION STEPS:\n1. Check what's running Ollama on akiendell right now (ps aux | grep ollama via cluster_ssh)\n2. Find the PID's parent — which Igor subsystem spawned it\n3. Walk backward: which module's route decision landed there\n4. Check if off-limits schedule exists at all or if the gate needs to be built\n\nLIKELY FIX (pending investigation):\n- Add availability-window term to cluster router score formula (0 for off-limits → exclusion)\n- Or explicit off-limits check before route() call in training+reading paths\n- DB-backed schedule per machine so it's editable without code changes\n\nURGENCY: Active resource-use issue while akiendell should be free for user. Non-emergency but visible to user immediately.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "router",
+      "training",
+      "reading",
+      "cluster",
+      "bug"
+    ],
+    "title": "Router routing to off-limits boxes during restricted hours (training mode bug?)",
+    "result": "Root cause: in_use_hours were in original machines.json but never migrated to DB when machines table was created (register_self seeds with []). Fixed: akiendell M-F 6-18, yogai7 17-21, yoga9i 20-23. machines.json echo refreshed. Note: akiendell needs weekend handling + Akien voiced commands for override (habits PROC_LOCATION_SET/CLEAR already exist).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-14T23:22:35Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T18:03:21.565999+00:00",
+    "github_issue": 434,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

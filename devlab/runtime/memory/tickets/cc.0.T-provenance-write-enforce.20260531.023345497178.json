@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-provenance-write-enforce.20260531.023345497178",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-provenance-write-enforce"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T02:33:45.497178",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-murderbot-security-review",
+      "T-provenance-write-attribution",
+      "T-provenance-write-enforce"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-provenance-write-enforce",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Memory",
+      "Security"
+    ],
+    "title": "Provenance: verify source_token at write boundary in cortex.py before storing",
+    "result": "Already implemented: cortex.py store() calls verify_source_token() at lines 1576-1587 — invalid token is nullified and logged PROVENANCE_TOKEN_INVALID before the DB write proceeds",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "blocked_at": "2026-06-02T18:57:59.337383+00:00",
+    "created_at": "2026-05-31T02:33:45.497178+00:00",
+    "created_by": null,
+    "related_to": "T-provenance-write-attribution",
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "HIGH gap found in T-murderbot-security-review.\n\ncortex.py store() writes memory.source_token directly from the MemoryNode object without calling ProvenanceService.verify(). A prompt-injected agent can direct Igor to store memories with a fabricated source_token value -- the attribution mechanism accepts whatever it is given. This poisons trust-tier scores: forged tier_1-matching tokens could masquerade as CC-written memories.\n\nVerified in code: grep of cortex.py lines 1533-1640 shows ensure_provenance() stamps metadata but there is no verify() call on the source_token before the INSERT.\n\nFix: before inserting, if source_token is non-null, call ProvenanceService.verify(source_token). If verification fails, either reject the write (strict mode) or nullify the token and log a warning (permissive mode). Permissive is the right default so existing writes are not broken.\n\n**Affected files:** devices/igor/memory/cortex.py (store() method around line 1533)\n**Design rules:** no-sqlite; ProvenanceService must be accessible from cortex (inject or import)\n**Scope boundary:** IN -- verify source_token in cortex.py store() before INSERT; OUT -- retroactive backfill, memory_writer.py (Librarian path; source_agent is lower risk, ticketed separately if needed)\n**Completion criteria:** storing a memory with a fabricated source_token results in the token being nullified and a warning logged; valid token passes through unchanged; test covers both paths",
+    "completed_at": "2026-06-03T02:56:46.450836+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T02:33:45.497250+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6896295d-ebb9-43ea-901e-10730e05b58e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

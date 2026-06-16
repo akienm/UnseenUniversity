@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-swarm-visibility-rules.20260505.185334233988",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-visibility-rules"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T18:53:34.233988",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-via-home-web-server",
+      "T-swarm-visibility-rules",
+      "T-swarm-web-tab-ui"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-visibility-rules",
+    "gate": null,
+    "title": "CLOSED: swarm visibility rules — profile field, manifest field, shared guarantee",
+    "result": "visibility field + shared guarantee; 10 tests; commit 4ae3bfd",
+    "status": "done",
+    "worker": "claude",
+    "priority": "S",
+    "claimed_at": null,
+    "related_to": "T-swarm-via-home-web-server",
+    "decision_id": null,
+    "description": "Implement the channel visibility model: primary agents (the one running on the local box) are visible everywhere; secondary agents (on remote boxes) are opt-in visible. The `shared` channel is always present for all participants. Web UI renders as horizontal tabs.\n\n**Affected files:** agent_datacenter/agent_datacenter/announce/profile.py, agent_datacenter/agent_datacenter/announce/manifest.py\n**Design rules:** none apply\n**Scope boundary:** IN — visibility flag (primary/secondary) on device profile, `shared` channel always-on guarantee, tab ordering rule (primary first, secondary by opt-in order). OUT — actual web tab rendering (T-swarm-web-tab-ui); per-user ACL overrides (deferred).\n**Test plan:** unit tests — primary device profile has visibility=primary; secondary has visibility=secondary; manifest listing filters by visibility flag; shared channel present in every device's channel list regardless of visibility.\n**Pass condition:** Device manifest for a remote box shows secondary visibility; querying available channels always includes `shared` regardless of which device profile is loaded.",
+    "completed_at": "2026-05-05T18:53:34.233988+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a4559bef-9089-46e8-a04b-045e9524994b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

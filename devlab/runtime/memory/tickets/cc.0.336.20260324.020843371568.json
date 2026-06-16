@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.336.20260324.020843371568",
+  "emitter": "cc.0",
+  "namespace": [
+    "336"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T02:08:43.371568",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "336"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "336",
+    "size": "M",
+    "title": "T-interoception: ResourceMonitorSource as continuous milieu contributor",
+    "result": "InteroceptionSource fully implemented as continuous milieu contributor. Added milieu.nudge_vad() for direct VAD delta application. Rewrote InteroceptionSource with: graduated CPU mapping (ease/capable/strain/overload), positive registration for calm states, db-latency/inference-latency/cluster-reachability signals, temporal accumulation via _sustained_arousal_boost(). Fixed missing import os (BoredomSource regression). 16 new tests, 126 total pass.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T02:00:32.676421+00:00",
+    "description": "ResourceMonitorSource feeds resource state continuously into milieu. #336",
+    "completed_at": "2026-03-24T02:08:43.371568+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d4af28c6-23ee-46e5-b090-6b4dbcc2a69a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-uc-session-id-canonical.20260423.193514402690",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-session-id-canonical"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T19:35:14.402690",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-session-id-canonical"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-session-id-canonical",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "UC",
+      "Comms"
+    ],
+    "title": "UC session_id canonicalization — strip bare/URI mismatch dropping all Igor replies",
+    "result": "UC canonicalizes session_id to comms:// URI at transport boundary (agent_send entry, _ws_endpoint init, join_session ingress). 60/60 UC-family tests pass. Commit ccb007ad.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-23T19:34:45.985030+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Observed live: Igor generates replies but the web UI never receives them. Root cause: browser joins session with comms://shared URI form (currentChannel in the tab UI), Igor/agent_send default session_id='shared' (bare form). Server keys _session_clients/_session_history on the literal string, so agent_send writes to 'shared' while browser subscribes 'comms://shared' → fanout=0 DROP every reply.\n\n**Fix:** UC transport boundary canonicalizes to comms:// URI form (matches browser + lab/utility_closet/comms.py channel registry). _canonical_session_id() helper applied at agent_send entry, _ws_endpoint initial current_session, and join_session new_sid ingress. HTTP POST flows through agent_send so no extra change needed there.\n\n**Affected files:** lab/claudecode/utility_closet_server.py (helper + 3 call sites), tests/test_uc_delivery_telemetry.py + tests/test_utility_closet_server.py (update assertions that keyed on bare 'shared').\n\n**Design rules:** docs-in-code, test-plan-or-why-not. No new DB schemas. HIGH-inertia file NOT touched (this is UC transport, not brainstem).\n\n**Scope boundary:** IN — session_id canonicalization at UC boundary + test updates to match new key form. OUT — changing comms.py's URI scheme, changing the browser's channel-tab UI, modifying agent_send callers in Igor (they keep using bare names; UC coerces).\n\n**Test plan:** Updated 2 existing unit tests (test_agent_send_logs_entry, test_agent_send_to_unknown_session_produces_drop, test_agent_send_writes_to_history). All UC-family suites pass (test_uc_delivery_telemetry, test_utility_closet_server, test_utility_closet_client, test_comms, test_comms_default_channels = 60 tests). Live verification: restart UC, check that Igor's next reply fanout>0 in uc_deliver logs.",
+    "completed_at": "2026-04-23T19:35:14.402690+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1afeb0d4-c847-43dc-b15e-3e9c2797efb9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

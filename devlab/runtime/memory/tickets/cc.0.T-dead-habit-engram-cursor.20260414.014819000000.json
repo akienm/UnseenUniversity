@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-dead-habit-engram-cursor.20260414.014819000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dead-habit-engram-cursor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:19",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dead-habit-engram-cursor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dead-habit-engram-cursor",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "PROC_INVOKE_SPRINT + PROC_INVOKE_COMMIT habits reference unregistered pe_chain:run_engram_cursor",
+    "result": "Investigation: habits not dead. SKILL_SPRINT_ENTRY and SKILL_COMMIT_ENTRY engrams exist (created by skill_importer.py). PROC_INVOKE_SPRINT/COMMIT habits have correct triggers and intent. Missing piece is pe_chain:run_engram_cursor interpreter itself. Reframed as T-engram-cursor-runtime (L). Biomimicry verdict: useful, just needs to be hooked up — this IS the direction of moving skill execution into the matrix.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-14T01:48:19Z",
+    "related_to": null,
+    "description": "Discovered in 2026-04-13 day-close audit (habit health step).\n\nTwo PROCEDURAL memories have code_ref='pe_chain:run_engram_cursor':\n  - PROC_INVOKE_SPRINT\n  - PROC_INVOKE_COMMIT\n\nBut `run_engram_cursor` is not in the tool registry (checked against registry._tools, 246 registered tools). When these habits fire, the code_ref dispatch resolves the string, looks it up in the registry, and finds nothing. Silent dead habits.\n\nCheck git log for when run_engram_cursor was removed or renamed. If renamed, update both habits' metadata.code_ref. If removed entirely, either delete both habits or pick a replacement target (the PROC_CODE_A_TICKET habit shipped with a real code_ref as a template — see that ticket's result line for the pattern).\n\nNot blocking anything today — habits just no-op when fired. Ticket so tomorrow's cleanup has a breadcrumb.\n\nINERTIA: LOW — metadata update in DB, no source code changes required if the right replacement exists.",
+    "completed_at": "2026-04-14T17:43:25.691796+00:00",
+    "github_issue": 429,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ea56e20e-8a0d-4ff2-abbb-47bf7124a255",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

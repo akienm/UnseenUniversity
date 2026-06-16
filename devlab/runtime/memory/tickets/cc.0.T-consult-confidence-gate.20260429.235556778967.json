@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-consult-confidence-gate.20260429.235556778967",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-confidence-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T23:55:56.778967",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-consult-confidence-gate",
+      "T-consult-confidence-threshold-raise",
+      "T-pe-chain-empty-close-detection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-confidence-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consult",
+      "Cognition"
+    ],
+    "title": "Consult: add abort-on-low-confidence gate (replaces empty-closed T-consult-confidence-threshold-raise)",
+    "result": "ConsultConclusion.aborted + .usable; conclude(min_confidence=0.55 default, env override). Empty + sub-threshold both abort. pe_chain caller propagates aborted to basket. 7 new tests, 4126 regression tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-29T23:50:38.364765+00:00",
+    "related_to": "T-consult-confidence-threshold-raise",
+    "decision_id": null,
+    "description": "Re-scope of T-consult-confidence-threshold-raise (Igor's pe_chain empty-closed it without doing the work — see T-pe-chain-empty-close-detection). Original ticket described 'raise 0.3 floor to 0.55' but no 0.3 constant exists in consult.py — Akien clarified the work is to ADD the abort-on-low-confidence gate.\n\nCurrent state: ConsultSession.conclude() picks max(transcript, key=confidence) regardless of threshold. Sub-threshold confabulations get returned as the 'best' answer with no signal that the consult should be aborted.\n\nFix: add threshold parameter to conclude (default 0.55, configurable via env IGOR_CONSULT_MIN_CONFIDENCE). When best.confidence < threshold:\n- Return ConsultConclusion with final_hypothesis='', confidence=best.confidence, plus a new aborted=True flag\n- Log 'consult aborted: best confidence X.XX below threshold Y.YY — escalating'\n- Caller (_conclude_consult_session in pe_chain) checks aborted and treats as escalation signal rather than usable answer\n\nThreshold rationale (from observe-and-tune ticket): 104 sessions, nothing fell under 0.62 — so 0.55 is a comfortable floor that catches the truly-confabulating cases without false positives.\n\n**Affected files:** wild_igor/igor/cognition/consult.py (ConsultConclusion + conclude), wild_igor/igor/tools/pe_chain.py (caller handles aborted), tests/test_consult.py (add gate tests).\n**Design rules:** approach-frame (positive: 'consult signals aborted when confidence below threshold'). No-sqlite. Test-plan present.\n**Scope boundary:** in scope: gate + caller change + tests. Out of scope: retuning the 0.55 threshold (Akien adjusts via env if needed), full multi-turn consult logic.\n**Test plan:** ConsultConclusion gains aborted field; conclude returns aborted=True when best.confidence < threshold; conclude returns aborted=False when best.confidence >= threshold; pe_chain caller treats aborted as escalation. 4119+ regression tests pass.",
+    "completed_at": "2026-04-29T23:55:56.778967+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2f89483d-0f20-43b6-8bf3-e495f7b5ec9d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

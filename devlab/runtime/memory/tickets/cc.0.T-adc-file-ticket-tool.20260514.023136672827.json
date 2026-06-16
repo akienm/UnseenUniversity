@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-file-ticket-tool.20260514.023136672827",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-file-ticket-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-14T02:31:36.672827",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-action-agency-tools-2026-05-13"
+    ],
+    "tickets": [
+      "T-adc-file-ticket-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-file-ticket-tool",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Agency"
+    ],
+    "title": "CLOSED: ADC MCP tool: file_ticket — create cc_queue ticket from any device",
+    "result": "file_ticket() MCP tool writing to clan.memories; 4 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": "2026-05-14T02:37:12.163394+00:00",
+    "created_at": "2026-05-14T02:31:36.672827+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-action-agency-tools-2026-05-13",
+    "description": "No MCP tool exists to file a ticket from the Librarian or any ADC device. Creating tickets requires CC or an indirect channel message. This blocks the three-way conspiracy loop (Librarian notices issue → files ticket → CC sprints).\n\nProposed shape: Add `file_ticket(title, description, size='S', tags=None, decision_id=None, priority=0.5, status='triage')` to Librarian tools. Writes directly to `clan.memories` using cc_queue's schema: id=T-<slug>, narrative=title, memory_type='FACTUAL', parent_id='TICKETS_ROOT', metadata={kind:'ticket', id, title, description, size, tags, status, priority, decision_id}, source='cc_queue', scope='class', confidence=1.0. No TheIgors import — the schema is known from inspection of cc_queue.py INSERT. Logs to action_log after insert.\n\n**Affected files:** new `agent_datacenter/devices/librarian/tools/ticket_tools.py`, update `agent_datacenter/devices/librarian/tools/__init__.py`\n**Design rules:** no-TheIgors-imports; no-sqlite; action-log-every-call\n**Scope boundary:** file_ticket only. No list_tickets, no status updates — those later. Status always 'triage' unless caller specifies.\n**Test plan:** call file_ticket, verify row in clan.memories with parent_id=TICKETS_ROOT, kind='ticket'; verify action_log entry; verify ticket appears in cc_queue list output.",
+    "completed_at": "2026-05-14T02:38:42.841956+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c3edd241-61f7-49d6-b067-d894bf807e06",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

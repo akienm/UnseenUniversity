@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-igor-web-reply.20260609.203210210546",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-igor-web-reply"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:32:10.210546",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-web-reply-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-igor-web-reply",
+      "T-igor-web-reply-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-igor-web-reply",
+    "gate": "2026-06-23",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "WebUI",
+      "Igor"
+    ],
+    "title": "[sprint] Consequence check: Igor replies reach web UI",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that Igor replies posted to the web routing channel are visibly delivered in the web UI without manual tmux inspection.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:32:10.210546+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-web-reply-2026-06-01",
+    "description": "D-igor-web-reply-2026-06-01 shipped T-igor-web-reply-routing (closed), but no consequence check was ever run.\n\n**What changed:** T-igor-web-reply-routing wired Igor's reply path to the web server so replies appear in the web UI.\n\n**Predicted unintended effects:** Reply routing may have shipped as a mechanism but the web UI may not render incoming replies (wrong channel, wrong author filter, missing WebSocket push).\n\n**Signals to watch:** Send a message to Igor from the web UI. Does a reply appear in the web UI within a reasonable time? Check: tmux console shows reply but web UI doesn't (routing gap), or neither (Igor not responding).\n\n**Gate condition:** Check by 2026-06-23\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe whether Igor replies reach the web UI chat pane. Report: working / broken with reason / partial.\n**Test plan:** no tests — live observation ticket\n**Completion criteria:** Manually send a message from web UI; observe whether Igor's reply appears in the web UI. Record outcome as: working / broken (reason) / partial.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.204.20260324.050136209676",
+  "emitter": "cc.0",
+  "namespace": [
+    "204"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T05:01:36.209676",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "204"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "204",
+    "size": "M",
+    "title": "Node growth gaps — richer episodic narrative + response TWM push + stew salience",
+    "result": "All three gaps already implemented: Gap1 (episodic narrative includes response_text[:300]) at main.py:4444, Gap2 (TWM push of IGOR_SAID) at main.py:4516-4525, Gap4 (stew salience=0.65) at ebook_reader.py:750. Ticket was already live — closing as done.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T05:00:39.779834+00:00",
+    "description": "Richer episodic narrative, response TWM push, stew salience scoring. #204",
+    "completed_at": "2026-03-24T05:01:36.209676+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d36bec56-6943-4140-9e74-172dd862e8a3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

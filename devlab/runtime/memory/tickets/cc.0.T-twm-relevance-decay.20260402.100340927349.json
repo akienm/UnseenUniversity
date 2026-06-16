@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-twm-relevance-decay.20260402.100340927349",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-relevance-decay"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T10:03:40.927349",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-twm-goal-slot",
+      "T-twm-relevance-decay"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-relevance-decay",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "TWM: goal-relevance-weighted TTL decay",
+    "result": "twm_relevance_score() + twm_apply_goal_decay() on cortex. Fires on goal shift + heartbeat. IGOR_TWM_GOAL_DECAY_PENALTY configurable. 18 tests. Session 2026-04-02a.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": "T-twm-goal-slot",
+    "description": "TWM currently decays entries by time only (fixed TTL). Items unrelated to the active goal should decay faster; items directly relevant should hold longer.\n\nFix: at each decay pass, compute a relevance score for each TWM entry against the current ACTIVE_GOAL (from T-twm-goal-slot). Adjust effective decay rate by relevance.\n\nAlgorithm:\n  relevance = word_graph_bigram_overlap(entry_content, active_goal_text)  # 0.0–1.0, no inference\n  decay_multiplier = 1.0 + (1.0 - relevance) * GOAL_DECAY_PENALTY  # default PENALTY=2.0\n  effective_ttl = base_ttl / decay_multiplier\n  # low relevance (0.0) → decays 3× faster; high relevance (1.0) → decays at base rate\n\nImplementation:\n1. Add relevance_score field to TWM observation (computed at insert + recomputed on goal change)\n2. In NE daemon decay pass (or TWM.tick()): apply goal-weighted multiplier\n3. On ACTIVE_GOAL change: re-score all existing TWM entries immediately (goal shift flushes stale context fast)\n4. ACTIVE_GOAL entry itself is exempt from relevance decay (it IS the goal)\n5. Configurable: IGOR_TWM_GOAL_DECAY_PENALTY env var (default 2.0, range 1.0–5.0)\n\nWord graph overlap: count shared bigrams between entry tokens and goal tokens, normalize by entry length. O(n) per entry, cheap enough for TWM size (~7-50 items).\n\nPrerequisite: T-twm-goal-slot.\nDesign refs: Gemini threading analysis (RL_gemini_threading_20260401), temporal gradient primitive (project_temporal_gradient_primitive.md).",
+    "completed_at": "2026-04-02T10:03:40.927349",
+    "required_files": [
+      "wild_igor/igor/cognition/twm_observations.py",
+      "wild_igor/igor/cognition/word_graph.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a5715dd5-e0c9-40b4-98f9-32c8f8b35699",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

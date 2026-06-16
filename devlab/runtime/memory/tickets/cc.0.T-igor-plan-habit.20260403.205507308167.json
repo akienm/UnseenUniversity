@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-igor-plan-habit.20260403.205507308167",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-plan-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T20:55:07.308167",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-plan-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-plan-habit",
+    "size": "M",
+    "title": "PROC_PLAN habit — reads ticket, stores plan, emits to basket",
+    "result": "Added pe_plan() to pe_chain.py — tier.2 generates plan_summary+test_criterion; store_plan() called durably; fast path for ticket.plan. Seeded PROC_PLAN habit memory. 5 tests.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 3,
+    "claimed_at": "2026-04-03T20:42:14.783179+00:00",
+    "related_to": null,
+    "description": "Seed PROC_PLAN cognitive habit: reads active ticket from basket context, calls store_plan, emits plan node into basket for PROC_FILTER to consume",
+    "completed_at": "2026-04-03T20:55:07.308167+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "63e065bf-494e-4eb6-b6af-6632ed7cb6af",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

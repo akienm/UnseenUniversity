@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-or-model-auto-update.20260403.192525000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-or-model-auto-update"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:25",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-or-model-auto-update"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-or-model-auto-update",
+    "size": "M",
+    "title": "habit: auto-update OR model IDs on 400 invalid model",
+    "result": "or_model_refresh.py: fetch OR /models, find closest match per env var, update os.environ in-process, log changes. PROC_OR_MODEL_REFRESH seeded. 8 tests pass.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-04-04T01:03:10.759773+00:00",
+    "created_at": "2026-04-03T19:25:25Z",
+    "description": "When inner_cc or any OR caller gets HTTP 400 'not a valid model ID', automatically call OR /models endpoint to find the closest valid replacement, update the stored default (INNER_CC_HAIKU_MODEL or equivalent in DB), log the rename, and retry. Seed as a PROC habit so Igor self-corrects on future OR model renames without Claude intervention. OR model names change regularly — manual fixes are not sustainable.",
+    "completed_at": "2026-04-04T01:07:49.634518+00:00",
+    "github_issue": 347,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4b013882-f362-4bef-ad00-38166c9c0c42",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

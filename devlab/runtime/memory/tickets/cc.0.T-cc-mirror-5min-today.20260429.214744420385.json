@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-mirror-5min-today.20260429.214744420385",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-mirror-5min-today"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T21:47:44.420385",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-per-day-log-freshness-2026-04-29"
+    ],
+    "tickets": [
+      "T-cc-daily-chat-logs",
+      "T-cc-mirror-5min-today",
+      "T-logging-"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-mirror-5min-today",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Logging",
+      "ADC",
+      "Fixit"
+    ],
+    "title": "CC chat mirror — 5-min refresh of today's file (drop hourly --all)",
+    "result": "Cadence 3600s→300s, dropped --all (default mode = newest session = today). REFRESH_INTERVAL_SEC class constant. 6 new tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-29T21:46:29.354454+00:00",
+    "related_to": "T-cc-daily-chat-logs",
+    "decision_id": "D-per-day-log-freshness-2026-04-29",
+    "description": "StaleChatLogBackfiller in wild_igor/igor/cognition/push_sources.py runs export_chat.py --all once per HOUR (3600s). Result: today's mirror at ~/.agent_datacenter/logs/CC.0/YYYY-MM-DD.md drifts up to 60min stale. Akien's request: 5-min refresh for today, no historical rebuild needed.\n\nFix:\n- Change cadence 3600s → 300s\n- Drop --all flag (default mode already targets newest session, which is today)\n- Optional: keep an --all backfill at /day-close or daily cron (not in this ticket; file separate if needed)\n\n**Affected files:** wild_igor/igor/cognition/push_sources.py (StaleChatLogBackfiller class).\n**Design rules:** none apply (cadence + flag tweak; no schema or interface change).\n**Scope boundary:** in scope: cadence 5min + drop --all. Out of scope: rewriting export_chat.py, full ADC LoggingControlCenter migration (covered by T-logging-* tickets).\n**Test plan:** existing test for StaleChatLogBackfiller (if any) updated for new cadence; otherwise add a small test asserting the 300s threshold. After deploy, observe today's CC.0 mirror updates within 5min.",
+    "completed_at": "2026-04-29T21:47:44.420385+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "82b05d34-5c13-4ea0-bb8b-05e8460ac87f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

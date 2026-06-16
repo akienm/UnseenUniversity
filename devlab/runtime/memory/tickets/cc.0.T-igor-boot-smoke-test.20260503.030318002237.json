@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-igor-boot-smoke-test.20260503.030318002237",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-boot-smoke-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T03:03:18.002237",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bystander-main-py-496-cortex-sweep-miss",
+      "T-flaky-tests",
+      "T-igor-boot-smoke-test",
+      "T-sqlite-out-wild-0001-db"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-boot-smoke-test",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "TestCoverage",
+      "BootHealth"
+    ],
+    "title": "Igor() boot smoke test — full pytest passed despite TypeError on instantiation",
+    "result": "Smoke test shipped (commit 7086aca9). Subprocess invocation: spawns python -c 'Igor(instance_id=...)', forwards conftest's IGOR_HOME_SEARCH_PATH so Cortex writes to test schema not production. Asserts returncode==0 and 'BOOT_OK' in stdout. Bug-catching verified: temporarily reverted main.py:496 to broken Cortex(self.db_path, ...) form, confirmed test fails with TypeError visible in captured stderr; restored. Suite: 4307 → 4308 passing. ~12s wall.",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-03T02:56:06.438323+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "The Cortex constructor sweep (T-sqlite-out-wild-0001-db, commit 9bfc31ae) missed main.py:496 — Igor() raised TypeError on instantiation for an unknown number of days, but the full pytest suite passed clean. The Igor class has near-zero direct coverage; tests stub it (e.g. _IgorShape in test_igor_datacenter_boot.py) rather than instantiating it.\n\n**Bug class:** anything that breaks Igor.__init__ ships silently because no test runs the constructor end-to-end. This is a coverage gap big enough to land a HIGH-inertia rename without anyone noticing.\n\n**The smoke test we need:** one test that does `Igor(instance_id='wild-0001-test')` (or whatever isolation pattern works) and asserts the boot sequence completes without exception. It does NOT need to:\n- Actually wire the datacenter (use injected None or stub client)\n- Run cognition\n- Hold long-lived state\n\nIt just needs to verify the constructor runs to completion, so future sweeps that rename a Cortex parameter or change a sub-component shape break this test instead of leaking to runtime.\n\n**Affected files:** tests/test_igor_boot_smoke.py (NEW). Possibly conftest.py to add an isolation fixture if needed.\n\n**Design rules:** test-coverage-for-load-bearing-classes, no-fragile-mocks (use real Cortex with isolated test schema, not deep MagicMock).\n\n**Scope boundary:** IN — single boot smoke test that instantiates Igor and asserts no exception. OUT — full Igor lifecycle tests (run_turn, etc.); refactoring Igor.__init__ to be more testable; coverage of nested subsystems (those have their own tests).\n\n**Test plan:** the test IS the deliverable. Acceptance: re-introducing the main.py:496 bug locally causes the new test to fail.\n\n**Why now:** the bug we're fixing in T-flaky-tests would have been caught by this test had it existed. Filing as the immediate response to the gap surfaced by T-bystander-main-py-496-cortex-sweep-miss.",
+    "completed_at": "2026-05-03T03:03:18.002237+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "614d59fe-296d-46ae-979d-c7c8bdd4953c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

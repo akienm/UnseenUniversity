@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-igor-console-logging.20260508.193944577853",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-console-logging"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T19:39:44.577853",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-console-logging"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-console-logging",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Observability"
+    ],
+    "title": "CLOSED: Add console logging for Igor startup and operations",
+    "result": "paths().logs fixed → ADC canonical location; DailyConsoleFileHandler now writes to ~/.agent_datacenter/logs/Igor-wild-0001/; dd444d14",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-05-08T20:16:35.741353+00:00",
+    "created_at": "2026-05-08T19:39:44.577853+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor is not logging to /home/akien/.agent_datacenter/logs/Igor-wild-0001/ today. Add console output so we can see what he's doing during startup and operation — helps with debugging silent failures or stuck processes.\n\n**Affected files:** wild_igor/igor/main.py, wild_igor/igor/paths.py, logging setup\n**Design rules:** docs-in-code\n**Scope boundary:** IN — add basic console.log / print statements at key startup points and during main loop iterations. OUT — implementing structured logging infrastructure.\n**Test plan:** Manual: start Igor, verify console output appears in the expected log file.",
+    "completed_at": "2026-05-08T20:30:31.221833+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7fa2c4bf-5c5a-440e-9bdd-c6f5584e3663",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

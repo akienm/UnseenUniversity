@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-librarian-persistent-inquiry.20260607.000608321265",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-persistent-inquiry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T00:06:08.321265",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-librarian-persistent-inquiry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-persistent-inquiry",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "Cognition",
+      "Platform"
+    ],
+    "title": "Librarian: become_knowledgeable_about persistent query",
+    "result": "become_knowledgeable_about + add_hit + compress + get_inquiry in persistent_inquiry.py; adc.palace storage; 19 tests (12 unit + 7 integration against real Postgres)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the Librarian can hold a standing inquiry that accumulates and synthesizes knowledge over time, distinct from one-shot research reports.",
+    "claimed_at": "2026-06-07T23:58:34.130719+00:00",
+    "created_at": "2026-06-07T00:06:08.321265+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "learn(topic) produces a one-shot report and terminates. There is no mechanism for 'become knowledgeable about X' — a question that persists, recognizes relevant information as it arrives, and deepens its model over time rather than closing. This is the Radar O'Reilly pattern applied to the Librarian: not waiting to be asked, but maintaining a running model of things Akien/Igor care about and updating it when new information bears on them.\n\nProposed shape: become_knowledgeable_about(topic) creates a PersistentQuestion record in the palace. Each time relevant information flows through the Librarian (research calls, igor reads, etc.), the record accumulates hits weighted by novelty: confirmation (small) < gap-explanation (medium) < serendipitous discovery (strongest). Periodically or on request, accumulated hits compress into an updated current_model. Returns the current model on query. Distinct from the watchlist (monitoring for changes) — this is accumulation toward understanding.\n\n**Affected files:** TBD — discovery step in sprint; likely a new persistent_inquiry.py in the Librarian device, palace schema additions for PersistentQuestion node type\n**Design rules:** external state principle (state in palace/DB, not in-memory only); no-sqlite; Igor uses systems not contains them\n**Scope boundary:** In scope: PersistentQuestion CRUD, hit accumulation with novelty weighting, compression step, query interface. Out of scope: automatic injection into all Librarian flows (wire-in separately), UI, changing existing learn() behavior.\n**Completion criteria:** become_knowledgeable_about('X') creates a PersistentQuestion in the palace that survives restart. Manual hit injection appends to it. get_inquiry('X') returns the current_model including accumulated hits. At least one compression cycle runs and produces a shorter, denser model than the raw hit list. Tests cover: create, hit accumulation with differential weighting, compression, query, restart persistence.",
+    "completed_at": "2026-06-08T03:06:48.742971+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

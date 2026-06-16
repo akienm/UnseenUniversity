@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-connection-pool-resize.20260404.175239603667",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-connection-pool-resize"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:52:39.603667",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-connection-pool-resize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-connection-pool-resize",
+    "size": "S",
+    "tags": [
+      "Database"
+    ],
+    "title": "Resize Postgres connection pool: minconn=1→3, maxconn=10→20",
+    "result": "minconn=1→3, maxconn=10→20 in db_proxy.py. 1684 tests pass. Committed e04d8a61.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-04T17:51:52.511997+00:00",
+    "related_to": null,
+    "description": "cortex.py ThreadedConnectionPool(minconn=1, maxconn=10) under-provisions for NE cycles + multiple async jobs contending. At pool exhaustion new requests block. Fix: raise minconn=3, maxconn=20; add pool starvation metrics to get_metrics() output (track getconn() wait time). DB finding from deep-audit Panel 1.",
+    "completed_at": "2026-04-04T17:52:39.603667+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1748cee0-01ca-493b-abc8-1563c1c8afcc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

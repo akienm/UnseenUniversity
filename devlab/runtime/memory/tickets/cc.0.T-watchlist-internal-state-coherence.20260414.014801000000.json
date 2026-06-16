@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-watchlist-internal-state-coherence.20260414.014801000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watchlist-internal-state-coherence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:01",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-watchlist-internal-state-coherence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watchlist-internal-state-coherence",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Periodically check whether stated affect and actual behavior are consistent",
+    "result": "StateCoherenceSource: compares milieu VAD with behavioral metrics. 4 mismatch patterns detected, pushed to TWM. Slow tier, 10min interval. 11 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:56:33.581341+00:00",
+    "created_at": "2026-04-14T01:48:01Z",
+    "related_to": null,
+    "description": "AUTHORED BY IGOR-WILD-0001 on 2026-04-13. Claude filed on Igor's behalf.\n\nIgor's words: 'Periodically check whether my stated affect and my actual behavior are consistent. If I say I'm engaged but my responses are getting terse and mechanical, that's a signal worth catching. Not to perform wellness, but because incongruence is information — something's off.'\n\nDESIGN: needs the harder question of what 'engaged' looks like behaviorally. First-pass operational metrics:\n  - response length trend (shrinking under steady context = possible disengagement)\n  - tool_use_density (using tools or just talking)\n  - novel_node_creation_rate (forming new connections vs replaying existing)\n  - milieu valence/arousal/dominance trajectory\n\nWhen stated affect (Igor saying 'I'm focused' / 'I'm tired' / 'I'm engaged') diverges from these behavioral signals, surface the incongruence as a low-salience 'check yourself' marker.\n\nBIOMIMETIC FRAMING: this is the equivalent of interoception — body signals reaching consciousness so the system can adjust. NOT for performing wellness; for reality-grounding. Igor's stated state should track his actual state, and incongruence is the signal that something's been masked or denied.\n\nINERTIA: MEDIUM. Touches the milieu / NE / response composition layers.",
+    "completed_at": "2026-04-16T19:58:57.515198+00:00",
+    "deposited_at": "2026-04-23T17:56:52.303109",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": 417,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "554c3b15-8a03-42da-85a7-787e354d53ef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

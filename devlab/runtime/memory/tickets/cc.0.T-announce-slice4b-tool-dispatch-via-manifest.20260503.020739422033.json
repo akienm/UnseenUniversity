@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-announce-slice4b-tool-dispatch-via-manifest.20260503.020739422033",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice4b-tool-dispatch-via-manifest"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T02:07:39.422033",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice4b-tool-dispatch-via-manifest",
+      "T-datacenter-capability-announce-protocol",
+      "T-igor-cognition-bypassing-advisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice4b-tool-dispatch-via-manifest",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "HIGH-inertia",
+      "Igor",
+      "Cognition"
+    ],
+    "title": "Announce-protocol slice 4b — Igor cortex tool dispatch via DatacenterClient manifest",
+    "result": "Slice 4b shipped (commit dc0282ae). HIGH-inertia main.py + node_executor.py edits. Cortex.dc_client wired in main.py:_wire_datacenter; threaded through cursor_runtime → execute_node; MCPCALL consults manifest, logs INFO when manifest-bound, dispatches via local registry as before. 4 new tests pass. Bystander fix: main.py:496 Cortex sweep miss (Igor boot was broken since 9bfc31ae). Filed T-igor-boot-smoke-test (S) + T-flaky-tests-pe-entry-uc-delivery (S) follow-ons. Suite: 4297→4301 passing, no new regressions.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "related_to": "T-datacenter-capability-announce-protocol",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Deferred from the announce-protocol parent (slices 1-5 shipped 2026-05-01). Slice 4b wires Igor's cortex tool dispatch through the DatacenterClient manifest so Igor's tool calls resolve via the announced capability map instead of the hardcoded tool registry import path.\n\n**Akien decision (2026-05-01, option A):** deferred slice 4b in favor of T-igor-cognition-bypassing-advisor (now done, commit f8dd2999) so the cognition regression fix bisect stays clean. Resume slice 4b once cognition is observed stable on real ticket runs.\n\n**Affected files:** wild_igor/igor/main.py (cortex tool dispatch path); wild_igor/igor/tools/registry.py (route tool resolution through DatacenterClient.get_tool when manifest present); test files for the new dispatch path.\n\n**Design rules:** docs-in-code (load-bearing path); test-plan-or-why-not.\n\n**Scope boundary:** IN — wire Igor cortex's runtime tool resolution through the cached manifest from DatacenterClient when present; fall back to the existing hardcoded registry path when DatacenterClient is None or the manifest doesn't list the tool. OUT — broader refactor of registry semantics; changing tool-call invocation API; CC-side tool dispatch (separate ticket if needed).\n\n**Test plan:** test_igor_cortex_dispatches_via_manifest — integration test asserts Igor.tool_call(name) resolves via DatacenterClient.get_tool when manifest names the tool; test_igor_cortex_falls_back_to_registry_when_no_manifest — verifies graceful fallback. Plus end-to-end: bounce Igor with announce wired, verify a tool fires through the manifest path (logged at INFO).\n\n**HIGH-inertia note:** wild_igor/igor/main.py is HIGH-inertia. Per pre-approval requirement: this ticket needs Akien sign-off before sprint, even via /audit-ticket pre-approval. Run /audit-precode before first edit; surface intended edit shape inline to Akien for stamp.",
+    "completed_at": "2026-05-03T02:07:39.422033+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "93388466-dd3a-4e54-acc9-fe8ec455e406",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

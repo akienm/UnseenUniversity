@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-granny-nanny.20260528.191804224007",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-granny-nanny"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:18:04.224007",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-nanny-2026-05-28"
+    ],
+    "tickets": [
+      "T-consequence-granny-nanny"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-granny-nanny",
+    "gate": "2026-06-11",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Granny + Nanny orchestration devices",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-28T19:18:04.224007+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-nanny-2026-05-28",
+    "description": "**What changed:** Added Granny Weatherwax (ticket gateway + coding orchestrator) and Nanny Ogg (scheduler + world-interaction dispatcher) as rack devices replacing scattered orchestration logic.\n**Predicted unintended effects:** (1) cc_queue.py as pure storage may break existing callers that depend on its current routing/dispatch logic — audit all call sites before switching over. (2) Granny's Hebbian routing may develop strong edges to wrong workers early in training — routing decisions in first week need monitoring. (3) Nanny taking over Igor's internal scheduler may leave timing gaps if the switchover isn't atomic — Igor fires twice or not at all during transition. (4) Agent registry as a single point of failure — if Nanny is down, all world-interaction tickets queue indefinitely with no visibility.\n**Signals to watch:** cc_queue.py call site errors post-switchover; routing edge weights in first 7 days; Igor alignment review cadence during Nanny transition; world ticket queue depth when Nanny is restarted.\n**Gate condition:** Check by 2026-06-11.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": 806,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:18:04.224040+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bb8e8bb6-b17b-45b5-8599-9fba9b0cbd59",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

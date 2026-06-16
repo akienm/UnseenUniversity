@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-fix-scraps-gate-import.20260614.035629670400",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-scraps-gate-import"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T03:56:29.670400",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-scraps-gate-import"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-scraps-gate-import",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "Testing"
+    ],
+    "title": "Fix scraps gate test — cmd_claim import after removal",
+    "result": "removed stale cmd_claim import + TestCmdClaimRemoved class; 6 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.2,
+    "intention": "I intend that the scraps gate test file collects without error after cmd_claim was removed from cc_queue.py.",
+    "created_at": "2026-06-14T03:56:29.670400+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "test_cc_queue_scraps_gate.py imported cmd_claim which was deleted from cc_queue.py, causing collection failure. Remove import and TestCmdClaimRemoved class.\n\n**Affected files:** tests/igor/test_cc_queue_scraps_gate.py\n**Design rules:** none apply\n**Scope boundary:** Remove stale import + test class only.\n**Completion criteria:** pytest tests/igor/test_cc_queue_scraps_gate.py passes 0 failures.",
+    "completed_at": "2026-06-14T03:56:34.545078+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

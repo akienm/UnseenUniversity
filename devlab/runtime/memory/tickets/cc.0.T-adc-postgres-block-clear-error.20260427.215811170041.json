@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-postgres-block-clear-error.20260427.215811170041",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-postgres-block-clear-error"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:58:11.170041",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-postgres-block-clear-error",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-postgres-block-clear-error",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: blocked Postgres returns clear error to dependents immediately",
+    "result": "DeviceBlockedError in agent_datacenter/skeleton/exceptions.py. PostgresDevice._check_not_blocked() raises it instantly (<0.1ms) before any DB op. block_type='manual'|'auto'. RegistrationError also defined there.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-04-27T21:50:41.349376+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "When Postgres is blocked and a dependent device tries to query it, it gets an immediate clear error — not a timeout.\n\nProblem: Without this, a Postgres block during DB migration causes dependent devices to hang for their TCP timeout (30s+). Clear error enables fast failover.\n\nProposed shape:\n- In PostgresDevice: before any DB operation, check registry for own block status\n  If block_type is 'manual' or 'auto': immediately raise DeviceBlockedError({'device': 'postgres', 'block_type': ...})\n  Error shape: {'error': 'device_blocked', 'device_id': 'postgres', 'block_type': 'manual'|'auto', 'blocked_since': ISO8601}\n- Dependent devices that catch DeviceBlockedError can surface it immediately without waiting for TCP timeout\n- Test with: Igor device calling PostgresDevice.query() while Postgres is manually blocked\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/postgres/device.py (pre-op block check)\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/exceptions.py (DeviceBlockedError)\n\nDesign rules:\n- docs-in-code: comment explaining the motivation (migration safety)\n\nScope boundary:\nIN: pre-op block check, DeviceBlockedError exception with error shape\nOUT: dependent device error handling (each device handles DeviceBlockedError in its own code)\n\nTest plan:\n- Manually block postgres in registry; PostgresDevice.health() raises DeviceBlockedError\n- DeviceBlockedError has block_type='manual'\n- DeviceBlockedError raised immediately (< 100ms), not after TCP timeout",
+    "completed_at": "2026-04-27T21:58:11.170041+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fe886752-3916-4f23-996e-82835f39d351",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

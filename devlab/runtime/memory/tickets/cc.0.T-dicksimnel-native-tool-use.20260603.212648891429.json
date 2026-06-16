@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-dicksimnel-native-tool-use.20260603.212648891429",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-native-tool-use"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:26:48.891429",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-native-tool-use"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-native-tool-use",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Inference",
+      "WorkerProtocol"
+    ],
+    "title": "DickSimnel ToolLoop: switch from XML tags to native OR tool calling",
+    "result": "native OR tool calling: tools/tool_calls on InferenceRequest/Response, TOOL_DEFINITIONS in toolloop, role:tool messages, 19 tests",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": "2026-06-03T21:40:24.883038+00:00",
+    "created_at": "2026-06-03T21:26:48.891429+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "DickSimnel's ToolLoop uses a custom XML tag format (<TOOL:Bash>...</TOOL>) that OR models are not trained on. Models make tool calls but drift without converging to DONE, hitting the iteration cap. Root cause: protocol mismatch, not model capability. Fix: add tools/tool_calls fields to InferenceRequest/InferenceResponse, thread tools through _or_call and tool_calls through _parse_response, then replace XML regex parsing in ToolLoop with structured response.tool_calls. DONE detection becomes finish_reason=='stop' with no tool_calls — no ambiguity.\n\n**Affected files:** devices/inference/shim.py, devices/inference/device.py, devices/dicksimnel/toolloop.py\n**Design rules:** no-sqlite (n/a); OOP-first — modifying existing dataclasses and methods, no new standalone functions; test-plan-or-why-not: tests required.\n**Scope boundary:** In scope: InferenceRequest.tools field (list|None=None), InferenceResponse.tool_calls field (list|None=None), _or_call includes tools when present, _parse_response extracts tool_calls, ToolLoop dispatches from tool_calls and stops when empty. Out of scope: Ollama tool use, MinionDevice ToolLoop, model selection, budget ledger, Anthropic API path.\n**Completion criteria:** (1) _parse_response populates tool_calls from choices[0].message.tool_calls when present; (2) ToolLoop dispatches tools via response.tool_calls instead of XML regex; (3) XML _TOOL_PATTERN regex removed from toolloop.py; (4) existing ToolLoop tests pass; (5) new tests: _parse_response correctly extracts tool_calls from an OR-format response dict; ToolLoop calls a tool when tool_calls present and stops when tool_calls is empty/absent with finish_reason stop.",
+    "completed_at": "2026-06-03T21:55:00.458313+00:00",
+    "deposited_at": "2026-06-03T15:27:47.749875",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:27:52.707016+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "504a58aa-acd7-4437-9e1d-a6463110afa6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

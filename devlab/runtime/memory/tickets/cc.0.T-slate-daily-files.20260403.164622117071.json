@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-slate-daily-files.20260403.164622117071",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slate-daily-files"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T16:46:22.117071",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-slate-daily-files"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slate-daily-files",
+    "epic": "Claude",
+    "size": "M",
+    "title": "Slate daily files — YYYYMMDD.slate.txt",
+    "result": "Migrated slates from slate.md sections to dated files at ~/.TheIgors/claudecode/YYYYMMDD.slate.txt (D304). slate_manager.py renders dated files with Active/Done/Tools/Design-thread sections, cross-referenced with cc_queue done status. channel.py now shows local time. pe_chain.py stores full ISO timestamps. Fixed test loop writing to real channel. context-load and slateclose skills updated for new format.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-03T16:33:15.136835+00:00",
+    "related_to": null,
+    "description": "D304: Migrate slates from ~/.TheIgors/cc_channel/slate.md (with Slate 0/1/2 sections) to dated files at ~/.TheIgors/claudecode/YYYYMMDD.slate.txt. Update slate_manager.py to write dated files. Update /context-load, /slateclose, /slate skills to use dated files. Archive current slate.md as 20260402.slate.txt. Update all blob notes that reference slate numbers. Epics remain as ticket tags.",
+    "completed_at": "2026-04-03T16:46:22.117071+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "348bf128-a7d9-42d0-97b1-a1355cd3fa4b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

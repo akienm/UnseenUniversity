@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-multi-twm.20260402.201404151136",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-multi-twm"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T20:14:04.151136",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-multi-twm"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-multi-twm",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "T-multi-twm: READING_STEW/FACIA contaminate goal TWM window",
+    "result": "Tagged READING_STEW with category='reading_stew' in ebook_reader.py; fixed FACIA/TOOL_REGISTRY_ROOT pushes to use category='body.motor' kwarg directly instead of burying in metadata dict. 1377 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-02T20:10:15.463377+00:00",
+    "related_to": null,
+    "description": "READING_STEW and FACIA entries in TWM bury GOAL_READY signal. D301 HeartbeatSource._check_twm_trigger_habits queries twm_read() but reading entries dominate. Fix: filter TWM query by category when scanning for habit triggers, reserving goal signals from noise. Files: main.py HeartbeatSource, cortex.py twm_read(). Inertia: MEDIUM.",
+    "completed_at": "2026-04-02T20:14:04.151136+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3c590adc-5ff2-4a09-a3e4-55904845f57a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

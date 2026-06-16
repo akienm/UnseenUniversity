@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-audit-finding-codes.20260521.175415340259",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-finding-codes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340259",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-audit-finding-codes"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-finding-codes",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AuditPipeline",
+      "Workflow"
+    ],
+    "title": "Add stable typed finding codes to audit tool outputs",
+    "result": "AR-001..AR-007 codes in audit_runner.py; code field in audit_checks.json; --code flag in audit_add.py; skill-file codes are separate work",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "blocked_at": "2026-05-22T20:32:39.720325+00:00",
+    "claimed_at": "2026-05-22T19:39:15.208745+00:00",
+    "created_at": "2026-05-21T17:54:15.340259+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "audit-design, audit-ticket, and day-close-audit emit prose AMEND/FAIL text. Downstream agents (consequence-check tickets, audit-audits) must parse free-form text to match patterns. Stable finding codes (e.g. AD-C01 through AD-C10 for audit-design checks, AT-D01 for audit-ticket) alongside prose enable machine-composable pipelines where agents match findings by code rather than parsing language.\n\n**Affected files:** wild_igor/igor/tools/audit_design.py (or equivalent), wild_igor/igor/tools/audit_ticket.py, lab/claudecode/audit_runner.py\n**Design rules:** theigors/rules/coding (OOP-first), theigors/rules/docs-live-in-code\n**Scope boundary:** In scope: add stable code field to all finding objects emitted by the three audits; maintain backward-compatible prose output alongside codes. Out of scope: changing how codes are consumed (separate ticket).\n**Test plan:** Run audit-design on a test decision; verify output contains {code: 'AD-C10', severity: '...', ...} alongside existing AMEND text. Verify same code emitted on two runs of same input.",
+    "completed_at": "2026-05-24T18:35:43.121927+00:00",
+    "github_issue": 782,
+    "dispatched_at": "2026-05-22T19:39:15.208745+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340283+00:00",
+    "target_difficulty": 2,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e359f418-a52d-495f-a4b6-31c5dccf7d05",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

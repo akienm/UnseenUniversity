@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-inference-transport-make-context-signature.20260424.022741503778",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-transport-make-context-signature"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:27:41.503778",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-transport-make-context-signature"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-transport-make-context-signature",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Comms",
+      "Inference",
+      "Transport",
+      "Reliability",
+      "Pass2"
+    ],
+    "title": "Fix InferenceTransport kwargs to match make_context signature",
+    "result": "Shipped in 598c5424. _run_inference now calls make_context with supported kwargs (research_mode, complexity) threaded from metadata; purpose flows as purpose_id to gw.call as originally intended; metadata with no ctx slot is dropped with log trace. Before fix: 100% of comms://model/* requests TypeError'd and silently returned error strings. 6 new smoke tests cover round-trip, no-TypeError, complexity/research_mode propagation, exception handling, None-safety.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.95,
+    "claimed_at": "2026-04-24T02:25:59.191700+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "From Pass-2 Area 5 Gap 1 (critical). `lab/utility_closet/transports/inference.py:_run_inference` calls `make_context(purpose=..., metadata=...)` but `make_context` at `wild_igor/igor/cognition/inference_gateway.py:1207` takes `(is_background, is_user_turn, research_mode, complexity)`. Every comms://model/* request TypeErrors and returns '[inference-error] TypeError: unexpected keyword argument'. Entire chattable-LLM-channel surface dead on arrival, masked only by `log.error` + string-return — no alarm beyond.\n\nFix: build ctx with supported args (research_mode, complexity) and pass purpose through to gw.call() as purpose_id=purpose (which is already the signature). Drop the metadata pass-through — make_context doesn't store it and gw.call's kwargs forward to handlers.\n\n**Affected files:** lab/utility_closet/transports/inference.py, new tests/test_inference_transport.py.\n**Design rules:** docs-in-code, test-plan-or-why-not.\n**Scope boundary:** IN — fix _run_inference signature mismatch, add smoke test that monkeypatches gateway and asserts successful round-trip. OUT — redesigning InferenceContext; changing gw.call's kwargs; touching inference_gateway itself.\n**Test plan:** tests/test_inference_transport.py — monkeypatch get_gateway() to a stub gateway; assert _run_inference('hello', 'default', {}) returns gateway response text, not [inference-error]; assert no TypeError raised.",
+    "completed_at": "2026-04-24T02:27:41.503778+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c27927c3-fec3-4af0-ae19-f61e305452a1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

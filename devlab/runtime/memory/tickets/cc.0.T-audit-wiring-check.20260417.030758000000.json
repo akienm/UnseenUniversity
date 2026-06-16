@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-audit-wiring-check.20260417.030758000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-wiring-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T03:07:58",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-wiring-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-wiring-check",
+    "size": "S",
+    "title": "Audit step: verify new switches have end-to-end wiring before enabling",
+    "result": "wiring_check.py: scans enabled switches for unreferenced or stub-near-gate issues. Audit skill step 18.5 added. 17 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T19:38:03.343653+00:00",
+    "created_at": "2026-04-17T03:07:58Z",
+    "related_to": null,
+    "description": "Add audit step: for each switch flipped to true, verify the feature produces real user-facing output (not stubs/debug labels). Catches the pattern where we build components, wire them, flip a switch, but the output path still has a stub. Specific check: if IGOR_TURN_PIPELINE=true, verify VoiceProducer is not the stub. If IGOR_CALVING_ENABLED=true, verify calve_subtree is reachable. Generalizable pattern for any gated feature.",
+    "completed_at": "2026-04-17T19:42:24.207898+00:00",
+    "github_issue": 473,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d9567a0f-13e5-4326-8571-35825dac917c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

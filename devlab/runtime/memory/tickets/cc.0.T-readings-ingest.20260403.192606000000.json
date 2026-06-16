@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-readings-ingest.20260403.192606000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-readings-ingest"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:06",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-readings-ingest"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-readings-ingest",
+    "epic": "Training",
+    "size": "M",
+    "title": "Ingest TheIgorsProject/akien/Readings early design sessions as Igor INTERPRETIVE memories",
+    "result": "ingest_readings_design_sessions() added to learner.py. Scans ~/TheIgorsProject/akien/Readings/ for .txt/.md files, queues as book_type=design-session, encoding_arousal=0.90, priority=1. Registered as Igor tool. First run: 56 sessions queued. Reading feeder will pick these up on next run.",
+    "status": "done",
+    "claimed_at": "2026-04-04T22:50:52.225809+00:00",
+    "created_at": "2026-04-03T19:26:06Z",
+    "completed_at": "2026-04-04T22:52:38.561082+00:00",
+    "github_issue": 368,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

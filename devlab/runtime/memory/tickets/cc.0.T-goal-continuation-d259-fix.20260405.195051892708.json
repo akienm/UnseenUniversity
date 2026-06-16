@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-goal-continuation-d259-fix.20260405.195051892708",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-continuation-d259-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T19:50:51.892708",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-continuation-d259-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-continuation-d259-fix",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "goal_continuation: remove D259 gate, replace with Ollama liveness",
+    "result": "Removed D259 human-activity gate from run_goal_continuation(). Gate was designed to block cloud spend but PE chain uses Ollama only. Three-line change: removed _is_human_recently_active() call and guard block, replaced with comment explaining the decision. _is_human_recently_active() function kept for future use. 1819 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "claimed_at": "2026-04-05T19:50:03.672563+00:00",
+    "related_to": null,
+    "description": "run_goal_continuation() skips when no human active in last 30min (D259 gate). D259 was designed to block cloud spend — but goal_continuation drives the PE chain which uses Ollama only. Gate is blocking free local work. Fix: remove _human_was_active() check; replace with _call_tier2 availability check (or remove gate entirely — PE chain degrades gracefully when Ollama is down). Result: Igor can autonomously pick up worker=igor tickets without human presence.",
+    "completed_at": "2026-04-05T19:50:51.892708+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "42cfabf8-7ea3-4a25-aa84-59ade3e539b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

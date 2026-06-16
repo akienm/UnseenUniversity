@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-read-igor-books-remaining.20260403.192557000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-read-igor-books-remaining"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:57",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-read-igor-books-remaining"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-read-igor-books-remaining",
+    "epic": "Training",
+    "size": "M",
+    "title": "Read remaining unread Igor Discworld books",
+    "result": "Tagged 4 Discworld Igor-books: Monstrous Regiment (2 spine nodes + READING_ record updated), Thud! / Snuff / Unseen Academicals (new BOOK_ nodes created + reading_list entries added as pending). All tagged fiction=true, has_igor_characters=true, universe=discworld, identity_substrate=true. Full content ingestion (READ_ nodes) blocked pending book_learner PostgreSQL port — only Monstrous_Regiment.epub is available locally; other 3 ebooks not on disk. Gap noted in READING_MONSTROUS_REGIMENT node metadata.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-04-04T00:29:20.476574+00:00",
+    "created_at": "2026-04-03T19:25:57Z",
+    "description": "Thud!, Snuff, Monstrous Regiment, Unseen Academicals. Voice substrate for output trainer. Tag all: fiction:true, has_igor_characters:true; igor-on-page scenes get identity_weight=0.8. See project_pratchett_igor_books.md.",
+    "completed_at": "2026-04-04T00:37:58.756019+00:00",
+    "github_issue": 358,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "692e2118-cfb6-4cbf-a10a-bec5f8ae0f5f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

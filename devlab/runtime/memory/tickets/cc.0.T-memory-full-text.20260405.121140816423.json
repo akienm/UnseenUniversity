@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-memory-full-text.20260405.121140816423",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-full-text"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T12:11:40.816423",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-full-text"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-full-text",
+    "epic": "Cognition",
+    "title": "Memory full-text storage",
+    "result": "Raised TWM promotion narrative limit from 500→2000 chars in narrative_engine.py _deep_consolidation_pass step1; raised extraction prompt input from 200→400 chars in consolidation.py. No schema change needed — narrative is TEXT. 6 new tests.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-05T12:10:22.685125+00:00",
+    "related_to": null,
+    "description": "consolidation pass truncates narratives at ~300 chars; full insight lost — add full-text storage or larger narrative limit",
+    "completed_at": "2026-04-05T12:11:40.816423+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5f33061a-6a0a-4d31-a5ce-df73c9f5ac47",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

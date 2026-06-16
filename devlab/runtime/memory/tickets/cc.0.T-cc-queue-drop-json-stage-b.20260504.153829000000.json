@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-queue-drop-json-stage-b.20260504.153829000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-drop-json-stage-b"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:38:29",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-drop-json-stage-b",
+      "T-cc-queue-write-race"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-queue-drop-json-stage-b",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "ccQueue",
+      "Cleanup",
+      "Refactor"
+    ],
+    "title": "CLOSED: queue.json drop — stage B: migrate readers + remove echo + delete file",
+    "result": "all queue.json readers migrated to load_tasks(); _write_queue_echo/_check_drift removed; runtime queue.json deleted; 4148 tests pass",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-05T00:31:04.730937+00:00",
+    "created_at": "2026-05-04T15:38:29Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Stage B follow-on to T-cc-queue-write-race (stage A shipped 2026-05-03). Stage A eliminated the drift sources (cert_worker_freeze, worker_foreman, ops.queue_task all routed through cc_queue.save_tasks); this stage completes the deletion: migrate every reader from queue.json to cc_queue.load_tasks(), remove _write_queue_echo from cc_queue._save, delete queue.json from disk.\n\n**Use callmap.md as planning input** — it lists every queue.json toucher.\n\n**Readers to migrate (use cc_queue.load_tasks):**\n- lab/claudecode/github_sync.py\n- lab/claudecode/slate_manager.py\n- lab/claudecode/audit_pass1_run.py (auditing the file shape — may legitimately need queue.json bytes; review)\n- lab/claudecode/stale_ticket_sweeper.py\n- lab/claudecode/audit_ticket_shape.py (auditing file shape — same review)\n- lab/claudecode/map_igor.py\n- wild_igor/igor/cognition/action_claim_verifier.py (uses MTIME for timing signal — this MAY be legitimate; review carefully)\n- wild_igor/igor/dashboard/terminal.py\n- wild_igor/igor/tools/goal_continuation.py\n- wild_igor/igor/tools/pe_chain.py (HIGH-inertia — pre-approval required)\n\n**Tests to update:**\n- tests/test_queue_consumer.py\n- tests/test_pe_entry_nodes.py (uses _QUEUE_FILE patch)\n\n**Then:**\n- Remove _write_queue_echo and the call to it in _save()\n- Remove `import json` if no longer needed for echo\n- Delete ~/.TheIgors/cc_channel/queue.json\n- Update CLAUDE.md if queue.json is mentioned anywhere\n\n**Open question for review (audit_pass1_run + audit_ticket_shape):** these scripts audit the file SHAPE of queue.json. If queue.json no longer exists, these checks become \"audit Postgres state\" instead — different shape. May need to keep queue.json as periodic export OR just rewrite the audit to query Postgres.\n\n**Open question (action_claim_verifier mtime):** uses queue.json mtime as a timing signal for \"recent ticket activity.\" Without queue.json, need an equivalent signal — maybe Postgres metadata.updated_at MAX over clan.memories. Or keep queue.json as a side-effect timestamp file.\n\n**Affected files:** see callmap.md sections for cc_queue.* and the readers listed above; tests as listed; CLAUDE.md if mentioned.\n\n**Design rules:** docs-in-code; no-silent-data-loss (drift detection in stage A stays — it should warn even if no readers exist); test-plan-required.\n\n**Scope boundary:** IN — the readers listed; remove echo write; delete file. OUT — Postgres schema changes; cc_queue.py CLI rewrite (still works as wrapper around load_tasks/save_tasks).\n\n**Test plan:** all queue-touching tests still pass after migration. New test that drift detection in _save still fires WARNING when given a synthetic load+modify+save sequence (proves stage A safety net works post-Stage-B too).\n\n**Why this is a separate ticket:** Stage A is the load-bearing safety win (drift class eliminated). Stage B is the cleanup. Splitting lets stage A ship clean and reviewed; stage B inherits Akien attention separately.",
+    "completed_at": "2026-05-05T00:49:10.409700+00:00",
+    "github_issue": 574,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "956c8cc2-e7ba-4082-9aa7-9a3ba1c276a6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

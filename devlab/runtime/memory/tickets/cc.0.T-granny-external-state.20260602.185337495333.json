@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-granny-external-state.20260602.185337495333",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-external-state"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T18:53:37.495333",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-external-state"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-external-state",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure",
+      "Device"
+    ],
+    "title": "Granny: externalize all in-memory state for clean restart",
+    "result": "dispatched_ids persist to dispatched_cycle.json on restart; GRANNY_STATS on start/stop",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "blocked_at": "2026-06-02T19:05:57.531576+00:00",
+    "claimed_at": "2026-06-02T19:04:49.404738+00:00",
+    "created_at": "2026-06-02T18:53:37.495333+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "KnightlyBuilder principle: keep state external from the process so it can be restarted freely without data loss. Granny currently holds _dispatched_ids, _total_dispatched, _total_errors in memory — these evaporate on restart (as we saw during 2026-06-02 development where Granny was restarted 3x).\n\nAlready external: worker availability (files), dispatch config (granny.yaml), ticket state (Postgres via cc_queue).\nNeeds to be external: dispatched-this-cycle ids (flat file or Postgres, cleared on startup by reset-stale), cumulative stats (channel post on startup/shutdown so slate captures them).\n\nConcretely: write _dispatched_ids to ~/.granny/dispatched_cycle.json on each update; read it on startup; _stats persist as a GRANNY_STATS channel post on stop/start (no DB write needed — channel is durable).\n\n**Affected files:** devices/granny/daemon.py\n**Design rules:** no-sqlite; flat JSON file acceptable for cycle-local dedup (not critical data); stats to channel for observability\n**Scope boundary:** IN: persist dispatched_ids to flat file; restore on start; post stats to channel at lifecycle events. OUT: full distributed state replication, Postgres for cycle cache\n**Completion criteria:** restart Granny mid-cycle; dispatched_ids survive; duplicate dispatches prevented; GRANNY_STATS posted on start and stop",
+    "completed_at": "2026-06-02T21:42:40.142116+00:00",
+    "deposited_at": "2026-06-02T12:56:44.721952",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T19:04:49.404738+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "919dc696-14ba-4ee6-9289-c432d585db9e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

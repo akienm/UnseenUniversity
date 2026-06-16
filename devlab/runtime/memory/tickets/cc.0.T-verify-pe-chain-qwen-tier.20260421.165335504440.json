@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-verify-pe-chain-qwen-tier.20260421.165335504440",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-verify-pe-chain-qwen-tier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T16:53:35.504440",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-worker-mode-routing-2026-04-21"
+    ],
+    "tickets": [
+      "T-pull-qwen-coder",
+      "T-verify-pe-chain-qwen-tier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-verify-pe-chain-qwen-tier",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Inference",
+      "pe_chain",
+      "Verification"
+    ],
+    "title": "Verify pe_chain work routes to cheap tier (Qwen) not interactive (Claude)",
+    "result": "already correct (route('batch') returns qwen2.5:7b); added _log_pe_inference() so model id is logged to reasoning_calls.log on every _call_tier2/_call_cloud_programming success; added integration test tests/test_pe_chain_qwen_tier.py verifying logged model contains 'qwen' not 'claude'",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-21T16:27:38.345094+00:00",
+    "related_to": null,
+    "decision_id": "D-worker-mode-routing-2026-04-21",
+    "description": "Qwen infrastructure already in place: inference_gateway tier ladder has 'tier.2 Ollama qwen2.5:7b — background, NE, batch' (inference_gateway.py:42), Qwen-2.5-Coder pulled on CPU boxes (T-pull-qwen-coder done), OR routing exists (reading extraction uses qwen/qwen-2.5-7b-instruct). What's unverified: does pe_chain request the cheap background tier when processing tickets, or does it default to interactive (Claude)? Fix shape: inspect pe_chain's reasoner call sites, confirm they request batch/background tier. If they default to interactive, add an explicit tier hint so ticket processing stays cheap. Ensure turn_trace logs which model actually answered so cost is auditable on demand. Scope: pe_chain tier hints + turn_trace visibility. Does not touch inference_gateway internals. Does not add new models. Does not touch reasoners/base.py (HIGH-inertia). Test plan: run one worker=igor ticket through pe_chain, grep turn_trace for model id, confirm Qwen. If Claude: inspect call site, add tier hint. Akien 2026-04-20 constraint: if Qwen quality is insufficient, next step is larger-param Qwen, not fallback to Claude.",
+    "completed_at": "2026-04-21T16:53:35.504440+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ac59618c-e840-4c5d-830c-03c61154e3e9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

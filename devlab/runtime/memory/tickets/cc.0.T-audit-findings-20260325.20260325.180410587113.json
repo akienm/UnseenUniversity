@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-audit-findings-20260325.20260325.180410587113",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-findings-20260325"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T18:04:10.587113",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-findings-20260325"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-findings-20260325",
+    "body": "From audit 2026-03-25. Two items:\n\n1. SILENT EXCEPTS (19 instances — MEDIUM priority)\nAdd forensic log_error() calls to all bare except blocks missing logging in:\n- basal_ganglia.py:346, narrative_engine.py x4, push_sources.py x3\n- main.py x2, boot_check.py:194, cortex.py x2\n- budget.py:137, cluster_ssh.py:628, browser.py:556, template_tools.py:134\n- discord_bot.py x2, listener.py:216, server.py:815\nPattern: except SomeError: pass → except SomeError as e: log_error(\"LABEL\", str(e), detail=...)\nCheck inertia level per file before editing. MEDIUM files: discuss if logic changes needed.\n\n2. ORPHAN MODULES (2 instances — LOW priority)\n- wild_igor/igor/cognition/multi_upstream.py — nothing imports it; investigate purpose\n- wild_igor/igor/brainstem/amm_diagnostics.py — diagnostics utility; check if used\nDo NOT delete — report findings only. Deletion requires Akien approval.\n\nTESTS: run full test suite before and after; must still pass.\nFORENSIC LOGGING: this task IS the forensic logging fix.",
+    "role": "worker",
+    "size": "S",
+    "title": "Audit findings: 19 silent excepts + 2 orphan modules",
+    "result": "Added forensic logging to 19 silent except blocks across 11 files. Pattern: except Exception: {pass|return|assignment} → except Exception as e: log_error(kind=TOOL_FAIL, detail=...). Investigated 2 orphan modules: multi_upstream.py (backward-compat shim, no imports), amm_diagnostics.py (unused utility, no imports). All 411 tests passing. Commit: 1edc489e.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-25T17:57:05.738047+00:00",
+    "completed_at": "2026-03-25T18:04:10.587113+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

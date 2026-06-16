@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-llm-class-routing.20260408.032902000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-llm-class-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T03:29:02",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-llm-class-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-llm-class-routing",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Task-class-aware LLM routing in thalamus",
+    "result": "Subsumed into D327 inference restructure. Intent classification already in thalamus.py. Tier→model mapping in inference_gateway.py. TWM context builder routes by tier. No separate implementation needed.",
+    "status": "done",
+    "worker": "igor",
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/kernel.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/kernel.py",
+    "blocked_at": "2026-04-08T20:50:26.591126+00:00",
+    "claimed_at": "2026-04-08T19:55:11.131701+00:00",
+    "created_at": "2026-04-08T03:29:02Z",
+    "related_to": null,
+    "approved_at": "2026-04-08T19:54:22.608396+00:00",
+    "description": "D316: route by task class not just availability. Add intent class detection at thalamus entry (code_task / reasoning / procedural / recall / conversation). Route: recall→tier1 graph only, conversation→Ollama 1b, procedural→qwen2.5, code_task+reasoning→DeepSeek-R1 batch (OR). Currently all fallthrough hits same Ollama path regardless of task class. Required_files: wild_igor/igor/cognition/thalamus.py, wild_igor/igor/cognition/cluster_router.py",
+    "proposed_at": "2026-04-08T20:05:27.426885+00:00",
+    "completed_at": "2026-04-08T20:51:49.087486+00:00",
+    "github_issue": 394,
+    "approved_plan": "Edit thalamus.py to add intent-class-aware tier mapping. Also needs cluster_router changes for model_for(intent). No HIGH inertia files needed — original plan to touch kernel.py was overscoped.",
+    "approval_notes": "Approved — thalamus.py + cluster_router only, no kernel.py. Subsumed into T-inference-restructure.",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8098bfdd-890b-4661-a3d2-66bd5d86892e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

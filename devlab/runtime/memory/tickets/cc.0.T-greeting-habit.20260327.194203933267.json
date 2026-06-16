@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-greeting-habit.20260327.194203933267",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-greeting-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-27T19:42:03.933267",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-greeting-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-greeting-habit",
+    "title": "greeting-habit",
+    "result": "GREETING_STANDARD updated: habit_type=response, trigger='hello hi hey...', match_mode=trigger_only, response_template='Hello. What are we working on?' — tier.1 confirmed via channel test",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Seed tier.1 RESPONSE habit for hello/hi/hey so Igor answers without upstream inference",
+    "completed_at": "2026-03-27T19:42:03.933267+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f792e293-dd7c-426d-abf2-002bb0a90c5c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-chat-export-reroute-to-adc.20260429.054007833459",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-chat-export-reroute-to-adc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T05:40:07.833459",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-chat-history-migrate",
+      "T-chat-export-reroute-to-adc",
+      "T-chat-history-igor-backfill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-chat-export-reroute-to-adc",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "igor"
+    ],
+    "title": "Reroute export_chat.py and StaleChatLogBackfiller to ~/.agent_datacenter/logs/CC.0/",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T05:27:06.091454+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "T-chat-history-igor-backfill shipped export_chat.py writing to ~/TheIgors/claude_chat_logs/. The agent_datacenter migration (T-adc-chat-history-migrate) moved the canonical CC log location to ~/.agent_datacenter/logs/CC.0/. The backfiller and export_chat.py still write to the old path, so the periodic job isn't populating the new location.\n\nFix: update export_chat.py default output dir to AGENT_DATACENTER_HOME/logs/CC.0/ (falling back to ~/TheIgors/claude_chat_logs/ if env not set). Update the StaleChatLogBackfiller push source registration to use the new path. Old files in claude_chat_logs/ can stay — no migration needed, just new writes go to the right place.\n\n**Affected files:** lab/claudecode/export_chat.py (output dir), wild_igor/igor/ (wherever StaleChatLogBackfiller is registered — likely a habits or push_sources file)\n**Design rules:** docs-in-code. No new schemas.\n**Scope boundary:** IN: output path update + backfiller registration update. OUT: migrating historical claude_chat_logs/ files.\n**Test plan:** Run export_chat.py --dry-run, verify output path is ~/.agent_datacenter/logs/CC.0/YYYY-MM-DD.md. Check StaleChatLogBackfiller registration references correct dir.",
+    "proposed_at": "2026-04-29T00:01:15.023048+00:00",
+    "completed_at": "2026-04-29T05:40:07.833459+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6371e428-6127-42ed-bbc9-fff1d1a9d0ee",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

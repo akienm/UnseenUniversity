@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-tree-traversal-review.20260403.192614000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tree-traversal-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:14",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tree-traversal-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tree-traversal-review",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Review word graph / trail traversal for optimization opportunities",
+    "result": "Research complete — see findings below. 4 follow-up tickets created.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:26:14Z",
+    "related_to": null,
+    "description": "After pe-observe is running: review the actual traversal patterns used in OBSERVE two-pass, SITUATE, and HYPOTHESIZE context loading. Look for redundant loads, missed facia opportunities, and cases where we load too much. Data-driven optimization — run first, then tune.",
+    "completed_at": "2026-04-04T01:45:58.215124+00:00",
+    "github_issue": 377,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cc309a58-5b12-4c97-a4b0-91cba80fc450",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

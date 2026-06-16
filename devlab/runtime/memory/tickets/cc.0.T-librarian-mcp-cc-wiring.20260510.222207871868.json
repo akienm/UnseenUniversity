@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-librarian-mcp-cc-wiring.20260510.222207871868",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-mcp-cc-wiring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:07.871868",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-elevation-2026-05-10"
+    ],
+    "tickets": [
+      "T-librarian-mcp-cc-wiring"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-mcp-cc-wiring",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "Workflow"
+    ],
+    "title": "CLOSED: wire librarian MCP server into CC workflow",
+    "result": "librarian MCP wired via ~/.mcp.json; optional research/summarize steps added to context-load (5.8) and sprint-ticket (step 5)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-10T22:22:07.871868+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-elevation-2026-05-10",
+    "description": "The Librarian device already has a running MCP server with research + summarize tools. Wire it into CC's active MCP config so context-load and sprint-ticket can call librarian.research() and librarian.summarize() directly. Add librarian MCP entry to `~/.claude/settings.json` mcpServers. Update /context-load to optionally call `librarian.research()` for session briefing enrichment. Update /sprint-ticket Step 5 (infrastructure brief) to optionally call `librarian.summarize()` for relevant context.\n\n**Affected files:** `~/.claude/settings.json` (mcpServers entry), `/home/akien/.claude/skills/context-load` (optional librarian call), `/home/akien/.claude/skills/sprint-ticket` (optional librarian call in Step 5)\n**Design rules:** graceful degradation — all librarian MCP calls degrade to skip if librarian is offline; no blocking on librarian availability; MCP call wrapped in try/except with silent fallback\n**Scope boundary:** IN — MCP registration, context-load briefing call, sprint-ticket Step 5 call. OUT — no new librarian tools (uses existing research + summarize), no changes to librarian device itself.\n**Test plan:** mcp__librarian__research callable from CC session when librarian running; context-load runs without error when librarian offline (graceful skip); sprint-ticket Step 5 includes librarian summary when available",
+    "completed_at": "2026-05-10T23:23:31.420589+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "84e524b7-cf40-4758-b901-edad4d427b77",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-memory-reconsolidation.20260321.171859680592",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-reconsolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T17:18:59.680592",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-reconsolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-reconsolidation",
+    "body": "NE gets a pass at retrieved memories when milieu arousal is high. Mechanism exists: milieu arousal + NE cycle. See GitHub #309.",
+    "size": "M",
+    "title": "Memory reconsolidation hook (#309) — retrieved memories go plastic under high arousal",
+    "result": "Memory reconsolidation hook implemented (#309). cortex.search() now calls _flag_for_reconsolidation() on returned memories when milieu arousal >= 0.4 and importance_proxy >= 0.6. NE._reconsolidation_pass() runs each NE cycle, fetches flagged memories, calls inference gateway to compare stored content vs current TWM context, and updates narrative+importance if 'update' action returned. Gated by IGOR_RECONSOLIDATION_ENABLED (default true) and IGOR_RECONSOLIDATION_MAX (default 2 per cycle). Postgres and SQLite both supported.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-21T17:13:06.971556+00:00",
+    "completed_at": "2026-03-21T17:18:59.680592+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

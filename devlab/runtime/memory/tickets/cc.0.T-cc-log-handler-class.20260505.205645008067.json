@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-log-handler-class.20260505.205645008067",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-log-handler-class"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T20:56:45.008067",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-log-logcontrol-conformance-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-log-handler-class",
+      "T-cc-log-stop-hook-wire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-log-handler-class",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "agent_datacenter",
+      "CC",
+      "logging"
+    ],
+    "title": "CLOSED: CC chat log Handler+Formatter class in agent_datacenter",
+    "result": "ChatLogHandler+CCEventFormatter in devices/claude/chat_log_handler.py; ClaudeDevice.logs() returns CC.0 path; 27 tests; pushed abc6398",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-05T20:51:40.805879+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-log-logcontrol-conformance-2026-05-05",
+    "description": "CC's JSONL transcript → markdown pipeline is currently two bespoke standalone scripts (export_chat.py, chat_log_formatter.py) that bypass the agent_datacenter logging interface. A proper logging.Handler + logging.Formatter subclass in agent_datacenter would make CC a first-class device in the log system.\n\nProposed shape: new devices/claude/chat_log_handler.py — a logging.Handler subclass with embedded Formatter. Accepts CC JSONL event dicts (user/assistant/tool_use/tool_result entries), writes date-partitioned markdown to AGENT_DATACENTER_HOME/logs/CC.0/YYYY-MM-DD.md. Same output format as export_chat.py (### User — / ### Assistant — with full datetime). ClaudeDevice.logs() added to return the CC.0 log path (implementing BaseDevice contract). NOT modifying LoggingControlCenter — it already names CC.0 in its tree layout.\n\n**Affected files:** devices/claude/chat_log_handler.py (new), devices/claude/device.py (add logs()), tests/test_cc_log_handler.py (new)\n**Design rules:** no-sqlite (n/a)\n**Scope boundary:** Handler + Formatter class + ClaudeDevice.logs(). Not modifying LoggingControlCenter. Not changing Stop hook wiring (that's T-cc-log-stop-hook-wire).\n**Test plan:** unit tests in tests/test_cc_log_handler.py — verify markdown output format matches export_chat.py output, date partitioning routes messages to correct day file, user/assistant/tool entries render correctly, missing timestamp handled gracefully.\n**Pass condition:** ChatLogHandler.emit(event_dict) on a sample JSONL user+assistant turn produces markdown matching export_chat.py's ### User / ### Assistant format in the correct dated output file.",
+    "completed_at": "2026-05-05T20:56:45.008067+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "116369b4-12a2-49fd-9af3-bf75e010824d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

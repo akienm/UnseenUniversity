@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-programs-himself-2.20260507.215506251781",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-programs-himself-2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:06.251781",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-1",
+      "T-cc-walk-11",
+      "T-cc-walk-20",
+      "T-igor-programs-himself-2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-programs-himself-2",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Autonomy",
+      "Meta",
+      "Infrastructure"
+    ],
+    "title": "Igor completes walks 11-20 autonomously — second validation batch",
+    "result": "All cc-walk-11 through cc-walk-20 verified closed — Igor walked 20 tasks autonomously",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-08T21:33:14.982858+00:00",
+    "created_at": "2026-05-07T21:55:06.251781+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Second batch of 10 autonomous walk tickets (T-cc-walk-11 through T-cc-walk-20). First batch (walks 1-10) all completed successfully. This batch validates Igor can sustain autonomous delivery across a wider range of subsystems: engrams, cognition safety, discord infra, paths abstraction, reading pipeline.\n\nCC monitors each run, intercepts bad proposals, verifies commits. Success = all 10 closed with Igor as author.\n\n**Affected files:** queue.json (ticket state), various Igor subsystem files per child tickets.\n**Design rules:** none apply — coordination ticket.\n**Scope boundary:** IN — T-cc-walk-11 through T-cc-walk-20. OUT — redesigning pe_chain, Igor's full queue autonomy beyond these 10.\n**Test plan:** all 10 child walk tickets reach done; each closed by Igor.\n**Pass condition:** `cc_queue.py list | grep 'T-cc-walk-1[1-9]\\|T-cc-walk-20' | grep -c closed` returns 10.",
+    "completed_at": "2026-05-08T21:33:17.232420+00:00",
+    "github_issue": 640,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b8fe84f1-8f79-4407-95a7-13720d985e44",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

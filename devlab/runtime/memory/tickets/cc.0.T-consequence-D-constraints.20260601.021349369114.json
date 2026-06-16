@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-D-constraints.20260601.021349369114",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-constraints"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T02:13:49.369114",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-constraints-first-class-2026-05-31"
+    ],
+    "tickets": [
+      "T-consequence-D-constraints"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-constraints",
+    "gate": "2026-06-14",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: constraints as first-class citizens (2026-06-14)",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-01T02:13:49.369114+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-constraints-first-class-2026-05-31",
+    "description": "**What changed:** Constraints added as first-class palace nodes; audit-design checks for blackout paths; /sorted requires cost-impact field for dispatch designs.\n\n**Predicted unintended effects:** (1) audit-design AMEND rate rises sharply on existing designs — may feel like friction rather than safety; (2) constraint nodes go stale as operational reality changes (budget plan changes, new sources available); (3) burn rate monitor gives false confidence if cache is stale; (4) 'blackout path' keyword matching too broad — flags benign dispatch patterns; (5) cost-impact field skipped when authors don't recognize trigger keywords\n\n**Signals to watch:** audit-design AMEND rate on sprint tickets (should rise then stabilize); zero unplanned CC blackouts after ship date; constraint nodes have updated_at within 7 days\n\n**Gate condition:** Check by 2026-06-14 or after 10 designs pass through the new audit-design check.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate occurred/clear/partial; close\n**Completion criteria:** predicted effects annotated and ticket closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "09068651-2f2d-4e40-ad1d-f6f7f6ef2cfe",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

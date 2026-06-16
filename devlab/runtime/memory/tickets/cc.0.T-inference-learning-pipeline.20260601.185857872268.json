@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-learning-pipeline.20260601.185857872268",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-learning-pipeline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T18:58:57.872268",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-chat-log-learning-bootstrap",
+      "T-inference-learning-pipeline",
+      "T-librarian-inference-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-learning-pipeline",
+    "gate": "T-librarian-inference-proxy",
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "Inference",
+      "CompiledInference"
+    ],
+    "title": "Librarian: overnight inference learning pipeline",
+    "result": "learning_pipeline.py + tests: queue consumption → epistemic knowledge nodes in adc.palace; 3+ query class examples → node creation; logged with stats",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "blocked_at": "2026-06-05T15:27:08.037683+00:00",
+    "claimed_at": null,
+    "created_at": "2026-06-01T18:58:57.872268+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Librarian overnight job that consumes the learning queue populated by T-librarian-inference-proxy. For each (request, response, log_pointer) tuple, builds or extends graph-tree nodes that could answer that query class without hitting an LLM next time.\n\nKey design constraint: this knowledge graph is PURELY EPISTEMIC — no emotional encoding. Igor's graph trees carry emotional salience (CAPS = distress, that's load-bearing for his cognition). This graph is an observation layer: 'Akien was upset' may be noted as fact but is NOT encoded to produce an emotional reaction in any agent. The distinction is architectural, not just philosophical.\n\n**Affected files:** unseen_university/devices/librarian/learning_pipeline.py (new); librarian knowledge graph storage (TBD — likely adc.palace or new table)\n\n**Design rules:** no-sqlite; purely epistemic encoding (no emotional salience in this graph); log pipeline runs at INFO\n\n**Scope boundary:** IN — consume learning queue; build/extend knowledge graph nodes; epistemic-only encoding. OUT — chat log retroactive bootstrap (T-chat-log-learning-bootstrap); emotional encoding rules (those stay in Igor)\n\n**Completion criteria:** (1) pipeline consumes queue and produces graph nodes; (2) a query class seen 3+ times produces a node that the proxy pre-check can match; (3) no emotional salience fields on knowledge graph nodes (schema check); (4) pipeline run logged with node counts",
+    "completed_at": "2026-06-09T03:54:17.564737+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a93244f1-ae86-47ac-8027-0b9297588fe1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

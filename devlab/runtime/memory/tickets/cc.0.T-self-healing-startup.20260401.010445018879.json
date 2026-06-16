@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-self-healing-startup.20260401.010445018879",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-healing-startup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T01:04:45.018879",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-self-healing-startup",
+      "T-signal-handlers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-healing-startup",
+    "epic": "Operations",
+    "size": "M",
+    "title": "D273 self-healing startup scripts — igor.sh/ps1/bat with crash recovery",
+    "result": "igor script: stderr captured to temp file, clean exits (0/130/143) break loop, crashes check debug_session.flag, if absent launch claude auto-fixer then continue; main.py SIGTERM handler exits 0; context-load writes flag, savestate deletes it. 567 tests pass.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-04-01T01:01:34.886800+00:00",
+    "description": "Rewrite igor startup as proper scripts (igor.sh, igor.ps1, igor.bat) with igor alias. Exit 42=restart, 0=stop, else: capture traceback from stderr, check for ~/.TheIgors/Igor-wild-0001/debug_session.flag, if absent launch claude --dangerously-skip-permissions with traceback to fix+commit+exit, then restart Igor. Absorbs T-signal-handlers (SIGTERM/SIGINT clean exit in main.py is part of this). context-load writes flag, savestate deletes it.",
+    "completed_at": "2026-04-01T01:04:45.018879+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "26610c36-90f8-499d-9dda-30e639f238d1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-case-study-lessons-learned.20260403.192613000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-case-study-lessons-learned"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:13",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-case-study-lessons-learned"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-case-study-lessons-learned",
+    "epic": "Claude",
+    "size": "L",
+    "notes": " | DEFERRED until after first external user ship (not Leah). Productization prerequisite. Trajectory will change after ship.",
+    "title": "Case study + lessons learned: Claude and Akien working together",
+    "result": "Closed per Akien 2026-05-01: noise in current queue. Will still author this eventually but not as a tracked sprintable ticket — noted in workshop scope instead.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 10,
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:26:13Z",
+    "related_to": null,
+    "description": "Expanded version of the current working-together document. Rich with statistics, patterns, and honest assessment of what worked and what didn't.\n\nContents:\n- How the Designer/Worker session pattern evolved\n- Statistics: sessions, decisions (D001-D300+), tickets closed, tests written, lines of code, cost per outcome\n- What Claude does well in this context (parallel minions, spec work, doc synthesis)\n- What Claude does poorly (context loss, over-engineering, asking questions already answered)\n- How Akien's prompting style changed over time and why\n- The crystallizations — which ones landed, which were wrong, how we knew\n- The skill/session architecture: what it replaced and what it cost\n- Igor as the long-term goal: how CC fits into the arc\n- Honest section: what would we do differently from day 1\n- Lessons for other human/AI collaborations\n\nFormat: long-form markdown doc, probably 3000-5000 words. Statistics section requires pulling from sessions.md, decisions_log.dsb, commit history, queue.json.\n\nWorker: claude + akien (collaborative write — needs Akien's perspective on several sections).\nEpic: Claude",
+    "completed_at": "2026-05-01T16:12:23.977444+00:00",
+    "github_issue": 375,
+    "required_files": [
+      "memory/sessions.md",
+      "design_docs_for_igor/decisions_log.dsb",
+      "thoughts/working_with_claude.md"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bfa8e8be-06fe-40d9-8710-9b669e201cf2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320d.20260321.011055983142",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320d"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:55.983142",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320d"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320d",
+    "body": "Decisions: D159-D165. All Slate 0 done. Slate 1 T-trails-infra done. New: T-memory-sync #293, PROC_NODE_ADOPT seeded, test_claudecode_managers.py (16 tests). Session theme: response routing + trails + test debt + distributed memory design. Subsystems: cortex.py, basal_ganglia.py, thalamus.py, browser.py, tests/.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-20b (final)",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:55.983142+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

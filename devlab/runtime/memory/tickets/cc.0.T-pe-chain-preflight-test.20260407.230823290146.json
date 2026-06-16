@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-chain-preflight-test.20260407.230823290146",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-preflight-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T23:08:23.290146",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-chain-preflight-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-preflight-test",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Add pre-flight test check to pe_chain",
+    "result": "Added preflight TEST step before HYPOTHESIZE in pe_entry_chain(). If tests fail pre-edit, escalate immediately with 'pre-flight: test suite broken'. Prevents 3 wasted attempts on unrelated breakage. pe_test() now accepts preflight param for logging.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "pe_test() runs AFTER all edits. If test suite already broken, chain exhausts 3 attempts replanning a non-existent problem. Run tests BEFORE hypothesize. If they fail, escalate immediately with reason 'test suite broken — not attempting fixes'.",
+    "completed_at": "2026-04-07T23:08:23.290146+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1c624c83-487b-4195-b63c-d4d67873d088",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

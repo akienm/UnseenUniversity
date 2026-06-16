@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-scope-guard-dedup-with-self-edit.20260504.214231630938",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scope-guard-dedup-with-self-edit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T21:42:31.630938",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scope-guard-dedup-with-self-edit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scope-guard-dedup-with-self-edit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "safety",
+      "scope_guard",
+      "self_edit",
+      "dedup"
+    ],
+    "title": "CLOSED: unify inertia tier table into inertia_map.py",
+    "result": "inertia_map.py created; scope_guard, self_edit, skill_filter, pe_chain all delegate to it; parity test added; 4405 tests pass",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-04T21:31:52.954588+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "scope_guard._TIER_TABLE (HIGH/MEDIUM/LOW bucket, prefix-string) and self_edit.INERTIA (float weights 0.0-1.0) encode the same inertia policy with different shapes and different entries — two copies of a load-bearing safety contract drifting apart. pe_filter also has its own hardcoded HIGH-inertia check duplicating scope_guard. Fix: create wild_igor/igor/tools/inertia_map.py with a single ordered table and helpers: bucket_of(path) -> HIGH/MEDIUM/LOW, weight_of(path) -> float. Both scope_guard.py and self_edit.py import from it. pe_filter delegates to scope_guard.classify_path(). Day-1 behavior identical — audit for equivalence first, then flip imports.\n\n**Affected files:** wild_igor/igor/tools/scope_guard.py, wild_igor/igor/tools/self_edit.py, new wild_igor/igor/tools/inertia_map.py, pe_filter (whereabouts in pe_chain.py), tests/test_scope_guard.py\n**Design rules:** none-apply\n**Scope boundary:** IN: unify two tables into one module; wire all three callers to it. OUT: do not change effective tiers applied anywhere on day 1; graph-derived inertia is future work.\n**Test plan:** existing test_scope_guard.py must pass unchanged; add equivalence test that bucket_of + weight_of return same values as old tables for all existing paths.\n**Pass condition:** grep for _TIER_TABLE outside inertia_map.py returns nothing; grep for INERTIA dict outside inertia_map.py returns nothing; pytest passes.",
+    "completed_at": "2026-05-04T21:42:31.630938+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "745af828-3def-410c-a93d-c40f1bc7cadb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

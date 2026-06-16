@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-flip-igor-worker-tickets-during-cert.20260430.015828660880",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-flip-igor-worker-tickets-during-cert"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T01:58:28.660880",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-single-ticket-cert-mode-2026-04-29"
+    ],
+    "tickets": [
+      "T-flip-igor-worker-tickets-during-cert",
+      "T-igor-single-ticket-mode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-flip-igor-worker-tickets-during-cert",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Cert",
+      "Temporary"
+    ],
+    "title": "Mass-flip pending igor-worker tickets to claude during cert (belt-and-suspenders)",
+    "result": "cert_worker_freeze.py — --freeze/--unfreeze/--status modes; metadata.original_worker preserves restoration; idempotent. Live freeze ran on 2 igor-worker tickets (T-wire-graph-preparse-pipeline, T-wg-cooccur-tree-restructure). 10 tests, 4213 regression pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-04-30T01:55:29.981970+00:00",
+    "related_to": "T-igor-single-ticket-mode",
+    "decision_id": "D-igor-single-ticket-cert-mode-2026-04-29",
+    "description": "Belt-and-suspenders for the cert phase: even with IGOR_SINGLE_TICKET in place, a forgotten env var or a fresh shell would let Igor's pe_chain start picking tickets again. Pre-emptively flip every pending worker=igor ticket to worker=claude (preserving the original worker in metadata.original_worker for restoration after cert).\n\nWhen cert completes: a one-line script flips them all back. Until then, every pending igor-side ticket sits as worker=claude — Igor's pe_chain filter at pe_chain.py:2704 already skips non-igor tickets.\n\n**Affected files:** lab/claudecode/cert_worker_freeze.py (small script with --freeze and --unfreeze modes) + queue.json mutations (data-only, no schema change).\n**Design rules:** none apply (queue.json mutation, scripted).\n**Scope boundary:** in scope: freeze/unfreeze script + initial run. Out of scope: integration with /sprint or other workflows.\n**Test plan:** unit test: freeze sets worker=claude + records original_worker in metadata; unfreeze restores worker from metadata; idempotent (re-running freeze on already-frozen is a no-op).",
+    "completed_at": "2026-04-30T01:58:28.660880+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "70ea1597-d9cd-4fc5-ac35-8af2db8f4566",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

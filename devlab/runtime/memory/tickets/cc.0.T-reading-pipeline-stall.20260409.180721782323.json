@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-reading-pipeline-stall.20260409.180721782323",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-pipeline-stall"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T18:07:21.782323",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-pipeline-stall"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-pipeline-stall",
+    "size": "M",
+    "title": "Fix reading pipeline stall — queue corruption, missing trigger",
+    "result": "Cleaned corrupted queue, added hourly cron, tested pipeline restart",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "learn_queue.json corrupted with trace:// URLs since Apr 8. drain_learn_queue idle. PROC_READING_FEEDER habit missing — no hourly trigger. Fix: clean queue, create hourly trigger, prevent trace:// recurrence. 349 books pending.",
+    "completed_at": "2026-04-09T18:07:21.782323+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0ed07c0f-fc2c-48c0-b261-75b0ac7286ba",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

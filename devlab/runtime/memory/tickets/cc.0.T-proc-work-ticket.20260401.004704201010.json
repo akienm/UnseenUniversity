@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-proc-work-ticket.20260401.004704201010",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proc-work-ticket"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T00:47:04.201010",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-proc-work-ticket"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proc-work-ticket",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "PROC_WORK_TICKET + needs_review workflow for Igor self-coding",
+    "result": "Seeded PROC_CODE_A_TICKET (with review gate steps 8-10), PROC_APPROVE_CHANGE, PROC_CHECK_IGOR_QUEUE. worker field + needs_review status live in cc_queue. 567 tests pass.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-04-01T00:44:55.334106+00:00",
+    "description": "Seed PROC_WORK_TICKET habit: reads cc_queue ticket (worker=igor), implements via patch_source_file, runs tests, posts diff summary to channel, marks ticket needs_review. Seed PROC_APPROVE_CHANGE: fires on approved/looks good/commit that -> commits. Add needs_review status to cc_queue. Add worker field to ticket schema. Igor never self-initiates restart.",
+    "completed_at": "2026-04-01T00:47:04.201010+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a370ec20-e105-4039-afdb-88875389efa9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

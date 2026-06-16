@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-twm-observations-missing.20260529.115528446777",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-observations-missing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T11:55:28.446777",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-twm-observations-missing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-observations-missing",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Cognition"
+    ],
+    "title": "Fix missing twm_observations table — breaking habits every NE cycle",
+    "result": "fixed: learn_top_gap/flag_top_gap/review_turn_traces used make_home_proxy (no instance schema); added _local_db_proxy() singleton using make_local_proxy() — commit 08253488",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-05-29T11:55:28.446777+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "DB error: relation \"twm_observations\" does not exist — firing on every NE cycle in learn_top_gap and other habits. Multiple lever-watcher ticks fail silently. Table is referenced in code but doesn't exist in the schema.\n\n**Affected files:** Igor DB schema (clan or instance schema), migration script or schema init\n**Design rules:** Postgres only — no SQLite fallback\n**Scope boundary:** Create twm_observations table with correct schema. Verify habits that reference it resume working. No code changes unless the schema definition is also wrong.\n**Test plan:** After table creation, confirm learn_top_gap and other twm_observations-dependent habits run without DB error in ring_memory",
+    "completed_at": "2026-05-29T12:07:00.332888+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-29T11:55:28.686065+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68abd2b0-10da-4e96-bd04-352e68e86d7a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

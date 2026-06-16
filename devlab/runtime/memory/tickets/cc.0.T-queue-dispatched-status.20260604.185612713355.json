@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-queue-dispatched-status.20260604.185612713355",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-queue-dispatched-status"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T18:56:12.713355",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-shim-dispatch-handshake-2026-06-04"
+    ],
+    "tickets": [
+      "T-granny-bus-dispatch",
+      "T-queue-dispatched-status",
+      "T-shim-dispatch-handshake",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-queue-dispatched-status",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Workflow"
+    ],
+    "title": "Queue: add dispatched and acked statuses",
+    "result": "added dispatched (4.5) and acked (4.75) statuses to STATUS_ORDER between sprint and in_progress; validation passes",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that the queue has explicit statuses for each handshake phase so Granny's watchdog can distinguish 'sent but not received' from 'received but not started'.",
+    "claimed_at": "2026-06-04T19:01:55.928577+00:00",
+    "created_at": "2026-06-04T18:56:12.713355+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-shim-dispatch-handshake-2026-06-04",
+    "description": "The current queue statuses (sprint → in_progress → done) have no intermediate state between Granny sending work and the worker actually starting it. Add `dispatched` (Granny sent the envelope) and `acked` (shim received and replied 'got it') statuses. Both are transient — normal flow exits them within seconds or minutes. They become visible to the watchdog when they age past the timeout threshold.\n\n**Affected files:** `lab/claudecode/cc_queue.py` (VALID_STATUSES, setstatus validation), `devices/queue/queue_device.py` (if queue device has status validation), `tests/test_datacenter_client.py` or equivalent queue tests\n**Design rules:** no-sqlite (Postgres only for queue state)\n**Scope boundary:** Add the two statuses and update validation. Do not implement the handshake protocol itself — that is T-shim-dispatch-handshake. Do not change Granny dispatch logic — that is T-granny-bus-dispatch.\n**Completion criteria:** `cc_queue.py setstatus T-xxx dispatched` and `cc_queue.py setstatus T-xxx acked` succeed without validation error; existing status transitions still work; tests cover the new statuses.",
+    "completed_at": "2026-06-04T19:08:29.130810+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

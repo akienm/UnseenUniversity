@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-bus-postgres-transport.20260610.224435592682",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bus-postgres-transport"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T22:44:35.592682",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-bus-postgres-transport-2026-06-10"
+    ],
+    "tickets": [
+      "T-bus-postgres-transport",
+      "T-bus-reconnect-watchdog",
+      "T-bus-shim-autostart"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bus-postgres-transport",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Bus",
+      "Reliability",
+      "Database"
+    ],
+    "title": "Replace IMAP bus transport with Postgres LISTEN/NOTIFY",
+    "result": "PgBus ships: bus.mailboxes + bus.messages schema, LISTEN/NOTIFY idle_wait, make_bus_connection() returns PgBus, IMAPServer deprecated; 20 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "intention": "I intend that devices communicate through a Postgres-backed message bus, eliminating the IMAP server dependency and making the rack self-contained on existing infrastructure.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T22:44:35.592682+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-bus-postgres-transport-2026-06-10",
+    "description": "The IMAP _StubServer/_DovecotClient transport requires an external server that keeps causing operational friction (T-bus-reconnect-watchdog, T-bus-shim-autostart). Postgres — already required by CLAUDE.md — provides all the same primitives: message persistence, mailbox routing, and push delivery via LISTEN/NOTIFY. The `bus/` abstraction layer isolates the change; nothing above it needs to change.\n\n**Schema (new migration, schema `bus`):**\n```sql\nCREATE SCHEMA IF NOT EXISTS bus;\nCREATE TABLE IF NOT EXISTS bus.messages (\n    id BIGSERIAL PRIMARY KEY,\n    mailbox TEXT NOT NULL,\n    from_device TEXT NOT NULL,\n    envelope_json JSONB NOT NULL,\n    created_at TIMESTAMPTZ DEFAULT now(),\n    seen BOOLEAN DEFAULT false\n);\nCREATE INDEX ON bus.messages (mailbox, seen, created_at);\n```\n\n**Interface (identical to current IMAPServer):**\n- `append(mailbox, envelope)` → INSERT + `NOTIFY <mailbox_channel>`\n- `fetch_unseen(mailbox)` → SELECT WHERE mailbox=? AND NOT seen, mark seen=true atomically\n- `idle_wait(mailbox, timeout)` → LISTEN on mailbox channel, wait for NOTIFY (poll fallback on timeout)\n\nNote: LISTEN requires a persistent Postgres connection per listener thread — one per device process, which is fine. Document this in PgBus.__init__.\n\n`make_bus_connection()` in `bus/connection.py` returns the new PgBus object. All callers get the new transport transparently.\n\n**Affected files:** `bus/connection.py`, `bus/pg_bus.py` (new), `bus/imap_server.py` (deprecate — keep for one cycle, add DeprecationWarning), `unseen_university/shim.py` or DB migration file (schema), `devices/dicksimnel/shim.py` (verify only — `_connect_bus` should work unchanged)\n**Design rules:** no-sqlite; Postgres-or-flat-file rule explicitly satisfied; log every interface crossing (bus.messages INSERT/SELECT are interface crossings — log at INFO)\n**Scope boundary:** IN — PgBus implementation, bus.messages schema migration, update make_bus_connection(). OUT — envelope format, shim/listener code above bus/, web UI (reads same DB naturally), message pruning (file separate ticket if needed)\n**Completion criteria:** (1) Start DickSimnel with no IMAP server; `nc -z 127.0.0.1 10143` exits non-zero (nothing listening); (2) `SELECT count(*) FROM bus.messages` increments when a dispatch envelope is sent; (3) DickSimnel listener logs 'polling successfully' / no ConnectionRefusedError; (4) all existing bus/ tests pass with updated transport",
+    "completed_at": "2026-06-10T22:54:15.897575+00:00",
+    "deposited_at": "2026-06-10T16:46:30.359867",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

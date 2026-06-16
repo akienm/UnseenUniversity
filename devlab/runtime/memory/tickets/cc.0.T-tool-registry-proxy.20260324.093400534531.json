@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-tool-registry-proxy.20260324.093400534531",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tool-registry-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T09:34:00.534531",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tool-registry-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tool-registry-proxy",
+    "title": "ToolRegistry proxy — per-tool call rates, failures, latency",
+    "result": "Added ToolStats dataclass (call count, error count, p50/p95 latency with 1000-sample cap) to registry.py. ToolRegistry.execute() now wraps all calls with timing and success/error tracking. New get_tool_registry_report tool in tools/metrics.py exposes the data to Igor. 17 new tests (199 total). No changes to reasoners needed — stats collected at the dispatch layer.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": "2026-03-24T09:30:58.125881+00:00",
+    "description": "Tools fire with no observability layer. Need aggregate view: per-tool call count, error rate, p50/p95 latency. Hook into basal_ganglia dispatch path. Feeds /audit thread-hygiene check.",
+    "completed_at": "2026-03-24T09:34:00.534531+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b7704f2b-e995-430c-9fb5-a970d66a02ba",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

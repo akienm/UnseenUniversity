@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-uuhelp-cmd.20260608.164520615833",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uuhelp-cmd"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T16:45:20.615833",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uuhelp-cmd"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uuhelp-cmd",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "CLI",
+      "Tooling"
+    ],
+    "title": "uuhelp: list all uu* commands with descriptions",
+    "result": "uuhelp script created — lists all uu* commands from ~/bin with descriptions extracted from shebang comments",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "intention": "I intend that uuhelp surfaces all available uu* commands so Akien can discover tools without reading the code.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T16:45:20.615833+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "We have uumytickets, uuquestions, uushowticket, uuticketadd, uurecall, uuresearch — need a help command that lists them all with usage.\n\nScript should read ~/bin/uu* files, extract the docstring (e.g., \"\"\"...\"\"\"), and display one line per command: uucommand — brief description.\n\n**Affected files:** ~/bin/uuhelp (new)\n**Design rules:** none apply\n**Scope boundary:** IN: list uu* commands with one-line description. OUT: interactive help, paging, documentation generation\n**Completion criteria:** uuhelp runs and shows all uu* executables from ~/bin with name + one-line extracted description. Examples: `uumytickets — show tickets assigned to Akien (guru/akien role)`; `uurecall — librarian full-text recall from the command line`",
+    "completed_at": "2026-06-08T16:46:05.610152+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

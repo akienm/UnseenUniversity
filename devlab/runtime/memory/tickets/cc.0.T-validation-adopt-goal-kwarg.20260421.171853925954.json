@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-validation-adopt-goal-kwarg.20260421.171853925954",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-validation-adopt-goal-kwarg"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T17:18:53.925954",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-worker-mode-routing-2026-04-21"
+    ],
+    "tickets": [
+      "T-validation-adopt-goal-kwarg",
+      "T-worker-dispatch-validation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-validation-adopt-goal-kwarg",
+    "gate": null,
+    "size": "XS",
+    "tags": [
+      "Bug",
+      "Validation",
+      "Orchestration"
+    ],
+    "title": "Fix adopt_next_ticket: goal_adopt() doesn't accept source_message kwarg",
+    "result": "Dropped source_message kwarg from goal_adopt call at worker_foreman.py:293. Folded engram-pickup marker into task description string. 16/16 tests pass. Commit 8c1caa09.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.02,
+    "test_plan": "After fix: adopt_next_ticket() runs to completion (either goal adopted + chain started, or a legitimate downstream error). Unit: invoke adopt_next_ticket() in isolation against a seeded worker=igor ticket and assert no TypeError on goal_adopt call.",
+    "claimed_at": "2026-04-21T17:18:10.201018+00:00",
+    "related_to": null,
+    "decision_id": "D-worker-mode-routing-2026-04-21",
+    "description": "T-worker-dispatch-validation discovered that worker_foreman.adopt_next_ticket() crashes at first call with: '[ERROR] adopt_next_ticket: goal_adopt() got an unexpected keyword argument source_message'. Site: wild_igor/igor/tools/worker_foreman.py:293-296 calls _goal_adopt(task_desc, source_message=...). ops.goal_adopt() signature (wild_igor/igor/tools/ops.py:174) accepts task_description, goal_id, origin_thread_id, origin_turn_id, origin_question, awaiting_reply, pr_facia_id, parent_goal_facia_id — no source_message. (source_message IS a metadata key set internally by goal_adopt at ops.py:217, but it is not an accepted parameter.) Fix: either drop the kwarg in adopt_next_ticket (simplest — goal_adopt already records task_description as source_message automatically), or pass it via origin_question if the engram-pickup provenance wants to be preserved. Repro: IGOR_HOME_DB_URL=... python3 -c 'from igor.tools.worker_foreman import adopt_next_ticket; print(adopt_next_ticket())' with at least one worker=igor pending ticket in the queue. Blocks T-worker-dispatch-validation end-to-end run.",
+    "completed_at": "2026-04-21T17:18:53.925954+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "63a54e53-9059-4c8d-bc52-ddab506e9ec2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

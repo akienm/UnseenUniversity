@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-bus-heartbeat.20260508.175810786500",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bus-heartbeat"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:58:10.786500",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-imap-idle-heartbeat-2026-05-08"
+    ],
+    "tickets": [
+      "T-bus-heartbeat",
+      "T-librarian-health-aggregator"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bus-heartbeat",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Bus",
+      "Observability",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: BaseDevice heartbeat — push liveness to comms://heartbeat every N seconds",
+    "result": "BaseDevice.start_heartbeat() daemon thread publishing to comms://heartbeat, bd7fa43",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:38:15.855970+00:00",
+    "created_at": "2026-05-08T17:58:10.786500+00:00",
+    "related_to": null,
+    "decision_id": "D-imap-idle-heartbeat-2026-05-08",
+    "description": "Add heartbeat publication to BaseDevice. Every live device publishes an envelope to comms://heartbeat every N seconds (default 30, config-driven). This IS the health monitoring mechanism — silence is the failure signal.\n\nHeartbeat envelope:\n  device_id, ts (ISO 8601), version, current_action, uptime_s,   plus any device-specific fields\n\nSilence thresholds (config-driven):\n  > 2N seconds — suspect (log warning)\n  > 3N seconds — presumed down (flag to rack)\n\nComplements (not replaces) the pull health() interface:\n  heartbeat = continuous, lightweight, push — 'I exist'\n  health()  = on-demand, rich, pull — 'tell me exactly how you are'\n\n**Affected files:** agent_datacenter/device.py\n**Design rules:** no-sqlite; heartbeat goes through bus, not direct connection\n**Scope boundary:** publication only — collection/aggregation is T-librarian-health-aggregator\n**Test plan:** device publishes heartbeat at configured interval; envelope contains required fields; stops publishing on halt()",
+    "completed_at": "2026-05-08T18:41:08.736556+00:00",
+    "deposited_at": "2026-05-28T11:17:28.710254",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e1f1bac0-c5ac-45fa-a326-e0bda917bd33",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

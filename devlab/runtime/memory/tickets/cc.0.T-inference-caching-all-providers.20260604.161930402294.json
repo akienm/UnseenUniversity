@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-caching-all-providers.20260604.161930402294",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-caching-all-providers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T16:19:30.402294",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dsimnel-cc-parity-2026-06-04"
+    ],
+    "tickets": [
+      "T-inference-caching-all-providers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-caching-all-providers",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Cost"
+    ],
+    "title": "Inference proxy: apply prompt caching to any supporting provider, not just Anthropic",
+    "result": "cache_control content block on system message for cacheable models in _or_call; 5 tests",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-06-04T16:19:30.402294+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dsimnel-cc-parity-2026-06-04",
+    "description": "All providers that support prompt caching should have cache_control applied — currently only Anthropic gets it. As usage-based accounts are replaced by subscription plans, caching reduces cost at every tier.\n\nRules: if provider response includes cache token fields (any format), apply caching on next request. For OR-routed requests, pass cache_control in the standard Anthropic format where the model supports it (OR forwards it). Add a `supports_caching` flag to ModelSpec so the inference proxy can opt-in per model.\n\n**Affected files:** devices/inference/device.py, devices/inference/models_registry.py\n**Design rules:** no-sqlite; OOP-first\n**Scope boundary:** caching opt-in flag per ModelSpec + inference proxy applies it; no new provider integrations\n**Completion criteria:** A cached request to a non-Anthropic model (e.g. via OR) shows cache_read_input_tokens > 0 in the response, OR the request includes cache_control markers and OR confirms support. Test: mock provider response with cache fields → verify flag set.",
+    "completed_at": "2026-06-04T20:36:02.318374+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "99e8d508-1582-436f-a60c-d8aa7a0925ba",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

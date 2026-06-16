@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-swadl-device.20260428.031522396923",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-swadl-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T03:15:22.396923",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-4-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-base-device-contract",
+      "T-adc-swadl-device",
+      "T-adc-test-device-contract-suite",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-swadl-device",
+    "gate": "T-adc-base-device-contract",
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: SWADL device stub — spec at implementation time",
+    "result": "SwadlDevice stub implemented in agent_datacenter/devices/swadl/device.py — health=degraded with clear message. Contract tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-28T02:50:35.954293+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-4-2026-04-27",
+    "description": "SWADL (~/dev/src/swadl) device registration stub. Full spec at implementation time once SWADL API stabilizes. File now to reserve the slot; sprint when SWADL is ready.\n\nProposed shape:\n- agent_datacenter/devices/swadl/device.py:\n  class SWADLDevice(BaseDevice): — full BaseDevice with stub implementations\n  who_am_i() → {'name': 'swadl', 'version': 'TBD', 'purpose': 'structured workflow agent definition language'}\n  All health/ops methods return sensible stubs\n  Note in class docstring: 'Full spec pending SWADL API stabilization. See ~/dev/src/swadl for current state.'\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/swadl/device.py\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/swadl/shim.py (stub)\n\nDesign rules:\n- oop-first: SWADLDevice class with stub methods — no abstract methods left unimplemented\n\nScope boundary:\nIN: stub device + stub shim that compiles and passes contract tests\nOUT: any real SWADL integration (future ticket after SWADL API stabilizes)\n\nTest plan:\n- SWADLDevice() instantiates (no abstract methods missing)\n- SWADLDevice passes T-adc-test-device-contract-suite parametrized test\n- No import of swadl package — stub only",
+    "completed_at": "2026-04-28T03:15:22.396923+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "52924be7-e090-4ee2-ab66-982a5f0db507",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-evaluator-core.20260615.001345587086",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-evaluator-core"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T00:13:45.587086",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-evaluator-consolidation-2026-06-14"
+    ],
+    "tickets": [
+      "T-evaluator-core"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-evaluator-core",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "CompiledInference",
+      "Factory"
+    ],
+    "title": "Build EvaluatorCore — single-call evaluator with optimism parameter",
+    "result": "EvaluatorCore built with optimism parameter; EvaluatorDevice._run_judge delegates to it; 41 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that a shared EvaluatorCore module exists that runs a single inference evaluation call with an optimism parameter, so Critic and Improver stop maintaining their own inference logic.",
+    "created_at": "2026-06-15T00:13:45.587086+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-evaluator-consolidation-2026-06-14",
+    "description": "Critic, Improver, and Evaluator all run their own inference evaluation logic independently. They share the same underlying shape — evaluate X against criteria, return verdict + rationale — but implement it separately. This creates drift and prevents the wrappers from benefiting from shared improvements.\n\nBuild EvaluatorCore as a shared module in devices/evaluator/core.py:\n  evaluate(context: str, optimism: float, rubric: str | None) -> {verdict: pass/fail/partial, rationale: str, confidence: float}\n  optimism=-1.0: bias toward finding what is wrong (Critic mode)\n  optimism=0.0: neutral assessment (Judge mode)\n  optimism=+1.0: bias toward what could be improved (Improver mode)\n\nRefactor EvaluatorDevice (3-panel) to call EvaluatorCore 3x with slight variation and take majority verdict. This makes EvaluatorDevice a thin orchestrator over EvaluatorCore rather than containing its own inference logic.\n\n**Affected files:** devices/evaluator/core.py (new); devices/evaluator/device.py (refactor to call core)\n**Design rules:** no-autonomous-action; no SQLite; external-state; all inference via InferenceDevice\n**Scope boundary:** IN: EvaluatorCore module; EvaluatorDevice refactored to use it. OUT: Critic/Improver wiring (separate tickets); rubric schema changes; optimism as a DB-stored parameter.\n**Completion criteria:**\n  1. EvaluatorCore.evaluate(context, optimism=-1.0) returns a verdict biased toward failure detection\n  2. EvaluatorCore.evaluate(context, optimism=+1.0) returns a verdict biased toward improvement suggestions\n  3. Same input with optimism=-1 vs +1 produces measurably different rationale content (verified by test)\n  4. EvaluatorDevice calls EvaluatorCore 3x and returns majority verdict — existing eval_history tests pass",
+    "completed_at": "2026-06-15T00:39:30.907285+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

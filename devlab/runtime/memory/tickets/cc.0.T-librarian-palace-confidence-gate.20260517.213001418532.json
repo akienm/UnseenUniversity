@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-librarian-palace-confidence-gate.20260517.213001418532",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-palace-confidence-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T21:30:01.418532",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-peer-agent-architecture-2026-05-17"
+    ],
+    "tickets": [
+      "T-librarian-constitutional-layer",
+      "T-librarian-palace-confidence-gate",
+      "T-librarian-trust-hierarchy-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-palace-confidence-gate",
+    "gate": "T-librarian-constitutional-layer",
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "CorePatterns",
+      "Safety"
+    ],
+    "title": "Implement confidence-gated palace writes for Librarian",
+    "result": "PalaceWriter class with 3-tier confidence gate, human-authored protection, CC inbox escalation",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-17T21:30:01.418532+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-peer-agent-architecture-2026-05-17",
+    "description": "Librarian palace writes currently have no confidence threshold — any synthesis can overwrite any node. This ticket implements the inertia-tier confidence gate so freedom of thought is unconstrained but freedom of permanent record is earned.\n\nThree tiers matching palace inertia:\n- LOW: any write with at least one sourced retrieval (URL, DB query, direct observation). Write proceeds with provenance tag.\n- MEDIUM: requires 2+ independent sources with no contradiction found. Trusted-principal attribution counts as multiplier (see T-librarian-trust-hierarchy-config).\n- HIGH: requires 5+ corroborations plus human-approval gate — same escalation path as pe_chain HIGH inertia. Posts to CC inbox for Akien approval before write.\n\nEach palace write from Librarian must carry: confidence_score (float 0.0–0.999…), provenance_chain (list of source descriptors), certification_timestamp, inertia_tier.\n\nHuman-authored nodes (clan.memory_palace.updated_by != 'librarian' and != 'dreaming'): Librarian may NOT silently overwrite. Attempt fires CC inbox escalation with proposed content for human review.\n\n**Affected files:** agent_datacenter/devices/librarian/ — new palace_writer.py or extended research.py (MEDIUM inertia)\n**Design rules:** theigors/rules/coding (OOP-first; confidence gate as a class); theigors/rules/database (Postgres only, clan.memory_palace); no new memory types\n**Scope boundary:** In scope: confidence gate logic + provenance tagging + human-authored-node protection + CC inbox escalation for HIGH tier. Out of scope: Librarian cognitive architecture changes; changes to how trust multipliers are stored (T-librarian-trust-hierarchy-config).\n**Test plan:** Write with 1 source → LOW tier write succeeds, provenance tag present. Write with 0 sources → rejected. Attempt overwrite of human-authored node → CC inbox escalation fires, no write made. HIGH tier attempt → escalation to CC inbox, write pending approval.",
+    "completed_at": "2026-05-17T22:05:57.187353+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f7c0564-8ce1-4a27-b8c1-7911fd6da8a3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

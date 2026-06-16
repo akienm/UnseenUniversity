@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igorbase-migrate-to-diagnosticbase.20260523.173918277932",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igorbase-migrate-to-diagnosticbase"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T17:39:18.277932",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-diagnosticbase-json-log-sink",
+      "T-igorbase-migrate-to-diagnosticbase"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igorbase-migrate-to-diagnosticbase",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Observability"
+    ],
+    "title": "Migrate IgorBase from AgentBase (utility_closet) to DiagnosticBase",
+    "result": "IgorBase now inherits DiagnosticBase; InterceptHandler routes all self.log calls through loguru; json file sink fires on every Igor log record; 4736 tests pass",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.3,
+    "claimed_at": "2026-05-23T20:56:48.613406+00:00",
+    "created_at": "2026-05-23T17:39:18.277932+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "IgorBase currently inherits AgentBase from lab.utility_closet.agent_base — the utility_closet debt. It used to inherit DiagnosticBase. Restore that.\n\nStep 1: Add stdlib→loguru intercept handler so Igor's existing logging.getLogger() calls flow through loguru without touching hundreds of call sites. Pattern: logging.basicConfig(handlers=[InterceptHandler()]) where InterceptHandler routes to loguru logger.\n\nStep 2: IgorBase inherits DiagnosticBase instead of AgentBase. Keep _IgorSafeLogger as the self.log property shim for backward compat (wraps loguru). The self.logger loguru property from DiagnosticBase becomes available for new code.\n\nStep 3: Remove the lab.utility_closet.agent_base import from igor_base.py. Remove AgentBase from the inheritance chain.\n\nResult: all Igor logging flows through loguru → T-diagnosticbase-json-log-sink's sink fires on every Igor log call, writing one file per record.\n\n**Affected files:** wild_igor/igor/igor_base.py (primary), wild_igor/igor/paths.py (source_root ref)\n**Design rules:** theigors/rules/inherit-base-class\n**Scope boundary:** In scope: igor_base.py migration + intercept handler. Out of scope: migrating individual call sites from self.log to self.logger (follow-on), removing utility_closet registry (separate ticket).\n**Test plan:** Run full pytest suite. Verify log records from IgorBase subclass appear in json/ subfolder after migration.",
+    "completed_at": "2026-05-23T21:09:31.793682+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-23T20:56:48.613406+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-23T17:39:18.277959+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0808113f-8620-45c8-bace-510919dfa6df",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

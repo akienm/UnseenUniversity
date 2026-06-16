@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-goal-adopt-evict-on-close.20260424.171419113451",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-adopt-evict-on-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T17:14:19.113451",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-adopt-evict-on-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-adopt-evict-on-close",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "TWM",
+      "Hygiene"
+    ],
+    "title": "goal_adopt ACTIVE_GOAL rows never evict when goal closes or supersedes",
+    "result": "cortex.twm_evict_category('active_goal') added before goal_adopt push. Mirrors emit_channels.py pattern. 1 new test + 2 _FakeCortex stubs extended. 3947 pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-24T17:02:07.504236+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Every goal Igor adopts deposits a new ACTIVE_GOAL observation at salience=0.85. Observed 2026-04-24: 22 such rows in live TWM spanning 09:08→10:50, all integrated=0. Stacks indefinitely across goal lifecycles — closed goals, superseded goals, test fixture goals (GOAL_TEST_NEST_*) all coexist at the same salience, saturating TWM (MAX=50) and starving lower-salience cognitive observations of slots. After manual cleanup the min eff_salience floor dropped from 0.45 → 0.45 breathing-room; the real fix is to evict/integrate the ACTIVE_GOAL row when its goal transitions to closed or superseded state. Cleanup path: when goal_manager marks a goal closed, find the corresponding ACTIVE_GOAL twm row by goal_id and set integrated=1 (or delete if no integration value). Goal-supersede pattern: newer ACTIVE_GOAL supersedes older on the same goal_id.\n\n**Affected files:** wild_igor/igor/cognition/push_sources/goal_adopt_source.py (or wherever ACTIVE_GOAL is deposited), wild_igor/igor/cognition/goal_manager.py (or wherever goals close), tests/test_goal_adopt_lifecycle.py (new). **Design rules:** oop-first (this is a lifecycle/close-hook addition), test-plan-or-why-not. **Scope boundary:** IN — evict on close, supersede on re-adopt of same goal_id. OUT — changing salience values, changing what a goal IS, changing goal close semantics. **Test plan:** unit test: adopt goal G1 → ACTIVE_GOAL row present at integrated=0. Close G1 → row moves to integrated=1 (or deleted). Adopt G2 (new goal_id) → both rows present if G1 was the in-integrated=1. Re-adopt G1 (idempotent) → no duplicate row.",
+    "completed_at": "2026-04-24T17:14:19.113451+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5c7a79de-16ec-4e23-91af-643597d4e214",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

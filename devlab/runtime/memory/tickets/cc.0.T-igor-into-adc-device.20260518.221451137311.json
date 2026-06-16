@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-igor-into-adc-device.20260518.221451137311",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-into-adc-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:14:51.137311",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-into-adc-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-into-adc-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "ADC",
+      "Architecture",
+      "Igor"
+    ],
+    "title": "Migrate wild_igor into devices/igor/ — Igor becomes an ADC device",
+    "result": "design complete — spawned T-igor-subtree-import, T-igor-import-rewrite, T-igor-theigers-archive (D-igor-into-adc-2026-05-25)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:14:51.137311+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor's cognition engine (wild_igor/) currently lives in a separate repo (~/TheIgors) and the ADC has a hard rule against importing it. This inverts the correct dependency direction: Igor is a device on the rack, not the host for everything. Migrating wild_igor/ into devices/igor/ makes the ADC the primary repo and Igor a peer device alongside librarian, inference, etc.\n\nPeople should be able to install and run the ADC without Igor. Igor should not be able to run without the ADC platform.\n\n**Migration path (to design in sprint):**\n1. Copy wild_igor/ → devices/igor/ with git history preserved (git subtree or filter-branch)\n2. Update import root: wild_igor.igor.* → devices.igor.* (or igor.* if device is own package)\n3. Update igor/shim.py in ADC to reflect new layout\n4. lab/utility_closet/ dissolves: budget.py → devices/inference/ (done), db_proxy.py → platform/, registry.py stays in skeleton/ (future platform/)\n5. TheIgors repo becomes ~/TheIgorsProject — history/docs archive only (lab/design_docs/, decisions_log, slate archive, lab/claudecode/ skills)\n\n**Affected files:** devices/igor/ (new — all of wild_igor/), agent_datacenter/devices/igor/shim.py, lab/utility_closet/ (gutted), pyproject.toml (consolidated deps)\n**Design rules:** no-cross-device-imports (replaces no-TheIgors-imports); platform/ is the only shared import target for devices\n**Scope boundary:** Igor's Postgres schema and IGOR_HOME_DB_URL stay unchanged. DB migration history stays. Skills/habits in DB stay. Only the *code location* changes. ~/TheIgorsProject archive is a separate step.\n**Test plan:** Igor's existing test suite passes from new location. ADC full suite passes. Igor starts and connects to rack after migration. Existing MCP tools work.",
+    "completed_at": "2026-05-25T15:06:39.368284+00:00",
+    "github_issue": 754,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "32454d01-a729-4613-96f7-4ebc2315a5a4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

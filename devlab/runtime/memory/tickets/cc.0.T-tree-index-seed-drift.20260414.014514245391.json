@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-tree-index-seed-drift.20260414.014514245391",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tree-index-seed-drift"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:45:14.245391",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tree-index-seed-drift"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tree-index-seed-drift",
+    "tag": "Infrastructure",
+    "size": "S",
+    "owner": "cc",
+    "title": "tree_index seed references deleted PROC_READING_FEEDER facia (4 test failures)",
+    "result": "Chose option 2: found PROC_READING_FEEDER_V2 from D334 commit 6627ae1f (seed_reading_facia.py). Updated tree_index.py _SPECIAL_TREES to point at the string-id replacement. test_tree_index.py: 18/18 pass. Full suite: 2170 passed, 0 failed.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Discovered in 2026-04-13 day-close audit.\n\nSYMPTOM: 4 test failures in tests/test_tree_index.py (test_list_all_contains_seeded, test_trees_at_facia_node, test_seed_returns_8_trees, test_seed_idempotent). All fail with:\n\n  psycopg2.errors.ForeignKeyViolation: insert or update on table 'trees' violates foreign key constraint 'trees_facia_id_fkey'\n  DETAIL: Key (facia_id)=(20260327162240000000) is not present in table 'memories'.\n\nROOT CAUSE: wild_igor/igor/memory/tree_index.py:266 hardcodes facia_id='20260327162240000000' for the 'reading_pipeline' well-known tree, pointing to what used to be the PROC_READING_FEEDER habit memory. That memory no longer exists in the Igor-wild-0001 database (verified: zero rows in memories with that id, no PROCEDURAL memories matching '%READING_FEEDER%' at all).\n\nNot caused by 2026-04-13 work — git log shows no recent changes to tree_index.py or test_tree_index.py. The habit was removed at some point (possibly during D334 unified-reading-tool refactor 6627ae1f) and the tree_index seed was never updated. The tests were presumably passing on another DB snapshot and drifted.\n\nFIX OPTIONS (pick one after reading the D334 commit and any habit rewrite notes):\n\n1. UPDATE the hardcoded facia_id in _SPECIAL_TREES to point at whatever replaced PROC_READING_FEEDER in the unified reading tool. Preferred if there's a clear replacement habit.\n\n2. REMOVE 'reading_pipeline' from _SPECIAL_TREES entirely if the unified reading tool doesn't use a tree-anchor habit anymore. Update test_seed_returns_8_trees to expect 7 instead of 8. Cleanest if the reading pipeline is no longer tree-structured.\n\n3. MAKE seed_well_known_trees defensive: check facia existence before creating the tree entry, skip with a log warning if missing. Lowest-risk but masks future drift.\n\nRECOMMENDATION: option 1 or 2 depending on what the unified reading tool actually uses. Do NOT just make it defensive — we want this drift caught, not hidden.\n\nSCOPE: single-file code change + test expectation update. Should be ~20 minutes once the right replacement facia_id is identified.\n\nINERTIA: LOW. memory/tree_index.py is a seed module, not a hot path.",
+    "completed_at": "2026-04-14T01:45:14.245391+00:00",
+    "deposited_at": "2026-05-15T07:48:56.641155",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "da2cd872-be4e-4b51-9279-c6fe2e875564",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

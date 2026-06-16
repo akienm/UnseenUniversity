@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-granny-tier-cascade.20260610.232004953657",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-tier-cascade"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T23:20:04.953657",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-tier-dispatch-2026-06-10"
+    ],
+    "tickets": [
+      "T-granny-tier-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-tier-cascade",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Dispatch",
+      "Infrastructure"
+    ],
+    "title": "Granny: cascading tier pickup for idle master devices",
+    "result": "cascade_if_idle flag + _cascade_active_workers() + cascade pickup in run_once; worker field updated post-dispatch; 10/10 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that a master device (CC.0) automatically absorbs creator/builder tickets when its own tier queue is empty, so idle capacity is never wasted.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T23:20:04.953657+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-tier-dispatch-2026-06-10",
+    "description": "Add `cascade_if_idle: true` per-device flag to granny.yaml. When set, Granny widens the role filter for that device after confirming zero tickets at its own tier. Order: master → creator → builder. Granny re-checks each tick; cascade only applies when the device's own-tier queue is genuinely empty.\n\n**Affected files:** devices/granny/daemon.py, config/granny.yaml\n**Design rules:** none apply\n**Scope boundary:** IN — cascade flag, widened role filter in run_once. OUT — exact-match mode (separate ticket), escalation tier-bump logic (consequence of escalation redesign).\n**Completion criteria:** When CC.0 has no master-role tickets and cascade_if_idle=true, Granny dispatches a builder-role ticket to CC.0; log shows 'cascade pickup' label. Test: unit test in tests/granny/ with a mock queue.",
+    "completed_at": "2026-06-13T22:52:23.287770+00:00",
+    "deposited_at": "2026-06-10T17:21:00.196897",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T22:42:26.847706+00:00",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

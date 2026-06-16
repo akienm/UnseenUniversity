@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-twm-sleep-eviction.20260423.212243231136",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-sleep-eviction"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T21:22:43.231136",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-twm-hygiene-2026-04-23"
+    ],
+    "tickets": [
+      "T-twm-self-eviction-policy",
+      "T-twm-sleep-eviction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-sleep-eviction",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "TWM",
+      "SleepConsolidation"
+    ],
+    "title": "TWM sleep — background process evicts stale unintegrated observations",
+    "result": "retired: superseded by T-twm-salience-time-decay + T-twm-leap-on-lever. No fold-in needed — decay demotes stale rows in eviction ranking; leap re-surfaces latent items when associatively relevant; narrative_engine already handles force-integration. The 'Igor feels sluggish' manual hotkey idea is debug-tooling, not ticket-worthy.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "blocked_at": "2026-04-23T21:00:29.189717+00:00",
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": "D-twm-hygiene-2026-04-23",
+    "description": "Akien insight 2026-04-23: 'maybe we need a sleep thing that evicts stale memories.' The existing consolidation path (narrative_engine._integrate_gaps, _consolidation_merge_pass, _deep_consolidation_pass; cognition/consolidation.py run_consolidation) is demand-driven — runs when the narrative engine decides to, which depends on traffic and priorities. When Igor's been running a while and narrative engine hasn't kept up, TWM fills up with unintegrated high-salience observations and new pushes get silently dropped (see T-twm-self-eviction-policy).\n\n**Framing:** biological analog — during wake, TWM accumulates; during sleep, TWM clears via consolidation + forgetting. Observations past some age that haven't been integrated either (a) get force-integrated in a batch, or (b) get aged out (salience decays past admit threshold). Either way, TWM makes room for the present.\n\n**Proposed shape (for discussion, not yet decided):** a `twm_sleep()` pass that runs on Igor idle (separate from narrative engine's consolidation). Picks stale unintegrated rows (age > N minutes, not touched by any integration pass), force-integrates or drops them. Logs summary. Can be invoked manually too (for the \"Igor feels sluggish, clear TWM\" hotkey).\n\n**Affected files:** TBD — discovery in sprint. Likely new wild_igor/igor/memory/twm_sleep.py + call site in main.py idle loop + manual invoker. Possibly cortex.py for a twm_stale_unintegrated() query helper.\n\n**Design rules:** docs-in-code, test-plan-or-why-not, oop-first. Integrates with existing sleep_consolidation / sleep_clock subsystem — check if this is a new sibling or an extension of those.\n\n**Scope boundary:** IN — one sleep-driven TWM eviction/integration pass with age + integration heuristics, manual invoker, log summary. OUT — changing the narrative engine's integration policy (this pass is BELOW that; a safety net, not a replacement), full biological-sleep state machine (that's a bigger architectural story).\n\n**Test plan:** unit tests on the stale-picker heuristic (N-minute age + not-integrated returns expected rows, fresh rows spared); integration test: fill TWM with 50 unintegrated rows dated > N minutes ago, run twm_sleep, verify table returns to workable state and new pushes land. Observation: track SELF_EVICTED warning rate in prod logs before/after deploy.\n\n**Sequence:** after T-twm-self-eviction-policy lands (so we have policy clarity on what \"should not happen\" vs what \"needs sleep to prevent\"). Not a technical gate — could also go in parallel.",
+    "completed_at": "2026-04-23T21:22:43.231136+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "17728340-17be-4405-ae8d-ff83c12bfb25",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

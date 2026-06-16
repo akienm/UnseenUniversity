@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-sec-shim-coldstart-failclosed.20260530.235216815024",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sec-shim-coldstart-failclosed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T23:52:16.815024",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-murderbot-security-review",
+      "T-sec-shim-coldstart-failclosed",
+      "T-shim-policy-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sec-shim-coldstart-failclosed",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Security"
+    ],
+    "title": "Security: shim policy gate must fail-closed when policy device not ready",
+    "result": "Already implemented: BaseShim.dispatch() fails closed when _policy_gate is None (shim.py:281-304) — writes governance denial record, raises PolicyDeniedError; tests in test_shim_policy_gate.py confirm",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "blocked_at": "2026-06-02T19:52:45.773674+00:00",
+    "claimed_at": "2026-05-31T21:32:20.649325+00:00",
+    "created_at": "2026-05-30T23:52:16.815024+00:00",
+    "created_by": null,
+    "related_to": "T-shim-policy-gate",
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Gap surfaced by T-murderbot-security-review. T-shim-policy-gate requires the policy device to 'boot before any device registers' but does not specify what the shim does when the policy device is not yet ready (cold start, restart under load, policy device crash). Fail-open would bypass the entire policy gate during the cold-start window.\n\nThe shim must be explicitly fail-closed: if the policy device is unreachable or not yet initialized, the shim denies all tool calls and returns a descriptive error. The shim should block until the policy device signals ready or timeout-deny. This behavior must be tested: a call during the policy-device-down window must be denied and logged.\n\n**Affected files:** unseen_university/skeleton/base_shim.py (policy check — add unavailable branch), devices/policy/ (ready signal)\n**Scope boundary:** IN — fail-closed behavior, policy-device-unavailable error path, logging of cold-start denials; OUT — policy device HA/replica, shim startup ordering enforcement\n**Completion criteria:** a tool call arriving before policy device is ready is denied with a structured error; denial is logged; shim startup test covers the cold-start deny path",
+    "completed_at": "2026-06-03T02:56:39.850892+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-30T23:52:17.815462+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0784e19d-947d-422e-99f5-fbe91fce209b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

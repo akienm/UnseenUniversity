@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-workflow-executor-flaky.20260610.154027242026",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-workflow-executor-flaky"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:40:27.242026",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-workflow-executor-flaky"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-workflow-executor-flaky",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Tests",
+      "Granny"
+    ],
+    "title": "Fix flaky [REDACTED-CREDENTIAL] in full suite",
+    "result": "mocked _dispatch_step in test_tick_advances_dispatched_to_done_on_closed — real subprocess call took 17s, always exceeding 10s timeout",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.2,
+    "intention": "I intend that the granny workflow executor test passes reliably in the full test suite without state leakage from earlier tests.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T15:40:27.242026+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "[REDACTED-CREDENTIAL] passes in isolation and with all granny/ tests, but fails when the full test suite runs. Pattern: shared state from an earlier test leaves granny workflow executor in a state that breaks this test.\n\n**Affected files:** tests/granny/test_workflow_executor.py; possibly shared fixtures or DB state\n**Design rules:** none\n**Scope boundary:** Fix the isolation issue. Do not change the test's assertion.\n**Completion criteria:** `python -m pytest tests/ -q` passes without the -k exclusion; test passes in both isolation and full-suite runs.",
+    "completed_at": "2026-06-10T17:02:34.817171+00:00",
+    "deposited_at": "2026-06-10T09:40:42.517717",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

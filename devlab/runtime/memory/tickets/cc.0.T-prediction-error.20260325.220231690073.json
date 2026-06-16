@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-prediction-error.20260325.220231690073",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-prediction-error"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T22:02:31.690073",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-prediction-error",
+      "T-spreading-activation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-prediction-error",
+    "title": "NE prediction error → per-turn graph training",
+    "result": "Implemented D228 step 2: NE prediction error → per-turn graph training. Before each NE cycle, collect seed memory IDs from TWM obs metadata and run spreading_activation. After _apply_output, compare predicted-hot nodes vs actually promoted IDs. Hits call reinforce_links(seed, hit_ids, +0.05); misses call reinforce_links(seed, miss_ids, -0.02). Gated by IGOR_PREDICTION_ERROR_ENABLED (default false). Modified: narrative_engine.py (added _train_prediction_error, modified _apply_output to return promoted_ids, pre-seed snapshot in run()). 10 tests. Commit 11fd32a1.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-25T21:52:32.779307+00:00",
+    "description": "Every NE cycle computes expected vs actual activation. Delta = training signal: edges that predicted correctly strengthen, edges that missed weaken. Makes NE a continuous graph trainer rather than a content surfacer. Implementation: after each NE cycle, compare TWM state before/after, compute delta per node, call cortex edge weight update. Ref: D228 step 2. Prereq: T-spreading-activation.",
+    "completed_at": "2026-03-25T22:02:31.690073+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c9604e5a-b442-4072-b7a4-31b2316e32d9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

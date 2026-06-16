@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-groundloop-cron-bootstrap.20260615.182303118762",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-groundloop-cron-bootstrap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:23:03.118762",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-unified-daemon-supervisor-2026-06-15"
+    ],
+    "tickets": [
+      "T-groundloop-cron-bootstrap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-groundloop-cron-bootstrap",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Daemon",
+      "Orchestration"
+    ],
+    "title": "[pending] Ground Loop cron bootstrap — system cron trigger + cross-platform daemon orchestration",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that Ground Loop provides unified daemon orchestration across all platforms, replacing per-device dispatcher logic.",
+    "created_at": "2026-06-15T18:23:03.118762+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-unified-daemon-supervisor-2026-06-15",
+    "description": "Wire system cron to trigger Ground Loop startup. On Linux/macOS: cron invokes `groundloop_start.sh` which calls `python ground_loop_daemon.py` if not already running. On Windows: Ground Loop runs as startup task or service. Ground Loop is a persistent Python process that: (1) discovers all `devices/*/groundloop/runme.py` files; (2) imports and runs them; (3) monitors for crashes; (4) auto-restarts failed daemons (or renames to .borkedpy if repeated failures); (5) detects new/removed runme.py files and hot-reloads. No Unix-specific APIs — works on Windows, macOS, Linux.\n\n**Affected files:** devices/ground_loop/daemon.py (new), devices/ground_loop/groundloop_start.sh (new), setup cron via Ansible or manual instruction\n**Design rules:** log-state-changes (daemon start/stop/crash), external-state-principle (all state in .borkedpy files, not in-memory)\n**Scope boundary:** Ground Loop bootstrap only; individual runme.py implementations are separate tickets\n**Completion criteria:** (1) Ground Loop process starts on system boot (cron on Linux/macOS, startup task on Windows); (2) discovers runme.py files; (3) runs them; (4) logs all state changes to datacenter_logs/ground_loop/; (5) handles Windows and Linux; (6) restarts on reboot; (7) manual start/stop via groundloop_start.sh works\n**Test plan:** (1) Start Ground Loop, verify it runs; (2) Check logs for daemon discovery; (3) Stop Ground Loop, verify daemons stop; (4) Reboot (or simulate), verify Ground Loop auto-starts; (5) Test on Windows VM if available",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

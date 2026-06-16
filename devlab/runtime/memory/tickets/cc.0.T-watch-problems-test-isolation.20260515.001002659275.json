@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-watch-problems-test-isolation.20260515.001002659275",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watch-problems-test-isolation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-15T00:10:02.659275",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-watch-problems-test-isolation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watch-problems-test-isolation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Cognition"
+    ],
+    "title": "watch_problems tests leak data to real instance schema",
+    "result": "test_data=true stamp in add_watch_problem() when IGOR_TEST_MODE=1; DELETE cleanup added to conftest _test_data_lifecycle teardown",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-23T21:29:13.892522+00:00",
+    "created_at": "2026-05-15T00:10:02.659275+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "test_watch_problems.py has accumulated test data in the real instance.watch_problems table (~26 rows each for 'some condition', 'ticket description scope affected files', etc.). The pg_test_schema fixture should isolate these writes to test_instance_<ts> schemas, but something is causing data to reach the real schema. The 'ticket description scope affected files' rows accumulated confidence 0.78 and caused a 20-message lever_watcher flood on 2026-05-14.\n\nLikely cause: pg_test_schema fixture setup fails silently in some test runs (e.g. IGOR_HOME_DB_URL not set), yielding None. Tests with `if pg_test_schema is None: pytest.skip()` skip cleanly, but any test run where the schema was set up but teardown failed would leave data. Need to audit.\n\nFix: confirm root cause, then add metadata->>'test_data'='true' marker to all test-inserted rows so they can be cleaned in teardown regardless of schema isolation. Alternatively, add a real-DB check in wp fixture.\n\n**Affected files:** tests/test_watch_problems.py, tests/conftest.py\n**Design rules:** no-sqlite, test-plan-or-why-not\n**Scope boundary:** test isolation only; no production code changes\n**Test plan:** verify after fix that running the test suite 3x in a row leaves no rows in instance.watch_problems",
+    "completed_at": "2026-05-28T01:59:08.276957+00:00",
+    "github_issue": 720,
+    "dispatched_at": "2026-05-23T21:29:13.892522+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5d363cbb-9f99-4522-8115-967e679d5c09",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-agentctl-env-and-skills.20260506.010026309484",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agentctl-env-and-skills"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T01:00:26.309484",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-0-2026-04-27",
+      "D-skills-portability-2026-05-05"
+    ],
+    "tickets": [
+      "T-agentctl-env-and-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-agentctl-env-and-skills",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Installer"
+    ],
+    "title": "CLOSED: agentctl init — set CC_WORKFLOW_TOOLS and run skills-sync on first install",
+    "result": "agentctl init now detects CC_WORKFLOW_TOOLS, writes to shell profile (idempotent), runs skills deploy on init; graceful skip when lab/claudecode not in agent_datacenter yet (commit 47f8f65)",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-06T00:56:28.326963+00:00",
+    "related_to": null,
+    "decision_id": "D-skills-portability-2026-05-05",
+    "description": "agentctl init (agent_datacenter installer device) is near-empty and doesn't set AGENT_DATACENTER_HOME or CC_WORKFLOW_TOOLS env vars, nor does it install skills. Extend the init flow: detect install path, write env vars to shell profile (~/.bashrc / ~/.zshrc), optionally run skills-sync to install canonical skills into ~/.claude/skills/. This is the 'complete illiterates can install' entry point per installer-bootstrap.md decision.\n\n**Affected files:** agent_datacenter/devices/installer/device.py (currently near-empty — Phase 4 target per D-adc-phase-0-2026-04-27).\n**Design rules:** No TheIgors imports. Phase 4 target is agentctl init per existing installer-bootstrap decision. No WSL dependency.\n**Scope boundary:** IN: env var writing to shell profile on Linux/macOS, skills-sync invocation on first install. OUT: Postgres setup (separate concern in installer bootstrap doc), Windows (later).\n**Test plan:** Run agentctl init on a clean shell profile; source profile; echo $AGENT_DATACENTER_HOME and echo $CC_WORKFLOW_TOOLS return correct paths; ~/.claude/skills/ contains canonical skill set.\n**Pass condition:** Fresh shell after agentctl init has both env vars set and skills installed; no manual path editing required by the user.",
+    "completed_at": "2026-05-06T01:00:26.309484+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ec482df8-abdb-47b0-8e4e-eaae36059888",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

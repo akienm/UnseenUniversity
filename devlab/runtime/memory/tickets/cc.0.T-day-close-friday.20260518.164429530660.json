@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-day-close-friday.20260518.164429530660",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-day-close-friday"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530660",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-day-close-friday"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-day-close-friday",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "DayClose",
+      "Audit",
+      "Skills"
+    ],
+    "title": "Add Friday /audit-expert trigger to day-close",
+    "result": "Added Friday eval-run + weekly-retro + audit-expert trigger to day-close; first-Monday monthly panel",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530660+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "The expert audit has no scheduled cadence — it only runs when manually invoked. Day-close on Fridays is the natural trigger for the weekly 3-expert panel.\n\n**Affected files:** agent_datacenter/skills/day-close/SKILL.md (add Friday conditional step after day-close-audit)\n**Design rules:** Friday detection via date +%u (1=Mon, 5=Fri); audit-expert runs in weekly mode (3 random experts) unless manually overridden to monthly\n**Scope boundary:** in scope: add to day-close checklist — 'Step N: If Friday (date +%u == 5): run /audit-expert'. Add note that monthly full panel runs on first Monday of month. Out of scope: auto-selecting experts, changing audit-expert itself.\n**Test plan:** skill file change; verify conditional logic is unambiguous; manual test on a Friday.",
+    "completed_at": "2026-05-18T16:59:07.237589+00:00",
+    "github_issue": 750,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ea02666d-7520-4674-8b7b-5a4189858ecf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

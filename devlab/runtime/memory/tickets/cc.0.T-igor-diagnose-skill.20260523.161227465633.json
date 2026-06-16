@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-diagnose-skill.20260523.161227465633",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-diagnose-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T16:12:27.465633",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-diagnose-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-diagnose-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Observability",
+      "Cognition"
+    ],
+    "title": "Write /igor-diagnose skill — log-first structured stuck-state diagnosis",
+    "result": "wrote /igor-diagnose skill at ~/.claude/skills/igor-diagnose/SKILL.md — 6-step protocol: anchor→leaf logs→anomaly→categorize(A/B/C)→fix→verify; appends incident entries to igor_diagnose_report.md",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-23T16:12:27.465633+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Every time Igor gets stuck we diagnose from channel/TWM (effects), form a theory, and act. That's backwards — the cause is always in the logs, and it's always earlier than the stuck NE cycles. A skill encodes the discipline so CC can't skip the log-reading step.\n\n**Skill name:** /igor-diagnose\n\n**Core invariant:** No hypothesis before step 3 (first anomaly found in logs). This line is in the skill to block CC from theorizing.\n\n**Protocol:**\n1. Anchor — find timestamp of last healthy action in channel (last non-stuck substantive message)\n2. Leaf log sweep — read Igor's specific subsystem logs from anchor time forward (NOT channel, NOT TWM). Leaf logs: ~/.TheIgors/logs/ hierarchy, pe_chain trace logs, goal/GOAL memory records. These are the authoritative record.\n3. First anomaly — identify the exact log line where behavior diverged. State it verbatim. Stop here; do not proceed until the anomaly is in hand.\n4. Categorize — three cases with different fixes:\n   - Code/logic bug → fix in source\n   - TWM/memory state corruption → DB cleanup, goal reset, or clarifying direction\n   - External noise / false narrative loop → clarifying direction + optionally filter the source\n5. One targeted fix — exactly what the logs point to, nothing more\n6. Verify — watch for Igor to produce a successful action, not just absence of stuck messages\n\n**Diagnostic report:** The skill appends each incident to a persistent report at ~/.TheIgors/claudecode/igor_diagnose_report.md. Format per entry: timestamp | trigger | leaf log citation | root cause category | fix applied | outcome. Over time this becomes a pattern library — the frequency distribution of failure modes drives what to fix in the system.\n\n**Integration:** When leaf logs point to a pe_chain HYPOTHESIZE failure, escalate to /debug-pe-chain (that skill steps phases manually). /igor-diagnose is the triage layer; /debug-pe-chain is the deep-dive layer for one specific failure mode.\n\n**Hard rules in the skill:**\n- Leaf logs first, always — no diagnosis from channel or TWM alone\n- No hypothesis before the verbatim anomaly is in hand\n- If logs are ambiguous → add logging before guessing (per standing instruction: 'if there isn't enough logging, add more')\n- Verify by watching Igor produce a successful action, not just silence\n\n**Affected files:** ~/.claude/skills/igor-diagnose.md (new skill file)\n**Design rules:** none (skill file only, no source changes)\n**Scope boundary:** In scope: the skill file itself + the diagnostic report append logic. Out of scope: fixing any specific bug found — that's the repair action that follows the diagnosis.\n**Test plan:** No automated tests — skill file is markdown. Manual verification: run /igor-diagnose on a known stuck incident from today's session and confirm the report entry captures the right leaf log citation and root cause.",
+    "completed_at": "2026-05-23T21:28:05.208479+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-23T16:12:27.510166+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f7399664-c1eb-4e15-bb51-d7c277f6e3d0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

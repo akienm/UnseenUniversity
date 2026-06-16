@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-uc-restart-endpoint.20260424.160154000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-restart-endpoint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:01:54",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-restart-endpoint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-restart-endpoint",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "UC",
+      "Tooling",
+      "Lifecycle"
+    ],
+    "title": "UC internal restart endpoint — one call instead of kill + relaunch",
+    "result": "Already DISCARDed per existing blocked reason: UC retiring as part of ADC Phase 5. Cutover ticket will be filed with Phase 5 batch. Closing administrative leftover.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": "2026-04-28T01:40:15.369688+00:00",
+    "claimed_at": "2026-04-27T06:15:21.115259+00:00",
+    "created_at": "2026-04-24T16:01:54Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Right now restarting UC to pick up code changes requires `kill $(cat ~/.TheIgors/utility_closet.pid)` + relaunch. That risks dropping web browser, CC's MCP channel, and Igor's uc_client registration on the floor with no coordination. Needed: a single call (HTTP endpoint or rack operation) that does graceful shutdown + re-exec, so every attached client has a well-defined reconnect point.\n\n**Affected files:** lab/claudecode/utility_closet_server.py (new endpoint + re-exec logic), wild_igor/igor/web/utility_closet_client.py (reconnect-on-disconnect detection), lab/claudecode/cc_skills/readigor/SKILL.md (maybe — if restart becomes a readigor subcommand)\n**Design rules:** docs-live-in-code, test-plan-or-why-not\n**Scope boundary:** IN — (1) POST /api/platform/restart triggers graceful shutdown + os.execv re-exec; (2) Igor's uc_client detects 'UC unreachable' and re-registers on first successful /health after; (3) minimum wait-for-healthy loop so caller knows when the new process is serving. OUT — CC's MCP-tool reconnection (separate concern — MCP client-side logic is outside UC's scope); browser-side reconnect (already handled by frontend JS reconnect-on-close).\n**Test plan:** (a) unit test the new endpoint returns 202 + a reconnect-token before shutdown; (b) unit test Igor's uc_client re-registration path (mock UC returning /health before and after); (c) integration-ish: launch UC in a subprocess, hit /api/platform/restart, assert new PID and health=ok within 5s.\n\nArchitectural context: eventually both CC and Igor are racks in the utility closet (per Akien 2026-04-23). A UC that can cleanly restart itself is the foundation for rack-lifecycle operations — add/remove/upgrade/restart any rack without the whole platform going dark. This ticket is the first step toward that.",
+    "proposed_at": "2026-04-27T06:31:04.876662+00:00",
+    "completed_at": "2026-05-02T03:15:30.261327+00:00",
+    "github_issue": 510,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4fe6f995-aa7e-4258-9357-f3d2ecbd3754",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

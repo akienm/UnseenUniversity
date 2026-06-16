@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-db-lemmatize.20260320.230009124748",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-lemmatize"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T23:00:09.124748",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-db-lemmatize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-lemmatize",
+    "body": "Lemmatize on ingest: store canonical stem as primary key, inflections as variants. Shrinks wg_word_lang from 2.1M to ~80K. wg_cooccur collapses from 29M to ~500K pairs. Precondition for T-db-wg-replace-cooccur. Requires Igor down. See audit_reports/audit_report_20260319_database_architecture.md.",
+    "role": "worker",
+    "size": "small",
+    "title": "Lemmatize vocabulary — 2.1M tokens → ~80K stems",
+    "result": "committed ec627be — WordNet lemmatization + wg migration",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-20T23:00:09.124748+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

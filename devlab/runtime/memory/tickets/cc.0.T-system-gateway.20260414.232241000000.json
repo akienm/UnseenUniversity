@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-system-gateway.20260414.232241000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-system-gateway"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:41",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-system-gateway"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-system-gateway",
+    "body": "From D112 (now closed as ticketed). Per Akien 2026-04-14: 'we should have an abstraction for that' — and we thought we already did.\n\n## What it is\n\nSystemGateway is the running-instance equivalent of PathManager. PathManager already abstracts paths under ~/.TheIgors/. SystemGateway abstracts EVERYTHING ELSE about the box this Igor instance is running on: resource metrics, process operations, shell execution, file watching, hostname/OS info, network primitives. Per-instance, NOT per-Igor-network — each running Igor sees its OWN box's gateway.\n\nThis is the substrate that makes 'Igor runs anywhere' real. Without it, platform assumptions leak everywhere and the Windows port means hunting and replacing every psutil/signal/subprocess call individually.\n\n## Currently scattered (the work the gateway centralizes)\n\n1. **Resource metrics** — cognition/interoception.py, tools/filesystem.py:check_resource_load(), scattered psutil calls\n2. **Process ops** — tools/runner.py (run_bash, restart_self), main.py signal handlers, worker_foreman.py PID checks\n3. **Shell execution** — runner.py:run_bash, subprocess.run() calls in 10+ files\n4. **File watching** — InboxWatcher in network/, EnvSync mtime polling\n5. **Temp/socket dirs** — /tmp references everywhere, no abstraction\n6. **Hostname / OS info** — socket.gethostname() in 4-5 places, no platform.system() handling\n7. **Network primitives** — port binding, localhost detection, scattered\n\n## Why per-instance, not per-Igor-network\n\nThe home DB lives on akiendelllinux but a yoga9i Igor instance operates on yoga9i's CPU/memory/filesystem/processes. The interoception data each Igor needs is 'what's the load on MY box,' not 'what's the load on the home DB box.' SystemGateway is a property of the running process, not a property of the deployment.\n\nThis maps cleanly to T-concurrent-ne-spawn / COA work — when yoga9i spawns a reading COA, that COA sees yoga9i's SystemGateway; when akiendelllinux spawns a conversing COA, that COA sees akiendelllinux's SystemGateway.\n\n## Sub-tickets (recommend implementing as four slices, not one big bang)\n\n- T-system-gateway-shell (M) — wrap subprocess.run + bash invocation + git commands + ssh exec under SystemGateway.shell\n- T-system-gateway-resources (M) — interoception + check_resource_load + cluster load checks under SystemGateway.resources; psutil contained to one module\n- T-system-gateway-process (M) — restart_self + signal handlers + PID liveness under SystemGateway.process; os.kill(pid, 0) wrapped so Windows variant is one method swap not a hunt\n- T-system-gateway-host-info (S) — hostname + OS detection + temp dir resolution + socket dir under SystemGateway.host\n\nEach slice does opportunistic conversion as code is touched (same pattern as T-typed-memories-to-tags from this morning). Lower inertia per sprint than the big-bang refactor.\n\n## Why this resurfaced now\n\n- T-concurrent-ne-spawn needs a 'where am I running' surface for spawn-gating decisions\n- T-router-off-limits-violation could put 'off-limits hours' rules on SystemGateway instead of scattered conditionals\n- Every 'Igor anywhere' / Windows-port discussion hits this\n- D352-D354 (mode work) routes interoception signals that currently read directly from psutil + cluster module\n\n## Existing work to extend, not replace\n\n- wild_igor/igor/paths.py — PathManager already exists. SystemGateway should USE PathManager, not replace it. Final shape is `SystemGateway.paths = PathManager()` plus the seven new sub-modules.\n- D108 PathManager — the pattern this work continues\n\n## Inertia\n\nHIGH-MEDIUM cumulative across slices. Each individual slice is M (touches one category at a time). The parent epic is L because of the cross-cutting nature.\n\n## Provenance\n\nD112 (Akien 2026-04-11, surfaced 2026-04-14) — and Akien thought we'd already shipped this, which is itself the case study for why decisions need to either become tickets or get closed promptly. See today's slate discussion.\n\n## Added 2026-04-14 — service lifecycle management (from D114)\n\nD114 'service-layer-always-on' was mostly implemented via D335 utility-closet-platform: DB, web server, and platform services already run as persistent daemons independent of Igor, and Igor attaches/detaches without taking infrastructure down. CC bridge stays available across Igor restarts.\n\n**The piece D114 named that is NOT yet covered:** SystemGateway should be the abstraction that **manages service lifecycle from inside Igor** — start/stop/health-check/restart of the persistent daemons (utility closet, db, future services) as a uniform interface. Today these operations are scattered (cluster_ssh.update_swarm, restart_ollama, manual systemctl from outside). Pulling them under SystemGateway.services means:\n\n  - Igor can introspect 'are my dependencies up?' with one call\n  - Igor can recover from a downed dependency by calling SystemGateway.services.restart('utility_closet') as part of the degrade-gracefully habit chain (T-architecture-core-principles principle #7)\n  - Same interface across machines (akiendelllinux's services vs yoga9i's services)\n  - Mode-aware policies (background mode can restart services freely; awake mode escalates to Akien)\n\n**New sub-slice: T-system-gateway-services (M)** — wrap service lifecycle (start/stop/restart/health) for utility closet + db + future daemons. Reuse cluster_ssh + restart_ollama + check_resource_load infrastructure. Connects to T-router-off-limits-violation (which is in part about service-level gating).\n\n## Added 2026-04-14 — config bootstrap abstraction (from D119)\n\nD119 'db-first-boot' is implemented in env_sync.py:boot_env_sync() — boot order, mtime tracking, re-hydration all work. But the implementation has Linux-shaped assumptions that should land under SystemGateway when this epic sprints:\n\n**New sub-slice: T-system-gateway-config (S)** — wrap the env_sync boot path under SystemGateway.config:\n- `SystemGateway.config.bootstrap()` — current boot_env_sync logic, called at instance startup\n- `SystemGateway.config.cfg_files()` — current _cfg_files() logic, platform-portable cfg discovery\n- `SystemGateway.config.last_sync_mtime(instance_id)` / `set_last_sync_mtime(instance_id, mtime)` — instance metadata access\n- Reuses env_sync.py internals; just gives them a uniform gateway-shaped surface\n- Windows variant handles cfg discovery + path resolution differently (different default locations, no symlinks, etc.)\n\nThis makes the bootstrap path portable as one method swap rather than scattered conditionals. Sister to T-system-gateway-host-info.",
+    "deps": [],
+    "size": "L",
+    "tags": [
+      "platform",
+      "epic",
+      "windows-port",
+      "infra",
+      "biomimicry"
+    ],
+    "title": "EPIC: SystemGateway — per-instance abstraction for platform-specific behavior",
+    "result": "Superseded by UC rack architecture + system_proxy shelf + machine_manager shelf + comms module.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-14T23:22:41Z",
+    "related_to": null,
+    "completed_at": "2026-04-17T22:15:23.584073+00:00",
+    "github_issue": 441,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

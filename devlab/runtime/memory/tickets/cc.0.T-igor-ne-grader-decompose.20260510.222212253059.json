@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-ne-grader-decompose.20260510.222212253059",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-ne-grader-decompose"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:12.253059",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-memory-depth-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-ne-grader-decompose",
+      "T-igor-ne-grader-pass"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-ne-grader-decompose",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "CLOSED: NE grader decomposed (shipped with prior)",
+    "result": "shipped within T-igor-ne-grader-pass — all 3 sub-scores already in _grade_ne_output()",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T22:50:19.099542+00:00",
+    "created_at": "2026-05-10T22:22:12.253059+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-memory-depth-2026-05-10",
+    "description": "Amend T-igor-ne-grader-pass: decompose the single quality score into three sub-scores evaluated in the same fresh-context grader call. Sub-scores: (1) memory_retrieval_quality — were loaded memories relevant to NE output?; (2) context_assembly_quality — was the prompt window coherent, not noise-heavy?; (3) output_coherence — does output reflect clear cognitive focus? Weighted sum (0.33 each) → overall_score. Escalate if overall_score < 0.5 OR any sub-score < 0.3. All four scores logged to psych_log alongside valence/arousal.\n\nSub-score decomposition makes the grader actionable: low memory_retrieval → signal to Librarian curation; low context_assembly → triggers task-boundary flush consideration; low output_coherence → feeds watch-confidence accumulator.\n\n**Affected files:** `wild_igor/igor/cognition/coa.py` (grader returns structured sub-scores; grader prompt updated)\n**Design rules:** fresh-context grader call (separate from NE's accumulated context); all sub-scores in psych_log; escalation on overall < 0.5 OR any sub < 0.3\n**Scope boundary:** IN — grader prompt, structured response parsing, sub-score logging, escalation thresholds. OUT — no NE changes, no memory retrieval changes.\n**Test plan:** grader returns dict with all four scores; overall < 0.5 triggers escalation; any sub < 0.3 triggers escalation; all four scores appear in psych_log entry",
+    "completed_at": "2026-05-10T22:50:24.192581+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0abc1e28-03a7-4be1-8205-3367a0bc21f6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

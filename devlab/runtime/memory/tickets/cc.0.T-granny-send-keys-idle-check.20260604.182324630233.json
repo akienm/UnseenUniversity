@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-granny-send-keys-idle-check.20260604.182324630233",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-send-keys-idle-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T18:23:24.630233",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-orphan-watchdog",
+      "T-granny-send-keys-idle-check",
+      "T-ibd-intention-field",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-send-keys-idle-check",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Bug"
+    ],
+    "title": "Granny: send-keys to CC may be swallowed if session is mid-response",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that every Granny dispatch to CC.0 results in a sprint-ticket command that CC actually receives and acts on.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T18:23:24.630233+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When Granny sends /sprint-ticket T-xxx via tmux send-keys to claude-main while CC is mid-response (generating output), the keystrokes go into the terminal buffer and are not reliably processed. Observed: T-ibd-intention-field was dispatched at 18:10 and marked in_progress, but the command was never acted on. The ticket stayed orphaned in in_progress until manually reset.\n\nNeeds: an idle-check before send-keys (e.g. check if the tmux pane is waiting for input), or a retry mechanism that verifies the ticket transitions from in_progress to done/sprint within a timeout.\n\nThis is related to T-granny-orphan-watchdog (already closed) but is the root dispatch-path fix rather than the recovery mechanism.\n\n**Affected files:** devices/granny/daemon.py (_dispatch_cc0), possibly devices/granny/availability.py\n**Design rules:** no-sqlite N/A; state must be externalized\n**Scope boundary:** add idle check or pre-dispatch wait in _dispatch_cc0; do not change ticket routing logic\n**Completion criteria:** dispatch to CC.0 while CC is mid-response either waits or queues reliably; dispatched ticket transitions to in_progress and eventually done without manual intervention",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

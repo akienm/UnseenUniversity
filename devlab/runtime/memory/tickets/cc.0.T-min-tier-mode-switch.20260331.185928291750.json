@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-min-tier-mode-switch.20260331.185928291750",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-min-tier-mode-switch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T18:59:28.291750",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-min-tier-mode-switch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-min-tier-mode-switch",
+    "size": "M",
+    "tags": [
+      "Training",
+      "Infrastructure"
+    ],
+    "title": "min_tier mode switch — reading bootstrap via TWM",
+    "result": "Superseded by T-reading-bootstrap-mode (L-size sprint). D268 implemented there — full path B with TWM category, gateway flag, tools, habit, and tests.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "Add min_tier check to inference_gateway tier routing; seed PROC_READING_BOOTSTRAP habit that pushes MODE|reading_bootstrap|min_tier=tier.4 to TWM with TTL. Enables controlled tier override for architecture doc reads without external env vars.",
+    "completed_at": "2026-03-31T18:59:28.291750+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dde8ee7d-91c0-4299-9380-eefa0eedd10b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

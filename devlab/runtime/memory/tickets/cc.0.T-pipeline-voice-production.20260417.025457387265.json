@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-pipeline-voice-production.20260417.025457387265",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pipeline-voice-production"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T02:54:57.387265",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pipeline-voice-production"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pipeline-voice-production",
+    "size": "M",
+    "title": "Pipeline cascade match must produce real Igor text, not level name",
+    "result": "5429d55f — _extract_cascade_content pulls narrative from matched memories. Blob selected_action is now real content, not 'reuse level_name result'. 2 new tests. IGOR_TURN_PIPELINE stays false until voice is fully wired.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T02:45:55.976252+00:00",
+    "related_to": null,
+    "description": "_blob_from_cascade_match sets selected_action to 'reuse level_0_exact_recall result' — a debug label, not a reply. When IGOR_TURN_PIPELINE=true, this becomes the literal channel output. Fix: cascade match path should pass the actual matched memory content/narrative as the selected_action. VoiceProducer stub needs to handle this. ABVoiceProducer should be the default when pipeline is on. Gate: don't enable IGOR_TURN_PIPELINE until this is done.",
+    "completed_at": "2026-04-17T02:54:57.387265+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "317ad482-7624-4c3d-9b78-c0835723b26e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-mcp-igor-cognition-debug-capability.20260504.153925000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-igor-cognition-debug-capability"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:39:25",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-capability-protocol-2026-05-03"
+    ],
+    "tickets": [
+      "T-mcp-igor-cognition-debug-capability"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-igor-cognition-debug-capability",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Capability",
+      "MCP",
+      "Cognition",
+      "Debug"
+    ],
+    "title": "CLOSED: Igor cognition-debug as MCP capability — claim/status/release verbs + skill consumer",
+    "result": "debug_session.py (claim/status/release/query/log_line) + debug_session_cli.py + 10 tests. Skills updated. Commit 32b2d901. MCP surface deferred to agent_datacenter arrival.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-04T17:07:44.165685+00:00",
+    "created_at": "2026-05-04T15:39:25Z",
+    "related_to": null,
+    "decision_id": "D-capability-protocol-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — 'all is approved! go!').** Second concrete capability migration under theigors/rules/capability-protocol. Replaces the flag-file dance (~/.TheIgors/Igor-wild-0001/debug_session.flag) with first-class MCP claim/status/release verbs.\n\n**Two-sided per the rule:** ships handler (MCP capability) AND skill consumer (skill files updated to call it).\n\n**Capability surface (matches theigors/rules/capability-protocol/vocabulary):**\n- `claim(scope)` — request a debug session (returns handle).\n- `status(handle)` — check if Igor is in debug mode + which scope.\n- `release(handle)` — exit debug mode for that scope.\n- `query(handle)` — read recent debug log lines.\n\n**Affected files:**\n- HANDLER: agent_datacenter/devices/igor_debug/cognition_debug_capability.py (NEW MCP tool registration), wild_igor/igor/cognition/debug_session.py (NEW or existing — manages live state). Replaces flag-file mechanism.\n- SKILL CONSUMER: /home/akien/.claude/skills/context-load/SKILL.md (Step 0.5 — replace `touch debug_session.flag` with mcp__igor__cognition_debug_claim), /home/akien/.claude/skills/savestateauto/SKILL.md (Step 3 — replace `rm debug_session.flag` with mcp__igor__cognition_debug_release).\n**Design rules:** theigors/rules/capability-protocol (parent), theigors/rules/capability-protocol/vocabulary (uses `claim`/`status`/`release`/`query`), theigors/rules/capability-protocol/two-sided-build, theigors/rules/igor-constraints (Igor cognition path remains in-stack — only the entry point moves to MCP).\n**Scope boundary:** IN: MCP capability + skill consumer migration for context-load + savestateauto. IN: backwards-compat — flag-file still works during transition (handler writes the flag too). OUT: deleting the flag-file mechanism (separate follow-on after burn-in). OUT: debug session telemetry/dashboard.\n**Test plan:** pytest for the MCP handler (claim returns handle, release clears state, status reflects current); CC.1 integration test that exercises /context-load and asserts mcp__igor__cognition_debug_claim is called instead of bash touch.",
+    "completed_at": "2026-05-04T17:10:19.799364+00:00",
+    "github_issue": 584,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "27d55acf-e2f9-4cd8-a68f-0da0c2d653c6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

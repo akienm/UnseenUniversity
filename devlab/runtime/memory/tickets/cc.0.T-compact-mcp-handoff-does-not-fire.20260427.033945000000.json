@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-compact-mcp-handoff-does-not-fire.20260427.033945000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-compact-mcp-handoff-does-not-fire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:45",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-compact-mcp-handoff-does-not-fire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-compact-mcp-handoff-does-not-fire",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Tooling",
+      "Claude-Code",
+      "Bug"
+    ],
+    "title": "mcp__igor__request_compaction claims 'will fire on next turn' but compact does not execute",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T05:57:51.494217+00:00",
+    "created_at": "2026-04-27T03:39:45Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Observed 2026-04-24 ~11:10 CDT: invoked mcp__igor__request_compaction with a fresh preserve string. Tool returned 'Compact queued via file handoff. Will fire on next turn.' and wrote ~/.TheIgors/cc_compact_pending.txt. On the next user turn, the file was gone (consumed by the cc_hook_pending.py UserPromptSubmit hook), but /compact did NOT execute — the conversation continued at full context.\n\nSecondary symptom all day 2026-04-24: the UserPromptSubmit hook kept re-injecting a stale compact request with `preserve: session=2026-04-16a` across multiple turns, even without new request_compaction calls from me. That stale string is from a different session and keeps surfacing — suggesting either (a) the COMPACT_PENDING_FILE was getting re-written by some automated path using a fixed template, or (b) there are multiple compact-request sources and one holds stale state that never drains.\n\nRoot causes to investigate:\n1. **File-handoff mechanism does not execute /compact** — cc_hook_pending.py:194-201 only injects a `--- COMPACT REQUESTED ---` additionalContext message describing the preserve string. It does NOT run `/compact` itself. Claude Code's harness does not auto-invoke /compact on seeing the injected suggestion. Either (a) the injection should also fire a tmux send-keys fallback that literally types /compact into the session, OR (b) the hook should be an explicit directive Claude Code's SDK recognizes as 'run /compact now'.\n2. **Stale-preserve leak source** — the session=2026-04-16a preserve kept resurfacing across turns. COMPACT_PENDING_FILE.unlink is called on each read, so there must be another writer. Candidates: the /loop skill's ScheduleWakeup path (CronCreate schedule persistence), lingering MCP server state, or a hook that re-injects from a cached location.\n\n**Affected files:** lab/claudecode/cc_hook_pending.py (the reader), lab/claudecode/igor_mcp.py:905-945 (request_compaction tool, already has a tmux fallback path — figure out why it isn't being taken), tests/test_compact_file_handoff.py (existing test — verify it covers the fire-through, or add that case). **Design rules:** test-plan-or-why-not. **Scope boundary:** IN — make mcp__igor__request_compaction actually cause /compact to execute; fix stale-preserve leak source. OUT — redesigning the compact mechanism end-to-end, changing Claude Code SDK behavior (that's upstream). **Test plan:** (1) invoke request_compaction, assert the pending file is written. (2) simulate next-turn hook invocation with mocked stdin; assert the hook's output triggers /compact execution (or note that the hook CAN'T trigger it and we need a different mechanism). (3) Reproduce the stale-preserve leak: write preserve=X, consume via hook (file deleted), verify NO further hook turn re-injects 'X'.",
+    "proposed_at": "2026-04-28T18:16:19.354050+00:00",
+    "completed_at": "2026-04-29T06:13:23.289770+00:00",
+    "github_issue": 536,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c33e0fa7-f89d-4d9e-867e-c0d503bb8e14",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-proprioception-source.20260331.003600401092",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proprioception-source"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T00:36:00.401092",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-proprioception-source"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proprioception-source",
+    "size": "S",
+    "title": "ProprioceptionSource — tool facia always warm in TWM",
+    "result": "ProprioceptionSource added to push_sources.py — 60s heartbeat keeps TOOL_REGISTRY_ROOT + INTERP_FACIA_* warm in TWM at salience 0.35. 555 tests pass.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "New push source in push_sources.py: keeps TOOL_REGISTRY_ROOT + facia neighbor nodes warm in TWM on 60s heartbeat. Tools are body parts not a lookup table.",
+    "completed_at": "2026-03-31T00:36:00.401092+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a12e699f-0807-492f-848c-f51f3da07af3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

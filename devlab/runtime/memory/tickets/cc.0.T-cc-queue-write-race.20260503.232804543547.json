@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-queue-write-race.20260503.232804543547",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-write-race"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T23:28:04.543547",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-write-race",
+      "T-datacenter-readme-build-your-own-igor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-queue-write-race",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "TestHygiene",
+      "Reliability",
+      "ccQueue"
+    ],
+    "title": "queue.json writes — atomic-rename + advisory lock; one observed loss 2026-05-02",
+    "result": "Stage A shipped. Public load_tasks/save_tasks API + 3 bypass-writers refactored (cert_worker_freeze, worker_foreman, ops.queue_task) + drift-detect WARNING in _save. Drift class eliminated. Suite 4357 → 4357 (zero regression). Stage B (T-cc-queue-drop-json-stage-b, L, P2) carries the deletion work — migrate readers + remove echo + delete file. Filed and slotted P2 because this stage's safety win is the load-bearing piece; the deletion is cosmetic.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-03T23:21:35.798183+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "\n## DIRECTION PICKED 2026-05-03 (Akien)\n\nDrop queue.json entirely. Postgres is canonical — the echo file is the drift surface; eliminating it removes the drift class. Migrate all queue.json readers to cc_queue.py list / direct Postgres query before removing the echo write.\n\n---\n\n## Akien clearance 2026-05-03\nCleared to go — pick a fix direction (read-only / drift-detect / drop-queue.json) and ship. Surfacing the direction question separately; default if no answer = drift-detect (least disruptive).\n\n---\n\n**Symptom (one observation 2026-05-02):** mid-sprint, T-datacenter-readme-build-your-own-igor disappeared from ~/.TheIgors/cc_channel/queue.json between session-start (where it was visible via cc_queue.py list / direct json query) and end-of-sprint (where cc_queue.py done returned 'not found'). Work shipped (agent_datacenter@5499a9a); ticket re-filed as done from /tmp.\n\n**Suspected mechanism:** cc_queue.py's add/done/claim path is load-modify-save-whole-file with no file lock or atomic-rename. Any concurrent writer (another cc_queue.py invocation, an Igor sweep, palace_sync.py, a direct python load-modify-save) can clobber recent additions in a TOCTOU window between read and write. During the lost-ticket window I ran one direct python edit (the docs-rollout inventory) plus several cc_queue.py CLI calls in sequence; can't definitively prove which writer raced because I have no logging of who else touched the file.\n\n**Akien call (2026-05-03):** ticket for completion **before audit review** so the audit isn't running on a queue that may silently lose entries.\n\n**Affected files:** lab/claudecode/cc_queue.py — change _save() to atomic-rename via os.rename(tempfile.NamedTemporaryFile.name, queue_path) and add fcntl.flock advisory locking around the load-modify-save block. Possibly add a short audit log of mutations to ~/.TheIgors/cc_channel/queue_mutations.log so future losses are post-mortemable.\n\n**Design rules:** atomic-file-write; no-silent-data-loss; logging-as-debug-base (per memory feedback_logging_as_debug_base.md — silent loss site needs WARNING with surrounding state).\n\n**Scope boundary:** IN — atomic save in cc_queue.py + advisory lock + per-mutation audit log. Apply same pattern to any other file in lab/claudecode/ that does load-modify-save on a shared JSON file (channel.py, docs_sync.py — quick grep). OUT — postgres-backed queue migration (separate epic if we ever want it); database-style transactions; hunt for the specific 2026-05-02 race source (one observation, not enough to root-cause without instrumentation — the fix prevents repeat regardless).\n\n**Test plan:** unit test that two threads doing load-modify-save concurrently both succeed and the final file contains both modifications (current pattern would lose one). Acceptance: after fix, repeating the 2026-05-02 sequence (cc_queue.py adds + a parallel direct python load-modify-save) leaves the queue intact.\n\n**Why now:** filed as the audit-review pre-req per Akien 2026-05-03. The audit will examine queue.json state and shouldn't be running on a substrate that can silently lose entries during the audit's own writes.\n\n**Provenance:** surfaced in sprint round 3 wrap-up 2026-05-02 (slate today). Akien decision 2026-05-03: 'ticket it for completion before the audit review.'",
+    "completed_at": "2026-05-03T23:28:04.543547+00:00",
+    "deposited_at": "2026-05-20T22:16:20.714821",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b40a0a8e-b1c4-4799-bf3b-84fee9861586",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

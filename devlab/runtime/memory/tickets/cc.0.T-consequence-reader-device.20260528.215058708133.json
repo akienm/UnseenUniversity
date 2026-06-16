@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-reader-device.20260528.215058708133",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-reader-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T21:50:58.708133",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reader-device-unified-uri-2026-05-28"
+    ],
+    "tickets": [
+      "T-consequence-reader-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-reader-device",
+    "gate": "2026-06-11",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: unified ReaderDevice replaces split reading",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-28T21:50:58.708133+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-reader-device-unified-uri-2026-05-28",
+    "description": "**What changed:** A unified ReaderDevice (URI resolver + blob cache + two output modes) was built as a rack device, consolidating SummarizerDevice and Igor's reading_tool.py/reading_engine.py/book_learner.py.\n\n**Predicted unintended effects:**\n- Igor's reading_tool.py still in place alongside ReaderDevice — risk of running both without a clean cutover, producing duplicate nodes\n- Calibre:// handler introduces dependency on Calibre CLI/metadata.db presence — silent failures if Calibre not installed or library moved\n- Blob cache accumulates with no eviction policy — disk exhaustion risk on high-volume reading\n- Node extraction quality may drift from book_learner.py's current behavior — embeddings could shift for the same source material\n- comms:// deferred but URI resolver pattern assumes it fits — may need design rework when added\n\n**Signals to watch:** Igor's reading_tool.py being invoked after ReaderDevice ships (check logs for book_learner_progress/ writes); disk usage in ~/.unseen_university/blobs/; calibre:// error rate in reader logs; node count per source vs prior book_learner baseline.\n\n**Gate condition:** Check by 2026-06-11 or when first ReaderDevice reading run completes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": 814,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T21:50:58.708163+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3143b179-d397-475a-9c9d-42e4fcbc7a7b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

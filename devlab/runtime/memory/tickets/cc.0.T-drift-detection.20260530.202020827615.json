@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-drift-detection.20260530.202020827615",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-drift-detection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T20:20:20.827615",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-auditor-device",
+      "T-drift-detection",
+      "T-learning-loop-generalized"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-drift-detection",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Drift detection: baseline check type for auditor + nanny continuous scheduling",
+    "result": "baseline check kind in auditor + 3 seed checks (2 shipped, 1 deferred pending T-shim-traffic-spy) + nanny hourly schedule + FAIL→ticket; 30 unit tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.65,
+    "claimed_at": "2026-05-31T14:28:02.554557+00:00",
+    "created_at": "2026-05-30T20:20:20.827615+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Drift detection is a new check type for the auditor device (T-auditor-device): compare current agent behavior to a rolling baseline and flag significant deviations. The time-series data already exists (clan.budget_ledger for inference call rates, datacenter_logs/shim/trace/ for tool call rates).\n\nNew check kind: 'baseline' — defines a metric (sql query returning a count), a window (e.g. last 1 hour), a baseline window (e.g. 7-day rolling average same hour), and a threshold multiplier (e.g. 3x = flag if current > 3x baseline). Example: Igor's inference calls per hour > 3x his 7-day hourly average → drift finding → ticket filed.\n\nNanny integration: schedule auditor run_all(kind='baseline') every hour. Findings above threshold become tickets via the learning loop (T-learning-loop-generalized). No human needed unless a ticket is filed.\n\nSeed checks on first deploy: inference call rate per agent, memory write rate per agent, tool call error rate per shim.\n\n**Affected files:** devices/auditor/ (baseline check type), devices/nanny/ (hourly schedule), config/audit_checks/ (seed baseline checks)\n**Design rules:** auditor device dependency (T-auditor-device must ship first); nanny owns scheduling\n**Scope boundary:** IN — baseline check type, 3 seed checks, nanny hourly schedule, findings → tickets via learning loop; OUT — anomaly ML models, cross-agent correlation, alerting to Akien (nanny handles that separately)\n**Completion criteria:** a seeded baseline check fires when inference rate exceeds 3x baseline; finding appears in auditor history; ticket filed automatically; nanny runs the check hourly without manual trigger",
+    "completed_at": "2026-05-31T14:39:53.209461+00:00",
+    "deposited_at": "2026-05-30T14:30:48.267274",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T14:28:02.554557+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "observation",
+    "scraps_validated": "2026-05-30T20:20:21.038346+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "743875ab-2b26-4831-bde7-dfd7c7d2da20",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

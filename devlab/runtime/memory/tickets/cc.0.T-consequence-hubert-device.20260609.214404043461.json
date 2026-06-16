@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-consequence-hubert-device.20260609.214404043461",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-hubert-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T21:44:04.043461",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hubert-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-hubert-device",
+      "T-control-station-breakers-only"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-hubert-device",
+    "gate": "2026-06-23",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Hubert device + Control Station split",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "intention": "I intend that the Hubert/Control Station split is verified as shipped with no dev tools left unreachable.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T21:44:04.043461+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-hubert-device-2026-06-09",
+    "description": "**What changed:** Hubert device created owning lab/+infrastructure; Control Station stripped to breaker panel; dev tools moved to Hubert fascia.\n**Predicted unintended effects:** Dev tools temporarily unreachable if gate sequence violated; Hubert fascia may not load if device fails to start; breaker toggles may not have backend wiring yet.\n**Signals to watch:** Control Station shows only breakers. Hubert tab shows all 6 dev tool links. All links resolve. No 404s on Goals/Decisions/etc pages.\n**Gate condition:** Check by 2026-06-23 or when T-control-station-breakers-only closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe and annotate: shipped / partial / not shipped\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "deposited_at": "2026-06-09T15:50:38.841642",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-06-09T21:44:04.043487+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

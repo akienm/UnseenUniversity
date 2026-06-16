@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-backfill-test-sentinel.20260615.205740680227",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-backfill-test-sentinel"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T20:57:40.680227",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-backfill-test-sentinel"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-backfill-test-sentinel",
+    "gate": null,
+    "role": "apprentice",
+    "title": "Test ticket",
+    "result": "sentinel cleanup",
+    "status": "closed",
+    "worker": "igor",
+    "intention": null,
+    "created_at": "2026-06-15T20:57:40.680227+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "A test ticket for backfill",
+    "completed_at": "2026-06-15T20:57:57.110980+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

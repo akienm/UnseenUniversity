@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-turn-trace-self-review.20260327.211304492498",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-turn-trace-self-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-27T21:13:04.492498",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-turn-trace-self-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-turn-trace-self-review",
+    "epic": "Training",
+    "title": "Nightly turn-trace review: Igor reads own cloud escapes, deposits gap nodes",
+    "result": "review_turn_traces() added to learner.py + PROC_TRACE_REVIEW seeded (86400s). Found 3 cloud escapes from last 24h → RL_060-062 + TWM NARRATIVE_GAP(salience=0.75). Idempotent confirmed.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "Scheduled nightly habit reads recent turn traces, identifies cloud escalations, deposits PROCEDURAL gap nodes into memories table so the plug-building loop is self-running.",
+    "completed_at": "2026-03-27T21:13:04.492498+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "708116aa-6075-428f-b811-6f6d2dda0c0a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

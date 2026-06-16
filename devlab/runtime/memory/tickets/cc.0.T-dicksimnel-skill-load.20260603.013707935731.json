@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-dicksimnel-skill-load.20260603.013707935731",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-skill-load"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T01:37:07.935731",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dicksimnel-skill-load-2026-06-02"
+    ],
+    "tickets": [
+      "T-dicksimnel-skill-load"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-skill-load",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "DickSimnel",
+      "Skills",
+      "Inference"
+    ],
+    "title": "DickSimnel: load + execute project skill files via ToolLoop",
+    "result": "skill_load() + _build_system_prompt(); sprint-ticket SKILL.md injected into inference system prompt; 5 tests; committed 2f1a741d",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "blocked_at": "2026-06-03T01:38:54.262251+00:00",
+    "claimed_at": "2026-06-03T01:37:49.782824+00:00",
+    "created_at": "2026-06-03T01:37:07.935731+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dicksimnel-skill-load-2026-06-02",
+    "description": "DickSimnel must be able to run the project's shared skill procedures (/sprint-ticket, /ticket, /sorted, etc.) using OR inference after June 15 when CC.0 is no longer available on the Anthropic Max plan.\n\nThe skills are substrate-independent procedures (SKILL.md files). DickSimnel's ToolLoop should load the relevant SKILL.md as procedural context before working a ticket, then follow the steps with OR inference exactly as CC.0 would.\n\nDesign:\n1. Add skill_load(name) to devices/dicksimnel/device.py: reads ~/.claude/skills/<name>/SKILL.md, returns content\n2. In _run_inference(ticket): check ticket tags for a skill hint; load the matching SKILL.md and prepend it to the ToolLoop system prompt\n3. Default skill: sprint-ticket (the core development procedure)\n4. Fallback: if no SKILL.md found, use the existing inference prompt unchanged\n\n**Affected files:** devices/dicksimnel/device.py (skill_load, _run_inference update), devices/dicksimnel/tool_loop.py (system_prompt injection point if separate)\n\n**Design rules:** no-sqlite; skills are read-only flat files; no DB dependency; skill loading is best-effort (missing SKILL.md = warn, continue)\n\n**Scope boundary:** IN — load SKILL.md as procedural context; inject into ToolLoop prompt; tests verify skill content appears in prompt. OUT — modifying skill files, writing new skills, multi-skill chaining, skill versioning\n\n**Completion criteria:** DickSimnel._run_inference with a sprint-tagged ticket includes the sprint-ticket SKILL.md content in its ToolLoop prompt. Test: mock skill_load(); assert prompt contains skill text. Integration: DickSimnel can close an S-size sprint ticket autonomously using the procedure.",
+    "completed_at": "2026-06-03T01:59:21.414811+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T01:37:49.782824+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2f416dc4-7834-41e5-b9ea-43ac808ca989",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

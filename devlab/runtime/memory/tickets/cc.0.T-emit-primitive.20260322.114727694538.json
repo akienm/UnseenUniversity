@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-emit-primitive.20260322.114727694538",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-emit-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T11:47:27.694538",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-emit-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-emit-primitive",
+    "size": "S",
+    "title": "emit step type in schema_runner dispatch table",
+    "result": "Completed by CC session 2026-03-22",
+    "status": "done",
+    "priority": 7,
+    "claimed_at": null,
+    "description": "emit step writes computed value to basket. emit/SET are same underlying write op. conditional prefix attaches to any step. Dispatch table addition to schema_runner.py.",
+    "completed_at": "2026-03-22T11:47:27.694538",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "57c692a7-adfe-4103-83da-9c38f2f21037",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

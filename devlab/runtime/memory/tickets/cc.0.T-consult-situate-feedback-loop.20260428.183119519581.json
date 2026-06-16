@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-consult-situate-feedback-loop.20260428.183119519581",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-situate-feedback-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T18:31:19.519581",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-consult-situate-feedback-loop",
+      "T-p1-step-debug-fix-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-situate-feedback-loop",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "P1"
+    ],
+    "title": "Wire consult hypotheses back into SITUATE as file-path hints (consult v2)",
+    "result": "Consult→SITUATE feedback loop closed. ticket_description in consult extra; _files_from_consult_hints extracts paths from hypotheses; tier.2-unavailable now also tries consult. 3984 tests pass. b61f090c",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-28T18:18:41.246595+00:00",
+    "related_to": [
+      "T-p1-step-debug-fix-loop"
+    ],
+    "decision_id": null,
+    "description": "consult_results land in basket['consult_results'] but are never read by pe_situate (detection-only v1 per code comment). This means SITUATE fires a consult when it returns 0 files, gets hypotheses back, and then returns empty anyway — the hypotheses have zero effect on the chain. Two gaps to close:\n\n1. The consult state at situate_empty doesn't include the ticket description (basket['description']), so the peer LLM receives only 'SITUATE returned 0 files' with no context about what the ticket is trying to do. Hypotheses come back vague and can't name files.\n\n2. Even if hypotheses were file-specific, pe_situate returns empty without reading basket['consult_results']. The feedback loop doesn't exist.\n\nFix: (a) Pass basket['description'] in extra when building ConsultState at the situate_empty call site. (b) After _maybe_consult_stuck fires at situate_empty, read the returned hypotheses from basket['consult_results'], extract path-like strings (regex for .py / subdir patterns) OR pass the hypothesis text as a hint to a second tier.2 SITUATE call. If that second call returns files, use them. If still empty, escalate as before.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (pe_situate + the situate_empty call site in _maybe_consult_stuck)\n**Design rules:** docs-in-code applies (pe_chain.py has architectural doc block — update Updated timestamp). No new memory schemas. Test plan below.\n**Scope boundary:** IN: pe_situate feedback loop for situate_empty only. OUT: Other consult hook sites (preflight, implement-fail) — separate tickets if needed.\n**Test plan:** Add test: mock _maybe_consult_stuck to inject a consult_result with file-path hypothesis; assert pe_situate returns those files rather than empty. Existing SITUATE tests must still pass. Run: python -m pytest tests/ -x -q -k 'situate'",
+    "completed_at": "2026-04-28T18:31:19.519581+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bd8cae06-72e9-4c66-aa91-4f369a119baa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

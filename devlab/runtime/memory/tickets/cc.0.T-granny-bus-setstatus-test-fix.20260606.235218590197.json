@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-granny-bus-setstatus-test-fix.20260606.235218590197",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-bus-setstatus-test-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T23:52:18.590197",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-bus-setstatus-test-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-bus-setstatus-test-fix",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Granny"
+    ],
+    "title": "Fix granny bus dispatch tests: setstatus assertions use wrong mock",
+    "result": "added _mock_setstatus_factory(); 6 tests updated to patch _setstatus_direct; all 27 pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that the 6 setstatus assertions in test_granny_bus_dispatch.py match the actual psycopg2-based _setstatus_direct implementation.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T23:52:18.590197+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "6 tests in tests/test_granny_bus_dispatch.py assert that subprocess.run is called with 'setstatus' — but _setstatus_direct uses psycopg2 directly, not subprocess. Tests were written before _setstatus_direct replaced the subprocess path. Pre-existing; confirmed by stash-and-run.\n\nFailing tests:\n- TestDispatchBus::test_sets_status_dispatched\n- TestProcessHandshakeReplies::test_ack_reply_sets_acked\n- TestProcessHandshakeReplies::test_started_reply_sets_in_progress\n- TestProcessHandshakeReplies::test_timeout_reply_sets_escalated\n- TestRunOnceBusDispatch::test_dispatch_sends_envelope_and_sets_dispatched\n- TestRunOnceBusDispatch::test_ack_reply_transitions_to_acked\n\n**Affected files:** tests/test_granny_bus_dispatch.py\n**Design rules:** none apply\n**Scope boundary:** IN: update the 6 setstatus assertions to patch _setstatus_direct and verify via return value or call args. OUT: changing daemon.py production code.\n**Completion criteria:** All 6 tests pass. No new failures introduced.",
+    "completed_at": "2026-06-07T00:56:15.585505+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

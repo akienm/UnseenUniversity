@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-palace-schema-design.20260508.000654574535",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-palace-schema-design"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T00:06:54.574535",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-shared-palace-schema-2026-05-07"
+    ],
+    "tickets": [
+      "T-cc-palace-schema-design"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-palace-schema-design",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Swarm",
+      "Architecture"
+    ],
+    "title": "CLOSED: Design shared palace schema: palace.shared.* + palace.projects.*",
+    "result": "palace_schema.md: palace.shared.* + palace.projects.* namespaces, node shape, bootstrap sequence, gating table. Commit f8cf3f6.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-08T00:06:54.574535+00:00",
+    "related_to": null,
+    "decision_id": "D-shared-palace-schema-2026-05-07",
+    "description": "The palace needs to be a shared agent-layer resource (not CC-private) serving all 4 consumers: Akien, CC, Igor, Rack-Minion. Design the schema as a markdown doc before any implementation begins — it gates SummarizerDevice, context-load redesign, and docs tree.\n\nProposed shape: palace.shared.akien (profile, working style), palace.shared.rules (coding, commits, memory, database, budget), palace.shared.capabilities (cross-agent skill/device inventory), palace.shared.audits (audit check registry). palace.projects.<name>.summary, palace.projects.<name>.map, palace.projects.<name>.standards, palace.projects.<name>.decisions. Igor's palace stays in TheIgors postgres — palace.projects.theigors contains a pointer node only (federate, don't merge).\n\nDeliverables: docs/palace_schema.md in agent_datacenter, with one section per namespace, example node shapes, and a gating table showing what each downstream ticket needs from the schema.\n\n**Affected files:** agent_datacenter/docs/palace_schema.md (new)\n**Design rules:** No TheIgors imports; schema must work for all 4 consumers; ADC portable.\n**Scope boundary:** Schema doc only — no DB creation, no migrations, no code. Out of scope: implementation of any schema node.\n**Test plan:** No automated tests (design doc). Manual review by Akien before dependent tickets begin.",
+    "completed_at": "2026-05-08T00:15:50.831986+00:00",
+    "github_issue": 631,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "72a83fbb-dd3a-459a-bceb-e7482595f1e4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

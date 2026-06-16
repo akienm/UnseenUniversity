@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-json-envelope-inference.20260612.164812523185",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-json-envelope-inference"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T16:48:12.523185",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-json-envelope-principle-2026-06-12"
+    ],
+    "tickets": [
+      "T-json-envelope-inference"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-json-envelope-inference",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "DickSimnel",
+      "Cost"
+    ],
+    "title": "JSON envelopes for agent-to-agent inference responses",
+    "result": "JSON envelope protocol in ToolLoop: _parse_terminal_response() parses JSON first, falls back to DONE:/ESCALATE: prefix",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that all agent-to-agent inference responses carry typed JSON envelopes so consumers parse structured fields rather than prose.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T16:48:12.523185+00:00",
+    "created_by": null,
+    "related_to": null,
+    "commit_hash": "08481755",
+    "decision_id": "D-json-envelope-principle-2026-06-12",
+    "description": "DickSimnel ToolLoop currently parses DONE: prefix from prose responses. Replace with JSON envelope: {\"status\": \"done\"|\"tool_call\"|\"error\", \"result\": \"...\", \"error_class\": null, \"error_number\": null, \"prose_version\": \"...\"}. ProseVersion is only included when the originating model already emitted prose — not generated.\n\n**Affected files:** devices/dicksimnel/toolloop.py, devices/inference/shim.py, devices/inference/sources.py\n**Design rules:** no-sqlite; log every interface crossing\n**Scope boundary:** In scope: DS ToolLoop request/response shape + inference shim response type. Out of scope: bus envelope format (separate ticket), slate files (separate ticket), foreground/human-facing output.\n**Completion criteria:** T-json-envelope-inference is CLOSED; grep for 'DONE:' prefix parsing in toolloop.py returns zero hits; DS response parsing reads envelope fields not regex; tests updated and passing.",
+    "completed_at": "2026-06-13T01:50:52.549926+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

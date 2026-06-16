@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-context-load-skill.20260101.175708569446",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-context-load-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T17:57:08.569446",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-context-load-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-context-load-skill",
+    "body": "Build ~/.claude/skills/context-load/SKILL.md + helper script. Pattern: (1) read slate (5 lines, what is active); (2) slate entries point to relevant blobs; (3) fetch top N lines of each blob (newest-first = most relevant first); (4) assemble as briefing. No Igor required, no Postgres required — works on files or simple API. Blob format: prepend-only, newest at top, stop reading when context is sufficient. Blobs: decisions log, session notes, gap log, any per-ticket context. Same pattern as ring memory but for project coordination. Exportable to non-Igor projects. Replaces: reading CLAUDE.md + MEMORY.md + sessions.md + gap_analysis at session start. Also design the blob naming convention and slate format so any session can find relevant blobs without prior knowledge.",
+    "size": "M",
+    "title": "context-load skill — trail-based startup context from blob tops",
+    "closed": "2026-03-19T10:23",
+    "result": "SKILL.md built and live. Used successfully in sessions. Trail-based blob-top pattern works.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "completed_at": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

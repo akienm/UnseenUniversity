@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-db-proxy-wire.20260506.000946668724",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-db-proxy-wire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T00:09:46.668724",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-datacenter-agent-infra-2026-05-05",
+      "D-datacenter-own-db-2026-05-05"
+    ],
+    "tickets": [
+      "T-adc-db-proxy-wire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-db-proxy-wire",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Database"
+    ],
+    "title": "CLOSED: Add make_dc_proxy() to agent_datacenter; wire AGENT_DATACENTER_DB_URL",
+    "result": "make_dc_proxy() in agent_datacenter/db.py (self-contained, no TheIgors imports per CLAUDE.md rule). AGENT_DATACENTER_DB_URL wired. 4 new tests pass. commit dc33966.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-06T00:03:59.501031+00:00",
+    "related_to": null,
+    "decision_id": "D-datacenter-agent-infra-2026-05-05",
+    "description": "Add a make_dc_proxy() function to agent_datacenter (mirrors Igor's make_home_proxy()) that reads AGENT_DATACENTER_DB_URL. Grep agent_datacenter for any modules currently importing IGOR_HOME_DB_URL or Igor's db_proxy and migrate them to make_dc_proxy(). Decision D-datacenter-own-db-2026-05-05.\n\n**Affected files:** agent_datacenter/lab/utility_closet/db_proxy.py or similar (make_dc_proxy), any agent_datacenter modules importing from Igor's db_proxy or using IGOR_HOME_DB_URL\n**Design rules:** no-sqlite, test-all-paths\n**Scope boundary:** IN: make_dc_proxy() function, AGENT_DATACENTER_DB_URL wiring, migration of existing agent_datacenter DB callers. OUT: populating memory palace content.\n**Test plan:** set AGENT_DATACENTER_DB_URL in test env; verify make_dc_proxy() connects without IGOR_HOME_DB_URL being set; run agent_datacenter tests.\n**Pass condition:** agent_datacenter imports/tests pass with only AGENT_DATACENTER_DB_URL set (no IGOR_HOME_DB_URL in env).",
+    "completed_at": "2026-05-06T00:09:46.668724+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b964c45f-b64b-487c-8103-d499ec8cb26b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

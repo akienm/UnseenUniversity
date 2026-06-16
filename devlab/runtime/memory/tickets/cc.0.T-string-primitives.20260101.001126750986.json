@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-string-primitives.20260101.001126750986",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-string-primitives"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T00:11:26.750986",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-string-primitives"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-string-primitives",
+    "size": "M",
+    "title": "String/text primitives: split, regex_search, format, slice, read_chunk",
+    "result": "Implemented: prim_str_split, prim_str_regex, prim_str_format, prim_str_slice. All registered in tool registry + seeded as PRIM_STR_* tool habits.",
+    "status": "done",
+    "priority": 7,
+    "claimed_at": null,
+    "description": "5 primitives for text manipulation. prim_split(text_key, delimiter, out_key) -> list in basket. prim_regex_search(pattern_key, text_key, out_key) -> list of matches. prim_format(template_key, out_key, *slot_keys) -> formatted string. prim_slice(text_key, offset, length, out_key) -> substring. prim_read_chunk(file_key, offset_key, size, out_key) -> arbitrary file position (extends prim_read_head). Add to primitives.json and os_primitives.py or new string_primitives.py.",
+    "completed_at": null,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a333ee11-8696-471f-96a2-3464f9f9e377",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

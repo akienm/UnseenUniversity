@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-slateclose-in-day-close.20260403.192600000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slateclose-in-day-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-slateclose-in-day-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slateclose-in-day-close",
+    "epic": "Claude",
+    "size": "S",
+    "title": "Wire /slateclose into /day-close skill",
+    "result": "/slateclose wired into /day-close as Step 13 (before savestate). day-close now: test→probe→audit→fix→session→docs sync→subsystem DSBs→gap analysis→MEMORY.md→GH discussion→commit→slateclose→savestate.",
+    "status": "done",
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:26:00Z",
+    "completed_at": "2026-04-03T22:57:23.287032+00:00",
+    "github_issue": 362,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

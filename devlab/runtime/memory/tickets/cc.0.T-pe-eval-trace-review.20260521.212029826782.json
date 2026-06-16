@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-pe-eval-trace-review.20260521.212029826782",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-eval-trace-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T21:20:29.826782",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cognition-proof-tooling-2026-05-21"
+    ],
+    "tickets": [
+      "T-pe-eval-trace-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-eval-trace-review",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "PeChain",
+      "Observability",
+      "CognitiveArchitecture"
+    ],
+    "title": "Add trace reading to pe_evaluate for cognition-tagged igor sprints",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-05-23T21:29:27.590666+00:00",
+    "created_at": "2026-05-21T21:20:29.826782+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cognition-proof-tooling-2026-05-21",
+    "description": "pe_evaluate currently checks whether the test plan conditions are met by reading diff_stat and ticket description. For cognition-tagged tickets (tags include 'CognitiveArchitecture', 'Cognition', 'NarrativeEngine', or 'Memory'), the evaluator should also read the NE psych log for the sprint window to verify that Igor's cognition was coherent during the work period — not just that tests passed.\n\nThis moves trace review from 'ad-hoc debug tool' to 'scheduled part of sprint close', which is the process change needed before graph-tree migration.\n\nProposed addition to pe_evaluate: when ticket tags include any cognition sentinel, read the last N NE psych log entries (or TWM observations) covering the sprint window and include them in the context passed to evaluate_sprint_outcome. The evaluator prompt should ask: 'Does the cognitive trace show coherent reasoning during this sprint?' A severely degraded trace (all negative valence, high arousal, stuck patterns) should be flagged as evaluate_result='not_done' with reason.\n\n**Affected files:**\n- wild_igor/igor/tools/pe_chain.py — pe_evaluate step\n- wild_igor/igor/tools/pe_evaluator.py — evaluate_sprint_outcome prompt\n\n**Design rules:** pe_evaluate is non-blocking (any failure defaults to 'done') — the trace read must respect this; if the psych log is unavailable, skip silently.\n\n**Scope boundary:** pe_evaluate step only, for cognition-tagged tickets only. Does not change pe_test or the test pass gate. Does not affect non-cognition-tagged tickets.\n\n**Test plan:**\n- Mock a cognition-tagged basket and verify pe_evaluate attempts to read the psych log\n- Mock a non-cognition-tagged basket and verify no psych log read\n- Mock unavailable psych log and verify pe_evaluate still returns 'done' (graceful degradation)",
+    "completed_at": "2026-05-23T22:08:51.948331+00:00",
+    "github_issue": 778,
+    "dispatched_at": "2026-05-23T21:29:27.590666+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T21:20:29.826819+00:00",
+    "target_difficulty": 2,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "321fc3fd-b95a-4a3c-b6ac-6fae320f612c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

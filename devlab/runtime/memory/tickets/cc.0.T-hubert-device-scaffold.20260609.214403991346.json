@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-hubert-device-scaffold.20260609.214403991346",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-hubert-device-scaffold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T21:44:03.991346",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hubert-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-hubert-device-scaffold",
+      "T-hubert-wire-dev-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-hubert-device-scaffold",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Hubert"
+    ],
+    "title": "Scaffold Hubert rack device",
+    "result": "HubertDevice+HubertShim created; registers in flat-file registry; BOOT_READY logged; appears in /api/device/list (e0bf9312)",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that Hubert exists as a rack device, appears in the device list, and gets a stub fascia tab — making him the named owner of build process and infrastructure.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T21:44:03.991346+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-hubert-device-2026-06-09",
+    "description": "Create devices/hubert/ with BaseDevice/BaseShim structure. Hubert owns: lab/, all tickets, decisions, outcomes, palace browser, goals, rack infrastructure. Phase 1 is scaffold only — device starts, registers in flat-file registry, appears in rack and web UI device list with a stub fascia page.\n\n**Affected files:** devices/hubert/__init__.py, devices/hubert/device.py, devices/hubert/shim.py, skeleton/registry (flat-file registration entry)\n**Design rules:** BaseDevice/BaseShim inheritance required; no Postgres dependency in skeleton registration; log every lifecycle event\n**Scope boundary:** Scaffold + registration only. No dev tool wiring yet (that is T-hubert-wire-dev-tools). No UI content beyond stub fascia.\n**Completion criteria:** `python -m devices.hubert` starts without error and logs BOOT_READY; Hubert appears in /api/device/list response; stub fascia tab visible in web UI.\n**Validation:** log.INFO('BOOT_READY device=hubert') visible in startup log.\n**Observable via:** log.INFO('BOOT_READY device=hubert') at startup.",
+    "completed_at": "2026-06-09T21:56:51.214313+00:00",
+    "deposited_at": "2026-06-09T15:46:26.923908",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-06-09T21:44:04.042953+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

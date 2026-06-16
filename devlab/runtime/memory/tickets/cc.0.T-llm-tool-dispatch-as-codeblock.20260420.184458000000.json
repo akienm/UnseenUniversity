@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-llm-tool-dispatch-as-codeblock.20260420.184458000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-llm-tool-dispatch-as-codeblock"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:58",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-llm-tool-dispatch-as-codeblock"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-llm-tool-dispatch-as-codeblock",
+    "size": "M",
+    "notes": "Recurring failure mode observed 2026-04-19 on SWADL anchor deposit. Igor (qwen2.5:7b) authored perfect store_memory(...) calls for 4 concepts and returned them as ```python ...``` code blocks instead of dispatching the tools. First call in the same conversation did dispatch correctly. Pattern: first tool call works, subsequent calls in the same reply become descriptive text. Hypothesis candidates: (1) prompt framing leads LLM to treat spec-given IDs as 'write the code' not 'execute it'; (2) tool-calling protocol doesn't loop after first turn-complete signal; (3) qwen2.5:7b specific limitation with multi-tool-call replies. Fix options: (a) post-process Igor's replies to detect fenced tool-call blocks + dispatch them; (b) adjust prompt to force explicit tool_use signals; (c) switch orchestration to one-tool-call-per-turn loop. Workaround today: CC dispatched the 4 remaining from Igor's narratives with source='igor_self_authored_2026_04_19'.",
+    "title": "LLM prints tool invocations as code blocks instead of calling them",
+    "result": "Discarded — zero description, zero priority, origin unknown.",
+    "status": "done",
+    "worker": "claude",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-04-20T18:44:58Z",
+    "related_to": null,
+    "completed_at": "2026-04-28T21:20:32.156702+00:00",
+    "github_issue": 485,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

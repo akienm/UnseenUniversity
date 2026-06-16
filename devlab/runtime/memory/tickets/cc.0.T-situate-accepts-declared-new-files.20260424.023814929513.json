@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-situate-accepts-declared-new-files.20260424.023814929513",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-situate-accepts-declared-new-files"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:38:14.929513",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-no-sqlite-enforcement",
+      "T-situate-accepts-declared-new-files",
+      "T-trace-to-miss-report"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-situate-accepts-declared-new-files",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "pe_chain",
+      "SITUATE",
+      "Bug",
+      "NewFile",
+      "Igor-completes-one"
+    ],
+    "title": "SITUATE: affected_files_from_description accepts declared new-file paths (not just existing)",
+    "result": "Shipped in 58d7b4da. Split _parse_file_list (strict, tier.2 guard) from _parse_declared_file_list (declared-author-trusted, returns all+new). _affected_files_from_description now accepts declared-new paths. pe_situate writes basket.new_files marker so IMPLEMENT knows create-vs-edit. 8 new tests. 188 pe_chain regression pass. This removes the biggest SITUATE-returns-0 source for new-file Igor tickets — direct Igor-completes-one unblocker.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-04-24T02:36:05.940015+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Discovered while auditing Igor's stuck tickets today. Every Igor ticket that proposes a NEW file (e.g. T-no-sqlite-enforcement: 'new lab/claudecode/check_no_sqlite.py', T-trace-to-miss-report: 'new lab/claudecode/engram_tools/trace_miss_report.py') has SITUATE return 0 files. Root: _parse_file_list (line 689) requires paths to exist under _REPO_ROOT to be accepted. _affected_files_from_description reuses _parse_file_list, so declared-new paths are silently filtered out. Consequence: every new-file ticket fails the affected_files_field fast path, falls through to tier.2 which then hallucinates brainstem/core_patterns.py.\n\nFix: split the strict existence-check path (for tier.2 returns where we want to reject hallucinated paths) from the Affected-files-field parse (where we trust the ticket author). Introduce _parse_declared_file_list that accepts any repo-relative path ending in .py (or containing /) regardless of filesystem existence. _affected_files_from_description uses that. _parse_file_list stays strict for the tier.2 guard path. Mark declared-new paths with a basket flag so IMPLEMENT can create them instead of expecting an edit target.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (line 689 _parse_file_list stays; add _parse_declared_file_list; update _affected_files_from_description).\n**Design rules:** docs-in-code, test-plan-or-why-not.\n**Scope boundary:** IN — parser split + Affected-files-field accepts new files + basket marker for new paths. OUT — IMPLEMENT create-new-file logic (separate concern; tier.2 guard stays existence-strict).\n**Test plan:** (a) _affected_files_from_description with description naming a non-existent .py path returns that path; (b) _parse_file_list still rejects non-existent paths from tier.2 output; (c) SITUATE integration with a ticket naming new file populates plan_files + sets a new-file marker in basket.",
+    "completed_at": "2026-04-24T02:38:14.929513+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6adbec97-be74-434f-8d34-618cdf9e4911",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

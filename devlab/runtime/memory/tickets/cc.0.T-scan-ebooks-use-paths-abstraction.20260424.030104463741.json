@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-scan-ebooks-use-paths-abstraction.20260424.030104463741",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scan-ebooks-use-paths-abstraction"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T03:01:04.463741",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scan-ebooks-use-paths-abstraction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scan-ebooks-use-paths-abstraction",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Ops",
+      "Portability",
+      "Paths",
+      "Pass2"
+    ],
+    "title": "scan_ebooks + calibre_catalog — use paths().ebooks_root / calibre_library instead of hardcoded onedrive path",
+    "result": "Shipped in f996b30b. scan_ebooks CALIBRE_DB + EBOOKS_ROOT now via paths() — single source of truth, EBOOKS_ROOT / CALIBRE_LIBRARY_PATH env overrides honored. calibre_catalog fallback removed; paths() is the only path. Import smoke clean.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-24T03:00:43.263673+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 6 (SHIP). scan_ebooks.py hardcoded /home/akien/.TheIgors/akien/onedrive/... for CALIBRE_DB and EBOOKS_ROOT even though paths().ebooks_root + paths().calibre_library already provide the abstraction (with EBOOKS_ROOT / CALIBRE_LIBRARY_PATH overrides). calibre_catalog.py already used paths() but kept the hardcoded path as a fallback. Both fixed: single source of truth via paths(); no fallbacks to hostname-specific strings.\n\n**Affected files:** lab/tools/scan_ebooks.py, lab/claudecode/calibre_catalog.py.\n**Design rules:** test-plan-or-why-not (no tests because: path-plumbing). **Scope boundary:** IN — constant replacement. OUT — logic changes; .db path abstraction changes.\n**Test plan:** python import smoke — scan_ebooks resolves CALIBRE_DB and EBOOKS_ROOT through paths(); calibre_catalog imports cleanly.",
+    "completed_at": "2026-04-24T03:01:04.463741+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d8335925-403e-45cc-b432-b2285cf11733",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

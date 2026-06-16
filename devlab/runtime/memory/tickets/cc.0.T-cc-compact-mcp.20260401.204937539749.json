@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-cc-compact-mcp.20260401.204937539749",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-compact-mcp"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T20:49:37.539749",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-compact-mcp"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-compact-mcp",
+    "title": "Implement tmux+MCP self-compaction for Claude Code",
+    "result": "Implemented MCP server (cc_mcp_server.py) for tmux-based /compact injection. Tool injects keystroke into CLAUDE_TMUX_SESSION (default: claude-main). Updated /savestate skill Step 4.5 to call request_compaction() automatically. Tested: MCP protocol correct, tmux send-keys works. Added CC_MCP_REGISTRATION.md with setup instructions (IDE, env var, daemon). Tests green (701), audit clean.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-01T20:46:23.695981+00:00",
+    "related_to": null,
+    "description": "Create claudecode/cc_mcp_server.py with request_compaction tool (tmux send-keys injection). Register in Claude Code MCP config. Update /savestate skill to call it at Step 4.5. Session name via CLAUDE_TMUX_SESSION env var (default: claude-main).",
+    "completed_at": "2026-04-01T20:49:37.539749+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6a72e093-807e-4c0c-9e23-f841c841ec16",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

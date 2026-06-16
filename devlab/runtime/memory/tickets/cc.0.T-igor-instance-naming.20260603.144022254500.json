@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-igor-instance-naming.20260603.144022254500",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-instance-naming"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T14:40:22.254500",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-instance-naming"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-instance-naming",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Device",
+      "Naming"
+    ],
+    "title": "Igor device: rename agent to instance-based name",
+    "result": "IgorShim.connect() uses agent_id=igor-{instance_id}; broker prefix-checks protection + falls back to igor.yaml profile for instance-based names",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": "2026-06-03T14:48:40.791612+00:00",
+    "claimed_at": "2026-06-03T14:46:43.567786+00:00",
+    "created_at": "2026-06-03T14:40:22.254500+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Change Igor's agent_id from 'igor' to an instance-based name (e.g., 'igor-wild-0001' matching IGOR_HOME directory, or configured instance ID). This unblocks multiple Igor instances on the same rack — currently agent naming assumes one Igor per host. Agent ID affects: device registration, channel posts, MCP routing, capability broadcasts.\n\n**Affected files:** TBD — discovery step in sprint (likely devices/igor/main.py, registry/manifest, tests)\n**Design rules:** agent_id must be globally unique per rack; must survive restart (config-driven or derived from stable instance path)\n**Scope boundary:** IN: update Igor's agent_id to instance-based naming. OUT: infrastructure to spin up multiple Igor instances. OUT: multi-Igor orchestration (that's future).\n**Completion criteria:** Igor reports with instance-based agent_id in capability manifest; rack device list shows unique Igor agent_ids; channel posts stamp instance name correctly; tests pass with new naming",
+    "completed_at": "2026-06-04T23:12:56.151680+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T14:46:43.567786+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ac35add5-edb6-4556-aacb-5ea714fd473c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-docs-live-code-rollout.20260422.145049000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-docs-live-code-rollout"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T14:50:49",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-docs-live-code-rollout",
+      "T-docs-live-in-code",
+      "T-scope-guard-reattempt-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-docs-live-code-rollout",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Docs",
+      "Standard",
+      "Rollout",
+      "Architecture"
+    ],
+    "title": "Docs-live-in-code rollout: remaining load-bearing subsystems (checklist)",
+    "result": "Closed per Akien 2026-05-03: audit infrastructure (audit_runner.py + day-close-audit) covers the standing concern. No separate ticket needed.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-04-22T14:50:49Z",
+    "related_to": "T-docs-live-in-code",
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Follow-up to T-docs-live-in-code (pilot shipped 2026-04-20 on reading_tool.py). Rolls the same docs-in-code standard across other load-bearing subsystems. Rather than 11 separate tickets, this one tracker holds the checklist — each subsystem ticks off as its canonical docstring lands.\n\n## Rollout opportunity rule\n\nPromote a subsystem NEXT TIME its primary file is touched. Don't schedule dedicated docstring sprints — that's make-work. The conversion is cheap when context is already loaded.\n\n## Checklist (load-bearing subsystems)\n\n- [x] reading — reading_tool.py (T-docs-live-in-code pilot, 2026-04-20)\n- [ ] cortex — wild_igor/igor/memory/cortex.py. Needs: long-term memory model, memory_type semantics, scope field usage, activation_count discipline, tsvector search, ring memory, parent_id conventions. HIGH leverage.\n- [ ] inference_gateway — wild_igor/igor/cognition/inference_gateway.py. Needs: tier ladder (habit→local→OR-cheap→OR-deep), prompt_role split (interactive/analysis), escalation gate, budget metering, cache semantics. HIGH leverage — OR burn rate depends on this.\n- [ ] pe_chain — wild_igor/igor/tools/pe_chain.py (or wherever pe_entry_init + friends live). Needs: the coding-engram chain (CODE_INIT → PROBE → READ → PLAN → FILTER → HYPOTHESIZE → IMPLEMENT → CLAIM → OBSERVE → CLOSE), MCPCALL/BRANCHIF/FORKIF/SPAWNIF primitives, cursor_runtime, basket conventions. HIGH leverage — touched every sprint.\n- [ ] comms — wild_igor/igor/comms/ + transports. Needs: Uhura-console model, channel routing envelope shape, transport registry (Discord/Matter/Gmail/etc.), comms:// URIs, message shape contract.\n- [ ] scope_guard — wherever it lives. Needs: pre-write guards, inertia enforcement, re-attempt-loop semantics (see T-scope-guard-reattempt-loop).\n- [ ] reasoners — wild_igor/igor/cognition/reasoners/base.py + subclasses. Needs: reasoner contract, OpenRouter reasoner, local Ollama reasoner, prompt_role threading, response shape.\n- [ ] narrative_engine — wherever NE lives. Needs: arc/context builder, TWM + ring + active goals + milieu intake, output shape.\n- [ ] milieu — wild_igor/igor/cognition/milieu.py. Needs: state model (arousal/valence), diffusion, propagation rules, boredom threshold integration.\n- [ ] consolidation — wherever consolidation lives. Needs: FACT_CLOUD → topology pass, co-occurrence edge strengthening, sleep phases.\n- [ ] reading_worker_pool — PLACEHOLDER in memory palace. Needs: stream-of-blocks queue, local/cloud worker split, backpressure.\n- [ ] sleep_memory_auditor — PLACEHOLDER. Needs: prior_version_of wiring for reading memory supersession.\n\n## Scope for this ticket\n\nNot a single sprint — a standing rollout. Check items off over time. Close this ticket when the checklist is empty OR when a review deems the remaining items not worth the cost.\n\n## Not in scope\n\n- Non-load-bearing utilities (per CLAUDE.md rule, these stay terse)\n- Retroactive DSB file rewrites — DSBs stay as historical log\n\n## Provenance\nSpun out 2026-04-20 during T-docs-live-in-code pilot close. Bundle with D-workflow-overhaul-2026-04-20 (docs standard is part of that workflow reshape).\n\n**Affected files:** top-of-file docstrings across load-bearing subsystems (per checklist in description). As subsystems are touched in normal sprint work, the docstring conversion ships alongside. Files include: wild_igor/igor/cognition/*, wild_igor/igor/memory/*, wild_igor/igor/tools/pe_chain.py (when next legitimately touched), wild_igor/igor/network/*, lab/utility_closet/* — see in-ticket checklist.\n\n**Design rules:** docs-in-code (this IS the rule being rolled out); no debris (don't add docs to files not being touched in this sprint).\n\n**Scope boundary:** IN — the subsystems on the checklist, converted opportunistically. OUT — exhaustive rewrite of all docstrings; non-load-bearing files; one-off scripts.\n\n**Test plan:** no automated test — verification is the docstring being there + matching code. Each subsystem update is a normal commit; checklist tracks completion.",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": 502,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9cb6c225-3964-473f-a337-a9f6302c1df9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

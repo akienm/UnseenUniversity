@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-cognition-proof-spec.20260521.212029780854",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cognition-proof-spec"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T21:20:29.780854",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cognition-proof-tooling-2026-05-21"
+    ],
+    "tickets": [
+      "T-cognition-proof-spec"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cognition-proof-spec",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "CognitiveArchitecture",
+      "Process",
+      "Observability"
+    ],
+    "title": "Define proof-of-work requirements for each cognition migration step",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-05-23T21:29:20.331462+00:00",
+    "created_at": "2026-05-21T21:20:29.780854+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cognition-proof-tooling-2026-05-21",
+    "description": "Tooling for validating cognitive pipeline changes is currently positioned as rescue (debug when broken) rather than scheduled validation (prove before claiming done). For the planned graph-tree migration there will be multiple difficult transition passes like the NE splitup — and graph traversal failures produce plausible-looking wrong output, not crashes.\n\nDefine what 'proved to work' means at each cognition migration step, including:\n1. Behavioral invariant tests — tests that verify cognitive invariants ('stuck for 3 cycles → self-diagnostic subgoal fires'), not just 'NE ran without exception'\n2. Required trace reads — which cognitive traces (NE psych log, TWM observations, pe_chain basket) must be reviewed as part of claiming a sprint passed\n3. Replay artifact format — what session state snapshot is needed to replay a scenario post-fix\n4. Per-step checklist — for each planned graph-tree migration step (NE → graph, dreaming → graph, etc), what is the minimum validation set\n\nThis spec becomes the gate for each graph-tree migration sprint: you don't declare it done until the spec's validation set passes.\n\n**Affected files:**\n- lab/docs/cognition_migration_validation_spec.md (new)\n- Possibly update sprint-ticket skill to require validation checklist for cognition-tagged tickets\n\n**Design rules:** none apply\n\n**Scope boundary:** Spec document + process definition only. Does not implement any new test infrastructure — that follows from the spec.\n\n**Test plan:** no tests — this is a spec/doc ticket; completeness check: does the spec answer 'what must pass before we claim this migration step is done?' for at least 3 planned migration steps",
+    "completed_at": "2026-05-23T22:08:59.887506+00:00",
+    "github_issue": 788,
+    "dispatched_at": "2026-05-23T21:29:20.331462+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T21:20:29.826584+00:00",
+    "target_difficulty": 2,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "26c4a395-1a2a-4465-b990-7b628207eda4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-labdocs-to-docs-move.20260530.164037902453",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-labdocs-to-docs-move"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T16:40:37.902453",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-labdocs-to-docs-move"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-labdocs-to-docs-move",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Platform"
+    ],
+    "title": "Move lab/docs/ → docs/ and update all referrers",
+    "result": "git mv lab/docs → docs; all referrers updated in skills/ source + ~/.claude/skills/ deployed copies + lab/claudecode/ + BRAINSTORM.md; deploy skipped (deployed skills ahead of source — separate cleanup needed)",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": "2026-05-30T16:49:50.572272+00:00",
+    "created_at": "2026-05-30T16:40:37.902453+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "lab/docs/ contains docs meant for humans (Levers, QE_in_the_Age_of_AI, the_ownership_gap, html_spec_template, callmap). The canonical public docs dir is docs/. These should live together. lab/docs/ was never the right home — it was a convenience location from when the project was less mature.\n\nReferrers that must be updated before the move:\n- ~/.claude/skills/sprint-ticket/SKILL.md (references lab/docs/Deterministic_AI_Development_Levers...)\n- ~/.claude/skills/day-close/SKILL.md (git add includes lab/docs/)\n- ~/.claude/skills/day-close-audit/SKILL.md (capability_map.md path)\n- ~/.claude/skills/decided/SKILL.md and skills/sorted/SKILL.md (html_spec_template path)\n- lab/claudecode/callmap.py (default output path lab/docs/callmap.md)\n- lab/claudecode/audit_checks.json (callmap.md path)\n- BRAINSTORM.md (several lab/docs/ references)\n\n**Affected files:** lab/docs/ (all files), skills/ (5 files), ~/.claude/skills/ (5 deployed copies), lab/claudecode/callmap.py, lab/claudecode/audit_checks.json, BRAINSTORM.md\n**Design rules:** no broken skill paths; skills are the primary consumer of these docs\n**Scope boundary:** IN — git mv lab/docs/* docs/; update all referrers listed above; redeploy skills; OUT — do not change doc content during the move (content pass is separate)\n**Completion criteria:** `grep -rn 'lab/docs' skills/ ~/.claude/skills/ lab/claudecode/ *.md` returns 0 hits; all moved files accessible at docs/<name>; `agentctl skills deploy` succeeds",
+    "completed_at": "2026-05-30T17:07:22.031117+00:00",
+    "deposited_at": "2026-05-30T10:41:15.468807",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T16:49:50.572272+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T16:40:38.125944+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "56430db0-c951-47e8-9003-9d1edf6e17b0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

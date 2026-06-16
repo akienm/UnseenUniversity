@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-uu-cli-ticket-views.20260605.152540343059",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-cli-ticket-views"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T15:25:40.343059",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-cli-ticket-views"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-cli-ticket-views",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "CLI"
+    ],
+    "title": "uumytickets + uuopentickets: PATH-accessible CLI scripts",
+    "result": "Created /home/akien/bin/uuopentickets and uumytickets — both on PATH, read clan.memories directly, no CC required",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that Akien can see the full ticket list from any terminal without invoking Claude Code.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T15:25:40.343059+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The /mytickets and /opentickets skills query tickets and summarize in CC. Instead, provide standalone scripts `uumytickets` and `uuopentickets` that Akien can run from any terminal on PATH, replacing both skills and the queue_view.py truncation problem.\n\n**Affected files:** lab/claudecode/uumytickets (new), lab/claudecode/uuopentickets (new), or devices/bin/; symlink/PATH setup\n**Design rules:** Reads clan.memories directly (same DB as cc_queue.py); no CC required to view tickets\n**Scope boundary:** In scope: two scripts, on PATH, show all open tickets untruncated (uuopentickets) and akien/guru tickets (uumytickets). Out of scope: mutation operations.\n**Completion criteria:** `uuopentickets` and `uumytickets` run from shell, output all open tickets without truncation, exit 0.",
+    "completed_at": "2026-06-05T15:28:59.281715+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

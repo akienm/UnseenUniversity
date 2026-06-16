@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-vetinari-deployment-signal.20260608.025532019600",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-deployment-signal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T02:55:32.019600",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-gap-map-2026-06-08"
+    ],
+    "tickets": [
+      "T-vetinari-deployment-signal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-deployment-signal",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Vetinari",
+      "Orchestration"
+    ],
+    "title": "Vetinari: post success signal to Akien when directive completes",
+    "result": "_notify_directive_complete() posts VETINARI_COMPLETE; fire_completion guard idempotent; 5 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that Vetinari posts a structured completion message to the Akien channel when all child tickets for a directive are closed.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T02:55:32.019600+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-vetinari-gap-map-2026-06-08",
+    "description": "Currently _escalate_to_akien() fires only on health degradation (bad news). The directive vision requires a success signal when work is done.\n\nExtend check_directive_progress(): when status transitions to 'completed' for the first time (completed_at not set), call _notify_directive_complete(directive_id). _notify_directive_complete() posts: 'VETINARI_COMPLETE directive=<id> tickets=<N> summary=<text>' to channel and sets directive state completed_at. Mark directive archived in flat-file (not deleted — audit trail).\n\n**Affected files:** devices/vetinari/device.py (add _notify_directive_complete(), extend check_directive_progress()), tests/test_vetinari_signal.py (NEW)\n**Design rules:** idempotent — completion fires exactly once per directive (guard on completed_at); channel post via _channel_post (existing)\n**Scope boundary:** IN — completion detection, VETINARI_COMPLETE post, directive archive; OUT — re-open path (out of scope for this ticket)\n**Completion criteria:** when all child tickets close and check_directive_progress() is called: VETINARI_COMPLETE posted to channel; directive state has completed_at; second call does NOT re-post; 4+ tests",
+    "completed_at": "2026-06-08T03:42:19.696470+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

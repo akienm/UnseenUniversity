@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-audit-hardcoded-instance-refs.20260530.031447891240",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-hardcoded-instance-refs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T03:14:47.891240",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-hardcoded-instance-refs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-hardcoded-instance-refs",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "audit",
+      "Infrastructure"
+    ],
+    "title": "Fix AR-004: no-hardcoded-instance-refs violations",
+    "result": "AR-004 audit already passes clean (18-file exempt list covers defaults/docstrings); no code changes needed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": "2026-06-02T02:22:16.161839+00:00",
+    "created_at": "2026-05-30T03:14:47.891240+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "audit_runner.py reports AR-004 failures: hardcoded 'Igor-wild-0001' instance IDs in source rather than using paths().instance_id or env var. Run the AR-004 check to get the full list.\n\n**Affected files:** devices/igor/ (specific files from audit output)\n**Design rules:** no-hardcoded-instance-refs — portability requirement\n**Scope boundary:** IN — replace literal 'Igor-wild-0001' strings with paths().instance_id; OUT — don't change palace/DB data\n**Completion criteria:** AR-004 audit check exits 0",
+    "completed_at": "2026-06-02T19:16:10.836937+00:00",
+    "github_issue": 818,
+    "dispatched_at": "2026-06-02T02:20:05.446602+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T03:14:47.891275+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "372d3037-ebdc-4735-9ed9-b82c12032c77",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

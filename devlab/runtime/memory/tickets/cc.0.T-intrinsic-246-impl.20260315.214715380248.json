@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-intrinsic-246-impl.20260315.214715380248",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intrinsic-246-impl"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T21:47:15.380248",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-intrinsic-246-impl"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-intrinsic-246-impl",
+    "body": "Plan approved. Implement as specified in T-intrinsic-motivation-246 result: (1) milieu.py — add ingest_resolution_reward() with RESOLUTION_ALPHA_UP=0.15/DOWN=0.04; (2) main.py — store _last_ne_valence, add _apply_resolution_reward(), call at turn return; (3) push_sources.py — add CuriositySource, MIN_INTERVAL=300s, fires on idle, pushes ACTION_IMPULSE toward watchlist topics; (4) seed_curiosity_habits.py — seeds PROC_CURIOSITY_IDLE. See T-intrinsic-motivation-246 for full spec.",
+    "role": "implementation",
+    "size": "M",
+    "title": "Implement intrinsic motivation: resolution reward + CuriositySource (#246)",
+    "result": "All 4 parts already implemented from prior session: (1) milieu.py — ingest_resolution_reward() + RESOLUTION_ALPHA_UP/DOWN constants; (2) main.py — _last_ne_valence field, _apply_resolution_reward() helper, called at turn return (line 4341); (3) push_sources.py — CuriositySource (idle check, round-robin topics, topic cooldown), wired into run_background_sources(); (4) seed_curiosity_habits.py run — PROC_CURIOSITY_IDLE already in live DB as CP3 child. Syntax OK on all files.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-15T21:43:45.636876+00:00",
+    "completed_at": "2026-03-15T21:47:15.380248+00:00",
+    "deposited_at": "2026-05-30T04:03:35.136156",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

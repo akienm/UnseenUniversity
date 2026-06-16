@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-librarian-device.20260508.173947108688",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:39:47.108688",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-rack-agent-2026-05-08"
+    ],
+    "tickets": [
+      "T-librarian-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Create the Librarian rack device — always-on rack agent skeleton",
+    "result": "Librarian BaseDevice skeleton — rack contract, MCP stdio stub, OOK, 19 tests, 6b6a31e",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:27:25.506204+00:00",
+    "created_at": "2026-05-08T17:39:47.108688+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "description": "Create the Librarian as a first-class rack device in agent_datacenter. The Librarian IS the rack-minion — that label is retired. Runs whenever the rack is running. Independent of Igor being up.\n\nResponsibilities (phased — this ticket is the skeleton):\n- BaseDevice subclass with full rack contract (health, lifecycle, comms://)\n- MCP server surface (stdio) so CC can connect and call tools\n- IMAP/bus channel for inter-agent comms (Igor, other rack devices)\n- Web/channel interface so Akien can chat to it directly\n- Internal constant: OOK = 'Ook.' (Discworld canon; the Librarian's only word)\n\nDoes NOT include inference routing or tool inventory in this ticket — those are follow-on.\n\n**Affected files:** agent_datacenter/devices/librarian/__init__.py, agent_datacenter/devices/librarian/librarian.py, agent_datacenter/devices/librarian/mcp_server.py\n**Design rules:** no-sqlite; BaseDevice contract; bus/ owns comms:// routing\n**Scope boundary:** skeleton + interfaces only; no tool implementations yet\n**Test plan:** BaseDevice contract satisfied; MCP server starts and lists tools (empty); health() returns healthy",
+    "completed_at": "2026-05-08T18:29:38.309092+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d06dd69e-d972-4926-84dc-271078eae7a9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

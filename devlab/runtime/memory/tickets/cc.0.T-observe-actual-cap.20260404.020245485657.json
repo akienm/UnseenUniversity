@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-observe-actual-cap.20260404.020245485657",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-observe-actual-cap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T02:02:45.485657",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-observe-actual-cap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-observe-actual-cap",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Increase HYPOTHESIZE actual cap 2000→4000 chars",
+    "result": "Increased HYPOTHESIZE actual cap 2000→4000 chars; also fixed flaky test_attempt_count_increments_on_replan (ops.run_tests bypass)",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "pe_hypothesize truncates basket[actual] to 2000 chars before the Ollama prompt. A 120-line file section averages 4000-6000 chars, so the edit target is routinely cut. Increase to 4000 chars. One-line change in pe_chain.py.",
+    "completed_at": "2026-04-04T02:02:45.485657+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "660168c4-2741-4932-a2de-56ed6c96519d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-worker-dispatch-routing.20260421.170931044406",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-dispatch-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T17:09:31.044406",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-worker-mode-routing-2026-04-21"
+    ],
+    "tickets": [
+      "T-engram-trigger-cell-name-mismatch",
+      "T-worker-dispatch-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-dispatch-routing",
+    "gate": "T-engram-trigger-cell-name-mismatch",
+    "size": "M",
+    "tags": [
+      "Orchestration",
+      "Habits"
+    ],
+    "title": "Implement worker dispatch routing in PROC_WORKER_FOREMAN habit",
+    "result": "Worker routing: cc_queue add auto-defaults worker by tags/size/paths; launch_next_worker dispatches to adopt_next_ticket (igor, in-process via pe_chain) or konsole-spawn (claude/missing); seed narrative updated. 16 new tests pass. Validation is T-worker-dispatch-validation.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-21T16:48:59.094631+00:00",
+    "related_to": null,
+    "decision_id": "D-worker-mode-routing-2026-04-21",
+    "description": "Worker field exists in queue.json (values: claude|igor, defaults to claude) but PROC_WORKER_FOREMAN doesn't read it to dispatch correctly. Needed: (1) automatic defaults in cc_queue.py add: HIGH-inertia OR size=XL -> worker=claude, else worker=igor; (2) PROC_WORKER_FOREMAN routing logic: read worker field, call adopt_next_ticket if igor (in-process pe_chain), call launch_next_worker if claude (konsole daemon spawn); (3) update seed_worker_foreman.py narrative to document the dispatch. Scope: cc_queue.py defaults, worker_foreman.py routing switch, seed script. Does not touch ENGRAM_CODE_*; depends on T-engram-trigger-cell-name-mismatch to unlock the igor path. Does not touch brainstem/ or models.py.",
+    "completed_at": "2026-04-21T17:09:31.044406+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ff527c13-b72b-4692-b6f7-3bcbd5a2b0a9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-granny-stale-inprogress-watchdog.20260604.203914397888",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-stale-inprogress-watchdog"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T20:39:14.397888",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-fast-sprint-2026-06-04"
+    ],
+    "tickets": [
+      "T-granny-stale-inprogress-watchdog"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-stale-inprogress-watchdog",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Reliability",
+      "Infrastructure"
+    ],
+    "title": "Granny: watchdog to reset stale in_progress tickets back to sprint",
+    "result": "_reset_stale_inprogress() using reset --timeout; circuit breaker caps retries at 3; 4 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.75,
+    "intention": "I intend that stale in_progress claude tickets are automatically reset using the existing --timeout circuit breaker, so runaway retry loops self-halt after 3 attempts rather than burning unlimited tokens.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T20:39:14.397888+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-fast-sprint-2026-06-04",
+    "description": "Tickets stuck at status=in_progress with worker IN ('claude','cc') block _cc0_busy() from ever clearing, preventing Granny from dispatching new work. Today 8 tickets were stuck this way after sprint sessions were interrupted. _escalate_stale_dispatched() handles dispatched tickets but nothing handles in_progress.\n\nFix: add _reset_stale_inprogress() in daemon.py — query status='in_progress' AND worker IN ('claude','cc') AND updated_at < now() - interval '2 hours', then for each: call cc_queue.py reset --timeout {ticket_id}. The --timeout flag increments a reset counter and automatically holds the ticket at 3 resets, capping the retry-loop blast radius at ~3 sprint attempts (~450k tokens worst case). Call it at the top of run_once() alongside _escalate_stale_dispatched().\n\n**Affected files:** devices/granny/daemon.py\n**Design rules:** no-sqlite; test the DB query path with a mock\n**Scope boundary:** New function _reset_stale_inprogress() + one call site in run_once(). No changes to _escalate_stale_dispatched() or dispatch logic. Out of scope: the reset --timeout counter itself (already in cc_queue.py).\n**Completion criteria:** Given a stale in_progress claude ticket in the mock DB, the function calls cc_queue.py reset --timeout {ticket_id} (not setstatus sprint). Test: mock psycopg2.connect returns the stale row; assert subprocess call includes 'reset' and '--timeout'. After 3 resets, cc_queue.py holds the ticket — verify by checking status=hold after 3 calls.",
+    "completed_at": "2026-06-04T21:06:51.517592+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

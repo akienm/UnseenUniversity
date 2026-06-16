@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-adc-scheduling-primitive.20260514.192817189180",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-scheduling-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-14T19:28:17.189180",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-scheduling-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-scheduling-primitive",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "ADC",
+      "Architecture",
+      "Igor"
+    ],
+    "title": "ADC scheduling primitive — move Igor timing/scheduling into shared device tool",
+    "result": "Superseded by T-nanny-ogg-device — Nanny Ogg device is the full design including scheduling + world-interaction dispatch + agent registry. Decision D-granny-nanny-2026-05-28.",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": null,
+    "created_at": "2026-05-14T19:28:17.189180+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor already has a 'when to do a thing' component (TIMING_TIER on push sources, experiment_scheduler, sleep_clock). Cherny's Routines concept maps to this: server-side persistent scheduled tasks that survive laptop close. Abstract this into agent_datacenter as a shared scheduling tool any device can use — Igor becomes one consumer, not the only owner.\n\nMotivation: ADC is the portable erector set; Igor is one device. The scheduling primitive belongs in ADC so future devices (Librarian, auditor, etc.) can also have scheduled behaviors without reimplementing Igor's pattern.\n\nDesign questions to answer:\n- What is the minimal interface? `schedule(device_id, task, interval_sec, condition?)` or richer?\n- Persistent (Postgres) vs ephemeral (in-process)? Likely Postgres for survive-restart semantics.\n- How does a device register its scheduled tasks? Static at init vs. dynamic API?\n- Does this replace Igor's TIMING_TIER or sit alongside it?\n\n**Affected files:** TBD — discovery/design step. Likely agent_datacenter/devices/scheduling_device/ or agent_datacenter/tools/scheduler.py + Igor push_sources.py migration\n**Design rules:** no-sqlite, postgres-for-state, device-inherits-BaseDevice if OOP\n**Scope boundary:** design the interface + migration path; implementation is a follow-on sprint. Out of scope: changing Igor's existing TIMING_TIER until design is approved.\n**Test plan:** design ticket — test plan written in follow-on implementation ticket",
+    "completed_at": "2026-05-28T19:18:07.645250+00:00",
+    "github_issue": 726,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "149ba1d1-331e-40a7-939a-f0b5deb1c81c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

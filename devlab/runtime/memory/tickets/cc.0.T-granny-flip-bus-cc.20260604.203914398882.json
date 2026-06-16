@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-flip-bus-cc.20260604.203914398882",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-flip-bus-cc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T20:39:14.398882",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-fast-sprint-2026-06-04"
+    ],
+    "tickets": [
+      "T-cc-worker-idle-listener",
+      "T-granny-flip-bus-cc",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-flip-bus-cc",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Infrastructure"
+    ],
+    "title": "Granny config: flip CC.0 to dispatch: bus once IDLE listener is live",
+    "result": "config/granny.yaml CC.0 → dispatch: bus, mailbox: cc.0",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that once the CC worker IDLE listener is running, CC dispatch uses the reliable two-phase bus handshake instead of a fire-and-forget tmux send-keys.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T20:39:14.398882+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-fast-sprint-2026-06-04",
+    "description": "With T-cc-worker-idle-listener shipped, the bus dispatch chain is complete end-to-end. This ticket flips config/granny.yaml CC.0 from dispatch: tmux_send_keys to dispatch: bus + mailbox: cc.0, enabling the full two-phase handshake: dispatch envelope → ack → prod-every-120s → started/timeout. The old tmux_send_keys path stays available in daemon.py as a named fallback but is no longer active for CC.0.\n\n**Affected files:** config/granny.yaml\n**Design rules:** none — config change only; no code changes\n**Scope boundary:** Change CC.0's dispatch value and add mailbox field. DickSimnel.0 dispatch method is out of scope. No daemon.py code changes.\n**Completion criteria:** After flip, Granny's log shows 'dispatched T-xxx → cc.0 via bus' (not 'send-keys → claude-main') for CC.0 tickets; imap.fetch_unseen('cc.0') shows a dispatch envelope; NO tmux send-keys call appears in Granny log for CC.0 dispatches. Test: run_once() with dispatch: bus config + FakeIMAP → verify envelope in cc.0, not a tmux subprocess call.",
+    "completed_at": "2026-06-04T21:10:42.919393+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

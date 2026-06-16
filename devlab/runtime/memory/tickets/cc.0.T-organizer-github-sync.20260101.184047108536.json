@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-organizer-github-sync.20260101.184047108536",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-organizer-github-sync"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T18:40:47.108536",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-organizer-github-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-organizer-github-sync",
+    "body": "Implement bidirectional GitHub sync as step 0 of the Organizer phase. Pull open issues from GitHub, compare to DB ticket nodes, apply deltas: new tickets → insert as nodes, human-closed tickets → mark done, updated bodies → merge. DB becomes current truth before Organizer proceeds to summarise. Ref: D130.",
+    "size": "M",
+    "title": "Organizer step 0: GitHub → DB sync",
+    "closed": "2026-03-19T10:39",
+    "result": "github_tickets table in Postgres. github_sync.py: sync/list/delta. First sync: 80 open + 30 closed. Becomes Organizer step 0.",
+    "status": "done",
+    "created": "2026-03-19T10:08",
+    "priority": 2,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

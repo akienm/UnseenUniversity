@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-orientation-classifier.20260612.164914941874",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-orientation-classifier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T16:49:14.941874",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-orientation-classifier-arch-2026-06-13"
+    ],
+    "tickets": [
+      "T-orientation-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-orientation-classifier",
+    "gate": null,
+    "role": "master",
+    "size": "L",
+    "tags": [
+      "Inference",
+      "Cost",
+      "Training",
+      "DickSimnel"
+    ],
+    "title": "Graph-tree orientation classifier: builder report for session start",
+    "result": "orientation_classifier.py in devices/scraps/: classify(ticket) queries clan.code_index (ILIKE keyword match, symbol 2x/path 1x score), returns BuilderReport; wired into ToolLoop.run() as prepended builder report text; fail-open. Live test: 10 files for this ticket from 15 keywords. Baseline: removes ~3-5 discovery turns (~1500 tokens) by surfacing relevant files before DS reads anything",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that a local graph-tree classifier produces a structured builder report at session/ticket start, replacing exploratory grep/find/read with a single cheap deterministic pass.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T16:49:14.941874+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-orientation-classifier-arch-2026-06-13",
+    "description": "Current session orientation burns tokens on exploratory file searches. A graph-tree classifier takes the task description, pattern-matches against the codebase graph (symbols, file tree, recent changes) and returns a structured builder report: {relevant_files[], context_nodes[], task_shape, estimated_complexity}. Same principle as palace reading-node classifiers but applied to the code graph. Local inference only (no cloud calls). Output is a JSON builder report consumed by DS/CC before any file reads.\n\nDesign questions to resolve in sprint: (1) What graph is the source — code_index symbols table, git tree, or both? (2) Does the classifier run in DS ToolLoop (per-ticket) or in context-load (per-session)? (3) KNN over embeddings or rule-based tree traversal first?\n\n**Affected files:** New devices/scraps/orientation_classifier.py (or devices/hubert/), devices/dicksimnel/toolloop.py, context-load skill\n**Design rules:** no-sqlite; log every interface crossing; flat-rate inference preferred (local Ollama)\n**Scope boundary:** In scope: classifier + builder report JSON shape + wiring into DS ticket start. Out of scope: embedding model training, full code indexing (use existing code_index), cloud inference.\n**Completion criteria:** T-orientation-classifier is CLOSED; DS ToolLoop emits a builder_report JSON block before first file read on a ticket; token count for orientation phase measurably lower vs baseline (same ticket type, side-by-side comparison documented in ticket close note).",
+    "completed_at": "2026-06-13T22:42:17.414378+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T22:37:27.977631+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

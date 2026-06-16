@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-blob-facia-and-tree-index.20260414.232243000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-blob-facia-and-tree-index"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:43",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-blob-facia-and-tree-index"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-blob-facia-and-tree-index",
+    "body": "From D115 (closed as ticketed). Akien 2026-04-14 thought this was done; checked the live DB and found the conceptual pieces are missing.\n\n## Current state\n\n- **memory_blobs table:** exists in Postgres, 251 blobs, 792kb total. Accessed by id only, never scanned. ✓ this part works.\n- **Blob facia memories:** ZERO (`SELECT count(*) FROM memories WHERE facia_role='blob_index'` → 0). Blobs are just rows; nothing in the matrix points at them.\n- **Blob index tree:** ZERO (no trees with name or description matching blob).\n- **wg_cooccur split to LMDB/RocksDB** (also part of D115): NOT done, still in Postgres. Skipping this part — looks like premature optimization at current scale (8 wg_* tables, fine where they are).\n\n## What needs building\n\n### 1. Per-blob facia memories\nWhen a blob is stored (via cortex.store_blob or wherever the write path is), also create a REFERENCE memory with metadata.facia_role='blob_index' that:\n- Carries a pointer back to the memory_blobs row (memory_id or blob_id)\n- Has a narrative summarizing what's in the blob (title + author + first paragraph for ebooks; topic + source for web content; etc.)\n- Has metadata for retrieval: content_type, source, length, tags, created_at\n- Lives under a parent BLOB_ROOT facia (see #2)\n- Is searchable like any other memory — Igor can find blobs via cortex.search() rather than via a separate blob query API\n\nThis is the biomimicry-honest framing: the matrix knows about every blob it owns, the same way the matrix knows about every relationship and every habit. Blobs become *retrievable as memories*, not as a separate filesystem-style store.\n\n### 2. BLOB_ROOT facia + blob_index tree\nNew root facia BLOB_ROOT (mirror of PR_ROOT) with all blob facia as children. New entry in the trees table named 'blob_index' with facia_id=BLOB_ROOT, descriptive of the blob graph. Lets Igor walk the blob index as a navigable subtree.\n\n### 3. Migration of existing 251 blobs\nBackfill facia memories for the 251 existing blobs. Read each blob, derive a narrative + metadata, create the facia row. Idempotent (skip if facia already exists). One-time pass.\n\n### 4. Wire-in to the read path\ncortex.expand_blob_memories() already does relevance≥0.5 expansion (DP9). Update it to walk via blob facia rather than (or in addition to) the current path, so the matrix-native retrieval is the primary route.\n\n## Why this matters\n\nUnder the cockpit/COA framing from this morning's discussions:\n- Igor needs to *know what he has stored* as part of his preparation work — not via a separate query API, but via the same memory-search machinery he uses for everything else\n- The reading pipeline (D334 unified-reading-tool) creates a lot of blobs and the relationship between 'thing I read' and 'memories I formed from reading it' is currently tracked outside the memory graph\n- Igor's self-capability awareness (T-self-capability-awareness) is partly 'what knowledge do I have access to?' — which is currently invisible because blobs are off-graph\n\n## Existing work to check\n\n- wild_igor/igor/cognition/blob_store.py — current blob storage path\n- wild_igor/igor/memory/cortex.py — expand_blob_memories(), DP9\n- wild_igor/igor/memory/cortex.py m032/m033 — blob CASCADE migrations\n- wild_igor/igor/tools/blobs.py — blob tool surface\n- wild_igor/igor/tools/persistent_relationships.py — facia pattern to mirror\n- wild_igor/igor/memory/tree_index.py — trees infrastructure (D257)\n- wild_igor/igor/tools/seed_persistent_relationships.py — pattern for seeding root facia + tree\n\n## Out of scope\n\n- wg_cooccur → LMDB split (D115's other half — premature optimization at current scale)\n- Migrating blob storage off Postgres (memory_blobs table is fine where it is)\n- Yesterday's verbatim truncation work (T-verbatim-prompt-injection / T-tool-result-verbatim — that was the surgical fix for the immediate problem and is the right shape; this ticket is the longer-term matrix-native blob retrieval, not a replacement for it)\n\n## Provenance\n\nD115 (Akien 2026-04-11, surfaced 2026-04-14 — Akien thought it was done; live DB check showed the facia + tree pieces missing). Connects to yesterday's truncation-fix work as a longer-term complement, not a replacement.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "memory",
+      "blobs",
+      "facia",
+      "biomimicry",
+      "self-knowledge"
+    ],
+    "title": "Each blob gets a facia memory + a graph tree as the blob index",
+    "result": "ensure_blob_facia: FACTUAL facia (facia_role=blob_index) + interpretive edge + tree index for any blob. Idempotent. 8 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:59:03.576368+00:00",
+    "created_at": "2026-04-14T23:22:43Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T20:00:37.499255+00:00",
+    "github_issue": 443,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

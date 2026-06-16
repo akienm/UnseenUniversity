@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-reasoning-workflow-primitive.20260415.233107775737",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reasoning-workflow-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T23:31:07.775737",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reasoning-voice-split",
+      "T-reasoning-workflow-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reasoning-workflow-primitive",
+    "body": "From T-reasoning-voice-split (#436) design session 2026-04-15 afternoon + Akien's reframe: instead of building a 'cockpit prompt' for the LLM to inhabit, Igor OPENS a peer conversation — 'this is what I am, here's my trails, what else do you want to know?' — and they iterate until the issue is resolved. The LLM is a peer advisor, not a cockpit pilot.\n\n## The insight\n\nIgor doesn't have ONE reasoning shape. He has WORKFLOWS for different kinds of help he needs, each with its own opening move, iteration rhythm, and exit condition. The four uncertainty strategies map onto workflow families:\n\n- **Workflow A** — 'help me design an experiment' (strategy 2)\n- **Workflow B** — 'help me evaluate this claim' (strategy 3, ask-half)\n- **Workflow C** — 'help me understand this pattern' (diagnostic)\n- **Workflow D** — 'help me plan' (multi-step decision)\n\nEach is a small state machine Igor runs, with the LLM as the oracle consulted at specific points. Not LLM-as-driver; LLM-as-peer.\n\n## Load-bearing architectural claims\n\n- Every workflow run produces `(state, predicted_next_move, actual_llm_move)` triples for substrate training. This is the shrinkage mechanism: over time, substrate learns to predict what the LLM would say, and the workflow graduates to substrate-only per-transition (not per-workflow).\n- Each workflow exit produces a typed output struct (`ProposedExperiment`, `Hypothesis`, `InterpretiveEdgeProposal`, `PlanStep[]`).\n- Workflows are cascade-level-5 consumers: when substrate levels 0-4 exhaust, the cascade walker picks a workflow based on DecisionBlob.intent and hands it the situation.\n\n## MVP scope (this ticket)\n\n1. `Workflow` abstract class in `wild_igor/igor/cognition/reasoning_workflow.py`\n   - name, opening_utterance(situation), next_utterance(conversation, peer_response)\n   - output_struct(conversation) -> the typed deliverable\n2. `Conversation` dataclass — the turn history\n3. `WorkflowUtterance` dataclass — one Igor-side or peer-side turn\n4. `WorkflowRecorder` — per-transition recording of (state, expected, actual) for future graduation training; writes to memory via cortex.store (metadata-only per memory_node_shape)\n5. `WorkflowA_ExperimentDesign` concrete implementation — opens with 'I'm uncertain about X, I want to design an experiment to learn. Here's my current state. What probe would resolve the uncertainty?' Loop until the peer proposes a concrete probe + expected observation; exit produces a `ProposedExperiment` from decision_blob.\n6. Unit tests using a fake PeerAdvisor that returns scripted responses (no real LLM needed for the test layer)\n\n## Out of scope (separate sub-tickets)\n\n- Workflows B, C, D concrete implementations (follow this MVP pattern)\n- Graduation logic (predictor per transition) — the recorder collects data, graduation happens later\n- Wiring into cascade level 5 (that's the cockpit-integration sub-slice of T-experiment-primitive)\n- Actual LLM call plumbing — separate sub-ticket T-llm-collaboration-protocol (#438)\n- Voice step — separate ticket\n\n## CP grounding\n\n- CP1 — the workflow's opening utterance always includes Igor's uncertainty, never fakes confidence\n- CP2 — every exit (success or abort) records learning via the recorder\n- CP3 — output struct carries provenance (which utterances led to this conclusion)\n- CP6 — workflow outputs are hypotheses/proposals, not committed state; the next cascade pass must consume them as new situations, not as decisions\n\n## Dependencies\n\n- T-decision-blob-schema ✅ (a0d224b9)\n- T-experiment-primitive-schema ✅ (64e1d472)\n- T-substrate-experiment-cascade ✅ (b6321c53)",
+    "size": "M",
+    "tags": [
+      "cognition",
+      "reasoning-voice-split",
+      "workflow",
+      "peer-conversation",
+      "cp-axioms"
+    ],
+    "title": "Reasoning workflow primitive: peer-conversation state machine Igor runs to consult LLM",
+    "result": "Workflow base class + Conversation/Utterance/Complete dataclasses + WorkflowRecorder + run_workflow runner + WorkflowA_ExperimentDesign concrete. Token-based match rule for recorder. 32 tests using ScriptedPeer (no real LLM). 2583 total pass. Primitive for the reasoning/voice split; B/C/D workflows follow same pattern.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T23:22:15.831922+00:00",
+    "related_to": "T-reasoning-voice-split",
+    "completed_at": "2026-04-15T23:31:07.775737+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-audit-debris-skill.20260429.182032501854",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-debris-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:20:32.501854",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-debris-skill",
+      "T-audit-rename-pyramid"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-debris-skill",
+    "gate": "T-audit-rename-pyramid",
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Skills",
+      "Debris",
+      "Docs"
+    ],
+    "title": "Build audit-debris (rename + fold validate-files + own docs-update)",
+    "result": "Created ~/.claude/skills/audit-debris/SKILL.md: 10 checks (temp files, runtime staged, .env, debug artifacts, log growth, test DB rows, file placement, docstring rot, subsystem_index, commented code). Model: Haiku.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T18:11:27.570604+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "audit-debris is the post-test, pre-commit cleanup layer. Folds /validate-files in. Owns docs-update at PR time (NOT day's-end — change is fresh, file is open).\n\nChecks: .tmp/.bak/.swp/__pycache__/*.pyc; runtime files staged (~/.TheIgors/* or *.db); .env changes uncommunicated in commit message; debug print()/breakpoint()/import pdb (covered by inherit-base-class+preferred_paths but double-check); log-size growth from new code (sample new log lines); test cleanup (tables/rows left in test DB after suite); file placement (runtime under ~/.TheIgors/, code under wild_igor/); top-of-file docstring updated for changed load-bearing files; subsystem_index updated when load-bearing primary file moves.\n\nEmits per-run record. Model: Haiku.\n\n**Affected files:** ~/.claude/skills/audit-debris/SKILL.md (renamed from validate-files, extended). Helper logic from validate-files folded in.\n**Design rules:** no persistence beyond palace telemetry.\n**Test plan:** pre-commit run with a stray .tmp file → flagged. Diff that changes a load-bearing file but not its docstring → AMEND. Test run that leaves rows in test DB → flagged. Telemetry recorded.",
+    "completed_at": "2026-04-29T18:20:32.501854+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1826f7f9-e999-434a-949a-af87194eef83",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

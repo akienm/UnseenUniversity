@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-list-primitives.20260322.122335187770",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-list-primitives"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T12:23:35.187770",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-list-primitives"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-list-primitives",
+    "size": "S",
+    "title": "List primitives: list_push, list_pop, list_count (wrapping D095 lists table)",
+    "result": "Implemented by CC session 2026-03-22",
+    "status": "done",
+    "priority": 6,
+    "claimed_at": null,
+    "description": "3 primitives wrapping the existing D095 lists table. prim_list_push(list_name_key, value_key) -> append. prim_list_pop(list_name_key, out_key) -> take next item + remove. prim_list_count(list_name_key, out_key) -> length into basket. Named lists persist across heartbeat cycles — this is the durable queue substrate for multi-step programs. Thin wrappers on cortex.list_set/list_get/list_all.",
+    "completed_at": "2026-03-22T12:23:35.187770",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a13969e8-1eea-4fb4-9474-b2abfc4fb450",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

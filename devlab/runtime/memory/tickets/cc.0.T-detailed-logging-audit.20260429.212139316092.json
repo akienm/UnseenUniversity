@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-detailed-logging-audit.20260429.212139316092",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-detailed-logging-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T21:21:39.316092",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-detailed-logging-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-detailed-logging-audit",
+    "gate": "deferred-pending-audit-pyramid-build",
+    "size": "L",
+    "tags": [
+      "Audit",
+      "Logging",
+      "Deferred"
+    ],
+    "title": "Detailed single-run logging audit (DEFERRED — gated)",
+    "result": "audit_logging.py callsite-level audit shipped (lab/claudecode/audit_logging.py + tests/test_audit_logging.py + lab/claudecode/reports/logging_audit_20260429-211639.md). 456 files, 2522 callsites scanned. 23 classes missing inheritance, 159 print smells, 150 logging.getLogger bypasses, 114 legacy _log sites. 32 new tests pass; 4075 regression tests pass. 5 follow-up migration tickets filed: T-logging-archive-decision, T-logging-class-inheritance-fixups, T-logging-migrate-utility-closet, T-logging-migrate-cognition (gated on UC), T-logging-migrate-lab-claudecode (gated on UC). Commit 2e5ab599.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-04-29T21:01:53.748649+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "Deferred audit: detailed single-run logging review for a representative Igor run. Walks every log line emitted during the run, classifies by source (which class produced it), checks inheritance from base class, flags noisy/quiet sites, identifies log-line gaps where silent failures could hide.\n\nGated until the audit pyramid restructure ships (other tickets in D-audit-pyramid-redesign-2026-04-29). Re-evaluate when the foundation is in place.\n\n**Affected files:** TBD when ticket is unblocked.\n**Design rules:** TBD.\n**Test plan:** TBD when ticket is unblocked.",
+    "completed_at": "2026-04-29T21:21:39.316092+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "012c4be2-aa5c-4148-9734-2f2162ddd667",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

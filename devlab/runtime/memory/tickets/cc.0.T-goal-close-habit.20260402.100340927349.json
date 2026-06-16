@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-goal-close-habit.20260402.100340927349",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-close-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T10:03:40.927349",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-close-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-close-habit",
+    "title": "Seed PROC_GOAL_CLOSE habit — map close goal trigger to goal_close tool",
+    "result": "close_goal(None) wrapper added to ops.py — finds most recent active GOAL. PROC_GOAL_CLOSE seeded. 23 tests. Session 2026-04-02a.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "When Claude Code or Akien says close goal <ticket_id>, Igor has no habit to match it. The LLM hallucinates running goals.py (does not exist). Fix: seed a code_ref habit PROC_GOAL_CLOSE with trigger: close goal|goal done|goal closed|goal complete that calls a new single-arg wrapper tool close_goal_by_ticket(ticket_id: str) which scans active GOAL memories, finds the one matching ticket_id in source_message, and calls goal_close(goal_id). Wrapper in ops.py alongside goal_close. This is the same class as store_factual/read_file — single-arg wrapper pattern from feedback_habit_dispatch_arg_limit.md.",
+    "completed_at": "2026-04-02T10:03:40.927349",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "326f642e-10eb-4b36-90db-06963c62470a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

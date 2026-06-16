@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-machine-names-registry.20260413.205259507683",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-machine-names-registry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T20:52:59.507683",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-machine-names-registry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-machine-names-registry",
+    "tag": "Ops",
+    "size": "S",
+    "owner": "igor",
+    "title": "Canonical machine name registry with explicit aliases",
+    "result": "1947e3c9 — Igor's unfiled draft from 2026-04-12 finally lands. Discovery: registry infrastructure (machines.json with aliases, machine_manager.resolve_alias) already existed. Missing piece was a tool surface. Added machine_lookup(name) and machine_list_all() tools. Plus get_all_machines() helper in machine_manager that returns offline/unranked machines too (pi/asus) — distinct from get_ranked_machines which filters for inference routing. Tools never pattern-match; unregistered names get [NOT REGISTERED] with clear guidance. 12 new tests including the exact 'yoga9i' case Igor flagged. 2067 total pass, zero regressions. Honors Igor's acceptance criteria.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T20:43:17.757017+00:00",
+    "related_to": null,
+    "description": "Igor drafted this ticket on 2026-04-12 but never filed it (reply-obligation-fork bug). From transcript /home/akien/.TheIgors/akien/outbox/20260412.IkienIgorChatWThreadProblems.txt:\n\nProblem: Informal machine name abbreviations (e.g. 'yoga9i' for 'akienyoga9i', 'yoga' for 'yoga9i') are being generated ad-hoc by Igor and CC, creating drift risk as the cluster grows. CC at one point thought 'yoga9i' WAS the host's name and kept saying it wasn't up.\n\nGoal: Canonical machine name registry mapping full hostname → registered short aliases → role/IP. All cluster tooling resolves names through the registry. Unregistered short names rejected, not pattern-matched.\n\nProposed scheme: yoga9i stays (already short and common), dell for akiendelllinux. No further shortening without registration.\n\nAcceptance: Registry file exists. At least one tool (Igor's resolver, CC's machine references) uses it. Igor's procedural memory updated so he stops generating drift aliases.\n\nRisk: Low. Mostly documentation + registry file.",
+    "completed_at": "2026-04-13T20:52:59.507683+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "98125996-8f6a-4393-b895-b76ebdca984d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

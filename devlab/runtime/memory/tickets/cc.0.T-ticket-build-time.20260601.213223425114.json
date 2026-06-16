@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-ticket-build-time.20260601.213223425114",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-build-time"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T21:32:23.425114",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-orphan-watchdog-2026-06-01"
+    ],
+    "tickets": [
+      "T-granny-orphan-watchdog",
+      "T-ticket-build-time"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-build-time",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Granny",
+      "Observability"
+    ],
+    "title": "Track build-time per ticket; calibrate orphan watchdog timeout",
+    "result": "dispatched_at field + wall_minutes in corpus + p90_minutes method + watchdog auto-calibration via 3×p90 when n≥10",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": "2026-06-02T17:04:20.820143+00:00",
+    "created_at": "2026-06-01T21:32:23.425114+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-orphan-watchdog-2026-06-01",
+    "description": "The orphan watchdog (T-granny-orphan-watchdog) uses fixed size-keyed timeouts. Those defaults are guesses. We have 1007 completed tickets with claimed_at/completed_at — the data to calibrate from exists. But claimed_at measures queue wait, not build time. We need dispatched_at (when Granny handed it off) and started_at (when the CC session actually opened the ticket).\n\nProposed shape:\n1. Add `dispatched_at` timestamp to the ticket record in cc_queue.py when Granny calls cc_queue.py setstatus in_progress (i.e. at dispatch time). This separates 'queued' from 'Granny acted on it'.\n2. PatternTracker.record_outcome() already takes cost_usd/iterations — add wall_minutes=(completed_at - dispatched_at) to the outcome record in the JSONL corpus.\n3. Add PatternTracker.p90_minutes(size) method: reads corpus, filters by size + DONE signal, returns p90 of wall_minutes. Returns None when n<10.\n4. GrannyDaemon.run_once() calls p90_minutes(size) for the watchdog timeout fallback: `timeout = p90_minutes(size) * 3 if p90_minutes(size) else DEFAULT_TIMEOUT[size]`.\n\n**Affected files:** lab/claudecode/cc_queue.py (dispatched_at field), devices/granny/daemon.py (PatternTracker.p90_minutes + watchdog calibration), devices/granny/escalation_corpus.py (wall_minutes field in append_outcome)\n**Design rules:** flat-file only for corpus; no new Postgres tables\n**Scope boundary:** dispatched_at + wall_minutes recording + p90 lookup; not a full analytics dashboard; started_at (requires CC-side change) deferred\n**Completion criteria:** after 10+ DONE outcomes recorded with wall_minutes, Granny's watchdog timeout for that size class switches from the fixed default to 3×p90_minutes; log line `GRANNY_TIMEOUT_CALIBRATED|size=S|p90=<n>m|n=<count>` visible on next Granny restart",
+    "completed_at": "2026-06-02T19:18:20.736592+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T17:02:29.410056+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "00d6e999-4b31-4e37-9cff-0db4f7d667b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

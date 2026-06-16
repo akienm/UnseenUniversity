@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-adc-inference-budget-gate.20260518.220011977330",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-inference-budget-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:00:11.977330",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-inference-budget-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-inference-budget-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Budget",
+      "Inference"
+    ],
+    "title": "Wire InferenceDevice.dispatch() to OR budget gate",
+    "result": "budget_gate.py: check_balance pre-call + record_spend post-call in dispatch(); fail-open on network error; no TheIgors imports",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:00:11.977330+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "The ADC inference device ('devices/inference/device.py') explicitly has no budget management. Both the Librarian and any future ADC device routing through it make OR calls that are invisible to the budget system Igor tracks in infra.spend/infra.balance_history. Add a lightweight budget gate so every ADC OR call checks balance pre-call and records spend post-call.\n\n**Affected files:** devices/inference/device.py, devices/inference/budget_gate.py (new)\n**Design rules:** no-sqlite, no-TheIgors-imports (ADC must be portable). Use IGOR_HOME_DB_URL env var for infra.spend writes; graceful no-op if env var absent or DB unreachable.\n**Scope boundary:** inference device dispatch path only. No changes to TheIgors budget.py. The new budget_gate.py is ADC-internal — direct OR API call for balance (cached in-process, 1h TTL), psycopg2 write to infra.spend with note='caller=adc_inference'. Attribution goes in the 'note' field of the existing schema (no migration needed).\n**Test plan:** Add tests to tests/test_inference_via_bus.py or new tests/test_inference_budget_gate.py: (1) dispatch with mocked OR response records spend to infra.spend, (2) dispatch proceeds when balance_gate returns ok, (3) balance_gate degrades gracefully when IGOR_HOME_DB_URL absent.",
+    "completed_at": "2026-05-18T22:09:05.289249+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8bfd4253-6575-4a44-8e3e-a1b0050f0817",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.GH-270.20260316.203147000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-270"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T20:31:47",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-270"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-270",
+    "title": "D099 — TWM global workspace: slot branching + NE comparison pass",
+    "result": "Already implemented: D099 TWM slot branching + NE comparison pass. TWM_MAX_SLOTS=7, twm_get_slots(), twm_decay_slot(), parent_obs_id column. NE run() has comparison pass: solo slot decay + D100 co-activation tallying. All code live.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-04-18T03:10:39.086563+00:00",
+    "created_at": "2026-03-16T20:31:47Z",
+    "description": "GitHub issue #270. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-18T03:11:48.831865+00:00",
+    "github_issue": 270,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9a12be88-00a2-46c1-b461-8f68e844ee38",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

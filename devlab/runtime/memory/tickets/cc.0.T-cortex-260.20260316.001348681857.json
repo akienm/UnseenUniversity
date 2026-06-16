@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-cortex-260.20260316.001348681857",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cortex-260"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T00:13:48.681857",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cortex-260"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cortex-260",
+    "body": "metadata LIKE trigger scan fires twice per turn at 55ms each — full table scan because SQLite cannot index JSON. Lighter fix: cache PROCEDURAL habit rows in-process at boot (habits rarely change mid-session). Heavier fix: add trigger_text column + index. Discuss schema change with Designer before implementing. See #260.",
+    "role": "implementation",
+    "size": "S",
+    "title": "Cache habit list in-process to avoid metadata LIKE scan (#260)",
+    "result": "cortex.py: added _habit_cache (Optional[list]) to __init__; get_habits() returns cached list on hit, populates on miss; invalidate_habit_cache() clears it; store() auto-invalidates when stored memory is a habit (is_habit=True). Eliminates repeated 55ms LIKE full-table scans per turn — cache persists for session lifetime, invalidated only on new habit creation. Syntax OK.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-16T00:12:07.433840+00:00",
+    "completed_at": "2026-03-16T00:13:48.681857+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

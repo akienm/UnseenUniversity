@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-reference-chat-agent.20260506.005254964909",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reference-chat-agent"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T00:52:54.964909",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-portability-2026-05-05"
+    ],
+    "tickets": [
+      "T-reference-chat-agent"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reference-chat-agent",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Agent",
+      "Reference",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Reference chat agent skeleton in agent_datacenter",
+    "result": "Reference chat agent at agent_datacenter/examples/chat_agent/agent.py — direct anthropic SDK, optional db.py memory, clean shutdown (commit ff13324)",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-05-06T00:49:14.180835+00:00",
+    "related_to": null,
+    "decision_id": "D-skills-portability-2026-05-05",
+    "description": "agent_datacenter has no 'hello world' showing how to build an agent on top of it. A reference chat agent demonstrates proper patterns: OR connection, db.py memory persistence, channel read/send, structured prompting — without LangChain, LlamaIndex, or framework cruft. Goal: runnable in < 5 minutes on a box with agent_datacenter installed. The 'OpenClaw without crappy patterns' starting point for third parties or for spinning up new specialized agents on the rack.\n\n**Affected files:** New agent_datacenter/examples/chat_agent/agent.py; agent_datacenter/examples/chat_agent/README.md (justified exception to no-README rule — this IS the reference documentation).\n**Design rules:** No TheIgors imports. No LangChain/LlamaIndex/framework imports. Direct anthropic SDK or OR HTTP calls only. Uses agent_datacenter/agent_datacenter/db.py for memory.\n**Scope boundary:** IN: minimal working chat loop, memory persistence via db.py, channel integration. OUT: voice, multi-agent orchestration, production hardening, GUI.\n**Test plan:** python agent_datacenter/examples/chat_agent/agent.py runs, accepts stdin, responds, saves to db.py memory, sends to channel. Smoke test: mock OR call, verify memory write + channel send.\n**Pass condition:** A developer with agent_datacenter installed can cd examples/chat_agent && python agent.py, send a message, and see a response with memory saved — in under 5 minutes from zero.",
+    "completed_at": "2026-05-06T00:52:54.964909+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "42bf0431-a1d7-46ce-8176-9235cdb10889",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

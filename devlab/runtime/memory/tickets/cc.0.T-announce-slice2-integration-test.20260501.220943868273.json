@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-announce-slice2-integration-test.20260501.220943868273",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice2-integration-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:09:43.868273",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice2-broker-as-skeleton-subdevice",
+      "T-announce-slice2-integration-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice2-integration-test",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice2",
+      "Datacenter",
+      "IntegrationTest"
+    ],
+    "title": "End-to-end IMAP-stub integration test: agent envelope → manifest round-trip",
+    "result": "Slice 2 green-test ships: end-to-end Skeleton+IMAP-stub round-trip verifies envelope→manifest path with suffix-style surface addresses; malformed-envelope branch verifies error-mode contract. 146 passed. agent_datacenter commit 28d9a0a.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T22:08:37.987508+00:00",
+    "related_to": "T-announce-slice2-broker-as-skeleton-subdevice",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Slice 2 green-test boundary: Skeleton boots with AnnounceBroker sub-device, a test-agent process sends an IdentityEnvelope to comms://announce via the IMAP stub (AGENT_DATACENTER_TEST_MODE=1), and a Manifest with matching manifest_id appears in comms://announce-events within a bounded wait. This is the verification slice 2 actually shipped — slice 1's round-trip was in-memory; this one exercises the full mailbox path.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/tests/test_announce_integration.py (NEW), possibly /home/akien/dev/src/agent_datacenter/tests/conftest.py (shared fixture for booted-skeleton if useful)\n**Design rules:** uses existing IMAP stub harness (no Dovecot, no network); test failure = slice 2 doesn't ship; bounded timeout (e.g. 5 seconds) on the announce-events poll so a hung listener fails fast.\n**Scope boundary:** in — single round-trip test using IMAP stub. Out — load test, multi-agent concurrent test, slice-3 CC-side adapter test.\n**Test plan:** test_announce_round_trip_via_imap_stub — start skeleton with igor profile, send IdentityEnvelope to comms://announce, poll comms://announce-events with timeout, assert manifest.issued_to.agent_id == 'igor' and manifest.tools is non-empty. test_malformed_envelope_returns_error_message — send junk to comms://announce, verify announce-events gets an error message (listener doesn't crash).",
+    "completed_at": "2026-05-01T22:09:43.868273+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a3fb0bc9-2499-4b9f-9c9e-41248a4e3f9d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

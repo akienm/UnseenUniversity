@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-pr-consolidation-sleep-wiring.20260413.204249618276",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-consolidation-sleep-wiring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T20:42:49.618276",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-consolidation",
+      "T-pr-consolidation-sleep-wiring"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-consolidation-sleep-wiring",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Wire pr_consolidate_all into the sleep tick — automatic consolidation during quiet periods",
+    "result": "e9e3f4bd — New PRConsolidationSource push source following the SleepConsolidation template. Idle gate (10 min quiet threshold), rate limit (30 min between passes), best-effort error handling. Lazy-loaded singleton in push_sources.py; registered in run_background_sources dispatch tuple. PR loop now self-sustains: every turn updates accretions; every quiet period runs consolidation; weight evolves automatically. 8 new tests including idle gate, rate limit, failure isolation, source contract, registration verification. 2055 total pass, zero regressions.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T20:35:58.670535+00:00",
+    "related_to": null,
+    "description": "T-pr-consolidation (0dcc387b) shipped pr_consolidate / pr_consolidate_all but they only run when manually invoked. This ticket wires pr_consolidate_all into the existing background-sources cadence so consolidation happens automatically during quiet periods, just like biological sleep.\n\nNew push source PRConsolidationSource in cognition/pr_consolidation_source.py, following the same pattern as SleepConsolidation (cognition/sleep_consolidation.py). Singleton lazy-loaded by run_background_sources(). Idle-gated via cortex._conversation_active_ts (same QUIET_THRESHOLD pattern). Rate-limited so consolidation doesn't run every tick — maybe 30 minutes between passes. push() calls pr_consolidate_all and returns a TWM observation summarizing what was consolidated.\n\nRegister in the existing run_background_sources tuple alongside sleep_consolidation.\n\nBIOMIMETIC FRAMING: hippocampal consolidation happens during sleep, not while you're paying attention. Igor's PR consolidation should follow the same rhythm. The existing D353 sleep_consolidation does Hebbian binding work during quiet periods; this adds relationship-level consolidation as a sibling operation in the same window.\n\nNO CHANGES to pr_consolidation.py itself — already idempotent, already best-effort, already exposed as tools. This ticket is purely about scheduling.\n\nINERTIA: LOW. New file in cognition/, single insertion in push_sources.py registration tuple.\n\nTESTS: PRConsolidationSource follows the push-source contract (push() returns list of obs IDs). Idle gate skips when conversation is active. Rate limit prevents re-running within the cooldown window. Active period skip + quiet period fire.",
+    "completed_at": "2026-04-13T20:42:49.618276+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d0be2572-ef3e-4bdf-b023-1aa2f2095551",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

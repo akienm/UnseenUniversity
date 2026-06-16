@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-portable-bootstrap.20260427.221303360370",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-portable-bootstrap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:13:03.360370",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-portable-bootstrap",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-portable-bootstrap",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: agentctl init — portable rack bootstrap on clean machine",
+    "result": "agent_datacenter/cli/agentctl.py: agentctl init (dirs+config+postgres-detect+imap-detect+skeleton start) + agentctl status. Wired via rack.py entry point. click>=8.0 added to pyproject.toml.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-27T22:07:53.408743+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "The 'init at work' story: pip install agent_datacenter && agentctl init bootstraps a working empty rack on a clean machine (ubuntu + macOS).\n\nProblem: agent_datacenter must work at work — a fresh machine, no igor, no TheIgors. agentctl init must produce a running rack from scratch.\n\nProposed shape:\n- agent_datacenter/cli/agentctl.py (click-based CLI, registered in pyproject.toml scripts)\n- agentctl init command sequence:\n  1. Create ~/.agent_datacenter/ runtime dir\n  2. Create datacenter_logs/ hierarchy: datacenter_logs/{postgres,skeleton,imap}/ \n  3. Write device_config.toml with defaults\n  4. Check Postgres: if pg_ctl found → use local; if Docker available → use Docker Postgres; else warn + continue\n  5. Start IMAP server (Dovecot if installed; Python stub as fallback)\n  6. Start skeleton (MCP aggregator on localhost:7788 or configured port)\n  7. Print: 'Rack is up. Devices: [skeleton]. Channels: [Shared]. Type agentctl status to verify.'\n- agentctl status: calls rack.health() and prints result\n- Idempotent: re-running init on existing install is safe\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/cli/__init__.py (new)\n- ~/dev/src/agent_datacenter/agent_datacenter/cli/agentctl.py (new)\n- ~/dev/src/agent_datacenter/pyproject.toml ([project.scripts] entry)\n\nDesign rules:\n- oop-first: init logic in agent_datacenter.rack or agent_datacenter.skeleton; cli is thin wrapper\n- no-sqlite: init creates no SQLite databases\n- docs-in-code: agentctl --help output is the documentation\n\nScope boundary:\nIN: agentctl init, agentctl status, datacenter_logs/ hierarchy creation, Docker Postgres fallback\nOUT: device registration (devices self-register on startup); SWADL/Igor-specific setup (separate)\n\nTest plan:\n- docker run --rm ubuntu:22.04 pip install -e /path/to/agent_datacenter && agentctl init exits 0\n- After init: agentctl status shows skeleton online\n- Re-running agentctl init on existing install exits 0, no duplicate processes",
+    "completed_at": "2026-04-27T22:13:03.360370+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8f0a79b0-2758-4afd-9854-6177801eb621",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

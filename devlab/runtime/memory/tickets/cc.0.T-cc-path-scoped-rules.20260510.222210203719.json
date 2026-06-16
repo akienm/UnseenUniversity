@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-path-scoped-rules.20260510.222210203719",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-path-scoped-rules"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:10.203719",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-session-hygiene-2026-05-10"
+    ],
+    "tickets": [
+      "T-cc-path-scoped-rules"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-path-scoped-rules",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "CC"
+    ],
+    "title": "CLOSED: Move Igor-specific CC rules to path-scoped .claude/rules/igor/ directory",
+    "result": ".claude/rules/cognition.md + memory.md created in TheIgors — HIGH-inertia files, key invariants, in-flight primitives load when editing those subsystems; root CLAUDE.md stays at 90 lines (6705f485)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T22:26:52.143840+00:00",
+    "created_at": "2026-05-10T22:22:10.203719+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-session-hygiene-2026-05-10",
+    "description": "Extract Igor-specific rules from CLAUDE.md/global CC settings into path-scoped files under `.claude/rules/`. Path-scoped rules load only when files matching the path pattern are edited. Goal: reduce per-session context load for non-Igor work. Identify rule sections that only apply when working in `~/TheIgors/` paths, extract to `.claude/rules/igor/*.md`. Move only — no content changes. CLAUDE.md stays under 200 lines after extraction.\n\n**Affected files:** `/home/akien/.claude/CLAUDE.md` or user settings (rules extracted), `.claude/rules/igor/*.md` (new)\n**Design rules:** move only, no rule content changes; verify rules still load for Igor work; verify they don't load for agent_datacenter-only work\n**Scope boundary:** IN — rule extraction and path-scoping, verification. OUT — no new rules, no content changes.\n**Test plan:** .claude/rules/igor/ rules appear in CC context when editing TheIgors file; absent when editing agent_datacenter file; CLAUDE.md < 200 lines after",
+    "completed_at": "2026-05-10T22:28:19.422354+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e8bc091c-e3c0-44e3-9b7c-1f0f2dc4f529",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

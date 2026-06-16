@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-audit-prompts-human-reviewed.20260420.184457000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-prompts-human-reviewed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:57",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-prompts-human-reviewed",
+      "T-extract-prompt-zero-tolerance",
+      "T-three-pass-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-prompts-human-reviewed",
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Governance",
+      "Policy"
+    ],
+    "title": "Human review of Gemini + Opus audit prompts before kickoff — no silent model-of-the-audit",
+    "result": "Akien reviewed + edited pass1_gemini_prompt.md + pass2_opus_subagent_prompt.md. Edits shipped in 811718cf. Review gate satisfied. Pass 3 disposition still pending — Akien to decide whether it needs a separate prompt file or is manual synthesis.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-20T20:19:30.952650+00:00",
+    "created_at": "2026-04-20T18:44:57Z",
+    "related_to": null,
+    "description": "Akien 2026-04-19: 'I wanna read the prompt for each of them before we press go.' Policy: the prompts that shape Pass 1 (Gemini) and Pass 2 (Opus) of the three-pass audit are themselves load-bearing — they decide what gets found and how it's framed. Akien reads and approves each prompt before the corresponding pass runs. No pass kicks without explicit green light.\n\n## Scope\n- CC drafts Pass-1 prompt (Gemini breadth, multi-persona auditor, biomimicry lens, no skip-rules)\n- CC drafts Pass-2 prompt template (used for each parallel subagent — there will be 4-8, one per concern category)\n- Both prompts go into lab/design_docs/audit_2026/ as markdown files so they're versioned in git\n- Akien reads, edits, approves\n- Only then does kickoff happen\n- Pass-3 prompt is trivially different (me synthesizing, no external call); Akien still reviews the synthesis framing\n\n## Why\nPrompts are the shape of the lens. A prompt that says 'skip truisms' (see T-extract-prompt-zero-tolerance) produces systematically zero output. A prompt that under-specifies the biomimicry lens produces generic code-review output. We need Akien's eyes on the prompts because the prompts are the audit's model of what-matters.\n\n## Acceptance\n- lab/design_docs/audit_2026/pass1_gemini_prompt.md exists with CC draft, Akien edits\n- lab/design_docs/audit_2026/pass2_opus_subagent_prompt.md exists, approved\n- Audit kickoff commands reference the approved prompts by path\n- No kickoff before explicit approval ('press go')\n\n## Related\n- T-three-pass-audit (parent; timing = end-of-sprint per 2026-04-19 interview)\n\n## Provenance\nAkien 2026-04-19 interview.",
+    "completed_at": "2026-04-20T21:27:47.836436+00:00",
+    "github_issue": 484,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a79c78cb-092b-40b4-aa02-beaa334808b7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

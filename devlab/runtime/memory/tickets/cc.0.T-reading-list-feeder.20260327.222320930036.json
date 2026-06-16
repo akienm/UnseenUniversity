@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-reading-list-feeder.20260327.222320930036",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-list-feeder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-27T22:23:20.930036",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-list-feeder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-list-feeder",
+    "title": "reading-list-feeder",
+    "result": "feed_reading_list() added to learner.py. PROC_READING_FEEDER seeded (hourly). Live test: 20 items fed, drain launched, igor_identity_master already processing.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Add feed_reading_list() tool: reads reading_list by encoding_arousal DESC, feeds top N into learn_queue.json, starts drain runner if idle. Seed PROC_READING_FEEDER habit (hourly).",
+    "completed_at": "2026-03-27T22:23:20.930036+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b3919711-1757-4a95-a34b-4257213769d2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

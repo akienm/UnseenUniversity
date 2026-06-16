@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-psych-monitoring.20260510.165729281870",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-psych-monitoring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T16:57:29.281870",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reasoning-inspection-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-psych-monitoring"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-psych-monitoring",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Observability",
+      "Psychology"
+    ],
+    "title": "Longitudinal psychological state tracking for Igor via NE indicators",
+    "result": "JSONL psych log in coa.py _ne_worker; read_psych_log() utility; valence+arousal+notes per NE run",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-10T16:57:29.281870+00:00",
+    "related_to": null,
+    "decision_id": "D-reasoning-inspection-2026-05-10",
+    "description": "Igor's NE already tracks valence. Extend this to a longitudinal psychological state record that captures valence, uncertainty, cognitive_load, and coherence at each NE run, stored with timestamps in palace or a dedicated DB table. This creates a queryable history — 'how has Igor's valence trended over the last week?' — and feeds into the reasoning inspection audit's interview pass.\n\nWatching Igor's psychological state over time ('as we go along') is the longitudinal health signal that point-in-time inspection can't surface.\n\n**Affected files:** wild_igor/igor/cognition/narrative_engine.py, wild_igor/igor/cognition/coa.py, palace table or adc.palace insert, possibly a new igor_psych_log table\n**Design rules:** theigors/rules/database (Postgres-only); theigors/rules/memory\n**Scope boundary:** In scope: capture 4 indicators per NE run, store with timestamp, basic query interface (last N days trend). Out of scope: visualization/dashboard (separate ticket), automated alerting on psych degradation.\n**Test plan:** NE run produces psych_state record; records accumulate over time; trend query returns correct time-series; existing NE tests still pass.",
+    "completed_at": "2026-05-10T17:26:05.864835+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "feab6699-febf-4dd0-baf8-fc3f3b8090af",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

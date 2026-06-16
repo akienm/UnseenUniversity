@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-ticket-schema-decision-id-and-gate.20260420.174656945249",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-schema-decision-id-and-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T17:46:56.945249",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-ticket-schema-decision-id-and-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-schema-decision-id-and-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Schema"
+    ],
+    "title": "Ticket schema: add decision_id + gate fields",
+    "result": "cc_queue.py: added decision_id + gate default-null keys on add; list filters gated by default, --gated / --by-decision flags; verbs gate/ungate/set-decision. d93c71e4.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-04-20T17:45:13.698230+00:00",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Two additive fields on every ticket:\n\n- `decision_id` (string or null): parent /decided decision that spawned this ticket. Enables two-way navigation (ticket → decision + decision → spawned_tickets).\n- `gate` (string or null): 'come back to' precondition, e.g. 'after productization'. Default queue selectors (cc_queue.py list, /sprint next) filter out gated tickets. Decision rollup un-gates when its milestone closes.\n\n## Changes\n- Update cc_queue.py:\n  - Accept both new fields on add\n  - `list` filters out `gate != null` by default; `--gated` shows them\n  - New verb: `ungate <id>` sets gate=null with audit note\n  - New verb: `gate <id> <reason>`\n- Optionally: a migration pass over existing queue.json to add null fields (additive, safe).\n\n## Not in scope\n- Decision rollup (un-gating on milestone close) — separate ticket.\n- /review enforcement — separate ticket.",
+    "completed_at": "2026-04-20T17:46:56.945249+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "426c4b3e-5cfd-4036-8650-8e724a9c345d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-observable.20260529.020612488034",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-observable"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T02:06:12.488034",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "none"
+    ],
+    "tickets": [
+      "T-granny-observable",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-observable",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Observability"
+    ],
+    "title": "Granny MCP shim + channel fix for observability",
+    "result": "GrannyShim added with 4 MCP tools; channel posts now human-readable via unseen_university.channel; deprecated TheIgors path removed; 10 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-29T02:06:12.488034+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "none",
+    "description": "Granny has no MCP shim and uses a deprecated channel path. Fix both: (1) add devices/granny/shim.py exposing route_ticket, intake_ticket, edge_weights, health via MCP; (2) replace _post_to_channel with unseen_university.channel.post_to_channel + human-readable messages instead of GRANNY_ROUTE:T-xxx codes.\n\n**Affected files:** devices/granny/shim.py (new), devices/granny/device.py (channel fix)\n**Design rules:** none apply\n**Scope boundary:** IN — shim with 4 tools + channel message fix; OUT — no routing logic changes\n**Test plan:** tests/test_granny_shim.py: shim self_test passes; intake_ticket returns AuditResult shape; channel post uses human-readable message format",
+    "completed_at": "2026-05-29T02:08:38.526947+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-29T02:06:12.488075+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7a018bd2-c0f9-44e9-87f6-fa4ae6d74fa6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

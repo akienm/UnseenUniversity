@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-document-bus-shim-model.20260530.183901166494",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-document-bus-shim-model"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T18:39:01.166494",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-document-bus-shim-model"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-document-bus-shim-model",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform"
+    ],
+    "title": "Document bus+shim interaction in CLAUDE.md and TheoryOfOperation",
+    "result": "Fixed envelope field names in ToO §1.3; added IDLE model + request/response walkthrough; added CLAUDE.md bus+shim section so CC sessions can't mistake RPC as missing",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.9,
+    "claimed_at": "2026-05-30T23:36:57.481728+00:00",
+    "created_at": "2026-05-30T18:39:01.166494+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "CLAUDE.md and TheoryOfOperation §1.3 describe the bus as pub/sub but do not make clear that shims own IDLE and that request/response is already first-class. This caused a misdiagnosis of 'agent-to-agent RPC' as a gap when it already works. CC sessions reading CLAUDE.md at startup need to understand: shims handle IDLE interrupts; agents don't poll; request/response is built-in via reply_to + correlation ID convention; the bus is [REDACTED-CREDENTIAL].\n\nAlso add a brief 'what the rack already gives you for free' section to CLAUDE.md so future design conversations start from a correct baseline.\n\n**Affected files:** CLAUDE.md, docs/TheoryOfOperation.md (§1.3 Bus)\n**Design rules:** CLAUDE.md is the session-start orientation — architecture facts belong here\n**Scope boundary:** IN — bus+shim IDLE model; request/response pattern; what the rack gives for free; OUT — new architecture, code changes\n**Completion criteria:** CLAUDE.md contains a clear description of shim-owns-IDLE and request/response; TheoryOfOperation §1.3 updated; a CC session reading both could not mistake RPC as a missing capability",
+    "completed_at": "2026-05-31T14:17:23.686610+00:00",
+    "deposited_at": "2026-05-30T12:40:00.994305",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:36:57.481728+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T18:39:01.344941+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bf5fe41d-565f-47dc-b109-5923548831f5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

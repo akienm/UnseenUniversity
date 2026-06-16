@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-experiment-primitive-outcome-feedback.20260415.162418522542",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-primitive-outcome-feedback"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T16:24:18.522542",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-primitive",
+      "T-experiment-primitive-outcome-feedback"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-primitive-outcome-feedback",
+    "body": "Sub-slice of T-experiment-primitive (#456). Builds on T-experiment-primitive-schema (shipped 64e1d472) and T-experiment-primitive-scheduler (shipped 5912a73d).\n\n## Scope (MVP)\n\nGiven an Experiment in OBSERVED state with an Observation, generate an Update and apply it. The Update is the bridge from 'I learned something' to 'my engrams reflect what I learned'.\n\n- New module: `wild_igor/igor/cognition/experiment_outcome.py`\n- `apply_outcome(cortex, experiment) -> Update` — derive update from observation, apply effects, transition experiment to UPDATED\n- Hebbian trail edge strengthening: on MATCH, bump the (hypothesis_source → probe_target) edge in interpretive_edges (small delta, e.g. +0.05)\n- Memory accretion: deposit an EPISODIC memory tagged with the experiment_id, capturing what was learned\n- Inhibitor weight delta: on MISMATCH from a 'tool_call' probe, nudge the cost/risk inhibitor for that tool slightly upward\n- Goal state transition: if hypothesis carried `goal_id` in cp_constraints, advance/block goal state based on outcome\n- Reason field is required (CP3): generated as a human-readable summary of what the observation showed and what changed\n\n## Wiring\n\nThe scheduler currently leaves OBSERVED experiments in the queue. Add an outcome-feedback pass that:\n  1. Pulls the next OBSERVED experiment\n  2. Calls apply_outcome()\n  3. Writes UPDATED back to the experiment_queue row\n\nThis pass is separate from tick() — it can run in a different mode (e.g. SLEEP consolidation, or batch on idle). The scheduler only does observation; this module does learning.\n\n## CP grounding\n\n- **CP2** — every outcome (MATCH/MISMATCH/PARTIAL/INCONCLUSIVE) produces an Update. Failure is learning, mandatory.\n- **CP3** — Update.reason is required and explains why each effect was applied.\n- **CP6** — engram changes only flow through the Update layer. Direct cortex mutation from observation handlers is forbidden.\n\n## Out of scope\n\n- Actually deciding whether the new edge weight is correct (that's a meta-experiment problem)\n- Cross-experiment update merging (later)\n- Negative-outcome inhibitor adaptation curves (separate ticket)\n\n## Tests\n\n- MATCH outcome → trail_edge_changes populated, Update.reason mentions strengthening\n- MISMATCH from tool_call → inhibitor_weight_deltas populated\n- INCONCLUSIVE outcome → memory_accretions populated (we still learned 'this didn't help')\n- goal_id in cp_constraints + MATCH → goal_state_transitions populated\n- apply_outcome on already-UPDATED experiment raises ValueError (CP3 lifecycle guard)\n- Persistence: experiment_queue row reflects UPDATED status after apply_outcome\n- TWM push of UPDATED experiment fires with cp1_provisional=False (now committed)",
+    "deps": [
+      "T-experiment-primitive-scheduler"
+    ],
+    "size": "M",
+    "tags": [
+      "epic-child",
+      "experiment-primitive",
+      "cognition",
+      "feedback",
+      "cp-axioms",
+      "hebbian"
+    ],
+    "title": "Experiment primitive: outcome → engram feedback (sub-slice of #456)",
+    "result": "derive_update + apply_outcome + feedback_tick. Hebbian edge strengthening on MATCH, tool inhibitor bumps on tool_call MISMATCH, goal state transitions, EPISODIC memory accretion every outcome. 22 tests, 2306 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T16:16:33.085104+00:00",
+    "related_to": "T-experiment-primitive",
+    "completed_at": "2026-04-15T16:24:18.522542+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

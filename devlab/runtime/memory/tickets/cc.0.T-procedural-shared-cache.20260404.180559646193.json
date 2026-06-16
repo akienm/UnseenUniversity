@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-procedural-shared-cache.20260404.180559646193",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-procedural-shared-cache"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:05:59.646193",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-procedural-shared-cache"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-procedural-shared-cache",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Database"
+    ],
+    "title": "N+1 PROCEDURAL scans: 30s TTL shared cache across push sources",
+    "result": "Added get_cached_procedural(cortex) + invalidate_procedural_cache() at module level in push_sources.py. All 4 callers (HabitCandidateSource, ResourceMonitorSource, SelfObservationSource, CuriositySource) now share one PROCEDURAL scan per 30s instead of 4+ independent scans per minute. Cache uses time.monotonic() TTL, refreshes automatically on expiry, and can be force-invalidated on writes.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T18:04:42.362951+00:00",
+    "related_to": null,
+    "description": "HabitCandidateSource, ResourceMonitorSource, SelfObservationSource, and CuriositySource all independently call cortex.get_by_type(PROCEDURAL) every 60-600s — 4+ full table scans per minute with no shared cache. At 10k+ memories this creates lock contention. Fix: add a module-level _procedural_cache dict in push_sources.py with TTL=30s, fetched once per loop cycle and shared by all sources. Invalidate on write. Performance finding from deep-audit Panels 1+6.",
+    "completed_at": "2026-04-04T18:05:59.646193+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1fd37425-25d0-451c-9bc8-abd086d1e32e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

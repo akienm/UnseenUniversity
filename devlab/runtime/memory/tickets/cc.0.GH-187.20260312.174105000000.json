@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.GH-187.20260312.174105000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-187"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-12T17:41:05",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-187",
+      "T-uc-gmail-google"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-187",
+    "gate": "requires Gmail/Google identity (T-uc-gmail-google) to land first",
+    "title": "feat: Igor own GitHub identity — separate PAT + dual-identity in github.py",
+    "result": "cancelled — Igor GitHub identity deferred indefinitely; not on critical path",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 3,
+    "created_at": "2026-03-12T17:41:05Z",
+    "description": "## Imported from GH#187 (created 2026-03-12, open)\n\nIgor acts as himself on GitHub — files issues, comments, closes tickets, self-assigns — with his own account rather than Akien's. Clean audit trail: Igor's work shows as Igor's.\n\nSteps:\n1. Create Igor's GitHub account (Akien does this) — suggested username `theigorsigor`, verify via theigorsigor@gmail.com, add as collaborator with Write access.\n2. Generate Igor's PAT (Akien does this) — scopes: repo (issues, PRs, comments). Add to `~/.TheIgors/igor_wild_0001/.env`: `IGOR_GITHUB_TOKEN=<pat>`.\n3. Update tools/github.py — add `_igor_headers()` alongside existing `_headers()` using IGOR_GITHUB_TOKEN. Igor-initiated actions (create_issue, comment, close, self-assign) use Igor's token. Akien-scoped actions keep GITHUB_TOKEN. Fallback: if IGOR_GITHUB_TOKEN unset, fall back to GITHUB_TOKEN with a warning.\n4. Seed identity habit `FACTUAL_IGOR_GITHUB`: username, how to self-assign, when to comment vs. stay quiet.\n\n**Affected files:** wild_igor/igor/tools/github.py (add _igor_headers + dual-identity routing); ~/.TheIgors/Igor-wild-0001/.env (IGOR_GITHUB_TOKEN — Akien adds out of band); a new identity-seed file (lab/claudecode/seed_igor_github_identity.py or similar); tests/test_github_dual_identity.py.\n\n**Design rules:** no-secrets-in-repo (PAT lives in .env); docs-in-code; test-plan-or-why-not.\n\n**Scope boundary:** IN — dual-identity in github.py + identity habit seed + fallback when token unset. OUT — Step 1 (Akien creates account); Step 2 (Akien generates PAT) — those are Akien-tasks, ticket waits on them.\n\n**Test plan:** tests/test_github_dual_identity.py — assert _igor_headers uses IGOR_GITHUB_TOKEN when set; falls back to _headers with warning when unset; create_issue routed through Igor's token in Igor-initiated path. Smoke test: file an issue with Igor's token and verify GH attribution (manual, gated on Steps 1+2 done).",
+    "completed_at": "2026-06-05T18:24:22.768497+00:00",
+    "github_issue": 187,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "76574888-356f-4b04-94b0-b974026b6a45",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

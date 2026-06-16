@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-cortex-search-request.20260325.175633083145",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cortex-search-request"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:56:33.083145",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cortex-search-request"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cortex-search-request",
+    "body": "cortex.py (MEDIUM inertia — design pre-approved, refactor only, no behaviour change).\n\nsearch() currently has 3 depth tiers + branching on memory_type + score weighting in one method. D233 will add spreading_activation scores on top. Abstract now before that lands.\n\nCHANGE: introduce SearchRequest dataclass with fields: query, depth (shallow/medium/deep), seed_nodes, memory_types, threshold. search() accepts SearchRequest. All existing callers updated to construct SearchRequest inline.\n\nSCOPE: cortex.py only. No changes to callers beyond SearchRequest construction. No behaviour change — identical results before and after.\n\nTESTS: existing cortex tests must still pass. Add one test confirming SearchRequest with explicit depth=deep returns deeper results than depth=shallow.\n\nFORENSIC LOGGING: none needed — pure refactor.\n\nNOTE: D233 (T-spreading-activation-d233) should not start until this is merged.",
+    "role": "worker",
+    "size": "S",
+    "title": "SearchRequest dataclass for cortex.search() — before D233 lands",
+    "result": "SearchRequest dataclass introduced for cortex.search(); accepts both legacy string and new SearchRequest interface; 8 new tests verify backwards compatibility and depth parameter preservation; all 411 tests passing",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-25T17:53:08.536934+00:00",
+    "completed_at": "2026-03-25T17:56:33.083145+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

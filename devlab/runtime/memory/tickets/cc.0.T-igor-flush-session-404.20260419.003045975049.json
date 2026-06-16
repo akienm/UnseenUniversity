@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-igor-flush-session-404.20260419.003045975049",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-flush-session-404"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T00:30:45.975049",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-flush-session-404",
+      "T-uc-channel-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-flush-session-404",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Operations"
+    ],
+    "title": "cc_queue.py flush_session endpoint returns 404",
+    "result": "Migrated flush_session + flush_decision from defunct /api/cc_notebook (removed in web-UI redesign 02ce529d) to the active /api/cc_send endpoint. Payload now a plain channel message with [FLUSH ...] prefix for parseable recognition. Verified live. Commit acba41eb.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T00:28:38.404613+00:00",
+    "related_to": null,
+    "description": "Observed twice during session 2026-04-18b when /savestateauto ran `cc_queue.py flush_session <session_id> <text>`.\n\n## Symptom\n```\n  [Igor flush failed — Igor not running? HTTP Error 404: Not Found]\n  (session logged locally only)\n```\n\nIgor IS running (other channel posts succeed). So it's not 'Igor not running' — it's that the endpoint doesn't exist on the live server (or moved).\n\n## Impact\n- Sessions are not being flushed to Igor's memory\n- CC's working-session summary isn't reaching Igor's graph\n- Local logging still works, so nothing is lost — but the cross-agent handoff path is broken\n\n## First steps\n1. Read lab/claudecode/cc_queue.py to find what URL flush_session hits\n2. Check the utility closet / Igor web server for matching route\n3. Likely: endpoint was renamed or moved during a recent UC refactor (e.g. T-uc-channel-migration era) and cc_queue.py wasn't updated\n4. Fix is probably one-line — update the URL in cc_queue.py, or restore the endpoint on the server side if it was dropped\n\n## Related\n- Several recent utility-closet refactors touched comms/routing — any of those may have dropped this endpoint",
+    "completed_at": "2026-04-19T00:30:45.975049+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "51456406-dbb0-43ca-85e9-78d6e96f9ae8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-inhibition-layer-infra.20260326.195344414808",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inhibition-layer-infra"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-26T19:53:44.414808",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inhibition-layer-infra"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inhibition-layer-infra",
+    "size": "L",
+    "tags": [
+      "engram",
+      "inhibition",
+      "basket",
+      "cognition"
+    ],
+    "title": "Inhibition layer infrastructure",
+    "result": "inhibition_chain.py with TWMCheckNode (live) + 3 stub gates; basket threaded through code_ref dispatch in main.py; 12 tests pass",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Build inhibition layer between BG selection and tool execution. Steps: (1) verify basket form in existing code; (2) cognition/inhibition_chain.py — InhibitionChain DAG with TWM check (temporal-aware) + inference/estimate/action-gate stubs, each returns (inhibited, reason); (3) basal_ganglia.py MEDIUM — invoke chain after selection, inhibition writes reason to basket; (4) main.py MEDIUM — thread basket through execution, attach basket to resulting memory metadata as provenance. Tests: tests/test_inhibition_chain.py. Logging: inhibition decisions to cognition.log. Out of scope: memory/models.py, BG scoring, tool registry, brainstem/. First test case: PROC_WHAT_TIME. Decisions: D246-D249. Size: L.",
+    "completed_at": "2026-03-26T19:53:44.414808+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5d34eaef-cda6-4726-bb9b-f0d005b460fe",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

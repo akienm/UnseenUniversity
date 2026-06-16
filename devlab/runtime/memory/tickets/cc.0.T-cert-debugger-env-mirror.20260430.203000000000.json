@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cert-debugger-env-mirror.20260430.203000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cert-debugger-env-mirror"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T20:30:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cert-debugger-env-mirror"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cert-debugger-env-mirror",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "cert",
+      "pe_chain",
+      "test-rig",
+      "diagnostic"
+    ],
+    "title": "Cert debugger harness must mirror Igor's runtime env — silent 7B-vs-32B routing detour",
+    "result": "load_igor_env_into_environ() helper added to env_sync.py; pe_chain_debugger.start() invokes it on entry; _call_tier2 logs routing decision (cloud vs local + model name) at INFO. 7 new tests, 173 pe_chain/env_sync/debugger tests pass. Standalone harnesses now mirror Igor's autonomous routing.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": null,
+    "created_at": "2026-04-30T20:30:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Cert walk-02 substitute attempts 5/6/7 (2026-04-30) chased prompt-shape phantoms for hours because /tmp/run_walk_02.py did not set `IGOR_CLOUD_PROGRAMMING=true` in os.environ before calling pe_chain. Without that var, `_call_tier2` routes through local Ollama (qwen2.5:7b) instead of cloud OR (qwen-2.5-coder-32b). 7B can't do verbatim copy on the HYPOTHESIZE prompt; 32B can. The harness silently routed to the wrong model — every attempt failed identically because every attempt was hitting 7B. Igor's real pe_chain runs hit 32B (cfg sets the var via env_sync); the test rig diverged.\n\nFix: cert debugger / pe_chain_debugger usage from a fresh Python process should load Igor's switches.cfg + credentials.cfg before running, so routing matches autonomous behavior. Either:\n- A tiny helper `wild_igor.cli.load_igor_env()` that reads the cfg files into os.environ\n- OR: pe_chain_debugger.start() does the load on first call when running outside Igor's main process\n\nLesson generalizes beyond cert: any standalone tool that imports pe_chain (or cognition modules that route through tier.2) needs the same env shape. A silent route to a different model is one of the worst diagnostic-distorting bugs in the project.\n\n**Affected files:** likely a new `wild_igor/cli/igor_env.py` helper + import in pe_chain_debugger or run_walk_02.py-style scripts.\n**Design rules:** test-plan-or-why-not. Add a logging line at routing time: 'pe_chain routing → model=<name>' at INFO so future divergence is visible in logs.\n**Scope boundary:** IN — env-loading helper + integration with pe_chain_debugger. OUT — restructuring cfg loading; changing _call_tier2 routing logic; building a separate cert framework.\n**Test plan:** unit test asserts the helper loads IGOR_CLOUD_PROGRAMMING from cfg + an integration test that uses pe_chain_debugger and asserts the cloud path is chosen.\n",
+    "completed_at": "2026-05-02T03:21:56.312265+00:00",
+    "github_issue": 571,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1399ceef-21d8-417b-bc11-80209f74431b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

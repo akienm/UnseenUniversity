@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice2-research-orca-profile-yaml.20260501.221136544536",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice2-research-orca-profile-yaml"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:11:36.544536",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice2-research-orca-profile-yaml"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice2-research-orca-profile-yaml",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice2",
+      "Datacenter",
+      "Profile"
+    ],
+    "title": "Add config/profiles/research-orca.yaml — example research-agent profile",
+    "result": "config/profiles/research-orca.yaml shipped: narrow research agent (inference+browser_use, shared channel, no mcp). Broker test verifies postgres excluded even when online. agent_datacenter commit 65aab73.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.65,
+    "claimed_at": "2026-05-01T22:09:51.517086+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Example research-orca profile YAML per § 4.3 of design. Demonstrates a non-igor agent type: inference + browser_use only, no postgres, no discord_bot, joins shared channel only, narrow ACL (inbound from skeleton + cc + igor; outbound to shared + cc). Validates that the broker handles profiles other than igor without hardcoded assumptions. Not on critical path of slice 2 green test — files alongside cc.yaml as parallel deferrable.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/config/profiles/research-orca.yaml (NEW)\n**Design rules:** matches igor.yaml shape; inherits: [] (slice 5 future); design § 4.3 example.\n**Scope boundary:** in — single example YAML. Out — actual research-orca agent code (separate epic), inheritance.\n**Test plan:** Extend tests with a research_orca fixture loading research-orca.yaml; assert allowed_devices == ['inference', 'browser_use'], default_channels == ['shared'], acl.inbound.allow == ['skeleton', 'cc', 'igor'].",
+    "completed_at": "2026-05-01T22:11:36.544536+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5e2c152c-10b9-4278-af77-0b76203d498f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

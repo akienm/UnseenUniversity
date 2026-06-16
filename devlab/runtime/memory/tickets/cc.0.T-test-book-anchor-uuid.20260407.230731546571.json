@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-test-book-anchor-uuid.20260407.230731546571",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-book-anchor-uuid"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T23:07:31.546571",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-book-anchor-uuid"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-book-anchor-uuid",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Fix broken test: test_create_book_anchor_node",
+    "result": "Fixed UUID collision via uuid.uuid4() per test, assert format not exact ID. Both test_create_book_anchor_node and test_create_book_anchor_node_no_author now pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "UUID collision in test fixture — uses fixed UUID that already exists in real DB. Function returns existing ID instead of new one. Use random UUID per-test, assert format not exact value.",
+    "completed_at": "2026-04-07T23:07:31.546571+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bf136cda-19e1-4dc7-bf78-239466baa772",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

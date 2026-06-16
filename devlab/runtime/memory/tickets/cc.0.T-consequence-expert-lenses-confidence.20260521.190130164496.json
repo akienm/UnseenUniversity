@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-expert-lenses-confidence.20260521.190130164496",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-expert-lenses-confidence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T19:01:30.164496",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-expert-lenses-confidence-2026-05-21"
+    ],
+    "tickets": [
+      "T-confidence-schema",
+      "T-consequence-expert-lenses-confidence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-expert-lenses-confidence",
+    "gate": "2026-06-04",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: expert lenses + confidence system adoption",
+    "result": "PARTIAL — 4 expert lenses in EXPERTS.md; implementation tickets (confidence column migration, habit telemetry gate) still pending; no premature breakage from confidence column absence observed yet",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-21T19:01:30.164496+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-expert-lenses-confidence-2026-05-21",
+    "description": "**What changed:** Added 4 expert lenses to EXPERTS.md (Schmidhuber, Shankar, Willison, Cherny) and filed 6 implementation tickets for confidence-everywhere, universal LLM lineage, habit telemetry gate, and skill contract checking.\n\n**Predicted unintended effects:** (1) confidence column migration on clan.memories could slow writes if index is missing; (2) habit telemetry gate could block legitimate habits if skill telemetry has thin data for newer code_ref functions; (3) pe_evaluate returning floats could make the threshold values load-bearing — wrong thresholds mean bad evaluations silently pass; (4) skill contract checker warnings could create noise if existing tooling adds tickets without the full template.\n\n**Signals to watch:** habit write block rate in cc_inbox (should be < 5% of writes after 2 weeks); pe_evaluate confidence distribution in instance.llm_calls (should cluster near 0.1 or 0.9, not all 0.5 which means the evaluator is uncertain about everything); no migration-related slow query alerts.\n\n**Gate condition:** Check by 2026-06-04 or when T-confidence-schema closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": "2026-06-05T15:33:17.972506+00:00",
+    "github_issue": 771,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T19:01:30.164515+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5759e808-fb73-4c85-8b03-cc7c96e4c6cf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

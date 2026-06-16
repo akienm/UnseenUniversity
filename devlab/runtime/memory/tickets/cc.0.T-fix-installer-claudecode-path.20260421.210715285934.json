@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-fix-installer-claudecode-path.20260421.210715285934",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-installer-claudecode-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T21:07:15.285934",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-installer-claudecode-path",
+      "T-fix-skills-sync-rsync-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-installer-claudecode-path",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DevLoop",
+      "Hygiene"
+    ],
+    "title": "Fix claudecode/ → lab/claudecode/ path refs in installer + Igor internals",
+    "result": "Fixed 11 path refs across installer.py + install_igor_linux.sh + 7 wild_igor/igor files. Grep check clean. Same-shape sweep after T-fix-skills-sync-rsync-path.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-21T21:05:38.741527+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Same-shape bug as T-fix-skills-sync-rsync-path: when claudecode/ moved under lab/, multiple files kept old-path references. Sweeping fix.\n\n**Affected files:**\n- wild_igor/setup_assets/installer.py (4 refs: skills_src, seed_dir, mcp_script, uninstall_cc skills_src + docstring comment)\n- lab/claudecode/install_igor_linux.sh (1 ref: SKILLS_SRC)\n- wild_igor/igor/cognition/reading_indexer.py (1 ref: sys.path hack for cc_queue import)\n- wild_igor/igor/tools/reading_tool.py (1 ref: reading_worker.py spawn path)\n- wild_igor/igor/tools/reading_integration.py (1 ref: _INTEGRATOR constant)\n\n**Design rules:** docs-in-code (doesn't apply — simple path constants); test-plan-or-why-not (applies — plan below); others n/a\n\n**Scope boundary:** In: code path constants pointing at `claudecode/` that should be `lab/claudecode/`. Out: docs referencing the old path (separate follow-up), comments in unrelated files, paths.py `self._runtime / \"claudecode\"` (that's runtime dir, intentional).\n\n**Test plan:** `grep -rn '\"claudecode\"' wild_igor/ lab/ | grep -v lab/claudecode | grep -v 'send.*claudecode' | grep -v '_runtime.*claudecode'` should return 0 matches after fix. No new unit tests — these are path constants used at install/runtime; regression coverage comes from the install flow itself.",
+    "completed_at": "2026-04-21T21:07:15.285934+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6f7e509f-acf9-42a1-831d-f88917315471",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

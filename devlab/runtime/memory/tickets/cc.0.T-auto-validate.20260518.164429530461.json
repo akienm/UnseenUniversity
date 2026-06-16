@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-auto-validate.20260518.164429530461",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-auto-validate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530461",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-auto-validate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-auto-validate",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Tickets",
+      "Automation"
+    ],
+    "title": "Auto-close low-risk tickets meeting all safety criteria",
+    "result": "5-criteria auto-validate in _try_auto_validate; 14 unit tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-18T17:33:23.814130+00:00",
+    "created_at": "2026-05-18T16:44:29.530461+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "922 awaiting-validation tickets can't all get human eyes. Low-risk tickets meeting all criteria should auto-close; only risky ones need CC review. Structurally drains the backlog rather than just renaming it.\n\n**Affected files:** agent_datacenter/lab/claudecode/cc_queue.py (add auto-validate check on status transition to awaiting_validation); agent_datacenter/lab/claudecode/github_sync.py (propagate auto-close)\n**Design rules:** all 5 criteria must be met — any failure keeps ticket in awaiting_validation for human review; criteria are conservative by design\n**Scope boundary:** in scope: auto-close when ALL: size S or M, no HIGH-inertia files in diff (check against inertia_map.py or SCOPE_GUARD log), pe_chain commit_result != skipped, test suite passed (from test_result field), zero SCOPE_GUARD trips on this ticket. Out of scope: auto-closing L/XL tickets, retroactive bulk-close of existing 922 backlog (separate pass), changing what CC does to manually close tickets.\n**Test plan:** unit test each criterion independently; integration test that a synthetic ticket meeting all 5 auto-closes; test that a ticket failing any one criterion stays in awaiting_validation.",
+    "completed_at": "2026-05-18T17:34:41.838900+00:00",
+    "github_issue": 747,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e97d18a7-2c0e-4fb6-9740-0c5a87801048",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

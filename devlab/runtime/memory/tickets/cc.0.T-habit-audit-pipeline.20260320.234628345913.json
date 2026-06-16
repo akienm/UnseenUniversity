@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-habit-audit-pipeline.20260320.234628345913",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-audit-pipeline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T23:46:28.345913",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-habit-audit-pipeline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-audit-pipeline",
+    "body": "Many early habits (PROC_READING_DEPOSIT, etc.) were written with a turn-based request-response mental model. D103 (no-turn continuous pipeline) makes some of these semantically wrong — they gate/suppress behaviors that should instead be pipeline events. D104 (The Watcher) also changes how high-salience triggers should work. After D103/D104 implementation lands: audit ALL habits with trigger text, identify those framed as turn-boundary rules, rewrite as pipeline-compatible events. Goal: habits that enable the pipeline, not habits that prevent it from becoming one.",
+    "role": "designer",
+    "size": "L",
+    "title": "Audit + rewrite early habits through D103 pipeline lens",
+    "result": "D178: archived 995 habits (3 pipeline suppressors + 2 dead-trigger + 991 zero-activation BL_*); wired PROC_DIRECTION_AWARE as context_inject/heartbeat; PROC_RESP_COMPLEX → context_inject; 124 active habits remain",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "completed_at": "2026-03-20T23:46:28.345913+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

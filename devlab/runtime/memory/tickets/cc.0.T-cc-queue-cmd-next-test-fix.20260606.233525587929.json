@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-queue-cmd-next-test-fix.20260606.233525587929",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-cmd-next-test-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T23:35:25.587929",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-cmd-next-test-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-queue-cmd-next-test-fix",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Queue"
+    ],
+    "title": "Fix pre-existing test failure: test_cmd_next_marks_ticket_in_progress",
+    "result": "test_cmd_next_marks_ticket_in_progress already passes — 3/3 tests pass; no fix needed; pre-existing failure resolved by prior work",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that the test suite has zero pre-existing failures so new regressions are immediately visible.",
+    "claimed_at": "2026-06-07T00:59:06.506653+00:00",
+    "created_at": "2026-06-06T23:35:25.587929+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "tests/igor/test_cc_queue_dispatch_is_assignment.py::TestCmdNextMarksInProgress::test_cmd_next_marks_ticket_in_progress fails before any of our changes (confirmed by stash-and-run check on 2026-06-06). Not blocking other tests. Needs investigation and fix.\n\n**Affected files:** tests/igor/test_cc_queue_dispatch_is_assignment.py (and possibly lab/claudecode/cc_queue.py)\n**Design rules:** none apply\n**Scope boundary:** Fix this one test. Do not refactor the queue module beyond what the fix requires.\n**Completion criteria:** pytest tests/igor/test_cc_queue_dispatch_is_assignment.py passes with 0 failures.",
+    "completed_at": "2026-06-07T01:16:03.621731+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

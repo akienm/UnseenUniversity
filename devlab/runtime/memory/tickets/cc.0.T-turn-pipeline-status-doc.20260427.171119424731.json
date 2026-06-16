@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-turn-pipeline-status-doc.20260427.171119424731",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-turn-pipeline-status-doc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T17:11:19.424731",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cap-map-followups-2026-04-27"
+    ],
+    "tickets": [
+      "T-retire-legacy-direct-reasoner-path",
+      "T-turn-pipeline-status-doc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-turn-pipeline-status-doc",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DocsHygiene",
+      "Palace",
+      "Cognition"
+    ],
+    "title": "Document turn_pipeline.py completeness as palace subsystem entry",
+    "result": "Added theigors/subsystem_index/turn_pipeline node — status BUILT-BUT-GATED-OFF, references T-retire-legacy-direct-reasoner-path as cutover ticket.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-27T17:10:50.186670+00:00",
+    "related_to": [
+      "T-retire-legacy-direct-reasoner-path"
+    ],
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "description": "cognition/turn_pipeline.py is a 5-stage conductor (cascade → workflow → decision_blob → voice_context → voice production) but is gated off (IGOR_TURN_PIPELINE=false). Status was unclear from outside: built? half-built? abandoned? — making T-retire-legacy-direct-reasoner-path harder to plan.\n\nDONE 2026-04-27: Added palace node theigors/subsystem_index/turn_pipeline. Records: status=BUILT-BUT-GATED-OFF, primary file with docstring, 5-stage pipeline shape, CP grounding, originating tickets, cutover ticket reference (T-retire-legacy-direct-reasoner-path).\n\nAffected files:\n- clan.memory_palace path='theigors/subsystem_index/turn_pipeline' (INSERT).\n\nDesign rules:\n- docs-in-code: palace node points at top-of-file docstring of turn_pipeline.py (already canonical — confirmed thorough docstring exists).\n- postgres-only: ✓.\n- no-new-memory-schemas: ✓.\n- test-plan-or-why-not: verification IS reading the SELECT.\n\nScope boundary:\nIN: subsystem_index node for turn_pipeline.\nOUT: cutting over from legacy (that's T-retire-legacy-direct-reasoner-path, L), modifying turn_pipeline.py, flipping IGOR_TURN_PIPELINE.\n\nTest plan:\n- SELECT from palace returns the new node.\n- Verified 2026-04-27.\n\nFollow-up: T-retire-legacy-direct-reasoner-path now has a clean status anchor.",
+    "completed_at": "2026-04-27T17:11:19.424731+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fad39652-a955-47c7-b78c-132ea7f5972b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

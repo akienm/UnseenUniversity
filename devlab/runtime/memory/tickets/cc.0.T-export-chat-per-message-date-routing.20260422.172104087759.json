@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-export-chat-per-message-date-routing.20260422.172104087759",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-export-chat-per-message-date-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T17:21:04.087759",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cross-day-session-boundary-2026-04-22"
+    ],
+    "tickets": [
+      "T-export-chat-per-message-date-routing",
+      "T-first-msg-of-day-close-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-export-chat-per-message-date-routing",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ExportChat",
+      "BugFix"
+    ],
+    "title": "export_chat.py: route each message to its own day-file (fix cross-day session bloat)",
+    "result": "Per-message date routing + union-of-all-sessions rewrites. Fixed first-line-no-timestamp fallback-to-mtime bug. 16 unit tests. Idempotent by construction. Commit 571c91f6.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-22T17:07:12.473406+00:00",
+    "related_to": null,
+    "decision_id": "D-cross-day-session-boundary-2026-04-22",
+    "description": "lab/claudecode/export_chat.py currently writes one session to one day-file via _date_for_transcript (first-message timestamp, else mtime fallback). Long-lived sessions spanning days dump ALL content into ONE day, and sessions whose first line lacks a timestamp (permission-mode / file-history-snapshot records) fall back to mtime → always route to 'today.' Evidence: session 86b1b97d started 2026-04-18, still active 2026-04-22, entire 4-day content in 2026-04-22.md; 2026-04-18.md is 297MB of likely-duplicated same content from prior --all runs.\n\nAffected files:\n- lab/claudecode/export_chat.py:90 _date_for_transcript (first-line-only logic)\n- lab/claudecode/export_chat.py:107 render (session-level rendering)\n- lab/claudecode/export_chat.py:130 write_out (single-file output)\n\nDesign rules:\n- Chat log files reflect the DAY, not the session lifecycle\n- Idempotent under --all re-runs (running twice produces same content, no duplication)\n- A session can write to N day-files\n\nScope:\n- Partition messages by their OWN timestamp → render per-day blocks\n- For message without timestamp, attach to the previous-timestamped message's day\n- Output path per partition: claude_chat_logs/YYYY-MM-DD.md\n- Idempotency under --all: rebuild each day-file as union of all messages dated that day across all sessions (rewrite, not append-with-separator)\n\nOut of scope (separate tickets if wanted):\n- Historical cleanup of duplicated content in existing day-files (note: 2026-04-18.md at 297MB is likely bloated)\n- The first-msg-of-day prompt (T-first-msg-of-day-close-prompt)\n\nTest plan:\n- Unit: cross-day jsonl fixture (messages spanning 3 days) → verify split across 3 day-files\n- Unit: first-line-without-timestamp fixture → verify fallback scans to next-timestamped line\n- Unit: run render twice on same fixture, verify idempotent output\n- Integration: run --all on real transcript dir, spot-check a long-lived session lands its content in correct days",
+    "completed_at": "2026-04-22T17:21:04.087759+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "19f22902-aeae-4194-b065-ddcbfa07f271",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-ops-log-tree.20260428.002607348790",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-ops-log-tree"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T00:26:07.348790",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-ops-log-tree-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-console-capture",
+      "T-adc-instance-home-migration",
+      "T-adc-ops-log-tree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-ops-log-tree",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "agent_datacenter",
+      "Observability"
+    ],
+    "title": "agent_datacenter: central log tree + AGENT_DATACENTER_HOME env var",
+    "result": "AGENT_DATACENTER_HOME env var, agent_datacenter_home/logs helpers, agentctl init --instance stamps full tree, LoggingControlCenter auto-configures from env, IgorDevice/Shim defaults updated",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-28T00:23:09.996079+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-ops-log-tree-2026-04-27",
+    "description": "Logs are scattered across ~/.TheIgors/. Create a hierarchical ~/.agent_datacenter/logs/<system|comms-channel>/ tree, introduce AGENT_DATACENTER_HOME env var (default ~/.agent_datacenter/, used everywhere), update LoggingControlCenter root to respect it, and update agentctl init to stamp the full directory structure idempotently.\n\n**Affected files:** agent_datacenter/logcontrol/control_center.py, agent_datacenter/cli/agentctl.py, config/device_config.py (add AGENT_DATACENTER_HOME constant), devices/igor/device.py + shim.py (update default log paths)\n**Design rules:** oop-first (LoggingControlCenter already a class, keep shape), test-plan-or-why-not applies\n**Scope boundary:** IN: create dirs, wire LoggingControlCenter, env var, agentctl stamps tree. OUT: moving existing log files (that's T-adc-instance-home-migration), console capture (T-adc-console-capture)\n**Test plan:** agentctl init is idempotent (run twice, no error, correct dirs exist); LoggingControlCenter writes to new root when AGENT_DATACENTER_HOME is set; AGENT_DATACENTER_HOME=/ test shows correct resolution",
+    "completed_at": "2026-04-28T00:26:07.348790+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d2531751-9fd7-45f8-b755-ae7f4a8eb1fc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

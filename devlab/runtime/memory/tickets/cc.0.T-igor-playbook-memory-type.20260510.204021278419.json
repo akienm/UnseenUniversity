@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-playbook-memory-type.20260510.204021278419",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-playbook-memory-type"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T20:40:21.278419",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dreaming-patterns-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-playbook-memory-type"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-playbook-memory-type",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Cognition"
+    ],
+    "title": "CLOSED: Igor playbook memory type",
+    "result": "playbook.py CRUD + NE injection + dreaming playbook proposals; 12 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-05-10T23:32:16.237834+00:00",
+    "created_at": "2026-05-10T20:40:21.278419+00:00",
+    "related_to": null,
+    "decision_id": "D-dreaming-patterns-2026-05-10",
+    "description": "Add PLAYBOOK as a new memory_type value in clan.memories. A playbook is a structured text artifact: conditions (when to apply) + heuristics (what to do). Dreaming proposes playbooks via instance.proposals queue; a new `playbook.py` module (direct psycopg2, same pattern as watch_problems.py) provides add_playbook() / read_active_playbooks() / archive_playbook(). NE loads active playbooks at prompt construction time as a context block (injected by narrative_engine.py, budget-aware).\n\n**Affected files:** `wild_igor/igor/cognition/playbook.py` (new), `wild_igor/igor/cognition/narrative_engine.py` (playbook context block injection), `wild_igor/igor/cognition/dreaming.py` (write playbooks)\n**Design rules:** no-sqlite; direct psycopg2 (no cortex.py touch — avoids HIGH-inertia); never hard-delete (use active=false); NE prompt must stay within token budget (cap playbook block at 500 tokens); source field records which dreaming run created each playbook\n**Scope boundary:** IN — playbook.py CRUD, NE injection, dreaming proposal path (via instance.proposals — not direct clan.memories writes). OUT — no cortex.py integration (future ticket), no playbook UI, no manual playbook creation tool yet.\n**Test plan:** add_playbook() inserts row; read_active_playbooks() returns only active rows; archive_playbook() sets active=false; NE prompt construction includes playbook block when active playbooks exist",
+    "completed_at": "2026-05-10T23:44:28.685907+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "357a8a11-fd15-4b69-9234-1c7196789dad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

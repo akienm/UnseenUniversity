@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-json-parse-recovery.20260529.122331791258",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-json-parse-recovery"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T12:23:31.791258",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-json-parse-recovery",
+      "T-igor-upstream-reply-parse"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-json-parse-recovery",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "NE: defensive JSON parser — don't skip cycle on bad LLM response",
+    "result": "_clean_llm_response strips fences/<think>; _call_inference retries once then returns fallback result; WARNING log on failure; 10 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "created_at": "2026-05-29T12:23:31.791258+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When the NE calls the upstream LLM and gets a malformed/non-JSON response, _call_inference() returns None and the NE skips the cycle silently (narrative_engine.py:1089-1091). Root cause confirmed in T-igor-upstream-reply-parse investigation.\n\nThe failure path:\n  1. _gw().call('ne', prompt, ctx) returns non-JSON text\n  2. _parse_ne_json() at line 1082 returns None\n  3. Cycle logs NE_FAIL anomaly but skips with no recovery\n  4. Igor has no goal output for this cycle and loops\n\nFix: (1) Add a retry with stripped markdown/think-block cleanup on first JSON parse fail. (2) If still None after cleanup, emit a minimal fallback NE result (impulse to re-examine TWM) rather than returning None. (3) Log the raw response (first 500 chars) at WARNING level so the log-error audit step can surface it.\n\n**Affected files:** devices/igor/cognition/narrative_engine.py (_parse_ne_json, _call_inference)\n**Design rules:** none — cognition is MEDIUM inertia; no HIGH-inertia files touched\n**Scope boundary:** fix the parse-fail path in _call_inference() only. Do not change the prompt format or model routing.\n**Test plan:** unit test: feed _call_inference a mock gateway that returns markdown-wrapped JSON; verify result is parsed not skipped. Feed one that returns pure garbage; verify fallback minimal result is returned.",
+    "completed_at": "2026-05-29T15:09:42.832062+00:00",
+    "github_issue": 804,
+    "required_files": [],
+    "scraps_validated": "2026-05-29T12:23:31.952535+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a31fb27a-3731-446b-bc18-34c420b91221",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

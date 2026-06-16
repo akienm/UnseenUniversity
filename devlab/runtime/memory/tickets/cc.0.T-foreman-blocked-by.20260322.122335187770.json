@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-foreman-blocked-by.20260322.122335187770",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-foreman-blocked-by"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T12:23:35.187770",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-foreman-blocked-by"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-foreman-blocked-by",
+    "body": "launch_next_worker() currently stops if any ticket is in_progress. Extend: also skip tickets with status=blocked. Pick next pending after any blocked/in_progress entries. blocked_by field signals design_prereq, dependency, or platform constraint.",
+    "size": "S",
+    "title": "Worker foreman respects blocked_by — skips blocked, picks next pending",
+    "result": "Implemented by CC session 2026-03-22",
+    "status": "done",
+    "created": "2026-03-22T11:49:20.587965",
+    "priority": 5,
+    "completed_at": "2026-03-22T12:23:35.187770",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

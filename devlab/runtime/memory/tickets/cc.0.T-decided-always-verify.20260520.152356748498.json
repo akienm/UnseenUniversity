@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-decided-always-verify.20260520.152356748498",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decided-always-verify"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-20T15:23:56.748498",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-request-not-claim-2026-05-20",
+      "D-target-difficulty-tiers"
+    ],
+    "tickets": [
+      "T-decided-always-verify"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decided-always-verify",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Skills"
+    ],
+    "title": "/decided skill: always file verification ticket when behavioral hypothesis present",
+    "result": "updated Step 5.5 skip condition + gate logic; S-only+hypothesis batches now get a consequence-check ticket gated on last ticket",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-20T15:23:56.748498+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-request-not-claim-2026-05-20",
+    "description": "The /decided skill's Step 5.5 only generates a consequence-check ticket for M/L/XL batches. But when a design extracts a behavioral hypothesis (Q2: 'what should be observably different') via Step 2.6, the decision has a testable claim that needs a verification gate regardless of ticket size. Yesterday's D-target-difficulty-tiers filed 3 S-size tickets with a clear behavioral hypothesis but no verification ticket — and the end-state was never reached because nobody checked.\n\nFix Step 5.5 in /decided: change the skip condition from 'every ticket in batch is S' to 'every ticket is S AND no behavioral hypothesis was extracted in Step 2.6.' If Q2/Q3 answers are present, always file a verification ticket gated on the last ticket in the batch.\n\n**Affected files:** ~/.claude/skills/decided/ (skill file edit)\n**Design rules:** none apply — this is a process document\n**Scope boundary:** IN: Step 5.5 skip condition update; verification ticket template when hypothesis present. OUT: Step 2.6 itself; consequence ticket content (unchanged)\n**Test plan:** Manual verification — next /decided run with S-only batch + behavioral hypothesis produces a verification ticket; S-only batch with no hypothesis (pure schema change, no behavioral claim) still skips",
+    "completed_at": "2026-05-20T17:00:38.233794+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-20T15:23:56.748517+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "986e496c-ca4e-469d-9a93-4e764dfce955",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

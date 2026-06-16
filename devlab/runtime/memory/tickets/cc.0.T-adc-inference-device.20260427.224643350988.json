@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-adc-inference-device.20260427.224643350988",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-inference-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:46:43.350988",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-3-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-bus-router-comms-uri",
+      "T-adc-inference-comms-unification-test",
+      "T-adc-inference-device",
+      "T-adc-ygm-nudge-pipeline",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-inference-device",
+    "gate": "T-adc-bus-router-comms-uri",
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: inference device — comms:// unification validation target",
+    "result": "InferenceDevice + InferenceShim shipped; openrouter+ollama modes",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-3-2026-04-27",
+    "description": "Implement the inference device. Its primary role is to validate comms:// unification — Igor talking to inference must use the identical call pattern as Igor talking to Claude.\n\nProposed shape:\n- agent_datacenter/devices/inference/device.py:\n  class InferenceDevice(BaseDevice):\n    who_am_i() → {'name': 'inference', 'endpoint': inference_endpoint_url, 'model': current_model}\n    capabilities() → {'inference': True, 'streaming': True, 'comms_unified': True}\n    comms() → {'read_write': True, 'push': False, 'pull': True, 'nudge': False}\n    health() → {'endpoint_reachable': bool, 'latency_ms': float, 'error_rate': float}\n    restart() / halt() → for external endpoints: health recheck + reconnect; shim defines semantics\n    where_and_how() → {'endpoint': url, 'type': 'openrouter'|'local'|'anthropic', 'auth': 'env:OR_API_KEY'}\n- comms:// routing: Router.send('comms://inference') routes to InferenceDevice's IMAP mailbox\n  Igor sends to comms://inference for inference requests — identical to comms://CC.0 for CC messages\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/inference/device.py\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/inference/shim.py\n\nDesign rules:\n- oop-first: InferenceDevice class; shim handles the 'restart = health recheck' semantics for external endpoints\n- no-sqlite: inference state kept in memory only\n\nScope boundary:\nIN: full BaseDevice implementation for inference endpoint; shim with 'restart = reconnect' semantics\nOUT: YGM/Nudge pipeline (T-adc-ygm-nudge-pipeline), comms unification test (T-adc-inference-comms-unification-test)\n\nTest plan:\n- InferenceDevice() instantiates (all abstract methods implemented)\n- health() returns {endpoint_reachable: True/False} without raising on connection error\n- restart() calls shim.restart() which does a health recheck, not a process kill\n- comms://inference resolves to InferenceDevice's mailbox via Router",
+    "completed_at": "2026-04-27T22:46:43.350988+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "81f30938-c110-4246-9b1e-d874f0879347",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

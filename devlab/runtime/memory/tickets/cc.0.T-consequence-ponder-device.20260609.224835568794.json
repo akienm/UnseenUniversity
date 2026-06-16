@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-ponder-device.20260609.224835568794",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-ponder-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:35.568794",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ponder-stibbons-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-ponder-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-ponder-device",
+    "gate": "2026-06-23",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Ponder Stibbons device scaffold",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to verify that the Ponder scaffold did not accidentally assign him capabilities that belong to other devices.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T22:48:35.568794+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-ponder-stibbons-device-2026-06-09",
+    "description": "**What changed:** Ponder Stibbons device scaffolded as human-facing coordinator placeholder.\n**Predicted unintended effects:** Role description in __init__.py may drift from the design conversation intent; future sprints may add capabilities to Ponder that belong to Igor (cognition) or Granny (routing); the 'coordinator' framing may be interpreted as 'owns dispatch'.\n**Signals to watch:** Review Ponder's capabilities() return value; check that no routing or dispatch logic has been added; confirm the docstring still matches the Radar-equivalent role description.\n**Gate condition:** Check by 2026-06-23.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

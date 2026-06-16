@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-goal-adopt-category.20260402.210538593200",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-adopt-category"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T21:05:38.593200",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-adopt-category"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-adopt-category",
+    "size": "S",
+    "title": "Fix goal_adopt TWM category mismatch",
+    "result": "Synced goal_adopt() TWM push and main.py BG context lookup from category='goal' to category='active_goal' — goals now properly discoverable by twm_get_active_goal() and downstream code. Tests passing.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "goal_adopt pushes category='goal' but twm_get_active_goal() queries category='active_goal' — they never match. Fallback to GOAL memory works but is fragile. Fix: sync category names or rename consistently.",
+    "completed_at": "2026-04-02T21:05:38.593200+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f992bf78-24f9-4ecb-aeec-f462178c9a22",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

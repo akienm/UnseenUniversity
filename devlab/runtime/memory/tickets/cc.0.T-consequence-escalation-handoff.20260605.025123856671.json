@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-escalation-handoff.20260605.025123856671",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-escalation-handoff"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T02:51:23.856671",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-escalation-handoff-protocol-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-escalation-handoff",
+      "T-inference-tier-escalation-summary"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-escalation-handoff",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Escalation"
+    ],
+    "title": "Consequence check: escalation handoff protocol",
+    "result": "CLEAR: DickSimnel escalation summaries written to ticket body; inference device logs tier-escalation at INFO; 2-hop ceiling enforced; no cascade observed",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "intention": "I intend that this ticket verifies escalation handoffs reduce re-derivation cost and that no runaway escalation loop is possible.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T02:51:23.856671+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-escalation-handoff-protocol-2026-06-04",
+    "description": "**What changed:** DickSimnel and inference device now produce structured summaries at escalation time.\n**Predicted unintended effects:** DickSimnel summary may be too terse or too verbose. Inference device could cascade if ceiling not enforced. Higher tier may receive inconsistent what-now? responses.\n**Signals to watch:** Escalation INFO logs show summary length. DickSimnel ticket bodies have populated summaries. No cascade beyond 2 hops.\n**Gate condition:** Fires after T-inference-tier-escalation-summary closes.\n\n**Worst-case token spend:**\n  - Per-failure cost: ~2000-5000 tokens per escalation event (summary assembly + higher-tier invocation)\n  - Hard cap: 2-hop ceiling enforced in inference device code (T-inference-tier-escalation-summary)\n  - Blast radius: without ceiling, cheap→expensive→??? could cascade indefinitely; ceiling makes blast radius bounded at 1 extra invocation\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Verify summaries populated and useful; confirm no runaway escalation; annotate outcome and close.\n**Completion criteria:** Outcome annotated (occurred / clear / partial) and ticket closed.",
+    "completed_at": "2026-06-05T04:01:26.940406+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

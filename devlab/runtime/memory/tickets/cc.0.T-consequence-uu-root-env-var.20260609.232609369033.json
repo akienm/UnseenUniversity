@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-uu-root-env-var.20260609.232609369033",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-uu-root-env-var"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T23:26:09.369033",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-root-env-var-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-uu-root-env-var"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-uu-root-env-var",
+    "gate": "2026-06-23",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: UU_ROOT portability across machines",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "intention": "I intend to verify that UU_ROOT auto-detection works correctly and no hardcoded paths regressed.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T23:26:09.369033+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-uu-root-env-var-2026-06-09",
+    "description": "**What changed:** UU_ROOT env var introduced; skill run scripts migrated away from CC_WORKFLOW_TOOLS.\n**Predicted unintended effects:** Auto-detection may return wrong path if package installed in editable mode in unexpected location; CC_WORKFLOW_TOOLS alias may break scripts that set it explicitly to a different path; skill run scripts may have missed CC_WORKFLOW_TOOLS references in edge cases.\n**Signals to watch:** Run grep -r CC_WORKFLOW_TOOLS skills/*/run after ship; run python3 skills/savestate/run midstream test without UU_ROOT set; verify on a second machine or fresh shell.\n**Gate condition:** Check by 2026-06-23.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate and close\n**Completion criteria:** Verify grep clean + savestate runs without env var; annotate outcome.",
+    "completed_at": null,
+    "deposited_at": "2026-06-09T17:28:26.721870",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

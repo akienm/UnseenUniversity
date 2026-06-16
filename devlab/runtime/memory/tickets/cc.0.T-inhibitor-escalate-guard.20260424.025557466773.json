@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-inhibitor-escalate-guard.20260424.025557466773",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inhibitor-escalate-guard"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:55:57.466773",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inhibitor-escalate-guard"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inhibitor-escalate-guard",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Inhibition",
+      "Coherence",
+      "SelfCorrection",
+      "Safety",
+      "Pass2"
+    ],
+    "title": "Per-thread coherence-inhibitor fire counter with N=3 escalate guard",
+    "result": "Shipped in edf2bf1c. Per-thread_id fire counter (N/window, env-tunable). On Nth+ fire: skip ring/TWM auto-correction pushes, emit COHERENCE_INHIBITOR_STUCK to channel (deduped), return reason='stuck_escalated'. Same-lifetime scope intentional — restart clears counter. 6 new tests + 40 inhibitor-related tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-24T02:55:35.195083+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 2 P1.9 (SHIP). response_coherence_inhibitor.check_coherence had no visit-count guard — if an auto-correction emission was ALSO incoherent, the inhibitor would fire on the new response, triggering another correction, triggering another fire. Bounded by TWM TTL (10min) but burns tier.2 budget meanwhile. Added per-thread_id fire counter with N-per-window threshold (env-tunable, defaults N=3 / 600s). On the Nth+ fire, emit COHERENCE_INHIBITOR_STUCK to the channel (deduped) + suppress the ring/TWM auto-correction pushes + return reason='stuck_escalated' so callers can route to human review.\n\n**Affected files:** wild_igor/igor/cognition/response_coherence_inhibitor.py (add counter + helpers + stuck-path branch), tests/test_inhibitor_escalate_guard.py (new).\n**Design rules:** docs-in-code, test-plan-or-why-not.\n**Scope boundary:** IN — fire counter + stuck-path short-circuit + STUCK channel post. OUT — changing COHERENCE_THRESHOLD; adding source-based filtering; persisting fires across process restarts (same-lifetime scope is intentional per ticket).\n**Test plan:** 6 tests — first fire doesn't escalate, escalates at N, per-thread isolation, empty-thread placeholder, full-path stuck return (ring/TWM skipped, channel post fires with STUCK), non-stuck path still writes ring+TWM.",
+    "completed_at": "2026-04-24T02:55:57.466773+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5a408b2d-b488-461e-b2fd-7178db677689",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

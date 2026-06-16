@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-log-rotation-policy.20260609.164426378583",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-log-rotation-policy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:44:26.378583",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-log-rotation-policy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-log-rotation-policy",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Ops",
+      "Reliability"
+    ],
+    "title": "Implement log rotation policy for operational logs",
+    "result": "rotate_logs.py: auto-rotates logs >10MB in ~/.unseen_university/logs/; wired into day-close-audit Step 7; uucompactclaude double-Enter fix incidental",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that operational logs never grow past 10MB between day-close cycles without automated pruning.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:44:26.378583+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Audit found node_registry.log at 16MB and slow_queries.log at 10MB — manually truncated. Need automated rotation (logrotate or tail-based) so logs don't grow unbounded between day-close runs.\n\n**Affected files:** ~/.unseen_university/logs/ (logrotate config or cron) or lab/claudecode/ (rotation script)\n**Design rules:** flat-file rotation only — no new DB dependency\n**Scope boundary:** IN — configure rotation for *.log in ~/.unseen_university/logs/; OUT — log content changes, structured logging migration\n**Completion criteria:** any log >10MB is automatically truncated/rotated; manual intervention not required between day-close runs",
+    "completed_at": "2026-06-09T17:26:55.645399+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

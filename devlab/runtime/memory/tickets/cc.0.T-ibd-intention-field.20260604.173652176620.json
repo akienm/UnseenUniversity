@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ibd-intention-field.20260604.173652176620",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ibd-intention-field"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T17:36:52.176620",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-based-development-2026-06-04"
+    ],
+    "tickets": [
+      "T-ibd-intention-field"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ibd-intention-field",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "IBD"
+    ],
+    "title": "IBD: add intention: field to ticket schema + audit enforcement",
+    "result": "IBD intention: field added to schema, audit-ticket check #1, /ticket and /audit-ticket skills updated",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-06-04T17:36:52.176620+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-intention-based-development-2026-06-04",
+    "description": "Add a required `intention:` string field to the ticket schema so every ticket begins with an 'I intend that...' statement — the root artifact of Intention-Based Development.\n\nShape: add `intention` key to cc_queue.py ticket JSON schema (optional for existing tickets, required for new); update /audit-ticket skill to flag tickets missing it at filing time; update /ticket skill to prompt for it during Step 2.\n\n**Affected files:** $CC_WORKFLOW_TOOLS/cc_queue.py, ~/.claude/skills/audit-ticket/SKILL.md, ~/.claude/skills/ticket/SKILL.md\n**Design rules:** no-sqlite N/A; schema change is flat-file JSON only\n**Scope boundary:** add field + enforcement in audit-ticket and ticket skills; no retroactive backfill of existing tickets\n**Completion criteria:** `python cc_queue.py show T-ibd-intention-field` shows `intention` key populated; filing a new ticket via /sorted without an intention: statement causes /audit-ticket to return FAIL; filing with one returns PASS",
+    "completed_at": "2026-06-04T18:25:44.421337+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8a737d36-cb24-4c85-b51c-d84d618796fe",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

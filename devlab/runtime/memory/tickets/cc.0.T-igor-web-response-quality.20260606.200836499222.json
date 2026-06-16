@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-igor-web-response-quality.20260606.200836499222",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-web-response-quality"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:08:36.499222",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-igor-web-response-quality"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-web-response-quality",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Web",
+      "Observability"
+    ],
+    "title": "Igor web responses garbled 2026-06-06 ~12:38-13:56: investigate via logs",
+    "result": "root cause: thread context injector pulls old channel history; NarrativeEngine responds to injected context not actual message; fix ticket T-web-thread-context-scope filed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-06T20:08:36.499222+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** Web conversation 2026-06-06 shows Igor giving garbled responses — at 12:41:44 Igor responded with 'I read the blog post [about polyamory]' in response to Akien explaining about The Librarian agent. At 13:56:40 response was just 'Good to hear from you. What's next?' after a long silence. Suggests message routing confusion or context bleed between conversation threads.\n\n**Timestamps to investigate:** 12:38:11 (akien hello), 12:38:24 (igor), 12:41:09 (akien librarian), 12:41:44 (igor polyamory non-sequitur), 12:42:43 (akien scifi novel), 12:55:02 (akien no replies seen), 12:56:35 (akien web page plan), 13:34:40 (any thoughts), 13:56:34 (akien hello), 13:56:40 (igor 'what's next')\n\n**Method:** Use logging skill to pull Igor logs at these timestamps. Look for: message routing decisions, what context Igor was using when generating each response, any context bleed from other conversation threads.\n\n**Affected files:** Igor logs at ~/.unseen_university/Igor-wild-0001/ around 2026-06-06 12:38-13:57\n**Design rules:** Diagnose before fixing\n**Scope boundary:** Log investigation and root cause identification only. Deprioritize — do after Granny and DickSimnel work.\n**Completion criteria:** Root cause of garbled responses identified. Noted in ticket. Fix ticket filed if needed.\n\nROOT CAUSE (2026-06-07): web_server.log confirms thread context injector at 12:41:44 sent Igor: 'akien: [Thread context — recent exchanges in this channel:] User: I was once at...' — old channel history (blog-reading content) prepended to Akien's Librarian message. Igor's NarrativeEngine arc at 12:41:26 shows it engaged on the injected context, not the real message. Fix needed: thread context injector must filter to current-session exchanges only, not all recent channel history. 13:56 minimal response appears to be NE brief-response after 22-min silence — separate issue, lower severity.",
+    "completed_at": "2026-06-07T00:38:05.901243+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "53730dd4-fcc3-463e-b4f9-f5f741bdb54c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

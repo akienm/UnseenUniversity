@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-container-shim-network-spec.20260531.023345497537",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-container-shim-network-spec"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T02:33:45.497537",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-container-shim",
+      "T-container-shim-network-spec",
+      "T-murderbot-security-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-container-shim-network-spec",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure",
+      "Security"
+    ],
+    "title": "ContainerShim: pin network isolation model before implementation (bridge vs none + unix socket)",
+    "result": "Pinned --network=none + Unix socket; ValueError on docker.sock mount; TheoryOfOperation §2.3 added",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-31T14:24:24.890780+00:00",
+    "created_at": "2026-05-31T02:33:45.497537+00:00",
+    "created_by": null,
+    "related_to": "T-container-shim",
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "MEDIUM gap found in T-murderbot-security-review.\n\nT-container-shim spec says 'loopback socket to the shim only, no host network' but does not pin the Docker network model. The two plausible interpretations have different security properties:\n\n- '--network=none' + Unix domain socket: container has no TCP stack, only the socket. Strong isolation. The shim and container must share a socket path via a bind mount.\n- Bridge network + port mapping: container gets a network namespace with a gateway IP. Containers on a bridge CAN reach the host via the gateway address. If host services (Postgres, IMAP) bind to 0.0.0.0 they are reachable from bridged containers -- bypassing the shim.\n\nThe current spec is ambiguous. Before T-container-shim implementation begins, this must be pinned. Recommended: --network=none + Unix domain socket for the shim channel. Also: explicitly prohibit /var/run/docker.sock in allowed_mounts in ContainerShim.start() regardless of profile, to prevent escape via Docker API.\n\n**Affected files:** unseen_university/skeleton/container_shim.py (not yet created -- this ticket gates implementation), docs/TheoryOfOperation.md (section 2.3 Security Tiers)\n**Design rules:** BaseDevice/BaseShim contract\n**Scope boundary:** IN -- pin network model to --network=none + unix socket; explicit docker socket deny; update TheoryOfOperation 2.3; OUT -- VM-level isolation, container image registry\n**Completion criteria:** ContainerShim.start() uses --network=none; communicates via Unix socket; raises ValueError if allowed_mounts contains docker.sock; TheoryOfOperation 2.3 states the network model and the why",
+    "completed_at": "2026-05-31T19:10:43.020894+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T02:33:45.497574+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "06080b90-f31c-4ff2-b0e3-148b39f79bf4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

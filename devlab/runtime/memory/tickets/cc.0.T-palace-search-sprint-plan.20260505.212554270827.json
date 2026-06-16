@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-palace-search-sprint-plan.20260505.212554270827",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-search-sprint-plan"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T21:25:54.270827",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-semantic-palace-search-injection-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-log-stop-hook-wire",
+      "T-palace-search-sprint-plan"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-search-sprint-plan",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CC",
+      "Workflow",
+      "palace"
+    ],
+    "title": "CLOSED: Semantic palace search at sprint-ticket plan step",
+    "result": "added memory_search step at Step 4 of sprint-ticket skill before inertia check",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-05T21:23:51.304608+00:00",
+    "related_to": null,
+    "decision_id": "D-semantic-palace-search-injection-2026-05-05",
+    "description": "Sprint-ticket Step 4 (plan review) runs without palace context specific to the ticket. A semantic search against Igor's palace at claim time would surface relevant architectural constraints and prior decisions before any code is written — the signal at decision time, not retrospectively.\n\nProposed shape: add a step to /sprint-ticket Step 4 (after inertia check, before infrastructure brief): call mcp__igor__memory_search(query=<ticket title + description summary>, limit=5), surface results as 'Related palace nodes:' block. If search returns nothing, proceed silently. Changes are additive — existing behavior unchanged when search is empty.\n\n**Affected files:** ~/.claude/skills/sprint-ticket (skill file text edit)\n**Design rules:** none\n**Scope boundary:** one new step in sprint-ticket Step 4 only. Not changing the plan format, not adding new state, not gating on results.\n**Test plan:** manually run sprint-ticket on a ticket tagged 'agent_datacenter'; verify relevant palace nodes (subsystem_index, architecture nodes) appear in the plan step without a manual memory_search call.\n**Pass condition:** during plan review for T-cc-log-stop-hook-wire, palace nodes about CC logging or agent_datacenter appear automatically from the semantic search.",
+    "completed_at": "2026-05-05T21:25:54.270827+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4c051140-d1a1-4d35-951a-9c629eced92f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

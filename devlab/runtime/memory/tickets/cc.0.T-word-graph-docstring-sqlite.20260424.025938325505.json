@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-word-graph-docstring-sqlite.20260424.025938325505",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-word-graph-docstring-sqlite"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:59:38.325505",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-docs-live-in-code",
+      "T-word-graph-docstring-sqlite"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-word-graph-docstring-sqlite",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Docs",
+      "Drift",
+      "Pass2",
+      "DocsLiveInCode"
+    ],
+    "title": "Scrub SQLite language from word_graph docstring",
+    "result": "Shipped in 2aab7616. Module + class docstrings now reflect Postgres (via db_proxy) as the storage; retired the SQLite-backed framing with a note.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.35,
+    "claimed_at": "2026-04-24T02:59:20.099888+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 3 Gap 1 (SHIP). word_graph.py module docstring and class docstring both claim SQLite-backed. Actual code uses PGDatabaseProxy. Per T-docs-live-in-code the docstring is canonical. Fix: rewrite both to say Postgres via db_proxy; drop stale 'Old .json files can be deleted' framing.\n\n**Affected files:** wild_igor/igor/cognition/word_graph.py (docstring only).\n**Design rules:** docs-live-in-code, test-plan-or-why-not (no tests because: docstring-only).\n**Scope boundary:** IN — module + class docstrings. OUT — any code logic; .db path abstraction (separate ticket).",
+    "completed_at": "2026-04-24T02:59:38.325505+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7f61d514-fb3e-46cb-b542-cb3cd0b01ba1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

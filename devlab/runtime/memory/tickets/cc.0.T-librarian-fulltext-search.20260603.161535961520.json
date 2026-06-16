@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-librarian-fulltext-search.20260603.161535961520",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-fulltext-search"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T16:15:35.961520",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-murderbot-feed-metaphor-2026-06-03"
+    ],
+    "tickets": [
+      "T-librarian-fulltext-search",
+      "T-librarian-index-paths"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-fulltext-search",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "Search",
+      "Platform"
+    ],
+    "title": "Librarian: fulltext search tool (files + palace + memories)",
+    "result": "search() tool in search_tools.py — FTS palace+memories+tickets, ripgrep files, source filter, 21 tests — 4d85f878",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "blocked_at": "2026-06-03T17:51:06.786372+00:00",
+    "claimed_at": "2026-06-03T20:23:20.071055+00:00",
+    "created_at": "2026-06-03T16:15:35.961520+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Add a low-inference search(query) tool to the Librarian that answers 'what do I know about X' across all indexed knowledge. Zero inference tokens in the hot path — search returns a compact ranked list; CC reads specific items only if it wants depth. Two backends already in place: (1) Postgres FTS — palace already has a GIN index; recall.py already uses plainto_tsquery; extend to cover clan.memories, adc.palace, and cc_queue tickets in one ranked query. (2) ripgrep for repo/file contents — subprocess rg call, top-N hits as file:line + 1-line snippet.\n\nResult format is critical — compact ranked list, NOT full content. Target ~10-20 tokens per hit:\n  decision: D-murderbot-feed-metaphor-2026-06-03 (0.94) — \"Web UI naming follows Murderbot feeds...\"\n  file: devices/granny/daemon.py:57 (0.88) — \"_ALERTED_IDS_FILE = _GRANNY_HOME...\"\n  palace: unseenuniversity/design/channel (0.81) — \"shared channel = public broadcast...\"\nCC then calls Read/memory_get on specific items for depth. Initiation AND digestion cost both minimal.\n\nAlso support: search(query, source='files'|'palace'|'decisions') to narrow scope.\n\n**Affected files:** devices/librarian/tools/ (new search_tool.py), devices/librarian/mcp_server.py (register tool), tests/librarian/\n**Design rules:** no-sqlite; postgres FTS via plainto_tsquery; ripgrep via subprocess; result truncation enforced — no full-file dumps\n**Scope boundary:** IN: unified search across palace+memories+tickets+files; compact ranked results; source filter. OUT: folder indexer/background sync (T-librarian-index-paths). OUT: git history (T-librarian-index-paths). OUT: semantic/vector search.\n**Completion criteria:** mcp__librarian__search(query=\"murderbot\") returns D-murderbot-feed-metaphor-2026-06-03 in top 3 within 200ms; result payload under 500 tokens for 10 hits; source filter narrows correctly; 6+ tests",
+    "completed_at": "2026-06-03T21:00:54.546622+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T19:42:27.123329+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e07ffca8-b39c-456e-aa51-3ccfd28e63cd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

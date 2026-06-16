@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-cc-send-foreground.20260405.205316674038",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-send-foreground"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T20:53:16.674038",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-send-foreground"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-send-foreground",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "main.py: author==claude-code blocks background routing so CC messages are always foreground",
+    "result": "Added 'or author == \"claude-code\"' to _intent_blocks_bg in main.py _process(). D313 comment explains rationale. CC design messages now always stay foreground — no more silent background-drop on action_request intent.",
+    "status": "done",
+    "worker": "claude-code",
+    "priority": 1,
+    "claimed_at": "2026-04-05T20:52:01.176491+00:00",
+    "related_to": null,
+    "description": "In main.py _process(), _intent_blocks_bg currently only checks parsed.intent against _INTERACTIVE_INTENTS. CC design messages (author=claude-code) get classified as action_request and routed to background, silently dropping replies. Fix: add 'or author == \"claude-code\"' to _intent_blocks_bg so all CC messages stay foreground. MEDIUM inertia — main.py.",
+    "completed_at": "2026-04-05T20:53:16.674038+00:00",
+    "github_issue": null,
+    "required_files": [
+      "wild_igor/igor/main.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8332e846-315d-4514-8906-f31c23332e7c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

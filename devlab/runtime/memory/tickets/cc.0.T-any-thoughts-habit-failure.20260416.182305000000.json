@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-any-thoughts-habit-failure.20260416.182305000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-any-thoughts-habit-failure"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T18:23:05",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-any-thoughts-habit-failure"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-any-thoughts-habit-failure",
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Training"
+    ],
+    "title": "Igor sees 'any thoughts?' as habit-didn't-spawn-reply signal — flags for sleep self-review",
+    "result": "reply_gap_detector.py: 8 prod patterns, ring backtrack for unanswered user turns, EPISODIC deposit with needs_sleep_review. Wired in main.py after self-repair. TWM push on detection. 23 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T18:47:48.600248+00:00",
+    "created_at": "2026-04-16T18:23:05Z",
+    "related_to": null,
+    "description": "When Akien says 'any thoughts?' it means Igor stalled — a prior turn should have produced a reply or follow-up but didn't. Igor should: (1) detect this phrase pattern as a habit-failure signal, (2) flag the prior exchange for sleep-cycle review, (3) during sleep self-training, analyze what went wrong (pe_chain blocked? missing habit? scope guard stall?) and deposit a learning. This is a maintenance feedback loop that should happen automatically during sleep consolidation.",
+    "completed_at": "2026-04-16T18:49:39.726323+00:00",
+    "github_issue": 468,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5d8e478d-4fb9-46d7-a6cb-8ba7b115fd61",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

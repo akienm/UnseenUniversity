@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-config-arch-finish.20260414.232248000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-config-arch-finish"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:48",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-config-arch-finish"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-config-arch-finish",
+    "body": "From D127 (closed as ticketed). Akien 2026-04-14: 'oh my yet please ticket that! I really want that.'\n\n## The vision\n\nClean separation of config concerns so a new box bootstraps cleanly with minimum friction:\n- **.env** = secrets only. API keys, passwords, DB connection strings with embedded creds. Nothing else.\n- **switches.cfg** (or equivalent) = instance flags with safe defaults. Every flag has a default that works on a fresh box. Override only when needed.\n- **machines DB table** = routing config (machine capabilities, in-use windows, inference rank). Already done via machine_manager.py #342.\n- **The rule:** every value in any config layer has a default that won't break a new box.\n\n## Current state (partially shipped)\n\n- **D319 split cfg files** already exist: igor.cfg, igor.models.cfg, igor.switches.cfg, igor.credentials.cfg, igor.context.*.cfg. Load order is fixed in env_sync._cfg_files() with last-wins semantics.\n- **machine_manager.py (#342)** is the DB-backed routing registry, replacing machines.json. T-machines-json-phaseout handles the leftover dual-write.\n- **env_sync hydrates os.environ from the graph at boot** (D119 done, env_sync.boot_env_sync).\n- **SYSCFG_* nodes** capture 59 vars in the DB tree.\n\n**What's missing from D127's vision:**\n\n1. **Secrets-only enforcement on .env** — today .env mixes secrets and non-secret instance flags. Audit every entry, move the non-secrets to igor.switches.cfg or igor.cfg, leave only credentials in .env. Add a check (registered with T-audit-add-checks?) that flags non-secret keys appearing in .env.\n2. **Defaults audit + enforcement** — every flag Igor reads should fall back to a documented safe default if the cfg files don't provide it. Today many flags are read with `os.getenv(\"IGOR_X\", \"\")` and crash or silently misbehave on missing values. Audit every os.getenv call and every cfg lookup; ensure each has a working default; document the default in one place (probably igor.switches.cfg.defaults or similar).\n3. **New-box bootstrap test** — fresh instance dir + only IGOR_HOME_DB_URL + IGOR_INSTANCE_ID set + nothing else → Igor boots cleanly and reaches steady state without any cfg files present. This becomes a first-class test (smoke test or integration test) so regressions are caught.\n4. **switches.cfg vs igor.switches.cfg naming** — D127 says 'switches.ini', current implementation says 'igor.switches.cfg'. Pick one and standardize.\n\n## Sub-steps\n\n### Step 1 — Inventory the current .env\nWalk a real .env, classify each entry as secret-or-not. List the non-secrets that should move out.\n\n### Step 2 — Move non-secrets to switches.cfg\nFor each non-secret entry: add it to igor.switches.cfg with the same value (current behavior preserved), remove it from .env. Verify env_sync still hydrates correctly via the load order.\n\n### Step 3 — Defaults audit\ngrep for `os.getenv\\(\"IGOR_` and `os.getenv\\(\"OPENROUTER_` etc. across wild_igor/. For each, verify there's a working default. List the offenders. Either fix in place (small change) or document defaults in a central registry.\n\n### Step 4 — New-box bootstrap test\nWrite a test that simulates a fresh box: new tmpdir, only IGOR_HOME_DB_URL + IGOR_INSTANCE_ID env vars, no cfg files. Boot Igor. Assert it reaches steady state without crashing. Catch regressions when someone adds a config-required dependency.\n\n### Step 5 — Add registered check to audit (depends on T-audit-add-checks)\nAdd a 'forever' check via the new audit-add system: 'no non-secret keys in .env'. Catches future drift.\n\n## Existing work to check\n\n- wild_igor/igor/env_sync.py:_cfg_files() — current load order\n- wild_igor/igor/env_sync.py:boot_env_sync() — hydration path\n- D319 split cfg refactor commits\n- wild_igor/igor/main.py — early boot env reads\n- T-machines-json-phaseout — sister cleanup ticket for the machines.json side\n- T-system-gateway-config — config bootstrap abstraction (the SystemGateway sub-slice)\n- T-audit-add-checks — registered audit checks (Step 5 depends)\n\n## Why this matters\n\n- 'Run anywhere' depends on 'works on a fresh box without manual config tweaks'\n- Windows port hits this immediately: assumptions about .env structure and value defaults break in surprising ways\n- D116 minimal-env-per-instance is implemented but not enforced — this ticket is the enforcement layer\n- Akien explicit framing: 'I really want that.' Priority signal.\n\n## Out of scope\n\n- Rewriting env_sync.py (it works; just exercise it more cleanly)\n- New cfg file format (stick with .cfg / .ini key=value as today)\n- Cross-instance config sync (memory_sync covers that)\n- Web UI for config (CLI + file edit is enough)\n\n## Provenance\n\nD127 (Akien 2026-04-11, surfaced + ticketed 2026-04-14). 'Yet please ticket that! I really want that.'",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "config",
+      "infra",
+      "windows-port",
+      "biomimicry-ish"
+    ],
+    "title": "Config architecture: secrets-only .env + switches with safe defaults + audit",
+    "result": "config.py: get/get_bool/get_int/get_float with env→cfg→default precedence. Loads .env + all igor.*.cfg files. Lazy cached, reload() for hot-reload. 18 tests. Follow-up: T-config-vars-review to slim the 169 vars.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T21:59:25.190040+00:00",
+    "created_at": "2026-04-14T23:22:48Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T22:01:18.714849+00:00",
+    "github_issue": 448,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

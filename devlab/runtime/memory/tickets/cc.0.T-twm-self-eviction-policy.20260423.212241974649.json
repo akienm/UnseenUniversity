@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-twm-self-eviction-policy.20260423.212241974649",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-self-eviction-policy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T21:22:41.974649",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-twm-hygiene-2026-04-23"
+    ],
+    "tickets": [
+      "T-twm-self-eviction-policy",
+      "T-twm-sleep-eviction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-self-eviction-policy",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "TWM",
+      "Observability"
+    ],
+    "title": "TWM self-eviction — decide policy when newly-inserted row loses to all existing rows",
+    "result": "retired: superseded by T-twm-salience-time-decay. SELF_EVICTED WARNING already shipped in 088c9bf5 (observability unblocked). No fold-in needed — with time-decay, old rows naturally lose eviction ranking, making the policy question (protect-newest / threshold-on-admit) unnecessary.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "blocked_at": "2026-04-23T21:00:34.939097+00:00",
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": "D-twm-hygiene-2026-04-23",
+    "description": "Observed live 2026-04-23: Cortex.twm_push silently drops newly-inserted rows when TWM (50 slots) is full of high-salience unintegrated observations. INSERT succeeds, eviction runs, new row is the lowest-priority tie-breaker → it gets picked for deletion. Caller sees a valid obs_id return but the observation never lands. Surfaced via pr_* / intent_decay / relationship_drift test failures.\n\n**Current state (commit 088c9bf5):** SELF_EVICTED WARNING now fires at the push site with full context. Observability is unblocked. Behavior unchanged — silent drop becomes logged drop.\n\n**Design question (this ticket's scope):** what should the actual policy be? Options:\n1. Status quo + warning (done) — accept that TWM is attention-bounded and sometimes a new low-priority observation doesn't win.\n2. Protect-newest — eviction never picks the row just inserted in the same call. Existing rows lose first; if no existing row can be evicted (e.g. all higher priority than new one), drop the new one explicitly with a distinct return (-2?).\n3. Salience-threshold on admit — if new row's salience is below the current 50th-percentile, reject at the door (don't insert) and return a clearly-not-obs-id value.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (twm_push eviction block ~line 4189-4220), tests/test_twm_eviction_policy.py (new). Possibly call sites that rely on obs_id semantics.\n\n**Design rules:** docs-in-code, test-plan-or-why-not, oop-first. No new memory schemas.\n\n**Scope boundary:** IN — pick policy (1/2/3 above or hybrid), implement, tests that verify the chosen policy holds. OUT — background sleep-based eviction of stale TWM rows (that's T-twm-sleep-eviction, separate ticket).\n\n**Test plan:** unit tests on twm_push with pre-filled TWM: verify push of below-floor salience behaves per chosen policy (drops with named return / evicts an existing row / etc). Integration: observe in prod that SELF_EVICTED warnings disappear after the fix is deployed.",
+    "completed_at": "2026-04-23T21:22:41.974649+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e0b32000-a165-4380-be1c-1767771f8676",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

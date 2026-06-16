@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-spreading-activation.20260325.203500632420",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-spreading-activation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T20:35:00.632420",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-spreading-activation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-spreading-activation",
+    "title": "Implement D233 spreading activation",
+    "result": "Implemented D233 spreading activation. cortex.spreading_activation(seed_nodes, depth=2) → dict[node_id, float] with two-layer propagation: word-graph layer (hop_decay=0.6) via wg_edges + bridge to memories via wg_word_docs, and memory-graph layer (hop_decay=0.8) via parent/children/links. Added WordGraph.spread_from_words() and WordGraph.words_to_doc_ids() for the WG layer. 13 tests, all passing. Commit 2445e49c.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-25T20:08:29.416120+00:00",
+    "description": "Implement cortex.spreading_activation(seed_nodes, depth=2) → dict[node_id, float]. Two-layer heat propagation: (1) word-graph layer — hop_decay=0.6, depth=2, feeds predict_next; (2) memory/interpretive layer — hop_decay=0.8, depth=2, feeds cortex.search. Seeds = TWM top-7 (Miller's Law). Bridge: hot word nodes activate memories via content index. Multi-source sum activations. Foundation for prediction error, inhibition, and binding tickets. Ref: D233.",
+    "completed_at": "2026-03-25T20:35:00.632420+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ff4668b8-31b0-429f-b893-1cffeb01d8c6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

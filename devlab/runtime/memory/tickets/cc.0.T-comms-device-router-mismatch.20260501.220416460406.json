@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-comms-device-router-mismatch.20260501.220416460406",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-comms-device-router-mismatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:04:16.460406",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-comms-device-router-mismatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-comms-device-router-mismatch",
+    "gate": "blocks-on-announce-protocol-v1-sprint",
+    "size": "M",
+    "notes": "From Opus reorg pass: 'IgorDevice has comms() but the router can't see the address it publishes'. This is a bootstrap blocker.",
+    "title": "IgorDevice.comms() advertises address that router cannot resolve",
+    "result": "Closed as side effect of T-announce-slice2-suffix-comms-routing — router now peels suffix variants so IgorDevice.comms() addresses resolve cleanly. agent_datacenter commit 0ed4a75.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "P1",
+    "claimed_at": null,
+    "related_to": null,
+    "assigned_to": "igor-worker",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "router.py:71 strips comms:// scheme to a flat mailbox name, but IgorDevice.comms() advertises comms://igor/inbox while skeleton creates the bare 'igor' mailbox. resolve('comms://igor/inbox') raises AddressError because 'igor/inbox' is not in known mailboxes. Per design § 2 + § 14 (11.A): resolve via suffix-style addressing (comms://igor.inbox) — same flat-mailbox invariant, no router parser change. Fix lands as part of announce-protocol v1 sprint (introduces the surface mailboxes).\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/devices/igor/device.py:101 (comms() returns wrong shape), /home/akien/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py:125 (mailbox creation), /home/akien/dev/src/agent_datacenter/agent_datacenter/bus/router.py:71 (resolve)\n**Design rules:** suffix-style-addressing (§ 14 11.A ratified)\n**Scope boundary:** in — change comms() to return suffix-style address; ensure skeleton creates matching mailbox(es) for advertised surfaces; out — router parser change (path-style was rejected)\n**Test plan:** test_comms_address_resolves_after_register (round-trip register → comms() → resolve → mailbox exists); regression for IgorDevice and ClaudeDevice",
+    "completed_at": "2026-05-01T22:04:16.460406+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b57ca292-cdf9-4f9a-8c72-66615a57470f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

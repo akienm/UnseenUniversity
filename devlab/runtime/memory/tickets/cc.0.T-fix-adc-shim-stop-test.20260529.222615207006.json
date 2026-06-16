@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-fix-adc-shim-stop-test.20260529.222615207006",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-adc-shim-stop-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T22:26:15.207006",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-adc-shim-stop-test",
+      "T-theigors-to-uu-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-adc-shim-stop-test",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "tests"
+    ],
+    "title": "Fix test_stop_terminates_owned_process in test_adc_shim.py",
+    "result": "already fixed in ef7a6e72 — stop/rollback tests aligned with device delegation design; 16/16 pass",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "claimed_at": "2026-05-30T23:41:45.002451+00:00",
+    "created_at": "2026-05-29T22:26:15.207006+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "TestIgorADCShimStartStopRestart::test_stop_terminates_owned_process fails: IgorADCShim.stop() logs 'Igor does not own the process, no-op' and returns True without calling process.terminate(). The test mocks the process and asserts terminate() was called once, but the ownership check fails so terminate is never called.\n\nPre-existing failure — not introduced by T-theigors-to-uu-migration.\n\n**Affected files:** tests/igor/test_adc_shim.py, devices/igor/adc_shim.py (or wherever the stop() ownership check lives)\n**Design rules:** no-sqlite; no persistence — unit test fix\n**Scope boundary:** IN — fix the test or the ownership check so stop() terminates a process the shim started; OUT — don't change IgorADCShim lifecycle semantics\n**Completion criteria:** `python -m pytest tests/igor/test_adc_shim.py -q` passes green, including test_stop_terminates_owned_process",
+    "completed_at": "2026-05-31T06:09:23.399842+00:00",
+    "deposited_at": "2026-05-29T16:27:39.948457",
+    "deposited_by": "cc_queue",
+    "github_issue": 819,
+    "dispatched_at": "2026-05-30T23:41:45.002451+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-29T22:26:15.538249+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "994cf9dc-3299-4ac4-b747-ceac1033b179",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

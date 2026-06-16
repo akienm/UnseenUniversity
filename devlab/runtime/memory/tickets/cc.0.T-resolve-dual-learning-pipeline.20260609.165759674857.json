@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-resolve-dual-learning-pipeline.20260609.165759674857",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-resolve-dual-learning-pipeline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.674857",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-resolve-dual-learning-pipeline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-resolve-dual-learning-pipeline",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "Architecture"
+    ],
+    "title": "Resolve dual LearningPipeline: archivist vs librarian",
+    "result": "InferenceAccumulator replaces LearningPipeline in archivist; librarian is canonical; alias preserves compat; ADR comment added",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that there is exactly one learning pipeline class with a clear owner.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.674857+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (Systems Architect) found two LearningPipeline classes: devices/archivist/learning_pipeline.py (enqueue/process_overnight) and devices/librarian/learning_pipeline.py (run_once/extract_facts). Different method signatures, different schema targets, unclear ownership. bootstrap_learning.py imports librarian version; devices/archivist/proxy.py imports archivist version. Unresolved split with no ADR.\n\n**Affected files:** devices/archivist/learning_pipeline.py, devices/archivist/proxy.py, lab/claudecode/bootstrap_learning.py (if import needs updating)\n**Design rules:** no duplicate classes; one canonical implementation per concept\n**Scope boundary:** IN — determine canonical pipeline, retire the other, document ownership in a one-line ADR comment; OUT — functionality changes to the retained pipeline\n**Completion criteria:** only one LearningPipeline class exists in the codebase; all callers import the same one; a one-line comment in the canonical file names the decision",
+    "completed_at": "2026-06-09T17:30:37.848961+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

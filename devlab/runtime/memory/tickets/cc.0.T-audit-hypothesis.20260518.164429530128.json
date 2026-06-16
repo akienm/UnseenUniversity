@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-audit-hypothesis.20260518.164429530128",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-hypothesis"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530128",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-audit-hypothesis"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-hypothesis",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Hypothesis",
+      "Audit",
+      "Skills"
+    ],
+    "title": "Create /audit-hypothesis skill — 5 checks + better-hypothesis challenge",
+    "result": "Created /audit-hypothesis skill — 5 checks + better-hypothesis challenge",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530128+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "Hypotheses extracted at /decided time need their own audit before tickets are filed — a vague or untestable hypothesis produces no useful outcome data.\n\n**Affected files:** agent_datacenter/skills/audit-hypothesis/SKILL.md (new)\n**Design rules:** follows PASS/AMEND pattern; blocks /decided ticket-filing on AMEND same as audit-design does\n**Scope boundary:** in scope: 5 checks: (1) hypothesis is a testable claim not a vague hope, (2) measurement signal is observable now not aspirational, (3) goal link is valid and active, (4) hypothesis doesn't contradict a recently-falsified one, (5) time horizon for checking outcome is named. Plus mandatory challenge: 'Is there a better hypothesis for achieving this goal?' Out of scope: actually running the measurement (that's /outcome); storing outcome data.\n**Test plan:** skill file; manual smoke against the hypotheses extracted during this design conversation.",
+    "completed_at": "2026-05-18T16:58:50.261506+00:00",
+    "github_issue": 742,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "aa211694-d0ae-4bb7-93aa-e4bea3cff996",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

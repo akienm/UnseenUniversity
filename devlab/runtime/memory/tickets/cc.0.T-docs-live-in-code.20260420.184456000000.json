@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-docs-live-in-code.20260420.184456000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-docs-live-in-code"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:56",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-docs-live-in-code",
+      "T-hypothesize-standards-injection",
+      "T-versioned-seed-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-docs-live-in-code",
+    "size": "M",
+    "tags": [
+      "Standard",
+      "Architecture",
+      "DX"
+    ],
+    "title": "Coding standard: subsystem docs live in code, not in separate DSB/CSB/design docs",
+    "result": "Book-reader pilot canonical docstring shipped on reading_tool.py (d68661de) — architecture, decisions (D333/D356/D359/D360 + 2026-04-18 single-model), engram portion (WATCH_Q_*/WATCH_T_*/PROC_READING_*/hot attractors). CLAUDE.md standard already present from 2026-04-19; verified complete. Follow-up T-docs-live-code-rollout filed with 11-subsystem checklist for on-touch promotion.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-20T18:52:57.238419+00:00",
+    "created_at": "2026-04-20T18:44:56Z",
+    "related_to": null,
+    "description": "Akien 2026-04-19 (morning-note request, end of 2026-04-18b): 'you know how we have docs in the DSB and CSB and all that? It's stupid. ALL of that should be in the code. The decisions we make, we do still have a simple log for decisions... they should also be in the code. because then i don't have to explain the book reader over for the 6th time. and reminder that at least some of the book reader is in engrams.'\n\n## The problem\nCurrent state: subsystem documentation lives in external files — lab/design_docs_for_igor/*.dsb (decisions_log.dsb, subsystem_memory.dsb, capabilities_index.dsb, gap_analysis.dsb), lab/design_docs/*.md, chat transcripts, Akien's head. New sessions (CC or Igor) reading the code don't automatically see those docs. Result: Akien re-explains the same thing ('the book reader') every few sessions because the info isn't where a session looking at the code would find it.\n\nThis is the same gap as T-versioned-seed-config but for docs instead of config: separating authoritative context from the thing it describes makes the context rot.\n\n## The standard (proposed)\n1. **Every load-bearing subsystem has a canonical module docstring** at the top of its primary file. That docstring covers: what the subsystem IS (plain English), WHY it exists (the problem it solves), HOW it works at the architectural level (not line-by-line — that's what well-named code is for), and which DECISIONS shaped its design (reference D### IDs from the decisions log inline).\n2. **The decisions log stays** as the chronological record. But every decision that shapes a module's design gets a one-line reference INSIDE the module's docstring (e.g. 'Shaped by D356 lever detection, D333 situated reading, D359 extractor via gateway'). The log is the canonical WHEN; the code is the canonical WHERE.\n3. **Engrams are a legitimate 'in the code' location.** Some subsystems (book reader, coding standards per T-hypothesize-standards-injection) live partly in engrams — memory graph nodes that other code queries at runtime. When engram content is load-bearing for a subsystem, the module docstring says so and names the relevant engram ids / parent_cp / habit_type filters.\n4. **New subsystems get a docstring first, code second.** If the subsystem isn't clear enough to docstring, it's not ready to write.\n5. **When Akien explains something twice, it goes into the relevant docstring, not into a separate doc.** Bias for inline, against extraction.\n\n## Pilot subsystem\nThe book reader. Specifically:\n- wild_igor/igor/tools/reading_tool.py — the public interface (create/start/process runs)\n- wild_igor/igor/tools/reading_engine.py — fetch/process pipeline\n- lab/claudecode/book_learner.py — extraction prompts, _extract_nodes, _deposit_nodes\n- wild_igor/igor/cognition/reading_indexer.py — legacy path (note it's legacy)\n- PLUS engram portion: watch habits (WATCH_Q_*, WATCH_T_*), hot attractors, any PROC_READING_* habits\n\nCanonical docstring for reading should cover: blob model (fetch → JSON → chunk), chunk flow (extract → score → deposit → spine-wire), provenance contract (book_title, source_author, model_used, inference_tier, chunk_position all stamped), the lever-detection / watchlist filter (D356 + GH-299), the qwen-only collapse (D360 path + 2026-04-18 single-model decision), D333 pass-2 vs pass-1 semantics.\n\n## What NOT to change\n- Don't delete the DSB files. They're versioned history. Just stop treating them as the canonical explanation — point from code to them when useful, but the code is now the authoritative explanation.\n- Don't turn every one-line helper into a docstring-heavy wall. The standard is for LOAD-BEARING subsystems, not trivial utilities.\n- Don't reinstate the 'document everything' urge that CLAUDE.md explicitly pushed back against. The rule there still stands: don't comment what the code obviously does. Comment WHY, architectural intent, and cross-references.\n\n## Acceptance\n- The book reader has a canonical module docstring that tells a new session everything Akien's been re-explaining\n- CLAUDE.md gains a paragraph on this standard so new sessions see it on context-load\n- (Optional, later) Other load-bearing subsystems (TWM, cortex, reasoners, milieu, consolidation, comms transports) get the same treatment over time\n\n## Scope for this ticket\n- Write the book-reader canonical docstring (pilot)\n- Add the standard to CLAUDE.md\n- File follow-up tickets for other subsystems that should get the same treatment (one per subsystem, so they can be sprinted independently)\n\n## Provenance\nAkien 2026-04-19 morning-note request. Connects to T-versioned-seed-config (same 'context lives with the thing' principle, different medium) and T-hypothesize-standards-injection (already demonstrates the engrams-as-docs pattern working).",
+    "completed_at": "2026-04-20T18:55:15.419918+00:00",
+    "github_issue": 483,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "26bf54ac-3564-4fbd-b10c-854e26a6c19a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

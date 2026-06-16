@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-graph-integrator.20260325.174222023081",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-graph-integrator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:42:22.023081",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bio-replay",
+      "T-blob-store",
+      "T-graph-integrator",
+      "T-reading-indexer",
+      "T-self-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-graph-integrator",
+    "title": "Graph integrator — co-occurrence edges from indexed content",
+    "result": "FACT_CLOUD co-occurrence graph integration complete: ROOT anchor node + weighted edges by chapter proximity, all 397 tests ✓",
+    "status": "done",
+    "priority": 6,
+    "claimed_at": "2026-03-25T17:39:50.555632+00:00",
+    "description": "D230 + G-BIO-REPLAY1. Shared primitive used by both:\n- Prospective: called after T-reading-indexer completes for a content_id\n- Retrospective: called by quiet-period replay habit (T-bio-replay)\n\nFor each pair of FACT_CLOUD nodes from same content_id:\n- Same chapter: edge weight += 0.2 (strong proximity)\n- Adjacent chapters: edge weight += 0.1\n- Distant chapters: edge weight += 0.05\n- Cap at 1.0\n- Upsert interpretive_edge(src, dst, relation=co_deposited, weight=...)\n\nAlso creates a ROOT anchor node per book: BOOK_{content_id_short} with edges to all its FACT_CLOUD nodes. This is the retrieval entry point — \"Making Money\" resolves to this node, which fans out to all deposited facts.\n\nOn completion: queue T-self-test with content_id\n\nT-bio-replay (minion currently building) uses this same primitive.\n\nFile: wild_igor/igor/cognition/graph_integrator.py (new)\nInertia: LOW\nSize: M\nDepends on: T-blob-store, T-reading-indexer",
+    "completed_at": "2026-03-25T17:42:22.023081+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5f2bd6c1-0b9d-43e3-a932-d097824c3e46",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

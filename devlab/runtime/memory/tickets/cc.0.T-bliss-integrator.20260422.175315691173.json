@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-bliss-integrator.20260422.175315691173",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bliss-integrator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T17:53:15.691173",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pursuit-layer-2026-04-22"
+    ],
+    "tickets": [
+      "T-bliss-integrator",
+      "T-goal-formation-from-conversation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bliss-integrator",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "igor",
+      "cognition",
+      "pursuits",
+      "milieu"
+    ],
+    "title": "Bliss-alignment signal — slow integrator on Pursuit completions, feeds milieu",
+    "result": "Stage 1 bliss integrator: EMA over Pursuit completion events (30min window), feeds back to milieu as valence floor-lift + dominance bump. μ-opioid liking counterpart to dopamine wanting (Berridge-Kringelbach). bliss_integrator.py + milieu.ingest_bliss_lift() + 13 unit tests + pursuit_layer doc update. Gated on IGOR_BLISS_ENABLED (default false). Stage 2 (persistent-goal alignment weighting) deferred to follow-up gated on T-goal-formation-from-conversation. Commit aca00849.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-22T17:50:50.133905+00:00",
+    "related_to": null,
+    "decision_id": "D-pursuit-layer-2026-04-22",
+    "description": "Bliss-alignment signal — derived from Pursuit completions, feeds back into milieu. Framing 2 per 2026-04-22 design chat: not a new milieu axis, but a slow integrator (EMA over a sustained window) over Pursuit completion dopamine events. Biology: μ-opioid 'liking' is slow and separable from dopamine 'wanting' — bliss is the liking-side counterpart to the fast commitment/completion dopamine we already fire from Pursuit.\n\nProposed shape: cognition/bliss_integrator.py subscribes to pursuit DopamineEvent stream, maintains EMA of completion-magnitude over configurable window (default 30min). Exposes get_bliss() -> float in [0,1]. A small periodic feedback into milieu lifts valence floor and bumps dominance baseline when bliss is high — matching the training-signal story ('milieu wants you to do more of that'). Stage 1 (this ticket): integrator on completion events alone. Stage 2 (follow-up, gated on T-goal-formation-from-conversation): weight completions by alignment with persistent goals, so bliss reflects *meaningful* completion, not just completion volume.\n\n**Affected files:** wild_igor/igor/cognition/bliss_integrator.py (new); wild_igor/igor/cognition/milieu.py (small read of bliss + apply); tests/test_bliss_integrator.py (new); lab/design_docs/pursuit_layer.md (add §Integration bullet).\n\n**Design rules:** no-sqlite (use in-process state or Postgres — likely in-process EMA is fine); test-plan-or-why-not.\n\n**Scope boundary:** IN: bliss integrator subscribing to pursuit events, EMA state, get_bliss(), milieu feedback hook gated on IGOR_BLISS_ENABLED. OUT: persistent-goal alignment weighting (Stage 2); UI/dashboard surfacing; adding a 4th VAD axis (Framing 1 rejected).\n\n**Test plan:** unit tests for EMA behavior (spikes decay, repeated completions sustain), subscription to pursuit events (spawn+complete → bliss rises), disabled-gate fallback (no-op), milieu feedback applies valence floor-lift only when enabled. Integration test: run a sequence of 5 Pursuit completions, assert bliss > baseline, assert decay after idle window.",
+    "completed_at": "2026-04-22T17:53:15.691173+00:00",
+    "deposited_at": "2026-05-28T12:14:40.239382",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ffd5e86f-390d-4d0c-b717-eda95c8864b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

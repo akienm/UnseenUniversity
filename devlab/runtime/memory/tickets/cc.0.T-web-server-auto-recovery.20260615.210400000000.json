@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-web-server-auto-recovery.20260615.210400000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-server-auto-recovery"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T21:04:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-server-auto-recovery"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-server-auto-recovery",
+    "title": "Web server down — does not auto-bring-itself-up",
+    "status": "closed",
+    "worker": "unassigned",
+    "size": "S",
+    "tags": [
+      "web",
+      "ops",
+      "discovery"
+    ],
+    "description": "Web server is not running and did not self-recover. Possible causes: (1) missing build artifacts, (2) missing startup trigger in daemon, (3) recovery path not wired. Discovery step: check if web server binary/dependencies exist, whether it has a boot entry, and whether any recovery/health-check daemon monitors it.",
+    "decision_id": null,
+    "created_at": "2026-06-15T21:04:00Z",
+    "updated_at": "2026-06-15T21:05:30.604300-06:00",
+    "completed_at": "2026-06-16T16:07:14.496340+00:00",
+    "result": "RESOLVED + verified self-healing & reboot-durable.\n\nROOT CAUSE (three faults in the Ground Loop activation chain, none in the backend code):\n1. Descriptor never deposited — config/ground_loop/web_server.yaml existed in the repo but was never copied into the live scan dir ~/.unseen_university/ground_loop/ (only logs/ was there), so Ground Loop never knew about the web server.\n2. Ground Loop daemon was not running and its systemd unit was never installed — nothing was supervising anything.\n3. Two descriptor defects: start_cmd used a bare 'python3' (system python3 lacks starlette/uvicorn -> silent ImportError, hidden by proxy stderr=DEVNULL); backend_port was 8080 (SSL) but http_proxy does plain-HTTP passthrough -> must be 8082 (the port internal clients already use).\n\nFIX:\n- Corrected descriptor: venv interpreter in start_cmd + PYTHONPATH; backend_port 8082 (commit 7a02e973). Deposited to live scan dir.\n- plugin_proxy now captures backend stdout/stderr to ~/.unseen_university/ground_loop/logs/web_server.backend.log instead of DEVNULL (commit c2c150b4) — the swallowed ImportError is why this needed diagnosis.\n- Added boot-durable user-systemd unit systemd/ground_loop.user.service; installed + enabled via systemctl --user (linger already on, no sudo) (commit ff... 'feat: Ground Loop user-systemd unit').\n\nVERIFIED (all 200 through :8078 proxy): cold-start spawns backend; kill backend -> next request transparently respawns; /api/health -> 200. Three protection layers: backend crash->proxy respawn; daemon crash->systemd Restart=on-failure; reboot->systemctl --user+linger. Unit active+enabled.",
+    "role": "apprentice",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

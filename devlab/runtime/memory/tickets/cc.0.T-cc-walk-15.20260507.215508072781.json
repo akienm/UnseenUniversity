@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-walk-15.20260507.215508072781",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-15"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:08.072781",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-15"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-15",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Discord",
+      "walk"
+    ],
+    "title": "CLOSED: remove dead webhook branch from DiscordTransport",
+    "result": "deleted dead _send_webhook branch and call site; warnings now consistent",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-08T19:04:10.291126+00:00",
+    "created_at": "2026-05-07T21:55:08.072781+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 area_5 finding: DiscordTransport._send_webhook is dead code — the path is never reached in production and silently fails. Delete the branch, return False with a logged warning if webhook path is needed.\n\n**Affected files:** lab/utility_closet/transports/discord.py\n**Design rules:** none apply\n**Scope boundary:** IN — delete _send_webhook branch, add log.warning on that path, return False. OUT — implementing webhook properly (separate ticket if needed).\n**Test plan:** Existing discord transport tests pass; grep confirms _send_webhook is deleted; dead code scanner finds no reference.\n**Pass condition:** `grep -r '_send_webhook' lab/utility_closet/` returns empty.",
+    "completed_at": "2026-05-08T19:04:42.658549+00:00",
+    "github_issue": 652,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "97459bb3-7deb-47c1-ac65-c4e487580f84",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

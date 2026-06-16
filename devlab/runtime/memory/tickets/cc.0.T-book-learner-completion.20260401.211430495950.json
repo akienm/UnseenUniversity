@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-book-learner-completion.20260401.211430495950",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-book-learner-completion"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T21:14:30.495950",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-book-learner-completion"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-book-learner-completion",
+    "epic": "Training",
+    "title": "book_learner: Calibre books not writing completion records or updating reading_list",
+    "result": "Per-book READING_<hash>.md report written incrementally during each run (header, chunk lines, footer). reading_list WHERE clause fixed to include 'pending'. 5 new tests. 706 total green.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-01T21:04:59.276843+00:00",
+    "related_to": null,
+    "description": "Calibre books run through drain_learn_queue deposit nodes mid-run (G54 log entries confirm) but _deposit_completion_record() silently fails — no READING_<hash> node in Postgres, no reading_list status=completed. Web/URL books work. Root cause unknown: DB connection drop at end of long subprocess run, or Cortex init failing. Fix: (1) add retry + file-based fallback for completion record (write to book_learner_progress/READING_<hash>.md even if DB fails), (2) fix reading_list status update, (3) add per-book readable report file appended during run so partial runs are visible. Books that ran but have no completion record: Design Patterns (Gamma), Documenting Software Architectures, C# Vol I/II, Test Your Own Optimism, others.",
+    "completed_at": "2026-04-01T21:14:30.495950+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "060ca7a9-770f-40ad-8908-e5a3d1a9e568",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-dashboard-247.20260315.205832589356",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dashboard-247"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T20:58:32.589356",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dashboard-247"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dashboard-247",
+    "body": "Fix two display bugs in dashboard inference block. (1) Distinguish cloud_mode gate (ON/OFF) from cloud call fraction (%) — currently displayed adjacently with no label distinction. (2) Cap latency window at 24h wall-clock or exclude calls >60s from p95 display with a note — current n=20 rolling window has a Feb timeout skewing p95 to 186s. Size S. Find the dashboard stats assembly code first, read it fully, then fix.",
+    "size": "S",
+    "title": "Fix dashboard Cloud% label and p95 outlier (#247)",
+    "result": "Fixed two display bugs: (1) Cloud% label now distinct from CloudMode ON/OFF gate — Performance line shows 'Cloud%: X%  CloudMode: ON/off'; (2) p95 latency now filters out samples >60s before computing — excluded count shown as dim note when nonzero. main.py render call updated to pass cloud_mode_active.",
+    "status": "done",
+    "claimed_at": "2026-03-15T20:56:59.593036+00:00",
+    "completed_at": "2026-03-15T20:58:32.589356+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

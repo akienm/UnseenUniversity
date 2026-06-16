@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-discord-uc-routing-verify.20260507.160959000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-discord-uc-routing-verify"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:09:59",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-discord-uc-routing-verify",
+      "T-uc-channel-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-discord-uc-routing-verify",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Network",
+      "Debug"
+    ],
+    "title": "CLOSED: Make Discord go — bidirectional, 20-message no-drop acceptance",
+    "result": "Discord reply delivery wired: main.py delivers LLM responses back to originating Discord channel_id; emit_channels.DiscordChannel stub replaced with discord_bot.send() + basket channel_id injection. Also swept 10 more files for ? placeholders (continuation of 0236d93a). 4479 tests pass. Igor needs restart to pick up changes.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 4,
+    "claimed_at": "2026-05-06T19:07:38.965423+00:00",
+    "created_at": "2026-05-07T16:09:59Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Discord is half-working: inbound messages arrive (igor0001#7027 connects, receives), but outbound is broken in two ways: (1) emit_channels.DiscordChannel is an explicit stub (emit_channels.py:177-183, drops with warning 'not yet implemented'), (2) main.py:1466 calls discord_bot.send() directly, bypassing the UC DiscordTransport that T-uc-channel-migration built.\n\nAcceptance criteria: send 20 messages in each direction without a drop. Both paths must be wired — Igor sends via DiscordTransport/comms:// routing, inbound events flow through the normal input path.\n\n**Affected files:** wild_igor/igor/cognition/emit_channels.py (DiscordChannel stub), wild_igor/igor/main.py:1466 (direct discord_bot.send call), wild_igor/igor/network/discord_bot.py, agent_datacenter DiscordTransport\n**Design rules:** comms routing through UC (T-uc-channel-migration design); no direct discord_bot.send() outside Transport wrapper\n**Scope boundary:** wire existing DiscordTransport into outbound path; fix emit_channels stub; validate 20-msg no-drop round-trip. No new Discord features.\n**Test plan:** manual 20-message send + receive in TheIgors Discord; confirm no 'not yet implemented' warnings; confirm outbound goes through DiscordTransport",
+    "completed_at": "2026-05-06T20:05:59.831486+00:00",
+    "github_issue": 602,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e25fd6b1-9e97-48ef-9b92-d828f1d2e69b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

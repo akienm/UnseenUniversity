@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-test-bus.20260427.221258825451",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-test-bus"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:12:58.825451",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-imap-impl-decision",
+      "T-adc-test-bus",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-test-bus",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Testing"
+    ],
+    "title": "agent_datacenter: IMAP bus tests — mailboxes, routing, IDLE, 24hr retention",
+    "result": "tests/test_bus.py: 17 tests — mailbox lifecycle, Router send/resolve/errors, fetch+seen semantics, IDLE push (<2s), 24hr retention (purge/retain/seen/index update). All pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-04-27T22:07:49.290200+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Tests for the IMAP bus: mailbox creation, message routing via comms://, IDLE push, and 24hr retention.\n\nProposed shape:\n- agent_datacenter/tests/test_bus.py:\n  Uses Python IMAP stub (in-process, no system Dovecot needed)\n  def test_mailbox_creation(): create_mailbox('CC.0'); 'CC.0' in list_mailboxes()\n  def test_message_routing_direct(): Router.send('comms://CC.0', envelope); unseen_count('CC.0') == 1\n  def test_message_routing_shared(): Router.send('comms://Shared', envelope); unseen_count('Shared') == 1\n  def test_fetch_marks_seen(): fetch_unseen() → envelope returned; unseen_count == 0\n  def test_idle_push(): subscribe to 'CC.0' via IDLE; send message; notification received within 2s\n  def test_24hr_retention(): create message with sent_at=now-25h; purge_old_messages(); message gone\n  def test_seen_within_24hr_retained(): SEEN message at 23hr: still present\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/tests/test_bus.py\n\nDesign rules:\n- Python stub IMAP server used in tests (not Dovecot) — established in T-adc-imap-impl-decision\n\nScope boundary:\nIN: mailbox lifecycle, routing, IDLE, retention tests — all against Python stub\nOUT: Dovecot production integration tests (marked integration, run separately)\n\nTest plan:\n- pytest tests/test_bus.py passes without system IMAP server installed\n- IDLE test uses asyncio with timeout to avoid hanging",
+    "completed_at": "2026-04-27T22:12:58.825451+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "30b70f18-82c5-4f00-b960-e27225eabff6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

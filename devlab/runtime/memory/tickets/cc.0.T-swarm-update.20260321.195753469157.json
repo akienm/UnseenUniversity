@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-swarm-update.20260321.195753469157",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-update"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T19:57:53.469157",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-update"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-update",
+    "body": "Implement coordinated update across all running Igor instances: (1) PROC_SWARM_UPDATE habit: trigger=update all igors|pull latest|swarm update — broadcasts shutdown signal to all instances via cluster_ssh, waits for clean exits, runs git pull on each box, then restarts. (2) A simpler version: igor tool update_swarm() that SSH-executes the igor update loop on each node in machines.csv. Should handle: graceful exit (not kill -9), pull from origin/main, restart via igor alias. Deferred until cognition work is complete — ticket is a placeholder.",
+    "role": "worker",
+    "size": "M",
+    "title": "Swarm update procedure — exit all, git pull, restart all",
+    "result": "Implemented D204 swarm update: (1) ssh_exec_all(windows_cmd, linux_cmd) primitive in cluster_ssh.py — iterates machines.json for SSH-capable online remote boxes, dispatches PowerShell on Windows, bash on Linux, skips local host; (2) update_swarm() tool — runs git pull + restart.flag glob on all boxes (remote via ssh_exec_all, local via direct subprocess), pull failure skips restart.flag and reports error, returns per-box audit log, forensic logs SWARM_UPDATE; (3) PROC_SWARM_UPDATE habit seeded (CP1, action, code_ref=tools.cluster_ssh:update_swarm, trigger=update swarm|pull latest|restart all boxes). seed script at claudecode/seed_swarm_update_habit.py.",
+    "status": "done",
+    "priority": 5,
+    "claimed_at": "2026-03-21T19:51:39.886731+00:00",
+    "completed_at": "2026-03-21T19:57:53.469157+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

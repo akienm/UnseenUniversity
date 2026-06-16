@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-audit-design-skill.20260429.174647662979",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-design-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T17:46:47.662979",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-design-skill",
+      "T-audit-rename-pyramid"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-design-skill",
+    "gate": "T-audit-rename-pyramid",
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Skills",
+      "Design"
+    ],
+    "title": "Build audit-design skill — called by /decided",
+    "result": "Built ~/.claude/skills/audit-design/SKILL.md with 9 positive checks (approach-frame goal, runtime-observable success, alternatives, constraints, missing-pass, 30d conflicts, palace-rule conflicts, decomposition, executor+inertia). PASS/AMEND verdict; AMEND blocks /decided Step 3. HIGH-inertia file mentions surface inline as separate gate. Standalone /audit-design <D-id> supported. /decided Step 2.5 inserted to invoke the audit. Model: opus. Telemetry emission described, waits on T-audit-telemetry-shape. Pushed in ac8ea17b.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T17:39:04.126929+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "New skill audit-design — invoked by /decided before drafting tickets. Catches a 'decision' that isn't actually decided. Checks: goal stated as positive target (approach-frame); success condition observable in runtime not just code; alternatives + why this one named; constraints named (HIGH-inertia files, gates, dependencies); 'what am I missing / what could be better' answered; conflicts with last-30d decisions; palace-rule conflicts (Postgres-only, oop-first, docs-in-code, no-new-memory-schemas, no-speculative-flags, inherit-base-class); scope decomposed into atomic ticketable units; per-piece executor + inertia tier named.\n\nReturn AMEND when checks fail. Emits per-run record via audit_telemetry.\n\nModel: Opus (architecture judgment is exactly Sonnet's weak spot).\n\n**Affected files:** new ~/.claude/skills/audit-design/SKILL.md, /decided skill updated to invoke audit-design before step 3.\n**Design rules:** no persistence beyond palace telemetry. /decided invocation is the integration point.\n**Test plan:** seed a deliberately-vague decision, invoke /decided → audit-design returns AMEND with specific failed checks. Seed a clean decision → PASS. Telemetry record written to palace.",
+    "completed_at": "2026-04-29T17:46:47.662979+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "11c8d901-e7cd-48d3-935e-32c1d46dd03e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

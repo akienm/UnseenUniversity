@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-sprint-wire-pre-inference.20260605.195630119580",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-wire-pre-inference"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T19:56:30.119580",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pre-inference-assembly-2026-06-05"
+    ],
+    "tickets": [
+      "T-dsimnel-pre-inference-parity",
+      "T-sprint-wire-pre-inference",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-wire-pre-inference",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Sprint",
+      "DickSimnel"
+    ],
+    "title": "Wire pre-inference assembler into sprint-ticket",
+    "result": "pre_inference_assemble.py wired into sprint-ticket step 2.3; levers doc updated; both repo + userSettings skills updated",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that sprint-ticket automatically runs the pre-inference assembler before Step 4 (plan) so the LLM receives pre-assembled context and never needs to spend turns on file discovery.",
+    "created_at": "2026-06-05T19:56:30.119580+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-pre-inference-assembly-2026-06-05",
+    "description": "Wire pre_inference_assemble.py into skills/sprint-ticket/SKILL.md at Step 2.3 (anticipatory pre-brief). The assembler output becomes part of the pre-brief block shown before plan review. The LLM reads context rather than deriving it.\n\n**Affected files:** skills/sprint-ticket/SKILL.md (in repo root skills/), tools/pre_inference_assemble.py\n\n**Design rules:** none apply\n\n**Scope boundary:** In scope: add assembler call to Step 2.3 of sprint-ticket, surface output as pre-brief block. Out of scope: changing plan logic, changing test/commit steps, DickSimnel wiring (that's T-dsimnel-pre-inference-parity).\n\n**Completion criteria:** Running /sprint-ticket T-xxx shows a pre-assembled context block (patterns + symbols + graph hits) before Step 4; sprint transcript logs show no file-discovery tool calls for files already listed in the pre-brief.",
+    "completed_at": "2026-06-05T21:52:31.495368+00:00",
+    "deposited_at": "2026-06-05T13:58:02.953302",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

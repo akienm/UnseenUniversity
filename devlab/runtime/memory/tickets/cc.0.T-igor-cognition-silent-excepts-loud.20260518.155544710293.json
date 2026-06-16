@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-igor-cognition-silent-excepts-loud.20260518.155544710293",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-cognition-silent-excepts-loud"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T15:55:44.710293",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-cognition-silent-excepts-loud"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-cognition-silent-excepts-loud",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Safety",
+      "Observability"
+    ],
+    "title": "Replace silent except blocks in 6 cognition files with logged handlers",
+    "result": "logged all 12 silent except-pass blocks across coa.py, dreaming.py, narrative_engine.py, cortex.py, pe_chain.py, worker_foreman.py",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": "2026-05-18T17:39:48.023880+00:00",
+    "created_at": "2026-05-18T15:55:44.710293+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "21 silent excepts in coa.py, dreaming.py, narrative_engine.py, cortex.py, pe_chain.py, worker_foreman.py are blinding the operator to upstream failures during stuck-NE incidents. Replace each with a typed, logged handler so failures surface without changing control flow.\n\n**Affected files:** wild_igor/igor/cognition/coa.py, wild_igor/igor/cognition/dreaming.py, wild_igor/igor/cognition/narrative_engine.py, wild_igor/igor/memory/cortex.py, wild_igor/igor/tools/pe_chain.py, wild_igor/igor/tools/worker_foreman.py\n**Design rules:** no bare except:; each handler must log at WARNING or above with the exception type and context\n**Scope boundary:** in scope: replace silent excepts with logged+typed handlers; add CI grep assertion that bare except: is zero in these 6 files. Out of scope: changing control flow, adding recovery logic, any other files.\n**Test plan:** CI grep assertion that none of the 6 files contain bare 'except:' or 'except Exception: pass'; smoke-run of each module to verify no import breakage after changes.",
+    "completed_at": "2026-05-18T17:51:15.892980+00:00",
+    "github_issue": 732,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ecdfee34-65a0-422f-87fe-13de5a51e8d6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

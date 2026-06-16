@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-behavior-milieu-loop.20260404.181445009112",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-behavior-milieu-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:14:45.009112",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-behavior-milieu-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-behavior-milieu-loop",
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "Close behavior→milieu feedback loop: action outcome updates affect state",
+    "result": "After each habit execution in main.py, outcome feeds back via EmotionalMilieuChannel: error result → arousal +0.08 + valence -0.05 + negative interpretive edge (FAIL_id, weight=-0.3); success → dominance +0.03. Closes the behavior→milieu loop: Igor's emotional state now reflects past action outcomes, modulating future habit selection.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T18:13:18.098074+00:00",
+    "related_to": null,
+    "description": "milieu modulates habit thresholds (BG reads arousal/valence) but action execution outcome NEVER feeds back into milieu. Liveness finding #1 from deep-audit Panels 3+10. Fix: when a habit executes and produces a result, route outcome confidence/error back to milieu via EmotionalMilieuChannel. Specifically: (1) successful code execution → small dominance boost; (2) error result → arousal spike + valence dip; (3) high-surprise outcome → arousal boost. Wire from habit dispatch path in main.py after habit execution completes. Also: add post-execution negative interpretive edge on failure (weight=-0.3 from habit to failure node).",
+    "completed_at": "2026-04-04T18:14:45.009112+00:00",
+    "deposited_at": "2026-06-04T16:23:21.145189",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "519e0497-5e51-411a-a362-aecce6636a6e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

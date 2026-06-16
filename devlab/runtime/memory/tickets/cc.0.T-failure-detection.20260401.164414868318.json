@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-failure-detection.20260401.164414868318",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-failure-detection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T16:44:14.868318",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-failure-detection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-failure-detection",
+    "size": "M",
+    "tags": [
+      "goals",
+      "cognition",
+      "D276"
+    ],
+    "title": "Failure detection + executive function (D276)",
+    "result": "goal_fail_active() tool: finds active GOAL, increments failure_count, cortex.search for alternatives (persistence hunting). At 3 failures: channel escalation. Registered as zero-arg tool. PROC_GOAL_STUCK habit seeded: fires on stuck/error/not-found, calls goal_fail_active. 567 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-01T16:42:41.657721+00:00",
+    "description": "Implement failure detection for goal nodes: detect when current_strategy stalls (N turns without progress toward success_condition), fire BRANCHIF, generate alternative strategies via deeper search — actively look for levers, not just next habit. Executive function IS persistence hunting: keep searching for what fits until something does. Connects to D276. Needs goal node active in TWM to monitor.",
+    "completed_at": "2026-04-01T16:44:14.868318+00:00",
+    "deposited_at": "2026-05-15T11:09:43.746687",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "372eebf9-5d6d-4135-9ed4-c8faade304e5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

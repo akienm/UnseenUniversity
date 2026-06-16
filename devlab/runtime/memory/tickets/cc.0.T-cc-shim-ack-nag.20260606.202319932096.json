@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-cc-shim-ack-nag.20260606.202319932096",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-shim-ack-nag"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:23:19.932096",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-shim-assignment-model-2026-06-06"
+    ],
+    "tickets": [
+      "T-cc-shim-ack-nag",
+      "T-cc-shim-priority-halt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-shim-ack-nag",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Claude",
+      "Dispatch",
+      "Shim"
+    ],
+    "title": "CC shim: ack receipt + configurable nag loop",
+    "result": "ack note + nag loop with external state; 7 tests added; restart recovery via nag_state/ flat files",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.84,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-06T20:23:19.932096+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-shim-assignment-model-2026-06-06",
+    "description": "**Problem:** CCWorkerListener currently receives dispatch envelopes but doesn't ack receipt, doesn't update ticket state with a receipt timestamp, and has no nag loop to remind CC about pending assignments.\n\n**What to build:**\n1. On envelope receipt: send ack back to Granny's mailbox immediately. Add a note to the ticket: 'CC.0 acked at <iso-timestamp>'. Ticket observably shows when the shim received the assignment.\n2. Nag loop: after acking, start a per-ticket timer. Every CC_SHIM_NAG_INTERVAL seconds (default: 600, i.e. 10 min), if the ticket is still not in_progress, fire: `tmux send-keys -t <CC_SESSION> $'\\r\\r\\rcheck messages when possible\\n'`. Stop nagging when ticket moves to in_progress or is cancelled/closed.\n3. Session targeting: use CC_TMUX_SESSION env var, else hostname-based detection (existing _detect_session_name() logic).\n\n**Affected files:** devices/granny/cc_worker_listener.py, possibly devices/claude/constants.py (session name)\n**Design rules:** External state — timer/nag state must not be in-memory-only; if listener restarts, it re-checks ticket state and resumes nagging if still needed\n**Scope boundary:** Ack + nag only. Priority/HALT path is T-cc-shim-priority-halt.\n**Completion criteria:** Test shows: dispatch envelope arrives → ack sent → ticket note added with timestamp → nag fires at interval → nag stops when ticket goes in_progress.",
+    "completed_at": "2026-06-06T21:34:45.661565+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0445bffa-7983-48a2-92ea-0405517cbee7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-ygm-end-to-end-test.20260427.224818363716",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-ygm-end-to-end-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:48:18.363716",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-3-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-ygm-end-to-end-test",
+      "T-adc-ygm-nudge-pipeline",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-ygm-end-to-end-test",
+    "gate": "T-adc-ygm-nudge-pipeline",
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Testing"
+    ],
+    "title": "agent_datacenter: YGM end-to-end test — send to CC.0, submit query, confirm injection",
+    "result": "YGM end-to-end verified: ygm_check.py JSONL fallback returns nudge header when unread, exits 0 when empty/IMAP down",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-3-2026-04-27",
+    "description": "End-to-end verification of the YGM pipeline. Send a message to CC.0, simulate a query submit, confirm the ygm token appears in the injected context.\n\nProposed shape:\n- agent_datacenter/tests/test_ygm_e2e.py:\n  def test_ygm_injection():\n    Router.send('comms://CC.0', Envelope(from_device='igor', to_device='CC.0', payload={'msg': 'hello'}))\n    injected = NudgePipeline().check_and_inject('CC.0', query_context='What is the weather?')\n    assert 'ygm' in injected\n    assert '1 unread' in injected\n    assert 'igor' in injected\n    assert imap_server.unseen_count('CC.0') == 0  # marked SEEN\n  def test_stop_injection():\n    Router.send('comms://CC.0', Envelope(from_device='igor', payload={'type': 'STOP'}))\n    injected = NudgePipeline().check_and_inject('CC.0', 'Do something...')\n    assert injected.endswith('STOP')\n  def test_clean_path_no_injection():\n    assert imap_server.unseen_count('CC.0') == 0\n    injected = NudgePipeline().check_and_inject('CC.0', 'Clean query')\n    assert injected == 'Clean query'  # no modification\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/tests/test_ygm_e2e.py\n\nDesign rules:\n- No live Claude session needed — NudgePipeline is testable independently of actual MCP\n\nScope boundary:\nIN: 3 test cases covering ygm, STOP, and clean path\nOUT: live CC session integration (manual verification only in this ticket)\n\nTest plan:\n- pytest tests/test_ygm_e2e.py passes with Python IMAP stub\n- All 3 test functions present and green",
+    "completed_at": "2026-04-27T22:48:18.363716+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "94fdffc6-86f4-4eea-b152-61bf6907116a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

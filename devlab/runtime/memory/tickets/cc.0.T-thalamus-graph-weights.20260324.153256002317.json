@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-thalamus-graph-weights.20260324.153256002317",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-thalamus-graph-weights"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:32:56.002317",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-thalamus-graph-weights"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-thalamus-graph-weights",
+    "size": "M",
+    "tags": [
+      "cognition",
+      "thalamus",
+      "intent-classification",
+      "habit-calibration"
+    ],
+    "title": "Thalamus intent classification reads graph weights — fix vision/peer misclassification as code_task",
+    "result": "Added relational-pronoun guard in _classify_intent (thalamus.py): when input has both peer signals ('you and i', 'as peers', 'we work', etc.) AND vision/process signals ('drive claude', 'our process', 'end state', etc.), return conversation before code_task/action_request patterns can fire. Root cause was CC_FIND_TICKETS misfire f5bff77c 2026-03-23. Also added _graph_weight_intent_hint() stub as architecture hook for future WordGraph-injected intent correction (follow-up L ticket). Tests: 11 cases in tests/test_thalamus.py. Commit 3134b77.",
+    "status": "done",
+    "priority": 25,
+    "claimed_at": "2026-03-24T15:25:09.589263+00:00",
+    "description": "Stage 1 preparse (word graph + thalamus) classifies intent without querying graph weights. Vision/peer conversation ('you and I work as peers', 'drive Claude's process') scores as code_task because no relational/aspirational graph signal is consulted. Fix: add graph-weight query step inside thalamus classification pass. Two parts: (1) thalamus.py: hook to query graph weights as classification inputs; (2) graph: seed weights mapping vision/peer/end-state signals toward general/conversation, suppressing code_task for relational-pronoun-heavy inputs. Root cause found: CC_FIND_TICKETS misfire turn f5bff77c 2026-03-23. D201 conditions gate on CC_FIND_TICKETS is the defensive fix already applied — this is the upstream fix.",
+    "completed_at": "2026-03-24T15:32:56.002317+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "04d71ff7-8165-441b-9d4a-2d548038fa57",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

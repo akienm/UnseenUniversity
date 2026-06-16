@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-reader-equivalence-test.20260528.215058708036",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reader-equivalence-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T21:50:58.708036",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reader-device-unified-uri-2026-05-28"
+    ],
+    "tickets": [
+      "T-reader-equivalence-test",
+      "T-scraps-embedding-engine"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reader-equivalence-test",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Reader",
+      "Testing"
+    ],
+    "title": "ReaderDevice: embedding equivalence test (same input, both modes)",
+    "result": "4-test suite verifying summary/nodes cosine > 0.7 via WG sparse embedding; CI-safe (mocked inference + no-DB bag-of-words fallback)",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "created_at": "2026-05-28T21:50:58.708036+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-reader-device-unified-uri-2026-05-28",
+    "description": "Verify that summary mode and node mode cover the same semantic territory for the same input. This is the workbench-testable invariant from the design hypothesis: the two output modes are different shapes of the same content, not different content.\n\nTest: read(uri, format='summary') → embed exec+detail text; read(uri, format='nodes') → embed concatenated node narratives; assert cosine_similarity(summary_vec, nodes_vec) > 0.7. Uses Scraps embed() (T-scraps-embedding-engine, already shipped). Input: a fixed synthetic chunk (no live fetch needed). Embedding: hash-SHA-256-384 fallback (no OpenAI key needed in CI).\n\n**Affected files:** tests/test_reader_equivalence.py (new)\n**Design rules:** no live LLM or network calls; use hash fallback embedding from Scraps for CI safety; documents the semantic-equivalence invariant\n**Scope boundary:** one test, one assertion; does not test extraction quality; does not test live URIs\n**Test plan:** test IS the plan; red if cosine < 0.7 or if either mode returns empty output",
+    "completed_at": "2026-05-29T15:34:21.387619+00:00",
+    "github_issue": 810,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T21:50:58.708063+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fa87f61f-4248-4587-a4a4-aaefa0d6ffc0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-routing-cluster-router.20260323.215006386589",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-routing-cluster-router"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T21:50:06.386589",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-routing-cluster-router"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-routing-cluster-router",
+    "size": "M",
+    "notes": "Score = network_weight × (1-load) × ram_weight × db_penalty. in_use_now(host): checks machine_overrides.json then in_use_hours. route_batch(n): returns up to n (host,model) pairs for parallel background work. D211.",
+    "title": "ClusterRouter: score formula + in_use_now() + route_batch()",
+    "result": "Implementation was already complete (score formula, in_use_now, route_batch all live from prior session). Sprint added 63 unit tests covering score formula components (network/ram/db/load/override/capability weights), in_use_now TTL + in_use_hours window logic, route_batch ranking and exclusions, and ClusterRouter.route single-best selection. All tests pass.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-23T20:59:05.350964+00:00",
+    "completed_at": "2026-03-23T21:50:06.386589+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

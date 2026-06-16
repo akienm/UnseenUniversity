@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-reader-summary-mode.20260528.215058707789",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reader-summary-mode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T21:50:58.707789",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reader-device-unified-uri-2026-05-28"
+    ],
+    "tickets": [
+      "T-reader-summary-mode",
+      "T-reader-uri-resolver"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reader-summary-mode",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Reader",
+      "Infrastructure"
+    ],
+    "title": "ReaderDevice: shell + summary output mode (exec/detail/chunks)",
+    "result": "ReaderDevice + chunk_text + 17 tests; summary mode ships format=summary → {exec,detail,chunks}",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "created_at": "2026-05-28T21:50:58.707789+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-reader-device-unified-uri-2026-05-28",
+    "description": "Wire the URI resolver + blob cache (T-reader-uri-resolver) into a BaseDevice shell and implement summary output mode, migrating SummarizerDevice's chunker and LLM summarization logic.\n\nReaderDevice.read(uri, format='summary') → {exec: str, detail: str, chunks: list[str]}. Same exec/detail/chunks contract as SummarizerDevice. Chunker extracted from devices/summarizer/device.py._chunk_text() into devices/reader/chunker.py (shared by both output modes). LLM summarization via InferenceDevice (same path as SummarizerDevice). SummarizerDevice NOT retired yet — gate retirement on ReaderDevice proven in production.\n\n**Affected files:** devices/reader/device.py (new — ReaderDevice(BaseDevice)), devices/reader/chunker.py (new — extracted from SummarizerDevice), devices/reader/__init__.py (update)\n**Design rules:** BaseDevice inheritance required; no-sqlite; inference via InferenceDevice not direct API calls\n**Scope boundary:** summary mode only; does not modify SummarizerDevice; no node extraction yet\n**Test plan:** read('https://...', format='summary') with mocked fetch → exec/detail/chunks present and non-empty; read('file:///...', format='summary') → same; chunk boundaries respected at paragraph boundaries",
+    "completed_at": "2026-05-28T23:00:59.441741+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T21:50:58.707837+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "705d11d7-6d03-40aa-9636-1f305cd76075",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

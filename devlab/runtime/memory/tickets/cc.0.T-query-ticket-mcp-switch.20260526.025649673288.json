@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-query-ticket-mcp-switch.20260526.025649673288",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-query-ticket-mcp-switch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T02:56:49.673288",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-queue-device-2026-05-25"
+    ],
+    "tickets": [
+      "T-query-ticket-mcp-switch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-query-ticket-mcp-switch",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "MCP"
+    ],
+    "title": "Switch /query-ticket and context-load Step 5.95 to mcp queue_next",
+    "result": "query-ticket and context-load Step 5.95 now call mcp__datacenter__queue_next; cc_queue.py fallback removed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-26T03:15:22.761494+00:00",
+    "created_at": "2026-05-26T02:56:49.673288+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-adc-queue-device-2026-05-25",
+    "description": "The /query-ticket skill was built with a cc_queue.py fallback and a 'When ADC queue device ships, replace this with mcp call' note. Ship that switch. Also update /context-load Step 5.95 which does the same cc_queue.py next call inline.\n\nNew Step 1 in /query-ticket: call `mcp__datacenter__queue_next(worker=WORKER)` instead of cc_queue.py. Remove the 'fallback' framing — the MCP path is now canonical. Keep the same output shape (ticket JSON → surface to Akien).\n\n**Affected files:** ~/.claude/skills/query-ticket/SKILL.md, ~/.claude/skills/context-load/SKILL.md (Step 5.95), ~/dev/src/UnseenUniversity/lab/claudecode/cc_skills/query-ticket/SKILL.md (mirror)\n**Design rules:** MCP-first when device exists; /query-ticket stays read-only, never claims\n**Scope boundary:** skill file updates to use MCP path; NOT touch cc_queue.py; NOT touch sprint-ticket\n**Test plan:** no automated tests (skill files); visual verify: /query-ticket Step 1 calls mcp__datacenter__queue_next; cc_queue.py fallback removed; context-load Step 5.95 updated to match",
+    "completed_at": "2026-05-26T03:16:04.582486+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T02:56:49.673310+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "67594fef-54ef-4260-b515-214a1ba147cd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

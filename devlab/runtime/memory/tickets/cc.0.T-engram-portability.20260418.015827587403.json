@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-engram-portability.20260418.015827587403",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-portability"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-18T01:58:27.587403",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engram-portability",
+      "T-graph-calving-execution",
+      "T-versioned-engrams",
+      "T-versioned-memories"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-portability",
+    "size": "L",
+    "tags": [
+      "Memory",
+      "Architecture",
+      "Cognition"
+    ],
+    "title": "Engram portability — extract, exchange, backup, restore",
+    "result": "EngramTemplate + export_engram() + import_engram() + _scan_dependencies(). Dependency manifest catalogs tool_refs, memory_refs, channel_refs, env_vars. BFS subgraph extraction. 13 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T01:56:35.385563+00:00",
+    "related_to": null,
+    "description": "Make engrams (habits, procedures, traversal programs) portable units that can be extracted, versioned, exchanged between Igors, backed up independently, and restored.\n\n## Motivation\nEngrams are woven into Igor's graph fabric, but they need to be:\n- **Extractable**: pull an engram out as a self-contained unit (code + edges + metadata)\n- **Versionable**: track edit history for rollback of failed self-experiments (version tree in metadata, not a new memory type)\n- **Exchangeable**: Igors sharing patterns = sharing engrams. Must be easy to serialize, transfer, and graft into another Igor's graph\n- **Backupable**: independent of full DB backup — back up just the engrams, or just a specific engram\n- **Restorable**: graft a backed-up or received engram back into the graph with edges intact\n\n## Design considerations\n- Engram = subgraph (root node + children + interpretive edges + metadata). Extraction = serialize the subgraph.\n- Exchange format: JSON or similar, self-contained with all edges and metadata. Receiver grafts it into their own graph.\n- Version tree lives in metadata (per feedback: no new memory types, tags only)\n- Clan schema is where shared engrams live — exchanged patterns go there\n- Relates to calving: a calved subtree is structurally similar to an extracted engram\n\n## Use cases\n- Igor experiments with a habit edit → it degrades → rollback to previous version\n- A new Igor boots and receives proven engrams from the clan\n- Akien asks Igor to share a useful pattern with another instance\n- Backup/restore specific high-value engrams without touching the rest of the DB\n\n## Related\n- T-versioned-engrams — versioning aspect (subset of this)\n- T-versioned-memories — versioned flag in metadata (shared infrastructure)\n- T-graph-calving-execution — calve_subtree is related extraction primitive",
+    "completed_at": "2026-04-18T01:58:27.587403+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "85c3b445-837c-4961-9224-f2955713fb73",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

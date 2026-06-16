@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-rotate-large-runtime-logs.20260424.160230000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rotate-large-runtime-logs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:30",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-rotate-large-runtime-logs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rotate-large-runtime-logs",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Ops",
+      "Logs"
+    ],
+    "title": "Rotate db_queries.log (13M) — daily cap or rolling window",
+    "result": "Lowered RotatingFileHandler cap 50MB→10MB in logging_setup.py, added 10MB rotation check to db_proxy._db_log(), wrote lab/claudecode/log_rotate.py standalone script. Ran --run to truncate 3 oversized files.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.25,
+    "claimed_at": "2026-04-29T16:37:21.751592+00:00",
+    "created_at": "2026-04-24T16:02:30Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Day-close audit 2026-04-23 found db_queries.log at 13M (over 10M threshold). cognition.log + memory.log + utility_closet.log all approaching. Add daily rotation or rolling-tail in lab/claudecode/log_rotate.py-shaped helper.\n\n**Affected files:** TBD — likely new lab/claudecode/log_rotate.py + cron entry.\n**Test plan:** logs auto-rotate at >10M and stay below cap.",
+    "completed_at": "2026-04-29T16:38:13.676889+00:00",
+    "github_issue": 526,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a6b7a76c-6de8-4a05-a2e4-1ba0587bfabc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

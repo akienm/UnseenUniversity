@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-twm-context-test.20260408.185323163553",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-context-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T18:53:23.163553",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-twm-context-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-context-test",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D330: TWM-view context test — interactive vs blob",
+    "result": "TWM-only saves 60.5% tokens vs full blob (1102 vs 2788 across 6 questions). Tiered context confirmed: TWM→+memories→+ring scales cost proportionally. Quality assessment limited by 1b model — need cloud model test for quality axis. 1880 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Give LLM the TWM snapshot and let it pull memories interactively (like Igor). Compare against current pre-built blob. Measure: response quality, tokens used, memory pulls needed. Validates TWM-view approach.",
+    "completed_at": "2026-04-08T18:53:23.163553+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c09b0ef4-c896-4b93-89ac-d850257c83ac",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

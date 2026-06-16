@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-logging-migrate-cognition.20260429.231559332459",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-logging-migrate-cognition"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T23:15:59.332459",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-detailed-logging-audit",
+      "T-logging-migrate-cognition",
+      "T-logging-migrate-utility-closet"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-logging-migrate-cognition",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Logging",
+      "Migration",
+      "Cognition"
+    ],
+    "title": "Migrate wild_igor/igor/cognition/* logging to self.log + get_logger pattern",
+    "result": "58 cognition files migrated. Whole-codebase metrics: logging_bypass 368→225, legacy_log 664→430, classes_missing_inheritance 23→0. cognition/* specifically: 357→23 callsites. 4119 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-29T23:11:35.299441+00:00",
+    "related_to": "T-detailed-logging-audit",
+    "decision_id": null,
+    "description": "Replace logging.getLogger bypass + _log/logger legacy across wild_igor/igor/cognition/ (~60+ files). Largest area. Gate on T-logging-migrate-utility-closet so the pattern is established and tested first.\n\nTop offenders from 2026-04-29 audit:\n- emit_channels.py: 20 _log sites\n- experiment_cascade.py: 12 _log sites\n- consult.py: 8 _log sites\n- cluster_router.py: 8 _log sites\n- distillation.py: 7 _log sites\n- basal_ganglia.py: 10 logging.getLogger sites\n- many more — full list in lab/claudecode/reports/logging_audit_20260429-211639.md\n\n**Affected files:** wild_igor/igor/cognition/*.py — ~60 files with logging-bypass or legacy-_log sites.\n**Design rules:** inherit-base-class palace rule. Pattern from T-logging-migrate-utility-closet.\n**Scope boundary:** in scope: cognition/ callsite migration. Out of scope: brainstem/, memory/, network/, tools/ (separate ticket if needed).\n**Test plan:** full regression suite must pass. Re-run audit_logging.py and confirm cognition/ legacy/bypass counts collapsed. Live Igor smoke run after migration to verify log routing intact.",
+    "completed_at": "2026-04-29T23:15:59.332459+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f96223fb-38fe-4df8-af9a-20dab6808825",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

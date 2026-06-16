@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-plus-minus-slate.20260505.212828006873",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-plus-minus-slate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T21:28:28.006873",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-plus-minus-scoring-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-plus-minus-fixit-tag",
+      "T-cc-plus-minus-slate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-plus-minus-slate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CC",
+      "Workflow"
+    ],
+    "title": "CLOSED: CC+/CC- causal rework tally in slate + context-load injection",
+    "result": "CC tally added to context-load Step 5.8; working_together.md updated with CC+/CC- mechanism; pushed to agent_datacenter",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-05T21:27:36.442229+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-plus-minus-scoring-2026-05-05",
+    "description": "No mechanism exists to distinguish 'rework because design changed' (CC+, not Claude's fault) from 'rework because Claude was incomplete' (CC-, Claude's gap). Without this signal, CC has no way to improve on the specific class of failures it caused. Naming it in-moment creates the accountability that retrospective review misses.\n\nProposed shape: add '## CC score' section to today's slate. Each event is one line: 'CC+ YYYY-MM-DD HH:MM: <reason>' or 'CC- YYYY-MM-DD HH:MM: <reason>'. /context-load reads the slate (it already does) and injects a summary line after the In-flight block: 'Current slate: CC+ N / CC- N' plus last 3 events. When no CC score section exists, inject nothing (clean slate). Update docs/working_together.md in ~/dev/src/agent_datacenter to document the mechanism.\n\n**Affected files:** ~/.claude/skills/context-load (inject CC tally after In-flight), ~/dev/src/agent_datacenter/docs/working_together.md (document mechanism)\n**Design rules:** none\n**Scope boundary:** slate text format extension + context-load injection. NOT changing savestate or any other skill — /fixit handles writing (T-cc-plus-minus-fixit-tag).\n**Test plan:** manually append a CC- line to today's slate; run /context-load; verify 'Current slate: CC+ 0 / CC- 1' appears in the context-load output.\n**Pass condition:** /context-load session briefing shows CC tally when slate has CC score entries; shows nothing when slate has no CC score section.",
+    "completed_at": "2026-05-05T21:28:28.006873+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9270d00b-27ec-4e4c-ae19-761be2108a37",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

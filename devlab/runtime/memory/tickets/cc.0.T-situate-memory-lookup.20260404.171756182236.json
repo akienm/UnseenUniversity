@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-situate-memory-lookup.20260404.171756182236",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-situate-memory-lookup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:17:56.182236",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-situate-memory-lookup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-situate-memory-lookup",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "SITUATE: check prior observe deposits before tier.2 call",
+    "result": "feat: _situate_from_memory() + regex fix committed (43b4d0e4). Checks Igor memory for prior observe deposits before tier.2 call.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "pe_situate slow path calls Ollama to identify files when required_files is empty. Igor already has FACTUAL memories from pe_store_observe_results deposits for prior ticket runs. Check memory_search for the ticket ID before burning a tier.2 call.",
+    "completed_at": "2026-04-04T17:17:56.182236+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7d58dafd-8de7-4928-bfab-af611c05e626",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

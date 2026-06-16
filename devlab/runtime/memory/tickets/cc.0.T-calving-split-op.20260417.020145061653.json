@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-calving-split-op.20260417.020145061653",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-calving-split-op"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T02:01:45.061653",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-calving-split-op"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-calving-split-op",
+    "size": "M",
+    "title": "Calving split operation — reparent subtree root to new tree",
+    "result": "5089a74f — calve_subtree(node_id) sets parent_id=NULL, tree_size CTE, _find_tree_root, _deepest_child. Ring trace logged. 12 tests.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-graph-calving-execution",
+    "claimed_at": "2026-04-17T01:59:29.972060+00:00",
+    "related_to": null,
+    "description": "cortex.calve_subtree(node_id) — set parent_id=NULL on the subtree root, making it a new tree root. Node IDs don't change, so all references still resolve. Return the new root ID and count of nodes in the new tree.",
+    "completed_at": "2026-04-17T02:01:45.061653+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "22a43c02-d410-47c1-bbd0-b1e8237c706f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-announce-slice4-system-prompt-capability-layer.20260501.223945492200",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice4-system-prompt-capability-layer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:39:45.492200",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice4-igor-boot-datacenter-client",
+      "T-announce-slice4-system-prompt-capability-layer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice4-system-prompt-capability-layer",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice4",
+      "Igor",
+      "Prompt"
+    ],
+    "title": "system_prompt — optional CAPABILITIES section from manifest + etag in cache key",
+    "result": "build_system_prompt accepts optional datacenter_client; manifest profile_etag folded into cache key; CAPABILITIES section prepended for interactive prompts (≤200 chars per line). Existing callers see byte-identical behavior. 6 new tests. TheIgors commit bb21e985.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-05-01T22:37:02.328657+00:00",
+    "related_to": "T-announce-slice4-igor-boot-datacenter-client",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Slice 4 minimal — system_prompt surfaces Igor's manifest. build_system_prompt accepts an optional datacenter_client; when present and a manifest is cached, prepends a CAPABILITIES section listing available tools (name + brief description) and state_refs. Manifest profile_etag is folded into the cache key so the prompt rebuilds when profile or registry changes. When no client is passed, behavior is identical to today (zero risk of regression on existing callers).\n\n**Affected files:** /home/akien/TheIgors/wild_igor/igor/cognition/system_prompt.py (build_system_prompt signature gains datacenter_client kwarg; cache key includes profile_etag; CAPABILITIES section prepended), /home/akien/TheIgors/tests/test_system_prompt_capability_layer.py (NEW — covers no-client/no-manifest/with-manifest paths + cache key invalidation)\n**Design rules:** opt-in by callers; existing callers (interactive/analysis/extraction) untouched unless they pass datacenter_client; cache key must include profile_etag so prompt invalidates on profile change; CAPABILITIES section ≤ 200 chars to stay within prompt budget.\n**Scope boundary:** in — read-only manifest surfacing in system_prompt, cache key extension. Out — runtime tool dispatch via manifest, peer advisor wiring, integration into Igor.__init__ call sites (next ticket / slice 4b).\n**Test plan:** test_prompt_without_client_unchanged (existing behavior preserved); test_prompt_with_client_no_manifest_unchanged (client present but manifest=None falls through); test_prompt_with_manifest_includes_capabilities (CAPABILITIES section present with tool names); test_cache_key_includes_profile_etag (changing etag rebuilds the prompt); test_capabilities_section_size_capped (stays under budget).",
+    "completed_at": "2026-05-01T22:39:45.492200+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e0a79448-639e-4ace-84ba-d2941453bb76",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

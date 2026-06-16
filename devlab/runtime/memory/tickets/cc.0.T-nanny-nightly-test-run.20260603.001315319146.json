@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-nanny-nightly-test-run.20260603.001315319146",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nanny-nightly-test-run"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T00:13:15.319146",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-nanny-nightly-test-run"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nanny-nightly-test-run",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "NannyOgg",
+      "Granny",
+      "Testing",
+      "Automation"
+    ],
+    "title": "Nanny Ogg: trigger full test suite nightly via Granny",
+    "result": "Nanny nightly_test_run schedule entry at 02:00; _run_test_suite() with CC-active guard + NIGHTLY_TEST_RESULT channel post; 5 new tests (3e2461bb)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": "2026-06-03T01:01:11.623594+00:00",
+    "claimed_at": "2026-06-03T00:59:38.439999+00:00",
+    "created_at": "2026-06-03T00:13:15.319146+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Run the full pytest suite nightly at a quiet time (e.g. 2 AM local) when no CC session is active and the machine is idle. Nanny Ogg fires the trigger; Granny owns the subprocess.\n\nDesign:\n1. Nanny Ogg: add a cron-style schedule entry for NIGHTLY_TEST_RUN at 02:00 local\n2. Granny daemon: add handler for NIGHTLY_TEST_RUN message — spawns pytest as a subprocess with a timeout, posts TEST_SUITE_RESULT to shared channel with pass/fail summary\n3. Guard: check that no CC session is in_progress before starting (read cc.yaml cc_concurrency_mode / dispatched_cycle.json)\n4. Post results to shared channel: NIGHTLY_TEST_RESULT|passed=N|failed=M|skipped=K|duration=Xs\n\nTest command: python3 -m pytest tests/ -q --ignore=tests/e2e --tb=no --timeout=300\n\n**Affected files:** devices/granny/daemon.py (add NIGHTLY_TEST_RUN handler), devices/nanny_ogg/ (add schedule entry)\n**Design rules:** no-sqlite; log every state change; never run when CC session active\n**Scope boundary:** IN — schedule trigger, subprocess run, channel result post. OUT — storing results in DB, test result history, per-test analytics.\n**Completion criteria:** At 02:00, if no CC session active, pytest runs to completion and NIGHTLY_TEST_RESULT is posted to shared channel with pass/fail count.",
+    "completed_at": "2026-06-03T01:05:13.451007+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T00:59:38.439999+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fe1cb23b-b151-4ad7-845e-6ad17566a8a0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

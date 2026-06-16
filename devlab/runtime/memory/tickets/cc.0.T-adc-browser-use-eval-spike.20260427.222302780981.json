@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-browser-use-eval-spike.20260427.222302780981",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-browser-use-eval-spike"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:23:02.780981",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-4-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-browser-use-device",
+      "T-adc-browser-use-eval-spike",
+      "T-adc-browser-use-shim",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-browser-use-eval-spike",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Research"
+    ],
+    "title": "agent_datacenter: browser-use evaluation spike — answer 3 shim questions",
+    "result": "GO verdict. lab/spikes/browser-use-eval.md: interface stable (pin 0.12.x), needs own shim (BaseShim maps: start=launch Chrome CDP, stop=kill, self_test=navigate), restart=kill+reopen (storage_state opt-in). Unblocks device+shim tickets.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.35,
+    "claimed_at": "2026-04-27T22:18:02.824249+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-4-2026-04-27",
+    "description": "Before a browser-use shim is scoped, answer the 3 open questions from the spec.\n\nQuestions to answer:\n1. Does browser-use have a stable enough interface to shim against? (check current pypi version, changelog stability, breaking changes in last 6 months)\n2. Does it need its own shim or can it ride an existing automation shim? (e.g. a generic 'subprocess automation' shim pattern)\n3. What does 'restart' mean for a browser session? (kill and reopen? restore session state? reconnect to existing session?)\n\nProposed shape:\n- Spike: install browser-use; read its API; attempt a minimal 'connect, navigate, close' cycle\n- Write lab/spikes/browser-use-eval.md: answers to all 3 questions + go/no-go recommendation\n- If go: T-adc-browser-use-device and T-adc-browser-use-shim are unblocked\n- If no-go: those tickets get DISCARD status with reason documented\n\nAffected files:\n- ~/dev/src/agent_datacenter/lab/spikes/browser-use-eval.md (new)\n\nDesign rules:\n- None apply — spike/research only\n\nScope boundary:\nIN: evaluation, spike attempt, written recommendation\nOUT: any production browser-use device code\n\nTest plan:\n- lab/spikes/browser-use-eval.md exists with all 3 questions answered\n- go/no-go stated explicitly",
+    "completed_at": "2026-04-27T22:23:02.780981+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "05837a92-8a4e-4d1b-9f8e-0b794c67a62e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

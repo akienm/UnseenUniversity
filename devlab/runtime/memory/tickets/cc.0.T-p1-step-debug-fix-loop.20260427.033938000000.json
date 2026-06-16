@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-p1-step-debug-fix-loop.20260427.033938000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-p1-step-debug-fix-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:38",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-no-sqlite-enforcement",
+      "T-p1-step-debug-fix-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-p1-step-debug-fix-loop",
+    "gate": null,
+    "size": "M",
+    "title": "P1 fix loop: step-debug pe_chain one engram at a time, fix first wrong direction, repeat until clean solution",
+    "result": "P1 fixed: ENGRAM basket isolation (fresh {} per MCPCALL) + pre-flight false-fail (exit code primary signal). Shipped in d7499f50.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-27T03:39:38Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Use pe_chain_debugger.start(ticket_id, breakpoint='PLAN') then step_next() one step at a time. At the first basket state heading wrong (wrong file proposed, spurious HIGH-inertia flag, empty plan), fix the root cause in the code, step one more to verify, repeat until HYPOTHESIZE produces a correct plan with correct files for ticket scope. CC drives the loop — Igor does not need a full ticket cycle.\n\nCRITICAL RULE: Do NOT read pe_chain.py source to reason about the bug. That approach has been tried and does not work. The only valid debug method is: run the engram debugger, watch basket state at each step, halt on first wrong state, fix that step's code.\n\nAll steps run in a single Python process (sessions are in-process only — step_next() across subprocesses loses state). Use timeout 300s minimum for LLM steps.\n\nGreedy ticket selection still applies in parallel. Trip condition: pe_chain runs ENTRY→CLOSE for a simple S-size ticket without proposing HIGH-inertia edits outside ticket scope.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py, wild_igor/igor/tools/pe_chain_debugger.py\n**Design rules:** docs-in-code (update pe_chain docstring with fix when found)\n**Scope boundary:** IN — find and fix the specific step where basket first goes wrong. OUT — refactoring pe_chain, changing engram sequence.\n**Test plan:** debugger runs T-no-sqlite-enforcement ENTRY→HYPOTHESIZE with correct files in basket, no HIGH-inertia proposals.",
+    "completed_at": "2026-04-28T21:10:18.028403+00:00",
+    "github_issue": 534,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a088f431-240b-4db8-8cc5-7bf3d9a4008c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

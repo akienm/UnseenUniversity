@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-scope-guard-proc.20260405.205638255413",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scope-guard-proc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T20:56:38.255413",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-close-loop",
+      "T-scope-guard-proc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scope-guard-proc",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Seed PROC_SCOPE_GUARD: tier table, op_delta, ring scope_log, escalate on HIGH writes",
+    "result": "Created tools/scope_guard.py: _classify_tier() (tier table: brainstem=HIGH, cognition/main/cortex=MEDIUM, else=LOW), run_scope_guard(basket) checks hypothesis file, ring push category=scope_decision, escalates on HIGH+write/delete. Wired into pe_chain.py between HYPOTHESIZE and IMPLEMENT. Added to __init__.py. 16 tests passing.",
+    "status": "done",
+    "worker": "claude-code",
+    "priority": 1,
+    "claimed_at": "2026-04-05T20:53:29.891070+00:00",
+    "related_to": "T-pe-close-loop",
+    "description": "Create tools/scope_guard.py with run_scope_guard(): checks basket target_file against tier table (brainstem=HIGH,cognition=MEDIUM,tools=LOW), op_delta (read=0/write=1/delete=2), posts to ring category=scope_decision, sets basket['pe_status']='escalated' on HIGH+write/delete. Register tool. Add SCOPE_GUARD step to pe_chain.py after HYPOTHESIZE. Seed PROC_SCOPE_GUARD PROCEDURAL memory node with code_ref.",
+    "completed_at": "2026-04-05T20:56:38.255413+00:00",
+    "deposited_at": "2026-04-24T15:14:30.543574",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [
+      "wild_igor/igor/tools/scope_guard.py",
+      "wild_igor/igor/tools/pe_chain.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7993841e-c53f-4eec-9d60-b448ed61f92b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

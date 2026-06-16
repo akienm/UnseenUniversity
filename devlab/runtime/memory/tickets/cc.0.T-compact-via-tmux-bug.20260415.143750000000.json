@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-compact-via-tmux-bug.20260415.143750000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-compact-via-tmux-bug"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T14:37:50",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-compact-via-tmux-bug"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-compact-via-tmux-bug",
+    "body": "From Akien 2026-04-15 08:32: 'new bug: when you compact via tmux it does not compact in this window. so we have to keep doing manual ones. /ticket that to fix later today.'\n\n## Observed\n\nThe /savestate skill calls mcp__igor__request_compaction with a preserve string. The MCP call returns successfully ('Compaction queued for session claude-main') but **the compact does not actually happen in the CC window.** Akien has to run /compact manually with a preserve string that CC outputs as text.\n\n## Impact\n\n- Tokens accumulate. Last night's session hit 788K tokens before manual compact.\n- /savestate skill doesn't actually save state in the way it's supposed to — the compact step is a no-op.\n- Every session-end requires a manual step from Akien that was supposed to be automated.\n\n## Investigation\n\n1. Where does `mcp__igor__request_compaction` dispatch to? Look at lab/claudecode/igor_mcp.py for the handler.\n2. The handler reports 'Compaction queued for session claude-main' — is it actually injecting a /compact command into the tmux session? Or is it just logging 'queued' without doing the injection?\n3. If injection uses `tmux send-keys`, check that the target pane matches the current CC session. If Akien's CC window isn't 'claude-main' in tmux, the send-keys goes to a different pane (or nowhere).\n4. Session naming — there might be drift between the CC tmux session name, the $CLAUDE_TMUX_SESSION env var, and what the MCP handler is targeting.\n\n## Fix sketch (pre-investigation)\n\n- Verify target session name matches. Surface errors loudly if not.\n- Alternatively: instead of tmux-send-keys, write the preserve string to a well-known file and have CC detect it on next turn + self-compact. More robust against session-name drift.\n\n## Workaround (until fixed)\n\nCC outputs the preserve string as text in the final message of a session. Akien runs /compact manually with that string.\n\n## Provenance\n\nAkien 2026-04-15 08:32. Observed after yesterday's day-close when the injected compact didn't actually take effect.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "bug",
+      "mcp",
+      "tmux",
+      "savestate"
+    ],
+    "title": "mcp__igor__request_compaction doesn't actually compact the CC window",
+    "result": "Defensive improvements (env var check, session validation, honest status return) + diagnosis that root cause is CC TUI dropping mid-response keystrokes. Real fix filed as T-compact-via-file-handoff (M) — write preserve to file + UserPromptSubmit hook reads on next turn. 6 tests, 2490 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T21:48:10.835267+00:00",
+    "created_at": "2026-04-15T14:37:50Z",
+    "related_to": null,
+    "completed_at": "2026-04-15T21:55:43.914707+00:00",
+    "github_issue": 463,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

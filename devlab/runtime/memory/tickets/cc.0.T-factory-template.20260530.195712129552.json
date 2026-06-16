@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-factory-template.20260530.195712129552",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-factory-template"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T19:57:12.129552",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-agent-kill-switch",
+      "T-agent-scaffold",
+      "T-factory-template"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-factory-template",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Research"
+    ],
+    "title": "Factory template: declarative multi-agent factory with owner, orchestrator, members",
+    "result": "factory YAML spec + FactoryInstantiator + GrannyPatternOrchestrator + factory-create skill; 39 tests; validate/instantiate CLI wired",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.65,
+    "claimed_at": "2026-05-30T23:41:42.514842+00:00",
+    "created_at": "2026-05-30T19:57:12.129552+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "One level above the agent scaffold (T-agent-scaffold). A factory is a declarative YAML spec that instantiates a set of agents wired together for a problem domain. Initially always owned by a human; designed so any agent with sufficient authority can own one in the future.\n\nFactory spec (config/factories/<name>.yaml):\n  owner_id: comms://akien/          # human today, agent tomorrow\n  orchestrator: granny-pattern      # one agent holds the goal, routes to members\n  members:\n    - agent_type: librarian\n    - agent_type: scraps\n    - agent_type: custom-intake     # scaffolded from template\n  eval_rubric: R-factory-output     # evaluator device rubric id\n  budget_limits:                    # inherited by all member agents\n    daily_limit_usd: 5.00\n\nInstantiation flow: owner approves spec → scaffold creates member agents → announce wires manifests → orchestrator receives factory goal → members route via orchestrator → health rollup reported to owner → eval scores reported to owner.\n\nEscalation: orchestrator escalates to owner when blocked. If owner is an agent, that agent escalates up its own chain. Terminal escalation always reaches a human.\n\n**Affected files:** config/factories/ (new), devices/installer/ (factory instantiation), devices/granny/ (orchestrator pattern reuse), skills/ (new factory-create skill)\n**Design rules:** owner_id is a comms:// address — typed as agent, humans are agents on the rack (comms://akien/); no hardcoded human assumption\n**Scope boundary:** IN — factory YAML spec, instantiation flow, owner approval checkpoint, health+eval rollup to owner, escalation chain; OUT — factory self-modification, cross-factory coordination\n**Completion criteria:** a factory spec instantiates 2+ agents, wires their manifests, reports health to owner_id; owner receives eval scores; escalation from orchestrator reaches owner; owner can halt factory via T-agent-kill-switch",
+    "completed_at": "2026-05-31T06:16:22.872272+00:00",
+    "deposited_at": "2026-05-30T13:57:33.752693",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:41:42.514842+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T19:57:12.208509+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6d2c8058-fed4-44cb-a771-6e623a9f54a3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

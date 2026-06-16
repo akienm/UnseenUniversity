@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-granny-cc-launch.20260529.155735407528",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-cc-launch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T15:57:35.407528",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-cc-launch-2026-05-29"
+    ],
+    "tickets": [
+      "T-granny-cc-launch",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-cc-launch",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Granny"
+    ],
+    "title": "Granny: cc_dispatch_fn spawns CC instance via tmux",
+    "result": "_launch_cc_instance added — Granny now spawns 'claude -p /sprint-ticket T-xxx' in tmux session cc-{ticket_id}",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.9,
+    "created_at": "2026-05-29T15:57:35.407528+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-cc-launch-2026-05-29",
+    "description": "cc_dispatch_fn currently marks in_progress + posts GRANNY_DISPATCH but does not launch CC. Add _launch_cc_instance(ticket_id) that spawns `claude -p /sprint-ticket T-xxx` in a named tmux session (cc-{ticket_id}) from the UU repo root. Prevents double-launch by checking tmux has-session first. Best-effort — launch failure logs a warning but does not block dispatch.\n\n**Affected files:** devices/granny/dispatch.py, tests/test_granny_dispatch.py\n**Design rules:** no-env-var-required; best-effort launch never blocks dispatch return value\n**Scope boundary:** IN — launch CC for worker=claude tickets; OUT — no session lifecycle management, no output capture\n**Test plan:** mock subprocess.Popen; assert called with tmux new-session + claude args; assert duplicate-session guard calls tmux has-session first",
+    "completed_at": "2026-05-29T15:59:43.250309+00:00",
+    "deposited_at": "2026-05-29T09:58:13.902813",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [
+      "devices/granny/dispatch.py"
+    ],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-29T15:57:35.469213+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "32c74fd4-3675-4486-bdf5-6e806ab40b73",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

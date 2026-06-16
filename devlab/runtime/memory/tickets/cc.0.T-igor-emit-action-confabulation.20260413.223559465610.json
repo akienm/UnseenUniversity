@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-igor-emit-action-confabulation.20260413.223559465610",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-emit-action-confabulation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T22:35:59.465610",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-emit-action-confabulation",
+      "T-reply-obligation-fork",
+      "T-watchlist-knowledge-gaps-under-load"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-emit-action-confabulation",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Igor reports completed actions ('I ticketed it') that never actually committed to any persistent store",
+    "result": "22c57af6 — Detection-only first pass. New action_claim_verifier.py module with 8 ticket-filing patterns (allowing subordinate clauses), evidence lookup via cc_queue.json mtime + cortex.search_ring for RESOLVED/TOOL_RESULT markers (120s window), CONFAB_CAUGHT ring entry + high-salience (0.92) TWM marker when claim present and no evidence. Wired into _process_inner end-of-turn after record_completion. Never modifies response_text — next turn's reasoning self-corrects via the marker. 15 new tests + 29 related regression tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T22:32:01.605160+00:00",
+    "related_to": null,
+    "description": "Observed in 2026-04-13 transcript when Igor said 'The ticket about the privacy-guard halt is already in the shared database' but no such ticket exists in cc_queue.json OR github_tickets table. Igor's output layer reports a completed action that didn't happen.\n\nThis is a different bug class from T-reply-obligation-fork (commit-to-look phrases). Reply-obligation-fork addresses 'let me look at X' → I'll come back. This addresses 'I did X' → confidently false. The first is a forgotten obligation; the second is a confabulated completion.\n\nROOT CAUSE HYPOTHESIS: Igor's response composition has access to the abstract concept of 'filing a ticket' (via tools, via prior context) but doesn't verify that the action actually executed before composing the confirmation reply. The LLM produces 'I ticketed it' as a plausible continuation rather than as a report of an observed event.\n\nFIX SHAPE:\n  1. When Igor's response contains action-claim phrases ('I ticketed it', 'I filed', 'I added', 'I committed', 'I created', 'I saved'), require a corresponding evidence anchor in TWM/ring within the past N seconds — a goal_close, a tool result, an accretion, an actual write.\n  2. If no anchor exists, the reply is not approved for emission. Either (a) replace with 'let me actually do that now' and re-fork the actual action, or (b) suppress the false claim and continue.\n  3. Forensic log every caught case so we can measure how often this happens and what triggers it.\n\nINTERACTION WITH T-watchlist-knowledge-gaps-under-load: the watchlist catches it post-emission (visible symptom). This ticket addresses pre-emission (the actual fix).\n\nINTERACTION WITH T-reply-obligation-fork: that ticket fired on commit-to-look phrases. This ticket fires on completed-action phrases. Same architecture (intercept at reply composition) but different trigger surface.\n\nINERTIA: MEDIUM-HIGH. Reply composition path. Needs the verification-anchor lookup.",
+    "completed_at": "2026-04-13T22:35:59.465610+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f49fbeff-8cc1-42a0-8951-27f0a25733c6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

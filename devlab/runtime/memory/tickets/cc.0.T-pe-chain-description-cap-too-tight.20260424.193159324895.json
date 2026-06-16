@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-pe-chain-description-cap-too-tight.20260424.193159324895",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-description-cap-too-tight"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T19:31:59.324895",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-consult-confidence-threshold-raise",
+      "T-pe-chain-description-cap-too-tight"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-description-cap-too-tight",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "pe_chain",
+      "IgorCompletesOne"
+    ],
+    "title": "pe_chain truncates ticket description at 600/400 chars — cuts off structured fields",
+    "result": "pe_chain.py: 4 description slice sites (pe_plan 857+875, pe_situate 1063, pe_hypothesize 1669) replaced with _DESC_CAP_REASONING=4000 and _DESC_CAP_FALLBACK=2000. Module-level docstring explains the motivation. 5 regression-guard tests cover constants, source-usage, and sub/over-cap slicing behavior. Commit (soon-push). Igor needs restart to pick up.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-24T19:30:35.659993+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "pe_chain pre-reasoning steps cut the ticket description before sending it to the tier.2 model:\n- pe_plan line 857: description[:600]\n- pe_plan line 875 (fallback): description[:200]\n- pe_situate line 1063: description[:600]\n- pe_hypothesize line 1669: description[:400]\n\nThe /ticket skill template requires structured sections (Affected files / Design rules / Scope boundary / Test plan) that land near the end of the description. For today's T-consult-confidence-threshold-raise (710 chars), the 600-char cap severed the Test plan field. Evidence: qwen returned a 40-char truncated plan ('Update `CONFIDENCE_THRESHOLD` to .') — the value that belongs after 'to' is elsewhere in the description AND the format hints qwen needed (e.g. 'Affected files:' cue) were cut.\n\nFix: raise caps to a generous bound — 4000 for reasoning-prompt contexts (PLAN/SITUATE/HYPOTHESIZE) and 2000 for the fallback-plan path. Tickets generally stay <2000 chars with the template; 4000 gives 2x headroom without prompt bloat.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (4 slice sites), tests/test_pe_chain_basic.py or new tests/test_pe_chain_description_cap.py.\n**Design rules:** test-plan-or-why-not.\n**Scope boundary:** IN — raise description caps in pe_plan/pe_situate/pe_hypothesize. OUT — dynamic token-budget shaping, per-tier caps, truncation of other basket fields.\n**Test plan:** regression-guard tests that assert the prompt carries the full description when it's ≤4000 chars, and a synthetic 5000-char description is truncated to 4000 (not 600/400).",
+    "completed_at": "2026-04-24T19:31:59.324895+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1729eca7-cbe1-4465-943b-026148d2b1a5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

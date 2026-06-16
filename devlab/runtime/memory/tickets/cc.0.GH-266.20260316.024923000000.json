@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-266.20260316.024923000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-266"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T02:49:23",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-266"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-266",
+    "title": "D093-W3: Instance identity isolation (ring_memory, milieu, job heartbeat)",
+    "result": "Done: three schemas (instance scoped) + instance search_path + per-proxy access control.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-16T02:49:23Z",
+    "description": "GitHub issue #266. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-17T22:15:23.688592+00:00",
+    "github_issue": 266,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0c24dd9e-e89f-4482-a1fe-56179f4653d0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

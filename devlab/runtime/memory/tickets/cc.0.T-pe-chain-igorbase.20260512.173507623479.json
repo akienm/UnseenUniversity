@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-pe-chain-igorbase.20260512.173507623479",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-igorbase"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T17:35:07.623479",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-pipeline-observability-2026-05-12"
+    ],
+    "tickets": [
+      "T-d125-igorbase-drift",
+      "T-logging-class-inheritance-fixups",
+      "T-pe-chain-flight-recorder",
+      "T-pe-chain-igorbase"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-igorbase",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Cognition",
+      "PeChain",
+      "Refactor"
+    ],
+    "title": "CLOSED: Refactor pe_chain into PeChain(IgorBase)",
+    "result": "PeChain(IgorBase) hybrid refactor: phase functions → class methods with self.log; pure utilities stay module-level to preserve mock.patch semantics; 8 test files updated; 300 pe_chain tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-05-12T17:35:07.623479+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "description": "pe_chain.py is ~3500 lines of standalone functions (pe_entry_init, pe_plan, pe_situate, pe_hypothesize, pe_implement, etc.) sharing state via an explicit `basket` dict parameter. It is the only major Igor tool not extending IgorBase — meaning it cannot use self.log, time_it(), log_llm_io(), or log_state_snapshot(). T-d125-igorbase-drift and T-logging-class-inheritance-fixups both missed it.\n\nRefactor into PeChain(IgorBase):\n- basket dict becomes self.basket (instance state)\n- All pe_xxx functions become methods: def pe_plan(self) reads/writes self.basket\n- Module-level run_pe_chain() and run_pe_entry_chain() stay as thin wrappers that instantiate PeChain and call the entry method — zero change to callers\n- Replace logging.getLogger(__name__) with self.log throughout\n- Replace all forensic_logger.log_error lazy imports with self.log.error\n- Replace forensic_logger.log_reasoning_call with self.log.info (include model/elapsed_ms/tokens in message)\n- Update module docstring: add PeChain class to overview, note basket is now self.basket\n\nDo NOT add new log sites in this ticket — that is T-pe-chain-flight-recorder. This ticket is structural refactor only.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py\n**Design rules:** OOP-first (class required), docs-live-in-code (module docstring must be updated)\n**Scope boundary:** pe_chain.py only. Callers (run_pe_chain, run_pe_entry_chain) signatures unchanged. Forensic_logger migration: clean log_error → self.log.error and log_reasoning_call → self.log.info. Do not touch forensic_logger.log_inference_io — that is T-pe-chain-flight-recorder.\n**Test plan:** All existing pe_chain tests pass unchanged after refactor. Run: cd ~/TheIgors && source venv/bin/activate && python -m pytest tests/ -x -q 2>&1 | head -40. Green is the gate — do not commit if any test fails.",
+    "completed_at": "2026-05-13T00:32:38.847326+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c2861970-e31c-4243-b3e7-93c71b988498",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

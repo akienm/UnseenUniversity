@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-web-responsiveness.20260605.180839565688",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-web-responsiveness"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T18:08:39.565688",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-web-responsiveness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-web-responsiveness",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Operational",
+      "Web"
+    ],
+    "title": "Igor: web API unresponsive, needs diagnosis",
+    "result": "Diagnosed: root cause was Ollama inference stall (341s), not routing. Routing code is sound — live test confirms comms://igor fanout=2, reply in 0.7s. Two follow-on issues filed: channel-mismatch UX (browser in wrong tab) + global incoming queue not filtered by agent_id.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.85,
+    "intention": "I intend that Igor's web interface is responsive and operational.",
+    "created_at": "2026-06-05T18:08:39.565688+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor is receiving messages intermittently and generating responses, but responses appear only in the tmux console (public feed) — not in the web chat UI (private feed). Server is running. Naming: tmux console = public feed. Web chat window = private feed. Bug: web-chat replies not routed back to web UI. Affected files: devices/igor/web/*, devices/web_server/server.py. Completion criteria: message sent via web chat produces visible response in web chat UI, not just console.",
+    "completed_at": "2026-06-05T20:38:00.028236+00:00",
+    "deposited_at": "2026-06-05T12:09:19.746694",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

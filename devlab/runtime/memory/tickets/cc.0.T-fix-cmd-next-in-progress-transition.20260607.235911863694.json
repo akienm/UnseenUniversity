@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-fix-cmd-next-in-progress-transition.20260607.235911863694",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-cmd-next-in-progress-transition"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T23:59:11.863694",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-cmd-next-in-progress-transition"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-cmd-next-in-progress-transition",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Bug"
+    ],
+    "title": "Fix: cmd_next does not mark ticket in_progress after dispatch",
+    "result": "patched next_ticket_id_for_worker in test to isolate from live queue; cmd_next marking logic was correct all along; all 3 dispatch tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that cmd_next atomically marks the dispatched ticket in_progress so TestCmdNextMarksInProgress passes.",
+    "claimed_at": null,
+    "created_at": "2026-06-07T23:59:11.863694+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pre-existing failure: test_cmd_next_marks_ticket_in_progress asserts that after cmd_next returns a ticket, its status in the DB is in_progress. Actual result: status remains sprint. Confirmed pre-existing (not caused by recent changes — git stash had nothing).\n\n**Affected files:** lab/claudecode/cc_queue.py (cmd_next / setstatus logic)\n**Design rules:** no-sqlite; Postgres only\n**Scope boundary:** In scope: fix cmd_next to mark returned ticket in_progress atomically. Out of scope: changes to other queue commands.\n**Completion criteria:** test_cmd_next_marks_ticket_in_progress passes. No other tests regress.",
+    "completed_at": "2026-06-08T03:12:09.497170+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

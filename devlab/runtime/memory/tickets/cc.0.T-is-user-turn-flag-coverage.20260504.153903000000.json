@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-is-user-turn-flag-coverage.20260504.153903000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-is-user-turn-flag-coverage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:39:03",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-routing-fix-2026-05-03"
+    ],
+    "tickets": [
+      "T-is-user-turn-flag-coverage",
+      "T-user-turn-cloud-first-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-is-user-turn-flag-coverage",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Routing",
+      "Bug"
+    ],
+    "title": "CLOSED: Trace + verify is_user_turn=True for human-Akien input reaching gateway.reason()",
+    "result": "Audit complete: all call sites correct. Added DEBUG log at gateway.reason() entry + 4 tests documenting the audit table. Commit 3c5e6a64.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-04T15:56:07.072657+00:00",
+    "created_at": "2026-05-04T15:39:03Z",
+    "related_to": null,
+    "decision_id": "D-inference-routing-fix-2026-05-03",
+    "description": "**Filed 2026-05-03 during T-user-turn-cloud-first-routing verification.** Discovery: the routing logic at inference_gateway.py:651 is correct (local-first is gated on `not is_user_turn` per D254). The 2026-05-03 20:17:27 incident, where Akien's 'how goes in there?' message hit local instead of cloud, was NOT a routing bug — it was that `is_user_turn=False` when his input reached gateway.reason(). The cloud-first contract is now locked in by tests/test_user_turn_cloud_first.py.\n\nThe upstream gap: trace every code path from 'Akien input arrives' (channel_send / IMAP / direct REPL / etc.) to gateway.reason() and verify is_user_turn=True is set when the originating actor is human. Likely suspects:\n\n1. **channel_send → Igor pipeline**: Akien sends via `channel_send(content=...)`. Where in Igor's processing chain does that get routed to gateway.reason()? Is is_user_turn passed through correctly?\n2. **Background pe_chain / habit-fired calls** that DERIVE from Akien input but then fire as background work. These probably should keep is_user_turn=False (they're background) — verify the boundary is in the right place.\n3. **author='claude-code' messages** — does Igor treat these as user_turn or background? Per the channel_send tool docstring: 'Igor processes messages with author 'claude-code' — full BG scoring, habit matching, LLM response.' That's BG-shaped, suggesting NOT user_turn. But CC messages on behalf of Akien probably should be.\n\n**Approach:**\n- Read every gateway.reason() call site (grep `\\.reason\\(` in cognition/, twm-driven habits, etc.)\n- For each call site: determine the originating-actor classification (human / Igor-self / CC / background)\n- Document the mapping in a table; for human-originated paths, verify is_user_turn=True\n- Add an assertion or log line at gateway.reason() entry that captures (origin_actor, is_user_turn) so the next misroute is observable\n\n**Affected files:** wild_igor/igor/cognition/* (caller audit), wild_igor/igor/cognition/inference_gateway.py (instrumentation if added), tests/test_is_user_turn_flag_coverage.py (NEW — assert known call sites pass the right flag).\n**Design rules:** D254 (user-turn cloud-first), theigors/rules/local-inference-no-timeouts (sibling — both rules want human-impacting paths to NOT timeout-stall on local).\n**Scope boundary:** IN: audit + verify + add observability for the flag. OUT: any architectural change to the channel-to-gateway pipeline (would be its own ticket). OUT: changing the default of is_user_turn (default should stay False — explicit-True is safer than explicit-False).\n**Test plan:** unit test per identified human-input call site asserting is_user_turn=True is passed to gateway.reason(). **Validation:** new log line `[gateway] reason() called: origin=<actor> is_user_turn=<bool>` at every entry — visible in production for future audits. **Cleanup:** none. **Logging:** the new log line IS the observability.",
+    "completed_at": "2026-05-04T16:05:27.968925+00:00",
+    "github_issue": 581,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b11b1902-2272-431c-9394-c496ce8d3bae",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

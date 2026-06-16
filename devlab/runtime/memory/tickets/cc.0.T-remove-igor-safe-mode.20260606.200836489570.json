@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-remove-igor-safe-mode.20260606.200836489570",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-igor-safe-mode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:08:36.489570",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-igor-boredom-background-goals",
+      "T-remove-igor-safe-mode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-igor-safe-mode",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Cognition",
+      "Cleanup"
+    ],
+    "title": "Remove Igor safe_mode watchdog entirely",
+    "result": "safe_mode.py deleted; trip() + _safe_mode_triggered removed from coa.py; test_safe_mode.py deleted; 405 lines gone",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.4,
+    "intention": null,
+    "claimed_at": "2026-06-06T20:32:21.809764+00:00",
+    "created_at": "2026-06-06T20:08:36.489570+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** safe_mode.py watchdog treats the symptom (NE stuck cycles) instead of the root cause (boredom/idle loop not triggering background goals). It also writes a persistent flag that blocks Igor's capabilities and requires human intervention to clear — exactly backwards from self-healing.\n\n**What to do:** Delete or hollow out `devices/igor/cognition/safe_mode.py`. Remove the `trip()` call sites in COA/NE. The flag was already cleared manually (2026-06-06). The actual fix for Igor getting bored is a separate ticket (T-igor-boredom-background-goals).\n\n**Affected files:** devices/igor/cognition/safe_mode.py, wherever trip() is called (COA, NE), igor.switches.cfg (IGOR_SAFE_MODE line already cleared)\n**Design rules:** none\n**Scope boundary:** Remove the watchdog mechanism. Do NOT touch the boredom/background-goal fix — that's a separate ticket.\n**Completion criteria:** safe_mode.py calls/imports removed from COA/NE; no IGOR_SAFE_MODE flag written anywhere; tests still pass.",
+    "completed_at": "2026-06-07T01:30:11.388600+00:00",
+    "deposited_at": "2026-06-06T14:09:00.391339",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cd0d36ec-427f-4a81-8d28-e7fa217d42db",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

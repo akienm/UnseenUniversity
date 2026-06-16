@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-lever-memory-confidence.20260610.215216395836",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-lever-memory-confidence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T21:52:16.395836",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-lever-memory-confidence-2026-06-10"
+    ],
+    "tickets": [
+      "T-consequence-lever-memory-confidence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-lever-memory-confidence",
+    "gate": "2026-06-24",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: LEVER type + confidence rename",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the LEVER type and confidence rename are verified to produce more readable code and no retrieval regressions.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T21:52:16.395836+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-lever-memory-confidence-2026-06-10",
+    "description": "**What changed:** Memory layer renamed `inertia` → `confidence`; added LEVER type (base 0.85); added source-seeded starting confidence.\n\n**Predicted unintended effects:**\n- Callers that string-match 'inertia' in log output break silently (grep logs for 'inertia' after ship)\n- FACTUAL baseline bump (0.25→0.65) causes FACTUAL memories to crowd out EPISODIC in pre-inference assembly — check top-10 memories surfaced before/after\n- Source multiplier defaults to 'unknown' (0.75) everywhere — effective change from flat baseline may shift retrieval ranking for existing memories\n- table_inertia.py rename breaks any external script that imports it by name\n\n**Signals to watch:** `grep -r 'inertia' devices/igor/ --include='*.py'` returns zero; pre-inference assembly output still contains a mix of types (not dominated by FACTUAL); no import errors after table rename.\n\n**Gate condition:** Check by 2026-06-24.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe retrieval quality and naming correctness; annotate as clean / retrieval-skewed / callsite-missed\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

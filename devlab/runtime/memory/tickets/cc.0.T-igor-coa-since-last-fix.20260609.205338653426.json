@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-igor-coa-since-last-fix.20260609.205338653426",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-coa-since-last-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:53:38.653426",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-coa-since-last-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-coa-since-last-fix",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "BugFix"
+    ],
+    "title": "Fix _since_last NameError in coa.py tick()",
+    "result": "one-liner: _since_last → _now - self._ne_last_run_time; crashdump revealed it (db96353b)",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that COA.tick() no longer crashes with NameError on every NE tick cycle.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:53:38.653426+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "After the _ne_tick_should_yield() refactor, the variable `_since_last` was removed from tick() scope but the cooldown gate at line 215 still referenced it. Igor crashed on every NE tick cycle with NameError: name '_since_last' is not defined.\n\n**Affected files:** devices/igor/cognition/coa.py:215\n**Design rules:** none apply\n**Scope boundary:** One-line fix — replace `_since_last` with `_now - self._ne_last_run_time`\n**Completion criteria:** Igor starts and enters cognition loop without NameError crash",
+    "completed_at": "2026-06-09T20:53:42.669791+00:00",
+    "deposited_at": "2026-06-09T15:01:02.202216",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-06-09T20:53:38.704216+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

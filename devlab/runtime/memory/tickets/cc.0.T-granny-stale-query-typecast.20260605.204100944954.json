@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-granny-stale-query-typecast.20260605.204100944954",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-stale-query-typecast"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T20:41:00.944954",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-stale-query-typecast"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-stale-query-typecast",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Operational"
+    ],
+    "title": "Granny: stale-dispatched query fails, text vs timestamptz cast",
+    "result": "::timestamptz cast on updated_at in both stale queries; stale cleanup now runs without error",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "intention": "I intend that Granny's stale-dispatched and stale-inprogress cleanup queries run without error by correctly casting the updated_at text field to timestamptz.",
+    "created_at": "2026-06-05T20:41:00.944954+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Granny's stale-dispatched and stale-inprogress SQL queries fail with: `operator does not exist: text < timestamp with time zone` on `updated_at`. The updated_at column in clan.memories is stored as text; the queries compare it directly with `now() - interval '...'`. Fix: add explicit cast `updated_at::timestamptz` in the WHERE clause.\n\n**Affected files:** devices/granny/daemon.py (stale-dispatched and stale-inprogress queries)\n\n**Design rules:** none apply — local query fix\n\n**Scope boundary:** Add ::timestamptz cast to both queries. Out of scope: schema migration, changing retention logic.\n\n**Completion criteria:** Granny log shows no 'operator does not exist: text < timestamp' warnings; stale cleanup runs without error.",
+    "completed_at": "2026-06-05T21:35:45.777651+00:00",
+    "deposited_at": "2026-06-05T14:42:31.505317",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

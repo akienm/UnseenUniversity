@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-slow-query-analysis.20260320.122425837289",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slow-query-analysis"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T12:24:25.837289",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-slow-query-analysis"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slow-query-analysis",
+    "body": "db_proxy now routes all DB traffic. db_queries.log has the data. Build: get_slow_query_report() tool in tools/metrics.py (reads ~/.TheIgors/logs/db_queries.log, groups by sql pattern, returns p50/p95/p99 + top offenders). Wire to a PROC habit so Igor can surface this on request. See subsystem_memory DP5 / db_proxy.get_metrics().",
+    "role": "worker",
+    "size": "S",
+    "title": "Slow query analysis: tool + habit to surface db_queries.log patterns",
+    "result": "analyze_slow_queries() tool + PROC_SLOW_QUERY_REPORT habit. Top offender: SELECT * FROM memories (2338x, avg 506ms). CREATE INDEX running 710x (boot-only bug). wg_cooccur historical noise. Committed.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "completed_at": "2026-03-20T12:24:25.837289+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

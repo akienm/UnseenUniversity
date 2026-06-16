@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-announce-slice5-mcp-wrapper-and-config.20260502.001652217348",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice5-mcp-wrapper-and-config"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T00:16:52.217348",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice3b-cc-mcp-adapter",
+      "T-announce-slice5-mcp-wrapper-and-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice5-mcp-wrapper-and-config",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice5",
+      "Datacenter",
+      "CC",
+      "MCP"
+    ],
+    "title": "datacenter_mcp.py wrapper + .mcp.json entry — wire AnnounceMcpServer into Claude Code",
+    "result": "datacenter_mcp.py wrapper + .mcp.json entry ship: 3 MCP tools (announce/manifest/check_for_invalidate) backed by lazy AnnounceMcpServer singleton. JSON TextContent serialization. 7 wrapper tests + manual import smoke. TheIgors commit a0459af7.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-01T23:27:10.606503+00:00",
+    "related_to": "T-announce-slice3b-cc-mcp-adapter",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "AnnounceMcpServer ships as a Python class (slice 3b) but Claude Code can't invoke it until we provide an MCP stdio entry point. This ticket adds:\n  1. lab/claudecode/datacenter_mcp.py — thin MCP stdio wrapper that imports AnnounceMcpServer and registers its three methods (announce / manifest / check_for_invalidate) as MCP tools\n  2. .mcp.json entry naming the new server so CC sessions auto-discover it\n\n**Affected files:** /home/akien/TheIgors/lab/claudecode/datacenter_mcp.py (NEW — modeled on igor_mcp.py), /home/akien/TheIgors/.mcp.json (add 'datacenter' server entry), /home/akien/TheIgors/tests/test_datacenter_mcp_wrapper.py (NEW — wrapper-level dispatch tests)\n**Design rules:** matches igor_mcp.py's transport pattern (mcp.server.Server + stdio_server); singleton AnnounceMcpServer instantiated at module import (so tools share one client + cached manifest); tool methods return the JSON dicts AnnounceMcpServer already produces — no shape transformations.\n**Scope boundary:** in — wrapper script, .mcp.json entry, tool-dispatch tests. Out — Igor-side reciprocal MCP tools, dynamic profile selection at runtime (cc.yaml is hardcoded), end-to-end CC integration test (requires live skeleton).\n**Test plan:** test_wrapper_imports_without_error; test_wrapper_exposes_three_tools (lists declared MCP tools, asserts presence); test_announce_tool_dispatches_to_adapter (mock adapter, call wrapper tool, verify forwarding); test_manifest_tool_dispatches_to_adapter; test_check_for_invalidate_tool_dispatches_to_adapter.",
+    "completed_at": "2026-05-02T00:16:52.217348+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "92a4ecc8-f80c-496f-b043-934641b9ca0e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

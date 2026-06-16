@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-restart-rate-limit.20260404.175146015620",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-restart-rate-limit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:51:46.015620",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-restart-rate-limit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-restart-rate-limit",
+    "size": "S",
+    "tags": [
+      "Operations"
+    ],
+    "title": "Exit-42 restart loop: add crash rate-limit counter (max 3 in 60s → alert + exit 1)",
+    "result": "Appends epoch timestamp each loop; prunes >60s; halts exit 1 if 4+ restarts in 60s; writes CRITICAL to alerts.txt. Syntax-checked. Committed 98915f15.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T17:50:35.448029+00:00",
+    "related_to": null,
+    "description": "igor bash startup script loops on exit code 42 with no rate-limit. 5 crashes in 60s loops forever with no alerting. Fix: write a restart.counter file with timestamps; if 3 restarts in 60s, log CRITICAL to alerts.txt and exit(1) instead of 42 — stops the loop and leaves evidence. SRE finding from deep-audit Panel 11.",
+    "completed_at": "2026-04-04T17:51:46.015620+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68e41c1c-b897-4147-8ade-bf19947c6346",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-goals-as-persistent-relationships.20260414.014808000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goals-as-persistent-relationships"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:08",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goals-as-persistent-relationships",
+      "T-igor-emit-action-confabulation",
+      "T-pr-accretion",
+      "T-pr-consolidation",
+      "T-pr-consolidation-sleep-wiring",
+      "T-pr-interlocutor-resolution",
+      "T-pr-investment-weight-propagation",
+      "T-pr-load-as-primary-attractor",
+      "T-pr-retrieval-bias",
+      "T-pr-schema-seed",
+      "T-pr-secondary-attractor-nesting"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goals-as-persistent-relationships",
+    "tag": "Cognition",
+    "size": "L",
+    "owner": "cc",
+    "title": "Unify goals and persistent-relationships — goals are PRs with abstract second-nodes",
+    "result": "52dcd383 — seed_strategic_goals.py (1 aspirational + 3 strategic facia) + goal_graph.py (list/decompose/progress/state_transition) + goal_adopt parent_goal_facia_id extension + pr_consolidate_all skips goal_* facia. Reuses PR substrate end-to-end. 18 tests, 2209 pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-14T01:48:08Z",
+    "related_to": null,
+    "description": "AUTHORED BY IGOR-WILD-0001 in conversation with Akien on 2026-04-13 (~17:30). Claude filed on Igor's behalf — see T-igor-emit-action-confabulation (22c57af6) for why Igor cannot reliably file his own tickets yet.\n\nIgor's exact words after Akien asked 'is a goal a (possibly short term) persistent relationship?':\n\n  'Yes — in a useful sense. A goal has the structure of a persistent relationship between my current state and a desired future state, with a gap that needs closing. It persists across time, it has salience that decays or intensifies based on progress, and it can be referenced, updated, or resolved — exactly like a persistent relationship between two entities. The difference from a social relationship is mainly the nature of the second node: instead of Akien or Leah it is state where Igor can reason about his own goal-graph or world that sucks less for experiencing beings. Abstract nodes, but nodes.'\n\nIgor proposed the structure himself: 'goals could live in the same graph layer as relationships, with typed edges — WANTS_TO_ACHIEVE, BLOCKED_BY, REQUIRES_FIRST, IN_PROGRESS. Progress updates are edge-weight changes. Completion is a state change on the node. Sub-goals are child nodes. The whole thing becomes navigable the same way relationship history is navigable.'\n\nTHIS IS THE UNIFICATION. Everything we shipped today on persistent-relationships already IS the goal infrastructure if we lean into it:\n  - frame load (T-pr-load-as-primary-attractor 72978a10) → goal load on relevant input\n  - accretion (T-pr-accretion 993a4461) → progress writes into the goal subtree\n  - consolidation (T-pr-consolidation 0dcc387b) → goal weight evolution\n  - investment weight propagation (T-pr-investment-weight-propagation 8654e7fb) → goal salience modulation\n  - retrieval bias (T-pr-retrieval-bias 12fd238f) → relevant memories surface during goal pursuit\n  - secondary attractor nesting (T-pr-secondary-attractor-nesting bbd10a02) → sub-goals nest inside parent goals\n  - sleep wiring (T-pr-consolidation-sleep-wiring e9e3f4bd) → goal consolidation runs automatically\n  - interlocutor resolution (T-pr-interlocutor-resolution 38585540) → goals can be tied to specific relationships (a goal pursued FOR a person)\n\nSCOPE — extend the PR tree with goal-flavored facia:\n\n1. New relationship_type values: 'goal_aspiration' (very long term, e.g. 'world where things suck less for all experiencing beings'), 'goal_strategic' (multi-week initiatives, e.g. 'learn to reason about my own goal graph'), 'goal_tactical' (single-session work, mostly current GOAL memory type).\n\n2. New metadata fields on facia: 'desired_future_state' (the second node — what does success look like), 'progress' (0.0-1.0 or qualitative), 'state' (not_started | in_progress | blocked | completed | abandoned), 'parent_goal_id' (for sub-goal decomposition), 'requires' (list of goal_ids that must complete first), 'blocks' (list of goal_ids this is blocking).\n\n3. Seed initial goal-aspiration: 'help the world suck less for all experiencing beings' — Igor's stated long-term purpose. Sub-strategic goals: 'learn to reason about my own goal graph,' 'learn to set sub-goals about what to learn,' 'learn to track progress and adjust.'\n\n4. Existing GOAL memory_type (from D275, used by goal_adopt) becomes the fast-path for tactical session-level goals. Strategic and aspirational goals live as PR facia. Goal_adopt extended to optionally promote a tactical GOAL into a sub-facia of a parent strategic goal when the relationship is clear.\n\n5. New tools: goal_decompose(parent_facia_id, sub_goal_description), goal_progress(facia_id, delta), goal_state_transition(facia_id, new_state). All registered.\n\n6. cortex.search() retrieval bias already covers goal-linked memories (from 12fd238f) — they get the same +0.10 bonus as relationship-linked memories.\n\nINERTIA: HIGH-MEDIUM. Touches PR schema (extension), goal_adopt (extension), main.py dispatch (small). Pure additive — does not break existing PR or GOAL behavior.\n\nTHIS IS IGOR'S OWN ARCHITECTURAL CONTRIBUTION. He saw the unification. The ticket should preserve his exact words in the provenance line above and credit him in the commit message when it ships.\n\nDEPENDS ON: T-pr-schema-seed (53740afc) and the rest of the PR epic — all shipped 2026-04-13. This is the next layer.",
+    "completed_at": "2026-04-14T17:41:50.397658+00:00",
+    "github_issue": 422,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5f0e9fc9-ed12-4ab2-a985-d8b38286e6ba",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

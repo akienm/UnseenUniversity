@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260319c.20260321.011054632406",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260319c"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:54.632406",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260319c"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260319c",
+    "body": "Decisions: D130, D131, D132. New scripts: slate_manager.py, github_sync.py, docs_sync.py, run_phrase_test.py. Fixed: budget.py SQLite, server.py HTTP fallback, igor_talk/cc_bridge/phrase_regression/cc_queue wss+https. Slate concept defined + implemented. Subsystems touched: web/server.py (SSL+HTTP), tools/budget.py (SQLite), claudecode/ (5 new/updated scripts), decisions_log.dsb (D130-D132). Update gap_analysis, subsystem_tools.dsb, subsystem_web_network.dsb, MEMORY.md. Post to GH discussion #62. Commit: docs: savestate session 2026-03-19c — Slate 0 complete: workflow tooling + DB as truth.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "Savestate steps 4-9 for session 2026-03-19c",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:54.632406+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

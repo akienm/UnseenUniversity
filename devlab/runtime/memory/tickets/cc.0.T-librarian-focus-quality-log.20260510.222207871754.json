@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-librarian-focus-quality-log.20260510.222207871754",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-focus-quality-log"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:07.871754",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-elevation-2026-05-10"
+    ],
+    "tickets": [
+      "T-librarian-focus-quality-log"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-focus-quality-log",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Librarian"
+    ],
+    "title": "CLOSED: Librarian focus quality log",
+    "result": "focus_quality_log DDL + read_quality_log() prune_candidate stats; 5 new tests; 14 total green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T23:27:27.301166+00:00",
+    "created_at": "2026-05-10T22:22:07.871754+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-elevation-2026-05-10",
+    "description": "Schema: `instance.focus_quality_log` — id serial PK, ne_cycle_ts timestamptz, memory_id bigint, was_loaded bool, was_used bool, contribution_score float DEFAULT 0.0, logged_at timestamptz DEFAULT now(). After each NE cycle, record which memory IDs were loaded as context and whether they appeared in the NE output (was_used). The Librarian reads focus_quality_log to weight prune recommendations: memories repeatedly loaded but never used are highest-value prune candidates.\n\nAPI in Librarian curation_tools: read_quality_log(memory_id, days=30) → contribution stats. NE logs via direct psycopg2 INSERT (or via a new proposals mechanism — whichever is simpler given the sprint state at implementation time).\n\n**Affected files:** `agent_datacenter/devices/librarian/tools/curation_tools.py` (read_quality_log), DB migration (CREATE TABLE instance.focus_quality_log)\n**Design rules:** no-sqlite; direct psycopg2; append-only; no cortex.py touch\n**Scope boundary:** IN — focus_quality_log schema, Librarian read path. OUT — NE write path (separate or part of grader work), no auto-prune from quality log alone.\n**Test plan:** seeded focus_quality_log rows; curation_tools identifies low-contribution-score memories as prune candidates; high-contribution memories skipped",
+    "completed_at": "2026-05-10T23:28:44.700244+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ab267b24-3d27-476a-9814-135dc96b1fbf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

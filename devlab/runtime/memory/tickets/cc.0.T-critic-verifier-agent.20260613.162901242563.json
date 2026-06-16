@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-critic-verifier-agent.20260613.162901242563",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-critic-verifier-agent"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T16:29:01.242563",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-builder-learning-blockade-2026-06-13"
+    ],
+    "tickets": [
+      "T-critic-verifier-agent",
+      "T-simulator-execution-sandbox"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-critic-verifier-agent",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Builder",
+      "Validation",
+      "Architecture"
+    ],
+    "title": "Wire CriticDevice into DickSimnel ToolLoop",
+    "result": "CriticDevice wired into ToolLoop: evaluate_decision per tool call + advisory apply_rules + learn+save at sprint end; 9 tests; all fail-open",
+    "status": "closed",
+    "worker": "claude",
+    "intention": "I intend that every tool call DickSimnel makes is evaluated by CriticAgent, so the planner-executor-critic loop is closed and the builder can learn from its own decisions.",
+    "claimed_at": null,
+    "created_at": "2026-06-13T16:29:01.242563+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-builder-learning-blockade-2026-06-13",
+    "description": "CriticDevice (devices/critic/) already exists with evaluate_decision(), analyze_pattern(), learn_from_patterns(), and apply_rules(). It is not wired into DickSimnel's execution loop. Every tool call DS makes goes unevaluated.\n\nWire CriticAgent into the DickSimnel ToolLoop:\n1. After each tool call result, call critic_agent.evaluate_decision(Decision(ticket_id, turn_num, decision_point, choice, context, tool_result))\n2. At sprint end (ticket close), call analyze_pattern(all_judgments) then learn_from_patterns(analysis)\n3. Persist learned rules via CriticDevice._save_rules() to ~/.unseen_university/critic_rules/\n4. At sprint start, call critic_agent.load_rules() so prior learning carries forward\n5. During tool selection, call critic_agent.apply_rules(context) — if a rule fires, log its recommendation (advisory, not blocking for now)\n\nThe Critic runs in-process alongside the ToolLoop. It is advisory at first — log recommendations but do not block execution. This gives us a learning signal without risking execution failures from premature gating.\n\n**Affected files:** devices/dicksimnel/toolloop.py (add CriticAgent calls), devices/critic/device.py (add _save_rules/_load_rules persistence), devices/critic/agent.py (minor: ensure load_rules handles missing file gracefully)\n**Design rules:** no-sqlite; log every Critic verdict at INFO; rules persisted to flat JSON (not Postgres — rules are local to the builder instance)\n**Scope boundary:** In scope: wire CriticAgent into ToolLoop; persist/load rules; advisory recommendations logged. Out of scope: blocking execution on Critic verdict (follow-on), Simulator integration (T-simulator-execution-sandbox), LLM-powered Critic judgments (current impl is rule-based — upgrade is separate ticket).\n**Completion criteria:** (1) After a DS sprint, ~/.unseen_university/critic_rules/*.json contains learned rules; (2) DS logs show CriticAgent verdict lines at INFO for each tool call; (3) apply_rules() logs a recommendation when a known failure pattern recurs; (4) all tests pass.",
+    "completed_at": "2026-06-13T23:23:14.442391+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T23:19:48.383162+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

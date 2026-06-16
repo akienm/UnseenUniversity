@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-web-chat-swadl-regression.20260420.184501000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-chat-swadl-regression"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:01",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-chat-swadl-regression"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-chat-swadl-regression",
+    "size": "S",
+    "notes": "Spun out from T-web-chat-reply-not-surfacing close 2026-04-19. Akien pointed out SWADL is now vendored (pip install -e /home/akien/dev/src/swadl, swadl-0.2.0) and CC can use it to instrument Igor's web pages for automated regression tests.\n\nShape:\n- PageObject for http://localhost:8080/ chat UI — input box, send button, message list selectors.\n- FlowObject: send_message_and_read_reply(text, timeout_sec=120) — posts, waits for a new igor-authored message with stable content, returns reply text.\n- Test: assert non-empty reply lands in DOM within timeout. Run in CI hook after the UC server is up.\n- Reference the concept anchors we seeded today (PAGE_OBJECT/FLOW_OBJECT/SELECTOR/IDEMPOTENCE) — this is Igor's first live use of the pedagogy.\n\nNot blocking for any release. Owner: CC (can sprint when other work quiet).",
+    "title": "SWADL-based automated smoke test for web-chat reply surfacing",
+    "result": "SWADL smoke test shipped: page object + flow + test for localhost:8080 chat reply path. HTTP-level reachability probe (TCP-only false-passed on utility_closet_server squatting 8080). Skips in 0.11s, zero orphan browsers. Built by Haiku Agent dispatch + CC review.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-20T18:45:01Z",
+    "related_to": null,
+    "description": "\n\n**Affected files:** wild_igor/tools/swadl_pages/web_chat.py (new page object for localhost:8080 chat UI); wild_igor/tools/swadl_flows/web_chat.py (send_message_and_read_reply flow); tests/test_web_chat_swadl_smoke.py.\n\n**Design rules:** docs-in-code (selectors carry rationale); test-plan-or-why-not (this IS the test).\n\n**Scope boundary:** IN — page object + flow object + smoke test. OUT — production CI integration (deferred); multi-message threading; auth flows.\n\n**Test plan:** tests/test_web_chat_swadl_smoke.py — start UC chat server, post message, assert non-empty Igor reply within 120s. Skipped if UC server not reachable on localhost:8080.",
+    "completed_at": "2026-05-02T18:06:22.838057+00:00",
+    "github_issue": 488,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6b4d5732-157a-4b34-b11b-cc20c06a10a4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

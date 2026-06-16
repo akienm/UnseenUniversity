@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-granny-test-isolation.20260603.035513714306",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-test-isolation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T03:55:13.714306",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bad",
+      "T-granny-test-isolation",
+      "T-ok"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-test-isolation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Granny"
+    ],
+    "title": "Granny tests: mock _cc0_available to prevent live tmux dispatch",
+    "result": "autouse fixtures in test_granny_daemon.py + test_feeds_mcp_tools.py; dedup test updated for |= semantics; 144 Granny tests pass (24411898)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-06-03T03:55:13.714306+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When Nanny runs pytest nightly (or any run when CC is idle), _cc0_available() reads granny.yaml + semaphore files and returns True. Tests calling run_once() without mocking this sent /sprint-ticket T-ok and /sprint-ticket T-bad to the live claude-main tmux session.\n\n**Affected files:** tests/test_granny_daemon.py, tests/test_feeds_mcp_tools.py\n**Design rules:** no-sqlite; test isolation\n**Scope boundary:** autouse fixture that mocks _cc0_available + _dicksimnel_available to False; also update test_dedup_blocks_immediate_re_dispatch to reflect |= semantics (not = reset).\n**Completion criteria:** 144 Granny tests pass; _cc0_available is never called with real config during test runs",
+    "completed_at": "2026-06-03T03:55:31.477952+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0dea47d4-2cde-444e-b02f-2bcb4e880ba1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice3b-igorshim.20260501.225324098172",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice3b-igorshim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:53:24.098172",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice3b-igorshim"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice3b-igorshim",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice3b",
+      "Datacenter",
+      "IgorShim"
+    ],
+    "title": "IgorShim — BaseShim subclass with install/connect/capability-reading (G-decision § 14)",
+    "result": "IgorShim ships per G-decision § 14: install (idempotent) + connect (announces, raises ConnectionError on timeout) + capability-reading forwarders. BaseShim contract (device_id, start/stop/restart, self_test, rollback). 12 new tests; 188 passed. agent_datacenter commit 0872937.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": "2026-05-01T22:51:15.557836+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "IgorShim is the datacenter's view of an Igor instance — a BaseShim subclass that wraps a DatacenterClient so the rack can start/stop/restart Igor and query its capability manifest through a stable shim API. Per G-decision (§ 14): install + connect + capability-reading. install() ensures a runtime profile exists for this Igor instance (copies canonical → runtime, idempotent). connect() instantiates a DatacenterClient and runs announce(). The capability-reading methods (get_tools, get_state_refs, get_channels) forward to the cached client. Lifecycle methods from BaseShim (start/stop/restart/self_test/rollback) are implemented but lightweight — Igor process management is not in this slice.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/igor_shim.py (NEW), /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/__init__.py (export IgorShim), /home/akien/dev/src/agent_datacenter/tests/test_igor_shim.py (NEW)\n**Design rules:** install() is idempotent (safe to re-run); connect() raises ConnectionError when announce times out — caller decides whether to retry; capability accessors return [] when not connected (graceful, mirrors DatacenterClient).\n**Scope boundary:** in — IgorShim class implementing BaseShim contract, install/connect lifecycle, capability-reading forwarders, unit tests covering all paths. Out — actual Igor process spawn (slice 4 or later — IgorShim assumes Igor runs externally), inotify-driven re-announce (slice 3b invalidator ticket), shim auto-restart on Igor crash.\n**Test plan:** test_install_creates_runtime_profile_idempotent; test_install_skips_when_runtime_already_exists; test_connect_announces_and_caches_client (uses in-process Skeleton + IMAP stub); test_connect_raises_on_announce_timeout; test_get_tools_forwards_to_client; test_get_tools_empty_before_connect; test_self_test_returns_passed_when_connected; test_self_test_returns_failed_when_not_connected; test_start_stop_idempotent.",
+    "completed_at": "2026-05-01T22:53:24.098172+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "722cb7e4-44eb-4aa5-ba0e-5b0ebd64e8a1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

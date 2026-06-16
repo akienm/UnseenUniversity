@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-tutor-not-oracle-prompt.20260422.204759942596",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tutor-not-oracle-prompt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T20:47:59.942596",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-architecture-2026-04-22"
+    ],
+    "tickets": [
+      "T-tutor-not-oracle-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tutor-not-oracle-prompt",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Reasoning",
+      "Prompting"
+    ],
+    "title": "Upstream LLM prompt shape — thinking-frame, not answer",
+    "result": "TUTOR_DIRECTIVE constant + mode='tutor'|'answer' param on reasoning_context. Tutor is default; asks LLM for thinking-frame (questions, options, considerations) not direct answer. Answer mode preserved for translation/summarization. 8 tests. Commit 321b5c3b.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-22T20:45:27.225098+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-architecture-2026-04-22",
+    "description": "When Igor invokes an upstream LLM (for reasoning assistance when his own confidence is low), today's prompts ask for answers (\"what should Igor say to this?\"). That lets Igor copy-paste LLM output and skips real reasoning. Shift prompt shape to tutor-mode: \"what reasoning moves would help Igor work through this? What questions should he ask himself? What options is he likely missing?\" Returns a thinking-frame, not an answer. Igor has to APPLY the frame, which forces actual reasoning and generates richer learning signal (reasoning-shapes transfer across domains in ways output-patterns don't).\n\n**Affected files:** `wild_igor/igor/cognition/inference_openrouter.py` or wherever upstream reasoning prompts are composed — discovery step early in sprint; likely also `inference_gateway.py`; `tests/test_tutor_prompt.py` new.\n**Design rules:** docs-in-code (the tutor-not-oracle principle is load-bearing — document in module docstring); test-plan-or-why-not (covered); oop-first.\n**Scope boundary:** IN: replace answer-prompts with tutor-prompts for reasoning-assistance calls; keep answer-prompts for pure translation/summarization tasks (those don't benefit from tutor-mode); log mode chosen per call. OUT: the iterative tutor-chat (multi-round back-and-forth — future ticket if single-shot proves insufficient); tutor-cache of learned reasoning moves (follow-on — becomes habit tree entries).\n**Test plan:** tutor-mode prompt contains framing questions not answer-directives; answer-mode preserved for translation/summary calls; mode selection gated on call-type; output parser handles thinking-frame shape (list of questions/considerations) vs answer shape (direct text); integration test runs live against a mock LLM verifying prompt shape.",
+    "completed_at": "2026-04-22T20:47:59.942596+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f8694ba8-0b34-4885-9197-a4579ebd84ad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

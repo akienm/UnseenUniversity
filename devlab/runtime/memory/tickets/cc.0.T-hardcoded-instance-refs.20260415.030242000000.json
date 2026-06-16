@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-hardcoded-instance-refs.20260415.030242000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-hardcoded-instance-refs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T03:02:42",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-hardcoded-instance-refs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-hardcoded-instance-refs",
+    "body": "Surfaced by /day-close audit 2026-04-14. CLAUDE.md says hardcoded instance names 'should use paths().instance_id or env var.' grep finds 52 such occurrences in wild_igor/igor/ (non-test, non-cache).\n\n## Why\n\n- **Run-anywhere goal:** every hardcoded 'Igor-wild-0001' is a place where spawning a fresh instance breaks. The Windows port + multi-instance work depends on these resolving via paths() or env.\n- **Credential hygiene:** every hardcoded 'choose_a_password' should be loaded from env (it IS the dev password but it shouldn't be in source).\n- **Audit drift:** 52 is a known number. A registered audit check can prevent reintroduction.\n\n## Approach\n\n1. Grep for the 52 sites; classify each as:\n   - Test fixture / default (probably keep, low priority)\n   - Live code path that would break under a different instance id\n   - Documentation / comment (rewrite or leave)\n2. Replace each live-code-path occurrence with paths().instance_id (for instance_id) or os.getenv (for credential).\n3. Run test suite after each batch.\n4. Register a forever audit check via audit_add.py: `no hardcoded Igor-wild-0001 in src` with an exemption list for known-OK fixtures.\n\n## Existing infra\n\n- wild_igor/igor/paths.py — paths().instance_id is the canonical source\n- IGOR_HOME_DB_URL env var — the canonical credential path\n- T-audit-add-checks (#446, done) — the registered-check substrate\n\n## Provenance\n\n/day-close audit 2026-04-14. Tagged from CLAUDE.md hard-rule violation grep. Small ticket; could be sprinted as opportunistic work or as a focused S sprint.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "cleanup",
+      "config",
+      "audit",
+      "found-by-audit",
+      "windows-port"
+    ],
+    "title": "Replace 52 hardcoded 'Igor-wild-0001' / 'choose_a_password' refs with paths().instance_id / env vars",
+    "result": "paths().home_db_url property + mass replacement of 24 IGOR_HOME_DB_URL fallbacks + 5 live path refs + no-hardcoded-instance-refs audit check registered. 52→23 occurrences; remaining 23 are legitimate (docstrings, canonical default, SQL schema, main.py echo). 2490 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T21:55:53.388345+00:00",
+    "created_at": "2026-04-15T03:02:42Z",
+    "related_to": null,
+    "completed_at": "2026-04-15T22:13:03.057248+00:00",
+    "github_issue": 458,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

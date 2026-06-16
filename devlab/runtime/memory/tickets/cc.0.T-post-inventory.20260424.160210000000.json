@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-post-inventory.20260424.160210000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-post-inventory"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:10",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-list-primitive",
+      "T-post-inventory"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-post-inventory",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "POST",
+      "Observability"
+    ],
+    "title": "POST inventory — centralize existing boot-time self-checks",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T12:05:03.375298+00:00",
+    "created_at": "2026-04-24T16:02:10Z",
+    "related_to": null,
+    "approved_at": "2026-04-24T02:03:05.549187+00:00",
+    "decision_id": null,
+    "description": "Igor already runs implicit Power-On Self-Test activity at boot (venv/dep checks, DB connect, migrations, cortex init, milieu banner, subsystem imports, brainstem tick 0, and pe_chain pre-flight pytest mid-ticket). These are scattered and the boot console doesn't surface them as a single tree. This ticket inventories what's already happening, centralizes the logging, and exposes a single boot-time PASS/FAIL summary.\n\nFraming (Akien 2026-04-23): not about adding new POST checks — those come later once we can see the tree. This is: make the existing ones legible, gather them centrally, then look at the whole system and ask 'what else should be a POST item?' Inside Igor, POST becomes another tree gathering disparate things.\n\n**Affected files:** TBD — discovery step in sprint. Likely new `wild_igor/igor/system/post.py` aggregator + small edits at each existing check-point to report into it (install/bootstrap, main.py boot banner, cognition/__init__, memory/init, brainstem init, pe_chain pre-flight).\n\n**Design rules:** docs-in-code, test-plan-or-why-not, oop-first. no-sqlite doesn't apply. Observer pattern from T-list-primitive is conceptually related but this ticket predates it — POST posts to a plain collector for now.\n\n**Scope boundary:** IN — audit existing boot-time self-checks, route their results through one aggregator, emit a single PASS/FAIL tree to console + cc_inbox at boot completion. OUT — adding new POST checks (reply pipeline probe, consult probe, cortex roundtrip, UC handshake) — those are proposed follow-ups once the tree is visible.\n\n**Test plan:** unit tests on the POST aggregator (register/report/summarize). Integration: boot Igor with a deliberately broken subsystem (e.g. bad OR key), verify POST tree shows FAIL at the right node and reports via the summary line.\n\n**Sequence:** after the current engram + consult + web-reply + cc-inbox batch lands. Not gated on anything technical, just sequencing.",
+    "proposed_at": "2026-04-24T20:26:12.407958+00:00",
+    "completed_at": "2026-04-29T12:27:29.601905+00:00",
+    "github_issue": 517,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "false-positive brainstem/core_patterns.py gate — ticket does not touch HIGH-inertia files; cleared 2026-04-23",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "63779d70-6bdf-4f39-82fa-6b1102b9a92d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

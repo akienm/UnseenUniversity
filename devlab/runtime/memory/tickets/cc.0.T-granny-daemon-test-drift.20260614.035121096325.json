@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-granny-daemon-test-drift.20260614.035121096325",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-daemon-test-drift"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T03:51:21.096325",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-daemon-test-drift",
+      "T-granny-rules-engine-test-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-daemon-test-drift",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Granny"
+    ],
+    "title": "Fix Granny daemon tests — _dispatch_dicksimnel removed, tests stale",
+    "result": "4 stale test patches updated — cascade/removed symbols; all 23 pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.35,
+    "intention": "I intend that the Granny daemon test suite reflects the current daemon API and all relevant tests pass.",
+    "created_at": "2026-06-14T03:51:21.096325+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "4 tests in test_granny_rules_engine.py patch _dispatch_dicksimnel (removed) and _dispatch_bus (call count wrong). T-granny-rules-engine-test-fix was previously closed but daemon changed again. Fix patches to match current daemon symbols.\n\n**Affected files:** tests/test_granny_rules_engine.py\n**Design rules:** none apply\n**Scope boundary:** IN — fix TestRunOnce tests patching removed symbols. OUT — changing daemon behavior.\n**Completion criteria:** python -m pytest tests/test_granny_rules_engine.py passes with 0 failures.",
+    "completed_at": "2026-06-14T03:56:43.067843+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

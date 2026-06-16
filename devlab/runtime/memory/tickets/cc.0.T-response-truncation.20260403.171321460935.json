@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-response-truncation.20260403.171321460935",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-response-truncation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:13:21.460935",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-response-truncation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-response-truncation",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Igor response truncation — find and fix mid-sentence cutoff",
+    "result": "Root cause found: PROC_RESP_AUTO_366B2A habit seeded by output_trainer with trigger 'talking akien relationship operator message akien' — fired on every Akien web message. Fixed output_trainer._extract_trigger to strip TALKING WITH/Web message prefix before keyword extraction. Added metadata tokens to stopwords. Deleted bad habit from live DB. 5 new tests.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-03T17:08:28.747629+00:00",
+    "related_to": null,
+    "description": "Igor responses are being truncated mid-sentence (observed: long self-assessment cut off at prefrontal cortex narration). Root cause unknown — candidates: OR max_tokens limit, channel message size cap, bridge truncation. Diagnose where the ceiling is, raise or handle gracefully.",
+    "completed_at": "2026-04-03T17:13:21.460935+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d73d7d9-90bc-48af-8fd5-40531ccdbf41",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

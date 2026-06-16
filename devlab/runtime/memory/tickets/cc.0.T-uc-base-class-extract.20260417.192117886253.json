@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-uc-base-class-extract.20260417.192117886253",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-base-class-extract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T19:21:17.886253",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-base-class",
+      "T-uc-base-class-extract",
+      "T-uc-schema-three-namespaces"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-base-class-extract",
+    "size": "M",
+    "tags": [
+      "Architecture"
+    ],
+    "title": "Extract AgentBase from IgorBase — generic base for any UC agent",
+    "result": "AgentBase extracted to lab/utility_closet/agent_base.py. IgorBase is thin subclass. Configurable log_dir, get_timer() Igor-specific. All 20+ subclasses unchanged. 25 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T19:09:52.329326+00:00",
+    "related_to": null,
+    "description": "Extract the generic parts of IgorBase into an AgentBase class that any UC agent can inherit. IgorBase becomes a thin subclass adding Igor-specific bits.\n\n## Current IgorBase (wild_igor/igor/igor_base.py)\nProvides: instance naming (GC lookup), lazy per-class logging, perf tracking (time_it, record_perf, perf_summary), debug utilities (dump, _get_caller). Zero required constructor args. Only coupling: paths() for log directory.\n\n## New structure\n\n### lab/utility_closet/agent_base.py — AgentBase\n```python\nclass AgentBase:\n    def __init__(self, log_dir: Path | None = None):\n        self._perf_history: dict[str, list[float]] = defaultdict(list)\n        self._log_dir = log_dir  # configurable, not hardcoded\n\n    # Everything from IgorBase that's generic:\n    def get_name(self) -> str          # GC reverse-lookup\n    @property\n    def log(self) -> Logger            # lazy per-class logger\n    def time_it(self, label: str)      # context manager\n    def record_perf(self, label, ms)   # write timing\n    def _perf_summary(self, label)     # p50/p95/p99\n    def dump(self)                     # debug __dict__\n    def _get_caller(self, depth)       # stack introspection\n```\n\n### wild_igor/igor/igor_base.py — IgorBase(AgentBase)\n```python\nfrom lab.utility_closet.agent_base import AgentBase\n\nclass IgorBase(AgentBase):\n    def __init__(self):\n        super().__init__(log_dir=paths().logs)\n        # Any Igor-specific init\n```\n\nAll 20+ existing IgorBase subclasses (Cortex, Thalamus, NarrativeEngine, WordGraph, TurnPipeline, BaseReasoner, etc.) continue to work unchanged — they inherit IgorBase which inherits AgentBase.\n\n### lab/utility_closet/agent_client.py — AgentClient(AgentBase)\nRefactor UtilityClosetClient into AgentClient:\n```python\nclass AgentClient(AgentBase):\n    def __init__(self, uc_url: str, log_dir: Path | None = None):\n        super().__init__(log_dir=log_dir)\n        self._uc_url = uc_url\n\n    def register(self, agent_id, capabilities, callback_url) -> bool\n    def deregister(self) -> bool\n    def push_stats(self, stats: dict) -> bool\n    def send_message(self, content, channel) -> bool  # channel-aware\n    def poll_messages(self, channel) -> list\n    def start_stats_pusher(self, stats_fn, interval)\n```\n\nIgor's UtilityClosetClient becomes:\n```python\nfrom lab.utility_closet.agent_client import AgentClient\n\nclass UtilityClosetClient(AgentClient):\n    # Igor-specific overrides if any, otherwise just pass-through\n```\n\n## Tool registry split\nToolRegistry itself is already 100% AI-agnostic. Keep it in the UC:\n- Move `wild_igor/igor/tools/registry.py` → `lab/utility_closet/tool_registry.py`\n- Tool dataclass unchanged (name, description, parameters, fn)\n- Igor's tools/__init__.py imports from new location\n- Add `infra.tools` table: shared tool definitions that any agent can discover\n- Igor registers his tools in both in-memory registry AND infra.tools\n- UC agents can query infra.tools to discover available tools without importing Igor code\n\n## Files\n- NEW: lab/utility_closet/agent_base.py\n- NEW: lab/utility_closet/agent_client.py\n- MOVE: wild_igor/igor/tools/registry.py → lab/utility_closet/tool_registry.py\n- MODIFY: wild_igor/igor/igor_base.py (thin subclass)\n- MODIFY: wild_igor/igor/web/utility_closet_client.py (thin subclass)\n- MODIFY: wild_igor/igor/tools/__init__.py (import path)\n- All IgorBase subclasses: NO CHANGES needed\n\n## Testing\n- Existing IgorBase tests pass unchanged\n- New AgentBase tests: get_name, logging, perf tracking with custom log_dir\n- AgentClient tests: registration, stats push, message send/poll\n- ToolRegistry tests: all existing + infra.tools persistence\n- Import path tests: verify old imports still resolve\n\n## Depends on\n- T-uc-schema-three-namespaces (for infra.tools table)\n\n## Updates\n- This replaces T-uc-base-class (#402)",
+    "completed_at": "2026-04-17T19:21:17.886253+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "db2a76bf-1733-4427-a8bf-761e020b591c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

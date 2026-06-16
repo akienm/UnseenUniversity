@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-response-coherence-inhibitor.20260413.233201728980",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-response-coherence-inhibitor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T23:32:01.728980",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inhibitory-pattern-primitive",
+      "T-response-coherence-inhibitor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-response-coherence-inhibitor",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Response coherence inhibitor — flag habit-fired replies with near-zero semantic overlap with the prompt",
+    "result": "bc63e493 — First instance of T-inhibitory-pattern-primitive (epic filed). Catches the 2026-04-13 transcript moment where a habit fired on 'graph' keyword and dumped a cached preparse paragraph in response to a goals/planning question. tokenize_content + jaccard_overlap on content tokens, COHERENCE_THRESHOLD=0.10, gates on min content words. Detection-only first pass: COHERENCE_FAILURE ring + high-salience TWM marker, never modifies response_text. Wired into _process_inner end-of-turn after action-claim verifier with source_label distinguishing habit vs LLM. 14 new tests including the load-bearing 2026-04-13 case and the coherent-answer counterexample. 60 regression tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T23:27:39.671066+00:00",
+    "related_to": null,
+    "description": "Hotfix to catch the failure mode observed in 2026-04-13 transcript:\n\n  Akien: 'your long term goal is help the world suck less for all experiencing beings. to do that, you will need to learn about goals and planning inside your graph matrix. you can't ONLY rely on LLMs for that...'\n\n  Igor: 'Word graph + thalamus form Stage 1 of preparse (free, instant). Ollama is Stage 2 — called only when Stage 1 finds no confident habit match. Adjust IGOR_WG_PREPARSE_THRESHOLD...'\n\nThis is a habit firing on the keyword 'graph' and dumping a cached preparse-configuration paragraph. The response has near-zero semantic overlap with the actual question. No inhibitor caught it.\n\nDIFFERENT CLASS from action-claim verifier (22c57af6): that catches FALSE CLAIMS OF ACTION ('I ticketed it'). This catches OFF-TOPIC HABIT EMISSIONS. Same architectural shape as a verifier, different trigger surface.\n\nFIRST INSTANCE OF T-inhibitory-pattern-primitive (the epic above). When the pattern primitive ships, this single-instance hotfix becomes the first migration target — we don't lose the work, we generalize it.\n\nDESIGN:\n  - new module wild_igor/igor/cognition/response_coherence_inhibitor.py\n  - tokenize prompt and response (lowercase, strip stopwords + punctuation)\n  - compute Jaccard overlap on content tokens\n  - threshold: < 15% overlap → suspect\n  - additional gate: response length > 80 chars (don't false-positive on terse habit responses) AND prompt length > 30 chars (don't false-positive on tiny prompts)\n  - DETECTION-ONLY first pass (same philosophy as action-claim verifier): log COHERENCE_FAILURE ring entry + push high-salience TWM marker. Do NOT modify response_text in this sprint. Active suppression after observation.\n  - wire into _process_inner end-of-turn alongside the action-claim verifier check\n  - forensic log to logs/coherence_inhibitor.log\n\nINERTIA: LOW-MEDIUM. main.py end-of-turn block + new module.\n\nTESTS: Jaccard formula behavior, the exact 2026-04-13 case (preparse paragraph vs goals/planning question), high-overlap responses pass cleanly, length gates work, detection-only contract (response_text never modified).",
+    "completed_at": "2026-04-13T23:32:01.728980+00:00",
+    "deposited_at": "2026-04-23T10:40:13.779252",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "979c374e-b689-4a16-8722-0da1761c7bf1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-retrieval-widen-on-miss.20260415.165608953997",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retrieval-widen-on-miss"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T16:56:08.953997",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-retrieval-widen-on-miss"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retrieval-widen-on-miss",
+    "body": "From Akien 2026-04-15 morning conversation about Igor failing to find 'igor dev facia tree' because the canonical name is 'The Igors Project' / PR_IGORS_PROJECT.\n\n## The pattern\n\nAkien's biomimetic framing: when exact match fails, a biological retrieval system WIDENS the frame — it doesn't dead-end. 'Igor dev' and 'The Igors Project' share overlap (`igor`, and `dev` ↔ `project` are semantic cousins in this context). Spreading activation through the word graph should bridge them automatically on a second pass.\n\nFrom Akien: \"if i fail that search i go 'what else could he have meant?' and scan the list looking for things in a wider range of LIKE. The Igors is our project, so anything with 'The Igors' or 'TheIgors' might be a match... and of those, dev and project have an overlap. So i still would have found it. THAT is the behavior we'd like to wind up at.\"\n\nApplies symmetrically: CC and humans all blow exact-match sometimes; what keeps us from dead-ending is the second pass.\n\n## The gap\n\ncortex.search Phase 0 traversal bridges via interpretive_edges, and the word graph Hebbian bridge already broadens from query tokens — BUT only when the first retrieval got something to anchor on. When the first pass returns zero, there's nothing to widen FROM, and the system has no 'try again with a loosened frame' reflex.\n\n## Scope (MVP)\n\n1. Detect first-pass empty result in cortex.search\n2. Widen fallback strategies (executed in order, stop on first non-empty):\n   a. **Token-loosened LIKE**: split query into tokens, try LIKE '%<tok>%' ILIKE on narrative + metadata->>'display_name' for each token individually\n   b. **Word-graph neighbor expansion**: use word_graph.neighbors(token) for each query token to generate semantic cousins, retry with expanded token set\n   c. **Character trigram LIKE**: for short queries (<=20 chars), try pg_trgm-style trigram similarity on narrative + display_name (requires pg_trgm extension — check first, skip if unavailable)\n3. Tag results as widened_from_empty=True in result metadata so caller sees them as second-pass candidates, not equivalent to exact matches\n4. TWM push of 'widen_attempt' marker when fallback fires, with: original query, strategy used, result count. Gives Igor visibility that the widen happened so the cockpit can surface 'here's what I considered'.\n5. Never crash — any widen strategy failure → try next, empty overall is still valid (CP1)\n\n## Out of scope\n\n- Synonym dictionary / hand-curated semantic expansions (too brittle; biology uses co-occurrence graphs)\n- Full-text search index (separate larger ticket if pg_trgm turns out not enough)\n- Voice-layer messaging about the widen (Igor cognition surfaces it; the voice layer is a separate concern)\n\n## Files touched\n\n- wild_igor/igor/memory/cortex.py — search() method. MEDIUM inertia. Changes additive (new fallback path, existing return path unchanged when first pass hits).\n\n## Tests\n\n- first pass returns results → widen never triggered (no regression)\n- first pass empty, token-LIKE hits → returns widened results with metadata flag\n- first pass empty, token-LIKE also empty, word-graph expand hits → returns those\n- first pass empty, all strategies empty → returns [] cleanly\n- pg_trgm unavailable → skipped, no crash\n- TWM push of 'widen_attempt' happens exactly when widen runs\n- widened results carry widened_from_empty=True flag\n- 'igor dev' query reaches PR_IGORS_PROJECT / 'The Igors Project' via widen (integration-style test)\n\n## Provenance\n\nAkien 2026-04-15 conversation after Igor failed to find facia tree. Biomimicry-engineer reframe: the bug isn't a name drift, it's missing widen-on-miss reflex.",
+    "size": "M",
+    "tags": [
+      "cognition",
+      "retrieval",
+      "biomimicry",
+      "cortex-search"
+    ],
+    "title": "Widen-on-miss retrieval fallback — exact-match failures should trigger a loosened pass",
+    "result": "search_widen.py with 3 strategies (token_like, wg_neighbor, pg_trgm), biomimetic facia-first ordering, wired into cortex.search post-pipeline. Live test: 'igor dev' → PR_IGORS_PROJECT in top results. 22 unit tests + 2348 total pass. Also cleaned 36 leftover test-pollution goal facia.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T16:47:01.243278+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-15T16:56:08.953997+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

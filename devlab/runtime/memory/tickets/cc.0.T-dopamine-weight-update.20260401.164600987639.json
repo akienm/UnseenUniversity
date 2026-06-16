@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-dopamine-weight-update.20260401.164600987639",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dopamine-weight-update"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T16:46:00.987639",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dopamine-weight-update"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dopamine-weight-update",
+    "size": "M",
+    "tags": [
+      "learning",
+      "cognition",
+      "D277"
+    ],
+    "title": "Dopamine to graph weight update: close the learning loop",
+    "result": "Added reinforce_text(q_part, boost=0.05) call at narrative gap closure in narrative_engine.py. Gap resolved = training signal → strengthens word co-occurrence edges that led to resolution. Learning loop now closes: dopamine spike feeds back to word graph. 567 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-01T16:44:18.947032+00:00",
+    "description": "Close the learning loop: dopamine closure signal (gap resolved, spike) must feed back to update edge weights in word graph. Currently the signal fires but changes nothing. Training only sticks if the graph updates on success. Without this, every training round teaches the same things again. Medium complexity — needs trail heat to write back to wg_edges. Connects to D277.",
+    "completed_at": "2026-04-01T16:46:00.987639+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5594e059-fa55-4ee9-ad19-e1045ed50d57",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

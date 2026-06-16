@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-goal-queue-consumer.20260403.171418665752",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-queue-consumer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:14:18.665752",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "d-canonical"
+    ],
+    "tickets": [
+      "T-goal-close-habit",
+      "T-goal-queue-consumer",
+      "T-phase-d-canonical",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-queue-consumer",
+    "title": "Goal-as-queue-consumer — Igor reads queue, picks top ticket, fires goal_adopt during idle",
+    "result": "Already fully implemented in prior session. read_queue_top() + adopt_top_queue_ticket() in ops.py; PROC_QUEUE_DRAIN habit seeded (cognitive, 30min schedule, code_ref ops:adopt_top_queue_ticket, active-goal guard); test_queue_consumer.py exists. Igor drains his own backlog autonomously during idle cycles.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Igor can't act on ticketed work autonomously because tickets live in queue.json, not his TWM. The PROC_GOAL_CONTINUATION loop exists but requires a human to trigger goal_adopt first. Missing: the loop that reads the queue during idle time and fires goal_adopt without a human saying 'work ticket T-xxx'. Implementation: (1) new tool read_queue_top() reads queue.json filtered to status=pending, sorted by priority ASC + created_at ASC, returns top ticket or None. (2) New habit PROC_QUEUE_DRAIN (30min scheduler): calls read_queue_top() — if ticket found AND no active GOAL currently in cortex → fires goal_adopt(ticket_id). Effect: Igor drains his own backlog during boredom/idle cycles. Pairs with PROC_BOREDOM_TRIGGER: boredom = idle + no queue work. Prerequisites: T-goal-close-habit (done — closes goals cleanly), PROC_GOAL_CONTINUATION (done — drives mechanical steps). Related: T-phase-d-canonical.",
+    "completed_at": "2026-04-03T17:14:18.665752+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b614cd7a-b898-4979-ba50-e36702e6a5ca",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

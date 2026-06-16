@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-akien-rack-device.20260518.224735180562",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-akien-rack-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:47:35.180562",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-web-control-station-2026-05-18"
+    ],
+    "tickets": [
+      "T-akien-rack-device",
+      "T-web-akien-comms"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-akien-rack-device",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Architecture"
+    ],
+    "title": "CLOSED: Create devices/akien/ shim — Akien as addressable rack entity",
+    "result": "devices/akien/ shim + ARCHITECTURE.md + palace.shared.akien.goals upserted — commit 836d882 (validated)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:47:35.180562+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-web-control-station-2026-05-18",
+    "description": "Akien's web and Discord traffic currently has no rack-native structure. Creating devices/akien/ gives his messages a comms:// address (comms://akien/) that the bus can route like any other device. inbox/outbox/ideas dirs already exist at ~/.agent_datacenter/akien/; this adds the code definition.\n\nAlso: upsert the full goals_tree.20260507.md content into palace.shared.akien.goals (currently the node is a 788-char summary with a pointer back to the flat file — paper echo).\n\n**Affected files:** devices/akien/__init__.py (new), devices/akien/shim.py (new), devices/akien/docs/ARCHITECTURE.md (new)\n**Design rules:** no-sqlite, no-TheIgors-imports; data home is ~/.agent_datacenter/akien/ (already exists)\n**Scope boundary:** device definition + goals palace upsert only. No comms:// routing wiring yet (that's T-web-akien-comms). No running process — Akien is not a daemon.\n**Test plan:** devices/akien/ importable; shim.who_am_i() returns correct shape; palace.shared.akien.goals content length > 2000 chars after upsert.",
+    "completed_at": "2026-05-19T16:48:27.896115+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "61bd9aa3-5a4f-41eb-b8f3-73d41d76f103",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

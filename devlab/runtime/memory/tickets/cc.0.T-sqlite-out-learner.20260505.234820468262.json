@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-sqlite-out-learner.20260505.234820468262",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-out-learner"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T23:48:20.468262",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-migration-phase-bc-2026-05-05"
+    ],
+    "tickets": [
+      "T-sqlite-out-learner"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-out-learner",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Migration"
+    ],
+    "title": "CLOSED: Migrate learner.py SQLite-isms to native Postgres",
+    "result": "learner.py migrated: 9 ?→%s sites, SELECT changes()→rowcount; Calibre SQLite queries left intentionally. 20 tests pass. commit b16f9389",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": "D-sqlite-migration-phase-bc-2026-05-05",
+    "description": "learner.py:898-911 still uses ? placeholders in UPDATE reading_list statements and SELECT changes() to check rowcount. Both are SQLite-isms: ? must become %s, SELECT changes() must become using conn.rowcount or RETURNING. This was missed in the Phase A inventory. After this ticket and T-sqlite-out-learner complete, the _translate_insert_or_replace and _INSTR_RE can be stripped from _PGConnWrapper.\n\n**Affected files:** wild_igor/igor/tools/learner.py\n**Design rules:** no-sqlite, test-plan-or-why-not\n**Scope boundary:** IN: learner.py ?→%s, SELECT changes()→rowcount. OUT: _PGConnWrapper cleanup (separate ticket after this).\n**Test plan:** run tests/test_learner.py or full suite after migration\n**Pass condition:** learner.py has no ? placeholders, no SELECT changes(); tests pass",
+    "completed_at": "2026-05-05T23:48:20.468262+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9108ff3d-525a-4dd7-93fa-bd98619cc148",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

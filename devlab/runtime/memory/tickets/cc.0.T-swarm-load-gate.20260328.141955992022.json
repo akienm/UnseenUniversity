@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-swarm-load-gate.20260328.141955992022",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-load-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-28T14:19:55.992022",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-load-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-load-gate",
+    "epic": "Operations",
+    "size": "M",
+    "title": "swarm update: load pre-screen + parallel SSH",
+    "result": "cluster_ssh.py: ssh_exec_all now parallel (ThreadPoolExecutor, 20s timeout); _update_swarm pre-screens load, skips critical/unreachable boxes. Import OK.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-28T14:19:20.059484+00:00",
+    "description": "_update_swarm: check cluster loads first (skip critical boxes), run remaining boxes in parallel with 20s timeout. Eliminates sequential 90s-per-box blocking and removes timeout noise from channel.",
+    "completed_at": "2026-03-28T14:19:55.992022+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5ff0b469-baef-4bc3-887d-76f05850d96d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

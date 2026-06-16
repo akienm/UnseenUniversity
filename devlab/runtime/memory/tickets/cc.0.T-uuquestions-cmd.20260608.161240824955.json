@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-uuquestions-cmd.20260608.161240824955",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uuquestions-cmd"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T16:12:40.824955",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-id",
+      "T-uuquestions-cmd"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uuquestions-cmd",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "CLI",
+      "Workflow",
+      "Triage"
+    ],
+    "title": "uuquestions: CLI to surface tickets/decisions with open design questions",
+    "result": "uuquestions.py + ~/bin/uuquestions: shows open_questions tickets (❓ + first Q) and design tickets (📐). --questions-only/--design-only flags.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": "I intend that uuquestions lets Akien triage design items without burning CC tokens — shows all tickets in design status plus any ticket with a '## Questions' section in its description.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T16:12:40.824955+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "`uuquestions` — surface tickets with unanswered design questions.\n\nPrimary query: `status = 'open_questions'` (tickets where Q1:/Q2: exist without A1:/A2: answers — Akien sets this status when adding questions).\n\nSecondary: `status = 'design'` (design not yet started).\n\nCompact output format:\n  `❓ T-id (size) — title`\n  `  Q1: <first question>`\n\nBash function in ~/.bashrc → lab/claudecode/uuquestions.py.\n\n**Affected files:** lab/claudecode/uuquestions.py, ~/.bashrc\n**Design rules:** no-sqlite; Postgres only (clan.memories)\n**Scope boundary:** IN: query status=open_questions and status=design. OUT: editing questions, showing full ticket body (that's uushowticket).\n**Completion criteria:** `uuquestions` shows tickets with status=open_questions, prefixed ❓. Returns exit 0 with '(none)' when none found. Shows first Q1: line as preview.",
+    "completed_at": "2026-06-08T16:59:36.932796+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

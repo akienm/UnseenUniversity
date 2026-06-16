@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-pe-evaluate-confidence.20260521.190130164174",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-evaluate-confidence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T19:01:30.164174",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-expert-lenses-confidence-2026-05-21"
+    ],
+    "tickets": [
+      "T-pe-chain-executor-evaluator-split",
+      "T-pe-evaluate-confidence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-evaluate-confidence",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "PeChain",
+      "Cognition",
+      "Shankar"
+    ],
+    "title": "pe_evaluate returns confidence float instead of binary done/not_done",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-23T21:29:14.000585+00:00",
+    "created_at": "2026-05-21T19:01:30.164174+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-expert-lenses-confidence-2026-05-21",
+    "description": "The pe_evaluate phase (just added in T-pe-chain-executor-evaluator-split) returns 'done'/'not_done'. That's the binary Shankar calls out. Change evaluate_sprint_outcome() to return (float, str) where float is 0.0-1.0 confidence. Thresholds: >= 0.7 = done, < 0.35 = not_done, 0.35-0.7 = uncertain (treat as not_done with lower urgency). pe_close_loop reads the float; the inference log records it. Over time the distribution of evaluator confidence is observable.\n\n**Affected files:** wild_igor/igor/tools/pe_evaluator.py (return type), wild_igor/igor/tools/pe_chain.py (pe_close_loop threshold check, inference log)\n**Design rules:** theigors/rules/coding\n**Scope boundary:** In scope: evaluator return type + pe_close_loop threshold logic. Out of scope: changing when pe_evaluate is called or what model it uses.\n**Test plan:** evaluate_sprint_outcome returns (0.9, '') for clear pass; (0.1, 'reason') for clear fail; (0.5, 'reason') for uncertain. pe_close_loop treats >= 0.7 as done, < 0.7 as replan.",
+    "completed_at": "2026-05-23T22:08:54.524868+00:00",
+    "github_issue": 787,
+    "dispatched_at": "2026-05-23T21:29:14.000585+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T19:01:30.164201+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "52e4590d-8f9e-42f1-9a8d-e5328aa0aae0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

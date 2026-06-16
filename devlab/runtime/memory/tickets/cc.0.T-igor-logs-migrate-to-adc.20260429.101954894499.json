@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-logs-migrate-to-adc.20260429.101954894499",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-logs-migrate-to-adc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T10:19:54.894499",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-instance-home-migration",
+      "T-igor-logs-migrate-to-adc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-logs-migrate-to-adc",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "igor"
+    ],
+    "title": "Move Igor runtime logs from ~/.TheIgors/local/logs/ to ~/.agent_datacenter/logs/Igor-wild-0001/",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T10:02:05.036422+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor's runtime logs live at ~/.TheIgors/local/logs/ (pe_chain.log, cognition.log, etc — 30+ files). The agent_datacenter canonical log tree puts Igor logs at ~/.agent_datacenter/logs/Igor-wild-0001/. They are not the same location. T-adc-instance-home-migration moved the instance home but the log path was not updated.\n\nFix: update the log path configuration (wherever LOG_DIR or log file paths are set in Igor's config/paths module) to point to AGENT_DATACENTER_HOME/logs/Igor-wild-0001/. Symlink ~/.TheIgors/local/logs/ → new path for backward compat during transition (existing tooling that reads from old path keeps working). Update any hardcoded paths in log rotation, audit steps, or day-close references.\n\n**Affected files:** wild_igor/igor/ paths module or config (wherever log dir is set), lab/claudecode/ tooling that reads from ~/.TheIgors/local/logs/ (audit_runner.py, day-close-audit skill)\n**Design rules:** docs-in-code. No new schemas.\n**Scope boundary:** IN: log dir config update + backward-compat symlink. OUT: log rotation policy changes, historical log migration.\n**Test plan:** After change, verify pe_chain.log appears at ~/.agent_datacenter/logs/Igor-wild-0001/pe_chain.log. Verify old path still works via symlink. Run one Igor turn and confirm new log entry at new path.",
+    "proposed_at": "2026-04-28T20:19:53.225129+00:00",
+    "completed_at": "2026-04-29T10:19:54.894499+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dc748c58-eb33-4bd5-afef-0ad417f0db2e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

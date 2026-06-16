@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-role-ladder-schema.20260603.142435333545",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-role-ladder-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T14:24:35.333545",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-role-ladder-2026-06-03"
+    ],
+    "tickets": [
+      "T-granny-dispatch-role-map",
+      "T-role-ladder-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-role-ladder-schema",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Workflow"
+    ],
+    "title": "Ticket schema: add role field (apprentice/builder/creator/master/guru)",
+    "result": "role field added to ticket schema with VALID_ROLES + _infer_role(); worker→role inference; display in list; Granny deferral uses role inference; 23 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "blocked_at": "2026-06-03T17:43:19.891260+00:00",
+    "claimed_at": "2026-06-03T19:00:17.392079+00:00",
+    "created_at": "2026-06-03T14:24:35.333545+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-role-ladder-2026-06-03",
+    "description": "Add a `role` field to the cc_queue ticket schema with values: apprentice, builder, creator, master, guru. Backward-compat: when `role` is absent, infer from `worker` (claude→master, dicksimnel→builder, igor→apprentice). Granny reads `role` at dispatch time; falls back to `worker` field for old tickets.\n\n**Affected files:** CC_WORKFLOW_TOOLS/cc_queue.py (schema + add/show), devices/granny/daemon.py (read role at dispatch)\n**Design rules:** no-sqlite; external state principle (role persists with ticket, not in-memory)\n**Scope boundary:** schema addition + backward-compat inference only; Granny dispatch logic is T-granny-dispatch-role-map\n**Completion criteria:** `cc_queue.py add` accepts `role` field; `cc_queue.py show` displays it; old tickets without role field still load cleanly; unit tests cover inference fallback",
+    "completed_at": "2026-06-03T19:37:47.897443+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T17:41:40.786064+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "59fba0c7-fed4-44dc-b0bf-6f6c300a0255",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

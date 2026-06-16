@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-provider-health-classifier.20260612.193144807951",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-provider-health-classifier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T19:31:44.807951",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-provider-health-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-provider-health-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-provider-health-classifier",
+    "gate": "2026-06-26",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Inference"
+    ],
+    "title": "[sprint] Consequence check: provider ping failure classifier",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that any unintended effects of adding _classify_ping_failure() to the Source base class are observed and documented.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T19:31:44.807951+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-provider-health-classifier-2026-06-12",
+    "description": "**What changed:** ProviderHealthClassifier added; Source base class gains _classify_ping_failure() called in all subclass ping() except blocks.\n**Predicted unintended effects:**\n- Silent perf regression: classify() is called on every ping failure; if ProviderHealthClassifier is slow or raises, it blocks the except branch and delays fallthrough.\n- Log noise: INFO lines fire on every ping failure (Ollama is pinged frequently); could flood inference logs if a source is persistently unreachable.\n- Missing subclass coverage: if a Source subclass has a bare `except:` that doesn't call _classify_ping_failure(), failures go unclassified silently.\n- Exception masking: if _classify_ping_failure() itself raises, it could shadow the real exception in logs.\n**Signals to watch:** inference log volume before/after; any new exception tracebacks in datacenter_logs/inference/; whether all subclass ping() except blocks actually call _classify_ping_failure().\n**Gate condition:** Check by 2026-06-26 or after first DS run following deploy.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

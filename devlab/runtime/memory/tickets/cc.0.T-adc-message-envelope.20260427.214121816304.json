@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-message-envelope.20260427.214121816304",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-message-envelope"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:41:21.816304",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-imap-server-embedded",
+      "T-adc-message-envelope",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-message-envelope",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Architecture"
+    ],
+    "title": "agent_datacenter: message envelope — flex schema with rigid keywords",
+    "result": "Envelope dataclass in bus/envelope.py. RIGID_KEYWORDS={from_device, to_device, sent_at, schema_version}. validate() raises ValueError on missing/empty rigid field. to_json/from_json round-trips. payload passes through unchanged. Envelope.now() convenience constructor.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-27T21:39:28.196724+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Define the message envelope schema. No transport yet — this is the data shape and validator that all bus messages use.\n\nDecision (Akien 2026-04-27): Flex schema, not rigid 5-field lock. Rigid keywords are well-known conventions; payload is open. Devices advertise what keywords they emit via their capabilities() method.\n\nProposed shape:\n- agent_datacenter/bus/envelope.py:\n  RIGID_KEYWORDS = {'from_device', 'to_device', 'sent_at', 'schema_version'}\n  @dataclass\n  class Envelope:\n    from_device: str\n    to_device: str\n    sent_at: str   # ISO 8601\n    schema_version: str = '1.0'\n    payload: dict = field(default_factory=dict)\n    def validate(self) -> bool: checks rigid keywords present and non-empty\n    def to_json(self) -> str: ...\n    @classmethod\n    def from_json(cls, s: str) -> 'Envelope': ...\n  Mirrors Igor memory shape: {id, metadata:{rigid keywords}, payload: open dict}\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/bus/envelope.py\n\nDesign rules:\n- oop-first: Envelope is a dataclass with to_json/from_json methods — not a plain dict\n- docs-in-code: RIGID_KEYWORDS set is the canonical source; module docstring explains why payload is open\n\nScope boundary:\nIN: Envelope dataclass, validation, JSON serialization/deserialization\nOUT: any transport (IMAP APPEND is T-adc-imap-server-embedded)\n\nTest plan:\n- Envelope(from_device='igor', to_device='CC.0', sent_at='2026-04-27T...').validate() returns True\n- Envelope missing from_device raises ValueError on validate()\n- to_json() / from_json() round-trips cleanly\n- payload dict passes through unchanged",
+    "completed_at": "2026-04-27T21:41:21.816304+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2427e1a8-f3b2-4e3e-9446-8ef1df7ecd7a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

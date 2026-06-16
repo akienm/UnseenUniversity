@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-competition-pipeline-configurable.20260610.153308941960",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-competition-pipeline-configurable"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:33:08.941960",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-competition-bootstrap-2026-06-10"
+    ],
+    "tickets": [
+      "T-competition-pipeline-configurable"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-competition-pipeline-configurable",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Competition",
+      "ReadingPipeline"
+    ],
+    "title": "Make reading pipeline deposit schema configurable",
+    "result": "target_schema param added to create_campaign + process_one_chunk; competition path uses direct psycopg2 INSERT; 9 tests pass (9ba35c46)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that the reading pipeline can deposit to any target schema so the competition corpus stays isolated from production.",
+    "claimed_at": "2026-06-10T15:51:23.061572+00:00",
+    "created_at": "2026-06-10T15:33:08.941960+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-inference-competition-bootstrap-2026-06-10",
+    "description": "The infra.reading_blocks pipeline currently hardcodes `clan` as the deposit target schema. Add a `target_schema` parameter to the campaign runner so we can deposit to `competition` instead. Existing campaigns default to `clan` unchanged.\n\n**Affected files:** TBD — reading campaign runner code (infra.reading_blocks processor, likely `devices/` or `lab/` — discovery step in sprint)\n**Design rules:** no TheIgors imports; schema param must default to clan so production behavior is unchanged\n**Scope boundary:** Schema routing only. No changes to extraction logic, chunking, or LLM calls.\n**Completion criteria:** Creating a campaign with `target_schema=competition` deposits memories to competition.memories; running without the param deposits to clan.memories as before; 1 test covering each path.",
+    "completed_at": "2026-06-10T15:59:22.701037+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

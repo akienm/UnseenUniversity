@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-dicksimnel-granny-dispatch-wire.20260606.231736016354",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-granny-dispatch-wire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T23:17:36.016354",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dicksimnel-idle-dispatch-redesign-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-granny-dispatch-wire",
+      "T-dicksimnel-worker-listener"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-granny-dispatch-wire",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Worker",
+      "Bus",
+      "Granny",
+      "DickSimnel"
+    ],
+    "title": "Granny: dispatch DickSimnel via bus instead of set-worker",
+    "result": "config/granny.yaml + daemon.py _default_config(): DickSimnel.0 dispatch: set_worker → bus, mailbox: dicksimnel.0; 4 new tests + updated rules test",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that Granny dispatches DickSimnel via bus envelope (same path as CC), so the new DickSimnelWorkerListener receives work.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T23:17:36.016354+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dicksimnel-idle-dispatch-redesign-2026-06-06",
+    "description": "Granny currently dispatches DickSimnel via cc_queue.py set-worker (devices/granny/daemon.py line 88: dispatch: set_worker). The new DickSimnelWorkerListener listens on dicksimnel.0 mailbox for {kind:dispatch} envelopes. Granny must send those envelopes.\n\nGranny already has _dispatch_bus() for this exact pattern. The only change is the worker config dict:\n\n  OLD: 'DickSimnel.0': {'dispatch': 'set_worker', 'worker_name': 'dicksimnel'}\n  NEW: 'DickSimnel.0': {'dispatch': 'bus', 'mailbox': 'dicksimnel.0'}\n\nNote: deploy order matters. DickSimnel must be running the new listener (T-dicksimnel-worker-listener shipped) before this config flip goes live — otherwise Granny dispatches to a void and tickets sit in 'dispatched' until _escalate_stale_dispatched fires at 180s.\n\n**Affected files:** devices/granny/daemon.py (config dict at ~line 88)\n**Design rules:** bus/ owns comms routing\n**Scope boundary:** IN: one config dict line change. OUT: ack/timeout handling (already exists in Granny), DickSimnel listener implementation (T-dicksimnel-worker-listener)\n**Completion criteria:** test that Granny routes a builder-tier ticket to DickSimnel via _dispatch_bus (bus envelope to dicksimnel.0), not via cc_queue set-worker. Existing Granny tests all pass. Deploy-order note stamped in ticket body: wire AFTER T-dicksimnel-worker-listener is deployed.\n\n**Deploy-order approval (stamped 2026-06-06):** Wire this config ONLY after T-dicksimnel-worker-listener is deployed and DickSimnel process restarted. Granny dispatching to dicksimnel.0 before the listener exists sends tickets into a void — they sit in 'dispatched' until _escalate_stale_dispatched fires at 180s. T-dicksimnel-worker-listener is deployed and pushed to main as of this sprint.",
+    "completed_at": "2026-06-06T23:51:45.243853+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

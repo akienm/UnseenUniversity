@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-preflight-classify-and-heal.20260423.022621797274",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-preflight-classify-and-heal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T02:26:21.797274",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cloud-fallback-alert",
+      "T-hanging-tests-surfaced-by-timeout",
+      "T-preflight-classify-and-heal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-preflight-classify-and-heal",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "PeChain",
+      "PreFlight",
+      "SelfHealing",
+      "TestInfra"
+    ],
+    "title": "Pre-flight classify-and-heal — sort fixable test rot, repair it, proceed",
+    "result": "preflight_heal module: Recognizer ABC + SocketRecvNoMockRecognizer (matches socket.recv/ReadTimeout → adds @pytest.mark.skipif gated on IGOR_LIVE_TESTS). classify/apply_heal/commit_heal/heal_and_commit full flow + _ensure_imports helper. pe_chain pe_test stores full test_output; run_pe_entry_chain pre-flight branch wires to heal_and_commit with one retry + clean fall-through. 17 new tests pass (4 match + 4 remedy + 2 classify + 2 apply + 3 ensure_imports + 2 full-flow). Commit 4e8cc032.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-23T02:21:56.845604+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Akien's framing (2026-04-22 post-20:00): 'if preflight can sort if we should fix it anyway while we're there that would be the biggest win.'\n\nCurrent pe_chain behavior: pre-flight runs pytest in subprocess; on any failure, escalates with reason 'pre-flight: test suite already broken' and parks the ticket. Igor has been stuck in this loop since 20:00 on T-cloud-fallback-alert — SITUATE fires correctly (post the kernel.py fix), pre-flight fails on a socket.recv timeout in some test that makes a live network call, pe_chain escalates, 5 min later the cycle repeats. Zero commits, zero progress.\n\nNew behavior: between 'pre-flight failed' and 'escalate,' insert a failure-shape classifier. Three buckets:\n\n1. my-work-caused — test was green on HEAD, red after Igor's edit. Escalate unchanged.\n2. already-broken-fixable — failure matches a recognizer pattern with a known remedy. Apply the remedy (edit test file), commit as precursor, re-run pre-flight. If green, proceed with original ticket.\n3. already-broken-unfixable — escalate, BUT include classifier output in the reason so future work knows why it was unfixable.\n\nThis turns 'already broken' from a dead-end into a self-healing opportunity. The recognizer library grows over time — every new pattern Igor hits becomes a new recognizer.\n\nMVP (this ticket):\n- New module wild_igor/igor/tools/preflight_heal.py: Recognizer ABC with matches(failure_text) and remedy(failure_text, repo_root) → list[EditDict]; classify_and_heal(pytest_output, repo_root) → HealResult(healed, edits, unfixable).\n- One concrete recognizer: SocketRecvNoMockRecognizer — matches 'socket.timeout: ReadTimeout' or 'return self._sock.recv' patterns from urllib3. Remedy: locate failing test function, add '@pytest.mark.skipif(not os.getenv(\"IGOR_LIVE_TESTS\"), reason=\"requires live network\")'.\n- Wire into pe_chain.py pe_test(preflight=True) path: on failure, call classify_and_heal → apply edits → separate precursor commit 'chore: preflight auto-heal <recognizer>' → re-run pre-flight once → proceed or escalate.\n\nOut of scope for MVP: additional recognizers (stale fixtures, import errors, timeout-too-short) — library grows per-ticket as patterns surface; auto-revert the heal commit if main ticket fails downstream; classifier confidence scoring.\n\n**Affected files:** wild_igor/igor/tools/preflight_heal.py (new — module + Recognizer ABC + SocketRecvNoMockRecognizer + classify_and_heal), wild_igor/igor/tools/pe_chain.py (wire into pe_test preflight-failure path, near lines ~1870), tests/test_preflight_heal.py (new).\n**Design rules:** docs-in-code (Recognizer docstring describes pattern→remedy contract), test-plan-or-why-not, oop-first (Recognizer class hierarchy, HealResult dataclass).\n**Scope boundary:** IN — classify_and_heal framework, one SocketRecvNoMock recognizer, pe_chain wire-in, precursor-commit shape, re-run-once logic. OUT — additional recognizers, cross-ticket heal tracking, auto-revert, LLM-guided recognizer dispatch, repair of tests with FLAKY status semantics (that's T-hanging-tests-surfaced-by-timeout).\n**Test plan:** (a) SocketRecvNoMockRecognizer.matches() returns True for fixture pytest output containing 'socket.timeout: ReadTimeout' and 'self._sock.recv'; (b) remedy() produces EditDict adding skipif decorator with correct indentation above the identified test function; (c) classify_and_heal() on matching fixture → HealResult.healed=True with one edit; (d) on non-matching → HealResult.healed=False and failure in unfixable; (e) integration: pe_test(preflight=True) on broken tree with the matching pattern, assert heal commit lands + pre-flight re-run is green + chain proceeds.",
+    "completed_at": "2026-04-23T02:26:21.797274+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e32c73af-cdde-424e-bf2c-abedbefaed2e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

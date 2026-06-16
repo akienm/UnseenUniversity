@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-pe-multi-file.20260407.201911289243",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-multi-file"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T20:19:11.289243",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-multi-file"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-multi-file",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "PE chain HYPOTHESIZE sequences multiple file edits",
+    "result": "DONE. _parse_hypothesis returns list of edits. pe_implement loops over all. _pe_replan + _pe_commit handle multi-file. Backwards compat with single-edit. 375 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "blocked_at": "2026-04-07T04:53:00.874979+00:00",
+    "claimed_at": "2026-04-07T04:34:01.432008+00:00",
+    "related_to": null,
+    "description": "D317: HYPOTHESIZE currently produces one edit per run. Extend to emit a list of edits (file+old_string+new_string per entry), IMPLEMENT applies them in sequence, TEST runs after each. Unlocks M tickets that touch more than one file. Required_files: wild_igor/igor/tools/pe_chain.py",
+    "completed_at": "2026-04-07T20:19:11.289243+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9af1abc4-0917-4653-b838-f4efa49182e7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-post-channel-utility.20260403.192612000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-post-channel-utility"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:12",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-post-channel-utility"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-post-channel-utility",
+    "epic": "Operations",
+    "size": "XS",
+    "title": "Extract _post_to_channel duplicate into shared utility",
+    "result": "channel_post.py created; goal_continuation.py + boredom_idle.py now import post_to_channel as alias. 27 lines removed from each. 12 tests pass. Pushed a1ecdd2f.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 4,
+    "claimed_at": "2026-04-04T00:50:18.460623+00:00",
+    "created_at": "2026-04-03T19:26:12Z",
+    "related_to": null,
+    "description": "Identical 27-line function duplicated in goal_continuation.py:53 and boredom_idle.py:71. Extract to tools/channel_post.py. ~30 min. Found by audit 2026-04-01h.",
+    "completed_at": "2026-04-04T00:51:17.846176+00:00",
+    "github_issue": 374,
+    "required_files": [
+      "wild_igor/igor/tools/goal_continuation.py",
+      "wild_igor/igor/tools/boredom_idle.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d4aedc3e-958c-4b9f-abf9-68ca6d9ed022",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

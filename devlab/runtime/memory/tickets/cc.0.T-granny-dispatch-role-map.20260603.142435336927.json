@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-dispatch-role-map.20260603.142435336927",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-dispatch-role-map"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T14:24:35.336927",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-role-ladder-2026-06-03"
+    ],
+    "tickets": [
+      "T-granny-dispatch-role-map",
+      "T-role-ladder-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-dispatch-role-map",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Workflow",
+      "Granny"
+    ],
+    "title": "Granny dispatch: workers self-register roles; route by capability at dispatch time",
+    "result": "workers self-register roles via register_worker(roles=[...]); Granny matches by capability at dispatch time; 18 tests",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.6,
+    "claimed_at": "2026-06-03T20:08:43.012541+00:00",
+    "created_at": "2026-06-03T14:24:35.336927+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-role-ladder-2026-06-03",
+    "description": "Granny's dispatch logic currently checks `worker` field directly. Change to: read `role` (falling back to `worker`-inferred role), then map role→available workers using a config-driven table. Role map (granny.yaml):\n  apprentice: []\n  builder: [dicksimnel]\n  creator: [dicksimnel]  # elevated model via InferenceRequest task_class\n  master: [claude]\n  guru: [claude]  # CC + advisor pattern in sprint-ticket\n\nFor creator vs builder routing: InferenceRequest task_class='analyst' for creator, 'worker' for builder — same DS binary, different model tier.\n\n**Affected files:** devices/granny/daemon.py (_ticket_needs_cc, cc0_dispatch_fn logic), devices/granny/device.py (route_ticket), config/granny.yaml (role_map section)\n**Design rules:** external state principle; no-sqlite; config-driven not hardcoded\n**Scope boundary:** dispatch routing only; does not change ticket schema (T-role-ladder-schema), does not change DS toolloop internals\n**Completion criteria:** granny.yaml has role_map section; daemon reads it; builder tickets route to DS; master/guru tickets route to CC; creator tickets route to DS with analyst task_class; 6+ tests covering each role→worker path; existing dispatch tests still pass",
+    "completed_at": "2026-06-03T20:09:53.317482+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68237d8a-10a0-4ea2-94c2-90306633eaf7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-state-inventory-leak-audit.20260616.203103014852",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-state-inventory-leak-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T20:31:03.014852",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rewind-as-workflow-primitive",
+      "D-rewind-as-workflow-primitive-2026-06-16"
+    ],
+    "tickets": [
+      "T-rewind-output-contracts",
+      "T-state-inventory-leak-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-state-inventory-leak-audit",
+    "title": "[sprint] State inventory / leak audit — run every state kind through durability x readiness",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Observability"
+    ],
+    "description": "Workstream 2 of D-rewind-as-workflow-primitive. Enumerate every kind of state we hold and classify each on two axes — durability (ephemeral -> durable) and readiness (raw -> predigested). For each leak (ephemeral, or durable-but-raw), decide the fix: static write at a step boundary, or an active-maintenance minion. Known candidates: rejected design branches, advisor feedback, the live working set, 'what's next', build logs (-> digester, already ticketed). Gated on T-rewind-output-contracts existing first (the audit slots fixes into the contract table).\n\n**Affected files:** TBD — the inventory lands as a doc; fixes spread across slate/memory/DB writes per the contract table.\n**Design rules:** external-state-principle, docs-live-in-code, test-plan-or-why-not.\n**Scope boundary:** IN — produce the inventory + per-leak remediation decision. OUT — executing the remediations (each becomes its own follow-up once classified).\n**Test plan:** no tests because: this is an audit/inventory deliverable. Each remediation it spawns carries its own test plan.\n**Completion criteria:** An inventory doc classifies every state kind on both axes; each ephemeral or durable-but-raw leak carries a remediation decision; the build-log digester and known leaks (rejected branches, advisor feedback, working set, what's-next) are accounted for.",
+    "decision_id": "D-rewind-as-workflow-primitive-2026-06-16",
+    "created_at": "2026-06-16T20:31:03.014852+00:00",
+    "updated_at": "2026-06-16T14:31:03.027219-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that every kind of state we hold is classified on durability x readiness, with each leak assigned a concrete remediation (static write or active-maintenance minion).",
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

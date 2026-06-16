@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-turn-pipeline-module.20260415.234839569697",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-turn-pipeline-module"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T23:48:39.569697",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reasoning-voice-split",
+      "T-turn-pipeline-module"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-turn-pipeline-module",
+    "body": "From T-reasoning-voice-split (#436) Decision 3 from the 2026-04-15 afternoon design session: put the conductor in its own module `wild_igor/igor/cognition/turn_pipeline.py` so main.py becomes a thin shell that delegates. This ticket ships the conductor as a testable standalone module — it does NOT yet touch main.py. Wiring into the turn loop is a subsequent ticket after Akien reviews the shape.\n\n## Pipeline shape (per 2026-04-15 design + Igor's felt loop)\n\n1. RECEPTION — already handled upstream; conductor receives parsed input\n2. COA ASSEMBLY — attractors + TWM + capability_awareness + widen-on-miss retrieval (already running)\n3. CANDIDATE GENERATION — substrate proposes N responses (current: BG picks 1; this is NOT in scope)\n4. CASCADE WALK — ExperimentCascade.attempt(situation) walks levels 0-4, either MATCHED (done) or ESCALATE (pass to reasoning)\n5. REASONING WORKFLOW — on ESCALATE, pick a workflow (MVP: WorkflowA_ExperimentDesign; others follow), run_workflow with a PeerAdvisor, produce a ProposedExperiment or similar typed output\n6. DECISION BLOB — construct a DecisionBlob from the reasoning output; run can_commit() CP-gate; if safe, proceed to voice\n7. VOICE PRODUCTION — build voice_context from the blob, hand to LLM (MVP: stub), encode as Igor voice\n8. return TurnResult(reply_text, path_taken, provenance)\n\n## MVP scope (this ticket)\n\n- `turn_pipeline.py` module with:\n  - `TurnPipeline` class that orchestrates the flow\n  - `TurnResult` dataclass (reply_text, cascade_result, workflow_run, decision_blob, voice_context, path_trace)\n  - `run_turn(situation, *, peer_advisor=None)` — the single entry point\n- Uses `build_default_cascade` from experiment_cascade.py for step 4\n- Uses `WorkflowA_ExperimentDesign` as the default workflow for step 5 (workflow selection on DecisionBlob.intent is a follow-up)\n- Uses `prompt_contexts.voice_context` for step 7\n- Stub voice production (just renders the decision blob's selected_action as text; actual LLM voice call is T-llm-collaboration-protocol #438)\n- PathTrace records every step's outcome for audit\n- Tests using mocked cortex, scripted PeerAdvisor, fake cascade (reuses patterns from the workflow and cascade tests)\n\n## Out of scope\n\n- Wiring into main.py's turn loop (post-review ticket)\n- Workflow selection beyond 'always A' (follow-up)\n- Actual LLM calls (peer + voice both stubbed; T-llm-collaboration-protocol wires them)\n- BG candidate generation (separate reworking)\n\n## CP grounding\n\n- CP1 — every step carries uncertainty honestly; the path trace records what's known vs. inferred\n- CP3 — PathTrace provenance records every decision point\n- CP6 — the pipeline NEVER commits on a hypothesis alone; reasoning outputs become new cascade inputs, not direct voice inputs\n\n## Dependencies\n\n- T-substrate-experiment-cascade ✅\n- T-reasoning-workflow-primitive ✅\n- T-reasoning-prompt-split ✅\n- T-decision-blob-schema ✅",
+    "size": "M",
+    "tags": [
+      "cognition",
+      "reasoning-voice-split",
+      "conductor",
+      "turn-pipeline",
+      "cp-axioms"
+    ],
+    "title": "turn_pipeline.py conductor — strings cascade + workflow + prompt contexts into one orchestrator",
+    "result": "TurnPipeline standalone module with cascade→workflow→blob→voice orchestration. Path trace records every step. VoiceProducer stub handles 3 branches (committed action, hedged experiment, honest fallthrough). Does NOT touch main.py — wiring is a follow-up. 16 tests, 2633 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T23:39:30.450744+00:00",
+    "related_to": "T-reasoning-voice-split",
+    "completed_at": "2026-04-15T23:48:39.569697+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

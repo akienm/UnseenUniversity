@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-sleep-memory-auditor.20260419.193607395427",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sleep-memory-auditor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T19:36:07.395427",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-audit-qwen-complete",
+      "T-sleep-memory-auditor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sleep-memory-auditor",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Sleep",
+      "Consolidation",
+      "Biomimetic"
+    ],
+    "title": "Sleep-cycle memory auditor: chain prior-version reading memories to newer deposits (not delete)",
+    "result": "Sleep-cycle auditor shipped. narrative_engine._memory_auditor_pass() chains prior-version reading memories under newer-better-provenance heads without deleting. Gated on IGOR_MEMORY_AUDITOR_ENABLED (default off). Head selection: confidence × provenance_completeness × exp(-age/30d). Shared-neighbor check prevents false matches. 8 pure-function tests. Commit 2836bac9. Enable with env var when ready to watch it operate.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T19:32:05.634090+00:00",
+    "related_to": null,
+    "description": "Akien 2026-04-19: add a memory auditor pass to the sleep cycle. When a new reading memory covers the same point as an older one, link the old one as a prior version of the newer (don't delete). Dissolves the historical-orphan problem (9,436 reading memories with broken provenance) naturally — as new reads land on the same territory, the orphans get chained under newer-better-provenance heads and fade from the head.\n\nBiomimetically: sleep consolidation is exactly where replay + comparison + selective revision happens. Slots alongside the existing NE deep-consolidation passes (orphan adoption, episodic merge at 0.80 cosine, weak-link pruning).\n\n## Why chain not delete\nDeletion is lossy — loses the epistemic history of 'Igor believed X before reading Y and revising to X''. Chain preserves that; compaction of old chain tails can happen later if storage becomes a problem.\n\n## Design\n### Match signal — 'same point'\n- Primary: cosine similarity on embeddings ≥ 0.85 (start conservative — same infra the episodic_merge at 0.80 uses, but stricter)\n- Sanity check: ≥1 shared graph neighbor (parent, child, or interpretive-edge neighbor). Rules out same-language-different-topic false matches.\n- Only FACTUAL / INTERPRETIVE memories eligible for chaining (episodic / experiential / procedural don't make sense to version).\n- Both must have metadata.source indicating reading-origin (book_learner, reading_indexer) — don't chain conversational memories under reading ones.\n\n### Head selection — which wins\nrank = confidence × provenance_completeness × recency_weight\n- confidence: metadata.extraction_confidence (or node-level)\n- provenance_completeness: how many of {book_title, source_author, chunk_position, model_used, inference_tier} are non-empty (0..1 normalized)\n- recency_weight: monotonic decay, newer weighted ~1.5x older at 30 days\n\nHigher rank = head. Loser becomes a prior_version_of edge.\n\n### Edge shape\nNew interpretive edge type: prior_version_of. Directed: old → new ('the old memory is a prior version of the new one'). Weight = cosine similarity at match time (stronger match = stronger link). Head memory's metadata gains a versions_count counter.\n\n### Audit trail\nEmit a FACTUAL memory per merge: VERSION_CHAIN_<uuid> with {old_id, new_id, cosine, shared_neighbors, reason}. Gives a walkable record of how Igor's understanding evolved.\n\n## Scope\n- Extend narrative_engine._deep_consolidation_pass (or a new _memory_auditor_pass method) with the chaining logic\n- New env var: IGOR_MEMORY_AUDITOR_ENABLED (default false for first landing)\n- Tests: one happy-path (same-point merge), one negative-path (similar-but-different-topic doesn't merge due to no shared neighbor), one provenance-wins (newer has worse provenance, older stays head)\n- Metric: log consolidation count per cycle\n\n## Acceptance\n- With a synthetic pair of near-duplicate FACTUAL reading memories, auditor chains them correctly after one sleep cycle\n- Orphan reading memories (metadata lacking full source path) lose the head position to new-fully-provenanced deposits on the same topic\n- No regression: conversational / episodic memories are untouched\n\n## Related\n- Existing NE deep consolidation (#310 — idle-detection + replay pipeline)\n- T-reading-audit-qwen-complete (the new-reading-pipeline side that produces fresh deposits the auditor will use)\n- D358 Hebbian trail training (parallel — edge formation during activity, auditor is post-hoc versioning)\n\n## Provenance\nAkien 2026-04-19 interview: 'we add a memory auditor to the sleep cycle... we match new reading memories to old ones, and ones that cover the same point get either deleted, or listed as old versions on the newer memory.' CC: chain-as-prior-version is the richer option for reasons above.",
+    "completed_at": "2026-04-19T19:36:07.395427+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3112c0c2-bcf0-4495-8359-124621fcf79b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-fix-memory-scope-portable-test.20260421.173720561721",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-memory-scope-portable-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T17:37:20.561721",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-memory-scope-portable-test",
+      "T-pe-chain-preflight-test",
+      "T-worker-dispatch-validation",
+      "T-worker-dispatch-validation-2026-04-21"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-memory-scope-portable-test",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Tests",
+      "Bug",
+      "Unblocker"
+    ],
+    "title": "Fix test_memory_scope.py::test_credential_ref_not_in_portable JSONDecodeError (blocks pe_test pre-flight)",
+    "result": "Extracted _decode_payload helper at cortex.py — tries json.loads, falls through to raw value on parse failure. 15/15 memory_scope tests pass. Unblocks pe_test pre-flight for worker=igor tickets. Commit 1e25cf1b.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-21T17:33:08.015769+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pre-existing test failure in tests/test_memory_scope.py::test_credential_ref_not_in_portable with a JSONDecodeError at `self.scan_once(s, idx)`. This test has been broken for at least weeks — multiple agents this session have called it out as 'pre-existing, unrelated'.\n\nWhy it matters now: pe_chain's pre-flight test-suite check (T-pe-chain-preflight-test) correctly ESCALATES when the suite is broken — preventing an Igor-worker from modifying code on top of broken tests. That's good safety behavior, but it means EVERY worker=igor ticket will escalate until this one test is fixed or quarantined. Without this fix, the worker_mode=igor path is effectively dead-on-guardrail.\n\nFix shape: (a) investigate the JSONDecodeError — probably a test fixture that loads JSON and gets bad data, or a stale serialized snapshot; (b) fix the root cause if trivial; (c) if nontrivial: quarantine the test with pytest.skip + a new tracking ticket, but document clearly so it doesn't rot.\n\nScope: one test file. Do NOT change the broader memory-scope semantics — just restore the test.\n\ntest_plan: The test is the test. Running it after fix must pass. Also run full suite to confirm no collateral regressions (other memory_scope tests).\n\nContext: discovered during T-worker-dispatch-validation re-run (2026-04-21 11:28). See lab/design_docs/validation/T-worker-dispatch-validation-2026-04-21.md for dispatch-capture evidence.",
+    "completed_at": "2026-04-21T17:37:20.561721+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a821d27f-e47f-4c43-ae62-eac4f9211105",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

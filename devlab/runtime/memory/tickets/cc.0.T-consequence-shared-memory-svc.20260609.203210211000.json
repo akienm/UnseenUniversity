@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-shared-memory-svc.20260609.203210211000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-shared-memory-svc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:32:10.211000",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-shared-memory-service-2026-05-28"
+    ],
+    "tickets": [
+      "T-consequence-shared-memory-svc",
+      "T-librarian-edge-maintenance",
+      "T-librarian-retrieval-service",
+      "T-memory-agent-write-api"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-shared-memory-svc",
+    "gate": "2026-06-23",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Librarian",
+      "Memory"
+    ],
+    "title": "[sprint] Consequence check: Librarian memory service wired",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the Librarian device is the authoritative owner of memory write/retrieval, with edge maintenance wired through it.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:32:10.211000+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-shared-memory-service-2026-05-28",
+    "description": "D-shared-memory-service-2026-05-28 shipped T-memory-agent-write-api, T-librarian-edge-maintenance, T-librarian-retrieval-service (all closed), but no consequence check was run.\n\n**What changed:** Librarian was designated as the always-on memory service owner — write API, edge maintenance, and retrieval all route through Librarian.\n\n**Predicted unintended effects:** Tickets may have added the API surfaces without fully wiring callers through them. Igor may still be doing direct DB writes instead of calling Librarian's write API.\n\n**Signals to watch:** Check if memory writes (cortex.store, interpretive_edge inserts) go through Librarian's write API or directly to DB. Check if edge maintenance (Hebbian decay, orphan rescue) is triggered by Librarian lifecycle, not Igor's NE cycle directly.\n\n**Gate condition:** Check by 2026-06-23\n\n**Affected files:** None — observation and code-review only\n**Design rules:** none apply\n**Scope boundary:** Code audit: verify callers route through Librarian service, not direct DB. Out of scope: performance, new features.\n**Test plan:** no tests — code review + observation ticket\n**Completion criteria:** Grep for direct cortex writes vs Librarian tool calls; confirm Librarian edge maintenance runs on Librarian's lifecycle. Record: wired / partially wired / not wired.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

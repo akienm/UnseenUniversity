@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-curiosity-recognition.20260607.000605257474",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-curiosity-recognition"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T00:06:05.257474",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-curiosity-recognition"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-curiosity-recognition",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Igor",
+      "Watchlist"
+    ],
+    "title": "Igor: curiosity from recognition, not just idle",
+    "result": "curiosity_recognition.py: score_recognition() (pure Jaccard gap-fill), emit_curiosity_event() (TWM push), recognize_watchlist_gap() tool. Novelty: serendipitous(0.9) > gap_explanation(0.5–0.85) > confirmation(0.3). 18 tests.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that Igor emits proportional curiosity when incoming information resolves a watchlist gap — not just when idle.",
+    "claimed_at": "2026-06-08T03:09:14.253656+00:00",
+    "created_at": "2026-06-07T00:06:05.257474+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "CuriositySource fires on idle/boredom, but the watchlist has no recognition mechanism: when Igor reads something that explains a gap, nothing amplifies that signal. The result is Igor 'never moves' even with working curiosity infrastructure. Two separate handles are needed: boredom (push from idle) vs. curiosity (pull toward unexplained gaps). The novelty of a hit matters: a confirmation (repeats known things) should produce a small signal; an explanation of a previously-open gap should produce a larger one; serendipitous discovery (explains something not known to be a gap) should produce the strongest signal.\n\nProposed shape: a recognition step in the watchlist processing path that scores incoming information against open watchlist questions by gap-fill value (not just keyword match), and emits a curiosity event weighted by novelty. Distinct from the idle-triggered CuriositySource.\n\n**Affected files:** TBD — discovery step in sprint; likely devices/igor/cognition/push_sources.py (CuriositySource), devices/igor/tools/watchlist.py, possibly milieu.py for signal ingestion\n**Design rules:** Igor uses systems (tools, habits, goals) — it doesn't contain them; no-sqlite\n**Scope boundary:** In scope: recognition scoring in watchlist processing, curiosity event emission weighted by novelty. Out of scope: changing the boredom pathway, changing watchlist seeding, full self-directing behavior.\n**Completion criteria:** When Igor processes an item that resolves a known watchlist gap, a curiosity event fires with measurably higher weight than a confirmation event. Observable via debug log or milieu state. Unit test: mock watchlist with one open question, feed it a gap-resolving item and a confirmation item, assert gap-resolver produces higher curiosity signal.",
+    "completed_at": "2026-06-08T03:26:15.787665+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

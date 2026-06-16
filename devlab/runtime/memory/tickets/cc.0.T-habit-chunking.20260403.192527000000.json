@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-habit-chunking.20260403.192527000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-chunking"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:27",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-habit-chunking",
+      "T-self-training-loop",
+      "T-trails-infra"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-chunking",
+    "title": "Habit chunking — repeated action sequences compile into a single procedural habit",
+    "result": "habit_chunker.py: scan 500 PROC_ trails, find 3-grams ≥5 occurrences, store as CHUNK_ PROCEDURAL memories. Live run found 8 chunks. PROC_CHUNK_INSPECTOR seeded. 17 tests. D277 gap closed.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": "2026-04-03T20:59:36.695222+00:00",
+    "created_at": "2026-04-03T19:25:27Z",
+    "related_to": "T-trails-infra",
+    "description": "D277 gap. Biological pattern: basal ganglia procedural learning compresses repeated sequences into single chunks. Igor implementation: ring buffer inspector in NE (runs weekly or on demand). Scans last 200 turns; finds sequences of 3+ habits that co-occur in same order 5+ times. Creates a new PROCEDURAL memory that chains them: action_sequence=[habit_A_id, habit_B_id, habit_C_id], trigger=AND(habit_A_trigger_keywords). Effectively compiles repeated patterns into a meta-habit. Complex: requires ring buffer sequence mining, new habit schema fields. Related: T-self-training-loop, T-trails-infra. Inertia: MEDIUM. Priority: low — implement after trails infra exists (trails give the sequence signal).",
+    "completed_at": "2026-04-03T21:04:25.128413+00:00",
+    "github_issue": 348,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "440f4834-52a2-4b88-8060-3929039940d5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-inline-graph-write.20260324.153810803693",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inline-graph-write"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:38:10.803693",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inline-graph-write"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inline-graph-write",
+    "size": "L",
+    "tags": [
+      "self-programming",
+      "code_ref",
+      "think-phase"
+    ],
+    "probe": "Igor inserts an INTERPRETIVE node during a live turn (no CC intervention), node appears in memory_search next turn",
+    "title": "Inline graph-write: store_memory + add_child + embed_node in turn context",
+    "result": "Created wild_igor/igor/tools/graph_write.py with three registered tools: store_memory (creates a Memory node with source=self_edit, optional parent attachment, valence/arousal, returns new ID), link_memory (adds parent→child edge between existing nodes), embed_node (triggers embedding computation for Phase 2 cosine search, graceful fallback when Ollama unavailable). Safety: per-process rate gate via IGOR_GRAPH_WRITE_LIMIT (default 5). Registered in tools/__init__.py. 14 tests in tests/test_graph_write.py. Commit a746070. Probe (Igor inserts INTERPRETIVE node live) requires Igor running — deferred to next live session.",
+    "status": "done",
+    "claimed_at": "2026-03-24T15:35:05.257543+00:00",
+    "description": "Wire store_memory(), add_child(), and embed_node() as callable tools within Igor's inline turn context (think phase). Needed for: Design B autonomous INTERPRETIVE deposit (CONDITION_GATE during reasoning), mid-turn DISTILLATION, and closing the self-modification loop without CC bridge. Current state: Igor can design and verbalize correct habit insertions but cannot execute them — requires CC to bridge every DB write. This is the capability gap that forces the LLM-as-trainer arc to remain open. L-size — requires plan approval.",
+    "completed_at": "2026-03-24T15:38:10.803693+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b1b2c615-0f45-433b-a625-fa9476b2029c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

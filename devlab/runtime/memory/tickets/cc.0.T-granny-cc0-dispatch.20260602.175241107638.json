@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-granny-cc0-dispatch.20260602.175241107638",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-cc0-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T17:52:41.107638",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-worker-registry-2026-06-02"
+    ],
+    "tickets": [
+      "T-granny-cc0-dispatch",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-cc0-dispatch",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Infrastructure"
+    ],
+    "title": "Granny: dispatch CC.0 via tmux send-keys with semaphore + usage gate",
+    "result": "cc0_dispatch_fn via tmux send-keys; gated on semaphore + usage + in_progress; protected by config-driven rules from granny.yaml",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": null,
+    "created_at": "2026-06-02T17:52:41.107638+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-worker-registry-2026-06-02",
+    "description": "When CC.0 is available, Granny offers it a sprint ticket via tmux send-keys to the running claude-main session — not by spawning a new process.\n\nDispatch command: tmux send-keys -t claude-main '/sprint-ticket T-xxx' ENTER\n\nGate check order: (1) CC.0.available.false absent, (2) CC.0.available.true present, (3) Claude usage < usage_max_pct (default 70%), (4) no worker=claude ticket in status=in_progress.\n\nChannel post on offer: GRANNY_CC0_OFFER|ticket=T-xxx|session=claude-main\nCC.0 accepts by marking ticket in_progress; declines by posting CC0_DECLINE|ticket=T-xxx|reason=... to channel (ticket stays in sprint).\nTime window (default 21:00-06:00 local) and away semaphore are both gates in granny.yaml — config-driven, not hardcoded.\n\nHIGH-INERTIA: Touches devices/granny/daemon.py — this file caused the 2026-06-01 CC runaway.\nAKIEN APPROVED INLINE 2026-06-02: Design is send-keys to existing session (not subprocess.Popen/spawn). Protected by non-bypassable semaphore interlock (CC.0.available.true) + usage gate. One ticket at a time (max_concurrent: 1). Fundamentally different from the spawn pattern that caused the runaway.\n\n**Affected files:** devices/granny/dispatch.py (add cc0_dispatch_fn), devices/granny/daemon.py (wire cc0 dispatch branch), config/profiles/granny.yaml (CC.0 worker entry)\n**Design rules:** no-sqlite; no subprocess.Popen for CC dispatch — send-keys ONLY; semaphore interlock is non-bypassable; log dispatch attempt at INFO with gate values\n**Scope boundary:** IN: CC.0 offer via tmux send-keys; semaphore + usage + in_progress gate checks; accept/decline channel events. OUT: spawning new CC processes (prohibited), CC.x workers, DickSimnel dispatch.\n**Completion criteria:** With CC.0.available.true present and usage < 70%, Granny posts GRANNY_CC0_OFFER and sends /sprint-ticket T-xxx to claude-main; with CC.0.available.false present, no offer made regardless of time or usage; with a worker=claude in_progress ticket, no offer made; tests covering each gate state.",
+    "completed_at": "2026-06-02T18:47:47.747374+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "282d3f43-906f-4d9a-9a9d-a37587d65c2f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

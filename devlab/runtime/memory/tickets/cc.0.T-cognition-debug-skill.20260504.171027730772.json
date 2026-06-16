@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cognition-debug-skill.20260504.171027730772",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cognition-debug-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T17:10:27.730772",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cognition-debug-skill",
+      "T-engram-logging-primitive",
+      "T-mcp-igor-cognition-debug-capability"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cognition-debug-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Skills",
+      "Debug",
+      "Cognition"
+    ],
+    "title": "CLOSED: /cognition-debug skill — realtime single-step of Igor's cognition cycle",
+    "result": "Skill file written: /cognition-debug — replay + realtime modes, MCP tool wrappers, diagnosis table, engram note.",
+    "status": "done",
+    "worker": "igor",
+    "akien_tier": "P2",
+    "claimed_at": null,
+    "related_to": "T-mcp-igor-cognition-debug-capability",
+    "decision_id": null,
+    "description": "CC skill that single-steps Igor's cognition cycle (input → thalamus → action-selection → basal_ganglia → NE → response) in realtime, pausing between phases to inspect actual state. Wraps existing MCP tools (hot_nodes, hot_attractors, twm_read, traces_get, turn_trace_recent, tail_heat, wg_neighbors) into a guided stepping interface. Same motivation as /debug-pe-chain: post-analysis requires assumptions; stepping exposes actual state at each boundary.\n\nCovers two modes:\n1. **Realtime** — pause at each cognition phase boundary during a live turn (requires Igor to support a step-mode flag or breakpoint protocol)\n2. **Replay** — step through a recorded turn_trace after the fact, showing what each phase saw and decided\n\nEngram execution is in scope — when a habit fires, the skill shows which engram ran and what its output was (requires T-engram-logging-primitive to be shipped first for full coverage).\n\n**Affected files:** lab/claudecode/skills/ (new skill: cognition_debug.md)\n**Design rules:** SWADL. Skill wraps existing MCP tools — no new Igor internals required for basic replay mode. Realtime mode may need a breakpoint hook (companion ticket if needed).\n**Scope boundary:** IN: skill file, replay mode using existing trace tools, engram step display (gated on T-engram-logging-primitive). OUT: new MCP verbs (that's T-mcp-igor-cognition-debug-capability), modifying Igor's turn loop.\n**Test plan:** step through a recorded turn_trace for a known turn (e.g. the 2026-05-03 20:17:27 misroute incident); verify each phase output is surfaced correctly.",
+    "completed_at": "2026-05-04T17:10:27.730772+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0d65510b-ef58-4a64-abbb-d2d5159f8ad6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

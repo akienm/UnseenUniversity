@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-librarian-curation-tools.20260510.222207871391",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-curation-tools"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:07.871391",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-elevation-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-memory-librarian",
+      "T-igor-proposals-queue",
+      "T-librarian-curation-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-curation-tools",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Librarian"
+    ],
+    "title": "CLOSED: Librarian memory curation — standalone reasoner in ADC librarian device",
+    "result": "curation_tools.py created with duplicate/stale/code_ref detection; writes archive_action proposals; 9 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-05-10T23:24:15.644202+00:00",
+    "created_at": "2026-05-10T22:22:07.871391+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-elevation-2026-05-10",
+    "description": "Add memory curation capability to the existing Librarian device (`agent_datacenter/devices/librarian/`). New module `tools/curation_tools.py`. Reads clan.memories via direct psycopg2, reasons about what's redundant/stale/underused, writes proposals to instance.proposals (T-igor-proposals-queue pattern). The Librarian is the correct host: standalone reasoner, independently debuggable, no Igor brain overhead. Design principle: Librarian PROPOSES, Igor DECIDES.\n\nCuration logic (first pass): (1) near-duplicate FACTUAL/PROCEDURAL entries (same code_ref or narrative md5 fingerprint); (2) SEMANTIC memories with no access in 30 days; (3) PROCEDURAL habits sharing code_ref with different conditions. Each finding becomes one proposals row (kind=archive_action, content=JSON with reason+target_ids+proposed_action). Log all analysis to `datacenter_logs/librarian/curation.jsonl`.\n\nReplaces T-igor-memory-librarian (incorrectly targeted at Igor's cognition stack — that ticket is closed/redirected here).\n\n**Affected files:** `agent_datacenter/devices/librarian/tools/curation_tools.py` (new), `agent_datacenter/devices/librarian/librarian.py` (wire curation trigger), `tests/test_librarian_curation.py` (new)\n**Design rules:** no-sqlite; direct psycopg2; never hard-delete; all curation proposals via instance.proposals; curation log append-only JSONL; no cortex.py touch; Librarian is outside Igor entirely\n**Scope boundary:** IN — curation analysis, proposals generation, log. OUT — no auto-commit, no cross-instance curation, no Igor internals.\n**Test plan:** curation_tools finds seeded duplicate pair → archive_action proposal; stale memory (>30d no access) → prune proposal; recently-accessed memory NOT flagged; all proposals have source_module='librarian_curation'",
+    "completed_at": "2026-05-10T23:27:18.330285+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "85f1197d-9edf-4baa-8bf5-df40d07b1fd6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

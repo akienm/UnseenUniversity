@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-concept-skill.20260527.031032346590",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-concept-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-27T03:10:32.346590",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-xxx",
+      "D-concept-layer-and-tags-2026-05-26",
+      "D-xxx"
+    ],
+    "tickets": [
+      "T-concept-palace-seed",
+      "T-concept-skill",
+      "T-sorted-concept-links"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-concept-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Skills"
+    ],
+    "title": "Create /concept skill — collaborative reference material authoring",
+    "result": "Created /concept skill at lab/claudecode/cc_skills/concept/SKILL.md + ~/.claude/skills/concept/SKILL.md. Supports /concept new (talk-over, draft, accord-check, palace write), list, show, update. Writes palace.concepts.* nodes to adc.palace.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-27T03:10:32.346590+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-concept-layer-and-tags-2026-05-26",
+    "description": "Build the /concept skill for collaboratively authoring and recording architectural reference material. A concept is declarative ('the shape of things'), not historical — no D-xxx ancestry, no spawned_tickets, no hypothesis. The skill guides CC and Akien through talking it over, drafting the record, accord check, and writing to palace.concepts.*.\n\nConcept record shape:\n  name: C-<kebab-slug>\n  title: <one-line what-is-this>\n  content: <present-tense declarative explanation of the shape>\n  related_goals: [G-xxx, ...]\n  related_concepts: [C-xxx, ...]\n\nSkill commands: /concept new, /concept list, /concept show C-xxx, /concept update C-xxx\n\nFlow: (1) talk it over in conversation, (2) CC drafts the record, (3) explicit accord check — 'does this capture it?', (4) write to palace.concepts.*, (5) append to concept index.\n\n**Affected files:** ~/TheIgors/lab/claudecode/cc_skills/concept/SKILL.md (new)\n**Design rules:** none apply — new skill, no palace rule conflicts\n**Scope boundary:** The skill file only. Seeding initial concepts is T-concept-palace-seed. Linking /sorted to concepts is T-sorted-concept-links.\n**Test plan:** no automated tests — skill is a CC behavior spec; validate by running /concept new on one concept and checking palace.concepts.* node was written correctly",
+    "completed_at": "2026-05-27T22:15:26.176123+00:00",
+    "github_issue": 797,
+    "required_files": [],
+    "scraps_validated": "2026-05-27T03:10:32.410495+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "803b960c-361e-4836-b0b2-0e88b754d50a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

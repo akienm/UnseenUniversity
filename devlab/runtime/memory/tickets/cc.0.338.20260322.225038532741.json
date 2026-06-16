@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.338.20260322.225038532741",
+  "emitter": "cc.0",
+  "namespace": [
+    "338"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T22:50:38.532741",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "338"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "338",
+    "body": "Training feedback currently uniform. Biological learning responds to sparse, unpredictable reward signals (dopamine spike on surprise). Add variable-ratio reinforcement signal to word-graph / memory training. Design first.",
+    "size": "M",
+    "title": "Sparse/unpredictable reward signals for training feedback",
+    "result": "Implemented sparse reward signals via gradient_flatness as surprise scaler. Added surprise_scale(flatness) to WordGraph — pure function, gate IGOR_SURPRISE_REWARD_ENABLED (default off). Updated BG winner reinforcement: calls gradient_flatness(_score_text) + surprise_scale → boost=0.1*scale. Expected input (flatness≈0) → unchanged +0.1; novel input (flatness≈1) → up to +0.3. Forensic log at DEBUG when scale>1.5. Design doc at design_docs/issue-338.csb.txt. Variable-ratio schedule deferred (flatness magnitude covers the intent).",
+    "status": "done",
+    "created": "2026-03-22T11:50:47.647353",
+    "priority": 5,
+    "claimed_at": "2026-03-22T22:47:47.735813+00:00",
+    "completed_at": "2026-03-22T22:50:38.532741+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

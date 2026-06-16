@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-inference-phase1.20260408.174556686098",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-phase1"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T17:45:56.686098",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-phase1"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-phase1",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D327 Phase 1: ollama_reasoner + cluster_router → inference_ollama.py",
+    "result": "inference_ollama.py + inference_openrouter.py created as canonical modules. All 14 external import sites migrated. cluster_router + ollama_reasoner still contain the code (re-exported). server.py _health_cache stays on cluster_router (mutable alias issue). 1875 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Move ollama_reasoner.py to inference_ollama.py, absorb cluster_router.py health/routing. Strip model names — expose by tier/call_type. Update all imports. Tests must pass.",
+    "completed_at": "2026-04-08T17:45:56.686098+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c3e49cd0-ffc3-4448-9aaf-d4410b1fb1ae",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

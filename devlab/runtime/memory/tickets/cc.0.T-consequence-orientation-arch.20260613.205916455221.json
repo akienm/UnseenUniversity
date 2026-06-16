@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-orientation-arch.20260613.205916455221",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-orientation-arch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T20:59:16.455221",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-orientation-classifier-arch-2026-06-13"
+    ],
+    "tickets": [
+      "T-consequence-orientation-arch",
+      "T-orientation-classifier",
+      "T-symbols-table-multilang"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-orientation-arch",
+    "gate": "2026-06-27",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Inference"
+    ],
+    "title": "[sprint] Consequence check: orientation classifier architecture",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-13T20:59:16.455221+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-orientation-classifier-arch-2026-06-13",
+    "description": "**What changed:** Orientation classifier architecture decided: (1) clan.code_index extended to all languages with Haiku intent pass for shell/bash; (2) after-sprint skill refreshes index for committed files; (3) ClassifierDevice stubs (_query_palace_trees, _llm_classify) filled in to read clan.code_index; (4) T-orientation-classifier updated to fill ClassifierDevice stubs rather than create a new file.\n\n**Predicted unintended effects:** (1) Haiku intent comments written to shell file headers may conflict with existing shebangs or script preambles — need to write after the shebang line, not at line 0. (2) clan.code_index schema may lack an 'intent' column — if the indexer writes intent as part of symbols blob, the merge must be clean. (3) After-sprint hook adds latency to push step — if indexer errors cascade, it could block push feedback. (4) ClassifierDevice._llm_classify stub is currently returns ('unknown', ..., 0.3) — filling it with clan.code_index reads changes the return shape; consumers of BuilderReport must handle richer task_shape values. (5) The per-commit Haiku pass on shell files during T-symbols-table-multilang sprint could accidentally overwrite intent comments on files the indexer had already processed correctly.\n\n**Signals to watch:** Sprint-ticket push step logs for indexer errors; BuilderReport.task_shape values in logs (should be more specific than 'unknown'); clan.code_index row count after first post-commit refresh; shell files in repo for accidentally misplaced intent comments (line 0 vs line 2).\n\n**Gate condition:** Check by 2026-06-27 or after first full orientation-classifier sprint cycle post-ship.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** All predicted effects checked; outcome annotated; ticket closed with one-line verdict.\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "623b2404-fb64-4829-b482-4f0d0c9c6a1b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-completion-audit-closed-tickets.20260606.031023257442",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-completion-audit-closed-tickets"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T03:10:23.257442",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "[REDACTED-CREDENTIAL]"
+    ],
+    "tickets": [
+      "T-completion-audit-closed-tickets",
+      "T-granny-bus-flip-fake-completion"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-completion-audit-closed-tickets",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Workflow",
+      "SelfImproving"
+    ],
+    "title": "Haiku completion audit: verify closed tickets were actually built (catch fake completions)",
+    "result": "completion_audit.py built (list/log-result/summary commands, queries clan.memories, extracts criteria); 8 tests pass; day-close-audit Step 18.7 added; levers doc updated",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.85,
+    "intention": "I intend that a closed ticket whose code was never written (a fake completion) is caught automatically, not discovered by accident.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T03:10:23.257442+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "[REDACTED-CREDENTIAL]",
+    "description": "On 2026-06-05 the Granny dispatch handshake was found to be a fake completion: closed, docstring updated, code never written (T-granny-bus-flip-fake-completion). Fake completions are high-severity (you build on sand), invisible by definition (you don't know what else is fake), and cheap to check. Nothing currently verifies a closed ticket's completion criteria against actual code/state after close.\n\nAdd a recurring completion audit: for each recently-closed ticket, a Haiku subagent reads the ticket's **Completion criteria** and checks them against the actual repo/DB state, returning pass / fail / cannot-verify with a one-line reason. Failures surface as findings (draft tickets to re-open). Plug into the existing auditor device / day-close-audit rather than building a standalone one-off — it should run on a cadence (e.g. day-close) and be invokable ad hoc over a date range. This is the verification half of the ticket-quality loop: it also makes completion-criteria quality *matter* (the audit is only as good as the criteria), forcing better tickets without a separate mandate.\n\n**Affected files:** the auditor device (devices/auditor/ or wherever day-close-audit checks are registered), a new completion-audit check module, possibly lab/claudecode/ helper to fetch closed-ticket criteria\n**Design rules:** external-state-principle (audit reads durable state, not in-memory); no-sqlite\n**Scope boundary:** In scope: per-closed-ticket criteria-vs-reality check via Haiku, findings output, cadence + ad-hoc invocation. Out of scope: auto-reopening tickets (surface findings, human decides); rewriting completion criteria retroactively.\n**Completion criteria:** Running the audit over the last N closed tickets produces a pass/fail/cannot-verify verdict per ticket with a reason; deliberately seeding a fake completion (close a ticket whose criteria don't hold) is flagged as fail; integrated into day-close-audit so it runs on cadence.",
+    "completed_at": "2026-06-06T17:55:20.866053+00:00",
+    "deposited_at": "2026-06-05T21:10:37.242144",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

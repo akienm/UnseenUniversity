@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-code-ref-validation.20260324.155603396598",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-code-ref-validation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:56:03.396598",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-code-ref-validation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-code-ref-validation",
+    "size": "S",
+    "title": "Validate code_ref before storing cloud-extracted PROCEDURAL habits",
+    "result": "code_ref validation added to openrouter_reasoner.py ~line 245: extracts tool name from code_ref, checks registry.get(), logs CODE_REF_INVALID and skips if not found. Prevents phantom habits that fire-and-error every turn. Also committed primitives.json v2 (T-primitive-survey, 66 new primitives). Commit 823109c.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-24T15:50:21.415248+00:00",
+    "description": "openrouter_reasoner.py ~line 245: code_ref stored without checking the function exists. Fix: importlib validation before metadata[code_ref] = code_ref — skip and log if module missing or attr absent. Prevents phantom habits that fire and error on every matching turn.",
+    "completed_at": "2026-03-24T15:56:03.396598+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8a180c89-6258-4530-b5a6-e87039adf76a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

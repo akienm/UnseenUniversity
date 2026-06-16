@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-ring-read-tool.20260324.163357906861",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ring-read-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T16:33:57.906861",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ring-read-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ring-read-tool",
+    "size": "S",
+    "title": "Expose read_ring_memory() as Igor callable tool",
+    "result": "Added prim_ring_read() to os_primitives.py — wires cortex.read_ring_memory() into the tool registry. Igor can now read his own recent IGOR_SAID/IGOR_HEARD ring buffer entries from a habit chain via ctx[ring_limit] and ctx[ring_category] inputs. Writes ring_entries + ring_count to traversal context. Catalog entry in primitives.json. 290 tests pass. Commit 5101ad7.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-24T16:30:30.122377+00:00",
+    "description": "Wire cortex.read_ring_memory() into the tool registry so Igor can read his own recent IGOR_SAID/IGOR_HEARD ring buffer entries. Enables self-inspection of recent conversation history. Small add: new function in tools/metrics.py or os_primitives.py that calls self._cortex.read_ring_memory(limit=N) and returns formatted output.",
+    "completed_at": "2026-03-24T16:33:57.906861+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c2bbb751-caae-41a2-bb29-7a14a5b11a72",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

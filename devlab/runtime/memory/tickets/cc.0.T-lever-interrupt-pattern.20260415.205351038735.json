@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-lever-interrupt-pattern.20260415.205351038735",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-lever-interrupt-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T20:53:51.038735",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-lever-interrupt-pattern",
+      "T-substrate-experiment-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-lever-interrupt-pattern",
+    "body": "Sub-ticket of T-substrate-experiment-cascade. From Akien's loop description: 'as soon as i spot the next lever, the experiment ends and the next one starts being designed.'\n\n## The behavior\n\nWhile a cascade level is running its probe, the probe may touch nodes that SURFACE new options Igor didn't have when the current experiment started. Example: level 1 widen-on-miss fires a word-graph neighbor expansion; one of the neighbors is an unexpected high-signal match that wasn't in the original hypothesis space. That match is a LEVER — a previously-invisible option Igor can now reach for. The correct move is to abort the current experiment and restart the cascade with a new hypothesis built around the lever.\n\nNot completing the current probe is correct. The lever is higher-value than finishing the stale hypothesis.\n\n## Scope\n\n1. Probe functions optionally return `CascadeResult(status='leveraged', new_lever=Lever(...))`\n2. Walker checks for leveraged status after each probe call\n3. On lever detected: call `experiment.abort(reason='lever_detected:...')`, log the lever, restart the cascade with the lever as the new seed hypothesis\n4. Lever detection rule (MVP): any result that wasn't predicted by the current hypothesis AND has relevance_score above a threshold\n5. Per-turn budget: max N lever-interrupts per situation to prevent infinite flipping; after N, commit to the current best\n\n## Biology\n\nBasal ganglia + dopaminergic novelty bonus. A high-salience unexpected stimulus interrupts ongoing motor programs mid-execution. The interrupt is involuntary in biology; here it's a walker-level check after each probe step.\n\n## CP grounding\n\n- CP2 — aborting on a lever isn't failure; it's learning-ahead-of-completion\n- CP3 — the abort reason is recorded, so the 'why' is auditable\n- CP1 — if no lever is confident enough, the walker continues (humility default)\n\n## Tests\n\n- Probe returning a lever triggers abort\n- Restarted cascade uses lever as new seed hypothesis\n- Per-turn budget prevents flip-flopping\n- Probes without levers run to normal exhaustion\n- Abort reason recorded in Experiment.update.reason\n\n## Depends on\n\nT-substrate-experiment-cascade",
+    "deps": [
+      "T-substrate-experiment-cascade"
+    ],
+    "size": "S",
+    "tags": [
+      "cognition",
+      "cascade",
+      "interrupt",
+      "novelty-bonus"
+    ],
+    "title": "Lever-interrupt — abort current experiment when new options surface mid-probe",
+    "result": "Lever dataclass + CascadeResult.lever field + walker LEVERAGED handler with context accumulation, lever_budget default 3, lever_chain visibility via context + TWM marker. 14 tests. 2462 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T20:45:36.545778+00:00",
+    "related_to": "T-substrate-experiment-cascade",
+    "completed_at": "2026-04-15T20:53:51.038735+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

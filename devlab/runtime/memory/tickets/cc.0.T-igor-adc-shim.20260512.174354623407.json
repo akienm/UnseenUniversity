@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-adc-shim.20260512.174354623407",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-adc-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T17:43:54.623407",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-pipeline-observability-2026-05-12"
+    ],
+    "tickets": [
+      "T-igor-adc-shim"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-adc-shim",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Infrastructure",
+      "Shim"
+    ],
+    "title": "CLOSED: Build IgorADCShim(BaseShim)",
+    "result": "Built IgorADCShim(BaseShim) with auto-launch/health-check/ownership-tracking; wired into Igor startup before web_server.start()",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-12T17:43:54.623407+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "description": "Igor is a resident of ADC, not its owner. When Igor starts and ADC (utility_closet_server.py on port 8080) is not running, Igor's web facade silently degrades — the browser shows 'This site can't be reached' with no indication why. The explicit ADC specification requires that any resident can automagically restart ADC if it's down by reaching for it.\n\nIgor currently has no ADC Shim — only a bare utility_closet_client.py with no lifecycle management. Build IgorADCShim(BaseShim):\n\n- start(): ping http://localhost:8080/health; if no response, subprocess-launch ~/TheIgors/lab/claudecode/utility_closet_server.py (in the TheIgors venv) and poll /health for up to 15s. Return True on success, False on timeout.\n- stop(): send shutdown signal to ADC process if Igor owns it (i.e., Igor launched it); no-op if ADC was already running when Igor started.\n- restart(): stop() + start().\n- self_test(): GET /health, return {passed: True, details: 'port 8080 OK'} or {passed: False, details: error}.\n- rollback(): kill the subprocess if start() failed mid-launch.\n\nWire into Igor startup: in main.py, call IgorADCShim().start() before web_server.start(). If start() returns False, log a clear error (not silent degradation): self.log.error('ADC did not come up — web UI unavailable').\n\nNote: CC has the same gap (no ADC Shim for its MCP session startup). That is a follow-on — scope this ticket to Igor only.\n\n**Affected files:** wild_igor/igor/web/ (new file: adc_shim.py), wild_igor/igor/main.py (wire startup call)\n**Design rules:** OOP-first (IgorADCShim extends BaseShim from agent_datacenter.shim), docs-live-in-code (module docstring on adc_shim.py)\n**Scope boundary:** Igor startup path only. Does not change ADC itself. Does not cover CC's session-start shim (separate ticket). IgorADCShim owns the process only if it launched it — never kills an ADC it didn't start.\n**Test plan:** Unit test IgorADCShim.start() with /health endpoint mocked: (1) already-up path returns True without launching subprocess; (2) down path launches subprocess and returns True after health check succeeds; (3) timeout path returns False and rollback() is called. Integration: restart Igor with ADC not running and confirm ADC comes up automatically and web UI is reachable.",
+    "completed_at": "2026-05-12T18:04:53.947218+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b2c42bfc-05be-4a43-a49e-a4712f1e6fa9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

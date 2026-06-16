@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-on-tier-unbound.20260507.160930000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-on-tier-unbound"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:09:30",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-on-tier-unbound"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-on-tier-unbound",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Pipeline",
+      "Igor"
+    ],
+    "title": "CLOSED: _on_tier UnboundLocalError silently broke all turns",
+    "result": "moved _on_tier def before pipeline usage; fixes all-turns error fallback",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0,
+    "claimed_at": null,
+    "created_at": "2026-05-07T16:09:30Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "def _on_tier at line ~5916 was used at lines 5815 and 5831 inside the turn-pipeline try block. Python makes the name local to the enclosing function scope on seeing any assignment (including def), so reading it before the def executes raises UnboundLocalError. The except block caught it silently and returned the fallback message. This caused every interactive turn to return 'I encountered an issue working through that. Please try again.' for all users (Discord and web).\n\n**Affected files:** wild_igor/igor/main.py\n**Design rules:** none\n**Scope boundary:** Move def _on_tier before first use; remove duplicate def at old location.\n**Test plan:** 4479 tests pass; Igor restart + live Discord/web test.",
+    "completed_at": "2026-05-06T21:59:05.393599+00:00",
+    "github_issue": 598,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "47d7b6d3-7ce8-499b-ba22-bb5afac042db",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

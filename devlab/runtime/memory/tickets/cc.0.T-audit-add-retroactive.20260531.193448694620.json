@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-audit-add-retroactive.20260531.193448694620",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-add-retroactive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:34:48.694620",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-add-retroactive",
+      "T-repo-map-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-add-retroactive",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Tooling"
+    ],
+    "title": "audit_add.py — CLI to register audit checks into audit_checks.json",
+    "result": "audit_add.py shipped — CLI to register audit checks into audit_checks.json",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-05-31T19:34:48.694620+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Retroactive ticket for lab/claudecode/audit_add.py committed incidentally in T-repo-map-context. Tool registers checks into audit_checks.json with code, severity, pattern, description.",
+    "completed_at": "2026-05-31T19:34:51.694521+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b41d6def-79b7-494b-bfd1-25f788f802aa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-igor-arch-ingest.20260327.205400975913",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-arch-ingest"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-27T20:54:00.975913",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-arch-ingest"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-arch-ingest",
+    "epic": "Training",
+    "size": "M",
+    "title": "High-density ingest of Igor own architecture: design_docs/, decisions_log, engram_language.md at identity_weight=1.0 — Igor reads his own design",
+    "result": "20 arch docs queued to reading_list (priority 1-3, arousal 0.75-0.95). ingest_arch_docs() added to learner.py, registered as tool. Idempotent.",
+    "status": "done",
+    "claimed_at": null,
+    "completed_at": "2026-03-27T20:54:00.975913+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

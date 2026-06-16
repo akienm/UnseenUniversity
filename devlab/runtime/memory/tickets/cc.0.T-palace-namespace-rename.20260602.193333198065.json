@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-palace-namespace-rename.20260602.193333198065",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-namespace-rename"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T19:33:33.198065",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-palace-namespace-rename"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-namespace-rename",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Memory",
+      "Palace"
+    ],
+    "title": "Rename theigors/ palace namespace to unseenuniversity/",
+    "result": "1007 palace nodes renamed theigors/* → unseenuniversity/*; all code + skill files updated; 0 theigors/ refs remain in source",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.5,
+    "blocked_at": "2026-06-02T19:39:26.681003+00:00",
+    "created_at": "2026-06-02T19:33:33.198065+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Palace paths like theigors/rules/database, theigors/skills/*, theigors/glossary are confusing to anyone who did not know the old name. The repo is now UnseenUniversity; the palace namespace should match.\n\nRename: all theigors/* palace nodes → unseenuniversity/*. Skills that do memory_get(path=\"theigors/rules/...\") must also be updated.\n\n**Affected files:** Postgres memory_palace table, ~/.claude/skills/ (any that reference theigors/ paths)\n**Design rules:** no-sqlite; migration must be idempotent; old paths can be left as alias stubs for one cycle\n**Scope boundary:** IN: theigors/rules/*, theigors/skills/*, theigors/glossary → unseenuniversity/*; update skill files that call memory_get on old paths. OUT: content changes (only path rename), palace.projects.*, palace.days.*\n**Completion criteria:** no palace node path starts with theigors/; all skill memory_get calls use unseenuniversity/ paths; Igor boots without errors",
+    "completed_at": "2026-06-02T19:41:16.347096+00:00",
+    "deposited_at": "2026-06-02T13:35:35.228749",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T19:37:55.748064+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "41ed2b71-89e6-4ca2-b0f2-f16dd91848ce",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

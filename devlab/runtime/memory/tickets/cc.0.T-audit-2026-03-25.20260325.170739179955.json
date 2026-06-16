@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-audit-2026-03-25.20260325.170739179955",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-2026-03-25"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:07:39.179955",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-2026-03-25",
+      "T-audit-findings-YYYYMMDD"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-2026-03-25",
+    "title": "Run full 17-step audit and produce findings report",
+    "result": "Full 17-step audit completed. No critical failures. 329 tests pass. Findings: 58 dead habit code_refs (critical), 19 silent excepts (medium), 2 orphan modules (low). Stale files deleted. Report saved to audit_reports/audit_report_20260325.md. Ticketed: T-audit-findings-20260325.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-25T17:05:05.690700+00:00",
+    "description": "Run /audit (all 17 steps) and produce a findings report.\n\nSteps: tests, file placement, code smells, registry coherence, inertia check, thread hygiene, log sizes, OR burn rate, DB schema, dead code/orphans, duplication scan, habit health, TWM push coverage, dependency hygiene, credential scan, simplification review.\n\nFor each finding:\n- Small fix (silent except, missing log, typo): fix now and note it\n- Medium/large: add to T-audit-findings-YYYYMMDD ticket for Akien review\n\nOutput the full findings report in the format from the audit skill.\nSave findings to: ~/TheIgors/audit_reports/audit_report_20260325.md\n\nAfter fixes: /commit with message \"fix: post-audit small fixes — 2026-03-25\"",
+    "completed_at": "2026-03-25T17:07:39.179955+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "033a6fcf-9aaf-4cac-8199-ea56d726d308",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

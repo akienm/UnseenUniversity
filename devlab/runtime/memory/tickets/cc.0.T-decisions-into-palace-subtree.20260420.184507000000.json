@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-decisions-into-palace-subtree.20260420.184507000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decisions-into-palace-subtree"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:07",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-palace-source-of-truth-2026-04-20"
+    ],
+    "tickets": [
+      "T-decided-skill",
+      "T-decision-rollup-on-last-ticket-close",
+      "T-decisions-into-palace-subtree",
+      "T-palace-as-source-of-truth",
+      "T-tickets-into-palace-subtree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decisions-into-palace-subtree",
+    "gate": "T-palace-as-source-of-truth + T-tickets-into-palace-subtree",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Palace",
+      "Decisions",
+      "WorkflowOverhaul"
+    ],
+    "title": "Decisions migrate into memory graph (theigors/decisions palace echo)",
+    "result": "Migrated 352 numbered D### decisions from decisions_log.dsb + 3 slug-style decisions (D-palace-source-of-truth, D-workflow-overhaul, D-workshop-evolution) synthesized from ticket backlinks to clan.memories. spawned_tickets list populated per decision. Palace pointers at theigors/decisions/<id>. decisions_log.dsb remains the echo; auto-regen is future T-sync-on-close-not-dayend work.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-20T19:42:48.745602+00:00",
+    "created_at": "2026-04-20T18:45:07Z",
+    "related_to": null,
+    "decision_id": "D-palace-source-of-truth-2026-04-20",
+    "description": "Decisions live in decisions_log.dsb today (plus scattered references). Move canonical storage into the memory graph; the .dsb file becomes a generated chronological echo.\n\n## Proposed shape\n- Each decision = memory row: memory_type=REFERENCE or FACTUAL (TBD), parent_id=<decisions-root>, metadata.decision_id=D### with spawned_tickets list, outcome, closed_at, milestone tag\n- <decisions-root> under PR_IGORS_PROJECT\n- theigors/decisions palace subtree as pointer index\n- decisions_log.dsb re-rendered on every /decided close via palace_sync\n\n## Cross-cuts\n- T-decision-rollup-on-last-ticket-close reads these\n- T-decided-skill writes these\n- Two-way ticket↔decision backlinks as metadata lists\n\n## Blocked by\n- T-palace-as-source-of-truth (shape lock)\n- T-tickets-into-palace-subtree (backlink target must exist first)",
+    "completed_at": "2026-04-20T19:44:28.205096+00:00",
+    "github_issue": 494,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "64f7bb83-3bb5-4b80-8a8e-0e51f7098299",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

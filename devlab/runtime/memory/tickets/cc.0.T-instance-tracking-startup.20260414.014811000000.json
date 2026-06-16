@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-instance-tracking-startup.20260414.014811000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-instance-tracking-startup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:11",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-instance-tracking-startup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-instance-tracking-startup",
+    "tag": "Ops",
+    "size": "S",
+    "owner": "cc",
+    "title": "Igor records his own boot history — commit hash, timestamp, pid, host — so we always know what he's running",
+    "result": "a333366c — instance_tracker.py with record_startup/record_shutdown + igor_instance_current/history tools. JSONL+DB dual-write. Migrations m045-m047. No TWM push (verified by test). Wired via atexit + Igor.__init__. 21 tests, 2191 pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-14T17:10:40.560539+00:00",
+    "created_at": "2026-04-14T01:48:11Z",
+    "related_to": null,
+    "description": "AUTHORED BY AKIEN on 2026-04-13 (17:33). 'every time igor starts up, he has some kinda space for tracking his up and down times... and you can just look at it to see not only when he was loaded... but the last commit he is running. NO MORE CONFUSION.'\n\nREFINED 2026-04-13 (17:36) after Akien caught Claude's design overshoot: the original spec proposed pushing a low-salience TWM observation at boot. Akien correctly identified that as noise — boot version is stable across a whole session, doesn't change per turn, and only matters when explicitly asked for. The principle: ANYTHING QUERYABLE ON DEMAND DOESN'T NEED TO BE HOT IN TWM. Same lesson as 'frame not flood' from the persistent-relationships work this morning, applied at a different layer. Boot version is REFERENCE not WORKING memory.\n\nDESIGN:\n\nBoth file AND database. JSONL is always-works fallback; DB is queryable surface for Igor.\n\n1. JSONL file at ~/.TheIgors/Igor-wild-0001/instance_log.jsonl (append-only). Per-instance. Each line: {timestamp, event ('boot' | 'shutdown'), instance_id, commit_short, commit_long, branch, host, pid, narrative}. Survives Postgres downtime.\n\n2. New table 'instance_log' in Igor's home DB with same fields. Queryable.\n\n3. STATUS MEMORY (queryable on demand, NOT pushed to TWM at boot):\n   - The current-instance status is computed on each tool call from the most recent boot record in the instance_log table.\n   - Returns a structured string in the format: yyyymmdd.hhmmssuuuuuu.xxxxxxx (date . timestamp-with-microseconds . commit-short-hash). Matches existing D256 timestamp ID format elsewhere. Example: 20260413.173500123456.bc63e493\n   - Igor calls it when he needs to know what he's running. It's not in his attention by default — only when something asks.\n\n4. New module wild_igor/igor/tools/instance_tracker.py with:\n   - record_startup() — called early in main.py boot path. Captures via subprocess: git rev-parse HEAD, git rev-parse --short HEAD, git rev-parse --abbrev-ref HEAD. Captures via os: hostname, pid. Writes to both JSONL and DB. NO TWM push.\n   - record_shutdown() — called from signal handler on SIGTERM/SIGINT. Best-effort, never blocks shutdown.\n   - igor_instance_current() — tool. Returns the structured status string yyyymmdd.hhmmssuuuuuu.xxxxxxx for the most recent boot record. Igor calls this via MCP to answer 'what version am I running?'\n   - igor_instance_history(limit=10) — tool. Returns recent boot/shutdown records as a list of structured strings, newest first.\n\n5. Wired into wild_igor/igor/main.py main() function early in startup, before Igor instantiation. Wired into the existing signal handlers for shutdown.\n\n6. Tool registrations.\n\nBONUS — separate commit_log.jsonl written by a git post-commit hook recording every commit (hash, timestamp, tests-pass status, title). Gives us the OTHER timeline — when commits shipped — parallel to when Igor was running which commit. Two timelines reconstructible after the fact.\n\nINERTIA: LOW. New module + small wiring in main.py boot path + new DB table + git hook (optional bonus).\n\nTESTS: record_startup writes both JSONL and DB rows with expected fields, format string parses correctly via igor_instance_current, record_shutdown handles missing prior boot row gracefully, igor_instance_history orders by recency, signal handler integration doesn't block shutdown, **the function does NOT push to TWM at boot** (verified by reading TWM after a record_startup call and asserting no instance_boot category entries appear).",
+    "completed_at": "2026-04-14T17:20:41.047895+00:00",
+    "github_issue": 424,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "45707959-57f6-46e9-990a-15e934efe4d3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

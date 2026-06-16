@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-ollama-model-cleanup.20260419.194641115845",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ollama-model-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T19:46:41.115845",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ollama-model-cleanup",
+      "T-swarm-manager",
+      "T-swarm-model-sync",
+      "T-versioned-seed-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ollama-model-cleanup",
+    "size": "M",
+    "tags": [
+      "Operations",
+      "Swarm"
+    ],
+    "title": "Remove unused local Ollama models per-box via swarm SSH (inverse of T-swarm-model-sync)",
+    "result": "Shipped swarm_ollama_cleanup.py — HTTP-API-driven audit + removal (SSH not required). Dry-run by default. akiendell + akienyogai7 each have ~6GB to reclaim (DeepSeek-R1, gemma3:270M, llama3.2:1b). akienyoga9i unreachable at commit time — will audit next online. Commit 3a9915d1. Akien runs with --confirm to execute.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T19:44:52.880642+00:00",
+    "related_to": null,
+    "description": "Post single-model-collapse (2026-04-18, just qwen), each Ollama box has several now-unused models consuming disk / VRAM. Per Akien 2026-04-19: reclaim the disk and do it via the swarm manager's SSH path (same infrastructure T-swarm-model-sync used to PUSH models — inverse direction).\n\n## Per-box audit (not fleet-uniform)\nAkien 2026-04-19 12:30 confirmed 'there is nothing named igor anything in ollama on akiendell' — so the model lists DIFFER per box. Ticket must read each box's `ollama list` before issuing any `ollama rm`, never assume fleet-uniform.\n\n## Keep list (per box)\n- qwen2.5:7b — the single local workhorse\n- nomic-embed-text — embeddings, used on akienpi + akiendelllinux\n\n## Candidate removal list (verify per-box presence first)\n- erwan2/DeepSeek-R1-Distill-Qwen-7B:latest (~4.4GB) — was the 'batch' model; failed extraction test, no longer routed to\n- llama3.2:1b (~1.3GB) — word graph now covers what the 1B used to do\n- gemma3:270M (~278MB) — small, unused\n- gemma3:1b (~777MB) — unused\n- igor:latest (~777MB) — custom Modelfile variant, present on akiendelllinux only per Akien (absent on akiendell). Status of its definition unknown — verify what it's built from before removing. May be a local experiment or orphaned.\n\n## Approach\n1. swarm_manager.ssh_audit_models(hostname) — returns that box's ollama list (size, model, parameter_size, digest)\n2. For each box, produce a removal plan and SHOW IT to Akien before executing\n3. On approval, swarm_manager.ssh_remove_model(hostname, model_name) — calls `ollama rm <model>` via SSH\n4. Log what was removed where for audit (forensic_logger or dedicated removal log)\n\n## Non-goals\n- Removing nomic-embed-text anywhere (still in use for embeddings)\n- Auto-removal without approval step — too easy to nuke something we'll want later\n- Changing the model-push infrastructure (T-swarm-model-sync is done; this is additive)\n\n## igor:latest specifically\nBefore removing, save the Modelfile: `ollama show --modelfile igor` on akiendelllinux. Commit it to lab/seed/ollama_modelfiles/igor.modelfile so we can rebuild if we ever want it back. Versioning pattern per T-versioned-seed-config.\n\n## Related\n- T-swarm-manager (GH-471, pending) — the aggregator that owns SSH to each box. This ticket may need to wait on it OR use a smaller swarm-SSH helper that already exists.\n- T-swarm-model-sync (done) — the push direction. Inverse lives here.\n- T-versioned-seed-config (done) — pattern for saving the igor:latest Modelfile before removing.\n\n## Provenance\nAkien 2026-04-19 — 'that was part of whatever ticket we last worked on this with, but apparently fell off. yes, the swarm manager would be the entity responsible for reaching thru the ssh to each of the boxes to drop uneeded models.' Also confirmed per-box variance via the akiendell audit.",
+    "completed_at": "2026-04-19T19:46:41.115845+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "df8ee7d5-f224-44a0-91aa-0d264391095e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

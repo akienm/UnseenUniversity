@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-template-schema.20260323.032052711426",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-template-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T03:20:52.711426",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-template-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-template-schema",
+    "body": "Define what a TEMPLATE node looks like in the DB. Fields needed: parameter_slots (list of named inputs), expansion_schema (the habit schema fragment with {param} placeholders), produces (list of habit_types it instantiates), example_instantiation. Instantiation contract: caller provides {param: value} dict, template expands into one or more Memory nodes + seeds them. memory_type=PROCEDURAL with habit_type='template'. Output: schema spec + one worked example (WONDER template). Prereq for T-template-seed-patterns.",
+    "size": "S",
+    "title": "Design TEMPLATE Memory node structure — parameter slots, instantiation contract",
+    "result": "3-layer TEMPLATE node engine live: slot_manifest+expansion_schema+instantiation_contract; template_tools.py; WONDER seeded as tpl-wonder; D209",
+    "status": "done",
+    "created": "2026-03-23T00:14:44.332776",
+    "priority": 2,
+    "completed_at": "2026-03-23T03:20:52.711426+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

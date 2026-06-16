@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-uucompactclaude-robustness.20260613.235623584290",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uucompactclaude-robustness"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T23:56:23.584290",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uucompactclaude-robustness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uucompactclaude-robustness",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Tooling",
+      "CC System"
+    ],
+    "title": "uucompactclaude: PostCompact hook to reliably restore Sonnet",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that /model sonnet fires only after compaction actually completes, not after a blind 30s sleep.",
+    "created_at": "2026-06-13T23:56:23.584290+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "uucompactclaude currently fires `/model sonnet` after `sleep 30`, which is a timing heuristic — compaction may take longer, leaving the session on Haiku until the next /model command.\n\nTwo improvements:\n1. **PostCompact hook** in CLAUDE.md (Claude Code supports hooks that fire on /compact completion) that runs `/model sonnet` — eliminates the race entirely.\n2. **Slate path in preserve string** — change `/compact preserve: /context-load - then resume` to include the explicit slate path so post-compact CC knows where to look without guessing.\n\nCurrent preserve string: `preserve: /context-load - then resume`\nTarget: `preserve: Read today's slate at ${IGOR_HOME}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.`\n\n**Affected files:** lab/claudecode/uucompactclaude, .claude/settings.json (or CLAUDE.md for hook config)\n**Design rules:** none\n**Scope boundary:** IN — PostCompact hook + slate path in preserve string. OUT — changing the Haiku-dance model sequence.\n**Completion criteria:** After /compact, session automatically returns to Sonnet without a fixed sleep; preserve string includes the concrete slate path.",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

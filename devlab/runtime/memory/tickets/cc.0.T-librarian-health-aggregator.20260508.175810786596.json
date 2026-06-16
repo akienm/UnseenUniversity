@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-librarian-health-aggregator.20260508.175810786596",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-health-aggregator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:58:10.786596",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-imap-idle-heartbeat-2026-05-08"
+    ],
+    "tickets": [
+      "T-bus-heartbeat",
+      "T-bus-imap-idle-client",
+      "T-librarian-health-aggregator"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-health-aggregator",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Observability"
+    ],
+    "title": "CLOSED: Librarian health aggregator",
+    "result": "HealthAggregator+rack_health MCP tool, 15 tests, silence thresholds (c4d7b22)",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:55:04.473425+00:00",
+    "created_at": "2026-05-08T17:58:10.786596+00:00",
+    "related_to": null,
+    "decision_id": "D-imap-idle-heartbeat-2026-05-08",
+    "description": "The Librarian sits in IMAP IDLE on comms://heartbeat and collects heartbeat envelopes from all rack devices. Maintains a last-seen table: device_id → timestamp.\n\nSilence detection:\n  > 2N seconds — log warning, mark device suspect\n  > 3N seconds — mark device down, expose via health summary MCP tool\n\nExposes via MCP: rack_health() tool returning per-device last-seen + status. CC can call this instead of querying each device individually.\n\ncurrent_action field from heartbeat gives 'what is it doing right now' for free — addresses the observability gap where only 'is it alive' was knowable.\n\n**Affected files:** agent_datacenter/devices/librarian/health_aggregator.py, agent_datacenter/devices/librarian/mcp_server.py\n**Design rules:** no-sqlite; last-seen table is in-memory (rack restarts are clean); gate on T-bus-heartbeat and T-bus-imap-idle-client\n**Scope boundary:** aggregation + MCP exposure only; no alerting/paging in this ticket\n**Test plan:** heartbeat from device A updates last-seen; silence > 3N marks A down; rack_health() MCP tool returns correct per-device status\n\n**Warm-up clause (audit amendment):** after Librarian restart the last-seen table is empty. Do not flag silence for the first 2N seconds — allow the table to repopulate before silence thresholds activate.",
+    "completed_at": "2026-05-08T18:59:24.531621+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a98c68e3-24c0-45cb-ae25-ca3e4f38b4e7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

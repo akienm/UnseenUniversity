@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-wordgraph-embedding-producer.20260528.232038705824",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wordgraph-embedding-producer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T23:20:38.705824",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wordgraph-embedding-producer-2026-05-28"
+    ],
+    "tickets": [
+      "T-wordgraph-embedding-producer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wordgraph-embedding-producer",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Embeddings",
+      "WordGraph"
+    ],
+    "title": "Word graph spreading activation as embedding producer",
+    "result": "text_to_activation_vector + _wg_embed + _sparse_to_dense + wg_training_signal logging; 19 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "created_at": "2026-05-28T23:20:38.705824+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-wordgraph-embedding-producer-2026-05-28",
+    "description": "Add text_to_activation_vector(text) to the word graph: spreading activation from input words produces a normalized float vector over word/memory space. Run in parallel with nomic-embed-text (Ollama) at embedding time; compare outputs to generate training signal for the graph. Long-term intent: phase out Ollama as the graph improves.\n\nThe word graph is deterministic — same graph state + same input = same activation vector. Two semantically similar texts activate overlapping nodes and produce similar vectors. This is the basis for the reader equivalence test and for all future similarity queries.\n\n**Affected files:** devices/igor/cognition/word_graph.py (add text_to_activation_vector), devices/scraps/embedding_engine.py (add graph backend alongside ollama/openai/hash)\n**Design rules:** no-sqlite; deterministic per graph state; parallel-run with Ollama produces training comparison\n**Scope boundary:** produces vectors + comparison signal only; training loop is a follow-on ticket; does not remove Ollama yet\n**Test plan:** same input text produces identical vectors on two calls with same graph state; similar texts produce cosine > 0.7; dissimilar texts produce lower cosine; comparison delta logged for training",
+    "completed_at": "2026-05-29T15:31:16.730676+00:00",
+    "github_issue": 807,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T23:20:38.755710+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7ed22e1f-cee0-4705-98b0-0f16ea193296",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

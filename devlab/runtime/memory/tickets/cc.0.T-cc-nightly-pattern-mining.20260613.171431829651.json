@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-cc-nightly-pattern-mining.20260613.171431829651",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-nightly-pattern-mining"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T17:14:31.829651",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-nightly-learning-2026-06-13"
+    ],
+    "tickets": [
+      "T-cc-nightly-pattern-mining"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-nightly-pattern-mining",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Autonomy",
+      "Learning",
+      "CC System"
+    ],
+    "title": "CC Nightly: pattern extraction from transcripts",
+    "result": "cc_nightly_pattern_mining.py: 8-pattern detector, scores by frequency, writes palace.patterns.* nodes; today: master-control 1.00, compiled-inference 1.00",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.6,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-13T17:14:31.829651+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-nightly-learning-2026-06-13",
+    "description": "Extract design patterns and preferences from session transcripts.\n\n**Affected files:** lab/design_docs/patterns/ (updated), palace nodes\n**Design rules:** autonomous-learning, pattern-recognition\n**Scope boundary:**\n  IN: Analyze transcript for recurring patterns (e.g., 'Akien prefers master control'), extract with confidence scores\n  OUT: General-purpose insights (separate ticket)\n**Completion criteria:**\n  1. Read transcript, find design patterns mentioned or implicit in decisions\n  2. Identify patterns: 'master control + circuit breaker = resilience preference'\n  3. Score confidence (how many times reinforced)\n  4. Update palace.patterns.* nodes\n  5. Test: today's transcript yields 'master control' pattern with confidence >0.8",
+    "completed_at": "2026-06-13T22:27:29.251859+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T22:25:59.056898+00:00",
+    "required_files": [],
+    "scraps_validated": "2026-06-13T17:14:31.829672+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "80ec0ba1-03e9-4d0f-9432-09b1815baebc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

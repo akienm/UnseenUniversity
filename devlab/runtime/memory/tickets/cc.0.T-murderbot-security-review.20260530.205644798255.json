@@ -1,0 +1,62 @@
+{
+  "id": "cc.0.T-murderbot-security-review.20260530.205644798255",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-murderbot-security-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T20:56:44.798255",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-agent-kill-switch",
+      "T-container-shim",
+      "T-murderbot-security-review",
+      "T-provenance-identity",
+      "T-provenance-trust-scoring",
+      "T-provenance-write-attribution",
+      "T-shim-output-validation",
+      "T-shim-policy-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-murderbot-security-review",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "tests"
+    ],
+    "title": "One-time Murderbot security review of all platform security decisions",
+    "result": "reviewed all 7 tickets; filed 3 HIGH + 1 MEDIUM gap tickets; wrote docs/security_known_limitations.md with 10 known limitations",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "claimed_at": "2026-05-30T23:47:22.289223+00:00",
+    "created_at": "2026-05-30T20:56:44.798255+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "A comprehensive adversarial security review of all security-related design decisions from the 2026-05-30 platform design session. Run as a CC session prompted to think like Murderbot — a security construct whose job is to find what could go wrong, not confirm what looks right.\n\nScope — review these tickets for threat vectors, gaps, and bypass scenarios:\n- T-provenance-identity (rack-issued tokens — can they be forged, replayed, or stolen?)\n- T-provenance-write-attribution (memory attribution — can a bad actor spoof source_token?)\n- T-provenance-trust-scoring (trust tiers — can an agent game its tier upward?)\n- T-shim-policy-gate (pre-execution gate — what bypasses it? race conditions? cold-start window?)\n- T-shim-output-validation (output validation — what evasion is possible?)\n- T-agent-kill-switch (kill switch — can a halted agent unhalted itself?)\n- T-container-shim (container isolation — what escape vectors exist? loopback-only — is that enough?)\n\nOutput: a prioritized list of gaps and weaknesses. Each gap that warrants a fix becomes a ticket. Gaps that are acceptable risks get documented as known limitations.\n\nReviewer posture: assume the agents are not malicious but can be manipulated via prompt injection. Assume the rack operators are trusted. Assume external agents (ContainerShim tier) are untrusted.\n\n**Affected files:** none — review only; output is tickets + documented known limitations\n**Design rules:** none apply to the review itself\n**Scope boundary:** IN — review the 7 tickets listed; identify gaps; file fix tickets; document acceptable risks; OUT — fixing the gaps (those get their own tickets)\n**Completion criteria:** each of the 7 tickets has been reviewed; any HIGH severity gaps have filed tickets; a short 'known limitations' note is written to docs/security_known_limitations.md",
+    "completed_at": "2026-05-31T02:36:55.465583+00:00",
+    "deposited_at": "2026-05-30T14:58:13.863647",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:47:22.289223+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T20:56:44.848325+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ac7dc9b2-cb16-49a1-86d9-a4011fa456f4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

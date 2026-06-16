@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-uc-module-migration-epic.20260419.011347692303",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-module-migration-epic"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T01:13:47.692303",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-base-class-extract",
+      "T-uc-budget-shelf",
+      "T-uc-channel-tabs-redesign",
+      "T-uc-comms-default-channels",
+      "T-uc-comms-module",
+      "T-uc-db-proxy-shelf",
+      "T-uc-discord-transport",
+      "T-uc-inference-channel",
+      "T-uc-matter-shelf",
+      "T-uc-metrics-shelf",
+      "T-uc-module-migration-epic",
+      "T-uc-rack-architecture",
+      "T-uc-schema-three-namespaces",
+      "T-uc-system-proxy-shelf"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-module-migration-epic",
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "Epic"
+    ],
+    "title": "EPIC: Migrate infrastructure modules from Igor to utility closet",
+    "result": "Epic ~90% complete. Phase 1-3 fully shipped (schema-namespaces, base-class-extract, rack-architecture, comms-module, db-proxy-shelf, system-proxy-shelf, channel-tabs-redesign, comms-default-channels). Phase 4-5 mostly shipped (discord-transport, metrics_store, matter-shelf, inference-channel today). Remaining two migrations filed as concrete children: T-uc-budget-shelf and T-uc-filesystem-shelf. Closing epic to prevent catch-all bloat.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T01:13:18.895113+00:00",
+    "related_to": null,
+    "description": "Sequence the migration of infrastructure modules from wild_igor/igor/ to lab/utility_closet/. Each module becomes a rack shelf.\n\n## Principle\n- Conversations → route through comms://\n- Service calls → direct call, log audit trail to comms channel\n- Moving infra out of Igor reduces cognitive noise in his operating environment\n\n## Migration order (dependencies flow downward)\n\n### Phase 1: Foundation\n1. T-uc-schema-three-namespaces — three Postgres schemas\n2. T-uc-base-class-extract — AgentBase + AgentClient + ToolRegistry move\n3. T-uc-rack-architecture — module registration interface\n\n### Phase 2: Core services\n4. T-uc-comms-module — channel routing, envelopes, transports\n5. T-uc-db-proxy-shelf — db_proxy as rack shelf + audit logging\n6. T-uc-system-proxy-shelf — system_proxy as rack shelf\n\n### Phase 3: Wiring\n7. T-uc-comms-default-channels — Shared + per-agent + web UI\n8. T-uc-channel-tabs-redesign — web UI with channel tabs\n\n### Phase 4: I/O migration\n9. T-uc-budget-shelf — budget tracking as rack shelf (includes SQLite→Postgres)\n10. T-uc-discord-transport — Discord bot as comms transport\n11. T-uc-metrics-shelf — system metrics as rack shelf\n\n### Phase 5: Advanced\n12. T-uc-inference-channel — inference as comms://model/*\n13. T-uc-matter-shelf — home automation as rack shelf (GH#185)\n\n## Per-module migration checklist\nFor each module moved:\n- [ ] Create lab/utility_closet/<module>/ directory\n- [ ] Move code, update imports\n- [ ] Register as UC rack module (health endpoint, standard interface)\n- [ ] Add comms://log/<module> channel for audit logging\n- [ ] Igor imports from UC shelf (thin facade in igor/ if needed)\n- [ ] Tests pass at old AND new import paths during transition\n- [ ] Update memory palace pointers\n\n## What stays in Igor (cognition only)\n- brainstem/ — core loop, inhibition, basal ganglia\n- cognition/ — TWM, attractors, reasoners, turn pipeline, NE, experiment scheduler\n- memory/ — cortex, models (but db_proxy moves out)\n- training/ — learning, corpus\n- tools/ that are engram-native (research cascade, boredom_idle, self_edit)\n\n## What moves (infrastructure/I/O)\n- network/system_proxy.py → lab/utility_closet/system_proxy/\n- network/network_proxy.py → merged into system_proxy shelf\n- network/channels/discord.py → lab/utility_closet/transports/discord.py\n- network/channels/direct_url.py → lab/utility_closet/transports/direct_url.py\n- tools/budget.py → lab/utility_closet/budget/\n- tools/metrics.py → lab/utility_closet/metrics/\n- tools/filesystem.py → lab/utility_closet/filesystem/\n- memory/db_proxy.py → lab/utility_closet/db_proxy/\n- web/ → lab/utility_closet/agent_client.py (already in base class ticket)\n- cognition/machine_manager.py → lab/utility_closet/machines/\n- cognition/inference_gateway.py → lab/utility_closet/inference/ (Phase 5)\n\n## Success criteria\n- Igor's wild_igor/igor/ contains ONLY cognition code\n- All infrastructure accessible via UC rack modules\n- Igor connects to UC on boot, uses services through standard interfaces\n- Each rack shelf independently testable\n- comms:// audit trail for all service operations",
+    "completed_at": "2026-04-19T01:13:47.692303+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a18e67f3-2eb9-4b2f-a321-022b8cb1d712",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

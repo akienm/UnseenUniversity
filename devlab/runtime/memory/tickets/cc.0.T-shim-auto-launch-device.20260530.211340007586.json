@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-shim-auto-launch-device.20260530.211340007586",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-auto-launch-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T21:13:40.007586",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-shim-auto-launch-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-auto-launch-device",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Shim always-on: auto-launch device daemon when queue has work and daemon is not running",
+    "result": "BaseShim.ensure_daemon_running hook + GrannyShim watchdog loop; daemon auto-relaunches within one poll cycle; committed in fb42f3bb",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.85,
+    "claimed_at": "2026-05-31T21:11:59.790523+00:00",
+    "created_at": "2026-05-30T21:13:40.007586+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The shim for any device should be the always-on component. When the queue has work routed to a device and that device's daemon is not running, the shim detects this and launches the daemon. The device is never 'down' from the rack's perspective as long as its shim is running.\n\nFor Granny specifically: GrannyShim polls the queue for sprint tickets routed to workers Granny manages. If GrannyDaemon is not running (no PID file, no heartbeat), GrannyShim launches it via subprocess. On daemon crash, shim relaunches after a brief backoff.\n\nThis is the general pattern for all device shims — not just Granny. BaseShim should provide a `ensure_daemon_running()` hook that subclasses implement. Skeleton calls this hook on any shim where the queue has pending work for that device.\n\n**Affected files:** unseen_university/skeleton/base_shim.py (ensure_daemon_running hook), devices/granny/shim.py (implement hook), devices/granny/daemon.py (PID file on start/stop)\n**Design rules:** BaseDevice/BaseShim contract; shim is always-on, daemon is launched-on-demand\n**Scope boundary:** IN — ensure_daemon_running hook in BaseShim; Granny implementation; PID file lifecycle; backoff on crash-restart; OUT — other device shims (follow-on, same pattern)\n**Completion criteria:** stop GrannyDaemon manually; add a sprint ticket; within one shim poll cycle GrannyDaemon restarts automatically; log shows 'shim: relaunched granny daemon'",
+    "completed_at": "2026-05-31T21:14:02.977205+00:00",
+    "deposited_at": "2026-05-30T15:13:52.220577",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T21:11:59.790523+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T21:13:40.065360+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "60b88f0c-a534-42f3-bcb5-c3b950ff7d1f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

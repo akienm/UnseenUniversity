@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-logging-migrate-lab-claudecode.20260429.230834796944",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-logging-migrate-lab-claudecode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T23:08:34.796944",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-detailed-logging-audit",
+      "T-logging-archive-decision",
+      "T-logging-class-inheritance-fixups",
+      "T-logging-migrate-lab-claudecode",
+      "T-logging-migrate-utility-closet"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-logging-migrate-lab-claudecode",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Logging",
+      "Migration",
+      "Lab"
+    ],
+    "title": "Migrate lab/claudecode/* logging to get_logger pattern (excluding archive)",
+    "result": "4 non-CLI files migrated to get_logger. CLI exemption broadened (suppress all prints in __main__-guarded files). lab/claudecode metrics: print_smell 910→122, logging_bypass 4→1 (cc_bridge bridge-setup documented), legacy_log 52→12 (function-scope refinement deferred). 4119 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-04-29T23:03:41.600191+00:00",
+    "related_to": "T-detailed-logging-audit",
+    "decision_id": null,
+    "description": "Migrate logging callsites in lab/claudecode/*.py (excluding archive/ — see T-logging-archive-decision). Most lab/claudecode/ scripts are module-level (no class), so primary pattern is get_logger(__name__) replacing print() + logging.getLogger().\n\nCounts from 2026-04-29 audit:\n- Many seed_* and migration scripts use print() heavily — these are CLI tools where print() may be acceptable for output (filter via CLI exemption)\n- Non-CLI helpers use logging.getLogger or _log: cc_bridge.py (12 _log + 1 bypass), reading_campaign.py, reading_integrator.py, etc.\n\nGated on T-logging-migrate-utility-closet so the migration pattern (especially the get_logger module-level helper) is proven first.\n\n**Affected files:** lab/claudecode/*.py excluding archive/. Per-file scope determined by audit punch list.\n**Design rules:** inherit-base-class for any classes; get_logger() for module-level.\n**Scope boundary:** in scope: lab/claudecode/ excluding archive/. Out of scope: archive/ (T-logging-archive-decision), engram_tools (cover via T-logging-class-inheritance-fixups).\n**Test plan:** existing tests pass. Re-run audit_logging.py to verify lab/claudecode/ counts dropped (excluding archive/).",
+    "completed_at": "2026-04-29T23:08:34.796944+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0b8c19d0-8ee2-4d3c-82b5-8c328b24dee9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

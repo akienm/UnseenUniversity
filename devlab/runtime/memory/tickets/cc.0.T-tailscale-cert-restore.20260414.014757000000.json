@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-tailscale-cert-restore.20260414.014757000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tailscale-cert-restore"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:47:57",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tailscale-cert-restore",
+      "T-uc-cert-domain-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tailscale-cert-restore",
+    "tag": "Ops",
+    "size": "M",
+    "owner": "cc",
+    "title": "Restore Tailscale cert flow for tailnet hostname",
+    "result": "Withdrawn per Akien 2026-05-03: only akiendelllinux is on tailnet; design call on swarm-tailnet shape postponed until swarm reshape lands. Re-file when needed.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-14T01:47:57Z",
+    "related_to": null,
+    "description": "Tailscale isn't currently working — diagnose and fix that first, then re-issue tailscale.crt/key via 'tailscale cert <hostname>' and either (a) point igor.cfg back at it, or (b) wire UC to load BOTH mkcert (localhost) and tailscale (tailnet name) certs and serve via SNI based on hostname. Today's mkcert switch is the interim. Depends on T-uc-cert-domain-migration plus Tailscale connectivity diagnosis.\n\n**Affected files:** /home/akien/.agent_datacenter/Igor-wild-0001/igor.cfg (cert/key paths); the UC server bootstrap file (loads cert; SNI logic if dual-cert chosen); tailscale cert renewal hook.\n\n**Design rules:** no-secrets-in-repo; docs-in-code (UC cert-loading code documents which path is for which hostname).\n\n**Scope boundary:** IN — Tailscale up + tailscale cert <hostname> + igor.cfg update OR SNI-based dual-cert serving. OUT — public-internet domain (separate T-uc-cert-domain-migration); non-Tailscale tailnet support.\n\n**Test plan:** smoke test: `curl https://<tailnet-hostname>:<UC port>` from another box on the tailnet returns 200 with valid cert chain. mkcert localhost path still works.",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": 414,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7d9fe48e-51be-496c-9061-3a6103eb0685",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

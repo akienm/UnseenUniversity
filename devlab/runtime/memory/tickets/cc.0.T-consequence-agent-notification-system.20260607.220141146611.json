@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-agent-notification-system.20260607.220141146611",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-agent-notification-system"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T22:01:41.146611",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agent-notification-system-2026-06-07"
+    ],
+    "tickets": [
+      "T-consequence-agent-notification-system"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-agent-notification-system",
+    "gate": "2026-06-21",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: agent notification system",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-07T22:01:41.146611+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agent-notification-system-2026-06-07",
+    "description": "**What changed:** Shim now filters all incoming messages through a notification level (SILENT/QUIET/LOUD) with per-sender overrides and state-linked defaults.\n\n**Predicted unintended effects:**\n- HALT/priority messages could be silently downgraded if notification level config is misconfigured (HALT must bypass the filter — verify it does)\n- QUIET pending list (notify_pending.txt) could grow unbounded if never surfaced — need a cap or auto-clear on context-load\n- Devices without tmux sessions (headless, Granny herself) silently fall back to QUIET — could mask LOUD intent\n- Config file not-found on first boot → default generation must be idempotent and not noisy\n- BaseShim change could break existing shim subclasses that override __init__ without calling super()\n\n**Signals to watch:** Logs show `notif: <sender> → <LEVEL>` on every inbound message. No HALT messages silently queued. notify_pending.txt doesn't grow unbounded. CC gets woken by Granny dispatch when idle.\n\n**Gate condition:** Check by 2026-06-21.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "204364fc-ecaa-4648-9953-0819f4b77715",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

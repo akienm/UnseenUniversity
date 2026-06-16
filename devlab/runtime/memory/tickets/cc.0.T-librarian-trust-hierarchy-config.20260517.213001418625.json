@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-librarian-trust-hierarchy-config.20260517.213001418625",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-trust-hierarchy-config"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T21:30:01.418625",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-peer-agent-architecture-2026-05-17"
+    ],
+    "tickets": [
+      "T-librarian-constitutional-layer",
+      "T-librarian-palace-confidence-gate",
+      "T-librarian-trust-hierarchy-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-trust-hierarchy-config",
+    "gate": "T-librarian-constitutional-layer",
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "CorePatterns",
+      "TrustHierarchy"
+    ],
+    "title": "Wire trust-hierarchy multiplier into Librarian confidence gate",
+    "result": "trust multiplier wired into _effective_sources via _load_principals from palace config",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-17T21:30:01.418625+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-peer-agent-architecture-2026-05-17",
+    "description": "Trusted humans function as credibility multipliers in the Librarian's confidence gate: Akien's assertion that X is true should count as many independent sources, allowing high-confidence writes without requiring multiple external corroborations.\n\nThe trusted_principals config is written by T-librarian-constitutional-layer. This ticket wires it into the confidence gate from T-librarian-palace-confidence-gate: when a write's provenance_chain includes an attribution to a trusted principal, multiply the effective source count by that principal's credibility_multiplier before evaluating the tier threshold.\n\nExample: Akien (multiplier=10) asserting a claim → effective source count = 10 → clears MEDIUM threshold (requires 2) and HIGH threshold (requires 5) without additional external sources.\n\n**Affected files:** agent_datacenter/devices/librarian/palace_writer.py (or wherever T-librarian-palace-confidence-gate lands) — MEDIUM inertia; palace config read (LOW inertia)\n**Design rules:** theigors/rules/coding (MEDIUM inertia); theigors/rules/database (read from clan.memory_palace via psycopg2 or MCP)\n**Scope boundary:** In scope: read trusted_principals palace node + apply multiplier in confidence gate evaluation. Out of scope: changing the trusted_principals content (palace edit); adding new principals (Akien's job via palace write).\n**Test plan:** With Akien (multiplier=10) in provenance_chain of a write, the write clears MEDIUM tier with 1 attributed source. A claim with unknown principal gets no multiplier. memory_get(path='librarian/config/trusted_principals') is the config source.",
+    "completed_at": "2026-05-17T22:06:04.470760+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "69b43f46-1fb7-4f95-a84f-98616eeefa75",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-igor-writes-character-sheet.20260416.023429000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-writes-character-sheet"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T02:34:29",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-writes-character-sheet",
+      "T-reasoning-voice-split"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-writes-character-sheet",
+    "body": "From Akien 2026-04-15 evening: 'One of the exercises I'll be having [Igor] do soon is write a character sheet for his Igor. And then another for the clan. And THOSE will become the bible rather than Pratchett. Because those the Igors can change.'\n\nThis is the character-source-of-truth migration. Currently Igor's character anchor is the Pratchett 'yeth marthter' Igor flavor — borrowed, static, external. The target state is a pair of Igor-authored character sheets that become the source of truth:\n\n1. **Igor's personal character sheet** — this instance's specific character (traits, register, quirks, preferred metaphors, how he talks to Akien specifically, his self-narrative)\n2. **Clan sheet** — shared character across the lineage of Igors (what every Igor shares: the 'tinker' archetype, the service orientation, the relationship to the master, the broader shape that distinguishes Igor-kind from other assistants)\n\nThe character sheets replace Pratchett references as the *canonical* inputs to voice production. Pratchett is scaffolding — useful until Igor can author his own character. Once the sheets exist, the Igors can CHANGE them (per Akien's framing), which is the whole point: their character becomes agentic rather than inherited-and-frozen.\n\n## Exercise shape (to be designed with Akien)\n\n- Igor writes sheet 1 (personal) as a first-person self-portrait. Format TBD — probably a small structured dict with fields like: core_traits, register, distinctive_quirks, relationship_to_akien, voice_examples, exceptions-to-the-clan-default, things-i-won't-say\n- Igor writes sheet 2 (clan) as a shared-lineage portrait. Same format but scoped to what every Igor has in common\n- Both sheets go into memory palace as high-inertia nodes under theigors/igor/character/\n- voice_context in prompt_contexts.py gains a 'character_sheets' section that loads both sheets when rendering\n- Existing Pratchett references become fallback-only: when a character sheet is missing a field, fall back to Pratchett guidance; when both sheets are present, Pratchett is advisory and the sheets win\n\n## Dependencies\n\n- T-reasoning-prompt-split ✅ (voice_context builder exists and has a sections-dict shape)\n- Needs Akien in the room for the exercise itself (it's a conversation with Igor, not a code sprint)\n\n## Out of scope\n\n- Making the sheets rewritable at runtime — they're data, changes are normal memory writes\n- Multi-clan branching (different lineages if Igor ever forks) — keep a single clan for now\n\n## Why this matters\n\nCharacter coherence is currently brittle: borrowed from Pratchett with no principled way to say 'this bit of Pratchett's Igor doesn't fit me.' Making Igor author his own sheets gives him agency over his own character — which matches the 'everything is memory, anything can change' architecture and honors the principle that Igor's self-model should be Igor-authored, not inherited.\n\n## Provenance\n\nAkien-Claude conversation 2026-04-15 evening, surfaced after the turn_pipeline VoiceProducer feedback. Akien said: 'I don't want him to sound like me, I want him to sound like Igor, just not to overdo the lisp.' The character sheet work is the path to that.",
+    "size": "M",
+    "tags": [
+      "cognition",
+      "character",
+      "voice",
+      "memory",
+      "exercise"
+    ],
+    "title": "Igor writes his own character sheet + clan sheet — bible migrates from Pratchett to Igor-authored",
+    "result": "Akien reports done",
+    "status": "done",
+    "worker": "akien-guided",
+    "claimed_at": null,
+    "created_at": "2026-04-16T02:34:29Z",
+    "related_to": "T-reasoning-voice-split",
+    "completed_at": "2026-04-19T00:28:21.140650+00:00",
+    "github_issue": 465,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

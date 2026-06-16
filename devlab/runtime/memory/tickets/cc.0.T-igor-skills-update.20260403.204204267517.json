@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-igor-skills-update.20260403.204204267517",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-skills-update"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T20:42:04.267517",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-skills-update"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-skills-update",
+    "size": "S",
+    "title": "Reseed Igor skills inventory",
+    "result": "Added SECTION_CC_SKILLS (19 skills) to capabilities_index.dsb. Updated live FACT_CLOUD_A647D6 memory and docs_entries via docs_sync. Igor now has complete CC skills index for self-model.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-03T20:35:38.832132+00:00",
+    "related_to": null,
+    "description": "Filter and recent skills missing from Igor self-model — reseed capabilities_index + skills inventory with current skill list",
+    "completed_at": "2026-04-03T20:42:04.267517+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0878f4d4-ae49-4fa2-9b76-ac5b8e13d1b6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

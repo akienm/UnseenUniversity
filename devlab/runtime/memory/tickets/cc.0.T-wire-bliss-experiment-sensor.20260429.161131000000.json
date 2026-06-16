@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-wire-bliss-experiment-sensor.20260429.161131000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wire-bliss-experiment-sensor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:31",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-formation-from-conversation",
+      "T-wire-bliss-experiment-sensor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wire-bliss-experiment-sensor",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Wire bliss_integrator, experiment_outcome, sensor_tree into callers",
+    "result": "wired bliss_integrator→milieu, experiment_outcome→experiment_scheduler, sensor_tree→palace_metric",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "blocked_at": "2026-04-30T02:19:21.069276+00:00",
+    "claimed_at": "2026-04-30T01:15:22.300204+00:00",
+    "created_at": "2026-04-29T16:11:31Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Three built-but-not-wired cognition modules have clear call sites identified. Wire each per its own docstring entry point:\n- bliss_integrator.py: called from milieu.py on Pursuit completion events (milieu.py already references it in its docstring)\n- experiment_outcome.py: called from experiment_scheduler.py (which already references the 'experiment_outcome' type in its deposits)\n- sensor_tree.py: called from palace_metric.py monitoring path (palace_metric.py docstring names it as complement)\n\nFor each: import the module, find the exact call site, wire it in, verify no behavior regression.\n\n**Affected files:** wild_igor/igor/cognition/milieu.py, wild_igor/igor/cognition/experiment_scheduler.py, wild_igor/igor/tools/palace_metric.py\n**Design rules:** oop-first. docs-in-code: update Updated timestamp in each touched file.\n**Scope boundary:** IN: add import + call for each of the three modules at the identified call site. OUT: modifying the modules themselves, wiring goal_formation (T-goal-formation-from-conversation), wiring graph_integrator/preparse_router (separate ticket).\n**Test plan:** Run full test suite after each wiring. Verify no new exceptions in pe_chain.log after Igor restart.",
+    "completed_at": "2026-05-04T17:25:12.654668+00:00",
+    "github_issue": 559,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2404d630-2b54-4caf-aec3-84281badae06",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

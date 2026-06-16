@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-granny-escalate-hold.20260601.021303536233",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-escalate-hold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T02:13:03.536233",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-system-availability",
+      "D-granny-no-cc-spawn-2026-05-31"
+    ],
+    "tickets": [
+      "T-granny-escalate-hold"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-escalate-hold",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Granny"
+    ],
+    "title": "Granny ESCALATE: block ticket, never spawn CC",
+    "result": "ESCALATE → block, not CC spawn, in b0394f42. Tests updated, all 40 tests passing.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 2.0,
+    "claimed_at": null,
+    "created_at": "2026-06-01T02:13:03.536233+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-no-cc-spawn-2026-05-31",
+    "description": "Remove _launch_cc_instance() from inference_dispatch_fn's ESCALATE path. Replace with cc_queue.py block <id> <reason> so the ticket goes on hold for CC review. Already coded in dispatch.py and tests updated — this ticket closes that work.\n\n**Affected files:** devices/granny/dispatch.py, tests/test_granny_inference_dispatch.py\n**Design rules:** Granny must never spawn CC automatically (C-system-availability); no CC spawn from automated processes\n**Scope boundary:** in: ESCALATE → block; tests updated. out: constraint palace nodes (separate ticket)\n**Completion criteria:** (1) inference_dispatch_fn ESCALATE path calls cc_queue.py block, not _launch_cc_instance; (2) tests pass; (3) committed and pushed",
+    "completed_at": "2026-06-01T02:14:50.951393+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7d122fe1-d467-4951-879c-82367e24cb8a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

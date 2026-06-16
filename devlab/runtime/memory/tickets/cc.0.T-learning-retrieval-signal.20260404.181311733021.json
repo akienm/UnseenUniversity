@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-learning-retrieval-signal.20260404.181311733021",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-learning-retrieval-signal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:13:11.733021",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-learning-retrieval-signal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-learning-retrieval-signal",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Training"
+    ],
+    "title": "Wire retrieval success back to word graph: reinforce on resolution",
+    "result": "Added reinforce_query_tokens() to hebbian_bridge.py: top-3 search results reinforce query co-occurrences + doc connections at boost=0.04/rank. Added set_word_graph() singleton so cortex.search() can call it without passing word_graph through every call site. main.py registers WG on boot. Called at both Phase 2 + Phase 1 fallback return paths. Gated by IGOR_HEBBIAN_BRIDGE env var (default off).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T18:10:28.715844+00:00",
+    "related_to": null,
+    "description": "Word graph learns from cloud call deposits but has no retrieval-success feedback. When cortex.search() returns a memory that resolves the query (goal completed), the query tokens that led there get no reinforcement. Fix: (1) instrument cortex.search() to emit (query_tokens, top_result_rank, result_score) tuples; (2) on goal resolution, call word_graph.reinforce() on query tokens with boost proportional to 1/initial_rank; (3) log and monitor correlation. ML finding from deep-audit Panel 8.",
+    "completed_at": "2026-04-04T18:13:11.733021+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4643a288-7034-4afd-9082-d83e93c4118a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

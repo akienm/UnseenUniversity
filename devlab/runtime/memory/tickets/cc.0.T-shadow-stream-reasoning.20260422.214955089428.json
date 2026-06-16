@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-shadow-stream-reasoning.20260422.214955089428",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shadow-stream-reasoning"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T21:49:55.089428",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-architecture-2026-04-22"
+    ],
+    "tickets": [
+      "T-divergence-learner",
+      "T-shadow-stream-reasoning",
+      "T-tutor-not-oracle-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shadow-stream-reasoning",
+    "gate": "T-tutor-not-oracle-prompt",
+    "size": "L",
+    "tags": [
+      "Reasoning",
+      "Learning"
+    ],
+    "title": "Shadow-stream reasoning — dual-path execution + divergence corpus",
+    "result": "ShadowReasoner class + DivergenceRecord + reasoning_context(mode=tutor) path + Jaccard comparison + instance.reasoning_divergence schema + fire_and_forget daemon-thread logging + run_shadow_sync scaffolded + record_turn_divergence convenience + turn_pipeline minimal wire (log-only, env-gated default off). 23 tests. Closes D-preparse-architecture at 7/7.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-22T21:35:05.436016+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-architecture-2026-04-22",
+    "description": "For reasoning stage (NOT preparse — preparse shadow is low-value per design discussion), run Igor's own reasoning path AND the tutor-LLM path in parallel on every turn. If Igor's reply lands first with high confidence, it ships; tutor-LLM's thinking-frame is recorded as a delta-record for later review. If tutor-LLM lands first (or Igor is unconfident), Igor uses the frame to revise. Over time, divergence corpus teaches when Igor is ready to replace LLM-assisted reasoning with his own. Off-policy RL via labeled divergence: where paths disagreed and outcomes were known, Igor learns.\n\n**Affected files:** `wild_igor/igor/cognition/` new `shadow_reasoner.py`; integration point in the reasoning stage callsite; storage for delta-records (new Postgres table `reasoning_divergence` under instance schema — NOT a memory schema, this is training telemetry); `tests/test_shadow_stream.py` new.\n**Design rules:** no-sqlite; oop-first (ShadowReasoner class); docs-in-code (divergence-corpus purpose + off-policy learning rationale); test-plan-or-why-not (covered); no-new-memory-schemas (storage is telemetry, not memory — verify with palace rule check at review time).\n**Scope boundary:** IN: parallel dispatch of Igor-reason + tutor-reason; first-result-wins output logic; delta-record persistence when paths diverge; confidence comparison; review-later pile for deposited tutor frames. OUT: the actual learning algorithm that consumes divergence corpus (future ticket — T-divergence-learner); cross-session corpus aggregation (future); outcome labeling mechanism (future — needs user-feedback signal integration).\n**Test plan:** both paths fire on a reasoning turn; faster-confident path wins; divergence recorded when outputs differ meaningfully (semantic comparison, not exact-match); delta-record schema validated; shadow disabled via env var (IGOR_SHADOW_STREAM_ENABLED); integration test with mocked tutor-LLM verifying first-result-wins logic.",
+    "completed_at": "2026-04-22T21:49:55.089428+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "13aacf06-e574-46dd-94d9-a73951928b87",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

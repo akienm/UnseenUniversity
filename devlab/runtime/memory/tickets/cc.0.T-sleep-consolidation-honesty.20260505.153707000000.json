@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-sleep-consolidation-honesty.20260505.153707000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sleep-consolidation-honesty"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T15:37:07",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sleep-consolidation-honesty"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sleep-consolidation-honesty",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "biomimicry",
+      "ne",
+      "hebbian",
+      "honesty",
+      "investigation"
+    ],
+    "title": "CLOSED: Honest Hebbian sleep pass — documented; SleepConsolidation is live",
+    "result": "Path A: SleepConsolidation push source is the real D353 Hebbian pass (already live). Fixed 3 docstring locations in NE + consolidation.py. Design doc at lab/design_docs/_sleep_consolidation_design.md.",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": "2026-05-08T21:35:29.187781+00:00",
+    "created_at": "2026-05-05T15:37:07Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "narrative_engine._deep_consolidation_pass is documented as Hebbian wandering (D353). Actual implementation: k-means clustering (cosine >= 0.80 merge) + link pruning + orphan adoption. None of that is Hebbian. hebbian_bridge.py exists but is flag-gated off. This is an INVESTIGATE ticket with Path A bias: map the existing idle-pass behavior, confirm hebbian_bridge.py is the right home for the real mechanism, and produce a design for wiring replay-based Hebbian weight updates (for each within-turn node pair activated near each other, bump the interpretive edge weight). Path B (retract + rename) is the fallback if Path A scope proves too large.\n\n**Affected files:** wild_igor/igor/cognition/narrative_engine.py (_deep_consolidation_pass, line 2134), wild_igor/igor/cognition/hebbian_bridge.py, wild_igor/igor/cognition/replay.py\n**Design rules:** none-apply (investigation first)\n**Scope boundary:** IN: read and map the idle pass; assess hebbian_bridge wiring; produce design doc for Path A. OUT: do not implement in this ticket.\n**Test plan:** no tests — produces design doc.\n**Pass condition:** Design doc at lab/design_docs/_sleep_consolidation_design.md names the chosen path (A or B), the specific wiring changes, and why.",
+    "completed_at": "2026-05-08T21:48:24.728612+00:00",
+    "github_issue": 592,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f763d2ce-491d-4e05-bb7f-ea32bf05f45c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

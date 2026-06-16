@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-walk-16.20260507.215508072841",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-16"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:08.072841",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-16"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-16",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Concurrency",
+      "walk"
+    ],
+    "title": "CLOSED: file-lock training_corpus index writes",
+    "result": "added fcntl LOCK_EX/LOCK_SH to _save_index/_load_index via companion .lock file",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-08T19:13:52.468154+00:00",
+    "created_at": "2026-05-07T21:55:08.072841+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 area_7 finding: training_corpus._save_index() writes index.json without a file lock, creating a race when multiple COAs run concurrently. Move the fcntl-based lock into _save_index() so no caller needs to remember.\n\n**Affected files:** wild_igor/igor/cognition/training_corpus.py\n**Design rules:** no-sqlite\n**Scope boundary:** IN — add fcntl lock inside _save_index() and _load_index(); both sides acquire. OUT — restructuring training corpus storage.\n**Test plan:** test_training_corpus.py: two threads call _save_index() concurrently; assert no partial write (file is valid JSON after both complete).\n**Pass condition:** Concurrent writes in test produce a valid, non-corrupted index.json.",
+    "completed_at": "2026-05-08T19:14:50.910381+00:00",
+    "github_issue": 654,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2cca8fdb-f137-4f2a-a3c1-a19f184f926d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

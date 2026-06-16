@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-palace-decay-timestamps.20260530.031447891361",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-decay-timestamps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T03:14:47.891361",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-palace-decay-timestamps"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-decay-timestamps",
+    "gate": null,
+    "size": "XS",
+    "tags": [
+      "Database",
+      "palace"
+    ],
+    "title": "Fix palace nodes missing updated_at timestamps (11 nodes)",
+    "result": "Verified: SELECT count(*) FROM adc.palace WHERE updated_at IS NULL returns 0",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-30T03:14:47.891361+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "palace-decay-detection audit finds 11 adc.palace nodes with no updated_at timestamp. These are likely older nodes that pre-date the column. Set updated_at = created_at (or now()) for those rows.\n\n**Affected files:** adc.palace table (DB only)\n**Design rules:** no-sqlite; Postgres only\n**Scope boundary:** IN — UPDATE adc.palace SET updated_at = now() WHERE updated_at IS NULL; OUT — don't change content\n**Completion criteria:** SELECT count(*) FROM adc.palace WHERE updated_at IS NULL returns 0",
+    "completed_at": "2026-05-30T17:41:46.489953+00:00",
+    "deposited_at": "2026-05-29T21:15:55.372192",
+    "deposited_by": "cc_queue",
+    "github_issue": 816,
+    "required_files": [],
+    "no_commit_reason": "DB-only fix",
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T03:14:47.891383+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bf971e55-2468-4faf-9063-8965bb751a6c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

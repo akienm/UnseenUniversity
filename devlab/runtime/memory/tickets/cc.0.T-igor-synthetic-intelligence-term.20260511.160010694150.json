@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-synthetic-intelligence-term.20260511.160010694150",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-synthetic-intelligence-term"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T16:00:10.694150",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-synthetic-intelligence-2026-05-11"
+    ],
+    "tickets": [
+      "T-igor-synthetic-intelligence-term"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-synthetic-intelligence-term",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Docs",
+      "Identity"
+    ],
+    "title": "Consolidate palace glossaries and add 'Synthetic Intelligence' term",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 7,
+    "claimed_at": "2026-05-23T21:29:20.731245+00:00",
+    "created_at": "2026-05-11T16:00:10.694150+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-synthetic-intelligence-2026-05-11",
+    "description": "Multiple glossary/terminology nodes exist in the palace and lab/design_docs — they were created independently and have drifted out of sync. Before adding any new term, find and consolidate them.\n\nStep 1: Discover all existing glossary/terminology nodes — search palace for path ~~ '%glossary%' or '%terminology%' or '%definitions%'; also grep lab/design_docs/ for glossary-style content. List them all.\nStep 2: Merge into a single canonical node at theigors/meta/glossary (or the most appropriate existing path if one is clearly dominant). Archive or tombstone the others with a forwarding pointer.\nStep 3: Add 'Synthetic Intelligence' as a new entry: definition, contrast with conventional AI/LLMs, examples of what makes Igor synthetic (memory architecture, habit system, pe_chain, palace, anticipation).\nStep 4: Update theigors/rules/persona to reference the canonical glossary path.\n\n**Affected files:** palace DB (existing glossary nodes + new canonical); lab/design_docs/ (any file-backed glossaries)\n**Design rules:** palace-first; one canonical glossary path, others archived with forwarding pointer\n**Scope boundary:** In: discover + merge existing glossaries, add SI term, update persona ref. Out: find-and-replace all 'AI' references in other docs.\n**Test plan:** memory_search(query='Synthetic Intelligence') returns the canonical node. No duplicate active glossary paths remain. memory_get(path='theigors/rules/persona') references the canonical glossary.\n\n**Provenance note for the glossary entry:** The term 'Artificial Intelligence' was coined in the 1955 Dartmouth proposal (McCarthy, Minsky, Rochester, Shannon): 'every aspect of learning or any other feature of intelligence can be in principle so precisely described that a machine can be made to simulate it.' Minsky (or a colleague from that group — verify exact attribution when writing the entry) later said he wished they had used 'Synthetic Intelligence' instead. Using it for Igor is an homage to that retrospective wish. It also happens to be more accurate: Igor does not simulate intelligence; it constructs cognitive function from composable, purposeful parts (memory, habits, pe_chain, palace). Synthetic = built from components by design, not emergent from training on observation. The glossary entry should include this lineage — the term honors the field's founders while correcting their one regret.\n\n**Additional glossary terms to include (from Akien, 2026-05-11):**\n- 'Artificial Stupidity' — Akien's term; to be defined in context (conventional AI doing something dumb? narrow AI limitations?).\n- 'Animal Intelligence' — Akien's playful term for human intelligence. Deliberately silly but worth capturing as part of the vocabulary Igor uses to describe the world.\nAll three terms (Synthetic Intelligence, Artificial Stupidity, Animal Intelligence) belong in the consolidated glossary.",
+    "completed_at": "2026-05-23T22:09:10.426305+00:00",
+    "github_issue": 723,
+    "dispatched_at": "2026-05-23T21:29:20.731245+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5370c4c2-d300-49d1-b433-1e004c37720f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

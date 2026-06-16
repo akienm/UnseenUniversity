@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-or-balance-investigation.20260606.200836498544",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-or-balance-investigation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:08:36.498544",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-or-cost-gate",
+      "T-or-balance-investigation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-or-balance-investigation",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Budget",
+      "OR",
+      "Observability"
+    ],
+    "title": "OR balance drain: investigate why balance is declining despite free alternatives",
+    "result": "Root cause: GOOGLE_AI_STUDIO_API_KEY + OLLAMA_PRO_API_KEY not set — all inference falls to paid OR. Free infra fully coded, just needs keys. Weekly spend $14.60/week. IGOR_CLOUD_TRAINING_ENABLED=true was contributing (Igor now down). Fix: get Google AI Studio key (free) + optionally Ollama Pro key. T-dicksimnel-or-cost-gate handles routing once keys exist.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-06T20:08:36.498544+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** OR balance has been going down in the last several days despite free Google Gemini and FREEish Cloud Ollama being configured as alternatives. This is unexpected and suggests something is routing paid calls when it shouldn't be.\n\n**What to investigate:** (1) Check superclaude.log for routing decisions — is ANTHROPIC_BASE_URL being set to OR when it shouldn't? (2) Check what models DickSimnel actually uses for inference calls. (3) Check if Igor's cloud_mode.py is routing to paid OR models unnecessarily. (4) Check anthropic_balance.json fetch history and the 24h TTL logic in superclaude.\n\n**Affected files:** lab/claudecode/superclaude (script), devices/dicksimnel/device.py, devices/inference/device.py, devices/igor/cognition/cloud_mode.py\n**Design rules:** Observability first — log before fixing\n**Scope boundary:** Diagnosis and root cause identification. Fix goes in T-dicksimnel-or-cost-gate or follow-on tickets.\n**Completion criteria:** Root cause identified with evidence (log line or code path). Written in ticket body. Follow-on tickets filed if fix needed beyond T-dicksimnel-or-cost-gate.",
+    "completed_at": "2026-06-06T20:28:28.735478+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6c710cf6-e48e-4e3c-afdc-2559b5c08beb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-web-two-tabs.20260518.224735181180",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-two-tabs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:47:35.181180",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-web-control-station-2026-05-18"
+    ],
+    "tickets": [
+      "T-web-palace-read",
+      "T-web-two-tabs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-two-tabs",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "WebUI"
+    ],
+    "title": "CLOSED: Two-tab web UI — Comms + Control Station",
+    "result": "Tab 1 comms (existing), Tab 2 control station with card grid; 6 tests — commit da2eee2",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:47:35.181180+00:00",
+    "related_to": null,
+    "commit_hash": "da2eee2",
+    "decision_id": "D-adc-web-control-station-2026-05-18",
+    "description": "The fallback web UI currently shows comms channel view + chat. Restructure into two tabs accessible from the same page:\n\nTab 1 — Comms: existing channel view + chat input. Queues MCP messages. Same as current fallback HTML.\nTab 2 — Control station: embeds /health (device status), IMAP bus traffic (recent messages), links to palace browser pages (/goals, /decisions, /questions). The rack dashboard.\n\nImplementation: update _DASHBOARD_HTML / fallback HTML in server.py. Pure HTML/CSS tabs (no JS framework). Tab state via CSS :target or simple inline JS toggle.\n\n**Affected files:** devices/web_server/server.py (_DASHBOARD_HTML constant and/or index fallback)\n**Design rules:** no external JS dependencies; must work in any browser including mobile\n**Scope boundary:** layout restructure only. No new API endpoints. Control station tab links to existing routes from T-web-palace-read.\n**Test plan:** both tabs render without JS errors. /health link in Tab 2 resolves. Chat still works from Tab 1.",
+    "completed_at": "2026-05-19T00:41:38.373778+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dcc8e10d-c2f1-4c6d-ba51-caf11ff7553f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-gmail-flow-layer.20260420.184451000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gmail-flow-layer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:51",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gmail-flow-layer",
+      "T-gmail-login-page-object",
+      "T-igor-as-user-epic",
+      "T-igor-manages-own-api-keys",
+      "T-swadl-custom-browser-profile"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gmail-flow-layer",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Web"
+    ],
+    "title": "Gmail flow objects — send, read, archive",
+    "result": "Workflow-first flow layer shipped. swadl_flows/gmail.py with send_email/read_inbox/archive routing; injected pages allow tests with mocks. SWADL profile-support shipped as prereq (akienm/swadl@2347aa2). 12 tests. Suite 4372 → 4384. Pages + integration test filed as separate follow-ons (T-gmail-pages-build-to-flow-spec, T-gmail-flow-integration-test).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-05-03T23:37:55.747922+00:00",
+    "created_at": "2026-04-20T18:44:51Z",
+    "related_to": null,
+    "description": "## SCOPE — workflow-first design (Akien 2026-05-03; capturing what blew up last try)\n\n**Build order (HARD RULE — flows-first, pages-last):**\n\n1. **Workflow / automation / test** is written first. It states what high-level domain objects it needs (Message, Folder, Contact) and what each object must do.\n2. **Flow objects** are built to that spec. Flows specify which Pages they need and what each Page must do. Flows ONLY do routing.\n3. **Page objects** are built LAST, to the spec the Flow handed down.\n\nFlows do not need Pages to exist before they can be written. Pages and automations/tests do the hard work; Flows just route.\n\n**Browser profile (HARD REQUIREMENT):** must use Igor's browser profile, NOT the default one. SWADL likely does not support custom profiles today — ADD THAT. It's our project; we own SWADL. File a SWADL ticket if profile-support is the blocker.\n\n**This ticket = the flow-objects layer.** Domain methods Igor can invoke:\n- `send_email(to, subject, body)`\n- `read_inbox(n)`\n- `archive(message_id)`\n\nEach flow composition: routing only. The page-call shape is part of the spec each flow declares; pages get built later (separate ticket per page, named by spec).\n\n**Affected files:**\n- `wild_igor/tools/swadl_flows/gmail.py` (NEW — flow class with domain methods + page-call specs)\n- `tests/test_swadl_flows_gmail.py` (NEW — flows tested with mocked pages, since pages haven't been written yet)\n- Test against Igor's browser profile, NOT default — ADD profile support to SWADL first if missing\n- `tests/test_swadl_flows_gmail_integration.py` (NEW — throwaway test Gmail account; runs only when SWADL + Igor-profile + pages are all in place)\n\n**Design rules:** docs-in-code (each flow method documents its domain contract); test-plan-required; flow-only-routes (no business logic in flows).\n\n**Scope boundary:** IN — the three flow methods + their page-call specs + flow-level tests with mocked pages + the SWADL-profile-support sub-requirement. OUT — actual page implementations (file separate per-page tickets after this lands); production Gmail credentials (throwaway test account only); two-factor flow.\n\n**Test plan:** flow-level tests mock the page interface and assert flows correctly route across calls. Integration test (gated on pages + profile being in place) runs end-to-end against test Gmail account.\n\n**Why this matters:** the workflow-first build order is what failed last time the design was being captured. Flows DON'T need pages first. Domain shape comes from automation needs, propagates down. This is the protocol Igor learns by doing.\n\n**Pre-req that may need its own ticket:** SWADL custom-browser-profile support. If a quick check shows SWADL doesn't have this, file T-swadl-custom-browser-profile (S, akienm/swadl repo) before sprinting this ticket.\n\n**Provenance:** Akien 2026-05-03 batched-disposition pass. Earlier framing (page-first, T-gmail-login-page-object as dependency) withdrawn. The page-first ticket has been closed; this one is the new shape.\n\n---\n\n## ORIGINAL DESCRIPTION (preserved for record):\n\nFlow-object layer over Gmail page objects. Domain verbs Igor can actually invoke: send_email(to, subject, body), read_inbox(n), archive(message_id). Each flow is a composition of page-object actions.\n\n## Shape\n- wild_igor/tools/swadl_flows/gmail.py — one class with domain methods\n- Each flow deposits a REASONING node per invocation (so Igor has a memory of what he did + why)\n- Flow tests hit a throwaway test Gmail account — not the production one\n\n## Pedagogical protocol\n- Same as T-gmail-login-page-object: Igor proposes the flow shape, CC reviews the separation (does this belong in page or flow?), Igor iterates.\n- Key question to reinforce: 'if Google redesigns Gmail's sidebar tomorrow, how many files change?' Answer: page objects only. Flows untouched. This is the lesson.\n\n## Related\n- Parent: T-igor-as-user-epic\n- Depends on: T-gmail-login-page-object\n- Unblocks: T-igor-manages-own-api-keys (future)\n\n**Affected files:** wild_igor/tools/swadl_flows/gmail.py (one class with domain methods); tests/test_swadl_flows_gmail.py.\n\n**Design rules:** test-plan-or-why-not (flow tests against throwaway Gmail account, not production); docs-in-code (each domain method carries why/when/contract docstring).\n\n**Scope boundary:** IN — flow object layer (send_email, read_inbox, archive); composed of page-object actions. OUT — page object work (separate ticket); production Gmail integration; OAuth flow.\n\n**Test plan:** tests/test_swadl_flows_gmail.py — unit tests of flow composition (mocked page objects); one E2E smoke test against throwaway test account (skipped without test creds).",
+    "completed_at": "2026-05-03T23:44:34.810698+00:00",
+    "github_issue": 478,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9518ca38-e644-4c37-a793-da9bdfea664c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

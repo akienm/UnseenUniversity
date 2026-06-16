@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-skills-sync.20260401.202536436580",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-sync"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T20:25:36.436580",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skills-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-sync",
+    "title": "Skills sync: update repo cc_skills from live, create Windows unfolder sync step",
+    "result": "cc_skills/ in repo already matches ~/.claude/skills/ (verified 2026-04-01e). install_igor.ps1 step 11 handles Windows sync.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Two-part task. (1) Ensure ~/TheIgors/claudecode/cc_skills/ is fully in sync with live skills in ~/.claude/skills/ — diff and copy any that differ. This is the source of truth the Windows unfolder reads from. (2) Update the Windows setup unfolder script (wherever it lives) to include a step that copies cc_skills/* into the correct Windows Claude Code skills path (typically %APPDATA%/Claude/skills/ or equivalent). The unfolder already deploys the repo to Windows — add a skills-sync step so updates flow automatically on next Windows setup. Check claudecode/ for any existing unfolder/setup script first.",
+    "completed_at": "2026-04-01T20:25:36.436580+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "488f11ea-da46-4851-ac39-0325973be97a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

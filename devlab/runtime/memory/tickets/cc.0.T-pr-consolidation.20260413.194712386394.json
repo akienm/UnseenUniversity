@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-pr-consolidation.20260413.194712386394",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T19:47:12.386394",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-accretion",
+      "T-pr-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-consolidation",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Sleep pass consolidation — integrate day's accretions into running themes + merge duplicates",
+    "result": "0dcc387b — Offline consolidation pass. New pr_consolidation.py module with pr_consolidate, pr_consolidate_all, compute_weight_delta. Activity weight formula: exchange=1.0, marker=3.0, commitment=5.0; weighted * 0.01 capped at 0.10 active delta; -0.02 inactive decay; clamped to [0.0, 2.0]. Writes consolidation_summary memory back into facia subtree. pr_consolidate_all skips dormant/archived. Forensic log at logs/pr_consolidation.log. 13 new tests covering pure formula + behavior + clamps + error handling. 2013 total pass, zero regressions. Wiring into D353 sleep tick deferred — exposed as tools, future ticket integrates the cadence.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T19:39:51.956355+00:00",
+    "related_to": null,
+    "description": "Extend existing sleep consolidation (D353) to walk recent persistent-relationship accretions and integrate them. Offline, runs during idle periods. Matches biological hippocampal-cortical consolidation during sleep.\n\nWHAT CONSOLIDATION DOES:\n- Walk all memories with pr_facia_id created since last consolidation\n- Cluster co-activated memories via Hebbian edge analysis — recurring themes get identified\n- Merge duplicate observations (same exchange mentioned twice in different forms)\n- Update the facia's cumulative_investment_weight based on activity level + explicit markers + emotional valence history\n- Prune noise (one-off mentions without follow-up, truly stale entries past a retention threshold)\n- Strengthen within-facia edges so future retrieval pulls cluster-mates together\n- Write a consolidation_summary memory to the facia subtree documenting what was integrated this pass\n\nDEPENDS ON: T-pr-accretion (needs accretion writes to consolidate).\n\nIMPLEMENTATION: add consolidate_persistent_relationships() function. Wire into the existing sleep/idle tick cadence. Forensic log to logs/pr_consolidation.log.\n\nTESTS: accrete N memories in a facia subtree, run consolidation, assert cluster summary created, duplicates merged, weight updated. Dormant facia with no recent accretions: consolidation pass leaves it alone.\n\nINERTIA: MEDIUM. cognition/ + tools/.",
+    "completed_at": "2026-04-13T19:47:12.386394+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c54efe93-3998-4564-ad40-b339d7a5f68a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

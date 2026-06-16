@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-proposals-occurrence-signal.20260510.222212252499",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-proposals-occurrence-signal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:12.252499",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-memory-depth-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-proposals-occurrence-signal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-proposals-occurrence-signal",
+    "gate": null,
+    "size": "XS",
+    "tags": [
+      "Memory",
+      "Cognition"
+    ],
+    "title": "CLOSED: proposals queue: occurrence_count + first_seen_at — recurrence signal for Igor",
+    "result": "shipped alongside T-igor-proposals-queue — occurrence_count + first_seen_at already in schema (42a44a45)",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-10T22:22:12.252499+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-memory-depth-2026-05-10",
+    "description": "Extend instance.proposals with: occurrence_count int DEFAULT 1, first_seen_at timestamptz DEFAULT now(). When add_proposal() is called for a proposal matching an existing pending one (same kind + md5(content[:200])), increment occurrence_count rather than inserting a new row. Igor reads occurrence_count when deciding whether to commit — the count is informational, never an auto-gate. This is the calligraphy principle: recurrence + foreseen future use drives Igor's own promotion judgment, not an automatic counter.\n\n**Affected files:** `wild_igor/igor/cognition/proposals.py` (dedup logic in add_proposal()), DB migration (occurrence_count + first_seen_at on instance.proposals)\n**Design rules:** no-sqlite; direct psycopg2; dedup on md5(kind + content[:200]) — deterministic, not semantic; occurrence_count is observable by Igor but never auto-commits\n**Scope boundary:** IN — two columns, dedup in add_proposal(), count returned in read_pending(). OUT — no auto-commit logic, no semantic dedup.\n**Test plan:** two add_proposal() calls with identical kind+content[:200] → single row with occurrence_count=2; different content → two rows; read_pending() includes occurrence_count",
+    "completed_at": "2026-05-10T22:29:44.511422+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "91da28db-34a8-45ca-b399-f501b9aa0728",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-reorg-seed-cc-memory-archive-deferred.20260503.021237507223",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reorg-seed-cc-memory-archive-deferred"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T02:12:37.507223",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reorg-bucket-archive-moves",
+      "T-reorg-seed-cc-memory-archive-deferred"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reorg-seed-cc-memory-archive-deferred",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Reorg",
+      "Archive",
+      "Followup"
+    ],
+    "title": "Reorg deferred: move seed_*.py + cc_memory_seed/ archives — needs caller updates first",
+    "result": "Resolved per-bucket (commit 550da87f). Moved 27 truly-orphan seed_*.py files to TheIgorsProject/seed_archive/. Reclassified 38 remaining seed_*.py + cc_memory_seed/ as active runtime assets (not archive): seed_layer3/4 deposit TEMPLATE nodes verified by tests; seed_goal_close_habit read by test; cc_memory_seed read by installer.py:349. Updated reorg-plan doc.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": [
+      "T-reorg-bucket-archive-moves"
+    ],
+    "decision_id": null,
+    "description": "Companion to T-reorg-bucket-archive-moves (which shipped the 33 clearly-safe files). The remaining buckets have live referrers that need updating in lockstep with the move:\n\n**Blocked sub-buckets:**\n- `lab/claudecode/seed_layer3_*.py` (8 files) + `lab/claudecode/seed_layer4_*.py` (5 files) — imported by tests (test_layer3_*, test_layer4_*) via `from claudecode.seed_layerN_xxx import (...)`. Tests would need import-path updates if files move.\n- `lab/claudecode/seed_goal_close_habit.py` — read by `tests/test_goal_close_habit.py:261,268` via `Path(...) / 'lab' / 'claudecode' / 'seed_goal_close_habit.py'`. Test reads file content for schema verification.\n- `lab/claudecode/cc_memory_seed/` (46 files) — read by `wild_igor/setup_assets/installer.py:349` for new-box memory seeding. Moving breaks installer.\n- Other `lab/claudecode/seed_*.py` (~52 files) — most likely safe but need per-file grep before move.\n\n**Affected files:** lab/claudecode/seed_*.py (~65 total); lab/claudecode/cc_memory_seed/ (46); tests/test_layer3_*.py + tests/test_layer4_*.py + tests/test_goal_close_habit.py (caller updates if moved); wild_igor/setup_assets/installer.py:349 (path update if cc_memory_seed moves).\n\n**Design rules:** archives → TheIgorsProject (rubric default per reorg-plan-2026-05-01-opus-pass.md); ship-clean (don't leave dual paths).\n\n**Scope boundary:** IN — decide per-bucket: (a) move + update callers, (b) move + leave a thin re-export shim, (c) leave in place permanently and re-classify as not-archive. OUT — actually moving without resolving the caller question.\n\n**Test plan:** per-file grep before each move; pytest -x -q after each batch; new-box installer dry-run if cc_memory_seed touched.",
+    "completed_at": "2026-05-03T02:12:37.507223+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "240a2d3e-6c5c-4c41-b81e-bc9de1df5447",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

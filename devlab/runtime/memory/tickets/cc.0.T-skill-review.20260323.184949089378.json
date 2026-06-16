@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-skill-review.20260323.184949089378",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T18:49:49.089378",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skill-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-review",
+    "title": "Review all CC skills — enforce discipline at step-switch boundaries",
+    "result": "Skill system overhauled: /slate, /slateclose, /readigor created; /decided rewritten as planning ritual; /savestate +compact string output; /sprint +test-fix→probe→audit chain; /day-close restructured. cc_queue sort bug fixed.",
+    "status": "done",
+    "priority": "p2",
+    "claimed_at": null,
+    "description": "Skills have drifted: step switches/gates exist in the skill files but Claude often skips them in practice. Review each skill together (Akien + Claude), tighten the gates that matter, remove dead steps. Candidate skills: savestate, day-close, decided, workstep, commit, sprint, context-load.",
+    "completed_at": "2026-03-23T18:49:49.089378+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bf466593-5d94-41c8-a336-a997bda8c5a7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

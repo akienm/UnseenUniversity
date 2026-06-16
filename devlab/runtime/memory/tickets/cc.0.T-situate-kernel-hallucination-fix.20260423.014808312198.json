@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-situate-kernel-hallucination-fix.20260423.014808312198",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-situate-kernel-hallucination-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T01:48:08.312198",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-situate-kernel-hallucination-2026-04-22"
+    ],
+    "tickets": [
+      "T-audit-findings-to-tickets",
+      "T-high-inertia-shared-state",
+      "T-llm-class-routing",
+      "T-reading-deepseek-pass2",
+      "T-situate-kernel-hallucination-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-situate-kernel-hallucination-fix",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "PeChain",
+      "HallucinationDefense",
+      "SITUATE"
+    ],
+    "title": "SITUATE — three-layer defense against kernel.py hallucination",
+    "result": "Three-layer SITUATE defense: (1) parse 'Affected files:' structured field from /ticket template → skip tier.2 when human-authored; (2) fattened _SITUATE_PROMPT with HIGH-inertia callout, max-3-files cap, empty-if-unclear escape hatch; (3) post-filter drops HIGH-inertia suggestions not named verbatim in description. Temp 0.7→0.1. 8 new tests, 18/18 pass. Commit 6a0e5b2e.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-23T01:38:29.360457+00:00",
+    "related_to": null,
+    "decision_id": "D-situate-kernel-hallucination-2026-04-22",
+    "description": "Tier2 Qwen hallucinates wild_igor/igor/brainstem/kernel.py in pe_situate when a ticket has no required_files and no prior observe memory. Empirically: four tickets over 2+ weeks (T-llm-class-routing, T-reading-deepseek-pass2, T-high-inertia-shared-state, T-audit-findings-to-tickets) produced the identical proposal string 'wants to edit wild_igor/igor/brainstem/kernel.py (HIGH inertia). Plan: . Reason: ...' — same LLM attractor, every ticket that lacks explicit file guidance. kernel.py is the canonical HIGH-inertia exemplar in Igor's discussion corpus; tier2 Qwen reaches for it when the description is sparse.\n\nFix is three layers (plus a prompt fatten + temperature drop):\n\n1. Structured-field fast path — parse 'Affected files:' line(s) from ticket description (new in /ticket template, already shipped). If present and non-empty, set plan_files from there and skip tier2. Sits alongside the existing _situate_from_memory fast path at pe_chain.py:825-837.\n\n2. Fattened _SITUATE_PROMPT — add explicit rules: paths must be verbatim from ticket text OR the obvious implementation target named in the problem; do NOT invent; HIGH-inertia dirs (brainstem/, cognition/, memory/models.py) require explicit naming; max 3 files; empty-if-unclear escape hatch. Drop temperature 0.7 -> 0.1 for this extraction call.\n\n3. Post-filter — after _parse_file_list (pe_chain.py:853), reject any HIGH-inertia file whose full path does NOT appear verbatim in the ticket description. Log each rejection with INFO-level 'SITUATE rejected tier2 suggestion <path> (HIGH inertia, not named in ticket)'. The HIGH-inertia classifier already exists in tools/scope_guard.py:_classify_tier — reuse it.\n\nRationale: three-layer defense (structured-field wins -> fattened prompt nudges -> post-filter catches leaks). No single layer is the full safety net; the filter is the backstop.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (pe_situate + _SITUATE_PROMPT + post-filter), tests/test_pe_chain.py (new tests for all three layers).\n**Design rules:** docs-in-code (update pe_situate docstring with the three sources), test-plan-or-why-not (4 tests specified below).\n**Scope boundary:** IN — pe_situate SITUATE path, prompt text, temperature, post-filter, docstring. OUT — other pe_chain steps (OBSERVE/HYPOTHESIZE/PLAN), scope_guard internals, ticket template (already shipped), tier2 client code.\n**Test plan:**\n(a) test_situate_uses_affected_files_field — description contains 'Affected files: foo.py, bar.py'; assert tier2 NOT called, plan_files == ['foo.py','bar.py'].\n(b) test_situate_rejects_unmentioned_kernel — tier2 returns 'wild_igor/igor/brainstem/kernel.py' for a description that does not mention kernel.py; assert plan_files == [] and rejection logged.\n(c) test_situate_allows_kernel_when_named — description contains 'wild_igor/igor/brainstem/kernel.py'; tier2 returns same; assert plan_files == ['wild_igor/igor/brainstem/kernel.py'].\n(d) test_situate_empty_affected_files_falls_through — 'Affected files: TBD' or empty; assert tier2 IS called (normal path).\n\n**/review verdict:** PASS. Build-tightness: tight (4/4).",
+    "completed_at": "2026-04-23T01:48:08.312198+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9804aba8-0d96-4680-b6f8-7afbc5904586",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

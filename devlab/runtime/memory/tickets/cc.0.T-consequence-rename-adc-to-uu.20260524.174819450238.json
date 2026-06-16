@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-rename-adc-to-uu.20260524.174819450238",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-rename-adc-to-uu"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-24T17:48:19.450238",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rename-adc-to-unseen-university-2026-05-24"
+    ],
+    "tickets": [
+      "T-consequence-rename-adc-to-uu"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-rename-adc-to-uu",
+    "gate": "2026-06-07",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: agent_datacenter → UnseenUniversity rename",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-24T17:48:19.450238+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-rename-adc-to-unseen-university-2026-05-24",
+    "description": "**What changed:** agent_datacenter repo and local directory renamed to UnseenUniversity; all string refs updated.\n\n**Predicted unintended effects:**\n- Scripts in TheIgors with hardcoded /home/akien/dev/src/agent_datacenter paths break silently\n- Igor palace nodes referencing agent_datacenter paths become stale\n- Shell aliases or tmux session configs still pointing to old path cause confusing failures\n- Any automation (cron, CI) referencing old GitHub URL fails if not using the redirect\n- THEIGORS_HOME or CC_WORKFLOW_TOOLS env vars may reference ADC path indirectly\n\n**Signals to watch:** Shell errors referencing agent_datacenter path in TheIgors venv or scripts; ADC device logs showing path-not-found errors; igor.switches.cfg or .env files with stale paths.\n\n**Gate condition:** Check by 2026-06-07.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": 793,
+    "required_files": [],
+    "scraps_validated": "2026-05-24T17:48:19.450267+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f31ecf7d-f17d-478c-bb9b-ffe3641a1575",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

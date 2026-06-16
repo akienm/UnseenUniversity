@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260319g.20260321.011055179893",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260319g"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:55.179893",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260319g"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260319g",
+    "body": "Decisions: D146, D147. Key changes: reading POC 2 rounds complete, turn_trace confirmed as diagnostic instrument, HTTPS fix for cc_send, PROC_CLUSTER_SSH_CHECK trigger fixed, habit-fires-before-meaning identified as structural issue. Session theme: reading POC diagnostic complete; T-mcp-pipeline is next. Subsystems touched: PROC_CLUSTER_SSH_CHECK (DB only), diagnostic scripts.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close for session 2026-03-19d (reading POC rounds)",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:55.179893+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

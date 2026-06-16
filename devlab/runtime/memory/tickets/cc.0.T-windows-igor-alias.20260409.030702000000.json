@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-windows-igor-alias.20260409.030702000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-windows-igor-alias"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T03:07:02",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-windows-igor-alias"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-windows-igor-alias",
+    "size": "S",
+    "tags": [
+      "Productization"
+    ],
+    "title": "Windows installer: create igor command alias",
+    "result": "Akien will tackle later; closing as noise",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "created_at": "2026-04-09T03:07:02Z",
+    "related_to": null,
+    "description": "igor.ps1 requires navigating to repo dir. PowerShell has profile-based aliases (Set-Alias or function in $PROFILE). Installer should create an igor command that works from anywhere. Linux has the bash alias already. Experimentor UX gap.",
+    "completed_at": "2026-04-19T00:28:21.026642+00:00",
+    "github_issue": 397,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8fcb75c7-d1d7-468e-9240-93fea586f272",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

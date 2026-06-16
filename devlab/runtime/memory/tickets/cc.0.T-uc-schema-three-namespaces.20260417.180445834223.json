@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-uc-schema-three-namespaces.20260417.180445834223",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-schema-three-namespaces"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T18:04:45.834223",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-db-proxy-shelf",
+      "T-uc-schema-three-namespaces"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-schema-three-namespaces",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Database"
+    ],
+    "title": "Three Postgres schemas: igor instance, clan, infrastructure",
+    "result": "Three Postgres schemas (instance/clan/infra). Migration m050 moves 38 tables. PGDatabaseProxy search_path per factory. make_infra_proxy() for UC services. DB-level default search_path. 17 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T17:28:37.742623+00:00",
+    "related_to": null,
+    "description": "Create three Postgres schemas to separate brain, species, and body.\n\n## Schemas\n\n### `instance` schema — Igor's brain state (per-instance)\nMoved from public schema. Instance-scoped data:\n- ring_memory\n- twm_observations (already has instance_id filter)\n- tails\n- traversal_contexts\n- pending_replies\n- wg_access_log\n- cloud_escalations\n\n### `clan` schema — species knowledge (shared across Igors)\nMoved from public schema. Any Igor can read, writes governed:\n- memories\n- memory_embeddings\n- memory_blobs\n- interpretive_edges\n- reading_list, reading_runs, reading_run_items\n- lists\n- wg_meta, wg_word_lang, wg_idf, wg_word_docs, wg_cooccur, wg_edges\n- blobs, blob_chunks\n- traces\n- experiment_queue\n- active_slate\n\n### `infra` schema — utility closet state (all agents)\nMoved from public schema + new tables:\n- machines (from machine_manager)\n- channel_messages → infra.comms_messages (rename)\n- sessions (CC session records)\n- slates (CC slate history)\n- memory_palace (navigable tree — used by CC and Igor)\n- instance_log (boot/shutdown history)\n- _migrations\n- _cc_index_registry\n- NEW: infra.comms_channels (channel definitions)\n- NEW: infra.tools (shared tool registry)\n- NEW: infra.budget_events (moved from SQLite spend/balance_history)\n\n## Implementation\n\n### Step 1: Create schemas\n```sql\nCREATE SCHEMA IF NOT EXISTS instance;\nCREATE SCHEMA IF NOT EXISTS clan;\nCREATE SCHEMA IF NOT EXISTS infra;\n```\n\n### Step 2: Migration script\nNew migration file: `m050_three_schemas.py`\n- For each table: `ALTER TABLE public.<table> SET SCHEMA <target>;`\n- Order matters: foreign keys (interpretive_edges refs memories) must move together\n- Update search_path in db_proxy connection: `SET search_path TO instance, clan, infra, public;`\n- This means existing queries work without schema prefixes during transition\n\n### Step 3: db_proxy schema awareness\n- `make_home_proxy()` sets search_path to `clan, infra, public` (shared access)\n- `make_local_proxy()` sets search_path to `instance, clan, infra, public` (full access)\n- New: `make_infra_proxy()` sets search_path to `infra, public` (UC services only)\n- Access control via search_path, not row-level security (simple, sufficient)\n\n### Step 4: Budget migration from SQLite\n- Move spend, config, balance_history from SQLite (~/.TheIgors/instance/claude_budget.db) to infra schema\n- Delete SQLite budget DB after migration verified\n- This is the LAST SQLite removal — everything Postgres after this\n\n## Testing\n- Migration script runs idempotently (IF NOT EXISTS, check current schema)\n- All existing queries work unchanged (search_path handles resolution)\n- db_proxy.get_metrics() still works\n- cortex operations unchanged\n- budget.py reads from Postgres instead of SQLite\n\n## Rollback\n- Reverse migration: ALTER TABLE <schema>.<table> SET SCHEMA public;\n- search_path revert in db_proxy\n\n## Depends on\n- Nothing — this can go first, sets the foundation\n\n## Related\n- T-uc-db-proxy-shelf — db_proxy moves to UC after schemas established",
+    "completed_at": "2026-04-17T18:04:45.834223+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ec01e9cd-4c33-491f-8ba7-940cf7b3fd71",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

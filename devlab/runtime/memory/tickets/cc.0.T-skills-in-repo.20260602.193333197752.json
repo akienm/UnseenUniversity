@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-skills-in-repo.20260602.193333197752",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-in-repo"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T19:33:33.197752",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skills-in-repo"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-in-repo",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Move CC dev skills into repo, install via uu bootstrap",
+    "result": "skills already in repo; cleaned all 16 files with TheIgors refs; added uu bootstrap --skills install command",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-06-02T19:33:33.197752+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Dev skills (/sprint, /sorted, /sprint-ticket, etc.) currently live at ~/.claude/skills/ outside version control — they cannot be shared, versioned, or contributed to. They should live in skills/ within this repo and be installed at bootstrap time.\n\nShape: skills/ directory at repo root mirrors ~/.claude/skills/ structure. uu bootstrap --skills symlinks or copies them to ~/.claude/skills/. New contributors get the full skill set by running uu bootstrap.\n\nSecondary: rename internal jargon in skill content — theigors/rules/*, cc-minion references, etc. should use unseenuniversity/ paths.\n\n**Affected files:** skills/ (new dir), uu (bootstrap subcommand), ~/.claude/skills/ (install target)\n**Design rules:** no-sqlite; skills are plain markdown files — no DB dependency; install is idempotent\n**Scope boundary:** IN: skills/ directory in repo; uu bootstrap --skills install; rename theigors/ refs in skill content to unseenuniversity/. OUT: changing skill logic/behavior, palace namespace rename (separate ticket)\n**Completion criteria:** git clone + uu bootstrap --skills installs all skills to ~/.claude/skills/; no skill file contains theigors/ or .TheIgors references",
+    "completed_at": "2026-06-02T19:36:34.310285+00:00",
+    "deposited_at": "2026-06-02T13:34:38.750002",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "95fcd04e-36e4-45b8-8bba-f271f36e5b08",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

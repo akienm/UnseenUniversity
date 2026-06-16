@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-claudeandakien-workshop-evolution.20260420.184512000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-claudeandakien-workshop-evolution"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:12",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workshop-evolution-2026-04-20"
+    ],
+    "tickets": [
+      "T-claudeandakien-workshop-evolution",
+      "T-three-pass-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-claudeandakien-workshop-evolution",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Architecture",
+      "Workshop",
+      "Multi-project",
+      "Future",
+      "epic"
+    ],
+    "title": "ClaudeAndAkienWorkshop — evolve ClaudeAndAkien into multi-project workshop with shared utility closet substrate",
+    "result": "Closed 2026-05-01 — folded into D-claudeandakien-folded-2026-05-01. ClaudeAndAkienWorkshop concept obsolete; all workshop-bound concepts now agent_datacenter material. Surviving scope absorbed by T-skills-master-home-in-datacenter (skills home) and T-capability-extraction-from-igor (substrate migration including cc_skills/ + utility_closet/).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-04-20T18:45:12Z",
+    "related_to": "T-three-pass-audit",
+    "decision_id": "D-workshop-evolution-2026-04-20",
+    "description": "## Scope refresh (2026-05-01)\n\nPer Akien: this ticket is now about **getting all the docs about skills + tooling into agent_datacenter**. Three faces:\n1. **Classroom** — how the skills work, how to learn them\n2. **Practical workshop** — actual tooling/templates Igor and other agents pick up and use\n3. **Foundation for all agents** — substrate that any agent inherits when it plugs in\n\n## Install-flow vision (Akien 2026-05-01)\n\nEnd-state UX:\n- Someone downloads the Igor repo\n- Runs the platform-specific Igor executable script\n- Script sees no datacenter → asks where to put it → fetches the datacenter repo\n- Datacenter installs itself, then asks Igor shim to install + run via the shim's install method\n- Each component interacts intelligently *even before installation*, summoning help it needs\n\nThis makes the workshop the substrate every component bootstraps from.\n\n## Original scope (preserved)\n\nAkien 2026-04-20: segment all utility closet and Claude Code tooling out to an evolution of /home/akien/dev/src/ClaudeAndAkien. Rename: ClaudeAndAkienWorkshop. Role: general-purpose workshop across many projects.\n\nIgor will live and work there too — the utility closet substrate (UC rack, inference channels, comms transports, skills, shared scripts) is what centers every project.\n\n**Affected files:** /home/akien/dev/src/ClaudeAndAkienWorkshop/ (new repo evolution); cross-cuts to wild_igor/ (Igor migration), /home/akien/dev/src/agent_datacenter/ (substrate alignment).\n\n**Design rules:** docs-in-code (each skill carries its own teaching docstring); test-plan-or-why-not (workshop tooling needs reproducibility tests).\n\n**Scope boundary:** IN — docs ingestion to agent_datacenter, install-flow design, workshop role split (classroom/workshop/foundation). OUT — actual classroom curriculum content, C&A history rewrite, multi-org federation.\n\n**Test plan:** install-flow E2E on a clean machine — repo download → executable → DC install → Igor install → first turn. Each phase verifiable without the next.\n\n## Cross-project lab framing (Akien 2026-05-01 architectural North Star)\n\nThe split crystallizes:\n- **`agent_datacenter/`** = the cross-project lab (substrate for any agent). The agent-as-pieces. Akien's general-purpose workshop across many projects.\n- **`TheIgors/lab/`** = Igor-only lab. Cognition-specific work, design docs, and Igor-internal tooling. NOT cross-project utilities.\n- **`/home/akien/dev/src/ClaudeAndAkienWorkshop/`** (this ticket's evolution target) = the workshop tooling and skills Akien uses with CC; sits alongside the datacenter as cross-project material.\n\nThis ticket's scope therefore is: **migrate the cross-project tooling currently in `TheIgors/lab/` into the workshop**, while keeping Igor-specific items behind. Examples to discuss at sprint-time design call: the various skills (savestate, day-close, audit, etc.), the audit tooling that's not Igor-specific, palace_sync.py if it's reusable for other projects, channel.py shim, etc.\n\nThe install-flow vision (download repo → executable → DC install → Igor install) is the *runtime* manifestation of this split: the datacenter installs first as the substrate, then Igor (or any other agent) installs on top. Every agent that plugs into the workshop inherits the substrate for free.\n\n## Reorg rubric (Akien 2026-05-01)\n\nThe categorization rules for the four-tree reorg (TheIgors / TheIgorsProject / .TheIgors / .agent_datacenter), captured durably so any Opus / future-CC pass references the same rubric:\n\n| Source | Destination |\n|---|---|\n| History (older session/decision/audit logs no longer load-bearing) | TheIgorsProject (for later organization) |\n| Tools NOT Igor-specific (cross-project utility shape) | agent_datacenter |\n| Older scaffolding for agent_datacenter no longer needed | TheIgorsProject as history, OR delete |\n| Tools for doing things *specifically* with Igor (current) | TheIgors/lab (stays) |\n| `design_docs/` and `design_docs_for_igor/` | stay in TheIgors (with exceptions below) |\n| `design_docs/archive/` (and similar archive subdirs) | TheIgorsProject |\n| `design_docs/audit_2026/` | move to TheIgors/lab (it's working-tooling, not human-facing reference) |\n| Design docs that are about agent_datacenter capabilities (e.g. `datacenter-swarm-bus-design-2026-05-01.md` written today) | agent_datacenter |\n| `.db` files (per no-sqlite rule) | DELETE all of them |\n\n**Underlying principle:** `design_docs/` is for *what a human needs to know to understand the project*. Not every design decision belongs in human-facing reference docs — implementation-specific design lives near the code it shapes. Capability-specific design lives near the capability.\n\n**Trees in scope of the reorg:**\n- `/home/akien/TheIgors` (this repo)\n- `/home/akien/TheIgorsProject` (project archive / history)\n- `/home/akien/.TheIgors` (runtime state for the Igor instance)\n- `/home/akien/.agent_datacenter` (runtime state for the datacenter)\n- `/home/akien/dev/src/agent_datacenter` (datacenter source repo — implied by \"tools not igor-specific\" rule and the design-doc relocation)",
+    "completed_at": "2026-05-01T20:51:23.743091+00:00",
+    "github_issue": 499,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "99e75810-be83-4308-b705-1b9a7a793b32",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

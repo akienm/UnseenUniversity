@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-cc-nightly.20260613.171431830239",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-cc-nightly"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T17:14:31.830239",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-nightly-learning-2026-06-13"
+    ],
+    "tickets": [
+      "T-consequence-cc-nightly"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-cc-nightly",
+    "gate": "2026-06-27",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: CC nightly learning loop",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-13T17:14:31.830239+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-nightly-learning-2026-06-13",
+    "description": "Verify CC nightly learning processes transcripts correctly and improves next-day context.\n\n**What changed:** CC processes session transcripts automatically at night (3:30 AM), extracts feedback, updates memory, prepares context for next day.\n\n**Predicted unintended effects:**\n  - False positive feedback: script interprets random text as feedback\n  - Stale patterns: outdated patterns clutter palace (no deprecation yet)\n  - Transcript loading: if session log is not available, script errors\n  - Idempotency: multiple runs might duplicate entries\n\n**Signals to watch:**\n  - Check: cc_nightly_learning.log shows 0 errors, process completes\n  - Log: feedback_items extracted matches manual count (spot-check)\n  - Verify: tomorrow's /context-load shows prepared briefing\n  - Palace: no duplicate nodes, feedback tree grows cleanly\n  - Next day: CC starts session with patterns and decisions from previous day visible\n\n**Gate condition:** Check 2026-06-27 (14 days) or first morning after nightly script runs in prod.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe transcript processing quality, context briefing accuracy\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-13T17:14:31.830273+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d3d7529e-25b6-41b5-b4eb-aa76aaeb85c7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

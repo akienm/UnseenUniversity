@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-announce-slice3b-client-invalidate-handling.20260501.230147760493",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice3b-client-invalidate-handling"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T23:01:47.760493",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice3b-client-invalidate-handling",
+      "T-announce-slice3b-invalidator"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice3b-client-invalidate-handling",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice3b",
+      "Datacenter",
+      "Client"
+    ],
+    "title": "DatacenterClient — check_for_invalidate() + re-announce on match",
+    "result": "DatacenterClient.check_for_invalidate ships + architectural fix: separate comms://invalidate mailbox so manifests and invalidates don't race in announce()'s poll loop. Coalesces N matched invalidates into 1 re-announce. Re-announce timeout preserves stale manifest. 6 new client tests + Invalidator/Skeleton updated for new mailbox. 205 passed. agent_datacenter commit 9e50bd5.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-01T22:58:19.945594+00:00",
+    "related_to": "T-announce-slice3b-invalidator",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Closes the cache invalidation loop. The Invalidator (slice 3b) publishes kind=invalidate envelopes to comms://announce-events when a profile or registry changes. This ticket extends DatacenterClient with the consumer side: check_for_invalidate() polls announce-events for kind=invalidate envelopes whose target matches the client's agent_id (or 'registry' which all clients heed), and triggers re-announce + cache replace. Manual-pump pattern matches the rest of slice 1-3 — slice 3b-2 will add a background thread for push-driven cache freshness.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/client.py (extend with check_for_invalidate + private re-announce helper), /home/akien/dev/src/agent_datacenter/tests/test_datacenter_client.py (extend with invalidate tests)\n**Design rules:** check_for_invalidate is a single non-blocking call (returns count of invalidates handled); re-announce on a match replaces the cached manifest atomically; envelopes whose target doesn't match (other agent's invalidate) are dropped silently; checks happen against announce-events with the client's primary_mailbox filter same as initial announce so multi-agent sharing the mailbox works.\n**Scope boundary:** in — check_for_invalidate() method, re-announce on match, manifest cache atomic replace; tests covering match-on-agent-id / match-on-registry / no-match-no-action / re-announce-failure-leaves-stale-manifest. Out — background thread polling (slice 3b-2), inotify-driven push, manifest TTL/expiry, structured callback notifications.\n**Test plan:** test_check_for_invalidate_returns_zero_when_no_envelopes; test_invalidate_for_our_agent_triggers_reannounce (post invalidate, run pump separately, verify manifest re-fetched); test_invalidate_for_registry_triggers_reannounce; test_invalidate_for_other_agent_ignored (target=cc when client is igor → no re-announce); test_check_for_invalidate_handles_re-announce_timeout_gracefully (returns 0, manifest unchanged, no exception).",
+    "completed_at": "2026-05-01T23:01:47.760493+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5654a8d3-3e75-4e65-9296-8403b6d1c23d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-igor-boredom-background-goals.20260606.200836494239",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-boredom-background-goals"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:08:36.494239",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-igor-boredom-background-goals"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-boredom-background-goals",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Cognition"
+    ],
+    "title": "Igor idle: diagnose why boredom doesn't trigger background goals",
+    "result": "BoredomSource was missing category='boredom_detected' on twm_push; seeded PROC_BOREDOM_FOREMAN habit (twm_trigger=BOREDOM_DETECTED, code_ref=foreman_scan). Loop now: boredom detected → TWM entry → reactive habit → foreman_scan() → queue check → dispatch.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.2,
+    "intention": null,
+    "claimed_at": "2026-06-07T00:55:01.048872+00:00",
+    "created_at": "2026-06-06T20:08:36.494239+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** Igor gets bored (30 stuck NE cycles) but doesn't do anything about it — doesn't go read, doesn't pick up background goals. The safe_mode watchdog was the wrong fix. The right fix is making the idle-detection → background-goal pathway actually work.\n\n**What to investigate:** How does the NarrativeEngine decide what to do when it has no active thread? What's the mechanism for 'go read something' when bored? Is PROC_READING_BOOTSTRAP seeded? Does the boredom signal reach a habit/goal that spawns reading?\n\n**Affected files:** devices/igor/cognition/ (NE, COA, habits), devices/igor/tools/bootstrap_reader.py\n**Design rules:** Igor uses systems (habits, goals, tools) — it doesn't contain them\n**Scope boundary:** Diagnose the gap, implement the fix. Do NOT re-introduce safe_mode or any watchdog that blocks capabilities.\n**Completion criteria:** When Igor has no active narrative thread, it picks up a background goal (reading or similar) within a reasonable number of NE cycles. Verifiable via log observation.",
+    "completed_at": "2026-06-08T03:19:51.594929+00:00",
+    "deposited_at": "2026-06-06T14:10:53.751961",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "07c1e57f-52af-4969-92cd-0b565289a604",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-workflow-c-diagnose-pattern.20260416.183312777087",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-workflow-c-diagnose-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T18:33:12.777087",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-workflow-c-diagnose-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-workflow-c-diagnose-pattern",
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "WorkflowC: diagnose-pattern reasoning workflow",
+    "result": "WorkflowC_DiagnosePattern: hypothesis + discriminating test extraction. PatternDiagnosis output struct. 8 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T18:25:10.597645+00:00",
+    "related_to": null,
+    "description": "WorkflowC_DiagnosePattern — peer conversation to diagnose a recurring pattern (repeated failure, repeated escalation, repeated topic). Same pattern as WorkflowA. Opening: describe the pattern + instances. Workflow steps: hypothesize cause, propose discriminating test. Output: PatternDiagnosis(pattern, hypothesis, proposed_test). Sub-ticket of #436.",
+    "completed_at": "2026-04-16T18:33:12.777087+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bfb34cb7-d78b-4d41-923d-e288abe5baef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-scope-backfill-migration-loop.20260422.193049179712",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scope-backfill-migration-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T19:30:49.179712",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-slow-query-triage-2026-04-22"
+    ],
+    "tickets": [
+      "T-cortex-261",
+      "T-scope-backfill-migration-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scope-backfill-migration-loop",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Database",
+      "Performance"
+    ],
+    "title": "Fix scope-backfill UPDATE firing every connection (38k hits in db_queries.log)",
+    "result": "Superseded by D-sqlite-removal-2026-04-22. The 38k UPDATE hits were historical — Postgres gate (scope_backfill_123 in _migrations) already shipped 2026-04-17. Residual 3 hits/9 days came from the SQLite fallback path, which is being removed entirely instead of gated. See T-test-postgres-schema + T-remove-sqlite-fallback.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": "2026-04-22T19:13:56.352333+00:00",
+    "related_to": null,
+    "decision_id": "D-slow-query-triage-2026-04-22",
+    "description": "UPDATE memories SET scope = ? WHERE portable = 0 AND scope = ? fires 38,034 times in db_queries.log (avg 68ms, worst 502ms). Same pattern as T-cortex-261 (meaning_to_me layer fix, now closed) — a migration that should be one-shot but runs on every connection because it lacks a _migrations guard. Add a 'scope_backfill' entry to _SCHEMA_MIGRATIONS / _migrations table so it runs exactly once.\n\n**Affected files:** TBD discovery step — likely wild_igor/igor/memory/cortex.py migration list, possibly lab/utility_closet/db_proxy.py. Will confirm on sprint start. Update docstring on the migration runner that guards it.\n**Design rules:** no-sqlite: touches _migrations table (Postgres existing) — no new tables, no SQLite. oop-first: migration guard is a single conditional check, no shared state. docs-in-code: update the migration runner file's docstring to name the new migration entry. test-plan-or-why-not: applies.\n**Scope boundary:** IN — add _migrations guard so UPDATE runs once. OUT — restructuring _migrations schema, schema changes to memories table.\n**Test plan:** Integration test on real Postgres — run the migration path twice, assert UPDATE appears 0 times in db_queries.log on second run. Pattern from T-cortex-261 tests applies directly.",
+    "completed_at": "2026-04-22T19:30:49.179712+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e4e45d6e-d776-4759-bc37-9ab87de99fee",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

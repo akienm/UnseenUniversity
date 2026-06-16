@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-256.20260315.222334000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-256"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T22:23:34",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-256"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-256",
+    "title": "Tailscale setup: secure remote access to Igor web UI from phone",
+    "result": "Merged into T-tailscale-cert-restore (#414). One ticket for Tailscale.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-15T22:23:34Z",
+    "description": "GitHub issue #256. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-17T22:26:03.354098+00:00",
+    "github_issue": 256,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "51f1c95e-9257-43e1-895d-2e7a95330f1d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

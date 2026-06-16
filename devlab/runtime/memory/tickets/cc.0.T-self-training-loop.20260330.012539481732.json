@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-self-training-loop.20260330.012539481732",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-training-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T01:25:39.481732",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-db-populate-embeddings",
+      "T-db-type-routing",
+      "T-self-training-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-training-loop",
+    "epic": "Training",
+    "title": "Self-training loop habit",
+    "result": "self_trainer.py fixed: (1) interaction logs found in correct path ~/.TheIgors/local/logs/ (2) CC: prefix extraction + routing directive strip (3) GAP_KEYWORD_THRESHOLD 1→3 (4) DB-based signal from EPISODIC used_api=true added as supplementary source (5) _deposit() now uses new_node_id(). PROC_SELF_TRAINING seeded. Manual pass: scanned=37 covered=34 gaps=3 deposited=3. Deposits in DB with timestamp IDs.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "Threshold habit fires after N cloud calls → reads own turn traces → finds inhibition misses that escalated to tier>=3 → deposits targeted knowledge to fill those exact gaps → graph densifies → next time no escalation. Gap signal = twm.check_result=miss AND tier>=3 in turn trace. Prerequisites: T-db-populate-embeddings + T-db-type-routing (matrix must be searchable for deposits to be retrievable). Unlocks both fork 1 (reply from graph) and fork 2 (design/code from graph).",
+    "completed_at": "2026-03-30T01:25:39.481732+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3c50201f-b9da-4048-9cbb-4605d45268a7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-dicksimnel-escalation-summary.20260605.025123852914",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-escalation-summary"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T02:51:23.852914",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "[REDACTED-CREDENTIAL]"
+    ],
+    "tickets": [
+      "T-dicksimnel-escalation-summary"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-escalation-summary",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Escalation",
+      "CompiledInference"
+    ],
+    "title": "DickSimnel: write structured summary to ticket at escalation",
+    "result": "structured escalation summary written to ticket body via append-note; What was tried / Where it broke / What now?",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that when DickSimnel escalates a ticket, the ticket body contains a structured summary (what was tried, where it broke) so CC starts informed rather than cold.",
+    "created_at": "2026-06-05T02:51:23.852914+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "[REDACTED-CREDENTIAL]",
+    "description": "Currently DickSimnel escalation does setstatus escalated and nothing else — ticket body is silent on what was attempted. CC re-derives context from scratch.\n\nAdd a structured summary to the ticket body at escalation time with three fields: What was tried, Where it broke, What now? (for next tier).\n\n**Affected files:** devices/dicksimnel/device.py\n**Design rules:** no-sqlite; log every interface crossing (escalation is a lifecycle event — INFO)\n**Scope boundary:** Only _escalate_ticket() in DickSimnel device. Does not change inference device or ticket schema.\n**Completion criteria:** After escalation, cc_queue.py show <id> shows an Escalation summary section in description with three fields populated. Verified by test in tests/inference/test_dicksimnel.py.",
+    "completed_at": "2026-06-05T03:44:25.205155+00:00",
+    "deposited_at": "2026-06-04T20:52:00.243341",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

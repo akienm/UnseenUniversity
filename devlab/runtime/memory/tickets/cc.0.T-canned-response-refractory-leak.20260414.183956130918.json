@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-canned-response-refractory-leak.20260414.183956130918",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-canned-response-refractory-leak"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T18:39:56.130918",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-canned-response-refractory-leak"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-canned-response-refractory-leak",
+    "body": "Evidence: 20260413.IgorAndAkienOnTheGaps.txt lines 61 and 154 (and 155 echo). Identical canned response — 'Word graph + thalamus form Stage 1 of preparse (free, instant). Ollama is Stage 2...' — emitted twice in completely unrelated conversational contexts. First fire was after akien said 'any thoughts?' about goals/planning. Second fire was after akien posted tomorrow's ticket list. Neither prompt mentions preparse, word graph, ollama, or thresholds.\n\nAkien noticed and called it out: 'i saw that:' (line 155) — quoting the misfire back at Igor.\n\nTHIS IS TWO BUGS:\n1. **Coherence**: the response has zero Jaccard overlap with the prompt. The response-coherence inhibitor we shipped today (pending Igor restart) should catch this. Use this transcript as a regression test case post-restart.\n2. **Refractory leak**: the SAME habit fired TWICE within one short conversation. PROC habits seeded with twm_ttl_seconds via inhibition_seeder.run_inhibition_seed_pass() should hit BG refractory and not re-fire so soon. Either:\n   a) the habit responsible isn't in the seeded list (PROC_GOAL_CONTINUATION, PROC_BOREDOM_TRIGGER, PROC_SELF_TRAINING, PROC_STALE_TASK_REAPER, PROC_GIT_AUTH_CHECK, PROC_MEMORY_COUNT_SNAPSHOT, PROC_DISK_USAGE_CHECK, PROC_QUEUE_DRAIN, PROC_CHUNK_INSPECTOR, PROC_FLUSH_HABIT_CACHE) — likely PROC_PREPARSE_HELP or similar that needs adding to the seed pass\n   b) refractory check isn't actually consulting twm_ttl_seconds correctly\n   c) the habit is high-enough scoring that BG selects it even with refractory penalty\n\nFIX STEPS:\n1. Identify the offending habit: grep for 'Word graph + thalamus form Stage 1' in PROC memories. `psql -c \"SELECT id, narrative FROM memories WHERE memory_type='PROCEDURAL' AND narrative ILIKE '%Stage 1 of preparse%'\"`\n2. Check its twm_ttl_seconds metadata. If absent, add to inhibition_seeder seed list.\n3. After restart, replay this transcript via cc_send and verify both: coherence inhibitor blocks/flags, AND second fire is refractory-suppressed.\n\nDEPENDENCIES: Igor restart (to activate today's inhibitor + seeder additions).",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "cognition",
+      "habits",
+      "refractory",
+      "coherence",
+      "verification"
+    ],
+    "title": "Same canned habit response fired twice in unrelated contexts (refractory leak)",
+    "result": "39c7381f — REOPENED. Initial close was wrong. Post-MCP-fix turn_trace revealed PROC_WG_PREPARSE_TUNING firing on canned text at 10:00 today (intent=code_task). My SQL grep had missed it because the canned text lives in metadata.action not narrative. Audit found 5 doc-as-action habits with no refractory; added all to inhibition_seeder INHIBITION_SPEC; ran live (15/15 seeded with probe=OK). 2209 tests pass. PARTIAL FIX: refractory alone won't stop the duplicate numeric-ID rows from 2026-03-29 firing identical content under a different id. Filed T-doc-habit-duplicates for the cleanup.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "completed_at": "2026-04-14T18:39:56.130918+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

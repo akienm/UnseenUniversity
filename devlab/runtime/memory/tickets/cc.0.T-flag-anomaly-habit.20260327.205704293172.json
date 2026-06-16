@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-flag-anomaly-habit.20260327.205704293172",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-flag-anomaly-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-27T20:57:04.293172",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-flag-anomaly-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-flag-anomaly-habit",
+    "epic": "Cognition",
+    "title": "PROC_FLAG_ANOMALY: Igor surfaces gaps to cc_channel",
+    "result": "flag_top_gap() added to learner.py. PROC_FLAG_ANOMALY seeded (tool, 300s interval). Test: synthetic NARRATIVE_GAP(salience=0.82) → channel_messages row confirmed as author=igor with [Igor notices] prefix.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "Threshold habit fires when NARRATIVE_GAP salience>0.7, sends cc_send with the question so Akien sees Igor noticing things.",
+    "completed_at": "2026-03-27T20:57:04.293172+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "17281f1e-15b8-44d5-8a05-35bafca75526",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

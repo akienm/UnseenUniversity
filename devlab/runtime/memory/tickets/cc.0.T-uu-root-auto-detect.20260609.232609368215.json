@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-uu-root-auto-detect.20260609.232609368215",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-root-auto-detect"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T23:26:09.368215",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-root-env-var-2026-06-09"
+    ],
+    "tickets": [
+      "T-uu-root-auto-detect",
+      "T-uu-root-migrate-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-root-auto-detect",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "DX"
+    ],
+    "title": "UU_ROOT env var: auto-detect utility + shell setup docs",
+    "result": "uu_root() auto-detects from package __file__; works without UU_ROOT set; CLAUDE.md updated",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that UU_ROOT resolves correctly on any machine without manual configuration, falling back to package location detection when the env var is not set.",
+    "claimed_at": "2026-06-09T23:26:42.006427+00:00",
+    "created_at": "2026-06-09T23:26:09.368215+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-uu-root-env-var-2026-06-09",
+    "description": "Add unseen_university/_uu_root.py with a uu_root() function that: (1) returns UU_ROOT env var if set, (2) detects from unseen_university.__file__ parent chain, (3) falls back to pip show location. Update CLAUDE.md env var section to document UU_ROOT and IGOR_HOME as the two canonical vars. Mark CC_WORKFLOW_TOOLS as derived (= ${UU_ROOT}/lab/claudecode).\n\n**Affected files:** unseen_university/_uu_root.py (new), CLAUDE.md\n**Design rules:** none apply\n**Scope boundary:** Detection utility + docs only. No migration of existing CC_WORKFLOW_TOOLS references — that is T-uu-root-migrate-skills.\n**Completion criteria:** python3 -c \"from unseen_university._uu_root import uu_root; print(uu_root())\" prints the repo root on this machine; works when UU_ROOT is unset.",
+    "completed_at": "2026-06-09T23:27:55.328816+00:00",
+    "deposited_at": "2026-06-09T17:26:32.121770",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-09T23:26:42.006427+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

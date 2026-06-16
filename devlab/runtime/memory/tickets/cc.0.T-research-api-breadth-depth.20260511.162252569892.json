@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-research-api-breadth-depth.20260511.162252569892",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-research-api-breadth-depth"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T16:22:52.569892",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-research-breadth-depth-2026-05-11"
+    ],
+    "tickets": [
+      "T-librarian-external-doc-fetch",
+      "T-research-api-breadth-depth"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-research-api-breadth-depth",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "API",
+      "Research"
+    ],
+    "title": "CLOSED: research() breadth+depth float API",
+    "result": "breadth+depth float API live; _research_unified scales prompts continuously; shim for legacy depth='shallow'/'deep'; MCP schema updated; 721 tests pass (c5c6753)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 4,
+    "claimed_at": null,
+    "created_at": "2026-05-11T16:22:52.569892+00:00",
+    "related_to": null,
+    "decision_id": "D-research-breadth-depth-2026-05-11",
+    "description": "research(query, depth='shallow') is a binary opaque switch. Replace with two independent 0.0-1.0 float parameters analogous to model temperature — breadth and depth — giving callers a 2D research space:\n\n  breadth 0.0-1.0: how wide to cast (0=single focused source/topic, 1=broad multi-source survey)\n  depth   0.0-1.0: how deep per source (0=title+summary, 1=full content synthesis)\n\nCanonical two-pass pattern:\n  Pass 1: research(topic, breadth=0.8, depth=0.2)  → landscape survey, many sources, light processing\n  Pass 2: research(target, breadth=0.1, depth=0.9) → deep synthesis on specific thing identified in pass 1\n\nImplementation:\n1. Update ResearchEngine.research() signature: (query, breadth=0.5, depth=0.5). Remove _research_shallow/_research_deep dispatch — replace with unified method that scales behavior continuously.\n2. breadth → number of sources to fetch (round(1 + breadth * 9) = 1 to 10). Even without external fetch wired, breadth controls how many subtopics the LLM synthesis covers.\n3. depth → prompt detail level + synthesis length. depth<0.3: 2-3 sentence summary. depth 0.3-0.7: structured answer with context. depth>0.7: full synthesis with caveats and examples.\n4. Backward compat shim: if a string 'shallow'/'deep' is passed as depth, remap (shallow→depth=0.2, deep→depth=0.8) and log deprecation warning. Allows existing callers to keep working.\n5. Update research_tools.py MCP schema: depth becomes type=number (0.0-1.0), add breadth param.\n6. Update ResearchResult to include breadth + depth fields in the result.\n\n**Affected files:** agent_datacenter/devices/librarian/research.py; agent_datacenter/devices/librarian/tools/research_tools.py (MCP schema)\n**Design rules:** backward-compat shim required (existing depth='shallow' callers must not break); no TheIgors imports\n**Scope boundary:** In: API change, shim, MCP schema update, LLM prompt scaling by depth. Out: external source fetching (that's T-librarian-external-doc-fetch, which gates on this).\n**Test plan:** research('topic', breadth=0.1, depth=0.1) returns short summary. research('topic', breadth=0.8, depth=0.8) returns longer structured answer. research('topic', depth='shallow') still works via shim (logs deprecation). MCP schema lists breadth and depth as number params. ResearchResult.breadth and .depth fields are set.",
+    "completed_at": "2026-05-11T20:00:18.874738+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "aa21197a-dab6-4484-8f04-9b66f85f38ce",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

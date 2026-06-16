@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-285.20260320.143201000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-285"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T14:32:01",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-285"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-285",
+    "title": "T-task-chain: Task tool chaining pattern for design/build workers",
+    "result": "Shipped via engram DSL 2026-04-19 audit. Task chaining in Igor = engram A's completion cell BRANCHIFs to engram B's node_id (or memory_id#trigger). Primitives delivered by GH-237 audit: cursor_runtime.py, node_executor.py (BRANCHIF/FORKIF/SPAWNIF/EMITIF). The biology-aligned answer to 'tool chaining pattern' is engram links, not a foreman loop. Separate follow-up T-retire-worker-foreman filed to migrate daemon-driven ticket pickup into a BOREDOM engram chain (the foreman is non-biomimetic scaffolding).",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-20T14:32:01Z",
+    "description": "GitHub issue #285. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-19T21:33:45.138867+00:00",
+    "github_issue": 285,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e2259345-424d-4723-99a8-bf0ad4cfd6e5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

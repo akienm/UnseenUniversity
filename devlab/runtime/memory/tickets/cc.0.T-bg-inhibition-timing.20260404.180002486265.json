@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-bg-inhibition-timing.20260404.180002486265",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bg-inhibition-timing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:00:02.486265",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bg-inhibition-timing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bg-inhibition-timing",
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "BG lateral inhibition: move _inhibit_neighbors() to score-time not post-selection",
+    "result": "Added get_inhibited_habit_ids() to cortex.py (reads bg_inhibition edges targeting candidates). select_habit() now preloads the inhibited set before the scoring loop and applies a graded -0.15 penalty during scoring. _inhibit_neighbors() stays post-selection to write new edges after each winner. This makes lateral inhibition biologically correct: near-miss candidates enter the next competition already penalised, so the dominant habit wins consistently.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T17:57:04.872376+00:00",
+    "related_to": null,
+    "description": "basal_ganglia.py _inhibit_neighbors() fires AFTER the winner is selected (line 735), not during the competition scoring phase. Biological lateral inhibition narrows the competition space — it should suppress near-miss candidates DURING scoring so the winner emerges from a filtered pool. Fix: call _inhibit_neighbors() inside _score_habit() or before winner selection in select_habit(), not after. This unlocks proper attentional filtering and is the #2 liveness finding from deep-audit 2026-04-04.",
+    "completed_at": "2026-04-04T18:00:02.486265+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6bec8e6c-33b6-4a4b-a197-eb0aaf3d7811",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

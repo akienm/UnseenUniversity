@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-consequence-skill-telemetry-repair.20260521.163328607249",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-skill-telemetry-repair"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T16:33:28.607249",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-queue-encapsulation-2026-05-21"
+    ],
+    "tickets": [
+      "T-consequence-skill-telemetry",
+      "T-consequence-skill-telemetry-repair",
+      "T-skill-telemetry-rollup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-skill-telemetry-repair",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Hotfix"
+    ],
+    "title": "Hotfix: reset T-consequence-skill-telemetry gate and result",
+    "result": "reset T-consequence-skill-telemetry: status=sprint, gate=2026-06-19, result cleared — was incorrectly closed by Igor after gate-parsing bug let it through early",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-05-21T16:33:28.607249+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-queue-encapsulation-2026-05-21",
+    "description": "Igor picked up T-consequence-skill-telemetry overnight despite its gate of '2026-06-19' because _gate_clear found 'T-skill-telemetry-rollup' in the gate text and returned True (that ticket is closed). Igor then wrote a wrong result claiming skill_telemetry.py was never committed — it was committed at 4f592ad + 49d725a. Repair: (1) reset status from closed back to sprint, (2) fix gate to bare '2026-06-19' with no ticket reference, (3) clear the wrong result field.\n\n**Affected files:** ~/.TheIgors/cc_channel/queue.json (queue state repair via cc_queue.py setstatus + gate commands)\n**Design rules:** none apply — queue state repair only\n**Scope boundary:** T-consequence-skill-telemetry record only; no code changes\n**Test plan:** no tests — queue state repair; verify via cc_queue.py show T-consequence-skill-telemetry showing status=sprint and gate=2026-06-19\n**Validation:** cc_queue.py show returns status=sprint, gate='2026-06-19', result=null\n**Cleanup:** n/a\n**Observable via:** cc_queue.py show T-consequence-skill-telemetry returns correct state",
+    "completed_at": "2026-05-21T16:45:28.196773+00:00",
+    "deposited_at": "2026-05-22T00:03:21.536468",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T16:33:28.607271+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f16e29e5-f5d9-414c-9e15-640a4dc6ecf5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

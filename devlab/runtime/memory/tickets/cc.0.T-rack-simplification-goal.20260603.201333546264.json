@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-rack-simplification-goal.20260603.201333546264",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rack-simplification-goal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T20:13:33.546264",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-rack-simplification-goal",
+      "T-registered-dispatcher-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rack-simplification-goal",
+    "gate": null,
+    "role": "master",
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "Platform",
+      "Goals"
+    ],
+    "title": "Goal: rack devices follow consistent patterns — no bespoke orchestration",
+    "result": "§3.10 documents the pattern; palace node written; device audit table in ToO; GoogleSecretary refactor ticket filed; pattern is the gate for all future devices",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "purpose": "",
+    "priority": 0.5,
+    "claimed_at": "2026-06-03T20:25:49.996889+00:00",
+    "created_at": "2026-06-03T20:13:33.546264+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The rack's current devices are individually good but architecturally inconsistent — each one invented its own dispatch, routing, and handler-registration approach. Granny now has the right shape (registered dispatcher). The goal is to propagate that shape to the rest of the rack so adding a new device means: implement the three stacks, register at startup, done. No changes to any orchestrator.\n\nThis is a simplification goal, not a feature goal. The target: any device can be understood in 5 minutes because it follows the same documented pattern. The secondary target: a new kind of agent can join the rack by self-registering, with no changes to existing code — exactly what we just built for worker dispatch.\n\nThis goal gates: GoogleSecretary refactor, Librarian routing review, any new device type (workspace, policy, factory). It is the architectural throughline behind the erector-set vision.\n\n**Affected files:** All devices/* (audit + incremental refactor); docs/TheoryOfOperation.md; palace.concepts.* nodes\n**Design rules:** Orchestration over monolith (feedback memory). External state principle. No bespoke orchestration in device internals.\n**Scope boundary:** In scope: document the pattern (T-registered-dispatcher-pattern), audit all current devices for fit, file per-device refactor tickets. Out of scope: re-implementing all devices in one sprint — this is a goal that spawns targeted S/M tickets.\n**Completion criteria:** All rack devices documented in TheoryOfOperation.md with their pattern classification; at least 3 devices confirmed as following the registered-dispatcher shape; GoogleSecretary has a filed refactor ticket; palace concept node exists and is linked from each device's section in ToO.",
+    "completed_at": "2026-06-03T20:49:15.346521+00:00",
+    "deposited_at": "2026-06-03T14:14:11.703129",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T20:25:49.996889+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "712833cc-b907-487e-bd5c-f04816621377",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

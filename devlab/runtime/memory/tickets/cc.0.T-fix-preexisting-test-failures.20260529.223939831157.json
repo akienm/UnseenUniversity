@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-fix-preexisting-test-failures.20260529.223939831157",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-preexisting-test-failures"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T22:39:39.831157",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-preexisting-test-failures"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-preexisting-test-failures",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "tests"
+    ],
+    "title": "Fix 3 pre-existing test failures (adc_shim, bg_score_debug, book_learner_drm)",
+    "result": "Fixed patch targets from igor.* to devices.igor.* in test_bg_score_debug (removed broken with-patch wrapper) and test_book_learner_drm (two patch path corrections); adc_shim was already green",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.4,
+    "claimed_at": "2026-05-30T23:41:50.850738+00:00",
+    "created_at": "2026-05-29T22:39:39.831157+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Three tests fail on main branch before any recent changes — confirmed pre-existing by git stash test:\n\n1. tests/igor/test_adc_shim.py::TestIgorADCShimStartStopRestart::test_stop_terminates_owned_process — IgorADCShim.stop() says 'does not own process' and skips terminate(); mock assert fails\n2. tests/igor/test_bg_score_debug.py::TestBGScoreDebugWinnerPath::test_threshold_present_and_numeric — threshold key missing from bg_score debug output\n3. tests/igor/test_book_learner_drm.py::TestHandleDrmBlocked::test_deposits_one_drm_blocked_memory — DRM blocked memory deposit not matching expected\n\n**Affected files:** tests/igor/test_adc_shim.py + devices/igor/adc_shim.py, tests/igor/test_bg_score_debug.py + related source, tests/igor/test_book_learner_drm.py + devices/igor/tools/book_learner.py\n**Design rules:** no-sqlite; no persistence (unit tests)\n**Scope boundary:** IN — fix each test + source so they pass; OUT — don't change test semantics\n**Completion criteria:** `python -m pytest tests/igor/test_adc_shim.py tests/igor/test_bg_score_debug.py tests/igor/test_book_learner_drm.py -q` all green",
+    "completed_at": "2026-05-31T06:18:54.185712+00:00",
+    "deposited_at": "2026-05-29T16:42:50.168896",
+    "deposited_by": "cc_queue",
+    "github_issue": 821,
+    "dispatched_at": "2026-05-30T23:41:50.850738+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-29T22:39:39.937735+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "614386a4-0b87-4d49-8eca-c5ad41cb05b0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

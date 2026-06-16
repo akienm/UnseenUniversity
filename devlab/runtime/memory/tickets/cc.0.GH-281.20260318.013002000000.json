@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.GH-281.20260318.013002000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-281"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-18T01:30:02",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-281"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-281",
+    "title": "D118 SensorTree — generalized observation source as traversable memory subtree",
+    "result": "SensorTree: sensor_tree.py with 4 evaluators (file_mtime, disk_usage, process_alive, http_endpoint), SensorTreeSource push source, create_sensor helper. 19 tests.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-04-18T16:47:25.816539+00:00",
+    "created_at": "2026-03-18T01:30:02Z",
+    "description": "GitHub issue #281. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-18T16:49:41.973908+00:00",
+    "deposited_at": "2026-05-28T11:44:44.434908",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": 281,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0b486ec0-032c-4428-83e6-c03b71f59cad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

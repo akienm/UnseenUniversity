@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-palace-approach-frame-rule.20260421.231120252640",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-approach-frame-rule"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T23:11:20.252640",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-approach-frame-principle-2026-04-21"
+    ],
+    "tickets": [
+      "T-audit-cc-rules-approach-frame",
+      "T-palace-approach-frame-rule",
+      "T-palace-rules-versioned"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-approach-frame-rule",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Palace",
+      "Rules",
+      "ApproachFrame"
+    ],
+    "title": "Add approach-frame as top-level palace rule (above persona)",
+    "result": "Palace node theigors/rules/approach-frame written. States the positive-target principle, cites Elliot+Janoff-Bulman, carries revision: 2026-04-21 line. Auto-echoed to lab/theigors/. Commit 59e76863.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": "2026-04-21T23:04:39.802139+00:00",
+    "related_to": null,
+    "decision_id": "D-approach-frame-principle-2026-04-21",
+    "description": "Rules across the system are a mix of 'do X' (approach) and 'don't do Y' (proscriptive). Decision 2026-04-21: canonicalize approach-frame as the first-class rule-shaping principle. Reference: approach goals (Elliot & Church 1997), prescriptive vs proscriptive norms (Janoff-Bulman). Akien's framing: 'maybe you need a thing to focus on instead of a thing to NOT focus on.'\n\n**Affected files:** palace node `theigors/rules/approach-frame` (new, sits above persona in read-order). Table: clan.memory_palace (existing). No code files.\n\n**Design rules:** no-sqlite: no persistence beyond existing clan.memory_palace; no-new-memory-schemas: new path only, not new table; test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: add the palace rule node. State the principle, cite Elliot+Janoff-Bulman, note that 'do-not' rule is the structural mismatch and will be dissolved by T-audit-cc-rules-approach-frame. Include revision: 2026-04-21 affordance.\n- Out: rewriting existing rules (T-audit-cc-rules-approach-frame). Out: versioning infrastructure (T-palace-rules-versioned).\n\n**Test plan:** no new tests. Verification: rule readable at theigors/rules/approach-frame via `psql ... SELECT content FROM memory_palace WHERE path = 'theigors/rules/approach-frame'`. /review Mode A Check 7 picks it up automatically next session.",
+    "completed_at": "2026-04-21T23:11:20.252640+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c81d7772-17c7-4826-b5bf-a06e9b8a9559",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

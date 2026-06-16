@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260319d-2.20260321.011057263033",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260319d-2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:57.263033",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260319d-2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260319d-2",
+    "body": "Decisions: D133-D136. Theme: crash-safe session accumulation + skill audit + day-close built. Subsystems: claudecode tooling only. New skills: day-close. Skills updated: workstep, sprint, savestate, decided, context-load, commit.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-19d (final)",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:57.263033+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

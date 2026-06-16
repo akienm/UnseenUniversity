@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-recall-skill.20260614.213513380800",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-recall-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T21:35:13.380800",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-recall-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-recall-skill",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Workflow",
+      "Librarian"
+    ],
+    "title": "Create /recall skill — CC-side interface to uurecall",
+    "result": "/recall skill created at ~/.claude/skills/recall/SKILL.md; backed by uurecall.py with graceful degradation",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that /recall is a usable CC skill backed by the uurecall.py script that already exists.",
+    "created_at": "2026-06-14T21:35:13.380800+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "uurecall.py and ~/bin/uurecall exist and work. No skill file exists so /recall is unavailable inside Claude Code sessions. This ticket creates the SKILL.md.\n\nThe skill should: (1) accept a query string as args, (2) call uurecall.py via Bash with those args, (3) surface results inline. If no results, say so cleanly. Should gracefully degrade when librarian/embedding pipeline is offline.\n\n**Affected files:** ~/.claude/skills/recall/SKILL.md (new)\n**Design rules:** none\n**Scope boundary:** IN — skill file only. OUT — changes to uurecall.py or the underlying search pipeline.\n**Completion criteria:** /recall <query> runs in a CC session and returns results from the recall script; graceful message when offline.",
+    "completed_at": "2026-06-15T00:36:04.474859+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

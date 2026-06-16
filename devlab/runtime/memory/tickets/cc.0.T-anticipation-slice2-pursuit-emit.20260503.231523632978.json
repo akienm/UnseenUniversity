@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-anticipation-slice2-pursuit-emit.20260503.231523632978",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-anticipation-slice2-pursuit-emit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T23:15:23.632978",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-anticipation-primitive",
+      "T-anticipation-slice2-pursuit-emit",
+      "T-anticipation-slice3-action-selection-read"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-anticipation-slice2-pursuit-emit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Anticipation",
+      "Pursuits"
+    ],
+    "title": "Anticipation slice 2 — Pursuit adoption emits anticipation onto bus",
+    "result": "Slice 2 shipped (commit pending). pursuits.py spawn pushes Anticipation onto bus + stashes id; evaluate_completion settles + register_outcome with actual_delta (1.0 complete, -0.5 abandon). 8 new tests. Suite 4339 → 4347. Disabled-mode short-circuit; pre-settled defensive path.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-05-03T23:09:18.811444+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "## Akien pre-approval — THIRD time given (2026-05-03)\n\nCC has flagged this as HIGH-inertia-needs-pre-approval three separate times now. Akien has approved each time. Reading this back: the inertia gate is satisfied; sprint without re-asking. Remove `gate` field; greenlight stands.\n\n---\n\nSlice 2 of T-anticipation-primitive (slice 1 shipped 2026-05-02 commit 6819d2a5 — primitive substrate ready: Anticipation dataclass, Anticipator predict/register_outcome, AnticipationBus push/top_k/settle, module singletons).\n\n**This slice:** when a Pursuit is adopted, emit an Anticipation onto the bus so downstream consumers (action selection, basal_ganglia) can see what Igor 'wants.' Producer-side wiring of slice 1.\n\n**Mechanism:**\n```python\nfrom wild_igor.igor.cognition.anticipator import get_anticipator, get_bus\n\n# In pursuit adoption path:\nant = get_anticipator().predict(referent_id=pursuit.id, referent_type='pursuit')\nget_bus().push(ant)\n# Anticipation handle stored on pursuit so settle() can match on resolution\n```\n\n**Affected files:** wild_igor/igor/cognition/pursuits.py (HIGH-inertia per ticket inertia check) + tests/test_pursuits_anticipation_emit.py (NEW).\n\n**Design rules:** docs-in-code; oop-first; HIGH-inertia-pre-approval (pursuits.py).\n\n**Scope boundary:** IN — emit on adoption, store handle, settle on resolution. OUT — action selection reads (slice 3); RPE → milieu (slice 4); RL training of predictor (separate epic).\n\n**Test plan:** unit test that adopting a pursuit increments bus.active_count and the bus.top_k surfaces the new anticipation; resolution test that bus.settle removes the anticipation and register_outcome is called with the actual closure delta.\n\n**Why filed:** slice 1 deliberately stopped short of plug-points because they touch HIGH-inertia files. This ticket carries the explicit pre-approval gate.\n\n**Related:** T-anticipation-primitive (parent, slice 1 shipped); T-anticipation-slice3-action-selection-read (sibling).",
+    "completed_at": "2026-05-03T23:15:23.632978+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "836ffdbc-3935-49f1-aba8-43961e1b908b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

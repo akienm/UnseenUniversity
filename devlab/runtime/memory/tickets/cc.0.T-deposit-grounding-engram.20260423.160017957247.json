@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-deposit-grounding-engram.20260423.160017957247",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-deposit-grounding-engram"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T16:00:17.957247",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-engram-engineering-toolkit-2026-04-23"
+    ],
+    "tickets": [
+      "T-deposit-grounding-engram"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-deposit-grounding-engram",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "EngramEngineering",
+      "Tooling",
+      "Memory"
+    ],
+    "title": "Engram tool: deposit grounding FACTUAL memory for confab-prone query space",
+    "result": "GroundingEngram + deposit() with shape validation (anchor-keyword-in-narrative enforcement). Uses existing FACTUAL + metadata, no new schema. 15 tests. c4452da3.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-04-23T15:54:27.875825+00:00",
+    "related_to": null,
+    "decision_id": "D-engram-engineering-toolkit-2026-04-23",
+    "description": "Build CC-side tool/CLI to deposit a FACTUAL memory shaped to close a grounding gap: structured narrative + anchor keywords tuned for retrievability. Targets capability/self-model/time-aware facts the LLM confabulates over. Uses existing cortex API, no new schema.\n\n**Affected files:** new lab/claudecode/engram_tools/deposit_engram.py, tests/test_deposit_engram.py\n**Design rules:** docs-in-code, test-plan-or-why-not, no-new-memory-schemas (use FACTUAL + metadata)\n**Scope boundary:** IN — deposit via cortex API, enforce grounding-engram shape (narrative, anchor_keywords, optional parent CP). OUT — new memory_type, new DB columns, retrieval tuning.\n**Test plan:** unit tests against test DB; verify deposited engram has required shape fields; verify it can be retrieved via traces_recent for anchor query.",
+    "completed_at": "2026-04-23T16:00:17.957247+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "79e4ef1b-a897-47d3-80dc-d5204d319a56",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

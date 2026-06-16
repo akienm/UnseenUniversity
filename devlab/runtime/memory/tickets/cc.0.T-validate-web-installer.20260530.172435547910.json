@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-validate-web-installer.20260530.172435547910",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-validate-web-installer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:24:35.547910",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-validate-web-installer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-validate-web-installer",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "tests"
+    ],
+    "title": "Smoke tests: web_server health endpoint + skill installer",
+    "result": "smoke tests validated: 15/15 passing — /api/health returns 200+status:ok, agentctl skills status exits 0; pre-existing cc1_minion module error unrelated",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-05-31T21:14:15.476158+00:00",
+    "created_at": "2026-05-30T17:24:35.547910+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Pre-Monday validation: verify the two human-facing surfaces work. Web server: GET /api/health returns 200 with a valid JSON health vector. Skill installer: agentctl skills status runs without error and lists at least one deployed skill.\n\n**Affected files:** tests/web_server/ (create if missing), devices/web_server/, devices/installer/\n**Design rules:** no-sqlite; web_server test may use requests or httpx against a running local instance\n**Scope boundary:** IN — health endpoint returns 200 JSON; agentctl skills status exits 0; OUT — full dashboard render, per-skill deploy/undeploy\n**Completion criteria:** curl localhost:<port>/api/health returns 200 JSON with 'status' key; agentctl skills status exits 0 listing deployed skills",
+    "completed_at": "2026-05-31T21:18:19.361558+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T21:14:15.476158+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:24:35.547932+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9e1f43a5-6d7b-4567-994f-76489cf83864",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

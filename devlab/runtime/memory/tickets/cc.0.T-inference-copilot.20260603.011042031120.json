@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-inference-copilot.20260603.011042031120",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-copilot"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T01:10:42.031120",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-copilot"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-copilot",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Interface",
+      "UX",
+      "LowPriority"
+    ],
+    "title": "Copilot-like interface for CC/DickSimnel (lower priority)",
+    "result": "closed as noise per Akien review 2026-06-07",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "claimed_at": null,
+    "created_at": "2026-06-03T01:10:42.031120+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Build a copilot-like assistant interface (web or chat) that leverages DickSimnel's multi-provider inference + Archivist's graph-based learning. This is a UI/UX wrapper around the recursive inference compiler — turning inference → graph → factory → new agents into an interactive experience.\n\nThe system learns from every interaction (DickSimnel captures, Archivist compiles). A copilot interface surfaces confidence levels, graph hit rates, cost metrics, and learned patterns so users see the system getting cheaper and more deterministic over time.\n\nNot needed this week — lower priority exploratory work.\n\n**Affected files:** TBD — discovery step in sprint (likely devices/copilot/, web_server/, or new device)\n\n**Design rules:** no-sqlite; all graph reads/writes through Archivist; every interaction logged to feed pattern capture\n\n**Scope boundary:** IN — chat UI, inference routing transparency, graph hit/miss signals, cost tracking. OUT — new inference models, graph tree modifications, Archivist training loop (those are internal)\n\n**Completion criteria:** A working copilot chat interface where users can ask questions, see inference provider + cost, and observe graph learning signals over sessions. Minimum: 2 interactions show graph density increasing; cost per task trending down over 10 questions",
+    "completed_at": "2026-06-07T01:35:59.235542+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f097cc2a-3f3c-4810-90d6-660d710e778e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

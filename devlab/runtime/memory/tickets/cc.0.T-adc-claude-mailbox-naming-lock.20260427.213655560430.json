@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-claude-mailbox-naming-lock.20260427.213655560430",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-claude-mailbox-naming-lock"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:36:55.560430",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-0-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-claude-mailbox-naming-lock",
+      "T-adc-imap-mailbox-lifecycle",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-claude-mailbox-naming-lock",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Design"
+    ],
+    "title": "agent_datacenter: lock Claude mailbox naming convention (CC.0 + CC.N per-session)",
+    "result": "constants.py in devices/claude/: GLOBAL_MAILBOX='CC.0', get_session_mailbox() reads CLAUDE_SESSION_ID env. docs/decisions/mailbox-naming.md written. All tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T21:34:32.469415+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-0-2026-04-27",
+    "description": "Lock Claude mailbox naming before device code is written. All Claude device code imports these constants.\n\nDecision confirmed by Akien 2026-04-27:\n- CC.0 = global/broadcast Claude mailbox (legacy-compatible, always present)\n- CC.{session_id} = per-session isolated mailbox for multi-CC scenarios\n- Default delivery target = CC.0 unless caller specifies session ID\n- Session ID sourced from CLAUDE_SESSION_ID env var when set\n- Rationale: multi-CC scenarios exist (4-machine swarm); per-session avoids cross-talk; CC.0 is the fallback broadcast\n\nProposed shape:\n- agent_datacenter/devices/claude/constants.py:\n  GLOBAL_MAILBOX = 'CC.0'\n  SESSION_MAILBOX_PREFIX = 'CC.'\n  SESSION_ID_ENV_VAR = 'CLAUDE_SESSION_ID'\n  def get_session_mailbox() -> str: reads env var, returns CC.{id} or CC.0 as fallback\n- docs/decisions/mailbox-naming.md: decision narrative + rationale\n\nAffected files:\n- ~/dev/src/agent_datacenter/devices/claude/constants.py (new)\n- ~/dev/src/agent_datacenter/docs/decisions/mailbox-naming.md (new)\n\nDesign rules:\n- oop-first: get_session_mailbox() is a function in the module, not a global — testable in isolation\n- docs-in-code: constants.py module docstring explains the naming scheme\n\nScope boundary:\nIN: naming constants, helper function, decision doc\nOUT: any IMAP mailbox creation code (T-adc-imap-mailbox-lifecycle, Phase 1)\n\nTest plan:\n- constants.py imports cleanly\n- GLOBAL_MAILBOX == 'CC.0'\n- get_session_mailbox() returns 'CC.0' when env var absent\n- get_session_mailbox() returns 'CC.abc123' when CLAUDE_SESSION_ID='abc123'",
+    "completed_at": "2026-04-27T21:36:55.560430+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a1a88547-76a2-413d-aca0-26206c15f1ae",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

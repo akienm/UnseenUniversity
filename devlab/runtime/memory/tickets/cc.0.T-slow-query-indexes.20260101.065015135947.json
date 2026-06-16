@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-slow-query-indexes.20260101.065015135947",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slow-query-indexes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T06:50:15.135947",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-slow-query-indexes"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slow-query-indexes",
+    "title": "Fix slow Postgres queries — wg_word_docs JOIN 400ms, memory IN-clause 200ms",
+    "result": "Added covering index idx_wgd_word_cover on wg_word_docs(word) INCLUDE (doc_id, weight). Scoring query: 400ms → 6ms. ANALYZE run.",
+    "status": "done",
+    "priority": 2,
+    "description": "wg_word_docs scoring query with 100+ doc_ids IN clause: 400ms. Memory batch fetch with 100+ ids: 200ms. Need composite indexes on wg_word_docs(word, doc_id) and verify memories primary key index covers IN queries.",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b5572a7e-24ab-4ee6-beb7-a8536c13ef3a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

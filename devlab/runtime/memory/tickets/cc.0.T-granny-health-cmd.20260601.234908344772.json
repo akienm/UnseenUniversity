@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-granny-health-cmd.20260601.234908344772",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-health-cmd"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T23:49:08.344772",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-runaway-prevention-2026-06-01"
+    ],
+    "tickets": [
+      "T-granny-health-cmd"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-health-cmd",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Observability",
+      "Infrastructure"
+    ],
+    "title": "Granny /health command — queue + runner status",
+    "result": "granny_health_snapshot() in devices/granny/health.py: CC sessions, queue depth by status+size, orphan detection, routing gaps; /api/granny/health endpoint in web server; /health skill",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-06-02T00:01:13.584404+00:00",
+    "created_at": "2026-06-01T23:49:08.344772+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-runaway-prevention-2026-06-01",
+    "description": "Granny needs a zero-inference status snapshot: active CC sessions (tmux cc-T-* count), queue depth by status, orphaned in_progress tickets, and routing gaps (ticket tags with no dispatch edge). Callable as a skill /health and also queryable by the web server for Granny's status pane.\n\n**Affected files:** new skill skills/health/ (or devices/granny/health.py); devices/granny/daemon.py (expose health data); devices/web_server/server.py (optional /api/granny/health endpoint)\n**Design rules:** zero inference — pure data aggregation from cc_queue.py list + tmux list-sessions + routing edge table; log every call at INFO\n**Scope boundary:** IN: active CC session count, queue depth by status/size, orphaned ticket list, routing gap detection. OUT: circuit breaker control (separate ticket), Granny restart.\n**Completion criteria:** Running /health (or calling the endpoint) returns a structured summary. Running it when there are orphaned tickets shows them. Running it when a tag has no routing edge shows the gap. No LLM inference calls made.",
+    "completed_at": "2026-06-02T00:09:39.032468+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T00:01:13.584404+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "50447d3b-a36e-4bb4-9881-3864849718dc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

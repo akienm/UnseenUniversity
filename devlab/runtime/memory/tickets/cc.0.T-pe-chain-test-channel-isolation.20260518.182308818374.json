@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-pe-chain-test-channel-isolation.20260518.182308818374",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-test-channel-isolation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T18:23:08.818374",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-chain-test-channel-isolation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-test-channel-isolation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Testing",
+      "PeChain"
+    ],
+    "title": "CLOSED: Mock _post_to_channel in pe_chain unit tests",
+    "result": "patched _post_to_channel in 8 tests across 2 files; channel spam on test runs eliminated",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-18T18:23:08.818374+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "pe_chain unit tests for description gate and empty-close guard were calling error paths without mocking _post_to_channel, causing real channel messages on every test run. Fixed by adding _post_to_channel patches to 8 affected tests in test_pe_chain_description_gate.py and test_pe_chain_empty_close_guard.py.\n\n**Affected files:** tests/test_pe_chain_description_gate.py, tests/test_pe_chain_empty_close_guard.py\n**Design rules:** none apply\n**Scope boundary:** test files only, no production code changes\n**Test plan:** 11 tests in both files pass; 3235 total test suite passes",
+    "completed_at": "2026-05-18T18:23:14.969753+00:00",
+    "github_issue": null,
+    "auto_validated": true,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "13a8efe0-c6c0-4e39-bf79-f68c7b7123e9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

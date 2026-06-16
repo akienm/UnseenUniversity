@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-sqlite-guard-igor.20260507.161018000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-guard-igor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:10:18",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sqlite-guard-igor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-guard-igor",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Hygiene",
+      "Database",
+      "Safety"
+    ],
+    "title": "SQLite import guard for wild_igor/igor — raise on any sqlite3 use",
+    "result": "Guard installed in wild_igor/igor/__init__.py — raises on sqlite3.connect(); ebook_reader + learner fixed to use real_sqlite3; androidkindlekey vendor exempt",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": "2026-05-06T17:06:33.055242+00:00",
+    "created_at": "2026-05-07T16:10:18Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Create wild_igor/igor/_sqlite_guard.py that patches sys.modules['sqlite3'] with a stub whose connect() raises RuntimeError. Import it at the top of wild_igor/igor/__init__.py so any SQLite usage anywhere in Igor explodes at import time rather than silently at runtime. Fix all breakages that result.\n\n**Affected files:** wild_igor/igor/_sqlite_guard.py (new), wild_igor/igor/__init__.py, any files in wild_igor/igor/ that import sqlite3\n**Design rules:** no-sqlite (enforces the hard rule at the module boundary)\n**Scope boundary:** guard + fixes inside wild_igor/igor/ only; no changes to lab/, tests/, or external tooling\n**Test plan:** tests/ full suite must pass with guard active; any sqlite3 import in wild_igor/igor/ that survives will cause an import error caught by tests",
+    "completed_at": "2026-05-06T17:11:23.318040+00:00",
+    "github_issue": 605,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "389acf65-38b6-4833-85df-000077bfe5c9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

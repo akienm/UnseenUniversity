@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-self-test-wire.20260404.181954411299",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-test-wire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:19:54.411299",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-self-test-wire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-test-wire",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Training"
+    ],
+    "title": "Wire self_test.py consolidate_content(): runtime behavioral regression detection",
+    "result": "Replaced Gemini stubs with graph-native: _generate_questions_from_graph() (key term extraction + cortex search, no LLM), _grade_answer() (Jaccard word-overlap), _store_miss_rate_to_experiential() (EXPERIENTIAL memory for observer). Added SelfTestSource to push_sources.py: 15min timer scans blob_index for untested items, runs consolidate_content(), pushes LEARNING_GAP to TWM if miss_rate > 50%.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T18:15:17.663162+00:00",
+    "related_to": null,
+    "description": "self_test.py consolidate_content() returns [] — Q&A loop scaffolding with no execution. Igor has zero continuous self-monitoring at runtime. Fix: implement _generate_questions() using cortex graph traversal (no LLM), _grade_answers() via embedding similarity, wire as background daemon triggered post-reading and post-sprint. Log miss rates to EXPERIENTIAL memory so observer can surface learning_gap signal. Test-finding from deep-audit Panel 7.",
+    "completed_at": "2026-04-04T18:19:54.411299+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "28c6282f-fe06-4a91-b56b-36b038f560b6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

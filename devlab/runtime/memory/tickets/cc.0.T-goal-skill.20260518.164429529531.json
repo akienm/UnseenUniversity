@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-goal-skill.20260518.164429529531",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.529531",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-goal-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Goals",
+      "Skills"
+    ],
+    "title": "Create /goal skill — define and manage G-xxx goals",
+    "result": "Created /goal skill — new/list/update/block/retire commands, G-xxx IDs, adc.palace storage",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.529531+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "No goal layer exists above decisions. /goal creates G-xxx records with all fields needed for auditing and hypothesis linkage. Goals stored in adc.palace as palace.goals.* nodes.\n\n**Affected files:** agent_datacenter/skills/goal/SKILL.md (new), palace storage via existing palace_write\n**Design rules:** palace-first; no new DB tables — goals live in adc.palace with node_type='goal'\n**Scope boundary:** in scope: /goal create (target, KRs, time-horizon, why-now, tensions, falsification-condition), /goal update, /goal list (active/blocked/retired), /goal retire, /goal block G-xxx --until G-yyy. Out of scope: auto-linking decisions to goals (that's /decided's job), goal KR auto-update (that's /outcome's job).\n**Test plan:** no automated tests for skill files; manual smoke: create a goal, list it, block it, verify palace node written correctly.",
+    "completed_at": "2026-05-18T16:58:40.275557+00:00",
+    "github_issue": 738,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "308a54ef-abc1-49cd-829a-e5e18186653e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

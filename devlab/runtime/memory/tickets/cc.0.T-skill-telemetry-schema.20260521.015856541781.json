@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-skill-telemetry-schema.20260521.015856541781",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-telemetry-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T01:58:56.541781",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skill-telemetry-2026-05-20"
+    ],
+    "tickets": [
+      "T-skill-telemetry-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-telemetry-schema",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "SkillTelemetry",
+      "Workflow"
+    ],
+    "title": "Define skill telemetry contract schema (forget-flags + improvement metrics)",
+    "result": "TypedDict schema (SkillContract, ViolationRecord, OutcomeRecord) in skill_telemetry.py; palace node at theigors/skill-telemetry/schema",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-05-21T02:01:07.539966+00:00",
+    "created_at": "2026-05-21T01:58:56.541781+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-skill-telemetry-2026-05-20",
+    "description": "Define the two-field telemetry contract format and violation log record schema that all subsequent telemetry work references.\n\n**Proposed shape:** Palace node at `theigors/skill-telemetry/schema` defining the contract format. Python TypedDict in lab/claudecode/skill_telemetry.py:\n  SkillContract(forget_flags: list[ForgotFlag], improvement_metrics: list[Metric])\n  ViolationRecord(ts, skill, flag_name, context, session_id)\n  OutcomeRecord(ts, skill, postconditions_met: dict[str, bool], session_id)\nNo runtime behavior yet — spec only. Everything else gates on this.\n\n**Affected files:** lab/claudecode/skill_telemetry.py (new), palace node (new)\n**Design rules:** no-sqlite (JSONL flat file), docs-live-in-code\n**Scope boundary:** Schema definition only — no logger, no retrofit, no rollup\n**Test plan:** Unit tests for SkillContract/ViolationRecord serialization round-trip",
+    "completed_at": "2026-05-21T02:25:35.992781+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T01:58:56.587326+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "13459c62-71d4-4f78-8ab2-b46ccae93fca",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

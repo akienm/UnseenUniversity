@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-design-patterns-inventory.20260605.195630118655",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-design-patterns-inventory"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T19:56:30.118655",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pre-inference-assembly-2026-06-05"
+    ],
+    "tickets": [
+      "T-design-patterns-inventory",
+      "T-pre-inference-assembler"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-design-patterns-inventory",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Audit",
+      "DickSimnel"
+    ],
+    "title": "Audit pass: build design patterns inventory",
+    "result": "11 patterns documented in docs/design_patterns_inventory.md with file refs and quick-reference table",
+    "status": "closed",
+    "worker": null,
+    "purpose": "",
+    "priority": 0.7,
+    "intention": "I intend that an audit pass scans the codebase and maintains a structured design patterns inventory that the pre-inference assembler can load without LLM involvement.",
+    "created_at": "2026-06-05T19:56:30.118655+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-pre-inference-assembly-2026-06-05",
+    "description": "Scan the UU/Igor codebase and produce a structured design patterns inventory doc. Identifies recurring patterns: BaseDevice/BaseShim lifecycle, IDLE loop, request/response envelope, registry pattern, flat-file boot state, device/shim boundary. Output doc is loaded by the pre-inference assembler at sprint start — no LLM needed to recognize patterns if the inventory is pre-built.\n\n**Affected files:** TBD — discovery step in sprint; likely a new script under tools/ or lab/claudecode/, output to docs/design_patterns_inventory.md\n\n**Design rules:** none apply — new file, no core device touches\n\n**Scope boundary:** In scope: scan Python files in devices/ and unseen_university/, identify structural patterns, emit structured doc. Out of scope: pattern matching during sprint (that's the assembler), maintaining the inventory automatically (first version is a manual-run audit pass).\n\n**Completion criteria:** Running the script produces docs/design_patterns_inventory.md listing ≥5 named patterns with example file references; the file is readable by the pre-inference assembler (T-pre-inference-assembler) as a plain-text context block.",
+    "completed_at": "2026-06-05T21:16:21.497304+00:00",
+    "deposited_at": "2026-06-05T13:57:13.840740",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

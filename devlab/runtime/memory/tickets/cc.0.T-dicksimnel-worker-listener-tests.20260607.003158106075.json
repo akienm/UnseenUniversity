@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-dicksimnel-worker-listener-tests.20260607.003158106075",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-worker-listener-tests"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T00:31:58.106075",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-worker-listener",
+      "T-dicksimnel-worker-listener-tests"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-worker-listener-tests",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Testing",
+      "Reliability"
+    ],
+    "title": "DickSimnel worker_listener.py: add unit tests",
+    "result": "12 tests: ack/started ordering, missing ticket_id, OR balance gate, HIGH-inertia escalation, poll_once routing",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.5,
+    "intention": "I intend that the core dispatch-flow paths in DickSimnelWorkerListener are covered by unit tests so regressions are caught before deployment.",
+    "claimed_at": null,
+    "created_at": "2026-06-07T00:31:58.106075+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "devices/dicksimnel/worker_listener.py (192 lines) was introduced in T-dicksimnel-worker-listener but has zero test coverage. The key behaviors to verify: (1) dispatch envelope triggers ack + started + device._run_inference, (2) missing ticket_id is silently ignored, (3) OR balance at floor triggers decline + setstatus sprint instead of working, (4) halt/priority envelope sets the stop event.\n\n**Affected files:** tests/test_dicksimnel_worker_listener.py (new), devices/dicksimnel/worker_listener.py (read-only reference)\n**Design rules:** no-sqlite; tests use MagicMock for bus and device dependencies — no real Postgres or IMAP needed for unit tests of this listener\n**Scope boundary:** In scope: _poll_once paths, _handle_dispatch core logic, _send helper. Out of scope: integration tests, full inference flow, toolloop coverage.\n**Completion criteria:** tests/test_dicksimnel_worker_listener.py exists with at least 4 tests covering the paths above. `python run test` passes (including any pre-existing failures — do not fix those, just don't add new ones).",
+    "completed_at": "2026-06-08T00:23:31.549033+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

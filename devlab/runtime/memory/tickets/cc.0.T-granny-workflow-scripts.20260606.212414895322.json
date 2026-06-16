@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-granny-workflow-scripts.20260606.212414895322",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-workflow-scripts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T21:24:14.895322",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-workflow-scripts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-workflow-scripts",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Workflow",
+      "Design"
+    ],
+    "title": "Design: Granny executes workflow scripts (multi-step dispatch programs)",
+    "result": "WorkflowExecutor + state machine (pending→dispatched→done) + dicksimnel-docstring-chain demo workflow + 15 tests. Live E2E requires DickSimnel running; unit tests verify all state transitions.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.25,
+    "intention": "I intend that Granny can execute multi-step work programs so CC is not needed as an intermediary for sequences of dispatch decisions.",
+    "claimed_at": "2026-06-07T00:51:17.088866+00:00",
+    "created_at": "2026-06-06T21:24:14.895322+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Granny currently dispatches individual tickets to workers. Give her the ability to execute workflow scripts — pure control-flow programs that fan out work to multiple workers, chain steps with dependencies, and gate on conditions. No inference required; all intelligence lives in the dispatched tickets/workers.\n\nProposed shape: `.wflow` files (or plain Python with a thin API) picked up via a `workflow:` ticket tag or a `workflow_script` field on a ticket. Script API surface: `dispatch(worker, ticket)`, `wait_for(ticket_id)`, `parallel([...])`, `gate(condition)`. Analogous to CC Workflow scripts but without a model — pure orchestration.\n\nThis is a design ticket first. Steps: (1) spike the script API shape, (2) prototype a single-file executor in Granny's daemon, (3) write one real workflow (e.g., audit → fix → smoke) to validate the abstraction.\n\n**Affected files:** devices/granny/daemon.py, devices/granny/ (new workflow executor), TBD script API module\n**Design rules:** no-sqlite; bus-only transport; executor must be independently startable/stoppable as a device lifecycle method\n**Scope boundary:** IN: script API design, executor prototype, one real workflow. OUT: UI for authoring workflows, versioning, rollback.\n**Completion criteria:** One real multi-step workflow (e.g., DickSimnel audit → cost-gate fix → smoke) executes end-to-end via Granny without CC in the dispatch loop. Verified by log trace showing each step dispatched and gated correctly.",
+    "completed_at": "2026-06-08T00:18:24.539498+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

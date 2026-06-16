@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-scheduler-result-logging.20260512.165130289512",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scheduler-result-logging"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T16:51:30.289512",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scheduler-result-logging"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scheduler-result-logging",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Cognition"
+    ],
+    "title": "Log PROC_QUEUE_DRAIN and scheduler habit results persistently",
+    "result": "log_anomaly on error-shaped scheduler results; stale-reset warning in worker_foreman; NE-empty escalation includes last 3 scheduler ticks from TWM",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "blocked_at": null,
+    "claimed_at": "2026-05-23T21:29:13.689575+00:00",
+    "created_at": "2026-05-12T16:51:30.289512+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "PROC_QUEUE_DRAIN returns 'no sprint tickets' on every 30-min tick — but the result only lives in TWM for 5 minutes then expires. A human reading the channel 6 minutes later sees only the opaque NE 'produced no result' message. This hid a status-filter bug for 5 weeks (2026-04-08 to 2026-05-12).\n\nThree logging gaps to close:\n1. SchedulerSource._call_tool() should log.warning() when any habit returns an error-shaped result ('no sprint tickets', 'error:', '[ERROR]'). This persists to the instance log file.\n2. launch_next_worker() should log.warning() whenever it resets an in_progress ticket (the pile-on was silent — no channel message, no log).\n3. NE 'produced no result' message in coa.py should include the last scheduler tick results: 'last ticks: PROC_QUEUE_DRAIN=no sprint tickets, PROC_WORKER_FOREMAN=igor goal active' — so the opaque verdict becomes diagnostic.\n\n**Affected files:** wild_igor/igor/cognition/push_sources.py (SchedulerSource._call_tool), wild_igor/igor/tools/worker_foreman.py (launch_next_worker reset path), wild_igor/igor/cognition/coa.py (NE empty branch)\n**Design rules:** docs-live-in-code for coa.py NE branch\n**Scope boundary:** IN: add log.warning() at 3 sites, enhance NE-empty channel message with last-tick summary. OUT: new tables, new metrics, dashboard.\n**Test plan:** no unit test needed — observable: NE-empty channel message now includes scheduler tick results; Igor log file contains warning lines when PROC_QUEUE_DRAIN returns empty.",
+    "completed_at": "2026-05-28T01:46:52.422724+00:00",
+    "deposited_at": "2026-05-22T00:03:21.643373",
+    "deposited_by": "cc_queue",
+    "github_issue": 721,
+    "dispatched_at": "2026-05-23T21:29:13.689575+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "95dc04f9-de95-4bed-a61f-c950488b8aa4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

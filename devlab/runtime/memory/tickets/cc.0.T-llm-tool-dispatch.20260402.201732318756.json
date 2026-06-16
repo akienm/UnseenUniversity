@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-llm-tool-dispatch.20260402.201732318756",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-llm-tool-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T20:17:32.318756",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-llm-tool-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-llm-tool-dispatch",
+    "epic": "Cognition",
+    "size": "S",
+    "notes": "cc_send cascade testing blocked: Igor says \"I will call X\" but does not emit tool call schema. Fix options: (A) tier escalation for code_ref habit dispatch, (B) have cc_send habits use code_ref bypass rather than LLM tool generation, (C) add structured tool-call format to llama3.2:1b prompting.",
+    "title": "#Cognition tier.2 LLM tool dispatch reliability — llama3.2:1b generates intent text without structured tool call JSON",
+    "result": "Detect [CODING SPRINT] in background job dispatch → force is_user_turn=True + complexity=high regardless of author. Routes to OR agentic loop (haiku/sonnet) which handles multi-step tool execution natively. 1377 tests pass.",
+    "status": "done",
+    "completed_at": "2026-04-02T20:17:32.318756+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

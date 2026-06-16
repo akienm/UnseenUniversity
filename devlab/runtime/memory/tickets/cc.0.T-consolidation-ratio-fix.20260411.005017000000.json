@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-consolidation-ratio-fix.20260411.005017000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consolidation-ratio-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-11T00:50:17",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-consolidation-ratio-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consolidation-ratio-fix",
+    "size": "M",
+    "tags": "Cognition,Training",
+    "title": "Episodic consolidation ratio 18:1 (target 2:1)",
+    "result": "Batch 20→200, interval 3600→1800s, model DeepSeek7B→qwen2.5:7b, min_importance 0.5→0.4. At 200/30min: ~225 hours to process backlog (down from 2250). qwen2.5:7b proven in D360 benchmark.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "created_at": "2026-04-11T00:50:17Z",
+    "related_to": null,
+    "description": "44,854 episodics vs 2,545 interpretive = 18:1 ratio. Target is 2:1. Consolidation daemon runs hourly but extracts too few patterns from episodic clusters. Root causes: (1) 1b model quality too low for pattern extraction, (2) consolidation only runs hourly, (3) no batch mode. Fix options: run during Sleep mode with 8b model, batch larger clusters, or use graph-only extraction (keyword overlap clustering without LLM).",
+    "completed_at": null,
+    "github_issue": 407,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "771c2dd0-2972-47d9-a059-19b315b916a2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

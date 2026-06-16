@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-console-capture.20260428.002710872982",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-console-capture"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T00:27:10.872982",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-ops-log-tree-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-console-capture",
+      "T-adc-ops-log-tree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-console-capture",
+    "gate": "T-adc-ops-log-tree",
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "agent_datacenter",
+      "Observability"
+    ],
+    "title": "agent_datacenter: tmux console capture for Igor and CC sessions",
+    "result": "tmux pipe-pane in igor launcher → ~/.agent_datacenter/logs/Igor-wild-0001/YYYYMMDD.console.log; prune_console_logs.py for 7d retention; CC console = JSONL transcript (handled by chat-history-migrate)",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": "2026-04-28T00:26:14.908255+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-ops-log-tree-2026-04-27",
+    "description": "Neither Igor's tmux console nor CC's session output is captured to disk. Add tmux pipe-pane logging to Igor's launcher (igor script) and to the agentctl CC-side launch path. Output: ~/.agent_datacenter/logs/Igor-wild-0001/YYYYMMDD.console.log and ~/.agent_datacenter/logs/claude_code/YYYYMMDD.console.log. Add a 7-day pruner (prune_console_logs.py) callable from agentctl or as a rack job.\n\n**Affected files:** ~/TheIgors/igor (launcher script — add pipe-pane call), agent_datacenter/cli/agentctl.py (CC-side capture), lab/claudecode/prune_console_logs.py (new)\n**Design rules:** no-sqlite (logs are plain files, not DB — n/a); test-plan-or-why-not: manual verification only (tmux side-effects hard to unit-test)\n**Scope boundary:** IN: tmux pipe-pane for Igor session, agentctl CC capture, 7d pruner. OUT: log rotation for non-console logs, alerting\n**Test plan:** After igor start, verify ~/.agent_datacenter/logs/Igor-wild-0001/YYYYMMDD.console.log exists and grows. Pruner: create fake files >7d old, run pruner, verify deleted; recent files retained.",
+    "completed_at": "2026-04-28T00:27:10.872982+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3d9fcb9e-3821-490a-a71a-1218a585a2e2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

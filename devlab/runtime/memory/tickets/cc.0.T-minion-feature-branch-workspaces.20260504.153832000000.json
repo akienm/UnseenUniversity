@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-minion-feature-branch-workspaces.20260504.153832000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-minion-feature-branch-workspaces"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:38:32",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-agent-datacenter-workspaces",
+      "T-docs-live-in-code",
+      "T-minion-feature-branch-workspaces"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-minion-feature-branch-workspaces",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Infrastructure",
+      "Concurrency"
+    ],
+    "title": "CLOSED: Per-minion feature branch workspaces — local clone + branch + merge-back",
+    "result": "MinionWorkspace clone/branch/merge-back in lab/claudecode/minion_workspace.py; 16 tests pass; sprint skill integration deferred to skill-edit pass",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-05T00:50:15.254036+00:00",
+    "created_at": "2026-05-04T15:38:32Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "When multiple minions work concurrently, the single-working-tree assumption breaks (stash/pull/pop only isolates serially). Adopt per-minion workspace clones with feature branches; merge back via local git (no GitHub round-trip required, though optional).\n\n**Two-piece design (split if either grows):**\n1. Per-minion workspace clone + branch convention (small infra win on its own)\n2. Merge-back protocol (who does it? on what trigger? auto vs. review-gated?)\n\n**Affected files:** lab/claudecode/minion_workspace.py (NEW — clone/branch/merge helpers), agent_datacenter (workspace path convention — overlaps T-agent-datacenter-workspaces), /home/akien/.claude/skills/sprint (branch-per-claim), /home/akien/.claude/skills/sprint-batch (same)\n**Design rules:** feature-branch-per-minion (no shared working tree); local clone destination is per-minion (e.g., ~/.agent_datacenter/<instance>/workspace/TheIgors); merge-back is to local main, push to GitHub remains explicit. T-docs-live-in-code: minion_workspace.py docstring documents the clone/branch/merge contract.\n**Scope boundary:** IN: clone helper, branch naming convention (e.g., minion/<instance>/<ticket-id>), merge-back command, sprint skill integration. IN: works without GitHub (local git clone+merge). OUT: GitHub PR-per-minion workflow (that's a separate optional layer). OUT: conflict-resolution automation (manual for now). OUT: workspace cleanup/GC.\n**Test plan:** unit tests for minion_workspace.py (clone creates branch, merge-back applies cleanly, conflict detection raises). Manual integration check: spin up two simulated minions, both claim different tickets, verify they don't collide. Acceptance: two concurrent minions can ship cleanly without stash dance.",
+    "completed_at": "2026-05-05T00:51:53.163012+00:00",
+    "github_issue": 575,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "25151867-bc95-498e-8c55-506ebfb18450",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

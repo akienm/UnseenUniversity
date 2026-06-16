@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-universal-llm-lineage.20260521.190130164346",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-universal-llm-lineage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T19:01:30.164346",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-expert-lenses-confidence-2026-05-21"
+    ],
+    "tickets": [
+      "T-universal-llm-lineage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-universal-llm-lineage",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Observability",
+      "Willison",
+      "Database"
+    ],
+    "title": "One queryable table for every LLM call system-wide (Willison)",
+    "result": "m054_llm_calls migration + _write_llm_call_db() + dual-write in log_inference_io() and IgorBase.log_llm_io(); 5 tests green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-05-23T21:29:20.434841+00:00",
+    "created_at": "2026-05-21T19:01:30.164346+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-expert-lenses-confidence-2026-05-21",
+    "description": "Simon Willison's observability-first principle: every LLM call should be logged with provenance and queryable without reading log files. Currently pe_chain writes inference calls to reasoning_calls.log (file-based). NE turns, habit evaluations, and palace reads that call LLMs have no unified audit trail. Create instance.llm_calls table: id, ts, prompt_hash (md5 of prompt), model, tokens_in, tokens_out, outcome (pass/fail/unknown), source_fn (caller), ticket_id (nullable), elapsed_ms. Wire IgorBase.log_llm_io() to write there (it currently writes JSON to daily files — keep file write, ADD DB write). Wire pe_chain _log_pe_inference() to write there too.\n\n**Affected files:** wild_igor/igor/cognition/igor_base.py (log_llm_io), wild_igor/igor/tools/pe_chain.py (_log_pe_inference), migration SQL for instance.llm_calls\n**Design rules:** theigors/rules/database (safe migration), theigors/rules/docs-live-in-code\n**Scope boundary:** In scope: schema + wiring IgorBase + pe_chain to write there. Out of scope: NE turn logging (separate ticket), UI to query it.\n**Test plan:** After a pe_chain hypothesize call, instance.llm_calls has a row with correct prompt_hash and model. After IgorBase.log_llm_io(), same table has a row. File log still works (dual-write, don't break existing).",
+    "completed_at": "2026-05-28T14:45:20.589208+00:00",
+    "github_issue": 785,
+    "dispatched_at": "2026-05-23T21:29:20.434841+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T19:01:30.164365+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6eb9feb9-6803-4bc6-81e9-9513ad8f253b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

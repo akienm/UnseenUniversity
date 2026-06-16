@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-sleep-triggered-by-clock.20260416.182304000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sleep-triggered-by-clock"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T18:23:04",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-modes",
+      "T-sleep-triggered-by-clock"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sleep-triggered-by-clock",
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "Sleep mode triggers by clock — 22:00-07:00 automatic sleep/maintenance cycle",
+    "result": "SleepClockSource: nighttime (22-07) + MIN_AWAKE_HOURS gate → sleep maintenance (consolidation + TWM marker + ring trace). IGOR_SLEEP_CLOCK=true default. Slow tier. 17 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T18:44:45.274937+00:00",
+    "created_at": "2026-04-16T18:23:04Z",
+    "related_to": null,
+    "description": "Igor's sleep/maintenance mode should trigger automatically by clock (22:00-07:00), not wait for idle detection alone. During sleep: self-training passes, consolidation, habit failure review, stale task reaping. T-igor-modes (#406) describes the broad Awake/Background/Sleep concept but doesn't wire the clock trigger. Night_mode already exists in _resource_load_dict() — extend it to actually trigger the sleep cycle.",
+    "completed_at": "2026-04-16T18:47:43.240835+00:00",
+    "github_issue": 467,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e64e31ca-9a0c-4428-ae9a-a0361ac6710d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

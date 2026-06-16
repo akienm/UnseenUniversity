@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-shim-docstring-pass.20260607.003158106346",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-docstring-pass"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T00:31:58.106346",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-shim-docstring-pass"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-docstring-pass",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Granny",
+      "Docs"
+    ],
+    "title": "Granny + DickSimnel shim.py: add method docstrings",
+    "result": "docstrings on all lifecycle methods in dicksimnel/shim.py + granny/shim.py + _session_exists",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.4,
+    "intention": "I intend that every method in both shim.py files has a one-line docstring so the lifecycle contract is self-documenting.",
+    "claimed_at": null,
+    "created_at": "2026-06-07T00:31:58.106346+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "devices/dicksimnel/shim.py and devices/granny/shim.py implement the BaseShim lifecycle (start/stop/restart/rollback/self_test). Most methods lack docstrings: dicksimnel/shim.py is missing 8, granny/shim.py is missing 9. A shim is the first file a new contributor reads to understand a device — missing docstrings here make the lifecycle opaque.\n\n**Affected files:** devices/dicksimnel/shim.py, devices/granny/shim.py\n**Design rules:** docs-live-in-code; one short line per method; no multi-line blocks\n**Scope boundary:** In scope: docstrings on all methods in both shim.py files. Out of scope: type hints, logic changes, other device shims.\n**Completion criteria:** All methods in both files have docstrings. Checked via: `python3 -c \"import ast; [print(f) for f in ['devices/dicksimnel/shim.py','devices/granny/shim.py'] for n in ast.walk(ast.parse(open(f).read())) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and not (n.body and isinstance(n.body[0],ast.Expr))]\"` produces no output.",
+    "completed_at": "2026-06-08T00:23:22.599712+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

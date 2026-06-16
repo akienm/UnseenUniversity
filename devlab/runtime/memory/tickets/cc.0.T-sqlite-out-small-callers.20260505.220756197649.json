@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-sqlite-out-small-callers.20260505.220756197649",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-out-small-callers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T22:07:56.197649",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-migration-phase-bc-2026-05-05"
+    ],
+    "tickets": [
+      "T-sqlite-out-small-callers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-out-small-callers",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Migrate budget.py + notebook.py + pending_replies.py to native Postgres",
+    "result": "budget.py + notebook.py + pending_replies.py fully migrated to native Postgres; test class updated to Postgres; 4483 tests pass; commit 7ad45110",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-05T21:53:07.023828+00:00",
+    "related_to": null,
+    "decision_id": "D-sqlite-migration-phase-bc-2026-05-05",
+    "description": "Three small callers with mechanical SQLite-ism migrations:\n\n1. `lab/utility_closet/budget.py` line 249: `INSERT OR REPLACE INTO budget_config (key, value) VALUES ('spending_cap_usd', ?)` → `INSERT INTO infra.budget_config (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`\n\n2. `wild_igor/igor/tools/notebook.py` lines 138–151: `INSERT OR REPLACE INTO entries (id, ...) VALUES (?,×9)` → `ON CONFLICT (id) DO UPDATE SET ...` with `%s` placeholders\n\n3. `wild_igor/igor/memory/pending_replies.py` lines 120–125: `?` → `%s`; line 126 `cur.lastrowid` → add `RETURNING id` to INSERT, `row_id = cur.fetchone()[0]`\n\n**Affected files:** `lab/utility_closet/budget.py`, `wild_igor/igor/tools/notebook.py`, `wild_igor/igor/memory/pending_replies.py`\n**Design rules:** theigors/rules/database — native Postgres syntax only\n**Scope boundary:** These 3 files only; no shim changes.\n**Test plan:** Run full test suite; grep confirms no `INSERT OR REPLACE` or `?` SQL placeholders in these files.\n**Pass condition:** All tests green; `grep -n 'INSERT OR REPLACE\\|INSERT OR IGNORE' lab/utility_closet/budget.py wild_igor/igor/tools/notebook.py wild_igor/igor/memory/pending_replies.py` returns 0 results.\n\nValidation: Igor budget cap readable/writable; pending_replies INSERT returns correct integer id.\nCleanup: test fixtures via conftest.pg_test_schema.",
+    "completed_at": "2026-05-05T22:07:56.197649+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f39b44e-c2e1-40a8-a562-0cd43e224c5a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-uc-system-proxy-shelf.20260417.195612755451",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-system-proxy-shelf"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T19:56:12.755451",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-system-proxy-shelf"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-system-proxy-shelf",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Operations"
+    ],
+    "title": "Move system_proxy to utility closet as rack shelf",
+    "result": "system_proxy.py moved to lab/utility_closet/. Re-export shim at old path. 262 lines out of Igor.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T19:52:24.713056+00:00",
+    "related_to": null,
+    "description": "Move wild_igor/igor/network/system_proxy.py to lab/utility_closet/system_proxy.py. Same pattern as db_proxy: real move, re-export shim at old path. SystemShelf rack module with health reporting.",
+    "completed_at": "2026-04-17T19:56:12.755451+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f84c56c9-75e9-4d5f-a5f6-5f357ac0b460",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

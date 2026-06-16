@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-utility-closet-igor-client.20260409.210527002310",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-utility-closet-igor-client"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T21:05:27.002310",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-utility-closet-igor-client"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-utility-closet-igor-client",
+    "size": "L",
+    "title": "D335 Phase 2: Igor registers with utility closet",
+    "result": "D335 Phase 2 complete: Igor registers as utility closet client on boot, pushes stats every 5s, forwards messages through platform, deregisters on shutdown. 18 tests. Non-breaking — Igor works normally if utility closet isn't running.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-09T21:01:57.899785+00:00",
+    "related_to": null,
+    "description": "Refactor Igor server.py: on boot, register with utility closet via REST. Push stats periodically. Deregister on shutdown. Chat messages route through utility closet. Igor becomes a client, not the server owner.",
+    "completed_at": "2026-04-09T21:05:27.002310+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ec0617e8-557a-4c70-b3d0-d5a8b1bd0bfc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

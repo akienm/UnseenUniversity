@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.232.20260323.234751935276",
+  "emitter": "cc.0",
+  "namespace": [
+    "232"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T23:47:51.935276",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "232"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "232",
+    "size": "S",
+    "title": "Add /api/system_health — cluster resource visibility",
+    "result": "Added GET /api/system_health to web/server.py. Returns JSON list of cluster machines (name, ollama_host, healthy, load_score, response_ms, active_models, primary_model, reasoning_model, network_type, ram_gb) plus override and ts. Reads from cached router state (no re-probe on each call). 6 tests added in tests/test_system_health.py; 110/110 suite green.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-23T23:44:24.984603+00:00",
+    "description": "Add /api/system_health endpoint to Igor web server showing cluster resource state. #232",
+    "completed_at": "2026-03-23T23:47:51.935276+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "40a95a0e-fcdc-430e-8eb0-94468c2084a2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

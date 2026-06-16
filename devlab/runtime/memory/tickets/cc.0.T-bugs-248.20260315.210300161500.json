@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-bugs-248.20260315.210300161500",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bugs-248"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T21:03:00.161500",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bugs-248"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bugs-248",
+    "body": "Three bugs from one exchange. Start by finding the habit that produces the Mashter/I-dont-know-that-one response — inspect its trigger in the live DB. Then: (1) fix routing so knowledge queries (what do you know about X, what have you learned about X) fall through to LLM + cortex.search, not canned response. (2) ensure habit execution traces go to forensic log only, not response text. (3) character voice in canned responses should not fire on knowledge/factual intent. Diagnosis script in ticket #248. Size S.",
+    "size": "S",
+    "title": "Fix three response bugs: habit trace leak, knowledge misrouting, Mashter (#248)",
+    "result": "Fixed 3 bugs: (1) PROC_RESP_DONT_KNOW trigger trimmed — removed 'what do you know about'/'have you heard of' so knowledge queries fall through to LLM+cortex.search; (2) main.py: cognitive/passive_capture habits with no action template now fall through to LLM (HABIT_FALLTHROUGH ring entry) instead of leaking 'Habit executed. [...]' debug text to response; (3) basal_ganglia.py G-OVN-1c: response habits with suppress_on_factual_intent=true skip on factual_question intent — PROC_RESP_DONT_KNOW flagged accordingly. PROC_LIST_ABSORBED_BOOKS trigger also tightened (removed 'what have you learned' which was too broad).",
+    "status": "done",
+    "claimed_at": "2026-03-15T20:58:50.208352+00:00",
+    "completed_at": "2026-03-15T21:03:00.161500+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

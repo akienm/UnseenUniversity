@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-log-stop-hook-wire.20260506.021942614631",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-log-stop-hook-wire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T02:19:42.614631",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-log-logcontrol-conformance-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-log-handler-class",
+      "T-cc-log-stop-hook-wire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-log-stop-hook-wire",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "agent_datacenter",
+      "CC",
+      "logging"
+    ],
+    "title": "CLOSED: Wire CC Stop hook to ChatLogHandler; retire chat_log_formatter.py",
+    "result": "cc_log_stop_hook.py ships: searches all CC project dirs by mtime, ingests via ChatLogHandler.flush(); chat_log_formatter.py deleted; settings.json Stop hook updated. commit 8a097f2c",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-06T02:04:51.493297+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-log-logcontrol-conformance-2026-05-05",
+    "description": "Stop hook currently calls chat_log_formatter.py (incremental, incompatible format with export_chat.py). Both bespoke scripts should be replaced once T-cc-log-handler-class ships the canonical ChatLogHandler.\n\nProposed shape: new lab/claudecode/cc_log_stop_hook.py — thin driver that instantiates ChatLogHandler, reads newest session JSONL from ~/.claude/projects/-home-akien-TheIgors/, and processes new entries since last run (same cursor-tracking as chat_log_formatter.py). Update ~/.claude/settings.json Stop hook to call this instead of chat_log_formatter.py. Retire chat_log_formatter.py (delete or archive). The /export-chat slash command continues to call export_chat.py for manual full-rebuild use.\n\n**Affected files:** lab/claudecode/cc_log_stop_hook.py (new), ~/.claude/settings.json (hook update), lab/claudecode/chat_log_formatter.py (delete)\n**Design rules:** none\n**Scope boundary:** wiring only — no new rendering logic. All logic in T-cc-log-handler-class. export_chat.py stays as-is for manual use.\n**Test plan:** run cc_log_stop_hook.py manually after a session turn; verify ~/.agent_datacenter/logs/CC.0/YYYY-MM-DD.md updates with correct format. Confirm chat_log_formatter.py is gone from settings.json.\n**Pass condition:** Stop hook updates the CC.0 day log in ### User / ### Assistant format after each turn; usage-cache hook still fires (second hook unblocked).",
+    "completed_at": "2026-05-06T02:19:42.614631+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bab70fae-e4f5-4e33-b599-08e690468f36",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

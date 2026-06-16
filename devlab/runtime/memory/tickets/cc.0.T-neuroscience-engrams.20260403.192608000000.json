@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-neuroscience-engrams.20260403.192608000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-neuroscience-engrams"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:08",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-neuroscience-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-neuroscience-engrams",
+    "epic": "Cognition",
+    "size": "L",
+    "title": "Neuroscience → self-model engrams: after reading AI/ML+neuro books, seed engrams that help Igor model his own cognition on the biology",
+    "result": "Closed per Akien 2026-05-01: empty desc/notes/body — too vague to act on. Title concept (neuro→self-model engrams) survives in spirit through other cognition tickets (T-anticipation-primitive, T-planning-as-waypoint-graph, T-goal-formation-from-conversation). If neuro reading produces specific engram-shape ideas later, file a fresh focused ticket then.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:26:08Z",
+    "completed_at": "2026-05-01T16:24:36.804489+00:00",
+    "github_issue": 370,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-design-skill-optional.20260420.175041208787",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-design-skill-optional"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T17:50:41.208787",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-design-skill-optional"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-design-skill-optional",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Skills"
+    ],
+    "title": "/design skill — optional session-marker for design blocks",
+    "result": "Created ~/.claude/skills/design/SKILL.md — marker for design-mode blocks. Writes DESIGN_START to session, sets design_mode flag. /decided infers scope from last DESIGN_START or prior /decided. Optional — most conversations work without it.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-20T17:47:46.057148+00:00",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Lightweight marker: 'we are in design mode, not sprint mode'. Sets a boundary that /decided uses to infer scope (last /decided OR last /design, whichever newer).\n\n## Flow\n- Writes a DESIGN_START marker to session record\n- Tags session as design-mode (optional nudge: fewer proactive edits, more 'what about X?')\n- /decided reads the most recent DESIGN_START or prior /decided as its scope-start boundary\n\n## Explicitly optional\nMost conversations are implicit designs; /decided works without /design. /design is for when you want to explicitly bracket a session.\n\n## Not in scope\n- Any behavioral enforcement — just a marker.",
+    "completed_at": "2026-04-20T17:50:41.208787+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8d524304-037d-4fa0-8180-b06d1b4af8c7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

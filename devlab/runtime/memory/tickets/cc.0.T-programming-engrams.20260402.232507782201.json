@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-programming-engrams.20260402.232507782201",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-programming-engrams"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T23:25:07.782201",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-programming-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-programming-engrams",
+    "epic": "Training",
+    "size": "L",
+    "title": "Seed programming-process engrams (Claude-style): plan→filter→sprint→test→probe→commit as TEMPLATE habit program Igor can execute",
+    "result": "7 sub-tickets complete: T-pe-entry-nodes, T-pe-basket, T-pe-situate, T-pe-observe, T-pe-hypothesize, T-pe-implement-test, T-pe-close-loop. Full chain wired: ENTRY→CLAIM→READ_TICKET→SITUATE→OBSERVE→HYPOTHESIZE→IMPLEMENT→TEST→CLOSE_LOOP. 71+ tests passing. Code seeded to DB.",
+    "status": "done",
+    "claimed_at": null,
+    "completed_at": "2026-04-02T23:25:07.782201+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-book-ch5-launcher.20260528.190127003752",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-book-ch5-launcher"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:27.003752",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-and-book-2026-05-28"
+    ],
+    "tickets": [
+      "T-book-ch5-launcher"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-book-ch5-launcher",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Book",
+      "Docs"
+    ],
+    "title": "Book ch5: add configurable frontend shim to platform description",
+    "result": "Added config layout (uu.cfg + per-device) and configurable frontend shim sections to Chapter 5",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "created_at": "2026-05-28T19:01:27.003752+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-and-book-2026-05-28",
+    "description": "Update lab/docs/the_ownership_gap/6.Platform.md (Chapter 5) to describe: (1) the three entry points (./igor, ./superclaude, ./uu) and the zero-config startup principle — clone → run → works; (2) the configurable frontend shim — any agent gets the same console option via config, not bespoke UI per agent; (3) the uu.cfg global + per-device config.cfg convention; (4) ./uu as the human-facing Librarian chat surface — 'what do I know about X?' for non-technical users.\n\n**Affected files:** lab/docs/the_ownership_gap/6.Platform.md\n**Design rules:** none\n**Scope boundary:** update existing launcher/config sections + add frontend shim section; update version timestamp to current MT\n**Test plan:** read file and verify launcher UX, config layout, and frontend shim sections present; version stamp updated",
+    "completed_at": "2026-05-28T19:33:57.768425+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T19:33:13.096137+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:27.003777+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3c060328-524d-43ce-9d0c-1f6ef44bb654",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

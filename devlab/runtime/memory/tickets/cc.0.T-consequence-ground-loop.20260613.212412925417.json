@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-ground-loop.20260613.212412925417",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-ground-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T21:24:12.925417",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ground-loop-2026-06-13"
+    ],
+    "tickets": [
+      "T-consequence-ground-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-ground-loop",
+    "gate": "2026-06-27",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Infrastructure"
+    ],
+    "title": "[sprint] Consequence check: Ground Loop plugin-host supervisor",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that predicted unintended effects of the Ground Loop are checked within two weeks of shipping so any silent regressions are caught before they compound.",
+    "claimed_at": null,
+    "created_at": "2026-06-13T21:24:12.925417+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-ground-loop-2026-06-13",
+    "description": "**What changed:** Ground Loop plugin-host daemon added below the rack stack; web_server managed via http_proxy plugin; CC recovery consolidated into on_failure hook.\n\n**Predicted unintended effects:**\n(1) Proxy latency — every web_server request now passes through Ground Loop proxy; if proxy adds >50ms on the hot path that degrades UX silently.\n(2) Double-start race — if Ground Loop and another launcher both start web_server within the same poll window, two backend instances conflict on the port.\n(3) CC recovery loop — if Igor fails to start repeatedly, Ground Loop fires CC recovery repeatedly; CC fixes it, Igor starts, fails again (different bug), loop continues burning tokens.\n(4) systemd masking — if Ground Loop is a systemd unit and the user manually starts it too, two instances run; need pid lock or systemd ConditionPathExists guard.\n(5) HTTPS CONNECT tunnel — if any client sends HTTPS to the proxy and the tunnel handling is incomplete, requests silently drop instead of erroring clearly.\n(6) Plugin YAML parse errors — a malformed YAML in the plugin dir must not crash the loop; fail-open is the rule but needs verification.\n\n**Signals to watch:** web_server response time before vs after (curl --write-out timings); Ground Loop logs for double-spawn events; CC invocation count in budget logs after any Igor instability period; proxy error rate in Ground Loop logs.\n\n**Gate condition:** Check by 2026-06-27 or after first week of Ground Loop running in production.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** All 6 predicted effects checked; outcome annotated; ticket closed with one-line verdict.\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

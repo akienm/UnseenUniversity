@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-pe-hypothesize-prompt.20260407.031708656963",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-hypothesize-prompt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:17:08.656963",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-hypothesize-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-hypothesize-prompt",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Harden HYPOTHESIZE prompt: explicit JSON schema + few-shot + anti-hallucination",
+    "result": "CC implemented: _parse_hypothesis strips <think> blocks (DeepSeek) and <function_calls> (Haiku). HYPOTHESIZE prompt hardened with explicit schema + few-shot + anti-hallucination rules. Igor also improved the prompt text.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "blocked_at": "2026-04-07T03:00:17.943650+00:00",
+    "claimed_at": "2026-04-07T02:39:45.168537+00:00",
+    "related_to": null,
+    "description": "Current HYPOTHESIZE prompt lets the model respond in any format. Tighten it: (1) explicit output schema — 'produce exactly one JSON object with old_string and new_string keys, nothing else outside the JSON', (2) one few-shot example of a correct edit in the prompt, (3) negative constraint — 'do not produce <tool_response> blocks, do not narrate, do not simulate tool output, only output the JSON edit object'. DeepSeek R1 models: allow <think> block before the JSON (reasoning is free), require JSON after. File: wild_igor/igor/tools/pe_chain.py HYPOTHESIZE section.",
+    "completed_at": "2026-04-07T03:17:08.656963+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "be5a9395-7ed2-44f7-869f-dc8406ef4c74",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

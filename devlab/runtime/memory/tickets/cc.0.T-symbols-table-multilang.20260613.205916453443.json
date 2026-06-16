@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-symbols-table-multilang.20260613.205916453443",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-symbols-table-multilang"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T20:59:16.453443",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-orientation-classifier-arch-2026-06-13"
+    ],
+    "tickets": [
+      "T-after-sprint-symbols-refresh",
+      "T-symbols-table-multilang"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-symbols-table-multilang",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "CodeIndex",
+      "Cost"
+    ],
+    "title": "Extend clan.code_index to all languages; Haiku intent pass for shell/bash",
+    "result": "Multi-language code_indexer at lab/claudecode/code_indexer.py — Python AST sweep + Haiku shell intent (writes # intent: header); 5 .sh files indexed in clan.code_index kind=file_intent; 15 tests pass; kind CHECK constraint extended",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that clan.code_index contains symbol+intent rows for every language in the repo so the orientation classifier has something to scan for any ticket regardless of file type.",
+    "claimed_at": null,
+    "created_at": "2026-06-13T20:59:16.453443+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-orientation-classifier-arch-2026-06-13",
+    "description": "The orientation classifier reads clan.code_index for keyword/symbol matching. That table currently covers Python only. To classify tickets touching shell scripts, Makefile, YAML, or any non-Python file, the index must be extended.\n\nFor languages with parseable symbols (Go, JS, YAML keys, etc.): extract symbols via tree-sitter or simple regex, write rows to clan.code_index using the same schema as the Python indexer.\n\nFor shell/bash files (few parseable symbols): run a one-off Haiku pass per file to extract a one-line intent string, write it as a comment at the top of the file (e.g. `# intent: manages Granny daemon lifecycle, starts/stops shim`), and index the intent string in clan.code_index as the file's 'symbols' row. This gives the classifier a scannable signal even for opaque shell scripts.\n\nNightly Nanny re-runs the full sweep; after-sprint hook (T-after-sprint-symbols-refresh) updates only files in the commit diff.\n\n**Affected files:** lab/claudecode/code_indexer.py (or equivalent indexer entry point), clan schema migration if new columns needed, skills/after-sprint-hook (created by T-after-sprint-symbols-refresh), any shell files that receive the Haiku intent comment\n**Design rules:** no-sqlite; log every DB write; Haiku pass uses cheapest inference tier; intent comment is idempotent (re-run overwrites)\n**Scope boundary:** In scope: extend indexer to non-Python files; Haiku intent extraction for shell/bash; write intent comment to file header; index result in clan.code_index. Out of scope: embedding-based search (symbols table is keyword scan only), full semantic indexing.\n**Completion criteria:** `SELECT COUNT(*) FROM clan.code_index WHERE file_path LIKE '%.sh'` returns >0 rows; a newly indexed shell file has a `# intent:` comment in its header; `grep -r 'code_index' lab/claudecode/code_indexer.py` confirms multi-language dispatch; all tests pass.",
+    "completed_at": "2026-06-13T22:37:13.193632+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T22:28:33.681463+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

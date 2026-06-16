@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-granny-shim-self-start.20260529.200818065175",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-shim-self-start"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T20:08:18.065175",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-feeds-mcp-tools",
+      "T-granny-shim-self-start"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-shim-self-start",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform"
+    ],
+    "title": "GrannyShim: auto-start daemon when queue has dispatchable ticket",
+    "result": "GrannyShim.start() now starts GrannyDaemon; stop() stops it; is_running() added; 3 lifecycle tests green. Criterion 5 (restart Granny) is a manual deploy step.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "created_at": "2026-05-29T20:08:18.065175+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "GrannyShim currently has no awareness of GrannyDaemon — the daemon is started manually via tmux. This breaks the encapsulation principle: the shim should own the device's full lifecycle. When a dispatchable ticket appears in the queue (status=sprint, no gate, worker=claude/cc or CC tag), GrannyShim should auto-start the daemon if it isn't already running. This follows the same 'good design almost nobody does' pattern as SuperClaude's hidden setup — the system self-manages.\n\n**Affected files:** devices/granny/shim.py (add daemon lifecycle awareness), devices/granny/daemon.py (expose is_running() or similar), tests/test_granny_shim.py\n**Design rules:** none apply beyond existing device encapsulation rule\n**Scope boundary:** IN: GrannyShim.start() also starts GrannyDaemon; add a queue-check on shim start (if dispatchable tickets exist, ensure daemon is running); GrannyShim.stop() stops daemon. OUT: IMAP-inbox-triggered start (follow-on, part of T-feeds-mcp-tools shim intelligence); tmux notification to Akien on incoming message (separate ticket). Note: also fix self_test in shim.py which still checks for 'Test plan' instead of 'Completion criteria'.\n**Completion criteria:** (1) Starting GrannyShim also starts GrannyDaemon. (2) If the queue has a dispatchable CC ticket when shim starts, daemon is running within 5s. (3) Stopping GrannyShim stops the daemon cleanly. (4) tests/test_granny_shim.py covers these cases. (5) Restart checklist: restart Granny (new shim behavior takes effect).",
+    "completed_at": "2026-05-29T20:30:38.424975+00:00",
+    "deposited_at": "2026-05-29T14:09:38.034004",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-29T20:13:35.727962+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "purpose_category": "observation",
+    "scraps_validated": "2026-05-29T20:08:18.128581+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "227cb2b8-7f4f-40ce-a43d-0a2f6a8223b6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

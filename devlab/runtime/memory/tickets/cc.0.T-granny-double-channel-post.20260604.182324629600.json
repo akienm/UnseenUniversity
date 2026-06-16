@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-granny-double-channel-post.20260604.182324629600",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-double-channel-post"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T18:23:24.629600",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-double-channel-post",
+      "T-ibd-intention-field",
+      "T-too-intentions-annotation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-double-channel-post",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Bug"
+    ],
+    "title": "Granny: GRANNY_DISPATCH posted twice per dispatch event",
+    "result": "push_ws=False in daemon._post_channel — root cause was stale web server ignoring ws_only; 3 new regression tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that each Granny dispatch event produces exactly one GRANNY_DISPATCH channel message.",
+    "claimed_at": "2026-06-04T19:21:12.189289+00:00",
+    "created_at": "2026-06-04T18:23:24.629600+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Every time Granny dispatches a ticket, GRANNY_DISPATCH appears twice in the shared channel with identical content and the same timestamp. Observed live: 2026-06-04T18:10:06 showed two identical posts for T-ibd-intention-field and T-too-intentions-annotation.\n\nThe double-post likely comes from _post_channel() being called twice, or from the channel implementation writing twice. The _dispatch_cc0 and _dispatch_dicksimnel functions each call _post_channel() once in run_once() — need to check if there is a second call path.\n\n**Affected files:** devices/granny/daemon.py (run_once, _post_channel), unseen_university/channel.py\n**Design rules:** no-sqlite N/A; log-every-interface-crossing: channel post IS the log\n**Scope boundary:** fix the double-post; do not change dispatch logic or message format\n**Completion criteria:** channel observation after fix shows exactly one GRANNY_DISPATCH per dispatch event; test asserts _post_channel called once per run_once dispatch",
+    "completed_at": "2026-06-04T20:25:24.289379+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

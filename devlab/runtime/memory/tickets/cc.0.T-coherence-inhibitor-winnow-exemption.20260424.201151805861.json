@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-coherence-inhibitor-winnow-exemption.20260424.201151805861",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-coherence-inhibitor-winnow-exemption"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T20:11:51.805861",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-coherence-inhibitor-winnow-exemption"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-coherence-inhibitor-winnow-exemption",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "ReplyPath",
+      "IgorCompletesOne"
+    ],
+    "title": "Coherence inhibitor gates WINNOW-hint-dispatched LLM replies as habit output",
+    "result": "main.py:6771-6789 — source_label for coherence inhibitor now gates 'habit:' on memory_type==PROCEDURAL. INTERPRETIVE winners (WINNOW_* hints) labeled 'llm_via_<id>' instead. suppress_incoherent's LLM-exemption already covers llm_via_ prefix, preserving the reply. 37 tests pass including new TestLlmViaLabel class + main.py source regression guard. Commit shipped — Igor needs restart.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.95,
+    "claimed_at": "2026-04-24T20:10:08.392917+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "response_coherence_inhibitor.suppress_incoherent exempts `llm_or_tier0` but treats every `habit:*` source_label as potentially-templated. Today 2026-04-24T14:00:45 Igor generated a genuine conversational reply ('What's the thing you've been carrying around in your head lately...') in response to 'time for you to ask me a question. anything at all'; reply was 0-overlap on content tokens (Jaccard 0.000 < threshold 0.10) because the user prompt and the answer share no content words — normal conversational behavior. Inhibitor suppressed it. Reply was visible in console but never hit the channel, so web interface never saw it.\n\nRoot cause: main.py:6771-6772 constructs `_source_label` as `habit:<_turn_habit.id>` for ANY winning BG entry. WINNOW_xxx entries are INTERPRETIVE memories (winnowing hints) that drive LLM dispatch, not PROCEDURAL templated-response habits. Mislabeling them as `habit:` routes the LLM-produced reply through the suppression path.\n\nFix: only label as `habit:` when the winning memory is PROCEDURAL (genuine templated-response habit). For INTERPRETIVE/FACTUAL winners (WINNOW hints etc.), label as `llm_via_<id>` so suppress_incoherent's existing LLM-exemption rule covers them.\n\n**Affected files:** wild_igor/igor/main.py:6771-6772 (source_label construction), tests/test_response_coherence_inhibitor.py (new test), tests/test_coherence_inhibitor_llm_gate.py (may need parallel coverage).\n**Design rules:** test-plan-or-why-not.\n**Scope boundary:** IN — change label construction + test. OUT — redesigning the Jaccard coherence check, changing suppress_incoherent's contract.\n**Test plan:** unit test: PROCEDURAL winner → label starts with `habit:`; INTERPRETIVE winner (simulating WINNOW_xxx) → label starts with `llm_via_`; regression test using today's observed prompt/response pair asserts suppression does NOT fire.",
+    "completed_at": "2026-04-24T20:11:51.805861+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dbdef6f3-8c9e-403a-92d9-50fd14b899c5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

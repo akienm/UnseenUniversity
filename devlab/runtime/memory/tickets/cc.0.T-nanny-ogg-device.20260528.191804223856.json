@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-nanny-ogg-device.20260528.191804223856",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nanny-ogg-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:18:04.223856",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-nanny-2026-05-28"
+    ],
+    "tickets": [
+      "T-adc-scheduling-primitive",
+      "T-nanny-ogg-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nanny-ogg-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Platform",
+      "Scheduler",
+      "Architecture"
+    ],
+    "title": "Nanny Ogg: scheduler + world-interaction dispatcher device",
+    "result": "NannyOggDevice: ScheduleEntry + AgentRegistration + default schedule (weekly audit, alignment review, consequence gate, dreaming); 37 tests green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-28T19:46:39.732027+00:00",
+    "created_at": "2026-05-28T19:18:04.223856+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-nanny-2026-05-28",
+    "description": "Supersedes T-adc-scheduling-primitive. Implement Nanny Ogg as a rack device — the when/then engine. Responsibilities: (1) internal scheduling — cron, periodic tasks (Friday audit, dreaming cadence, alignment reviews), gate condition monitoring, consequence ticket maturation; (2) external scheduling — Google Calendar integration, real-world time commitments; (3) world-interaction dispatch — routes non-coding tickets to specialized agents (calendar agent, social agent, IoT agent, sysadmin agent); (4) agent registry — knows what agents exist and what ticket types they handle; (5) new agent spin-up — can instantiate a new specialized agent when a ticket type has no current handler.\n\nNanny is the event/trigger engine: 'when condition C is true, execute action A.' Conditions: time (cron), event (ticket closed), threshold (N cycles), date (consequence gate), external trigger.\n\n**Affected files:** devices/ (new devices/nanny/ rack device), supercedes T-adc-scheduling-primitive (close that ticket on sprint start), Igor internal scheduler → stub or remove\n**Design rules:** igor-uses-not-contains; scheduling logic is rule-based not inference; world-interaction agents are registered capability nodes, not hardcoded\n**Scope boundary:** IN — internal scheduling, gate monitoring, consequence maturation, world dispatch, agent registry; OUT — coding ticket routing (Granny)\n**Test plan:** consequence ticket with past gate date gets surfaced; periodic audit fires on schedule; world ticket (add calendar event) routes to calendar agent; Igor alignment review fires via Nanny schedule not Igor internals",
+    "completed_at": "2026-05-28T19:54:42.813061+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T19:46:39.732027+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:18:04.223910+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "57cfd3fc-f091-40f5-8b6c-a833736f492d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

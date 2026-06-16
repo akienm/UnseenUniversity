@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-igor-pe-chain-baseline.20260518.155544710655",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-pe-chain-baseline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T15:55:44.710655",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-pe-chain-baseline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-pe-chain-baseline",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "PeChain",
+      "Metrics",
+      "Observability"
+    ],
+    "title": "Establish HYPOTHESIZE success-rate baseline from existing flight-recorder logs",
+    "result": "Apr 2026 baseline: ~0% HYPOTHESIZE success rate; published to palace.metrics.pe_chain_baseline; target 40% by 2026-06-18",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-18T17:35:15.092751+00:00",
+    "created_at": "2026-05-18T15:55:44.710655+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "pe_chain has been failing for 7 weeks with no published success-rate baseline. Compute per-day HYPOTHESIZE success/error rate from existing flight-recorder logs (last 30 days) and publish as a palace node or slate report, setting a 30-day improvement target.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (log source), lab/claudecode/ (report script output)\n**Design rules:** no new data collection — compute from existing flight-recorder logs only\n**Scope boundary:** in scope: query existing pe_chain flight-recorder logs for HYPOTHESIZE outcomes, compute daily success rate, output to palace node or slate. Out of scope: algorithmic changes to pe_chain, new logging instrumentation, UI.\n**Test plan:** report script produces output without error on current log data; output includes at least 7 days of history if logs exist; result published to palace.metrics.pe_chain_baseline or equivalent.",
+    "completed_at": "2026-05-18T17:37:31.394145+00:00",
+    "github_issue": 737,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c34624e9-5a3c-430c-ae26-dfca8b4817b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

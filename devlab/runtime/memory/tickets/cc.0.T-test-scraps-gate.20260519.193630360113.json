@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-test-scraps-gate.20260519.193630360113",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-scraps-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-19T19:36:30.360113",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-scraps-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-scraps-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [],
+    "title": "Wire Scraps gate into queue transitions",
+    "result": "Already shipped: _scraps_validate() wired into cmd_add (adb17bf in agent_datacenter); cmd_claim removed per D-igor-request-not-claim-2026-05-20 so claim path is cmd_next with scraps_validated stamped at add-time. 8 tests in test_cc_queue_scraps_gate.py all pass.",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": "2026-05-21T00:24:39.269133+00:00",
+    "created_at": "2026-05-19T19:36:30.360113+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "**Affected files:** cc_queue.py\n**Test plan:** integration test covering add and claim paths.",
+    "completed_at": "2026-05-21T00:32:14.349813+00:00",
+    "github_issue": 761,
+    "required_files": [],
+    "scraps_validated": "2026-05-19T19:36:30.360150+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b75d9946-db19-4147-912a-c1a01c22af96",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-uc-server-watchdog.20260429.222804124190",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-server-watchdog"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T22:28:04.124190",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-unstick-2026-04-29"
+    ],
+    "tickets": [
+      "T-uc-server-watchdog"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-server-watchdog",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "UtilityCloset",
+      "Watchdog",
+      "Fixit"
+    ],
+    "title": "Igor watchdog: detect utility_closet_server down, relaunch",
+    "result": "UtilityClosetWatchdog shipped — slow-tier push source, two-strike rule, 120s cooldown, IgorBase-inherited (avoids push_sources circular import). Live-validated: UC was dead at sprint start, relaunch_uc() brought it up (PID 1467112). 15 new tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": "D-igor-unstick-2026-04-29",
+    "description": "utility_closet_server (port 8080) currently dead; Igor's logs show 'Connection refused' every 5s on POST /api/agents/.../stats. Akien wants Igor to constantly nudge UC back to awake — relaunch when down.\n\nFix: new push source `UtilityClosetWatchdog` in wild_igor/igor/cognition/push_sources.py. Polls /api/health (or socket connect on 8080) every 60s. If down for 2 consecutive checks: relaunch via setsid (same pattern as ~/bin/igor launcher line 39). Cooldown: skip relaunch if last attempt < 120s ago to avoid restart storms. Logs to errors.log on failed relaunch.\n\n**Affected files:** wild_igor/igor/cognition/push_sources.py (new class + registration) + tests/test_uc_watchdog.py.\n**Design rules:** inherit-base-class (BasePushSource); no-sqlite (n/a); approach-frame (positive: 'keep UC alive' framing, not 'don't let it die').\n**Scope boundary:** in scope: monitoring + relaunch of utility_closet_server.py. Out of scope: monitoring other services, rewriting UC's startup flow.\n**Test plan:** unit tests covering: down-detection, cooldown logic, no-restart-when-up, relaunch-command formatting. Live verify after deploy: kill UC manually, observe restart within 2-3 min.",
+    "completed_at": "2026-04-29T22:28:04.124190+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "769b3d4a-eaf2-4f6a-aff1-08935a669045",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-utility-closet.20260404.004949083177",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-utility-closet"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T00:49:49.083177",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-utility-closet"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-utility-closet",
+    "epic": "Operations",
+    "size": "M",
+    "title": "Utility closet bootstrap script",
+    "result": "utility_closet.sh created: self-installs system deps, auto-detects .env (handles Igor-wild-0001 case), validates env vars, bootstraps DB schema, launches tmux session. --dry-run + --no-launch flags. Tested: exit 0. Pushed 7db6fa0b.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T00:47:36.044076+00:00",
+    "related_to": null,
+    "description": "Self-installing bootstrap for Igor's infrastructure. Handles: (1) verify/install system deps (postgres, ollama, tmux, ssh); (2) DB schema bootstrap so Igor can start; (3) env var validation + guided setup; (4) launch tmux session others can attach to. New file: claudecode/utility_closet.sh or .py. NO HIGH inertia files touched. Tests: --dry-run mode + manual checklist. Logging: logcmd/logecho akientools convention. Scope OUT: dashboard extraction, MCP server migration, brainstem/cognition changes. D307.",
+    "completed_at": "2026-04-04T00:49:49.083177+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fb515b2f-13b7-4580-9194-f442e9a2b97b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

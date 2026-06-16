@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-experiment-primitive-schema.20260415.022113767948",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-primitive-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T02:21:13.767948",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-primitive-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-primitive-schema",
+    "body": "Sub-slice 1 of T-experiment-primitive (#456). This is the smallest tractable first step — just the data model. The scheduler, outcome feedback, cockpit integration, and CP-check sub-slices all consume this.\n\n## What ships\n\nA new module wild_igor/igor/cognition/experiment.py with dataclasses:\n\n- **Hypothesis** — structured proposition (e.g. 'input X should produce outcome Y', 'habit H will fire for trigger T', 'source S is trustworthy on topic K'). Fields: statement, source, confidence, cp_constraints.\n- **Probe** — concrete action to exercise the hypothesis. Fields: kind (memory_query | tool_call | habit_dryrun | channel_send | db_query | sim_turn), target, payload, expected_shape.\n- **Observation** — what happened. Fields: outcome (str enum: match | mismatch | partial | inconclusive), data (dict), timestamp, cost.\n- **Update** — what changes in Igor's engrams as a result. Fields: trail_edge_changes (list), memory_accretions (list), inhibitor_weight_deltas (dict), goal_state_transitions (list), reason.\n- **Experiment** — the full quartet: id + hypothesis + probe + observation + update + status. Status enum: proposed | running | observed | updated | aborted.\n\n## Integration with T-decision-blob-schema (already shipped)\n\nThe decision_blob module already has a `ProposedExperiment` dataclass with fields (hypothesis, probe, expected_observation, cost_estimate) — that's the seed. The full Experiment dataclass in this ticket is the complete lifecycle around that seed: what happens after the experiment runs.\n\nProposedExperiment becomes the 'draft' state; Experiment is the full object after scheduling. Clean relationship:\n```\nProposedExperiment (in decision blob) → Experiment.proposed → Experiment.running → Experiment.observed → Experiment.updated\n```\n\n## Axiomatic grounding\n\n- CP1: Hypothesis.confidence is a field, never assumed. Observations can be 'inconclusive' without failing.\n- CP2: failed Observations trigger Update objects that feed learning. Failure is a state, not an error.\n- CP3: Hypothesis must have a causal statement. Probe must specify what it expects. Observation must relate back to the hypothesis.\n- CP6: no experiment can update Igor's state without passing through the Update layer — no direct mutation from hypothesis-bearing sources.\n\n## Tests\n\n~15 tests covering:\n- Construction of each dataclass with required fields\n- Enum coercion (status, outcome, probe kind)\n- Experiment lifecycle state transitions (proposed → running → observed → updated) with validation of allowed transitions\n- Serialization roundtrip (dict + JSON)\n- Integration: Experiment.from_proposed_experiment(ProposedExperiment) cross-module constructor\n- CP validation fields populate correctly\n\n## Out of scope\n\n- Scheduler (T-experiment-primitive-scheduler sub-slice)\n- Outcome feedback into engrams (T-experiment-primitive-outcome-feedback sub-slice)\n- Cockpit integration (T-experiment-primitive-cockpit-integration sub-slice)\n- Audit CP-check (T-experiment-primitive-cp-check sub-slice)\n- Actually running experiments (this is just the data model)\n\n## Dependencies\n\n- Parent: T-experiment-primitive (#456)\n- Builds on: T-decision-blob-schema (shipped a0d224b9, provides ProposedExperiment seed)\n\n## Provenance\n\nFiled during the 2000-2100 solo sprint window as a natural follow-on to T-decision-blob-schema — same shape, same approach, small scope, unblocks downstream.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "cognition",
+      "schema",
+      "biomimicry",
+      "experiment",
+      "strategy-2",
+      "cp-axioms"
+    ],
+    "title": "Experiment primitive: data model (hypothesis + probe + observation + update)",
+    "result": "64e1d472 — full experiment dataclass quartet (Hypothesis + Probe + Observation + Update) + Experiment lifecycle state machine (PROPOSED → RUNNING → OBSERVED → UPDATED + ABORTED branch) + from_proposed() bridge from decision_blob.ProposedExperiment. CP-axiomatic grounding in every dataclass docstring. 26 tests, 2256 pass. Unblocks T-experiment-primitive sub-slices: scheduler, outcome-feedback, cockpit-integration, cp-check.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T02:13:23.358551+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-15T02:21:13.767948+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

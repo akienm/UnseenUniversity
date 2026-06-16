@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-sorted-concept-links.20260527.031032410957",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sorted-concept-links"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-27T03:10:32.410957",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-xxx",
+      "D-concept-layer-and-tags-2026-05-26"
+    ],
+    "tickets": [
+      "T-sorted-concept-links"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sorted-concept-links",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Skills"
+    ],
+    "title": "Add concept_links field to /sorted decisions and palace nodes",
+    "result": "Added concept_links as Q4 in step 2.6 of /sorted and /decided. Decision record template updated with ## Concept Links section and concept_links field in palace metadata.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-27T03:10:32.410957+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-concept-layer-and-tags-2026-05-26",
+    "description": "Update /sorted (and /decided) step 2.6 to ask a fourth question: 'Which concepts does this decision assume? (C-xxx or none)'. Store as concept_links field in the decision palace node metadata alongside goal_link. Update the decision record template to include a '## Concept Links' section.\n\nThis closes the traceability loop: decisions link up to goals (why) and sideways to concepts (what the decision assumed about how things work). A future CC session can pull a decision and understand both what it was trying to achieve and what architectural model it relied on.\n\n**Affected files:** ~/.claude/skills/sorted/SKILL.md, ~/.claude/skills/decided/SKILL.md, lab/design_docs/decisions/*.md template\n**Design rules:** none apply\n**Scope boundary:** Skill text changes only. No retroactive backfill of existing decisions — too many, low value. New decisions only.\n**Test plan:** no tests — validate by running /sorted on a small decision and confirming the resulting palace node has concept_links in metadata",
+    "completed_at": "2026-05-27T22:16:44.948964+00:00",
+    "github_issue": 798,
+    "required_files": [],
+    "scraps_validated": "2026-05-27T03:10:32.411000+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "47c22de5-5d99-4ac6-92f6-b185877223e8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

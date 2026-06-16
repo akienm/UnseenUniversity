@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-ibd-dicksimnel-preamble.20260604.173652177068",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ibd-dicksimnel-preamble"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T17:36:52.177068",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-based-development-2026-06-04"
+    ],
+    "tickets": [
+      "T-dsimnel-cc-parity",
+      "T-ibd-dicksimnel-preamble"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ibd-dicksimnel-preamble",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "IBD"
+    ],
+    "title": "IBD: DickSimnel ToolLoop intention+hypothesis preamble before sprint-ticket",
+    "result": "IBD preamble added to _build_system_prompt: intention + hypothesis + test before sprint-ticket steps; 2 new tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-06-04T17:36:52.177068+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-intention-based-development-2026-06-04",
+    "description": "Add a thin IBD preamble to DickSimnel's ToolLoop system prompt so that before following sprint-ticket, DickSimnel states the intention and hypothesis for the ticket, then writes the test, then writes code. DickSimnel = CC clone — this is additive framing on top of the sprint-ticket skill, not a replacement.\n\nShape: in `_build_system_prompt()` in devices/dicksimnel/device.py, prepend a short paragraph: 'Before executing the sprint-ticket skill steps, state in one sentence the intention for this ticket (I intend that...), state the hypothesis (what should be observably different when this ships), and write the test that validates the hypothesis. Then proceed with sprint-ticket as written.' No ToolLoop structural changes.\n\nGated on T-dsimnel-cc-parity: parity must ship first so sprint-ticket is the sole guide before this preamble is added.\n\nMEDIUM-inertia pre-approval: Akien approved 2026-06-04 as part of D-intention-based-development-2026-06-04 design review.\n\n**Affected files:** devices/dicksimnel/device.py (lines ~45-68, _build_system_prompt)\n**Design rules:** no-sqlite N/A; OOP-first: change is inside device method, not standalone function\n**Scope boundary:** preamble addition only; sprint-ticket skill steps unchanged; no ToolLoop turn-count or tool-list changes\n**Completion criteria:** unit test asserts that `_build_system_prompt()` output contains 'I intend that' and 'hypothesis'; DickSimnel full test suite green; preamble does not appear when DickSimnel.0 is blocked",
+    "completed_at": "2026-06-04T19:05:15.337727+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "02aa46ce-7b39-4c67-82cb-aa780b9c8122",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-test-inbox-cleanup.20260506.020424837770",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-inbox-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T02:04:24.837770",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test",
+      "T-test-inbox-cleanup",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-inbox-cleanup",
+    "gate": null,
+    "owner": null,
+    "title": "CLOSED: Tests must clear their inbox messages on completion",
+    "result": "conftest cc_inbox_test_tag now sweeps [test:] at session START (not only on teardown) — stale entries from killed sessions cleared on next run; commit 6323f53f",
+    "status": "done",
+    "worker": "igor",
+    "priority": "M",
+    "claimed_at": "2026-05-06T01:56:52.225630+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Tests post prefixed messages to the CC inbox (e.g., 'pe_chain_block [T-test]') but don't clear them on completion. Currently 87 unread inbox messages are test blocks from Igor, blocking context visibility.\n\nAdd cleanup logic to test runners and pe_chain completion handlers to remove messages with test-identifying prefixes (pe_chain_block, pe_chain_escape, etc.) from the inbox when the test exits.\n\n**Affected files:** lab/claudecode/cc_inbox.py, wild_igor/igor/pe_chain/, wild_igor/tests/conftest.py or matching fixture cleanup hooks\n\n**Design rules:** none apply\n\n**Scope boundary:** IN: Add inbox.clear_by_prefix() or matching method; wire it to test cleanup on pass/fail/block. OUT: Restructuring inbox system; changing how tests post messages.\n\n**Test plan:** Run a pe_chain test, observe message posted with 'pe_chain_block [T-xxx]' prefix. Verify on completion (pass/fail/block), message is deleted from inbox. Verify non-test messages persist.\n\n**Pass condition:** After a test run completes, inbox contains zero messages with 'pe_chain_block' or 'pe_chain_escape' prefix that were posted during that test.",
+    "completed_at": "2026-05-06T02:04:24.837770+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "blocking_tickets": [],
+    "inferred_intention": "unknown",
+    "tickets_blocked_by": [],
+    "inferred_intention_id": "08b82c47-d498-4644-9a1a-1b84278e0a47",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

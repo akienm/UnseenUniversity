@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-mcp-channel-rename.20260412.221216561700",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-channel-rename"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-12T22:12:16.561700",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-mcp-channel-rename",
+      "T-uc-web-server-refactor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-channel-rename",
+    "epic": "Claude",
+    "size": "S",
+    "title": "MCP tool rename: cc_send → channel_send pointing at UC (8080)",
+    "result": "Renamed cc_send → channel_send with channel param (default 'shared'). cc_send kept as deprecated alias. .mcp.json local entry fixed 8081→8080 (per-machine already correct). channel_read accepts channel param but no-op until schema upgrade (T-channel-messages-schema ticketed).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 4,
+    "claimed_at": "2026-04-12T22:04:45.710546+00:00",
+    "related_to": null,
+    "description": "Rename mcp__igor__cc_send to mcp__igor__channel_send and add channel param (default 'shared'). Same for channel_read — add channel param. Point both at port 8080 (utility closet) instead of 8081 (Igor's old server, now deleted). Requires updating the MCP server config/implementation which lives outside the TheIgors repo. Follow-up to T-uc-web-server-refactor.",
+    "completed_at": "2026-04-12T22:12:16.561700+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f2de2ce4-5262-4efb-b3b1-81cedf245ccf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

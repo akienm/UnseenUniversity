@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-retire-legacy-direct-reasoner-path.20260420.184500000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retire-legacy-direct-reasoner-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-retire-legacy-direct-reasoner-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retire-legacy-direct-reasoner-path",
+    "size": "L",
+    "notes": "Filed 2026-04-19 to replace mis-scoped T-system-prompt-static-layers-truncated.\n\n## The architecture (Akien's model)\nInput: words → meanings → means to me → what do I wanna do (trees). When reasoning fails, Igor chats with upstream LLM back-and-forth UNTIL CLEAR ON THE REASONING SIDE. Then returns to trees. Output: what do I wanna say → how do I wanna say it → put it into words. Trees are one voice actor; LLM is another. When LLM is involved, it's invoked at least twice per turn (once for reasoning, once for voice) — each call small and focused, not a fat one-shot.\n\n## What's already shipped\n- Input pipeline: thalamus.py:16 (words), cortex.py:1920 (meanings), basal_ganglia.py:571 with meaning_to_me layer #244 (means to me), decision_blob.py + goal_formation.py (what to do).\n- Escalation-as-conversation: reasoning_workflow.py:326 runs workflows A/B/C/D as peer conversation with upstream; NOT cockpit-prompt.\n- Output pipeline: prompt_contexts.voice_context() (how to say) + voice_ab.VoiceABFramework (put into words) with GraphVoiceActor vs LLMVoiceActor and graduation when graph consistently wins. Ticket #439 / c8da1578.\n- Orchestrator: turn_pipeline.py strings cascade → workflow → blob → voice.\n\n## What's NOT migrated\nMany interactive turns in main.py still call reasoner.reason() directly with build_system_prompt(cortex, role='interactive') as the big system prompt. That path hits the 4800-char _MAX_CHARS truncation in system_prompt.py:35, losing TOOL DISPATCH, SAFETY NOTES, ORIENTATION, TREE-BUILDING, CLOUD ROLE sections — every operational directive past the DB-loaded CP/identity/procedure dump.\n\n## Scope\n1. Inventory all remaining callers of build_system_prompt(role='interactive') + direct reasoner.reason() in main.py.\n2. Route each through turn_pipeline.run_turn() or its equivalent.\n3. Once no callers remain, delete the interactive branch of build_system_prompt — keep only 'extraction' and 'analysis' roles for the daemon/background paths.\n4. Remove _MAX_CHARS truncation entirely (it becomes unneeded — extraction/analysis prompts are already small).\n\n## Inertia\nTouches main.py (MEDIUM), cognition/reasoners/* (MEDIUM), system_prompt.py (MEDIUM). Akien pre-approved the migration 2026-04-19 conditional on doing the work carefully.\n\n## Related\n- T-llm-tool-dispatch-as-codeblock (blocked) — will be naturally solved once legacy path retires and turn_pipeline owns every interactive turn.\n- T-voice-actor-ab-framework #439 (done) — the output-side substrate that this migration feeds into.\n- T-goal-formation-from-conversation (pending) — the goal_formation stage this ticket documents.\n\n## Provenance\nAkien-Claude 2026-04-19 autonomous sprint. Discovered while investigating T-llm-tool-dispatch-as-codeblock; Akien re-framed the architecture; explored and mapped what's already built.",
+    "title": "CLOSED: Retire legacy direct-reasoner path; migrate interactive turns through turn_pipeline + reasoning_workflow + voice_ab",
+    "result": "scope b: added role=voice prompt, LLMVoiceActor passes prompt_role=voice, removed IGOR_TURN_PIPELINE gate, deleted legacy interactive else block (~175 lines), migrated G37/G5 observability into pipeline path",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-05T01:01:40.709499+00:00",
+    "created_at": "2026-04-20T18:45:00Z",
+    "related_to": null,
+    "description": "\n\n**Affected files:** wild_igor/igor/main.py (migrate remaining interactive turn call sites away from `reasoner.reason()` direct path); wild_igor/igor/cognition/turn_pipeline.py (orchestrator); wild_igor/igor/cognition/reasoning_workflow.py (escalation-as-conversation); wild_igor/igor/voice/voice_ab.py + prompt_contexts.py (voice path); wild_igor/igor/system_prompt.py (drop or reshape `build_system_prompt(role='interactive')` once nothing calls it).\n\n**Design rules:** docs-in-code (turn_pipeline + reasoning_workflow are load-bearing; refresh top-of-file docstrings as they're touched); test-plan-or-why-not.\n\n**Scope boundary:** IN — migrate remaining direct-reasoner call sites, deprecate or delete `build_system_prompt(role='interactive')` once unreferenced, ensure each interactive turn flows through turn_pipeline → workflow → blob → voice. OUT — reasoning_workflow internal refactor (separate); voice graduation logic (already shipped via #439/c8da1578).\n\n**Test plan:** tests/test_turn_pipeline_no_direct_reasoner.py — assert no remaining call sites of the legacy path; integration test of one interactive turn end-to-end. Existing turn_pipeline + voice_ab tests pass unchanged.",
+    "completed_at": "2026-05-05T01:48:13.739668+00:00",
+    "github_issue": 487,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c506310c-015c-49ce-a0b3-1f510d813135",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

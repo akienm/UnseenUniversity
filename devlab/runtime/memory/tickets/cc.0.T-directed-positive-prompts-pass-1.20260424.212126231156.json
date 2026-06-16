@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-directed-positive-prompts-pass-1.20260424.212126231156",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-directed-positive-prompts-pass-1"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T21:21:26.231156",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-directed-positive-prompts-2026-04-24"
+    ],
+    "tickets": [
+      "T-directed-positive-prompts-pass-1"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-directed-positive-prompts-pass-1",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Skills",
+      "Prompts",
+      "CC"
+    ],
+    "title": "Rewrite high-friction skills + CLAUDE.md with binding imperatives + directed workflow + MCP-first",
+    "result": "Rewrote 9 skills in ~/.claude/skills/ + CLAUDE.md + 8 palace rule nodes + WorkingWithClaude.md with binding imperative + directed workflow + MCP tool naming; mirrored to ClaudeAndAkien utility-closet variant (hard-rules pass). Commit ae1c0597 (TheIgors), 6726c88 (ClaudeAndAkien).",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-24T20:46:51.390334+00:00",
+    "related_to": null,
+    "decision_id": "D-directed-positive-prompts-2026-04-24",
+    "description": "High-friction skill prompts and CLAUDE.md rules currently state rules as negations (\"do not skip X\", \"never Y\"). This makes the right behavior a constraint to avoid instead of a path to follow. Rewrite mandatory-step lines using the paired shape: **binding imperative** (Always/Shall/Must/First as checklist anchor) + **directed workflow** (spell the path the right behavior travels) + **named MCP tool** (where a tool exists — prescribe the call, don't let ad-hoc psql/grep win by default). Rationale: CC reads imperative-led lines as required checkbox steps; workflow-phrased lines as a traversable path; tool-named steps as the frictionless default. All three layers required — imperative without workflow is a nag; workflow without imperative is ambient info; neither without the MCP reference when one applies means the ad-hoc path still wins. Commit per skill so reverts are cheap if a rewrite lands wrong.\n\n**Affected files:** `/home/akien/.claude/skills/sprint/SKILL.md`, `/home/akien/.claude/skills/decided/SKILL.md`, `/home/akien/.claude/skills/ticket/SKILL.md`, `/home/akien/.claude/skills/review/SKILL.md`, `/home/akien/.claude/skills/context-load/SKILL.md`, `/home/akien/.claude/skills/savestateauto/SKILL.md`, `/home/akien/.claude/skills/fixit/SKILL.md`, `/home/akien/.claude/skills/sprint-batch/SKILL.md`, `/home/akien/.claude/skills/day-close/SKILL.md`, `/home/akien/TheIgors/CLAUDE.md`, palace nodes under `theigors/rules/*` (via palace_write or direct psql UPDATE).\n**Design rules:** docs-in-code (skills are the docs — edit them, don't write a parallel style guide); scaffold-not-correct (rules visible at point-of-use in each skill, not remembered across sessions); test-plan-or-why-not; no-sqlite: no persistence — this ticket edits prose/markdown files only, no DB reads or writes.\n**Scope boundary:** IN — rewriting existing mandatory-step lines in listed skills + CLAUDE.md + palace rules using the paired shape; naming MCP tools where one applies cleanly. OUT — adding new skills or new rules; rewriting advisory/informational lines (imperatives lose force if overused); building new MCP tools (the existing shelf covers the needs we've surfaced); changing skill behavior (pure prompt rewrite, not flow changes).\n**Test plan:** no unit tests (prose). Verification: after rewriting each skill, follow it as-written on a small real task and note where the imperative/workflow/MCP-name triplet still left ambiguity. Iterate within the same ticket. One commit per skill.",
+    "completed_at": "2026-04-24T21:21:26.231156+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "da1bcc4e-0b3d-4f3e-80c4-069cc5ef3205",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

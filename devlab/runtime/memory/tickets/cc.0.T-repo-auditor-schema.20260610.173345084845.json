@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-repo-auditor-schema.20260610.173345084845",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-repo-auditor-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T17:33:45.084845",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-repo-auditor-device-2026-06-10"
+    ],
+    "tickets": [
+      "T-repo-auditor-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-repo-auditor-schema",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "Hygiene",
+      "Hubert",
+      "Infrastructure"
+    ],
+    "title": "Repo auditor: audit_flags DB table in Hubert",
+    "result": "Validated: hubert.audit_flags table live in DB (cecf1fb8). INSERT round-trip verified. Migration idempotent (re-run clean). 10-column schema matches spec.",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that a durable audit_flags table exists in the DB so the auditor can write structured flags that persist across runs and are queryable by the web UI.",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-06-10T17:33:45.084845+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-repo-auditor-device-2026-06-10",
+    "description": "Create the `hubert.audit_flags` table to store per-ticket-per-commit structural audit results.\n\nSchema: `(id SERIAL PRIMARY KEY, ticket_id TEXT, commit_hash TEXT, size TEXT, structural_score REAL, diff_lines INT, flag_reason TEXT, reviewed_at TIMESTAMPTZ, verdict TEXT, created_at TIMESTAMPTZ DEFAULT now())`.\n\nAlso create a migration file under `unseen_university/migrations/`.\n\n**Affected files:** unseen_university/migrations/m_hubert_audit_flags.py (new), devices/hubert/__init__.py (schema registration)\n**Design rules:** no-sqlite; postgres-only\n**Scope boundary:** IN — table creation + migration. OUT — populating data, web surface, cron wiring.\n**Completion criteria:** `psql \\dt hubert.*` includes `audit_flags`; INSERT of a sample row succeeds; migration script is idempotent (re-running produces no error).\n\n## Escalation summary\n**What was tried:** MAX_TURNS: hit 20 turns without DONE: prefix\n**Where it broke:** max turns hit without completing\n**What now?**",
+    "completed_at": "2026-06-11T22:13:39.556967+00:00",
+    "deposited_at": "2026-06-10T11:35:14.241500",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-06-10T17:33:45.263590+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

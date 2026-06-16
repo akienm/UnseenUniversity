@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-costs-log.20260403.192524000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-costs-log"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:24",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-costs-log"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-costs-log",
+    "tags": [
+      "Operations",
+      "Training"
+    ],
+    "title": "unified costs log — all inference spend to costs.log",
+    "result": "Added append-only costs.log at ~/.TheIgors/logs/costs.log (format: ts|inference|provider|model|tier|cost_usd|tokens_in|tokens_out|caller). _append() helper added to forensic_logger.py; log_reasoning_call() now appends a cost entry when cost_usd > 0. query_costs_log(window_days) added to budget.py with inference_costs_log tool — breaks down spend by tier/provider/model. All 1684 tests pass.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-04-04T19:26:41.756786+00:00",
+    "created_at": "2026-04-03T19:25:24Z",
+    "description": "Append-only costs.log at ~/.TheIgors/logs/costs.log. Format: ts|source|provider|model|tier|cost_usd|tokens_in|tokens_out|caller. Hook into: OpenRouterReasoner (after every reasoning call), inner_cc/_make_or_request (per call), AnthropicReasoner (if ever re-enabled). Add daily/weekly total query to budget.py. Feeds priority decisions: which calls cost most, which tiers burn fastest.",
+    "completed_at": "2026-04-04T19:28:39.515053+00:00",
+    "deposited_at": "2026-05-20T03:30:40.675195",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": 346,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "32dbe456-9818-463f-aa71-e02cd2f71005",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

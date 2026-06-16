@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-palace-day-writer.20260508.023425542870",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-palace-day-writer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T02:34:25.542870",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-palace-session-memory-2026-05-07"
+    ],
+    "tickets": [
+      "T-adc-palace-day-writer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-palace-day-writer",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "agent_datacenter",
+      "palace",
+      "workflow"
+    ],
+    "title": "Wire day-close to write palace.days.* roll-up node",
+    "result": "day-close step 12 writes palace.days.<YYYYMMDD> rollup node + echo file; palace.days.20260508 verified",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-08T21:17:00.816561+00:00",
+    "created_at": "2026-05-08T02:34:25.542870+00:00",
+    "related_to": null,
+    "decision_id": "D-palace-session-memory-2026-05-07",
+    "description": "Update day-close SKILL.md to write a palace.days.<YYYYMMDD> node after closing the slate. The node rolls up all palace.sessions.* nodes for the day: decisions made, tickets closed, tickets filed, CC+ moments, next priority. Write a flat-file echo alongside.\n\n**Affected files:** ~/.claude/skills/day-close/SKILL.md, ADC skills/day-close/SKILL.md\n**Design rules:** palace DB always, files as echo; day-close is MEDIUM-inertia skill\n**Scope boundary:** IN: day-close adds palace.days.* write step, file echo. OUT: context-load changes (separate ticket).\n**Test plan:** after day-close runs, palace.days.<YYYYMMDD> node exists and is queryable; echo file written.",
+    "completed_at": "2026-05-08T21:18:13.947625+00:00",
+    "github_issue": 660,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "81e92faf-2893-4ac4-8b6d-dd38466e970f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

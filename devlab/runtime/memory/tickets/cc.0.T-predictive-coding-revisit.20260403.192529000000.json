@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-predictive-coding-revisit.20260403.192529000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-predictive-coding-revisit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:29",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-predictive-coding-revisit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-predictive-coding-revisit",
+    "title": "D279 data review: check escalation trend ~2 weeks post-deploy",
+    "result": "D279 data review complete. Bug found and fixed: _topic_from_input extracted 'thread' from '[Thread context...]' prefix → 103/172 this-week escalations mis-tagged. Fix: strip boilerplate prefixes before word selection; add 'your'/'their' to stop words. 3 regression tests added (46 total pass). Data: 172 cloud calls this week vs 44 prev (3.9×, more active use); tier.3.5 dominates (160/172); top real topics: hello/greetings (35), dashboard (6), codebase (4). NARRATIVE_GAP deposit is live and correct (TWM transient). No D279 design changes needed.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 4,
+    "claimed_at": "2026-04-04T22:29:33.803006+00:00",
+    "created_at": "2026-04-03T19:25:29Z",
+    "related_to": null,
+    "description": "Run escalation_stats, check whether cloud escalation rate on gap-deposited topics trends down. Revisit refractory TTL and gap content if signal is noisy.",
+    "completed_at": "2026-04-04T22:34:23.556534+00:00",
+    "github_issue": 351,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ed86d900-8a87-4ff6-8ba2-d4cb76f8079b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

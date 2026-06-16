@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.332.20260322.000834737782",
+  "emitter": "cc.0",
+  "namespace": [
+    "332"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T00:08:34.737782",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "332"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "332",
+    "body": "See GitHub issue #332. Implement run_habit(habit_id, args). Depends on #330 and #331 being done. Loop semantics, max_iterations guard, error surfacing. Runner < 100 lines.",
+    "role": "CC",
+    "size": "M",
+    "title": "T-habit-compose: Runtime habit runner",
+    "result": "T-habit-compose implemented: run_habit(habit_id, args, *, cortex, user_input, _call_stack, max_depth) in schema_runner.py — 74 lines. Supports schema habits (validates via validate_schema_habit, runs via run_schema_habit with ctx_override), code_ref habits (tool registry dispatch), and static action habits. Recursion guard: frozenset call stack, halts if habit_id already in stack or depth >= max_depth (default 5). Returns {ok, result, habit_id, steps_run, error}. Also added ctx_override param to run_schema_habit for caller-supplied runtime ctx. Smoke tested: not-found, recursion guard, max-depth, schema with args override, code_ref PROC_WHAT_TIME — all pass.",
+    "status": "done",
+    "priority": 30,
+    "claimed_at": "2026-03-22T00:04:19.215065+00:00",
+    "completed_at": "2026-03-22T00:08:34.737782+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

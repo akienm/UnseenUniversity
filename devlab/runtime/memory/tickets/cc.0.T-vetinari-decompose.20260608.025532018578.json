@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-vetinari-decompose.20260608.025532018578",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-decompose"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T02:55:32.018578",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-gap-map-2026-06-08"
+    ],
+    "tickets": [
+      "T-vetinari-decompose"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-decompose",
+    "gate": null,
+    "role": "master",
+    "size": "L",
+    "tags": [
+      "Vetinari",
+      "Orchestration",
+      "Cognition"
+    ],
+    "title": "Vetinari: LLM decomposition of directive into cc_queue tickets",
+    "result": "decompose_directive() with injectable LLM, _call_llm_or (OR/gpt-4o-mini), _parse_subtasks, _write_tickets_to_queue; retry-once on parse fail; state pending→active + child_ticket_ids; 12 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that Vetinari calls an LLM to decompose a pending directive into subtasks and writes each to cc_queue with the correct worker tag.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T02:55:32.018578+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-vetinari-gap-map-2026-06-08",
+    "description": "Vetinari has no LLM call and no cc_queue integration. The autonomous directive vision requires him to break a natural-language goal into work units.\n\nAdd decompose_directive(directive_id) to VetinariDevice: load the directive text, call inference (OR via DickSimnel's ToolLoop or direct call — prefer cheapest model capable of structured output), receive JSON list of {title, description, worker, tags, size} subtasks, write each to cc_queue via cc_queue.py add, store child_ticket_ids in the directive flat-file state. Move directive from pending → active.\n\n**Affected files:** devices/vetinari/device.py (add decompose_directive(), _call_llm()), devices/vetinari/decompose_prompt.txt (NEW — system prompt), lab/claudecode/cc_queue.py (read-only — use existing add command), tests/test_vetinari_decompose.py (NEW)\n**Design rules:** no SQLite; LLM call via OR (cheapest capable model); cc_queue writes via cc_queue.py subprocess call; directive state in flat-file JSON\n**Scope boundary:** IN — LLM decompose call, ticket writing, directive state transition pending→active, child_ticket_ids list; OUT — clarification loop, routing logic, progress tracking\n**Completion criteria:** decompose_directive('test-id') with a test directive produces ≥1 ticket in cc_queue; directive state file shows active status + child_ticket_ids; LLM parse errors are handled gracefully (retry once, then escalate); 6+ tests covering: decompose produces tickets, state transitions, LLM error handling, malformed LLM response, child IDs recorded",
+    "completed_at": "2026-06-08T03:34:50.336552+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

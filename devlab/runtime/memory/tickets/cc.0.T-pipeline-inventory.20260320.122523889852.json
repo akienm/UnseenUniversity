@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-pipeline-inventory.20260320.122523889852",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pipeline-inventory"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T12:25:23.889852",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-master-cognition-tree",
+      "T-pipeline-inventory"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pipeline-inventory",
+    "size": "L",
+    "files": [
+      "design_docs_for_igor/cognition_pipeline.dsb"
+    ],
+    "title": "Map all cognition trees and pipelines — signals, thresholds, what fires, milieu writes",
+    "result": "cognition_pipeline.dsb written (244 lines). Maps: 11 TWM push sources with salience/urgency/TTL/gate conditions; 13-intent thalamus taxonomy + intent gates (D074); BG scoring formula + milieu threshold modulation [0.30,0.70]; 6 milieu write paths (update/ingest_ne_state/resolution_reward/ingest_surprise/tick/gap_reset); backchannel gate conditions + form selection; full tier ladder (tier.1-6) + skip_to computation logic (preparse, thalamus, milieu, NE, latency signals); ring→context→LLM 15-step flow including memory search phases; 7 traversal strategies. 5 open gaps flagged (traversal not wired, IGOR_NE_ROUTING off, etc).",
+    "status": "done",
+    "claimed_at": "2026-03-20T12:22:17.730206+00:00",
+    "description": "Read-only mapping task. Output: design_docs_for_igor/cognition_pipeline.dsb. Map: (1) all TWM push sources and what they push, (2) thalamus intent taxonomy and what each intent gates, (3) BG milieu modulation range and which habits are gated by it, (4) what writes to milieu (tools, habits, sources), (5) backchannel gate conditions, (6) tier ladder and skip_to logic, (7) ring→context→LLM data flow. No code changes. Output is the dependency graph prerequisite for T-master-cognition-tree. Plan approved by Akien 2026-03-19.",
+    "completed_at": "2026-03-20T12:25:23.889852+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "00376f5d-9b3f-499d-bfe6-72ffd4e25770",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

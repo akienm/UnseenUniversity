@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-watchlist-240.20260315.205629869977",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watchlist-240"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T20:56:29.869977",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-watchlist-240"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watchlist-240",
+    "body": "Implement #240. Pre-approved plan (Designer reviewed):\n\n1. cognition/basal_ganglia.py (MEDIUM): add watch type handling — on trigger match, boost TWM salience (min(1.0, current+0.3)) instead of dispatching action. Write WATCH_HIT| ring entry. Skip if metadata.watch_expires < now.\n\n2. tools/watchlist.py (new, LOW): list_watchlist() tool — returns Igor watch habits as formatted list. Register in tool registry.\n\n3. claudecode/seed_watchlist_habits.py (new): seed Leah (permanent/person) and found resources/coins (permanent/resource).\n\nNo schema changes. watch_expires and employer_id in metadata only. Read every file before editing. Add forensic logging. Test via CC bridge after each change. Post result when done.",
+    "size": "M",
+    "title": "Implement watchlist habit_type=watch (#240)",
+    "result": "All three parts already implemented: tools/watchlist.py (list_watchlist tool registered), main.py D080 watch handler (lines 3471-3509: TWM salience boost + ring write + fall-through), seed_watchlist_habits.py. PROC_WATCH_LEAH + PROC_WATCH_FOUND_COINS confirmed seeded in live DB. BG scores watch habits normally (no exclusion needed). Task was in_progress from prior session — work was already complete.",
+    "status": "done",
+    "claimed_at": "2026-03-15T20:44:02.787847+00:00",
+    "completed_at": "2026-03-15T20:56:29.869977+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

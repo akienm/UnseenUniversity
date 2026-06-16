@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-wg-node-tree-arch.20260608.193323917192",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-wg-node-tree-arch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T19:33:23.917192",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wg-node-tree-architecture-2026-06-08"
+    ],
+    "tickets": [
+      "T-consequence-wg-node-tree-arch",
+      "T-wg-spread-via-cortex"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-wg-node-tree-arch",
+    "gate": "2026-06-22",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Memory",
+      "Performance"
+    ],
+    "title": "[sprint] Consequence check: wg words-as-memories rollout",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that we verify the wg-to-memories migration did not silently slow queries that touch memories without type filtering.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T19:33:23.917192+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-wg-node-tree-architecture-2026-06-08",
+    "description": "**What changed:** ~57K word-graph words added to clan.memories as WORD_GRAPH type nodes, growing the table from ~128K to ~185K rows.\n**Predicted unintended effects:** (1) tsvector GIN searches on memories.payload and memories.narrative that do NOT filter by memory_type scan 44% more rows — consolidation.py, distillation.py, and any full-text habit search that omits a type clause will regress; (2) any SELECT * on memories without a type filter (e.g. get_by_type with no type arg) silently becomes 44% heavier; (3) spreading activation semantic equivalence: if links_weighted from wg_edges doesn't reproduce wg_edges traversal faithfully, predict_next results drift without an obvious error.\n**Signals to watch:** cortex.py query durations in the log (look for traverse_interpretive or get_by_type calls taking > 2× baseline); spreading activation latency benchmark (T-wg-spread-via-cortex sets a <5ms baseline); hit count on idx_memories_parent_id vs full-seq-scan warnings in Postgres slow query log.\n**Gate condition:** Check by 2026-06-22.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no tests — observation ticket. Close with one of: CLEAR (no regression observed), OCCURRED (regression found, file follow-on fix ticket), PARTIAL (minor drift, within tolerance).",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

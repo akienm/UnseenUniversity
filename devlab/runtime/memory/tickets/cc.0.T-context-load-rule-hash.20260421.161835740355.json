@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-context-load-rule-hash.20260421.161835740355",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-context-load-rule-hash"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T16:18:35.740355",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-workflow-optimizations-2026-04-21"
+    ],
+    "tickets": [
+      "T-context-load-rule-hash"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-context-load-rule-hash",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CCWorkflow",
+      "Tokens"
+    ],
+    "title": "Cache palace rule-content by hash across sessions; context-load reads hash-only on hit",
+    "result": "Added hash-gated steps 2a+2b to context-load — md5 of rule content and palace tree, writes ~/.TheIgors/claudecode/rules_hash.txt + palace_tree_hash.txt, skips full reload when unchanged (~1500 tokens saved/session)",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-04-21T16:18:04.838707+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-workflow-optimizations-2026-04-21",
+    "description": "Optimize /context-load step 2 to cache rule and tree hashes. Compute md5(content) per rule path, composite hash over all. Write to ~/.TheIgors/claudecode/rules_hash.txt after successful load. On subsequent loads: compute current hash, compare. If unchanged: print 'rules unchanged since last session (hash=abc123)' — actual content stays resident in CC context from recent training. If changed: full load, report which specific rules changed via per-path hash diff. Step 2b (tree listing) same treatment. Saves ~1500 tokens per unchanged session (most sessions). Scope: token optimization, no behaviour change. Files: context-load/SKILL.md, new state file.\n\ntest_plan: (1) First context-load writes hash file. (2) Second context-load reads 'unchanged' without printing rules. (3) Modify a palace rule — third context-load triggers full reload and identifies changed rule by path.",
+    "completed_at": "2026-04-21T16:18:35.740355+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c91c51cb-2265-4bb8-b682-288fc249088f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

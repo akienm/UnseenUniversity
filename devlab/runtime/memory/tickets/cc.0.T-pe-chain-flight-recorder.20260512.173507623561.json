@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-pe-chain-flight-recorder.20260512.173507623561",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-flight-recorder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T17:35:07.623561",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-pipeline-observability-2026-05-12"
+    ],
+    "tickets": [
+      "T-igorbase-llm-io-log",
+      "T-pe-chain-flight-recorder",
+      "T-pe-chain-igorbase"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-flight-recorder",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "PeChain",
+      "Observability"
+    ],
+    "title": "CLOSED: Wire flight-recorder logging into PeChain LLM call sites",
+    "result": "log_llm_io() wired into pe_plan, pe_situate, pe_hypothesize (3 paths), pe_replan; log_state_snapshot('escalation') at _pe_escalate entry; 171 pe_chain tests green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-13T00:32:52.535226+00:00",
+    "created_at": "2026-05-12T17:35:07.623561+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "description": "After T-pe-chain-igorbase lands PeChain(IgorBase) and T-igorbase-llm-io-log adds the log methods, wire flight-recorder logging into PeChain. These are the gaps that made the 5-week queue-drain bug and pile-on invisible: no record of what the LLM was asked, what it returned, or what was in the basket at escalation time.\n\nAdd these calls inside PeChain methods:\n- pe_plan: self.log_llm_io('pe_plan', prompt, response, model, elapsed_ms) after tier.2 call\n- pe_situate: self.log_llm_io('pe_situate', prompt, response, model, elapsed_ms)\n- pe_hypothesize: self.log_llm_io('pe_hypothesize', prompt, response, model, elapsed_ms) — main call AND retry call\n- pe_replan: self.log_llm_io('pe_replan', prompt, response, model, elapsed_ms)\n- pe_implement: self.log.info('IMPLEMENT file=%s old_len=%d new_len=%d', file, len(old_string), len(new_string)) for each file write\n- _pe_escalate: self.log_state_snapshot('escalation', {k: str(v)[:500] for k, v in self.basket.items()})\n\nAll via self.log / self.log_llm_io() — no new forensic_logger calls.\n\nNote: also requires T-igorbase-llm-io-log (the log methods). Gate is T-pe-chain-igorbase (last structural dep); verify T-igorbase-llm-io-log is also done before starting.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py\n**Design rules:** docs-live-in-code (no docstring change needed — logging calls are implementation detail)\n**Scope boundary:** Adding log call sites only. No behavior change. Does not touch callers or any other file.\n**Test plan:** After a pe_chain sprint completes or escalates, verify ~/.TheIgors/logs/llm_io/YYYYMMDD.log exists and contains JSON lines with step/prompt/response fields. Verify escalation snapshot appears in ~/.TheIgors/logs/snapshots/YYYYMMDD.log on an escalated ticket. Run full test suite — green required.",
+    "completed_at": "2026-05-13T00:36:55.877384+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c28b375d-319c-48ec-907a-09dca8e5c999",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

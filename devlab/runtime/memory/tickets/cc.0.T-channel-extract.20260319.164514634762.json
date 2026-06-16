@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-channel-extract.20260319.164514634762",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-channel-extract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-19T16:45:14.634762",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-channel-extract"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-channel-extract",
+    "body": "Split igor/web/server.py into two parts: (1) standalone channel process (python -m igor.channel) — message persistence + broadcast, writes to Postgres, no Igor dependency. Endpoints: POST /channel (post message), GET /channel (read recent), GET /health. (2) Igor telemetry stays in igor.main. After extraction: Igor reconnects as a client. CC sessions post/read directly without Igor running. Channel stays up across Igor restarts. This is the coordination substrate for multi-session CC work. Prerequisite for sprint skill and shared multi-session coordination.",
+    "size": "M",
+    "title": "Extract web channel to standalone process",
+    "closed": "2026-03-19T10:35",
+    "result": "channel.py PG dual-write. channel_messages table.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-19T16:45:14.634762+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

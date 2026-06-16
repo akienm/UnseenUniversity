@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-list-primitive.20260424.160207000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-list-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:07",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-list-primitive",
+      "T-post-inventory"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-list-primitive",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "DataPrimitives",
+      "Memory"
+    ],
+    "title": "List primitive — formalize append+cursor+index+observer over existing graph",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.35,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T10:33:04.768092+00:00",
+    "created_at": "2026-04-24T16:02:07Z",
+    "related_to": null,
+    "approved_at": "2026-04-28T01:40:44.096147+00:00",
+    "decision_id": null,
+    "description": "Many Igor subsystems are shaped like lists but each keeps ad-hoc head/tail bookkeeping: ticket queue, cc_inbox, channel, consults log, session key_changes, memory version chains. Formalize a List primitive over the existing graph (node+edge storage) so these all use one shape. Akien noted versioned memories are starting to show up conceptually in many places — formalizing lists (and by extension queues, rings, priority queues) gives all of them one reusable primitive.\n\n## Design captured from session 2026-04-21a (Akien + CC, 2026-04-23)\n\n**Storage:** always append to the end. FIFO vs FILO is a cursor/read-strategy concern, not a storage concern.\n\n**Read strategies (cursor-as-policy):**\n- FIFO: cursor reads head forward\n- FILO/LIFO: cursor reads head backward (or tail forward)\n- Priority queue: secondary index (heap or sorted tree) maintained incrementally on insert/update/delete; reads by max-by-key\n- Ring/window ('last N', 'last 30 days'): cursor rule ('below sequence X = invisible'), not physical truncation. Same mechanism handles TTL.\n\n**Secondary indexes:** auto-maintained via change events on the list (append/update/tombstone). Second tree triggered every time an element is added, changed, or removed.\n\n**Observer bus:** the same change event that drives index updates also feeds subscribers. One bus — anybody can subscribe to individual or grouped activities.\n\n**Additions from CC design review:**\n1. Deletion = tombstone in append-only storage; indexes skip tombstoned; compaction later if ever.\n2. Writes go through one append-point so observers see a consistent sequence. Index updates and subscriber delivery fire after the append commits.\n3. Subscription durability tier: best-effort (transient notifications) vs at-least-once (durable subscriber cursor, survives restart). Declared at subscribe-time.\n4. Ordering key is explicit at list-creation: insertion-order (append wall-clock) is default; event-time ordering available for multi-source lists with out-of-order arrival.\n5. Reader cursors are durable state separate from the list — a subscriber's position survives restart, stored alongside the list not in the subscriber.\n6. Branching and multi-parent/child topology already supported by the underlying graph — no new work needed for that.\n\n**Affected files:** TBD — discovery in sprint. Likely new `wild_igor/igor/memory/list_primitive.py` (or similar), plus migration of each ad-hoc list-shaped thing (ticket queue, cc_inbox, channel, consults log, session key_changes, memory version chains) to use it.\n\n**Design rules:** docs-in-code, test-plan-or-why-not, oop-first, no-new-memory-schemas (reuse existing graph node+edge — do not add new tables).\n\n**Scope boundary:** IN — List primitive (append/cursor/index/observer/tombstone/ring/durable-subscriber-cursor), migration of at least 2 ad-hoc list-shaped subsystems to validate the primitive. OUT — rewriting underlying graph storage, changing memory_palace schema, full migration of all ad-hoc lists (that's N follow-up tickets per-subsystem).\n\n**Test plan:** unit tests on primitive: append / pop-head / pop-tail / peek / subscribe / durable-cursor / ring-window / tombstone / priority-index / out-of-order-event-ordering. Integration: migrate consults log (simplest target) and verify semantic equivalence before/after.\n\n**Sequence:** after current batch. Maybe also after T-post-inventory — either order works but both are sequencing concerns, not technical gates.",
+    "proposed_at": "2026-04-28T22:15:00.036615+00:00",
+    "completed_at": "2026-04-29T10:48:52.469070+00:00",
+    "github_issue": 516,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Approved by Akien 2026-04-27",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "98f25b4a-d847-4a9e-b016-fcd3352685cf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

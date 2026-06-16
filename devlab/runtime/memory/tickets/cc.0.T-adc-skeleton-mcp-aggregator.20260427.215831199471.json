@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-skeleton-mcp-aggregator.20260427.215831199471",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-skeleton-mcp-aggregator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:58:31.199471",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-imap-mailbox-lifecycle",
+      "T-adc-rack-health-rollup",
+      "T-adc-skeleton-mcp-aggregator",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-skeleton-mcp-aggregator",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: skeleton MCP aggregator — single endpoint, namespace routing",
+    "result": "Skeleton in agent_datacenter/skeleton/skeleton.py. BaseDevice + FastMCP. rack.devices/rack.health/rack.channels tools. register_device/deregister_device. Collision detection (RegistrationError). Per-device .health MCP tool added on registration. All tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-27T21:50:59.891820+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "The skeleton is the single MCP endpoint everything connects to. It namespaces and proxies tool calls to the appropriate device.\n\nProblem: Without a central MCP aggregator, CC and Igor must know about each device's MCP server separately. The aggregator gives one unified address space.\n\nProposed shape:\n- agent_datacenter/skeleton/skeleton.py:\n  class Skeleton(BaseDevice):\n    Uses MCP SDK (mcp or anthropic-mcp package; check latest)\n    MCP server with dynamic tool registration\n    Registers itself as device #1: 'skeleton'\n    Tool namespace routing:\n      tools prefixed 'rack.*' handled internally (rack.devices, rack.health, rack.channels)\n      tools prefixed '{device_id}.*' proxied to that device's registered MCP endpoint\n    register_device(device_id, mcp_endpoint) — adds tool prefix entry\n    deregister_device(device_id) — removes tool prefix entry (keeps mailbox)\n    Device registration creates MCP tool namespace entry\n    Namespace collision: if device_id already has tools registered → raise RegistrationError before starting device\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py\n\nDesign rules:\n- oop-first: Skeleton extends BaseDevice (implements full device contract itself)\n- no-sqlite: no SQLite; state in flat-file registry only\n\nScope boundary:\nIN: MCP aggregator, namespace routing, rack.* tools, proxy to device endpoints\nOUT: IMAP mailbox creation on registration (T-adc-imap-mailbox-lifecycle), health rollup implementation (T-adc-rack-health-rollup)\n\nTest plan:\n- Skeleton starts; rack.devices() returns [skeleton]\n- Register stub device → its tools appear under {device_id}.* namespace\n- Call {device_id}.health → proxied correctly\n- Deregister device → its tools disappear from namespace",
+    "completed_at": "2026-04-27T21:58:31.199471+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e9b38e4d-b89e-43ff-b4e5-ae124858f3c2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

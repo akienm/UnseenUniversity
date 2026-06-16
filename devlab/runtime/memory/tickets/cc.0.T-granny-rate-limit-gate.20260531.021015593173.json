@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-granny-rate-limit-gate.20260531.021015593173",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-rate-limit-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T02:10:15.593173",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-rate-limit-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-rate-limit-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Granny dispatch gate: add 7d utilization check alongside 5h",
+    "result": "Implemented by linter during daemon.py edits: _check_rate_limit returns 3-tuple, checks both 5h and 7d thresholds, run_once updated.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.1,
+    "claimed_at": null,
+    "created_at": "2026-05-31T02:10:15.593173+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Granny's dispatch gate currently pauses on 5h utilization ≥ 90% (GRANNY_RATE_LIMIT_PAUSE). The 7d-all-models utilization is equally important for deciding whether to dispatch overnight — a 5h window at 2% can still be a bad time to dispatch if the weekly budget is nearly exhausted. Add a second configurable threshold (GRANNY_RATE_LIMIT_7D_PAUSE, default 90%) that reads `usage.seven_day.utilization` from ~/.claude/usage-cache.json, and log which signal (5h or 7d) triggered the pause.\n\n**Affected files:** devices/granny/daemon.py\n**Design rules:** none apply\n**Scope boundary:** In scope: read 7d utilization from usage cache, add env-var threshold, log which signal fired. Out of scope: extra_usage credits tracking, any new cache-writing logic, UI.\n**Completion criteria:** (1) With GRANNY_RATE_LIMIT_7D_PAUSE=0, Granny logs '7d rate limit at X%' and returns 0 from run_once(). (2) With both thresholds untripped, dispatch proceeds normally. (3) Log line names which signal (5h or 7d) triggered the pause.",
+    "completed_at": "2026-05-31T02:16:54.825604+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T02:10:15.700075+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "acace63c-dd27-48e4-bb41-12ce1a909eb0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

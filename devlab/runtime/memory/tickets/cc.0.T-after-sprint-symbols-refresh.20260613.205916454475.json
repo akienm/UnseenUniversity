@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-after-sprint-symbols-refresh.20260613.205916454475",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-after-sprint-symbols-refresh"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T20:59:16.454475",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-orientation-classifier-arch-2026-06-13"
+    ],
+    "tickets": [
+      "T-after-sprint-symbols-refresh",
+      "T-symbols-table-multilang"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-after-sprint-symbols-refresh",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "CodeIndex",
+      "Skills"
+    ],
+    "title": "After-sprint skill: refresh clan.code_index for committed files",
+    "result": "step 10.5 added to sprint-ticket skill: git diff HEAD~1 HEAD | code_indexer --files; synced to ~/.claude/skills",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that clan.code_index stays current after every sprint by refreshing only the files the commit touched, keeping orientation classifier accuracy high without a full nightly re-index on every change.",
+    "claimed_at": null,
+    "created_at": "2026-06-13T20:59:16.454475+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-orientation-classifier-arch-2026-06-13",
+    "description": "After a sprint commits and pushes, the files changed in that commit should be re-indexed immediately so the orientation classifier sees the new symbols on the next ticket. The nightly Nanny sweep covers everything but fires too late for same-session accuracy.\n\nAdd a step to the after-sprint skill (or an after-commit hook) that: (1) reads the list of files in the most recent commit (`git diff --name-only HEAD~1 HEAD`), (2) calls the code_indexer for each file, (3) writes updated rows to clan.code_index. Shell/bash files trigger the Haiku intent pass (from T-symbols-table-multilang).\n\nThis is a light incremental update — typically 3–10 files per sprint. Non-fatal if the indexer fails; log and continue.\n\n**Affected files:** skills/sprint-ticket (after-sprint steps), lab/claudecode/code_indexer.py, clan.code_index rows\n**Design rules:** no-sqlite; log every DB write; non-fatal (never blocks commit/push)\n**Scope boundary:** In scope: post-commit incremental index update for files in diff. Out of scope: full re-index (Nanny's job), embedding refresh.\n**Completion criteria:** After a sprint commit, `SELECT updated_at FROM clan.code_index WHERE file_path = '<changed_file>'` shows a timestamp within 60s of the commit; skill step appears in sprint-ticket skill after the push step; all tests pass.",
+    "completed_at": "2026-06-13T22:58:31.190074+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T22:52:49.368576+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

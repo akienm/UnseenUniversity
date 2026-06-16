@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-cc-daily-chat-logs.20260419.000025750160",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-daily-chat-logs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T00:00:25.750160",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-daily-chat-logs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-daily-chat-logs",
+    "size": "S",
+    "tags": [
+      "Operations",
+      "History"
+    ],
+    "title": "CC daily chat logs — Stop-hook formatter from JSONL transcripts",
+    "result": "chat_log_formatter.py + Stop hook in ~/.claude/settings.json + .gitignore. Converts JSONL transcripts to daily markdown at ~/TheIgors/claude_chat_logs/YYYY-MM-DD.md with per-session state cursor. Commit e82be852.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T23:02:45.037535+00:00",
+    "related_to": null,
+    "description": "Now that Claude Code runs inside tmux, scrollback is ephemeral. Build a Stop-hook formatter that converts CC's durable JSONL transcripts into append-only daily markdown logs. Output: ~/TheIgors/claude_chat_logs/YYYY-MM-DD.md (gitignored).\n\n## Why\n- tmux scrollback is lost on detach/reattach\n- CC already saves every turn as JSONL at ~/.claude/projects/-home-akien-TheIgors/*.jsonl\n- Akien wants grep-able, date-indexed chat history\n- Bonus: this becomes durable training data for Igor (how Akien + CC collaborate, what decisions get made)\n\n## Design\n- Standalone script: lab/claudecode/chat_log_formatter.py\n- Reads the current session's JSONL (detect via newest mtime in ~/.claude/projects/-home-akien-TheIgors/)\n- Emits markdown: user messages as '## Akien [HH:MM]', assistant text as '## CC', tool calls summarized in one line (not full arg dumps — too noisy)\n- Appends only entries newer than last-flush marker (avoid duplicating on every Stop)\n- Stop hook in ~/.claude/settings.json runs the formatter after every turn\n\n## Acceptance\n- After a few exchanges, ~/TheIgors/claude_chat_logs/2026-04-18.md exists and contains today's conversation in readable form\n- Next day's file auto-rolls at midnight (based on message timestamps, not file mtime)\n- Tool call summaries are one line (not the full JSON blob)\n- .gitignore updated to exclude claude_chat_logs/\n\n## Non-goals\n- Don't duplicate JSONL — formatter is derived view, JSONL remains source of truth\n- Don't include CC's internal thinking blocks (too noisy; not useful as history)\n- No retention policy yet (add later if it grows unbounded)",
+    "completed_at": "2026-04-19T00:00:25.750160+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cc0c2f1f-79fb-4a64-8960-6f5c3b93502f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

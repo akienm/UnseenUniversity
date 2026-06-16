@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-ygm-nudge-pipeline.20260427.224755600335",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-ygm-nudge-pipeline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:47:55.600335",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-3-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-claude-device-mcp-native",
+      "T-adc-ygm-nudge-pipeline",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-ygm-nudge-pipeline",
+    "gate": "T-adc-claude-device-mcp-native",
+    "size": "L",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: YGM/Nudge pipeline — ygm and STOP injection only, minimal footprint",
+    "result": "ygm_check.py + ClaudeShim hook registration shipped; JSONL fallback during dual-write window",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-3-2026-04-27",
+    "description": "Implement the YGM (You've Got Mail) Nudge pipeline. On every query submit, check Claude's IMAP mailbox for UNSEEN messages and inject one of exactly two tokens: 'ygm' (you have mail) or 'STOP' (halt signal). Minimal footprint by design.\n\nDecision (Akien 2026-04-27): Only two injectable tokens. ygm = 'you have N unread messages from: {from_list}'. STOP = halt signal. Full message bodies stay in mailbox; Claude reads them explicitly via tool call. This keeps injection minimal and footprint small.\n\nProposed shape:\n- agent_datacenter/devices/inference/nudge.py:\n  class NudgePipeline:\n    def check_and_inject(self, mailbox: str, query_context: str) -> str:\n      unseen = imap_server.unseen_count(mailbox)\n      if unseen == 0: return query_context  # clean path, no injection\n      messages = imap_server.fetch_unseen(mailbox)  # marks as SEEN\n      stop_messages = [m for m in messages if m.payload.get('type') == 'STOP']\n      if stop_messages: return query_context + '\\n\\nSTOP'  # halt signal injected\n      from_list = [m.from_device for m in messages]\n      return query_context + f'\\n\\nygm ({unseen} unread, from: {from_list})'  # ygm injected\n    Hook: fires on query submit, before context reaches model\n    Mid-stream messages: wait until next query (no interrupt)\n    Only two output forms: 'ygm (N unread, from: [...])' or 'STOP'\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/inference/nudge.py\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/inference/device.py (integrate hook)\n\nDesign rules:\n- docs-in-code: NudgePipeline docstring states 'only ygm and STOP are valid injection types — minimal footprint by design'\n\nScope boundary:\nIN: IMAP UNSEEN check, ygm injection with count+from, STOP injection, mark SEEN\nOUT: full message body injection (bodies stay in mailbox; Claude reads via tool call), v2 format (future ticket)\n\nTest plan:\n- No unseen → query_context returned unchanged (clean path)\n- 3 unseen from ['igor', 'web-server', 'igor'] → 'ygm (3 unread, from: [...])' injected\n- STOP message in mailbox → 'STOP' injected (even if other unread messages exist)\n- After check_and_inject(): unseen_count == 0 (all marked SEEN)",
+    "completed_at": "2026-04-27T22:47:55.600335+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "86a9d373-6899-4b79-a6f6-56149c64170a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

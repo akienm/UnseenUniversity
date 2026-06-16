@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-dreaming-librarian-input.20260518.022508462679",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dreaming-librarian-input"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T02:25:08.462679",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-peer-agent-architecture-2026-05-17"
+    ],
+    "tickets": [
+      "T-dreaming-librarian-input",
+      "T-librarian-behavioral-emit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dreaming-librarian-input",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Librarian",
+      "SelfImprovement",
+      "Cognition"
+    ],
+    "title": "CLOSED: Wire Librarian observations into Igor dreaming synthesis",
+    "result": "_read_librarian_observations + _synthesize 3rd section + convergence flag + extra_metadata; 11 dreaming tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-18T02:31:18.262830+00:00",
+    "created_at": "2026-05-18T02:25:08.462679+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-peer-agent-architecture-2026-05-17",
+    "description": "Dreaming's _synthesize() currently uses 2 inputs: psych log + watch_problems. This ticket adds a third: librarian observations from instance.proposals. Dreaming synthesizes across Igor's internal state AND Librarian behavioral patterns — enabling the convergence signal where both point to the same area.\n\nAdd _read_librarian_observations() to dreaming.py (reads kind='librarian_observation' pending proposals, last 10). Modify _synthesize() to accept and include a third prompt section. Add convergence detection: when a synthesized proposal rationale mentions both librarian-domain terms (librarian, research, observation) AND igor-psych terms (igor, valence, arousal, psych), set metadata['convergence']=True via extra_metadata in _add_proposal.\n\n**Affected files:** wild_igor/igor/cognition/dreaming.py\n**Design rules:** no new tables; no new memory types; uses existing instance.proposals; psycopg2 only\n**Scope boundary:** In scope: _read_librarian_observations + _synthesize() third section + convergence flag + _add_proposal extra_metadata. Out of scope: Librarian-side emission (T-librarian-behavioral-emit).\n**Test plan:** _read_librarian_observations() returns kind='librarian_observation' pending proposals. _synthesize() prompt includes librarian section. convergence flag set when rationale references both domains.",
+    "completed_at": "2026-05-18T02:44:38.471840+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "db2eb79d-1259-4cb2-8ffa-f126b01d7c06",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

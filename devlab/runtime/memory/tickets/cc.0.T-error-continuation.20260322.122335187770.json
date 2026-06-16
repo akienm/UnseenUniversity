@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-error-continuation.20260322.122335187770",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-error-continuation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T12:23:35.187770",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-error-continuation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-error-continuation",
+    "size": "S",
+    "title": "Error continuation: on_error branch routing from __error__ basket key",
+    "result": "Implemented by CC session 2026-03-22",
+    "status": "done",
+    "priority": 6,
+    "claimed_at": null,
+    "description": "When a step chain sets __error__, execution currently stops. Add on_error field to habit schema: a branch target that fires when __error__ is non-empty at end of chain. Lets programs define recovery paths without wrapping every step in conditional. Also: prim_clear_error() to reset __error__ after handled. This completes the try/catch pattern at the habit level.",
+    "completed_at": "2026-03-22T12:23:35.187770",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dafa4c51-ee17-479d-9607-aee297a0cb2d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

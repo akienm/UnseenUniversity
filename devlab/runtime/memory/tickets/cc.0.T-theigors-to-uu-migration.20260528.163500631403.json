@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-theigors-to-uu-migration.20260528.163500631403",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theigors-to-uu-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:35:00.631403",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-theigors-to-uu-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theigors-to-uu-migration",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Infrastructure",
+      "Migration"
+    ],
+    "title": "Consolidate TheIgors runtime + config into ~/.UnseenUniversity",
+    "result": "Migration complete: ~/TheIgors archived, paths updated across all devices, .unseen_university is canonical runtime, Igor running clean. Phases 2-7 all shipped.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "created_at": "2026-05-28T16:35:00.631403+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Everything currently split across ~/TheIgors (launcher, venv, lab/claudecode tools) and ~/.TheIgors (runtime state, logs, cfg files) should consolidate into UnseenUniversity. This is a sequenced migration — nothing removed until its replacement is live and tested.\n\nTarget directory schema:\n  ~/.UnseenUniversity/\n    <InstanceName>/config.cfg    # all cfg merged (replaces igor.cfg + switches.cfg + models.cfg + credentials.cfg)\n    <InstanceName>/              # instance state\n    logs/<InstanceName>/         # per-device logs\n    claudecode/                  # CC slates, inbox\n    cc_channel/                  # queue, channel state\n\nConfig philosophy: each rack device reads ~/.UnseenUniversity/<DeviceName>/config.cfg at boot — no env var soup. Launcher discovers instance by scanning ~/.UnseenUniversity/Igor-* count: 0 = fresh install wizard, 1 = use it, >1 = prompt which to start. --id flag overrides at runtime.\n\nMigration sequence:\n  Phase 1: UU venv + requirements (already done)\n  Phase 2: Move lab/claudecode/ tools (cc_queue.py, channel.py, skills) into UU under lab/\n  Phase 3: Introduce ~/.UnseenUniversity with compat shim reading ~/.TheIgors if new path absent\n  Phase 4: Merge cfg files into single config.cfg per device; update all cfg readers\n  Phase 5: Update launcher to use discovery logic (no IGOR_INSTANCE_ID env var)\n  Phase 6: Remove IGOR_RUNTIME_ROOT, IGOR_INSTANCE_ID, IGOR_HOME_DB_URL as required env vars (fold into config.cfg defaults)\n  Phase 7: Validate all paths, archive akienm/TheIgors GitHub repo, remove ~/TheIgors local install\n\n**Affected files:** ~/TheIgors/lab/claudecode/* (move to UU), devices/igor/setup_assets/installer.py, ~/TheIgors/igor launcher, all cfg readers in devices/igor/, UU bin/superclaude\n**Design rules:** no-env-var-required, config-per-device, discovery-first-then-prompt\n**Scope boundary:** IN — full migration as sequenced above; OUT — do not change Igor cognition logic; do not break running Igor mid-migration (compat shim required through Phase 5)\n**Test plan:** Fresh UU clone on clean machine: ./igor prompts for instance name, bootstraps, launches cleanly. Existing instance: ./igor finds one Igor-* dir, starts without prompts. Multiple instances: ./igor lists choices. pytest passes throughout all phases.",
+    "completed_at": "2026-06-02T19:50:11.090557+00:00",
+    "github_issue": 812,
+    "required_files": [],
+    "no_commit_reason": "runtime + env changes, not repo",
+    "scraps_validated": "2026-05-28T16:35:00.682397+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "19a40a10-d560-4287-9609-41efc3912394",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

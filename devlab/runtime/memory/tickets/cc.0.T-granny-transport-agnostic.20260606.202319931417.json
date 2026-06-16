@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-granny-transport-agnostic.20260606.202319931417",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-transport-agnostic"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:23:19.931417",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-shim-assignment-model-2026-06-06"
+    ],
+    "tickets": [
+      "T-cc-shim-ack-nag",
+      "T-cc-shim-priority-halt",
+      "T-granny-cc0-dispatch-decision",
+      "T-granny-transport-agnostic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-transport-agnostic",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Dispatch",
+      "Bus"
+    ],
+    "title": "Granny: remove all tmux knowledge — bus assignment only",
+    "result": "Removed _dispatch_cc0, import socket, _CC_DEFAULT_SESSION, tmux_send_keys branch; default config is now dispatch:bus mailbox:cc.0; T-granny-bus-flip-fake-completion resolved",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "intention": null,
+    "claimed_at": "2026-06-06T20:31:55.376806+00:00",
+    "created_at": "2026-06-06T20:23:19.931417+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-shim-assignment-model-2026-06-06",
+    "description": "**Problem:** Granny daemon currently has tmux/send-keys knowledge baked in — dispatch='tmux_send_keys' config, session name constants, subprocess calls. That knowledge belongs in the CC shim, not in Granny.\n\n**What to do:** Remove all tmux/send-keys code from devices/granny/daemon.py. Granny's dispatch path for CC.0: send a bus envelope to cc.0 mailbox, mark ticket dispatched, done. Remove `dispatch='tmux_send_keys'` from _default_config(). Remove any tmux subprocess.run calls. Remove session-name constants from Granny's code. This supersedes T-granny-cc0-dispatch-decision (update that ticket to cancelled/superseded).\n\n**Affected files:** devices/granny/daemon.py, devices/granny/cc_worker_listener.py (ensure it doesn't have Granny's dispatch logic)\n**Design rules:** bus/ owns comms routing; nothing outside bus/ speaks transport directly\n**Scope boundary:** Granny side only. CC shim changes are T-cc-shim-ack-nag and T-cc-shim-priority-halt.\n**Completion criteria:** grep for 'tmux' in devices/granny/daemon.py returns nothing. Granny dispatches by sending envelope to cc.0. Existing Granny tests still pass.",
+    "completed_at": "2026-06-06T20:36:06.757778+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b81e5838-82e3-4948-9c31-4768102e544d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

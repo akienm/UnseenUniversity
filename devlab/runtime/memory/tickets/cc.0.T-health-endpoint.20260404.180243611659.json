@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-health-endpoint.20260404.180243611659",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-health-endpoint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:02:43.611659",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-health-endpoint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-health-endpoint",
+    "size": "M",
+    "tags": [
+      "Operations",
+      "Dashboard"
+    ],
+    "title": "/health + /metrics endpoint: liveness probe for unattended Igor",
+    "result": "Added GET /health and GET /metrics (plus /api/* aliases) to web/server.py. /health returns {status, uptime_s, last_input_ago_s, active_threads, dead_daemons} — status is 'degraded' if any daemon supervisor thread is dead. /metrics returns SRE snapshot: swap_pct from /proc/meminfo, daemon thread status, Igor stats (memory_count, session_cost, tier, busy). _last_input_ts updated on every cc_send and WebSocket message.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T18:00:12.592825+00:00",
+    "related_to": null,
+    "description": "Igor's web server (port 8080) has no /health or /metrics endpoint. A hung process is indistinguishable from a healthy one. Fix: add GET /health (returns 200 + {status, turn_id, last_input_ms, uptime_s}) updated every turn; add GET /metrics (turn count, tier escalation rates, cortex query latency, swap %, active threads). Updated from the turn path, never blocking. SRE finding from deep-audit Panel 11. Akien specifically called this out as high value.",
+    "completed_at": "2026-04-04T18:02:43.611659+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a6061f4e-5986-46a2-857e-051e795f5eb5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

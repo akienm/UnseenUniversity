@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-pe-chain-empty-close-detection.20260430.000602091482",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-empty-close-detection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T00:06:02.091482",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-installer-design-call",
+      "T-cc-queue-gate-clear-on-close",
+      "T-pe-chain-empty-close-detection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-empty-close-detection",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "pe_chain",
+      "Workflow",
+      "Igor"
+    ],
+    "title": "pe_chain auto-closes tickets with 'commit=skipped: no edit applied' — should escalate or block instead",
+    "result": "Three-layer guard: pe_close_loop escalates on implement_skipped (existing) + commit_result.startswith('skipped') (new) + _pe_close defensive guard refuses when implement_skipped OR commit_skipped OR no implement_files (new). All paths to ticket-close now require evidence of real work shipped. WARNING log on refusal so next leak is debuggable. Test fixture _passing_basket fixed to set implement_files. 7 new tests, 4133 regression pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T23:59:13.982143+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Observed 2026-04-29: Igor's pe_chain ran on T-adc-installer-design-call (a design-call ticket auto-unblocked by T-cc-queue-gate-clear-on-close), found no plan_summary/no test_criterion/no plan_files/no hypothesis, ran existing tests (pass), then closed the ticket with 'pe_chain autonomous: pass' / 'commit=skipped: no edit applied'. Result: design ticket closed without producing design content.\n\nFix: pe_chain CLOSE step should refuse to close when commit=skipped AND no edits were applied AND ticket isn't trivially empty. Either escalate (block ticket with 'autonomous closure refused — needs human design'), or restore status=pending with a note. Don't ship empty closures as if they were real work.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (CLOSE step) — also check pe_chain_qwen_tier or successor module.\n**Design rules:** approach-frame (positive: 'pe_chain confirms real work shipped before closing'). No-sqlite. Test-plan-or-why-not.\n**Scope boundary:** in scope: refuse-to-close-when-empty in pe_chain CLOSE step. Out of scope: redesigning ticket-pickup heuristics, fixing past empty closures (T-adc-installer-design-call can be reopened manually if Akien wants the design).\n**Test plan:** unit test pe_chain CLOSE rejects close when commit_status='skipped' AND edits_applied=0; passes through normally when edits applied. Live verify after deploy.",
+    "completed_at": "2026-04-30T00:06:02.091482+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c922df45-b980-4197-9b9e-ac07c0c926db",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

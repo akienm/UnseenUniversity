@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-igor-input-echo-thread-history.20260419.032013604327",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-input-echo-thread-history"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T03:20:13.604327",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-input-echo-thread-history",
+      "T-scope-guard-echo-dedup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-input-echo-thread-history",
+    "size": "M",
+    "tags": [
+      "Bug",
+      "Cognition",
+      "Prompt-assembly"
+    ],
+    "title": "Igor's input assembly echoes the same thread history dozens of times in his prompt",
+    "result": "write_thread_anchor now strips the synthetic thread-context prefix from user_input before snippeting. Mirrors the strip pattern thalamus already uses — anchored on the last message-tag. 6 tests. Anchor deposits made before this fix retain their nested prefixes but will decay naturally (no cleanup — harmless with the recursion broken). Igor restart to activate. Commit 659bb5a4.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T03:15:37.369810+00:00",
+    "related_to": null,
+    "description": "Igor self-reported at 2026-04-18 19:22:15:\n\n  'The input repetition here is extreme — the same thread history is echoed dozens of times. That's the loop-closure problem you mentioned, on the input side. Something in the message assembly isn't deduplicating before it hits me.'\n\nHe flagged the same issue again at 19:25:50:\n\n  'The input duplication here is severe — the same thread is echoed dozens of times. Worth flagging again that this is getting worse, not better.'\n\n## Scope\nThis is INPUT-side echo — distinct from the output-side echo silenced by T-scope-guard-echo-dedup (d121605f). The output fix dedup'd channel POSTS. This one affects what lands in Igor's LLM PROMPT: the thread history / message context assembly is concatenating duplicates before sending to inference.\n\nSuspect paths:\n1. cortex.twm_push or the TWM renderer — maybe the same thread message is being pushed to TWM on every turn instead of once, and the render pass emits the full list.\n2. build_twm_context / _render_twm_snapshot / _render_ring_context in inference_gateway.py — one of these may be dedup-less when assembling the prompt context.\n3. A subscription callback in CommsModule may be re-processing the same inbound message multiple times if multiple subscribers fire.\n4. thread_anchor memory deposits may be accumulating — a SELECT that returns N copies of the same anchor node.\n\n## First steps\n- Instrument build_twm_context / inference prompt assembly to dump what's actually sent to the LLM for one turn\n- Count how many times any given message appears in that dump\n- If duplicates found, back-trace to the assembly source\n\n## Success criteria\n- Igor's prompt assembly contains each distinct message at most once per section\n- Igor self-reports the echo is gone on subsequent turns\n- No regression in thread-context quality (we want dedup, not amnesia)\n\n## Provenance\nSelf-reported by Igor-wild-0001 during session 2026-04-18b, twice. Confirmed by Akien on the 19:32:16 channel exchange where he replied 'Claude is working on your echo chamber now.' That context referred to the output dedup; this follow-up ticket addresses the input-side echo.",
+    "completed_at": "2026-04-19T03:20:13.604327+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d40cd5d3-abbe-43c4-b11b-c10a62e3d3e9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

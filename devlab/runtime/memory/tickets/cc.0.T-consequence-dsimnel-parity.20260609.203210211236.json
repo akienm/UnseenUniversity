@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-dsimnel-parity.20260609.203210211236",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-dsimnel-parity"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:32:10.211236",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dsimnel-cc-parity-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-dsimnel-parity",
+      "T-dsimnel-cc-parity",
+      "T-flat-rate-provider-routing",
+      "T-inference-caching-all-providers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-dsimnel-parity",
+    "gate": "2026-06-23",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "DickSimnel",
+      "Inference"
+    ],
+    "title": "[sprint] Consequence check: DickSimnel provider routing parity",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that DickSimnel routes inference through the same tiered cascade and provider registry as CC, not a bespoke or stale path.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:32:10.211236+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dsimnel-cc-parity-2026-06-04",
+    "description": "D-dsimnel-cc-parity-2026-06-04 shipped T-dsimnel-cc-parity, T-inference-caching-all-providers, T-flat-rate-provider-routing (all closed), but no consequence check was filed.\n\n**What changed:** DickSimnel designated as CC mirror — inference routing, provider selection, and caching aligned between DickSimnel and CC.\n\n**Predicted unintended effects:** DickSimnel may use a hardcoded model or provider path that was never updated to use the shared registry. Flat-rate routing may have shipped in the registry but DickSimnel's dispatch may still bypass it.\n\n**Signals to watch:** Check DickSimnel's inference dispatch path — does it call the shared provider registry? Is caching active for DickSimnel sessions? Is flat-rate provider routing reflected in observed model selection?\n\n**Gate condition:** Check by 2026-06-23\n\n**Affected files:** None — code audit and observation\n**Design rules:** none apply\n**Scope boundary:** Verify routing parity between CC and DickSimnel at the dispatch layer. Out of scope: performance tuning.\n**Test plan:** no tests — code audit ticket\n**Completion criteria:** Read DickSimnel's dispatch code and confirm it routes through shared provider registry with caching enabled. Record: parity confirmed / gap found (with reason).",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

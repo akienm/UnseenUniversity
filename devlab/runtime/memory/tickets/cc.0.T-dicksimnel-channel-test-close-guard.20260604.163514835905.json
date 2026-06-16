@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-dicksimnel-channel-test-close-guard.20260604.163514835905",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-channel-test-close-guard"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T16:35:14.835905",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-channel-test-close-guard",
+      "T-dicksimnel-close-failure-handling"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-channel-test-close-guard",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Tests"
+    ],
+    "title": "Fix: test_dicksimnel_channel mock return values broken by close-failure guard",
+    "result": null,
+    "status": "closed",
+    "worker": "claude",
+    "done_note": "Shipped in e543554d; tests now pass with correct mock return values",
+    "claimed_at": null,
+    "created_at": "2026-06-04T16:35:14.835905+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "After T-dicksimnel-close-failure-handling shipped the close-failure guard, test_dicksimnel_channel.py tests that mocked _run_queue_cmd with return_value=None started failing — the guard treats None as a close failure and escalates instead of posting DONE. Fixed by updating mock return values to {\"status\": \"closed\"}.\n\n**Affected files:** tests/inference/test_dicksimnel_channel.py\n**Design rules:** none apply\n**Scope boundary:** test mock fix only\n**Completion criteria:** test_post_result_posts_done and test_post_result_channel_failure_still_increments_counter pass",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "09405985-7f98-4041-8698-2a1a68944c3c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

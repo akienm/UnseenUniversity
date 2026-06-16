@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ne-desperation-pull-ltm.20260512.000629848493",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ne-desperation-pull-ltm"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T00:06:29.848493",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ne-desperation-pull-2026-05-11"
+    ],
+    "tickets": [
+      "T-ne-desperation-pull-ltm"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ne-desperation-pull-ltm",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Memory"
+    ],
+    "title": "NE empty → desperation LTM kick in coa.py",
+    "result": "force_push() added to MemorySurfacer; called from coa.py NE-empty branch; surfaces top-5 hot memories by activation_count",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "blocked_at": null,
+    "claimed_at": "2026-05-23T21:29:13.788893+00:00",
+    "created_at": "2026-05-12T00:06:29.848493+00:00",
+    "related_to": null,
+    "decision_id": "D-ne-desperation-pull-2026-05-11",
+    "description": "When NE produces no result in coa.py (~line 237), actively kick MemorySurfacer with a lowered threshold — top-N memories by activation_score with no keyword match required. Currently the NE-empty path only calls escalate_to_channel() then continues, leaving TWM starved until boredom accumulates over 20 min. The fix: add force_push(cortex, top_n=5) to MemorySurfacer in push_sources.py that queries clan.memories ORDER BY activation_score DESC LIMIT top_n (no keyword filter, skip dedup for fresh content), then call it from the coa.py NE-empty branch. Rate-limit: one force_push per NE cycle — guard via a flag on MemorySurfacer that resets after the normal push cadence (300s). This is the proactive 'sensory deprivation search' pattern.\n\n**Affected files:** wild_igor/igor/cognition/coa.py (NE-empty branch ~line 237), wild_igor/igor/cognition/push_sources.py (MemorySurfacer class ~line 148, add force_push method)\n**Design rules:** OOP-first (force_push() is a method on MemorySurfacer, not a standalone function); no-sqlite (query clan.memories via existing DB conn pattern)\n**Scope boundary:** IN: MemorySurfacer.force_push() new method; coa.py NE-empty caller with per-cycle rate-limit guard. OUT: changes to normal push() cadence; NE result logic; escalation behavior (escalate_to_channel still fires)\n**Test plan:** After Igor restart, let NE go empty (or deplete TWM manually). Observe: memory_surfacer entries appear in instance.twm_observations within 1 NE cycle; channel confirms activation rather than silence. No unit test (cognition loop integration only).",
+    "completed_at": "2026-05-28T01:53:22.148634+00:00",
+    "github_issue": 719,
+    "dispatched_at": "2026-05-23T21:29:13.788893+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "45ef32a8-a9c2-434a-b938-1104efcacbd0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

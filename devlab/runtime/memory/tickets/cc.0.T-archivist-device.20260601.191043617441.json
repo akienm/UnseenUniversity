@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-archivist-device.20260601.191043617441",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-archivist-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T19:10:43.617441",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-archivist-device",
+      "T-chat-log-learning-bootstrap",
+      "T-librarian-inference-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-archivist-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Archivist",
+      "Inference",
+      "CompiledInference",
+      "Device"
+    ],
+    "title": "Archivist device: compiled-inference proxy + learning pipeline",
+    "result": "ArchivistDevice + ArchivistShim scaffold: proxy intercept, always-miss graph stub, learning queue, skeleton registration; 27 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "blocked_at": "2026-06-01T19:12:13.450152+00:00",
+    "claimed_at": "2026-06-02T00:10:16.544419+00:00",
+    "created_at": "2026-06-01T19:10:43.617441+00:00",
+    "created_by": null,
+    "related_to": null,
+    "supersedes": "T-librarian-inference-proxy",
+    "decision_id": null,
+    "description": "New rack device: Archivist. Owns the compiled-inference proxy layer and the overnight knowledge-graph building pipeline. Distinct from Librarian (which stays as retrieval/research). Archivist's job: intercept every inference call, check the knowledge graph first, on miss send to LLM and fan out (answer → caller + learning payload → self for overnight processing). Builds the graph trees that progressively absorb more queries locally.\n\nThe Archivist and Librarian share the same knowledge store (Archivist writes, Librarian reads for retrieval queries) but have different jobs and different trust models.\n\nThis ticket supersedes/replaces T-librarian-inference-proxy — the proxy work moves to the Archivist device, not the Librarian.\n\n**Affected files:** devices/archivist/ (new — device.py, shim.py, proxy.py, learning_pipeline.py); skeleton/registry.py (register); devices/inference/ (proxy integration point); tests/archivist/ (new)\n\n**Design rules:** bus+shim model; no-sqlite; log every proxy intercept at INFO (PROXY_INTERCEPT|ticket=|caller=|graph_hit=true/false); compiled inference — graph-tree pre-check before any LLM call\n\n**Scope boundary:** IN — device scaffold + lifecycle; proxy intercept stub (always-miss initially OK); dual fan-out; overnight pipeline stub; graph store schema. OUT — retroactive chat log bootstrap (T-chat-log-learning-bootstrap); emotional encoding; Librarian retrieval (unchanged)\n\n**Completion criteria:** (1) every inference call routed through Archivist proxy; (2) graph pre-check runs, stubs to always-miss; (3) on LLM response, learning payload enqueued; (4) caller API unchanged; (5) PROXY_INTERCEPT logged at INFO per call; (6) skeleton lists archivist with agent_class=specialized",
+    "completed_at": "2026-06-02T00:17:48.485516+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T00:10:16.544419+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8af968d9-3c3c-43a8-8289-30ab47cca4d1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

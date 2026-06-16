@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-model-alternatives-classifier.20260612.194411743450",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-model-alternatives-classifier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T19:44:11.743450",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-model-alternatives-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-model-alternatives-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-model-alternatives-classifier",
+    "gate": "2026-06-26",
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Inference"
+    ],
+    "title": "[sprint] Consequence check: model alternatives classifier",
+    "result": null,
+    "status": "sprint",
+    "worker": "dicksimnel",
+    "priority": 0.3,
+    "intention": "I intend that any unintended effects of adding model_not_found classification and alternatives ranking are observed and documented.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T19:44:11.743450+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-model-alternatives-classifier-2026-06-12",
+    "description": "**What changed:** ModelAlternativesClassifier added; Source._classify_ping_failure() now returns dict with alternatives field; subclass ping() except blocks call the extended _classify_ping_failure().\n**Predicted unintended effects:**\n- Latency spike in failure path: list_models() calls on every model 404; if provider API is slow or down, it blocks the except branch.\n- Ranking fail-open: if alternatives ranking logic crashes (missing token_window on model metadata, malformed response), exception masking could hide the actual error.\n- Empty alternatives spam: logging alternatives=[] on every model_not_found could fill logs if a model is persistently unavailable.\n- Provider API drift: if a provider changes their /models endpoint format, alternatives extraction silently returns empty list; no alerting.\n**Signals to watch:** inference log volume before/after; latency of Source.ping() calls when model endpoint returns 404; whether alternatives lists are non-empty when they should be (spot check a few logs); any new exceptions in datacenter_logs/inference/.\n**Gate condition:** Check by 2026-06-26 or after first DS run following deploy.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

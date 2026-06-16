@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-walk-13.20260507.215508072653",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-13"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:08.072653",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-13"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-13",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Safety",
+      "walk"
+    ],
+    "title": "CLOSED: Inhibitor-fires counter: emit COHERENCE_INHIBITOR_STUCK after 3 fires",
+    "result": "Implementation was already complete; added 3 missing tests (stuck after 3 fires, 4th fire suppression, independent thread counters). Commit c743e2c0.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-07T21:55:08.072653+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 area_2 finding: response_coherence_inhibitor fires silently with no escalation when stuck. Add per-thread_id counter; after 3 fires in a 10-minute window, emit COHERENCE_INHIBITOR_STUCK to channel and suppress further auto-corrections for that thread.\n\n**Affected files:** wild_igor/igor/cognition/response_coherence_inhibitor.py\n**Design rules:** no-sqlite\n**Scope boundary:** IN — in-process counter (dict keyed by thread_id + TTL expiry), channel emit on N=3. OUT — changing detection logic.\n**Test plan:** test_response_coherence_inhibitor.py: mock time, fire inhibitor 3x for same thread, assert channel.send called with COHERENCE_INHIBITOR_STUCK; 4th fire is suppressed.\n**Pass condition:** Firing inhibitor 3 times in tests produces exactly one COHERENCE_INHIBITOR_STUCK channel message and suppresses the 4th correction.",
+    "completed_at": "2026-05-08T02:50:33.409044+00:00",
+    "github_issue": 634,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "756711de-d07e-4a49-a35a-65b641e2e952",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-flat-rate-turn-cap.20260612.000837036707",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-flat-rate-turn-cap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T00:08:37.036707",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-flat-rate-turn-cap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-flat-rate-turn-cap",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "inference",
+      "dicksimnel",
+      "ollama"
+    ],
+    "title": "Cost cap skips flat-rate sources; separate higher turn cap for Ollama Pro",
+    "result": "Separate turn/cost caps by billing type: flat-rate MAX_TURNS_FLAT_RATE=80 (no cost cap), usage_based COST_CAP_USD=$3",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.5,
+    "intention": "I intend that flat-rate sources (ollama_cloud) are governed by a turn cap not a dollar cap, and that usage-based sources (openrouter) keep the $3 cost cap.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T00:08:37.036707+00:00",
+    "created_by": null,
+    "related_to": null,
+    "commit_hash": "54159f5b",
+    "decision_id": null,
+    "description": "COST_CAP_USD=$3 in ToolLoop fires for all sources including flat-rate Ollama Pro where real cost is $0. Devstral ran 30 turns at $0 real cost but was on the verge of COST_EXCEEDED. Wrong constraint applied to wrong billing type.\n\nFix: in ToolLoop.run(), check source billing_type before applying cost cap. For flat_rate sources: use a higher turn cap (e.g. MAX_TURNS_FLAT_RATE=50) and skip the cost accumulation exit. For usage_based: keep COST_CAP_USD=$3 as now. Source billing_type is available via the models_registry or can be inferred from model_override by checking OllamaCloudSource.\n\n**Affected files:** devices/dicksimnel/toolloop.py, possibly devices/dicksimnel/device.py\n**Design rules:** none apply\n**Scope boundary:** IN: split turn/cost caps by billing type. OUT: changing cascade logic, routing rules.\n**Completion criteria:** devstral run on an S-size ticket completes with DONE: within 50 turns; haiku run still terminates at $3 cost cap. Both verified by test or live run.",
+    "completed_at": "2026-06-13T01:50:22.319394+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

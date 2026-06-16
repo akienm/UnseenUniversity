@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-runtime-self-healing-tests.20260531.140640142440",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-runtime-self-healing-tests"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T14:06:40.142440",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-runtime-self-healing-tests"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-runtime-self-healing-tests",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "[design] Runtime self-healing test automation via SWADL",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "priority": 1.5,
+    "claimed_at": null,
+    "created_at": "2026-05-31T14:06:40.142440+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Build a test harness that detects narrow 'this thing no longer exists' failures at runtime and escalates to CC to rewrite the code in place — the system heals itself without human intervention. SWADL is the execution harness; CC is the repair agent. Scope is narrow: reference failures (missing function, moved file, renamed symbol) not logic bugs. Akien and CC design together in one session.\n\n**Affected files:** TBD — discovery step in design session\n**Design rules:** none apply\n**Scope boundary:** In scope: detection of structural reference failures, escalation to CC, in-place code rewrite, re-run to confirm. Out of scope: logic bugs, behavioral regressions, anything requiring human judgment on correctness.\n**Completion criteria:** A test that references a deliberately deleted symbol detects the failure, escalates, CC rewrites the reference, test passes on re-run — all without human intervention.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T14:06:40.194299+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b2882a7b-33c3-419c-bc1b-3e31686d3e79",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-sprint-ticket-levers-ref.20260604.185450356838",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-ticket-levers-ref"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T18:54:50.356838",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sprint-ticket-levers-ref"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-ticket-levers-ref",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Workflow"
+    ],
+    "title": "Fix stale levers doc path in sprint-ticket skill",
+    "result": "updated step 12.5 to point to docs/the_ownership_gap/4.Skills.md (canonical levers doc)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that sprint-ticket step 12.5 points at the canonical levers doc so the post-sprint check actually opens the right file.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T18:54:50.356838+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "sprint-ticket/SKILL.md step 12.5 references `docs/Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.md` (old flat path). The canonical levers content now lives at `docs/the_ownership_gap/4.Skills.md`. The old file still exists so no hard failure, but any post-sprint update lands in the wrong place.\n\n**Affected files:** `~/.claude/skills/sprint-ticket/SKILL.md` (step 12.5), `skills/sprint-ticket/SKILL.md` in repo (installer source)\n**Design rules:** none apply\n**Scope boundary:** Update the path reference in step 12.5 only. Do not merge or delete the old file — that is a separate cleanup decision.\n**Completion criteria:** `grep 'Deterministic_AI_Development_Levers' ~/.claude/skills/sprint-ticket/SKILL.md` returns no matches; `grep 'the_ownership_gap/4.Skills' ~/.claude/skills/sprint-ticket/SKILL.md` returns the updated line.",
+    "completed_at": "2026-06-04T19:07:17.539732+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

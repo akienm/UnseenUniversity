@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-swadl-shim.20260428.031555202244",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-swadl-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T03:15:55.202244",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-4-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-swadl-device",
+      "T-adc-swadl-shim",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-swadl-shim",
+    "gate": "T-adc-swadl-device",
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: SWADL shim stub — spec at implementation time",
+    "result": "SwadlShim stub implemented in agent_datacenter/devices/swadl/shim.py. self_test returns passed=False with explanation. Commit 3850610.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-28T03:15:52.511160+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-4-2026-04-27",
+    "description": "SWADL shim stub. Implements BaseShim with stubs; real lifecycle TBD when SWADL API stabilizes.\n\nProposed shape:\n- agent_datacenter/devices/swadl/shim.py:\n  class SWADLShim(BaseShim):\n    device_id = 'swadl'\n    start() → return False  # stub; not implemented\n    stop() → return True\n    restart() → return False\n    self_test() → return {passed: False, details: 'SWADL shim not yet implemented'}\n    rollback() → pass\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/swadl/shim.py\n\nDesign rules:\n- oop-first: SWADLShim class, not module-level stubs\n\nScope boundary:\nIN: stub shim that compiles and passes BaseShim contract check\nOUT: any SWADL integration\n\nTest plan:\n- SWADLShim() instantiates (all abstract methods present)\n- self_test() returns {passed: False, ...} without raising",
+    "completed_at": "2026-04-28T03:15:55.202244+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bec9e4b4-0ef2-4eed-9cee-1026a74d038f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

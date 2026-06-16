@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-cc-compact-cadence-hook.20260606.004704977058",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-compact-cadence-hook"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T00:47:04.977058",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-compact-cadence-hook-2026-06-05"
+    ],
+    "tickets": [
+      "T-autocompact-haiku-dance",
+      "T-cc-compact-cadence-hook"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-compact-cadence-hook",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Claude",
+      "Operational"
+    ],
+    "title": "CC compaction cadence: Stop hook fires /autocompact every 5 ticket-closes",
+    "result": "Stop hook (cc_compact_cadence) counts closes via sprint_tokens.log, injects /autocompact every 5; registered by ClaudeShim; 15 tests",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.8,
+    "intention": "I intend that CC compacts automatically every 5 ticket-closes regardless of dispatch path, with the model unable to defer it.",
+    "created_at": "2026-06-06T00:47:04.977058+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-compact-cadence-hook-2026-06-05",
+    "description": "Compaction never fires on a cadence today. Three causes: (1) the native CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=85 trigger never arms on Sonnet 1M because live-window occupancy never reaches 85% of 1M; (2) the 'every 5 tickets' rule lives ONLY in /sprint-batch, but Granny dispatches atomic /sprint-ticket commands — bypassing the batch wrapper entirely; (3) even when the compact line is in a skill the model reads, the model treats it as advisory and defers it 'until it suits him'.\n\nFix: a harness-enforced Stop hook (not model-advisory). ClaudeShim registers a Stop hook in ~/.claude/settings.json (alongside the existing ygm UserPromptSubmit hook). The hook script counts ticket-closes by reading the line count of ~/.unseen_university/claudecode/sprint_tokens.log (one line appended per close) and comparing to a baseline file in CC's state dir. When (current - baseline) >= COMPACT_EVERY_N (default 5), it injects /autocompact via tmux send-keys (3-Enter interrupt, then the command, then Enter) and sets baseline = current. A queued slash command is not advisory — the model runs it as the next turn, so it cannot be deferred. Counter/baseline is external state on disk (shim-owned), surviving any dispatch path (Granny / sprint-batch / direct).\n\n**Affected files:** devices/claude/cc_compact_cadence.py (new — the Stop hook script), devices/claude/shim.py (register Stop hook in start(), remove in stop(), verify in self_test()), devices/claude/constants.py (COMPACT_EVERY_N, sprint_tokens.log path, baseline path)\n**Design rules:** external-state-principle (counter lives on disk, never in-memory); no DB rules apply\n**Scope boundary:** In scope: the Stop hook script, shim registration/teardown, the count-and-inject logic, the baseline file. Out of scope: HOW /autocompact compacts (T-autocompact-haiku-dance owns the Haiku dance); the N value beyond the default of 5.\n**Completion criteria:** Unit tests cover (a) delta<5 -> no fire, (b) delta>=5 -> inject + baseline update, (c) the /autocompact turn itself closes no ticket so the next Stop sees delta 0 (no double-fire). ClaudeShim.start() registers the Stop hook and self_test() reports it present. Manually: append 5 lines to a temp sprint_tokens.log -> hook injects /autocompact and resets baseline.",
+    "completed_at": "2026-06-06T00:57:13.853690+00:00",
+    "deposited_at": "2026-06-05T18:47:53.613335",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

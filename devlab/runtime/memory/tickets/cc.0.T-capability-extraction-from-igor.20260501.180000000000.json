@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-capability-extraction-from-igor.20260501.180000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-capability-extraction-from-igor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T18:00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-claudeandakien-folded-2026-05-01"
+    ],
+    "tickets": [
+      "T-capability-extraction-from-igor",
+      "T-claudeandakien-workshop-evolution",
+      "T-inference-migrate-igor-to-datacenter-device",
+      "T-skills-master-home-in-datacenter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-capability-extraction-from-igor",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Epic",
+      "Architecture",
+      "AgentDatacenter",
+      "CapabilityExtraction",
+      "epic"
+    ],
+    "title": "CLOSED: Epic: capability extraction — move everything we can out of Igor into the datacenter",
+    "result": "All children closed. SensorDevice (last open child) shipped in e9bfc53. pe_chain stays in Igor by design. SMART disk deferred to follow-on ticket.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1,
+    "akien_tier": "P1",
+    "claimed_at": null,
+    "created_at": "2026-05-01T18:00:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "**Epic / tracking ticket. Children file as opportunities surface.**\n\nPer Akien architectural North Star (2026-05-01): the datacenter is the agent-as-pieces (capability appliances), Igor is the master reasoning model. The substrate is reusable; cognition is Igor's. Any agent can be built on top of the datacenter; Igor is one tenant.\n\n## The split\n\n- **Datacenter** (`/home/akien/dev/src/agent_datacenter/`): capability appliances — inference, web_server, postgres, browser_use, swadl, discord_bot, the rack itself. Akien's cross-project lab. Reusable substrate for any agent.\n- **Igor** (`/home/akien/TheIgors/wild_igor/igor/`): master reasoning model. Cognition only. Runs ON the datacenter; doesn't CONTAIN the datacenter.\n- **TheIgors/lab/**: Igor-specific tooling and design docs only. Cross-project tooling moves out (to `/home/akien/dev/src/ClaudeAndAkienWorkshop/` per T-claudeandakien-workshop-evolution).\n\n## Why\n\n- **Easier to debug Igor.** Cognition isolated from substrate concerns.\n- **Capabilities debuggable in isolation.** Each appliance is its own scope, smaller surface.\n- **Reusability.** Future agents (Igor variants, agents in other projects) inherit the substrate for free.\n- **Reduces complexity.** The currently-tangled monorepo splits into clean tiers.\n\n## Children (file as opportunities arise — partial list)\n\n- [ ] T-inference-migrate-igor-to-datacenter-device (M, filed 2026-05-01) — Igor inference via comms://inference bus envelope.\n- [x] Web server already in datacenter (Phase 4 shipped commit 3850610).\n- [x] Browser-use already in datacenter (commit f3c48ec).\n- [x] SWADL already in datacenter (commit 3850610).\n- [x] Discord bot already in datacenter (commit 3850610).\n- [x] Postgres device already in datacenter (Phase 1 shipped).\n- [ ] Reading pipeline → datacenter device? (TBD — design call)\n- [ ] Cortex / memory engine → datacenter device? (TBD — high-inertia, design call needed)\n- [ ] Pe_chain (autonomous editor) → datacenter device? (TBD — entangled with Igor's reasoning loop)\n- [ ] Sensor tree → datacenter device? (TBD)\n- [ ] Forensic logger → datacenter device? (TBD)\n\n## Children NOT to move (likely)\n\n- Cognition primitives (NE, TWM, milieu, BG, basal-ganglia rules, attractors) — these ARE Igor.\n- Engram graph / habit graph — these ARE Igor.\n- Reasoning workflow + voice_ab — these ARE Igor.\n\n## Sprint approach\n\nThis ticket stays open as a tracker. Each child gets its own ticket and is sprinted independently. When a child closes, mark the checkbox here. When a non-trivial number of items have moved, snapshot progress in a slate or design doc.\n\n**Affected files:** N/A directly — children carry their own file lists. This ticket is the umbrella.\n\n**Design rules:** N/A directly — children carry their own. Pattern across children: cleanly separable boundary, capability surface as a device interface, igor consumes via comms:// bus envelope.\n\n**Scope boundary:** IN — extracting cleanly-extractable capabilities from Igor into datacenter devices. OUT — Igor's cognition (NE/TWM/milieu/BG/engrams stay); rebuilding Igor on the datacenter substrate (different ticket); creating new agents that use the substrate (different ticket).\n\n**Test plan:** N/A directly — each child carries its own. Pattern: each extracted capability has both unit tests in its datacenter device + integration tests in Igor showing the bus-routed call works equivalent to the legacy direct call.\n\n## Scope expansion (2026-05-01, per D-claudeandakien-folded-2026-05-01)\nClaudeAndAkienWorkshop is obsolete; everything that was workshop-bound is agent_datacenter material. Beyond utility_closet/ (the original scope), this ticket now also covers:\n- lab/claudecode/cc_skills/ — per-skill triage (cross-machine vs Igor-internal); cross-machine ones migrate to agent_datacenter master skills home (see T-skills-master-home-in-datacenter for design)\n- Any other formerly-workshop-bound modules surfaced during the migration\nCoordination: T-skills-master-home-in-datacenter ships first (design + deploy mechanism); this ticket then executes the per-skill moves.",
+    "completed_at": "2026-05-09T02:00:16.598460+00:00",
+    "github_issue": 578,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e3078179-9a7a-4793-9b23-f320b00f75ae",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

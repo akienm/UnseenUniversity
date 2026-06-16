@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-dsimnel-launcher.20260603.161535961037",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dsimnel-launcher"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T16:15:35.961037",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dsimnel-launcher"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dsimnel-launcher",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Platform",
+      "Launcher"
+    ],
+    "title": "dsimnel: short name + repo-root launcher script",
+    "result": "dsimnel launcher at repo root, __main__.py entry point, semaphore wired. commit 5b7b1af2.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "blocked_at": "2026-06-03T17:45:51.184638+00:00",
+    "claimed_at": "2026-06-03T17:44:26.370862+00:00",
+    "created_at": "2026-06-03T16:15:35.961037+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Use 'dsimnel' as the canonical short name for DickSimnel.0 — 'ds' conflicts with the OS 'ds' utility (data structures tool on some distros). Add a launcher script at repo root: `dsimnel` (symlink or thin wrapper) that starts the DickSimnel shim and sets DickSimnel.0.available.true semaphore on startup, DickSimnel.0.available.false on clean exit. Mirrors the pattern expected by Granny's _dicksimnel_available() check.\n\n**Affected files:** repo root (new launcher script), devices/dicksimnel/shim.py (set semaphore on start/stop), any code using 'DS' as a variable prefix where it shadows OS tools\n**Design rules:** semaphore protocol: ~/.granny/available/DickSimnel.0.available.true present = available; .false wins; external state principle applies (flag survives shim crash by being file-based)\n**Scope boundary:** IN: launcher script, semaphore wiring in shim, rename 'ds' variable refs in dsimnel code. OUT: renaming DickSimnel's class names or device ID.\n**Completion criteria:** `./dsimnel` at repo root starts DickSimnel and sets availability flag; Granny's _dicksimnel_available() returns True when dsimnel is running; flag cleared on clean stop; test covers semaphore set/clear lifecycle",
+    "completed_at": "2026-06-03T18:18:16.672124+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T17:44:26.370862+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "21a4a238-ff73-43b4-b41a-e47509a55f41",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

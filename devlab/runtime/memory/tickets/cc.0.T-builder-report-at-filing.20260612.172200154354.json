@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-builder-report-at-filing.20260612.172200154354",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-builder-report-at-filing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T17:22:00.154354",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-classifier-device-architecture-2026-06-12"
+    ],
+    "tickets": [
+      "T-annotator-delta-update",
+      "T-builder-report-at-filing",
+      "T-classifier-inflight-flags"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-builder-report-at-filing",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Classifier",
+      "Workflow",
+      "Cost"
+    ],
+    "title": "Wire classify() into /ticket skill — BuilderReport at filing time",
+    "result": "cli.py classify/freshness; palace query wired to clan.memories; /ticket step 3.5; /sprint-ticket step 2.4; 8 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that every filed ticket has a BuilderReport section so DS reads relevant_files at sprint start without exploratory searching.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T17:22:00.154354+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-classifier-device-architecture-2026-06-12",
+    "description": "Wire classify() call into /ticket skill so BuilderReport is written into the ticket description at filing time as a labeled section (consistent with existing convention — no DB migration needed). Sprint start calls freshness_check() only (fast path, no LLM). Skill-to-device call mechanism: subprocess call to devices/classifier CLI or MCP tool — resolve and name at sprint start.\n\nTicket description gains a section:\n**Builder report:** {\"relevant_files\": [...], \"confidence\": 0.9, \"stale\": false, \"ts\": \"...\"}\n\n**Affected files:** lab/claudecode/skills/ticket (skill file), cc_queue.py (if ticket schema needs builder_report field), devices/classifier/ (CLI entry point)\n**Design rules:** no-sqlite; flat-file safe (classify call is best-effort — if device is down, ticket files without builder report, no gate)\n**Scope boundary:** In scope: classify() called at filing, BuilderReport in ticket description, freshness_check() at sprint start. Out of scope: in_flight flags (T-classifier-inflight-flags), delta updates (T-annotator-delta-update), multi-project classification.\n**Completion criteria:** T-builder-report-at-filing is CLOSED; new tickets filed via /ticket have **Builder report:** section in description; freshness_check() at sprint start returns BuilderReport without LLM call when files unchanged; classify() failure is non-fatal (ticket files successfully without report if device is down).",
+    "completed_at": "2026-06-13T23:09:34.426721+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T23:05:53.853346+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

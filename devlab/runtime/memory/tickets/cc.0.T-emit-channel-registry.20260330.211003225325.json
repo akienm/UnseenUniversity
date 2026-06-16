@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-emit-channel-registry.20260330.211003225325",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-emit-channel-registry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T21:10:03.225325",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-emit-channel-registry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-emit-channel-registry",
+    "epic": "Cognition",
+    "title": "Implement EmitChannelRegistry — I/O surfaces for engram executor",
+    "result": "emit_channels.py: EmitChannelRegistry singleton + 6 channels (basket, emotional_milieu, cognitive_milieu, console, web, discord). Delta values supported on emotional_milieu. get_registry() lazy init. 555 tests passing.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Named channels for EMIT instruction dispatch. Channels: emotional_milieu (writes arousal/valence/dominance to milieu state), cognitive_milieu, basket (trail state writeback — closes the loop), console, web, discord. Each channel: name, directionality, write(value, key) -> None. Singleton registered at boot. Distinct from acquisition channel registry (D230).",
+    "completed_at": "2026-03-30T21:10:03.225325+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e91a512b-bbed-4d1f-b349-809ec2879973",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

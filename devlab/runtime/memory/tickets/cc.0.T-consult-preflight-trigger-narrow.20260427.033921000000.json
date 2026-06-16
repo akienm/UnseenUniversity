@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consult-preflight-trigger-narrow.20260427.033921000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-preflight-trigger-narrow"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:21",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-consult-preflight-trigger-narrow",
+      "T-pe-chain-via-uc-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-preflight-trigger-narrow",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consult",
+      "Tuning"
+    ],
+    "title": "Narrow 'pre-flight blocked (no recognizer)' consult trigger — unactionable hypotheses",
+    "result": "Removed _maybe_consult_stuck(preflight_unrelated) from the no-recognizer-matched pre-flight branch. Post-heal failure path retains it. Test updated to assert absence. No brainstem edit needed.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T07:59:45.340452+00:00",
+    "created_at": "2026-04-27T03:39:21Z",
+    "related_to": null,
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "Consult observe-and-tune Finding 4: 'pre-flight blocked (no recognizer)' fires on every red-preflight but produces the same 'test suite is broken, unrelated to your code' hypothesis every time. Unactionable — Igor has no mechanism to act on 'not your problem, go look at infra'. Either gate the trigger on a second signal (e.g., pre-flight fails AND git status shows changes to test-relevant files) or remove the trigger entirely.\n\nRelated: this is EXACTLY the stuck-loop that's blocking Igor on T-pe-chain-via-uc-proxy today — same consult fires every 6 minutes, same hypothesis.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (_maybe_consult_stuck pre-flight hook site), tests/test_pe_chain_consult_hooks.py.\n**Design rules:** test-plan-or-why-not.\n**Scope boundary:** IN — decide: narrow the trigger OR remove it. OUT — building a new preflight-analysis consult (that's a bigger design).\n**Test plan:** if narrowed, new test covers both fire and no-fire sides. If removed, assertion the hook no longer fires on no-recognizer pre-flight fails.",
+    "proposed_at": "2026-04-28T20:07:20.101083+00:00",
+    "completed_at": "2026-04-29T16:40:18.572330+00:00",
+    "github_issue": 531,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9f2f25fc-a37d-4259-8962-ea4209dd7034",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

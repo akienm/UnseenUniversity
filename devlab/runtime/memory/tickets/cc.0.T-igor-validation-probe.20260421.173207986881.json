@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-validation-probe.20260421.173207986881",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-validation-probe"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T17:32:07.986881",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-validation-probe",
+      "T-worker-dispatch-validation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-validation-probe",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Validation",
+      "TestOnly"
+    ],
+    "title": "Probe: create /tmp/igor_validation_probe.txt with 'hello' then remove it",
+    "result": "Probe ticket served its purpose; dispatch adopted it, pe_chain pre-flight escalated; see T-worker-dispatch-validation for full outcome",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.01,
+    "test_plan": "Probe passes when /tmp/igor_validation_probe.txt is written with 'hello' and subsequently deleted. Ticket itself is the e2e test; the real assertion lives in T-worker-dispatch-validation.",
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Test-only probe for T-worker-dispatch-validation. In /tmp/igor_validation_probe.txt write exactly 'hello' then delete the file. Done when file was created and then removed. Touches only /tmp — zero production impact.",
+    "test_marker": true,
+    "completed_at": "2026-04-21T17:32:07.986881+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2205f18e-8041-465b-bc11-f751a61698eb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

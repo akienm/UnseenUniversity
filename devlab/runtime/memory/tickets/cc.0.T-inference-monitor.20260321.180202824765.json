@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-inference-monitor.20260321.180202824765",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-monitor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T18:02:02.824765",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-monitor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-monitor",
+    "size": "S",
+    "notes": "Currently inference_gateway fires inline when cloud+local both unavailable, halting the turn. Should be a threshold habit evaluated by ResourceMonitorSource (~30s poll): cloud_ok=False AND local_ok=False → push high-salience TWM observation. Remove inline halt from inference path.",
+    "title": "Move inference-unavailable detection to ResourceMonitorSource (#323 companion)",
+    "result": "ResourceMonitorSource._check_inference_availability() added to push_sources.py — polls cloud (OR key + budget) + local (Ollama is_healthy) every 60s; when both down pushes INFERENCE_UNAVAILABLE at salience/urgency 0.9 with 180s TTL + forensic log; suppresses repeats until condition clears. Tier.6 in inference_gateway.py simplified: removed inline arbiter.submit(), now only logs forensically + returns fallback message. Proactive detection now decoupled from turn path.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": "2026-03-21T17:58:49.467495+00:00",
+    "completed_at": "2026-03-21T18:02:02.824765+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

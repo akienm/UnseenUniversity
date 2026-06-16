@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.340.20260324.021507346381",
+  "emitter": "cc.0",
+  "namespace": [
+    "340"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T02:15:07.346381",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "340"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "340",
+    "size": "M",
+    "title": "Add prim_twm_read primitive + seed stew readout habit",
+    "result": "prim_twm_read already existed (from 53032e3). Updated: limit 20→50, format now [category|sal=|urg=] snippet. PROC_STEW_READOUT already seeded; trigger extended with show stew/what's brewing/current stew. seed_wondering_habits.py synced. 126 tests pass.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T02:10:35.472539+00:00",
+    "description": "prim_twm_read primitive for habits to inspect TWM; seed stew readout habit. #340",
+    "completed_at": "2026-03-24T02:15:07.346381+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f9504411-3d97-4105-b9f0-6a694598d641",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

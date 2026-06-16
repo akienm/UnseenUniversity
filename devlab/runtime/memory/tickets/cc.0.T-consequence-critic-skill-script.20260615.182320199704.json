@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-critic-skill-script.20260615.182320199704",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-critic-skill-script"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:23:20.199704",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-critic-skill-script-pair-2026-06-15"
+    ],
+    "tickets": [
+      "T-consequence-critic-skill-script"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-critic-skill-script",
+    "gate": "2026-06-29",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Critic"
+    ],
+    "title": "[pending] Consequence check: /critic and scripts/critic.py produce actionable critique",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that /critic and scripts/critic.py are useful before wiring them into automated decision flows.",
+    "created_at": "2026-06-15T18:23:20.199704+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-critic-skill-script-pair-2026-06-15",
+    "description": "**What changed:** /critic skill and scripts/critic.py available for adversarial analysis of code, decisions, tickets, and text.\n\n**Predicted unintended effects:**\n- Critic prompt is too generic, produces boilerplate (\"use error handling, add tests, improve logging\")\n- Critic finds fake issues (flags things that are correct but unfamiliar)\n- Critic misses obvious issues because context is incomplete\n- CC spends time on critique output that isn't actionable\n- Critic could hallucinate file paths or function names not in codebase\n\n**Signals to watch:**\n- Spot-check 5 recent /critic or scripts/critic.py runs: are outputs useful? Do they flag real issues?\n- Ticket feedback: are critiques acted on, or ignored as boilerplate?\n- Prompt iteration: if early runs are too generic, refine prompt and re-test\n- No false positives (flagged issues that turn out to be correct on inspection)\n\n**Gate condition:** Check by 2026-06-22 (7 days) to refine prompt if needed; gate at 2026-06-29 for final observation.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe prediction effects; annotate actionability of critiques; recommend prompt refinements if needed\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

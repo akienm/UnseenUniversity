@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-vetinari-team-dispatch.20260608.025532019059",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-team-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T02:55:32.019059",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-gap-map-2026-06-08"
+    ],
+    "tickets": [
+      "T-vetinari-team-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-team-dispatch",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Vetinari",
+      "Orchestration"
+    ],
+    "title": "Vetinari: tag-based team routing — CC/Librarian/DickSimnel",
+    "result": "ROUTING_TABLE + _route_worker(tags); wired into _write_tickets_to_queue; 11 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that Vetinari maps each decomposed subtask to the correct worker (CC for build, Librarian for research, DickSimnel for token-light) based on ticket tags.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T02:55:32.019059+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-vetinari-gap-map-2026-06-08",
+    "description": "decompose_directive() currently writes tickets but assigns no worker. The vision requires routing to CC (build), Librarian (research), DickSimnel (token-light) based on work type.\n\nAdd _route_worker(tags: list[str]) -> str to VetinariDevice: ROUTING_TABLE maps tag patterns to worker names (Build/Code/Architecture → 'claude'; Research/Memory/Reading → 'librarian'; Review/Check/Summarize → 'dicksimnel'; default → 'claude'). Wire into decompose_directive(): set worker field on each ticket before cc_queue write.\n\n**Affected files:** devices/vetinari/device.py (add _route_worker(), ROUTING_TABLE), tests/test_vetinari_dispatch.py (NEW)\n**Design rules:** routing table as module-level constant (not config file) — simple and auditable; worker names must match cc_queue.py worker field values\n**Scope boundary:** IN — ROUTING_TABLE, _route_worker(), wiring into decompose; OUT — Granny-level dispatch protocol, DickSimnel connection setup\n**Completion criteria:** _route_worker(['Build', 'Architecture']) == 'claude'; _route_worker(['Research']) == 'librarian'; _route_worker(['Summarize']) == 'dicksimnel'; _route_worker([]) == 'claude'; tickets written by decompose_directive() carry correct worker field; 4+ tests",
+    "completed_at": "2026-06-08T03:36:54.438564+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

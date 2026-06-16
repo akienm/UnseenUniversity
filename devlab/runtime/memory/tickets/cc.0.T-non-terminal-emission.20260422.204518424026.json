@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-non-terminal-emission.20260422.204518424026",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-non-terminal-emission"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T20:45:18.424026",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-architecture",
+      "D-preparse-architecture-2026-04-22",
+      "D-pursuit-layer"
+    ],
+    "tickets": [
+      "T-continuation-reply-register",
+      "T-non-terminal-emission",
+      "T-reply-forms-pursuit",
+      "T-salience-residue-scan"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-non-terminal-emission",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Pursuits",
+      "ReplyPath"
+    ],
+    "title": "Reply emission as pursuit-child — parent resumes for residue scan",
+    "result": "residue_scan.py stub module + main.py hook after resume_parent. reply_state now threads input_text + reply_text + addressed_span. reply pursuit carries input_text in metadata. Exception-wrapped so hook failures can't regress reply path. 5 tests green. Commit a7dfe1b8.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-22T20:42:23.092151+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-architecture-2026-04-22",
+    "description": "Currently, reply-sent = turn-done. The fast reflex path can't emit 'Hi!' and then keep processing the rest of Akien's message for follow-up content (the monkey-brain 'Hi! ... oh, and about X...' pattern). The pursuit layer already models parent-child suspend/resume (shipped in D-pursuit-layer + T-reply-forms-pursuit). Build on that: reflex-reply becomes a child pursuit that completes fast, parent pursuit resumes and triggers the residue scan (T-salience-residue-scan). Reply emission must be non-terminal — the pipeline keeps processing after reply-send.\n\n**Affected files:** `wild_igor/igor/main.py` reply-emission path (HIGH-inertia — PRE-APPROVED by Akien 2026-04-22 as part of D-preparse-architecture blanket approval); likely `wild_igor/igor/pursuits.py` or the pursuit spawn helper; `tests/test_non_terminal_emission.py` new.\n**Design rules:** docs-in-code (document the non-terminal pattern in main.py + pursuits.py); test-plan-or-why-not (covered); oop-first (extend pursuit class, don't re-implement).\n**Scope boundary:** IN: reflex-reply → child pursuit that completes on emission, parent resumes with input-minus-addressed-portion for further processing. OUT: the residue-scan logic itself (T-salience-residue-scan); continuation-reply coherence markers (T-continuation-reply-register — TBD if needed).\n**Test plan:** reflex-reply fires, child pursuit completes, parent pursuit resumes without blocking; input state carried across resume includes what-was-addressed flag; if parent's residue-scan returns nothing-interesting, no second reply fires; if something interesting, a new child pursuit for continuation reply spawns correctly; pipeline doesn't terminate on first emit.",
+    "completed_at": "2026-04-22T20:45:18.424026+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "283d12e7-5397-4ce0-bfd9-c131b8cbe1f3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice1-manifest-dataclasses.20260501.210800082432",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice1-manifest-dataclasses"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T21:08:00.082432",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice1-manifest-dataclasses",
+      "T-datacenter-capability-announce-protocol"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice1-manifest-dataclasses",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice1",
+      "Datacenter"
+    ],
+    "title": "announce/manifest.py — Manifest + ToolBinding/ChannelSubscription/StateRef/ACL dataclasses",
+    "result": "Manifest + ToolBinding/ChannelSubscription/StateRef/ACL dataclasses at announce/manifest.py. etag() SHA-256 helper for cache-invalidation. agent_datacenter commit a3caa2d.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T21:07:06.318994+00:00",
+    "related_to": "T-datacenter-capability-announce-protocol",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Define the dynamic manifest types per § 5.1: Manifest holds manifest_id, agent_id, instance_n, profile_etag, registry_etag, tool_bindings (list[ToolBinding]), channel_subscriptions (list[ChannelSubscription]), state_refs (list[StateRef]), acl (list[ACL]). ToolBinding = name + address + capabilities. ChannelSubscription = name + address + mode. StateRef = kind + address (Igor-only). ACL = role + permissions.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/manifest.py (NEW)\n**Design rules:** dataclass-as-wire-shape, etag-driven-cache-keys\n**Scope boundary:** in — Manifest + 4 sub-dataclasses, manifest_id derivation (uuid4 per assembly), to_dict/from_dict; out — assembly logic (broker.py owns), inotify/invalidation (slice 3)\n**Test plan:** test_manifest_to_dict_includes_all_fields, test_manifest_id_unique_per_call, test_state_refs_optional (CC has none, Igor has them)",
+    "completed_at": "2026-05-01T21:08:00.082432+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7fab37a8-874b-4444-800a-92c9ff6b2cf2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

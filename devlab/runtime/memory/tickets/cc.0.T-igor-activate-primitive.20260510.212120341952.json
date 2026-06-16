@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-activate-primitive.20260510.212120341952",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-activate-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T21:21:20.341952",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-activate-primitive-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-activate-primitive",
+      "T-igor-focus-state"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-activate-primitive",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Memory"
+    ],
+    "title": "CLOSED: activate() spreading activation primitive",
+    "result": "activate.py with cosine match, temporal decay, visited-set propagation; 7 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-10T22:51:01.132842+00:00",
+    "created_at": "2026-05-10T21:21:20.341952+00:00",
+    "related_to": null,
+    "decision_id": "D-activate-primitive-2026-05-10",
+    "description": "New function `activate(memory_id, stimulus_embedding, *, conn=None, **kwargs)` in `wild_igor/igor/cognition/activate.py`. Steps in order:\n1. Fetch node from clan.memories; read watch_condition embedding (stored in metadata.watch_embedding as float list); cosine similarity vs stimulus_embedding; skip if below per-node threshold (metadata.activation_threshold, default kwargs.get('threshold', 0.65)).\n2. Activation decay: current_score = node.activation_score (new column); decay_factor = 0.7 ** (days_since(node.last_activated_at) if last_activated_at else 0.0); new_score = max(current_score * decay_factor, 0.0) + (similarity * kwargs.get('signal_weight', 1.0)).\n3. UPDATE clan.memories SET activation_score=new_score, last_activated_at=now() WHERE id=memory_id.\n4. Propagate: visited = {memory_id}; for each neighbor (parent_id + metadata.associations entries [{memory_id, weight, relation}]): skip if in visited or depth >= max_depth or prop_score < min_score; prop_score = new_score * propagation_decay * neighbor.weight; recurse with depth+1, visited|{neighbor.memory_id}.\n5. After propagation, call focus_state.update_from_activation(top_node_id, top_score) — from T-igor-focus-state.\nAll DB writes direct psycopg2.\n\nDefaults (all overridable via kwargs): propagation_decay=0.7, max_depth=3, min_score=0.05, threshold=0.65, signal_weight=1.0\n\nDB migration: ADD COLUMN activation_score float DEFAULT 0.0, ADD COLUMN last_activated_at timestamptz (both nullable-safe, backward compatible).\n\n**Affected files:** `wild_igor/igor/cognition/activate.py` (new), DB migration (activation_score + last_activated_at on clan.memories)\n**Design rules:** no-sqlite; direct psycopg2; no cortex.py touch; visited-set (set of int memory_ids per call) prevents association cycles; max depth hard cap 3; min score cutoff 0.05; all defaults overridable via kwargs; clan.memories schema change adds nullable columns only (backward safe)\n**Scope boundary:** IN — activate(), decay, propagation, focus_state.update_from_activation() call. OUT — no focus_state schema (T-igor-focus-state), no embedding generation (caller passes stimulus_embedding), no NE wiring (future ticket).\n**Test plan:** activate() on seeded node with matching embedding raises activation_score; decay applied correctly on node with stale last_activated_at; propagation reaches parent node but stops at depth 3; visited-set prevents infinite loop in association ring (A→B→A); focus_state.update_from_activation() called with highest-scored node id; node with similarity below threshold not updated",
+    "completed_at": "2026-05-10T23:00:07.013391+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6a6bec61-7afe-4ce6-91a9-273994fb72aa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

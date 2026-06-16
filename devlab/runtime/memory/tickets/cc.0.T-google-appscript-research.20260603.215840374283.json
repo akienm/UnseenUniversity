@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-google-appscript-research.20260603.215840374283",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-google-appscript-research"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.374283",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-google-appscript-YYYY-MM-DD"
+    ],
+    "tickets": [
+      "T-google-appscript-research"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-google-appscript-research",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "GoogleSecretary",
+      "Research",
+      "Decision"
+    ],
+    "title": "Research: Google AppScript as GoogleSecretary substrate",
+    "result": "ADOPT AppScript Web App for write ops; decision doc at D-google-appscript-2026-06-04.md",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-06-03T22:28:37.732459+00:00",
+    "created_at": "2026-06-03T21:58:40.374283+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Leah built an app using Google AppScript that reads Sheets and sends email server-side. AppScript runs inside Google's infrastructure, has native access to all Workspace APIs (Gmail, Calendar, Sheets, Drive), and doesn't require OAuth dance for each operation — the script runs as the authenticated user. This may be a more durable substrate for GoogleSecretary than browser automation via SWADL, which is fragile to UI changes. Research ticket: evaluate AppScript as the execution layer for GoogleSecretary operations and produce a decision doc.\n\n**Affected files:** lab/design_docs/decisions/D-google-appscript-YYYY-MM-DD.md (output artifact)\n**Design rules:** none apply — research/decision doc only\n**Scope boundary:** In scope: what AppScript can do (APIs, triggers, quotas), how to call it from a Python rack device (Apps Script API via service account or webhook), comparison with SWADL approach, decision recommendation. Out of scope: implementation of AppScript functions, wiring into GoogleSecretary device.\n**Completion criteria:** Decision doc written at lab/design_docs/decisions/ covering: AppScript capability surface, invocation path from Python, quota limits, verdict (adopt/defer/reject) with rationale",
+    "completed_at": "2026-06-04T21:15:08.753135+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:59:47.917880+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e5f8908b-f5f7-4446-8477-3b0a609d86a2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-model-alternatives-classifier.20260612.194411743006",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-model-alternatives-classifier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T19:44:11.743006",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-model-alternatives-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-model-alternatives-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-model-alternatives-classifier",
+    "gate": null,
+    "role": "builder",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Resilience",
+      "Cost"
+    ],
+    "title": "ModelAlternativesClassifier — suggest models when one fails",
+    "result": "wrote 26-test suite covering all provider fetchers, classifier, source integration; all pass",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.6,
+    "intention": "I intend that when a source's configured model is not found, alternatives are logged and available for auto-retry or manual selection.",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-06-12T19:44:11.743006+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-model-alternatives-classifier-2026-06-12",
+    "description": "When a source's configured model fails with a 404 or 'unknown model' error, the current behavior logs only 'unavailable — falling through' to a different source. This masks whether the failure is due to model deprecation (fixable by selecting a live model) or a transient provider issue (retry-on). \n\nAdd devices/inference/model_alternatives.py with ModelAlternativesClassifier class:\n  classify(source_name, model_name, failure_exc) -> tuple[str, list[str]]\n  Returns: (failure_category, alternatives)\n  failure_category: 'model_not_found' (404, 'unknown model' in error), or delegates to ProviderHealthClassifier for other types\n  alternatives: ranked list of available models from provider API (token_window match first, then provider-native ranking); empty list when unsupported or API unavailable\n\nExtend Source._classify_ping_failure(exc) → dict to return:\n  {\n    'failure_category': 'model_not_found' | 'local_bug' | 'auth_error' | 'unreachable' | 'unknown',\n    'alternatives': [list of model names] (empty for non-model-not-found)\n  }\n\nLog at INFO when model_not_found:\n  log.info('source %s model %s not found: alternatives=%s', self.name, requested_model, alternatives)\n\nImplement provider list endpoints:\n- Ollama: GET /api/tags → extract model names\n- Anthropic: GET /models → filter by availability, extract IDs\n- OpenRouter: GET /models → sort by featured/updated\n- Google Vertex: use google.cloud.aiplatform SDK list_models()\n\nFallback: when provider API fails or is unsupported, return empty alternatives; classification still fires (no regress).\n\nSource.ping() return type stays bool. Classification + alternatives extraction happens in except blocks (same injection point as provider-health). model_alternatives.py is local to devices/inference/, not part of the Classifier rack device.\n\n**Affected files:** new devices/inference/model_alternatives.py (LOW inertia); devices/inference/sources.py — Source._classify_ping_failure() signature change (MEDIUM inertia) + subclass implementations\n**Design rules:** OOP-first (ModelAlternativesClassifier class); log every interface crossing; urllib-only for standard endpoints (google.cloud.aiplatform SDK for Vertex only); no status-page fetch\n**Scope boundary:** In: model_not_found detection + ranked alternatives list + log line. Out: auto-retry logic (HealthMonitor concern), changing Source.ping() return type, status-page enrichment\n**Completion criteria:** pytest tests/inference/test_model_alternatives.py passes; grep 'failure_category=model_not_found.*alternatives=' in source logs fires when a model endpoint returns 404 or 'unknown model'; all provider list endpoints return non-empty alternatives when available\n**Observable via:** log.info('source %s model %s not found: alternatives=%s', source_name, model, alternatives) when model_not_found occurs\n**Validation:** trigger a model-not-found by renaming a model in config, run DS, grep the log line; confirm alternatives list contains live models\n**Cleanup:** pytest fixture suppresses INFO logs from devices.inference.sources at WARNING level; no DB rows or channel posts generated\n\n## Escalation summary\n**What was tried:** MAX_TURNS: hit 50 turns without DONE: prefix\n**Where it broke:** max turns hit without completing\n**What now?**\n\n## Escalation summary\n**What was tried:** MAX_TURNS: hit 50 turns without DONE: prefix\n**Where it broke:** max turns hit without completing\n**What now?**",
+    "completed_at": "2026-06-13T23:34:28.900985+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

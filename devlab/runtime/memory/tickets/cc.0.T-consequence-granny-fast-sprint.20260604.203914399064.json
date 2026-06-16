@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-granny-fast-sprint.20260604.203914399064",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-granny-fast-sprint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T20:39:14.399064",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-fast-sprint-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-granny-fast-sprint",
+      "T-granny-stale-inprogress-watchdog",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-granny-fast-sprint",
+    "gate": "2026-06-18",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Granny autonomous dispatch loop",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to verify that the autonomous dispatch loop does not silently regress ticket integrity, double-dispatch, or enable runaway token spend.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T20:39:14.399064+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-fast-sprint-2026-06-04",
+    "description": "**What changed:** Granny now dispatches CC and DickSimnel autonomously end-to-end via bus handshake, with stale-ticket watchdogs and dispatched-set pruning removing previous blocks.\n\n**Predicted unintended effects:**\n- Prune-then-dispatch loop: if _load_dispatched() prunes a ticket that was dispatched 5s ago (before DB status updates from dispatched→in_progress), Granny could re-dispatch it on the next cycle. The _cc0_busy() DB check should prevent this, but the window is narrow.\n- Stale-in_progress watchdog fires during active sprint: if CC is mid-sprint and takes >2h on a single ticket, the watchdog resets it to sprint mid-execution. CC finishes and closes it — no harm, but the setstatus sprint creates a redundant dispatch window.\n- IDLE listener tmux injection during interactive session: deliver_fn fires send-keys into claude-main while Akien is in a design conversation. Same risk as old tmux path but now harder to trace because dispatch source is the IMAP listener, not Granny directly.\n- Repeated escalation loop: broken ticket (always fails mid-sprint) → escalated → manual reset to sprint → dispatched again → loop. No hard max-retry counter exists.\n\n**Signals to watch:**\n- Channel: GRANNY_DISPATCH appearing twice for the same ticket within one poll cycle\n- Granny log: 'dispatched T-xxx' appearing twice without an intervening 'closed T-xxx'\n- Token spend: >200k/day increase in OR cost without corresponding closed tickets\n- Ticket: any ticket cycling between in_progress → sprint → in_progress more than 3 times\n\n**Gate condition:** Check by 2026-06-18 or after 10 autonomous dispatches complete.\n\n**Worst-case token spend:**\n  - Per-failure cost: ~50k-200k tokens per full sprint attempt on a broken ticket\n  - Hard cap: cc_queue.py reset --timeout trips gate at 3 resets → ticket auto-held (T-granny-stale-inprogress-watchdog uses this)\n  - Blast radius: capped at 3 automatic retries × ~150k tokens ≈ 450k tokens max before ticket is held; circuit breaker is the existing --timeout counter in cc_queue.py\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

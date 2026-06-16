@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-proc-decided-habit.20260324.172817091697",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proc-decided-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T17:28:17.091697",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-proc-decided-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proc-decided-habit",
+    "size": "S",
+    "title": "Seed PROC_DECIDED_HANDOFF — Igor handles /decided by gathering context and posting Claude handoff",
+    "result": "seeded via claudecode/seed_process_habits.py — PROC_DECIDED_HANDOFF cognitive habit, [DECIDED_HANDOFF] channel protocol defined",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "description": "Seed a workflow habit PROC_DECIDED_HANDOFF triggered by '/decided' from Akien. Igor: (1) reads ring memory for what was just discussed, (2) synthesizes what was decided, (3) posts structured [@Claude /decided] message to channel with summary + context, (4) acknowledges to Akien that the hand-off is posted and Claude needs to be notified. Format: '[DECIDED_HANDOFF] What was decided: <summary>. Context: <background>. Requesting /decided ritual from Claude.' This is the Igor side of the decided discussion protocol.",
+    "completed_at": "2026-03-24T17:28:17.091697+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "80657832-bf20-412a-ab80-89e9c146358d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

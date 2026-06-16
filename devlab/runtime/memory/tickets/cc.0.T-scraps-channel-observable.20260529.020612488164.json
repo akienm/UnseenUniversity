@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-scraps-channel-observable.20260529.020612488164",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scraps-channel-observable"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T02:06:12.488164",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "none"
+    ],
+    "tickets": [
+      "T-scraps-channel-observable"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scraps-channel-observable",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Observability",
+      "Scraps"
+    ],
+    "title": "Add channel posts to Scraps for audit events",
+    "result": "Channel posts added for validation failure, fuzzy escalation, and fuzzy INVALID; 4 new tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-29T02:06:12.488164+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "none",
+    "description": "Scraps validates tickets and runs scripts silently. Add channel posts for: validation failures (with reasons), fuzzy-check escalations (when deterministic rules are insufficient), and script execution completions. Use unseen_university.channel.post_to_channel.\n\n**Affected files:** devices/scraps/scraps_device.py\n**Design rules:** none apply\n**Scope boundary:** IN — channel posts for 3 event types in scraps_device.py; OUT — no new validation logic\n**Test plan:** tests/test_scraps_device.py: mock channel post, verify it fires on validation failure and fuzzy escalation",
+    "completed_at": "2026-05-29T02:10:01.731776+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-29T02:06:12.488198+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "93ec4fe1-e00e-47e0-92ce-c1af6dc0c34f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

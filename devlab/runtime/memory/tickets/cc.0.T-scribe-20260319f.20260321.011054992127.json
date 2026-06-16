@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260319f.20260321.011054992127",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260319f"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:54.992127",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260319f"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260319f",
+    "body": "Decisions: D141-D145. New: D144 traversal-context-design, D145 os-primitives-design. Key changes: UC-004 added to use_cases.md, slate.md updated with Layer 1.5 + OS primitives + index tickets, book_learner wg_cooccur removed, PROC_READING_DEPOSIT deleted, Layer 1 complete. Session theme: Layer 1 substrate complete; reading POC initiated; traversal context + OS primitives designed as Layer 1.5. Subsystems touched: cortex.py, book_learner.py, temporal_gradient.py (new), design_docs/use_cases.md, slate.md.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close for session 2026-03-19d (final)",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:54.992127+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

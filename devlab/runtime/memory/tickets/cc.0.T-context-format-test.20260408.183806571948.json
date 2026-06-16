@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-context-format-test.20260408.183806571948",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-context-format-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T18:38:06.571948",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-context-format-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-context-format-test",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "D330: Context format test — CSB vs prose per model",
+    "result": "D330 finding: prose beats CSB on BOTH token efficiency and quality. CSB pipe delimiters tokenize poorly (+7% tokens). Prose quality: 0.69-1.00 vs CSB 0.62-0.88. Recommendation: render TWM context as natural language, not CSB. Test at tests/test_context_format.py.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Same prompt + memories in structured CSB vs natural language prose. Run against Ollama local, haiku, sonnet. Measure response quality + token count. Determines if structure saves tokens without losing quality.",
+    "completed_at": "2026-04-08T18:38:06.571948+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8063de42-1080-42cc-b12a-4f343e8c0d6f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

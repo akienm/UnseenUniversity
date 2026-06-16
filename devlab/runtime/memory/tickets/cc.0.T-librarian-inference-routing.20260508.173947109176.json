@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-librarian-inference-routing.20260508.173947109176",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-inference-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:39:47.109176",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-rack-agent-2026-05-08"
+    ],
+    "tickets": [
+      "T-librarian-inference-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-inference-routing",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Inference"
+    ],
+    "title": "CLOSED: Librarian inference routing",
+    "result": "InferenceRouter + model_config.yaml, 3 tiers, 16 tests (ee436c0)",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:59:31.851596+00:00",
+    "created_at": "2026-05-08T17:39:47.109176+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "description": "Wire inference routing into the Librarian. Same router pattern as Igor. Default to local low-cost models; escalate by task type.\n\nModel tiers (config-driven, not hardcoded):\n- Tier 0 (default): Qwen 8B — routine chat, channel replies, DB proxy responses\n- Tier 1 (research/summarization): Qwen 32B or 72B (or largest available on rack)\n- Tier 2 (complex reasoning): cloud escalation — Claude Haiku → Sonnet\n\nTask-type → tier mapping is a simple config table (YAML or JSON), tunable by Akien without touching code. Any rack participant can chat with the Librarian via channel — the Librarian selects model tier automatically based on message type.\n\n**Affected files:** agent_datacenter/devices/librarian/inference.py, agent_datacenter/devices/librarian/model_config.yaml\n**Design rules:** no-sqlite; inference router pattern consistent with Igor's\n**Scope boundary:** routing + model selection only; research workflows in separate ticket\n**Test plan:** task_type=chat → Qwen 8B selected; task_type=summarize → tier 1; config override works; escalation path reachable",
+    "completed_at": "2026-05-08T19:00:49.931951+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ef97ff8d-4a75-458e-99ac-8da8cebe0b4f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

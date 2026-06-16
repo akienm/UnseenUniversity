@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-milieu-inspector.20260324.164156367121",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-milieu-inspector"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T16:41:56.367121",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-milieu-inspector"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-milieu-inspector",
+    "size": "S",
+    "title": "Add get_milieu_state() tool returning current affective state",
+    "result": "get_milieu_state() tool added to metrics.py — returns valence/arousal/dominance with per-dim gradients, dominant emotion label (VAD→label helper), and session character. 9 tests. commit 2a02d41.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-24T16:38:31.172051+00:00",
+    "description": "Create callable tool returning current valence, arousal, and dominant emotion from the milieu system. Igor currently has no direct read on his own emotional register. Add to tools/metrics.py: call self._igor.milieu.get_state() or equivalent and return formatted snapshot.",
+    "completed_at": "2026-03-24T16:41:56.367121+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "70019138-37c9-4d11-9865-8e87dbe06f37",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

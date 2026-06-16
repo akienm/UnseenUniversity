@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-classifier-prompt-first.20260610.153308942701",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-classifier-prompt-first"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:33:08.942701",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-competition-bootstrap-2026-06-10"
+    ],
+    "tickets": [
+      "T-classifier-prompt-first"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-classifier-prompt-first",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Competition",
+      "Classifiers"
+    ],
+    "title": "Prompt-first LLM memory type classifier with hash cache",
+    "result": "llm_classifier.py: classify() returns (memory_type, cloud_calls_count); SHA256 cache in competition.classifications_cache; 7 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the prompt-first classifier establishes an LLM quality baseline with tracked cloud cost per classification.",
+    "claimed_at": "2026-06-10T16:17:41.699562+00:00",
+    "created_at": "2026-06-10T15:33:08.942701+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-inference-competition-bootstrap-2026-06-10",
+    "description": "Build Personality B: classify input text via structured LLM prompt → memory_type. Cache results by SHA256(text) in a local file or competition schema table to avoid repeat cloud calls. Second call for same text = 0 cloud calls.\n\n**Affected files:** New `lab/competition/classifiers/llm_classifier.py`; uses existing LLM client\n**Design rules:** Cache is mandatory — without it the classifier burns cloud calls on every eval row on every run\n**Scope boundary:** classify(text) → memory_type + cloud_calls_count. Few-shot prompt with 3-5 examples per type.\n**Completion criteria:** `llm_classifier.classify(text)` returns (memory_type, cloud_calls_count); second call for identical text returns cloud_calls_count=0; 5 sample programming-book sentences produce plausible types.",
+    "completed_at": "2026-06-10T16:19:40.857648+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-10T16:17:41.699562+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

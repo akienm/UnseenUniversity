@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-swarm-port-audit.20260505.184559273560",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-port-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T18:45:59.273560",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-identity-layer",
+      "T-swarm-port-audit",
+      "T-swarm-via-home-web-server"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-port-audit",
+    "gate": null,
+    "title": "DESIGNED: Swarm port-use audit — enumerate and rationalize bindings under unified bus",
+    "result": "Audit doc at lab/design_docs/swarm-port-audit-20260505.md. All bindings mapped: 5432/PG, 6379/Redis, 8080/8082/UC, 10143/IMAP bus, 11434/Ollama, plus infra ports. 3 conflict flags (PG external, Ollama external, web_server stub). Commit f7df1ab3.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "S",
+    "claimed_at": null,
+    "related_to": "T-swarm-via-home-web-server",
+    "decision_id": null,
+    "description": "Enumerate all current port bindings and service addresses on the swarm (UC web server, Discord bridge, Matter shelf, SensorTree, tailnet, CC dashboard) and produce a rationalization plan for how each fits under the unified agent_datacenter bus.\n\n**Affected files:** lab/design_docs/ (new audit doc), agent_datacenter/config/device_config.py, lab/claudecode/cc_skills context if anything conflicts\n**Design rules:** none apply\n**Scope boundary:** IN — enumerate every bound port/service, map each to its datacenter device or flag as needing one, note conflicts. OUT — actually rationalizing/changing any bindings (that's T-swarm-identity-layer and siblings).\n**Test plan:** audit doc is the deliverable; review against live `ss -tlnp` and `netstat` output from each online swarm box.\n**Pass condition:** A written audit doc exists at lab/design_docs/swarm-port-audit-YYYYMMDD.md mapping every current binding to: (a) its datacenter device, (b) its proposed bus address, or (c) a conflict flag. No ports are left unmapped.",
+    "completed_at": "2026-05-05T18:45:59.273560+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0203a3ea-dc0d-4233-a6b5-cac6bad1d0a5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

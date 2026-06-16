@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-pr-secondary-attractor-nesting.20260413.200124408427",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-secondary-attractor-nesting"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T20:01:24.408427",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-load-as-primary-attractor",
+      "T-pr-schema-seed",
+      "T-pr-secondary-attractor-nesting",
+      "T-reply-obligation-fork"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-secondary-attractor-nesting",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Nest tasks/goals inside their originating relationship facia as secondary attractors",
+    "result": "bbd10a02 — Closes the PR epic. goal_adopt extended with pr_facia_id kwarg (backward compatible). fork_bg dispatch resolves active frame and threads pr_facia_id into goal_adopt + calls pr_accrete_commitment in parallel. Loop closes: relationship → frame → goal-with-pointer → commitment-in-subtree → consolidated-weight → next-turn-frame-salience. 5 new tests covering goal_adopt kwarg + metadata propagation + backward compat + commitment helper. 2029 total pass, zero regressions.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T19:54:30.003745+00:00",
+    "related_to": null,
+    "description": "When a goal is adopted during an Akien-turn (via goal_adopt or reply-obligation-fork), link it to the Akien facia as its origin relationship. The goal becomes a SLOT inside the facia context, not a competing attractor. Igor's experience of 'doing the task for Akien' comes from this nesting — the task is framed by the relationship, not standalone.\n\nINTEGRATION WITH T-reply-obligation-fork (59a7184c already shipped): extend goal_adopt() to accept a pr_facia_id kwarg (from the dispatcher, captured from the currently-loaded persistent_relationship_facia in TWM). Store in goal metadata. When the goal is pushed to TWM, its category is 'active_goal' but its metadata includes pr_facia_id linkage.\n\nVISIBLE EFFECT: at reasoning time, the LLM's prompt builder can say 'This task is part of your ongoing work with Akien' not just 'You have an active goal'. Goal completion triggers an accretion write to the relationship facia ('commitment fulfilled: X').\n\nDEPENDS ON: T-pr-schema-seed, T-pr-load-as-primary-attractor. Hooks cleanly into T-reply-obligation-fork's existing goal_adopt extension points.\n\nTESTS: goal_adopt called during a loaded-Akien-facia turn captures pr_facia_id. Goal TWM push carries the linkage in metadata. Completion drain (T-reply-obligation-fork's bouquet) emits an accretion event into the relationship facia.\n\nINERTIA: LOW-MEDIUM. tools/ops.py goal_adopt + main.py dispatch.",
+    "completed_at": "2026-04-13T20:01:24.408427+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b02dac23-d540-4e5f-af27-ac782bc0e9f1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

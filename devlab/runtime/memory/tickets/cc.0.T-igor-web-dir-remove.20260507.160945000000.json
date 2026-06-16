@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-web-dir-remove.20260507.160945000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-web-dir-remove"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:09:45",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-migration-2026-05-06"
+    ],
+    "tickets": [
+      "T-igor-web-dir-remove"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-web-dir-remove",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Migration",
+      "Igor",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Remove uc_client admin wiring from Igor (web/ dir pending channel replacement)",
+    "result": "uc_client admin wiring removed (register/stats/deregister); web_server send path kept — needs agent_datacenter channel replacement before web/ dir can be deleted; commit b2865377",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-05-07T02:58:42.620465+00:00",
+    "created_at": "2026-05-07T16:09:45Z",
+    "related_to": null,
+    "decision_id": "D-adc-migration-2026-05-06",
+    "description": "wild_igor/igor/web/ (server.py, utility_closet_client.py) is UC infrastructure that doesn't belong in Igor's cognition layer. After the UC wiring is confirmed working via agent_datacenter, remove this directory and clean up the import in main.py:68 and all call sites (register, start_stats_pusher, deregister, broadcast_activity).\n\n**Affected files:** wild_igor/igor/web/ (delete), wild_igor/igor/main.py (remove uc_client calls)\n**Design rules:** no-sqlite; safeguards (main.py HIGH inertia — pre-approved for this migration)\n**Scope boundary:** In scope: delete web/ directory, remove uc_client import and all call sites from main.py. Out of scope: Discord/network/ cleanup (separate ticket).\n**Test plan:** Igor boots and runs normally without web/ directory. No ImportError. uc_client calls removed — stats no longer pushed to UC (UC side shows no agent attached, which is expected).",
+    "completed_at": "2026-05-07T03:04:48.580313+00:00",
+    "github_issue": 600,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c444bb1b-06bc-42b7-b3a4-26141963cfb2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

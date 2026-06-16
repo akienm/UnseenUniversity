@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-archivist-inference.20260601.191639223330",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-archivist-inference"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T19:16:39.223330",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-archivist-compiled-inference-2026-06-01"
+    ],
+    "tickets": [
+      "T-archivist-device",
+      "T-consequence-archivist-inference"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-archivist-inference",
+    "gate": "2026-06-15",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Archivist compiled-inference proxy",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-01T19:16:39.223330+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-archivist-compiled-inference-2026-06-01",
+    "description": "**What changed:** Archivist device owns the compiled-inference proxy; every inference call is intercepted, graph-checked, and fan-out to learning pipeline on miss.\n\n**Predicted unintended effects:**\n- Proxy latency added to every inference call — even always-miss graph checks have overhead; callers may time out if proxy is slow to start\n- Epistemic/emotional encoding boundary erodes — someone adds an emotional salience field to knowledge graph 'because it seemed useful'\n- Archivist becomes a single point of failure — if it crashes, all inference stalls rather than degrading gracefully\n- Learning queue grows unbounded if overnight processing falls behind — disk pressure\n- Caller API 'unchanged' assumption breaks when a caller imports inference directly, bypassing proxy\n\n**Signals to watch:**\n- PROXY_INTERCEPT log latency percentiles (p99 should stay <100ms)\n- Knowledge graph schema drift (grep for emotional_salience, valence, distress in archivist tables)\n- Channel: PROXY_FALLBACK messages (proxy down → direct inference bypass)\n- Learning queue depth metric (should drain overnight)\n\n**Gate condition:** Check by 2026-06-15 or when T-archivist-device closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Completion criteria:** Observation ticket — done when each predicted effect is annotated",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ff86b27d-9129-4d26-b0ef-d85d1a5153c0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

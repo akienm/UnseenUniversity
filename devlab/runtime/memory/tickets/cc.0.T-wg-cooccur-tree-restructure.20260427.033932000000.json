@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-wg-cooccur-tree-restructure.20260427.033932000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wg-cooccur-tree-restructure"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:32",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-wg-cooccur-tree-restructure"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wg-cooccur-tree-restructure",
+    "gate": "after Igor can reliably run his own tickets",
+    "size": "L",
+    "tags": [
+      "Memory",
+      "Architecture",
+      "Performance"
+    ],
+    "title": "Restructure wg_cooccur: flat table → adjacency/cluster tree",
+    "result": "Superseded by D-wg-node-tree-architecture-2026-06-08 — architecture restated as words-as-memories (Option C). Replaced by T-wg-words-as-memories + T-wg-spread-via-cortex + T-wg-cooccur-retire.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-04-27T03:39:32Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Restructure wg_cooccur from flat 29M-row Postgres table to hierarchical adjacency structure with cluster tree. Current flat shape (word_a, word_b, score) requires O(N) table scans for any lookup; tree shape enables O(k) traversal from a node outward, edge pruning, and calving of cold clusters.\n\nThe word graph conceptually IS a graph (words → [(neighbor, weight), ...]) but stores as a relational table, paying scan cost at scale. Applying the same clustering/hierarchy model used for memories (with root nodes, subtrees, salience decay) to co-occurrence will unlock both performance and structural operations.\n\n**Affected files:** wild_igor/igor/cognition/word_graph.py (core structure), tests/test_word_graph.py (verify traversal + calving), wild_igor/igor/tools/spreading_activation.py (update propagation to use tree edges)\n\n**Design rules:** memory shape (hierarchical tree with salience), spreading-activation (traverse edges not scan table), calving (prune weak clusters)\n\n**Scope boundary:** IN: restructure wg_cooccur storage from flat to tree; update spreading_activation to traverse tree; add calving support. OUT: retrain word graph from corpus (separate migration ticket); change co-occurrence computation algorithm (separate tuning ticket).\n\n**Test plan:** Unit tests for tree traversal (BFS from node); integration test for spreading_activation via tree vs. old table (verify same semantic output); calving test (prune edges below threshold, verify cluster removal).\n\n**Gate:** This ticket is blocked — Igor must be able to reliably run his own tickets first. Bring Igor down for the operation; once he's stable, schedule this as a standalone sprint task (not automated).",
+    "proposed_at": "2026-04-27T07:57:35.538581+00:00",
+    "completed_at": "2026-06-08T19:33:30.993513+00:00",
+    "github_issue": 533,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a3d4c37d-10b4-4c15-8286-17236b8250ad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

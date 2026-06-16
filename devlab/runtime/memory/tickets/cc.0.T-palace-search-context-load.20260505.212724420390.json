@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-palace-search-context-load.20260505.212724420390",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-search-context-load"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T21:27:24.420390",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-semantic-palace-search-injection-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-log-stop-hook-wire",
+      "T-palace-search-context-load"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-search-context-load",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CC",
+      "Workflow",
+      "palace"
+    ],
+    "title": "CLOSED: Semantic palace retrieval in /context-load Step 2b",
+    "result": "added Step 2c conditional in-flight semantic search to /context-load",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-05-05T21:27:06.669181+00:00",
+    "related_to": null,
+    "decision_id": "D-semantic-palace-search-injection-2026-05-05",
+    "description": "Context-load Step 2b loads the palace tree by structural hash-gating. When there is an in-flight task on the slate, a semantic search against that task would pull the most relevant palace nodes without loading the full tree — targeted context at session start.\n\nProposed shape: after Step 2b palace tree hash check, if ## In-flight on slate is not NONE, extract the in-flight task description and call mcp__igor__memory_search(query=<in_flight_text>, limit=5). Inject results as 'Relevant palace nodes for in-flight task:' block. When in-flight is NONE, skip (no meaningful query). Additive — doesn't replace structural tree listing.\n\n**Affected files:** ~/.claude/skills/context-load (Step 2b addition)\n**Design rules:** none\n**Scope boundary:** one new conditional step after Step 2b. Only fires when in-flight task exists. No state changes.\n**Test plan:** run /context-load with in-flight set to a specific ticket; verify palace nodes relevant to that ticket appear without being in the standard structural load.\n**Pass condition:** /context-load with in-flight 'T-cc-log-stop-hook-wire' surfaces palace nodes about agent_datacenter logging architecture.",
+    "completed_at": "2026-05-05T21:27:24.420390+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "60b696d9-5c75-4894-8eb1-479eb55d2d3a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

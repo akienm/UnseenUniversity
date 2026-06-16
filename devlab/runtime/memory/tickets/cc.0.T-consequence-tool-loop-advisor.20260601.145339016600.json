@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-tool-loop-advisor.20260601.145339016600",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-tool-loop-advisor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T14:53:39.016600",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tool-loop-advisor-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-tool-loop-advisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-tool-loop-advisor",
+    "gate": "2026-06-15",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: ToolLoop advisor redesign",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-01T14:53:39.016600+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-tool-loop-advisor-2026-06-01",
+    "description": "**What changed:** ToolLoop redesigned with round-based iteration (5 per round, 2 rounds max) and advisor meta-call between rounds with 6 end states.\n\n**Predicted unintended effects:**\n- Tickets that previously needed 8-12 iterations to complete now hard-ESCALATE at the round-2 boundary — silent regression in DONE rate\n- Advisor REPROMPT rewrites may drift away from original ticket intent, producing work that doesn't match what was requested\n- Advisor call adds latency and an extra inference cost per ticket — total cost per DONE may rise even if per-iteration cost drops\n- CONFUSED signal flood if the advisor's own context is insufficient to summarize 5 complex tool results\n- Context reset may drop information the second round actually needed (e.g. a file read result from round 1)\n\n**Signals to watch:** DONE% across first 20 post-ship tickets vs. pre-ship baseline (both escalated); avg cost_usd per DONE in MINION_RESULT channel; advisor_signal distribution; any CONFUSED rate > 10%\n\n**Gate condition:** Check by 2026-06-15 or after 20 tickets through the new ToolLoop, whichever comes first.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** No automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7075aec3-e5cf-446d-8e58-17cddf66b093",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

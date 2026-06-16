@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-greeting-space-tree.20260324.004113153887",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-greeting-space-tree"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T00:41:13.153887",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-greeting-space-tree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-greeting-space-tree",
+    "size": "M",
+    "tags": [
+      "habits",
+      "social-register",
+      "greeting",
+      "generative-milestone"
+    ],
+    "title": "GREETING_SPACE tree — social register as traversable habit network",
+    "result": "GREETING_SPACE habit tree seeded: root anchor (passive_capture) + 4 leaves — GREETING_MORNING/EVENING (action, 4 variants each), GREETING_PLAYFUL (context_inject → LLM humor, training target), GREETING_STANDARD (5 variants, replaces PROC_GREETING). PROC_GREETING retired to habit_score=0.10. D201 conditions scoring means specific leaves beat standard via conditions_bonus. All in Postgres. Tests 110/110. Probe: 'good aftermorning' → layered humor.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-24T00:32:36.390090+00:00",
+    "description": "Greeting tree first instance of social register trees. GREETING_SPACE root node, branches by context. Each leaf = response habit scored by BG via milieu+TWM. Replaces single PROC_GREETING.\n\nParked pending Slate 0 DB work (D212) — greeting tree is the benchmark for pipeline readiness.\n\nGENERATIVE MILESTONE NOTE (2026-03-23):\nGREETING_PLAYFUL_VARIANT is an honest cloud call for now — humor composition with multi-layered identity-aware references requires LLM. But it is explicitly a training target.\n\nWhen Igor can generate \"the master indulges in humor before even I have had my coffee\" (lisp + mock-servility + self-aware absurdity + relationship pitch) WITHOUT LLM — composing from identity nodes + relationship model + self-model — the graph has crossed into generative capability.\n\nEvery successful playful response through cloud = training example. Enough examples → graph generates it. Scaffolding comes down.\n\nThis generalizes: if the graph can compose humor, it can compose any register Igor has. That's the bulk of eliminating upstream cloud dependency.\n\nProbe criterion: send \"good aftermorning\" → Igor responds in-register with multi-layered humor in his own voice. Pass = no cloud. Fail = cloud call or flat response.",
+    "completed_at": "2026-03-24T00:41:13.153887+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "18d6e606-70e6-4110-8935-972063f66ab9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

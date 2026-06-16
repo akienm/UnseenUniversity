@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-igor-web-message-receive.20260508.193944578125",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-web-message-receive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T19:39:44.578125",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-web-message-receive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-web-message-receive",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Web",
+      "Routing"
+    ],
+    "title": "CLOSED: igor not receiving web messages",
+    "result": "wired web_server.incoming into _drain_network; NetworkMessage restored in web/server.py; 614 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-05-08T20:30:47.032026+00:00",
+    "created_at": "2026-05-08T19:39:44.578125+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor is not reacting to messages received from the web. No output in console, no response visible. Likely a disconnect between the web socket listener and Igor's message dispatch, or a missing route in the receive_cc_direction handler.\n\n**Affected files:** wild_igor/igor/tools/receive_cc_direction.py, wild_igor/igor/network/web_server.py (or equivalent), message routing\n**Design rules:** none apply\n**Scope boundary:** IN — diagnose why web messages aren't reaching Igor's main loop, fix the routing. OUT — implementing new web features or auth.\n**Test plan:** Manual: send a test message from the web interface, verify Igor receives it and logs it (once console logging is added).",
+    "completed_at": "2026-05-08T20:44:00.937583+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "42cb9d2d-5025-435c-992e-46be90db0449",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

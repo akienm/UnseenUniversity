@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-wg-meta-upsert-latency.20260422.194252064867",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wg-meta-upsert-latency"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T19:42:52.064867",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-slow-query-triage-2026-04-22"
+    ],
+    "tickets": [
+      "T-wg-meta-upsert-latency"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wg-meta-upsert-latency",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Database",
+      "Performance",
+      "WordGraph"
+    ],
+    "title": "Investigate wg_meta upsert latency (5,855ms worst, 143 hits)",
+    "result": "37665892 — batched word_count upserts (G-WG3 doc_count pattern). _inc_word_count + flush_word_count. Root cause: every index() hit the hot wg_meta row; 500% bloat on 2-row table confirmed pre-fix. 7 tests.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-04-22T19:40:32.783654+00:00",
+    "related_to": null,
+    "decision_id": "D-slow-query-triage-2026-04-22",
+    "description": "INSERT INTO wg_meta (key, value) ON CONFLICT DO UPDATE hits 5,855ms worst-case across 143 calls. This is an investigation ticket — find the root cause (lock contention, table bloat, missing index on wg_meta, or write amplification) and either fix in-place if trivial or spawn a follow-on ticket.\n\n**Affected files:** TBD discovery — likely wild_igor/igor/memory/word_graph.py or lab/utility_closet/wg_*.py. Update docstring on the upsert call site once identified.\n**Design rules:** no-sqlite: touches wg_meta table (Postgres existing). oop-first: investigation only, no new shared state in this ticket. docs-in-code: update docstring on upsert call site when found. test-plan-or-why-not: applies — see below.\n**Scope boundary:** IN — identify root cause, fix if trivial OR file follow-on ticket with concrete fix shape. OUT — rewriting word graph, changing wg_meta schema without evidence.\n**Test plan:** No new tests in investigation phase. Deliverable: root-cause writeup in ticket close note. If fix is trivial (index gap, single-line guard), add before/after timing assertion in test_word_graph*.py. If non-trivial, spawn follow-on with its own test plan.",
+    "completed_at": "2026-04-22T19:42:52.064867+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "709ef213-30b0-4d71-95b5-c54068367b0b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-yogai7-ssh-fix.20260327.235114477205",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-yogai7-ssh-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-27T23:51:14.477205",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-yogai7-ssh-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-yogai7-ssh-fix",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Fix yogai7 SSH publickey auth from akiendelllinux",
+    "result": "Fixed: removed administrators_authorized_keys from Match block scope (StrictModes rejected it due to extra akien user permission); user-level C:\\Users\\igor_wild_0001\\.ssh\\authorized_keys now used. SSH from akiendelllinux working.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "SSH from akiendelllinux (10.0.0.229) to yogai7 (10.0.0.71) as igor_wild_0001 fails with publickey auth. Key is correct in both C:\\ProgramData\\ssh\\administrators_authorized_keys AND C:\\Users\\igor_wild_0001\\.ssh\\authorized_keys. sshd_config has one correct Match Group administrators block. Permissions on administrators_authorized_keys: SYSTEM:(F) Administrators:(F). Event log shows: Authentication refused (publickey path), then Failed password fallback.\n\nSteps (run on yogai7, report each result to home Igor via POST http://10.0.0.229:8080/api/cc_send with JSON body {content: result}):\n\n1. Show current state: icacls both key files, Get-Content sshd_config last 15 lines, Get-WinEvent OpenSSH/Operational last 5.\n\n2. Try StrictModes no: add line StrictModes no before the Match block in sshd_config, Restart-Service sshd, ask akiendelllinux to test (or check event log for connection attempt).\n\n3. If still failing: remove Match block entirely (igor_wild_0001 already has user-level authorized_keys), Restart-Service sshd.\n\n4. If still failing: enable sshd debug logging (LogLevel DEBUG3 in sshd_config), capture a connection attempt, report full log.\n\n5. Report outcome to home Igor channel: POST http://10.0.0.229:8080/api/cc_send body={content: T-yogai7-ssh-fix: <result>}.\n\nSuccess = ssh -i ~/.ssh/igor_ed25519 igor_wild_0001@10.0.0.71 echo SSH OK returns SSH OK from akiendelllinux.",
+    "completed_at": "2026-03-27T23:51:14.477205+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "576628f2-bd65-4aae-af60-5e97fe13a8c7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

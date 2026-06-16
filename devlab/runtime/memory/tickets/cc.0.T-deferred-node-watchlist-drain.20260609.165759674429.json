@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-deferred-node-watchlist-drain.20260609.165759674429",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-deferred-node-watchlist-drain"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.674429",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-deferred-node-watchlist-drain"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-deferred-node-watchlist-drain",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Memory",
+      "Igor"
+    ],
+    "title": "Wire tick_watch_pass() into NE cycle + watchlist GIN index",
+    "result": "tick_watch_pass wired into NE cycle; m064 partial index for watched nodes; get_portable excludes WORD_GRAPH",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that deferred nodes actually decay over time and the watchlist remains bounded.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.674429+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (Cognitive Scientist) found tick_watch_pass() has no callers outside cortex.py — deferred nodes accumulate on watchlist indefinitely and never decay. Three fixes in one ticket: (1) wire tick_watch_pass() into the NE context cycle so watched nodes decay; (2) add GIN index on (metadata->>'watch') filtered WHERE metadata ? 'watch' to replace full-table scan across 57K+ rows; (3) exclude WORD_GRAPH type from get_portable() to prevent 57K scaffolding nodes appearing in instance-portable payload.\n\n**Affected files:** devices/igor/cognition/narrative_engine.py (or coa.py), devices/igor/memory/cortex.py (migration for GIN index + get_portable filter)\n**Design rules:** HIGH-inertia: cortex.py (pause for Akien pre-approval before coding); no-sqlite\n**Scope boundary:** IN — tick_watch_pass() wiring, GIN index migration, WORD_GRAPH portable exclusion; OUT — deferred node accumulation logic changes\n**Completion criteria:** (1) grep confirms tick_watch_pass() is called from NE/context cycle; (2) migration adds filtered GIN index on metadata->>'watch'; (3) get_portable() excludes WORD_GRAPH type; (4) watched node count query runs <100ms on full memory table",
+    "completed_at": "2026-06-09T19:49:03.650000+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

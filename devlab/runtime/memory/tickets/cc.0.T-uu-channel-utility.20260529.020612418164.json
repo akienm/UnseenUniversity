@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-uu-channel-utility.20260529.020612418164",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-channel-utility"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T02:06:12.418164",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "none"
+    ],
+    "tickets": [
+      "T-uu-channel-utility"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-channel-utility",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Observability"
+    ],
+    "title": "Add unseen_university/channel.py — standalone channel post utility",
+    "result": "Created unseen_university/channel.py with Postgres + JSONL fallback; 5 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-29T02:06:12.418164+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "none",
+    "description": "Granny and Scraps need to post to the shared channel_messages table but can't import from devices/igor/tools/channel_post.py (Igor-internal). Create unseen_university/channel.py with a standalone post_to_channel(message, author, channel) that writes to Postgres channel_messages + JSONL fallback — same pattern as Igor's implementation but with no Igor dependencies.\n\n**Affected files:** unseen_university/channel.py (new)\n**Design rules:** no-sqlite, Postgres only\n**Scope boundary:** IN — standalone utility with Postgres + JSONL fallback; OUT — no dedup logic in initial version (can add later)\n**Test plan:** unit test in tests/test_uu_channel.py: mock Postgres, verify insert shape; verify JSONL fallback fires when Postgres fails",
+    "completed_at": "2026-05-29T02:07:02.514111+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-29T02:06:12.487358+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3e15078c-7cb2-4d6c-89f1-67e5be5809ad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

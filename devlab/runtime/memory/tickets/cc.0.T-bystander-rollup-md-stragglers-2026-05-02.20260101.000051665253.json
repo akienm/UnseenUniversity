@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-bystander-rollup-md-stragglers-2026-05-02.20260101.000051665253",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bystander-rollup-md-stragglers-2026-05-02"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T00:00:51.665253",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-bystander-rollup-md-stragglers-2026-05-02",
+      "T-igor-programs-himself",
+      "T-rollup-autocommit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bystander-rollup-md-stragglers-2026-05-02",
+    "gate": null,
+    "size": "XS",
+    "tags": [
+      "Bystander",
+      "Housekeeping"
+    ],
+    "title": "Commit 2 stranded decision-rollup .md files (D-announce + T-igor-programs-himself)",
+    "result": null,
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "cc_queue.py _decision_rollup writes per-decision rollup files into lab/design_docs/decisions/ as a side effect of the last ticket of a decision closing. Two such files were left untracked from prior sessions: D-announce-protocol-2026-05-01.md (rollup appended after slice 4b shipped) and T-igor-programs-himself.md (cc-walk 1-10 rollup). Bundling them into the test-fix commit window so they don't keep lingering as untracked.\n\n**Affected files:** lab/design_docs/decisions/D-announce-protocol-2026-05-01.md, lab/design_docs/decisions/T-igor-programs-himself.md.\n\n**Design rules:** every-change-has-a-ticket (this is the bystander ticket per /sprint-batch step 9).\n\n**Scope boundary:** IN — commit the two stranded rollup files. OUT — fixing the underlying race that leaves rollups untracked (file under T-rollup-autocommit if that ever becomes a recurring annoyance).",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "41e3f87d-4178-40f7-9627-5df8dac3a105",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

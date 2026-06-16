@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-granny-escalate-closed.20260603.142435337119",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-escalate-closed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T14:24:35.337119",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-role-ladder-2026-06-03"
+    ],
+    "tickets": [
+      "T-announce-proof-validation",
+      "T-granny-escalate-closed",
+      "T-granny-external-state",
+      "T-provenance-write-enforce",
+      "T-sec-killswitch-authz",
+      "T-sec-shim-coldstart-failclosed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-escalate-closed",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Granny",
+      "Bug"
+    ],
+    "title": "Granny bug: skip tickets already closed/done before escalating",
+    "result": "persist alerted_ids to disk; dedup channel posts in _hold_for_cc_approval and _hold_for_audit_fail; 5 new tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "blocked_at": "2026-06-03T14:27:47.478678+00:00",
+    "claimed_at": "2026-06-03T14:25:25.024030+00:00",
+    "created_at": "2026-06-03T14:24:35.337119+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-role-ladder-2026-06-03",
+    "description": "Granny re-escalated T-sec-killswitch-authz, T-announce-proof-validation, T-sec-shim-coldstart-failclosed, T-provenance-write-enforce every ~60 seconds from 03:41–03:44 AM on 2026-06-02. All four tickets were already closed. Root cause: _alerted_ids is in-memory; after a Granny restart it's empty, so closed tickets that were previously alerted get re-escalated on the next poll.\n\nFix: in run_once(), before escalating a ticket, re-check its status from queue. If status is closed/done/cancelled, add to _alerted_ids and skip silently. Persist _alerted_ids alongside _dispatched_ids (already external-state pattern from T-granny-external-state).\n\n**Affected files:** devices/granny/daemon.py (run_once escalation path), devices/granny/orchestrator.py if relevant\n**Design rules:** external state principle — _alerted_ids must survive restart\n**Scope boundary:** escalation dedup only; does not change when Granny escalates (HIGH-inertia logic unchanged), only prevents re-escalation of already-closed tickets\n**Completion criteria:** after Granny restart, closed tickets that were previously escalated do not re-appear in channel; _alerted_ids persisted to disk; test: restart Granny with a pre-closed escalated ticket in alerted state — no channel post on next run_once()",
+    "completed_at": "2026-06-03T14:38:38.123209+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T14:25:25.024030+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "116a5182-845f-4ce6-bc8f-59fcde267987",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

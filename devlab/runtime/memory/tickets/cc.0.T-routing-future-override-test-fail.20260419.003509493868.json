@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-routing-future-override-test-fail.20260419.003509493868",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-routing-future-override-test-fail"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T00:35:09.493868",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-daily-chat-logs",
+      "T-routing-future-override-test-fail"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-routing-future-override-test-fail",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Tests"
+    ],
+    "title": "tests/test_routing.py::TestIsInUse::test_future_override_blocks failing",
+    "result": "Patch target was igor.cognition.machine_manager but is_in_use lives in lab.utility_closet.machine_manager (the shim only re-exports). Swapped patch path to canonical module. Fixed 4 failing tests (3 TestIsInUse + 1 TestRoute); all 24 routing tests pass. Commit eebc7296.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T00:32:44.138788+00:00",
+    "related_to": null,
+    "description": "Discovered during T-cc-daily-chat-logs sprint on 2026-04-18. Pre-existing failure verified independently of that sprint's changes.\n\n## Symptom\n```\ntests/test_routing.py:104: in test_future_override_blocks\n    self.assertTrue(self._run(m))\nE   AssertionError: False is not true\n```\n\n## Context\n- Test suite otherwise clean: 2546 passed, 6 skipped\n- test_routing.py is the only failure\n- Only this one test in TestIsInUse fails (other routing tests unknown — suite halted on first fail with -x)\n\n## First steps\n- Read tests/test_routing.py around line 104 to understand what `_run(m)` checks\n- Check git log on test_routing.py and the code under test for recent changes — might be a regression from a recent sprint\n- Try running TestIsInUse class in full (without -x) to see the class-level pattern\n\n## Scope\n- Figure out whether test or code is wrong\n- If test is stale, update it\n- If code is wrong, fix it\n- Keep change minimal — this is a targeted fix, not a routing refactor",
+    "completed_at": "2026-04-19T00:35:09.493868+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "286ef5fe-e571-4bc7-97a7-532628be6937",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

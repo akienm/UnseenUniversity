@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-inference-proxy-mini-rack.20260531.192211606448",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-proxy-mini-rack"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:22:11.606448",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-proxy-mini-rack"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-proxy-mini-rack",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Redesign inference proxy as mini-rack: providers + models separate",
+    "result": null,
+    "status": "closed",
+    "worker": "claude",
+    "priority": 2.0,
+    "claimed_at": null,
+    "created_at": "2026-05-31T19:22:11.606448+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The inference proxy is a self-contained mini-rack with 5 internal components. SOURCES: API keys/endpoints/wire format/availability. MODELS: capability specs/cost/latency/quality scores. RULES: priority-ordered routing policy, health-aware, session-affinity-aware. HEALTH: background ping loop feeding back into Rules. STORE: internal only — request log, per-caller billing ledger, semantic cache, model quality scores. Billing per caller is foundational. Highest priority: unlocks OR/Ollama/Qwen for Granny without burning Anthropic account. **Affected files:** devices/inference/ (full redesign). **Scope boundary:** 5-component mini-rack, internal Store, no Scraps dependency. Phase 2: graph tree rules. **Completion criteria:** (1) Route to Anthropic/OR/Ollama interchangeably. (2) Every request logged. (3) Per-caller billing accurate. (4) Health monitor reroutes within one poll cycle.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T19:22:11.666646+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a55203c6-0a7c-4fd2-b22c-9eb32bf2e32f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

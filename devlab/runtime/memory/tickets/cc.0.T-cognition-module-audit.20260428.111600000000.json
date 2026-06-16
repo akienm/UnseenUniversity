@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cognition-module-audit.20260428.111600000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cognition-module-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T11:16:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cap-map-followups-2026-04-27"
+    ],
+    "tickets": [
+      "T-cognition-module-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cognition-module-audit",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Architecture",
+      "DocsHygiene"
+    ],
+    "title": "Cognition module audit — classify 70+ modules as live/dead/experimental",
+    "result": "audit_cognition_modules.py classifies 93 modules: LIVE=72, EXPERIMENTAL=17, PLACEHOLDER=0, ORPHAN=4 (observer, pipeline_manager, prefrontal_cortex, reasoning_cache — verify before deleting). Report at lab/claudecode/reports/cognition_module_audit_20260430-003029.md. Palace summary at theigors/audits/cognition_module_audit/latest. Per-module subsystem_index nodes deferred (balloons scope). 4193 regression pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.55,
+    "claimed_at": "2026-04-30T00:26:33.756333+00:00",
+    "created_at": "2026-04-28T11:16:00Z",
+    "related_to": null,
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "description": "wild_igor/igor/cognition/ contains 84 .py modules. The palace subsystem_index names ~10 as load-bearing. The remaining ~70 modules have unknown status: live and wired in transitively, experimental dead-end, orphan, or moved-but-not-deleted. This is the single biggest 'is this built?' confusion source for fresh sessions — it broke Sonnet repeatedly last week.\n\nWork: walk every cognition/*.py. For each, determine status (live / experimental / orphan / placeholder) by (a) checking importers via grep, (b) reading the top-of-file docstring, (c) checking call sites against main.py and turn_pipeline.py. Classify each. Update palace subsystem_index to reflect findings: add nodes for live-but-undocumented modules, mark stale placeholders, file removal candidates for orphans (don't auto-delete — surface for Akien review).\n\nAffected files:\n- wild_igor/igor/cognition/*.py (read-only — just classifying)\n- clan.memory_palace path 'theigors/subsystem_index/*' (additions/updates)\n- lab/docs/capability_map.md §6.1 (close out the open question)\n\nDesign rules:\n- postgres-only: applicable — palace writes only.\n- oop-first: not applicable — investigation work.\n- docs-in-code: applies via top-of-file docstrings as canonical source.\n- no-new-memory-schemas: applicable.\n- test-plan-or-why-not: no automated test — output IS a doc + palace coverage delta.\n\nScope boundary:\nIN: classification + palace updates for cognition/ tree.\nOUT: actually deleting orphans (separate Akien-reviewed pass), refactoring live modules, brainstem/ (HIGH inertia — separate), memory/ (separate audit if needed).\n\nTest plan:\n- Output check: subsystem_index node count grows by N (where N = newly-classified live modules).\n- Spot-check: pick 5 random cognition/ modules; for each, palace must answer 'is this live?' in one node lookup.\n- No code-behavior test (this is a doc ticket).\n\nWhy now: surfaced by lab/docs/capability_map.md §6.1 (2026-04-27). The capability map exposed the gap; this ticket closes it.",
+    "completed_at": "2026-04-30T00:31:30.192079+00:00",
+    "github_issue": 539,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "696d6557-95b5-40b9-aa23-892478100c93",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

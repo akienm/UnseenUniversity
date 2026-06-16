@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-audit-expert-skill.20260429.183209840886",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-expert-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:32:09.840886",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-expert-skill",
+      "T-audit-rename-pyramid"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-expert-skill",
+    "gate": "T-audit-rename-pyramid",
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Skills",
+      "Experts"
+    ],
+    "title": "Rework audit-expert — broadest lens per expert + watch_next emission",
+    "result": "Created ~/.claude/skills/audit-expert/SKILL.md + lab/claudecode/cc_skills/audit-expert/SKILL.md: 11-expert panel (Cognitive Scientist, Systems Architect, Safety, HCI, Distributed Systems, ML Engineer, Process/Meta, Security, Reliability, Data Engineer, Product Manager), per-expert output format (≤5 severity-tagged observations, ≤2 watch-for notes via emit_watch_next, 0-1 candidate tickets via /audit-ticket), weekly/monthly/on-demand cadence, area-to-expert mapping, ultraview integration, telemetry via emit_run_record. Model: Opus.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T18:25:51.835824+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "audit-expert (renamed from /deep-audit) drops the 'mainly look at X' restrictions. Each of the 11 experts gets the broadest lens of their discipline. Output per expert: top 3-5 observations (severity-tagged); 1-2 watch-for-this-next-time notes (written to theigors/audits/expert/watch_next/); 0-1 candidate ticket drafts (run through audit-ticket before filing).\n\nCadence: weekly = 3 randomly-rotated experts; monthly = full 11-expert panel; on-demand = pick experts by recently-touched area.\n\nUltraview integration: big PRs / monthly panel / pre-merge-on-HIGH-inertia → ultraview the candidate diff with 2-3 expert lenses.\n\nEmits per-run record. Model: Opus per expert (low volume, high leverage).\n\n**Affected files:** ~/.claude/skills/audit-expert/SKILL.md (renamed + reworked).\n**Design rules:** no persistence beyond palace telemetry.\n**Test plan:** weekly invocation rotates 3 experts; each emits ≤5 observations + ≤2 watch-for notes. Monthly invocation runs all 11. Watch-for from prior expert run hits → recorded. Telemetry recorded.",
+    "completed_at": "2026-04-29T18:32:09.840886+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2a9f0f1b-81e5-44ce-8898-059fcc19ef83",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

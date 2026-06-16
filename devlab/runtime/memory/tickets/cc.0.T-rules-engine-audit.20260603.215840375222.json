@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-rules-engine-audit.20260603.215840375222",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rules-engine-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.375222",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-registered-dispatcher",
+      "D-rules-engine-audit-YYYY-MM-DD"
+    ],
+    "tickets": [
+      "T-rules-engine-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rules-engine-audit",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Refactor",
+      "Workflow"
+    ],
+    "title": "Audit: find bespoke routing logic that should be rules engines",
+    "result": "audit complete; 28 patterns; 2 refactor tickets filed (T-librarian-tool-dispatcher, T-queue-mcp-dispatcher)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.45,
+    "claimed_at": "2026-06-04T19:43:52.076371+00:00",
+    "created_at": "2026-06-03T21:58:40.375222+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The Registered Dispatcher pattern (C-registered-dispatcher, §3.10 TheoryOfOperation) is the canonical shape for: queue of work + self-registering handler registry + routing rules. As the codebase grows, bespoke if/elif routing chains accumulate that should instead be rules engines. This ticket is a one-time audit sweep: grep for routing patterns, classify each as appropriate-bespoke or should-be-rules-engine, and file follow-on tickets for the refactor candidates.\n\n**Affected files:** Output: lab/design_docs/decisions/D-rules-engine-audit-YYYY-MM-DD.md + follow-on tickets\n**Design rules:** none apply — audit and ticket-filing only, no code changes in this ticket\n**Scope boundary:** In scope: grep devices/ + unseen_university/ for if/elif dispatch chains >3 branches, evaluate against C-registered-dispatcher criteria, produce report + tickets. Out of scope: performing the refactors (each gets its own ticket).\n**Completion criteria:** (1) audit report written listing each candidate with verdict (refactor / leave / monitor); (2) tickets filed for any refactor-now candidates; (3) report committed to lab/design_docs/decisions/",
+    "completed_at": "2026-06-04T21:14:17.502420+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:59:47.592146+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5dc8ab9f-b089-4a56-a3a4-f8bcc0325c16",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

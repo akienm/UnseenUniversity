@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-vetinari-clarification-loop.20260608.025532018790",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-clarification-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T02:55:32.018790",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-gap-map-2026-06-08"
+    ],
+    "tickets": [
+      "T-vetinari-clarification-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-clarification-loop",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Vetinari",
+      "Orchestration",
+      "CP1"
+    ],
+    "title": "Vetinari: CP1 clarification — ask Akien before ambiguous decompose",
+    "result": "_parse_decompose_response (backward-compat object+array); confidence gate + CLARIFY channel post; handle_clarification_reply enriches+redecomposes; 9 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that Vetinari scores confidence before decomposing and asks Akien a clarifying question (via channel) when confidence is below threshold, waiting for reply before proceeding.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T02:55:32.018790+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-vetinari-gap-map-2026-06-08",
+    "description": "CP1: when Vetinari doesn't know how to decompose a directive reliably, he asks rather than guesses. Currently there is no clarification capability at all.\n\nAdd confidence scoring to decompose_directive(): ask LLM to rate confidence 0.0-1.0 alongside the decomposition. If confidence < CLARIFY_THRESHOLD (0.7), post a clarifying question to the channel with directive_id in subject, set directive state to awaiting_clarification. Add handle_clarification_reply(directive_id, reply_text): update directive text with the clarification context and re-attempt decompose.\n\n**Affected files:** devices/vetinari/device.py (add confidence scoring, clarification state, handle_clarification_reply()), tests/test_vetinari_clarification.py (NEW)\n**Design rules:** clarification question posted via channel_post (not IMAP direct send); directive state machine: pending → awaiting_clarification → active; CP1 compliance logged at INFO\n**Scope boundary:** IN — confidence scoring, clarification question post, handle_clarification_reply(), state machine extension; OUT — parsing the channel for replies (that requires intake shim extension — separately), CP3/CP6 audit\n**Completion criteria:** mock LLM returns confidence=0.3 → clarification question posted to channel; directive state = awaiting_clarification; handle_clarification_reply() triggers re-decompose with enriched context; 5+ tests",
+    "completed_at": "2026-06-08T03:45:24.103246+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

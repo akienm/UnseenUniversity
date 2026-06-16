@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-igor-failure-accumulator.20260517.152323115844",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-failure-accumulator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.115844",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17"
+    ],
+    "tickets": [
+      "T-igor-failure-accumulator",
+      "T-igor-recurring-",
+      "T-igor-recurring-old-string-not-found"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-failure-accumulator",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "PeChain",
+      "Metacognition",
+      "SelfImprovement"
+    ],
+    "title": "CLOSED: pe_chain failure accumulator: 3+ same-type failures auto-files a design ticket",
+    "result": "infra.pe_failure_log table created; _pe_escalate() upserts failure_type and auto-files T-igor-recurring-* at count>=3",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-17T15:48:31.900892+00:00",
+    "created_at": "2026-05-17T15:23:23.115844+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "description": "pe_chain failures are escalated to CC inbox individually but not accumulated. The same failure type can recur indefinitely without triggering self-improvement. A failure accumulator that tracks patterns and auto-files design tickets closes the observe→improve loop (goal 1.5c path).\n\nAdd infra.pe_failure_log table: (failure_type TEXT, count INT, last_seen TIMESTAMPTZ, ticket_filed BOOLEAN). On each pe_chain escalation, upsert the failure_type + increment count. When count >= 3 and ticket_filed=false, call cc_queue.py add to file ticket T-igor-recurring-[failure_type] as status=sprint. Mark ticket_filed=true.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (MEDIUM); new infra.pe_failure_log table (LOW — new table only)\n**Design rules:** theigors/rules/database (Postgres only via db_proxy); theigors/rules/coding (new table creation)\n**Scope boundary:** In scope: failure_type taxonomy + upsert + auto-ticket at threshold. Out of scope: root-cause analysis in the filed ticket (CC/Igor job when picking it up); failure_type must be a finite enum, not free text.\n**Test plan:** After 3 escalations of type 'old_string_not_found', cc_queue shows T-igor-recurring-old-string-not-found at status=sprint. 4th failure does not duplicate the ticket (ticket_filed=true gate). infra.pe_failure_log row shows count=4.",
+    "completed_at": "2026-05-17T15:50:45.266789+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a49e5c96-b16e-4273-aa49-95eaa624072f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

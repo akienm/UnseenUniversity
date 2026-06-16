@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-degrade-safe.20260518.155544709983",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-degrade-safe"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T15:55:44.709983",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-degrade-safe"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-degrade-safe",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Reliability",
+      "Safety"
+    ],
+    "title": "Watchdog → known-safe mode on prolonged NE stuck",
+    "result": "safe_mode.py + COA watchdog: trip at IGOR_DEGRADE_SAFE_THRESHOLD (30) cycles, writes flag to switches.cfg, cc_inbox alert",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.9,
+    "blocked_at": "2026-05-18T17:07:59.420614+00:00",
+    "claimed_at": "2026-05-23T21:29:20.228055+00:00",
+    "created_at": "2026-05-18T15:55:44.709983+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "With Akien away through 05-25, a prolonged NE stuck cycle (>30 cycles or >2h) should trip a watchdog that drops Igor to a degraded-safe mode (SELF_EDIT off, dreaming-write off, action-tools off; reads still allowed) and writes a high-priority entry to cc_inbox.jsonl. No email alert — that path is blocked pending Igor becoming goal-oriented enough to self-configure it.\n\n**Affected files:** wild_igor/igor/cognition/coa.py or narrative_engine.py (watchdog hook), wild_igor/igor/env_sync.py or igor.switches.cfg (safe-mode gate writes), lab/claudecode/cc_inbox.py (alert write)\n**Design rules:** no-sqlite; safe-mode transition is human-reset-only — no auto-recovery\n**Scope boundary:** in scope: one watchdog (stuck cycle count threshold), one safe-mode env transition (writes IGOR_SAFE_MODE=true to switches.cfg), one cc_inbox.jsonl high-priority write. Out of scope: email/Gmail alerts, auto-recovery from safe mode, UI changes, TURN_PIPELINE or ARBITER gates.\n**Test plan:** unit test watchdog fires at threshold; integration test safe-mode flag written and SELF_EDIT gate consulted from switches.cfg after write; test cc_inbox.jsonl entry created with urgency=high.",
+    "completed_at": "2026-05-28T14:54:52.759941+00:00",
+    "github_issue": 731,
+    "dispatched_at": "2026-05-23T21:29:20.228055+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "958ca146-0b27-4cc6-9853-fd9ba4e65d34",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

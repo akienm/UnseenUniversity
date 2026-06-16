@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-rule-inherit-base-class.20260429.180149518683",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rule-inherit-base-class"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:01:49.518683",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-rule-inherit-base-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rule-inherit-base-class",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Rules",
+      "Logging",
+      "Palace"
+    ],
+    "title": "Promote inherit-base-class to first-class palace rule",
+    "result": "Promoted to first-class palace rule. Added theigors/rules/inherit-base-class (narrative covering: basemost class IS the logging+introspection layer for both Igor and agent_datacenter; lineage AgentBase → IgorBase; exemptions for Pydantic/Enum/ABC/Protocol/dataclass; existing D125 enforcement reference). Added theigors/rules/ticket_design_checks/inherit-base-class (check shape — applies_when/check_body/failure_message). Updated parent index to list the new check. Repo echo synced via palace_sync.py. No retrofitting (separate concern). Tests: 3988 passed.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-29T17:54:27.593590+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "The base class IS the logging+introspection layer for both Igor and agent_datacenter. Every non-library class inherits from it; this is the foundational rule, currently informal.\n\nAdd palace rule at theigors/rules/inherit-base-class with the narrative (every class inherits → logging is as easy as print → introspection comes for free). Add corresponding check shape at theigors/rules/ticket_design_checks/inherit-base-class — fires when ticket adds new classes, requires the ticket to declare base-class inheritance.\n\nThis ticket does NOT retrofit existing violations. A separate ticket audits the codebase for non-inheriting classes.\n\n**Affected files:** new palace nodes theigors/rules/inherit-base-class and theigors/rules/ticket_design_checks/inherit-base-class. No code changes.\n**Design rules:** no persistence beyond palace. no-new-memory-schemas: reusing memory_palace.\n**Test plan:** rule appears in palace dump; audit-ticket includes it in /review filing-time checks; a draft ticket adding a class without inheritance gets AMEND.",
+    "completed_at": "2026-04-29T18:01:49.518683+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c81820d2-e9f7-4ade-9173-8542569ac1d1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

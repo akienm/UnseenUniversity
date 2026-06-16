@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-vetinari-autonomy-gap-map.20260607.220610611810",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-autonomy-gap-map"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T22:06:10.611810",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-vetinari-autonomy-gap-map"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-autonomy-gap-map",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Vetinari",
+      "Orchestration",
+      "Evaluation",
+      "Factory"
+    ],
+    "title": "Vetinari: gap map against autonomous directive vision",
+    "result": "7-dimension gap map: directive-intake/decompose/clarification/dispatch/tracking/signal/CP-audit all MISSING or PARTIAL. Filed 7 follow-on tickets (T-vetinari-directive-intake through T-vetinari-cp-audit). Design doc: D-vetinari-gap-map-2026-06-08.md",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that we know exactly which capabilities Vetinari has, which are missing, and what tickets are needed to reach 'Akien gives a directive, Vetinari sorts it with team and reports when deployed, guided by the six core patterns.'",
+    "claimed_at": "2026-06-07T23:02:09.002740+00:00",
+    "created_at": "2026-06-07T22:06:10.611810+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Vetinari (devices/vetinari/device.py) exists with factory registry, health rollup, and Akien escalation. The target vision: Akien gives a natural-language directive ('make the web server do X'), Vetinari decomposes it into work, coordinates with Akien (clarifying questions), Librarian (research), CC (build), DickSimnel (token-light tasks), tracks progress, and reports when deployed — guided by CP1-CP6.\n\nThis is a gap-mapping sprint, not an implementation sprint. Read the existing device, evaluate each capability dimension against the vision, produce a gap list, and file one follow-on ticket per gap.\n\nCapability dimensions to evaluate:\n1. **Directive intake** — can Vetinari receive a natural-language goal from Akien via bus/channel?\n2. **Decomposition** — can he break a directive into tickets or work units?\n3. **Clarification loop** — can he ask Akien questions when a directive is ambiguous (CP1: 'I don't know' → ask)?\n4. **Team dispatch** — can he route work to CC (build), Librarian (research), DickSimnel (token-light), Granny (coordination)?\n5. **Progress tracking** — can he track whether work items are done and the directive is fulfilled?\n6. **Deployment signal** — can he detect 'deployed' and report back to Akien?\n7. **CP alignment** — does each behavior reflect the six core patterns? CP1 (admits uncertainty), CP3 (explains why each dispatch decision was made), CP4 (minimizes friction), CP6 (safety-conscious escalation)?\n\nFor each dimension: PRESENT (code exists, tested), PARTIAL (code exists but incomplete/untested), MISSING (not present).\n\n**Affected files:** devices/vetinari/device.py, devices/vetinari/__init__.py, config/profiles/vetinari.yaml, tests/vetinari/ (read only — this is evaluation)\n**Design rules:** none apply — evaluation sprint only; no code changes\n**Scope boundary:** In scope: read existing Vetinari device + test suite, evaluate against 7 dimensions, produce gap list, file one ticket per gap. Out of scope: implementing any gap (those are the follow-on tickets this sprint produces).\n**Completion criteria:** Gap map document written to ~/.unseen_university/vetinari/gap_map_20260607.md listing each dimension as PRESENT/PARTIAL/MISSING with one-sentence evidence. At least one follow-on ticket filed per MISSING or PARTIAL dimension. Sprint closes with a summary posted to shared channel so Akien sees the gap count.",
+    "completed_at": "2026-06-08T02:55:43.015673+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

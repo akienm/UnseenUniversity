@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-code-a-ticket-engram.20260330.190915489319",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-code-a-ticket-engram"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T19:09:15.489319",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-code-a-ticket-engram"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-code-a-ticket-engram",
+    "epic": "Training",
+    "title": "Encode sprint loop as PROC engram in Igor memory",
+    "result": "PROC_CODE_A_TICKET + INTERP_WHY_THE_LOOP seeded. Full sprint loop encoded: read ticket → grep → read files → plan → self_edit → pytest → deposit EPISODIC. Canonical exercise in PROC narrative. Lever 3 of 3 complete.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "PROCEDURAL engram: read ticket, grep codebase for touch point, plan (1 para), self_edit, run pytest, deposit result as EPISODIC. Pattern: PROC_WHAT_TIME but for coding process. First iteration handholded with CC present. Enables Igor to run the loop himself.",
+    "completed_at": "2026-03-30T19:09:15.489319+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fabaf31a-edec-46c3-9698-7cfbf6ee3b1a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

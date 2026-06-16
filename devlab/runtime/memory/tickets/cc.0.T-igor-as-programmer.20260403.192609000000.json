@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-igor-as-programmer.20260403.192609000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-as-programmer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:09",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-as-programmer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-as-programmer",
+    "epic": "Cognition",
+    "size": "L",
+    "title": "META: Igor executes dev cycle as habit program; Claude guides/reviews rather than implements. Needs: task-receipt habit, plan habit, filter habit, sprint habit, probe habit, commit habit — all as matrix-language programs",
+    "result": "12 coding engram nodes seeded: INIT→CLAIM→READ→PLAN→FILTER→SITUATE→OBSERVE→HYPOTHESIZE→IMPLEMENT→TEST→PROBE→CLOSE. Each with code_ref + MCPCALL + BRANCHIF chain. PROC_CODE_A_TICKET updated.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-04-18T01:46:51.497819+00:00",
+    "created_at": "2026-04-03T19:26:09Z",
+    "completed_at": "2026-04-18T01:50:30.832657+00:00",
+    "github_issue": 371,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

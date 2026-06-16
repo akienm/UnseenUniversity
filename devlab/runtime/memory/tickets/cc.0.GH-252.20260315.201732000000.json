@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-252.20260315.201732000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-252"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T20:17:32",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-252"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-252",
+    "title": "Research corpus: adaptive organizer knowledge base",
+    "result": "Subsumed by reading-pipeline + annotate_learning work (closed 2026-04-19 audit). annotate_learning() tool + PROC_ANNOTATE_LEARNING habit (aa5c9dbf) deposit EXPERIENTIAL nodes on 'this worked' / 'this didn't' signals. RL_016-020 reading list entries (7 Habits, GTD, ADHD 2.0, Drive, Atomic Habits) extend the knowledge corpus via book_learner extraction → cortex. The adaptive organizer knowledge base is the graph itself, populated by the reading pipeline.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-15T20:17:32Z",
+    "description": "GitHub issue #252. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-19T21:24:02.633582+00:00",
+    "github_issue": 252,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "db4c2284-dbfe-4b62-8a90-4cd7cf572618",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

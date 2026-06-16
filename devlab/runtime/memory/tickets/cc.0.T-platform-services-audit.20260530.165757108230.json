@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-platform-services-audit.20260530.165757108230",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-platform-services-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T16:57:57.108230",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-platform-services-roadmap-",
+      "D-platform-services-roadmap-YYYY-MM-DD"
+    ],
+    "tickets": [
+      "T-platform-services-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-platform-services-audit",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure",
+      "Research"
+    ],
+    "title": "Audit and roadmap UU platform services — what do new agents need?",
+    "result": "Design output: 7 sprint tickets filed (T-validate-bus-core through T-agent-scaffold) + T-igor-rack-tool-migration triage. Services inventory: announce, IMAP, queue/Granny, cc_task_listener, Librarian, scraps embed, web, installer. New capabilities: workspace file tools, shim spy, agent scaffold.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "claimed_at": "2026-05-30T17:05:46.138003+00:00",
+    "created_at": "2026-05-30T16:57:57.108230+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "UnseenUniversity is now a platform for building agents, not just Igor's runtime. With other people starting to see the repo this weekend, it's worth asking: what services are we already providing, what's missing, and what should be on the roadmap?\n\nCurrent service layer (for reference):\n- IMAP bus + comms:// addressing\n- Skeleton + MCP aggregator + flat-file registry\n- Postgres device (clan.* shared + instance.* private)\n- Inference device (LLM routing + escalation tiers)\n- Queue device (atomic work dispatch)\n- Librarian + embedding engine (memory search + retrieval)\n- Profile system (declarative YAML per agent type)\n- Skill framework + installer\n\nStrategic questions raised 2026-05-30:\n1. What other services would new agents need that aren't here yet?\n2. Cloud storage abstraction (S3/GCS as a device) — no immediate need but obvious eventual pattern\n3. Skill/workflow translation — could a device translate skills from other agent platforms (openclaw.ai, similar) into UU skill format? What would that look like?\n4. Are there other device-shaped services (agent-to-agent RPC, execution sandbox, richer observability) worth designing now vs. discovering via the first external agent builder?\n\nThis is a design conversation ticket, not a build ticket. Output should be a short palace decision node (D-platform-services-roadmap-YYYY-MM-DD) capturing the answer to each question, with any follow-on build tickets spawned from that.\n\n**Affected files:** docs/TheoryOfOperation.md (add platform services section if conclusions warrant), README.md (possibly)\n**Design rules:** orchestration-over-monolith — every service is a device; new agents shouldn't hardcode dependencies\n**Scope boundary:** IN — audit current services, define gaps, write a decision node; OUT — don't build new devices without a separate ticket\n**Completion criteria:** palace node palace.decisions.D-platform-services-roadmap-* written with answers to the 4 questions above; any build tickets spawned and filed",
+    "completed_at": "2026-05-30T17:24:47.368798+00:00",
+    "deposited_at": "2026-05-30T10:58:10.605170",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T16:57:57.192057+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7b4b9380-ceeb-4105-9df1-0764c6c7284f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

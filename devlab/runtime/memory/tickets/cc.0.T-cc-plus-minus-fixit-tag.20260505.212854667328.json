@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-plus-minus-fixit-tag.20260505.212854667328",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-plus-minus-fixit-tag"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T21:28:54.667328",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-plus-minus-scoring-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-plus-minus-fixit-tag",
+      "T-cc-plus-minus-slate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-plus-minus-fixit-tag",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CC",
+      "Workflow"
+    ],
+    "title": "CLOSED: CC+/CC- tagging prompt in /fixit",
+    "result": "added CC+/CC- tagging Step 0 to /fixit — asks classification before /decided fires, appends to slate ## CC score",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-05-05T21:28:35.771608+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-plus-minus-scoring-2026-05-05",
+    "description": "Rework events have no causal classification. The /fixit skill is the natural moment to tag each rework because that's exactly when rework is triggered. Adding a one-question prompt ('CC+ design changed, or CC- Claude gap?') and appending the event to the slate puts the signal at the right place in the workflow.\n\nProposed shape: at the start of /fixit (before ticket filing), prompt: 'Is this rework because the design changed (CC+) or because of a gap in my work (CC-)? One word: + or -'. Append the tagged event to '## CC score' section of today's slate: 'CC+/- HH:MM: <brief reason from context>'. If /fixit is called programmatically (no interactive context), skip the prompt and note as untagged.\n\n**Affected files:** ~/.claude/skills/fixit (add tagging step at top)\n**Design rules:** none\n**Scope boundary:** one new step at /fixit entry. Not changing the rest of /fixit flow. Gate on T-cc-plus-minus-slate (slate section must exist for appending to work correctly).\n**Test plan:** invoke /fixit for a rework scenario; verify CC+ or CC- prompt appears; verify entry appended to slate ## CC score section.\n**Pass condition:** after /fixit run, today's slate contains a CC+/CC- entry under ## CC score with timestamp and reason.",
+    "completed_at": "2026-05-05T21:28:54.667328+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9064ad9d-38b0-4a95-b8c2-030ccf0210ef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-unified-daemon-supervisor.20260615.182303120465",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-unified-daemon-supervisor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:23:03.120465",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-unified-daemon-supervisor-2026-06-15"
+    ],
+    "tickets": [
+      "T-consequence-unified-daemon-supervisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-unified-daemon-supervisor",
+    "gate": "2026-06-29",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Daemon"
+    ],
+    "title": "[pending] Consequence check: unified daemon supervisor resilience",
+    "result": null,
+    "status": "pending",
+    "worker": null,
+    "priority": 0.3,
+    "intention": "I intend that the Ground Loop supervisor improves daemon resilience without introducing new failure modes.",
+    "created_at": "2026-06-15T18:23:03.120465+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-unified-daemon-supervisor-2026-06-15",
+    "description": "**What changed:** All daemons consolidated under Ground Loop supervisor; file-pattern discovery, hot-reload, .borkedpy error handling.\n\n**Predicted unintended effects:**\n- If Ground Loop itself crashes, all daemons stop (single point of failure; mitigated by system cron respawn)\n- Runme.py imports with side effects (global state, module-level print) could interfere with hot-reload\n- Config.yaml parsing error could silently skip a daemon (if error handling is too lenient)\n- .Borkedpy files accumulate without cleanup if daemon never fixed\n- Hot-reload timing: if daemon is logging during reload, log file could be corrupted\n\n**Signals to watch:**\n- Ground Loop process running continuously; cron/startup task restarts on reboot\n- All expected runme.py files discovered on startup (logged to datacenter_logs/ground_loop/supervisor.log)\n- No .borkedpy files in devices/*/groundloop/ unless daemon crashed\n- Daemon logs appear at expected frequency (heartbeat for demo, requests for acurite, etc.)\n- Manual rename from .borkedpy back to .py successfully reloads daemon\n- No log corruption in daemon output files\n\n**Gate condition:** Check by 2026-06-29 (14 days) or when system has been running for 48h continuous with ≥3 daemons active.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

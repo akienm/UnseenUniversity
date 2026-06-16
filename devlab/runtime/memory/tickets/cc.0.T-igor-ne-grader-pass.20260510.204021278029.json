@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-ne-grader-pass.20260510.204021278029",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-ne-grader-pass"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T20:40:21.278029",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dreaming-patterns-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-ne-grader-pass"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-ne-grader-pass",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Quality"
+    ],
+    "title": "CLOSED: NE grader pass in coa.py",
+    "result": "ne_grader scores 3 dimensions via haiku, logs to psych_log, escalates on low scores",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-10T22:29:57.506088+00:00",
+    "created_at": "2026-05-10T20:40:21.278029+00:00",
+    "related_to": null,
+    "decision_id": "D-dreaming-patterns-2026-05-10",
+    "description": "After `_ne_worker` produces a non-empty NE result, spawn a `_grader_worker` in a fresh NE call that evaluates output against a hardcoded rubric: did it identify a concrete next action? did it surface the current stuck point? does the recommended habit exist in the registry? If grader returns weak output, call `escalate_to_channel()` with the gap description.\n\n**Affected files:** `wild_igor/igor/cognition/coa.py`\n**Design rules:** no-sqlite; rubric hardcoded initially; grader runs in a separate NE invocation (not same `_ne_thread`); must check `_ne_thread.is_alive()` before spawning grader; grader swallows its own exceptions (must never crash caller)\n**Scope boundary:** IN — grader function in coa.py, escalate on weak NE output. OUT — no new DB tables, no rubric persistence, no changes to NE prompt itself.\n**Test plan:** unit test grader fires and escalates on weak (empty next_action) NE output fixture; unit test grader passes silently on strong output fixture",
+    "completed_at": "2026-05-10T22:49:36.685291+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "72940912-10a3-4abe-9331-4adaeeec7628",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

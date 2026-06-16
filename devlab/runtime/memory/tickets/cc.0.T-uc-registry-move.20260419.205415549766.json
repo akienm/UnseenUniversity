@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-uc-registry-move.20260419.205415549766",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-registry-move"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T20:54:15.549766",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-budget-shelf",
+      "T-uc-db-proxy-shelf",
+      "T-uc-filesystem-shelf",
+      "T-uc-module-migration-epic",
+      "T-uc-registry-move"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-registry-move",
+    "size": "M",
+    "tags": [
+      "Refactor",
+      "UC",
+      "Prereq"
+    ],
+    "title": "Move Tool + registry from wild_igor/igor/tools/registry.py → lab/utility_closet/",
+    "result": "Registry moved to lab/utility_closet/registry.py with AgentBase parent (9ae6ed32). Budget and filesystem shelves fully flipped to UC-canonical with wild_igor shims (a2450562). 255 tools still register cleanly via both paths; identity preserved. Remaining UC→wild_igor deps are lazy (paths, system_proxy, log_error) — accepted per ticket, no circulars. Test baseline unchanged: 10 pre-existing fails, 3215 passing.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T20:34:20.828500+00:00",
+    "related_to": null,
+    "description": "Prerequisite for the full inversion of T-uc-budget-shelf (partial, 44db598a) and T-uc-filesystem-shelf (partial, 62f8c342). Currently those modules live at wild_igor/igor/tools/<name>.py with UC shims pointing at them; the canonical direction is the reverse (UC owns the implementation). Reversing requires their dependencies — Tool, registry, DatabaseProxy, log_error — to all import cleanly from UC without circling back through wild_igor/igor/tools/__init__.py during load.\n\n## Scope\n- Move Tool class + registry singleton from wild_igor/igor/tools/registry.py to lab/utility_closet/registry.py\n- Update internal imports (non-breaking): wild_igor/igor/tools/registry.py becomes a re-export shim\n- DatabaseProxy already lives at lab/utility_closet/db_proxy.py (T-uc-db-proxy-shelf done) — verify the current import pattern\n- forensic_logger.log_error: still in wild_igor/igor/cognition/forensic_logger.py; leave for now (UC → wild_igor cross-layer is OK for logging; that's a separate ticket if we want to clean it up)\n- Once registry lives in UC, flip T-uc-budget-shelf and T-uc-filesystem-shelf to have UC be canonical (the docstring explaining 'why partial' becomes 'full' and the shim direction reverses)\n\n## Acceptance\n- `from lab.utility_closet.registry import Tool, registry` works\n- `from wild_igor.igor.tools.registry import Tool, registry` still works via shim\n- No circular import when lab.utility_closet.budget imports registry natively\n- Budget shelf flipped to UC-canonical (separate follow-up commit)\n- Filesystem shelf flipped to UC-canonical\n- All tests pass\n\n## Related\n- T-uc-budget-shelf partial (44db598a) — blocked by this\n- T-uc-filesystem-shelf partial (62f8c342) — blocked by this\n- T-uc-db-proxy-shelf (done) — the template for this kind of move\n- T-uc-module-migration-epic (closed) — parent\n\n## Provenance\n2026-04-19 sprint: discovered during T-uc-budget-shelf when the circular-import failure made the inversion direction untenable until registry moves.",
+    "completed_at": "2026-04-19T20:54:15.549766+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1677f7df-ce7e-422d-b93c-d6c3ed962159",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

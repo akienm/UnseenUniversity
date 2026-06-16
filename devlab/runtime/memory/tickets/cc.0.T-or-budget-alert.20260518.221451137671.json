@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-or-budget-alert.20260518.221451137671",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-or-budget-alert"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:14:51.137671",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-or-budget-alert"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-or-budget-alert",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Budget",
+      "Inference"
+    ],
+    "title": "Post CC inbox alert when OR balance drops below threshold",
+    "result": "_maybe_alert() posts to channel when balance < OR_BUDGET_ALERT_USD (default $15); 6h dedup stamp; no TheIgors imports; 18 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:14:51.137671+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "OR balance is at $41 burning at $6/day (~7 days remaining as of 2026-05-18). There's no automated alert when balance gets critically low — CC only finds out by manually checking. Add a threshold check that posts to the CC inbox when balance drops below a configurable floor (default $15).\n\nThe balance is already fetched hourly by budget_gate.py during inference calls. Add a post-fetch check: if balance crosses below threshold and hasn't alerted in the last 6h, post to cc_inbox_bridge (or directly to the channel).\n\n**Affected files:** devices/inference/budget_gate.py, new devices/inference/budget_alert.py or inline in _write_balance_history()\n**Design rules:** no-TheIgors-imports; alert dedup via a simple timestamp file (no DB needed)\n**Scope boundary:** alert only, no automatic throttling of inference. Threshold configurable via OR_BUDGET_ALERT_USD env var (default 15.0). One alert per 6h max to avoid spam.\n**Test plan:** (1) alert fires when balance < threshold, (2) alert deduped within 6h window, (3) no alert when balance above threshold.",
+    "completed_at": "2026-05-18T22:29:39.260261+00:00",
+    "deposited_at": "2026-05-20T03:30:40.739075",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68296ccd-a47e-41b6-bd00-aa2cbb0bd87d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-test-inbox-tagging.20260430.170500000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-inbox-tagging"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T17:05:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-inbox-tagging"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-inbox-tagging",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "test-isolation",
+      "cc_inbox",
+      "tier1-candidate"
+    ],
+    "title": "Tag test-origin inbox messages with run id; cleanup phase sweeps them",
+    "result": "Shipped (commit 81b1c8a4): CC_INBOX_TAG env var prepends scope prefix to summary on cc_inbox.append; new delete_by_prefix() helper; conftest session fixture sets test:<ts> tag and sweeps on teardown. 9 new dedicated tests, 39 cc_inbox tests pass overall. Generalizes to debug:/sandbox:/dev: scopes.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 5,
+    "claimed_at": "2026-04-30T23:24:50.070356+00:00",
+    "created_at": "2026-04-30T17:05:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Tests are polluting the production cc_inbox (1510 entries triaged 2026-04-30). Stronger fix than path-isolation: self-identifying messages. Tests tag their writes with a scope+timestamp prefix, cleanup sweeps the tag. Stragglers (tests that bypass the fixture) are still findable and sweepable manually.\n\n**Mechanism:**\n- cc_inbox.append() reads `CC_INBOX_TAG` env var at append-time; when set, prepends `[<tag>]: ` to summary\n- pytest conftest sets CC_INBOX_TAG=`test:<YYYYMMDD.HHMMSS.ffffff>` at session start (long timestamp aligns with other log artifacts for easy cross-linking)\n- conftest.pytest_sessionfinish calls cc_inbox.delete_by_prefix(f'[{tag}]')\n- New helper: cc_inbox.delete_by_prefix(prefix) for the sweep\n\n**Generalizes beyond tests:** any scoped context (debug session, sandbox eval, dev tool) can set CC_INBOX_TAG to its own scope id (`debug:...`, `sandbox:...`) and sweep on exit. Single inbox sweep `delete_by_prefix(\"[test:\")` nukes ALL test pollution; date-scoped `delete_by_prefix(\"[test:20260430\")` nukes a day's runs. Same pattern works for any scope.\n\n**Affected files:**\n- lab/claudecode/cc_inbox.py (append reads env var + prefix logic; new delete_by_prefix function)\n- tests/conftest.py (pytest_sessionstart sets tag; pytest_sessionfinish sweeps)\n\n**Design rules:** test-isolation; no-real-side-effects-leaking-from-tests; side-effects-tagged-with-scope.\n\n**Scope boundary:** IN — env-var prefix at append + delete_by_prefix helper + conftest hooks. OUT — back-tagging existing entries (already swept); changing inbox schema; non-pytest test runners; path-isolation as separate mechanism (tag-and-sweep covers the use case).\n\n**Test plan:**\n- unit: append() with CC_INBOX_TAG set prepends tag; without set, no prefix\n- unit: delete_by_prefix removes only matching entries; leaves untagged + other-tagged entries intact\n- integration: pytest writes a tagged entry, sessionfinish sweep removes it, the test-installed entry is gone but other entries persist (verify against tmp inbox path)\n",
+    "completed_at": "2026-05-02T03:40:47.441758+00:00",
+    "github_issue": 569,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "be80697d-0fb5-457b-a40e-cb7146bc93f6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

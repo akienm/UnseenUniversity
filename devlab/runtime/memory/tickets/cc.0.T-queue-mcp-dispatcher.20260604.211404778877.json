@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-queue-mcp-dispatcher.20260604.211404778877",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-queue-mcp-dispatcher"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T21:14:04.778877",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rules-engine-audit-2026-06-04"
+    ],
+    "tickets": [
+      "T-queue-mcp-dispatcher"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-queue-mcp-dispatcher",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Refactor",
+      "Infrastructure"
+    ],
+    "title": "Queue MCP server: refactor 7-branch _dispatch to handler dict",
+    "result": "_handlers dict in _dispatch; 7 branches removed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.38,
+    "intention": "I intend that queue MCP tool dispatch uses a handler dict so new tools register themselves rather than extending an if/elif chain.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T21:14:04.778877+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-rules-engine-audit-2026-06-04",
+    "description": "devices/queue/mcp_server.py _dispatch has 7 branches routing by tool name. Replace with _HANDLERS = {name: fn} dict.\n\n**Affected files:** devices/queue/mcp_server.py\n**Design rules:** OOP-first\n**Scope boundary:** Replace if/elif in _dispatch only. No new tools. No behavior change.\n**Completion criteria:** _dispatch uses dict lookup; all existing tests pass; adding a new tool requires one dict entry.",
+    "completed_at": "2026-06-04T21:43:20.083646+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-vetinari-pa20-spec.20260601.145342183962",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-pa20-spec"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T14:53:42.183962",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-prescient-agents-north-star-2026-06-01"
+    ],
+    "tickets": [
+      "T-granny-escalation-patterns",
+      "T-inference-outcome-learner",
+      "T-vetinari-device",
+      "T-vetinari-pa20-spec"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-pa20-spec",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Architecture",
+      "Vetinari"
+    ],
+    "title": "Update T-vetinari-device: PA2.0 Layer 3 + Alejandro's tasks pipeline",
+    "result": "T-vetinari-device updated with PA2.0 Layer 3 framing (Alejandro pattern) + T-pa20-palace-foundation dependency note; status→sprint",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1.4,
+    "claimed_at": null,
+    "created_at": "2026-06-01T14:53:42.183962+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-prescient-agents-north-star-2026-06-01",
+    "description": "T-vetinari-device exists at triage with a vague description ('meta-orchestrator for the whole agent collective'). Two inputs sharpen the spec significantly:\n\n1. PA2.0 identifies Vetinari as the Layer 3 device — the one that models future decisions before they're needed, consuming Layer 1 observations + Layer 2 discovered relationships to pre-stage tasks.\n\n2. Alejandro's coding factory pattern names the missing 'tasks layer': project briefs + Figma/Slack feedback → tasks with implementation details + testing criteria → route to worker tier → automated proof of life → CI pipeline → manual QA. Bottlenecks are humans: PMs (brief→tasks) and manual QA. Vetinari's job is to eliminate the PM bottleneck.\n\nUpdate T-vetinari-device description to include:\n- PA2.0 Layer 3 role: consumes observations (MINION_RESULT, PATTERN_REPORT, OUTCOME_LEARNER_REPORT) to model which decisions will be needed next and pre-stage tasks\n- Alejandro's pipeline: brief → tasks(with impl details + test criteria) → proof-of-life → automated review → hold for manual QA\n- Implementation shape: VetinariDevice(BaseDevice), receives briefs via comms://vetinari/brief-inbox, decomposes into cc_queue tickets with full description + completion criteria\n- Dependency: Layer 1+2 (T-granny-escalation-patterns + T-inference-outcome-learner) should exist before Vetinari can make intelligent routing pre-decisions\n\n**Affected files:** cc_queue ticket T-vetinari-device (description update via cc_queue.py); lab/design_docs/decisions/ stub for this decision\n**Design rules:** none (spec update only)\n**Scope boundary:** Update T-vetinari-device description and status from triage to sprint. Out of scope: implementing VetinariDevice.\n**Completion criteria:** `python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py show T-vetinari-device` shows updated description with PA2.0 framing, Alejandro's pipeline stages, and dependency note; status = sprint",
+    "completed_at": "2026-06-02T21:47:09.730604+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e11af6f2-4a53-412b-877c-417906b0df5d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

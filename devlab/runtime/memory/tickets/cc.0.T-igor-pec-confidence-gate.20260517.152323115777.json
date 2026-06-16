@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-pec-confidence-gate.20260517.152323115777",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-pec-confidence-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.115777",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17"
+    ],
+    "tickets": [
+      "T-igor-pec-confidence-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-pec-confidence-gate",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "PeChain",
+      "Metacognition",
+      "Safety"
+    ],
+    "title": "CLOSED: pe_chain confidence gate — fast-fail on hypothesis_error",
+    "result": "Fast-fail confidence gate in pe_chain sprint flow: escalates immediately when hypothesis_error set after retries, before pe_test/pe_probe run",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-05-17T15:34:51.533034+00:00",
+    "created_at": "2026-05-17T15:23:23.115777+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "description": "pe_chain proceeds from HYPOTHESIZE to IMPLEMENT without verifying hypothesis validity. 'old_string not found in file' is the most common pe_chain failure mode and is entirely detectable before IMPLEMENT runs. A pre-IMPLEMENT confidence gate catches bad hypotheses before they cause damage.\n\nAfter pe_hypothesize(), for each hypothesis check: (1) does old_string exist verbatim in the target file (grep -c)? (2) is the target file in the ticket's Affected files list? If either check fails, set basket['confidence_fail'] with reason and skip pe_implement() — escalate to CC inbox instead. This is mechanical, not LLM-based.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (MEDIUM inertia)\n**Design rules:** theigors/rules/coding (MEDIUM inertia; pe_chain is core execution pipeline — gate shape discussed here); no sqlite\n**Scope boundary:** In scope: post-HYPOTHESIZE mechanical check: old_string grep + affected-files membership. Out of scope: LLM quality scoring of hypothesis coherence (future ticket); changes to HYPOTHESIZE prompt.\n**Test plan:** When pe_hypothesize() produces old_string='nonexistent text', confidence gate fires and pe_implement() is not called. CC inbox receives escalation with reason 'old_string not found in file'. Existing passing tests unchanged. Ticket T-igor-pec-confidence-gate closes the most common pe_chain failure mode.",
+    "completed_at": "2026-05-17T15:37:10.725252+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c86953a5-9c5c-4a56-a6b5-14cf607379c0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

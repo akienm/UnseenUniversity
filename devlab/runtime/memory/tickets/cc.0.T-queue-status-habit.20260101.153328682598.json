@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-queue-status-habit.20260101.153328682598",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-queue-status-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T15:33:28.682598",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-queue-status-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-queue-status-habit",
+    "body": "Reactive habit pattern: trigger on open-ticket wondering (\"what is left\", \"what is open\", \"what is pending\", \"what are my tickets\"). code_ref = tool that reads queue.json, formats pending/blocked/in_progress tickets as a brief summary. Result pushed to TWM with short TTL (~120s). Igor wonders -> habit fires -> answer is in TWM before next cognition cycle. No polling. No stale memory. Same mechanism as PROC_WHAT_TIME. Also fixes the queue/memory divergence: Igor always gets live queue state, never his own (potentially stale) episodic recollection of what is open.",
+    "size": "S",
+    "title": "PROC_QUEUE_STATUS — reactive habit surfaces live queue on open-ticket wondering",
+    "result": "Seeded PROC_QUEUE_STATUS reactive habit → check_worker_queue. Trigger: what's in the queue / open tickets / queue status.",
+    "status": "done",
+    "created": "2026-03-22T11:52:20.460942",
+    "priority": 3,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-gmail-pages-build-to-flow-spec.20260504.153928000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gmail-pages-build-to-flow-spec"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:39:28",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gmail-flow-layer",
+      "T-gmail-pages-build-to-flow-spec",
+      "T-igor-as-user-epic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gmail-pages-build-to-flow-spec",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Web",
+      "Pedagogy"
+    ],
+    "title": "CLOSED: Gmail Page objects — InboxPage + ComposePage built to GmailFlow spec",
+    "result": "InboxPage/ComposePage/MessageRef built to GmailFlow spec; profile guard added to load(); 25 tests green; commit 6956b990",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P3",
+    "claimed_at": null,
+    "created_at": "2026-05-04T15:39:28Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Follow-on to T-gmail-flow-layer (shipped 2026-05-03). The flow layer documented the Page interface in its docstring; this ticket builds the Page implementations.\n\n**Pages required:**\n- InboxPage with .load(), .open_compose(), .first_n_messages(n), .find_message(message_id)\n- ComposePage with .set_to(addr), .set_subject(subject), .set_body(body), .send() -> message_id\n- MessageRef return type with .id, .subject, .from_addr, .snippet, .archive(); .as_summary() helper for flow-side translation\n\n**Pre-req:** SWADL custom-profile-support (shipped akienm/swadl@2347aa2) — must run in Akien's Igor browser profile via SELENIUM_USER_DATA_DIR.\n\n**Affected files:** wild_igor/tools/swadl_pages/gmail_inbox.py (NEW), wild_igor/tools/swadl_pages/gmail_compose.py (NEW), wild_igor/tools/swadl_pages/gmail_message_ref.py (NEW). Tests: tests/test_swadl_pages_gmail_*.py.\n\n**Pedagogy protocol (per parent epic T-igor-as-user-epic):** Igor proposes selectors, CC critiques (asks 'what happens if Google A/B tests this element?'), Igor revises. Reasoning deposited as ARCHITECTURE_DECISION memory nodes linked to PAGE_OBJECT + SELECTOR concept nodes.\n\n**Test plan:** unit tests with mocked WebElements; integration test (separate ticket — gated on a throwaway test Gmail account being available).\n\n**Provenance:** Akien 2026-05-03 workflow-first design ('flows-first, pages-last') — flow shipped first; pages get built last to a known spec.\n\n**Pass condition:** Igor's browser profile opens gmail.com, navigates to inbox, and extracts sender + subject from the newest unread email — without CC involvement.",
+    "completed_at": "2026-05-05T18:08:52.564474+00:00",
+    "github_issue": 585,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "06bd81ff-87a8-4796-8679-12a46b3a24bf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

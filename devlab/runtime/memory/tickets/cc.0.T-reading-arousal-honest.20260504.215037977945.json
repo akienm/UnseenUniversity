@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-reading-arousal-honest.20260504.215037977945",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-arousal-honest"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T21:50:37.977945",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-arousal-honest"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-arousal-honest",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "reading",
+      "biomimicry",
+      "milieu",
+      "memory"
+    ],
+    "title": "CLOSED: reading arousal from milieu state, not keyword hits",
+    "result": "milieu.read_state() added; book_learner uses it for arousal; cp_affinity in metadata; reading_integrator dead Step 4 retired; 4408 tests pass",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-04T21:43:46.626885+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "_arousal_from_cp() computes a keyword-hit score against a 6x7 CP dictionary clamped to [0.10, 0.60] and stamps it as memory.arousal at deposit time. This is a CP-affinity score, not systemic arousal. Fix: at deposit, sample milieu.read_state().arousal (Igor's actual systemic arousal when he read the passage) and write that to memory.arousal. Move the keyword score to metadata['cp_affinity'] (already half-present as identity_weight). Delete _arousal_from_cp() and the duplicate _best_cp/_CP_KEYWORDS_AROUSAL in reading_integrator.py. No models.py touch needed — arousal field exists, we just write the correct value. Prerequisite: confirm milieu.read_state() exists or add it.\n\n**Affected files:** lab/claudecode/book_learner.py, lab/claudecode/reading_integrator.py, wild_igor/igor/cognition/milieu.py\n**Design rules:** none-apply (semantic correction, no schema change)\n**Scope boundary:** IN: re-source memory.arousal from milieu; rename keyword score to cp_affinity; delete duplicate keyword dict. OUT: do not change the keyword dictionary data itself; do not change retrieval ranking (downstream reads arousal — verify they handle 0.0-1.0 continuous range).\n**Test plan:** test that deposited nodes get arousal from milieu not from keyword count; test that cp_affinity appears in metadata; verify no test hard-codes the old 0.10-0.60 range.\n**Pass condition:** A freshly-deposited node has arousal matching milieu state at deposit time, not 0.10-0.60; pytest passes.",
+    "completed_at": "2026-05-04T21:50:37.977945+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f6c5dbd2-efa6-4465-82ac-0a0a4387817c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

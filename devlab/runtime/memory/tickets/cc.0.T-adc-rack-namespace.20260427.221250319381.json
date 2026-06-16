@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-rack-namespace.20260427.221250319381",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-rack-namespace"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:12:50.319381",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-imap-server-embedded",
+      "T-adc-rack-health-rollup",
+      "T-adc-rack-namespace",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-rack-namespace",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: rack.* MCP tools — devices, health, channels",
+    "result": "agent_datacenter/skeleton/health.py: rack_devices(registry), rack_channels(imap_server), rack_health_async(devices). Skeleton._setup_rack_tools() delegates to health.py. _health_rollup() removed.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-27T22:07:37.195570+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Implement the rack.* MCP namespace — the meta-level tools that enumerate and inspect the entire rack.\n\nProposed shape:\n- agent_datacenter/skeleton/health.py:\n  def rack_devices() -> list[dict]: reads registry, returns all device records\n  def rack_health() -> dict: delegates to rack-health-rollup (T-adc-rack-health-rollup)\n  def rack_channels() -> list[str]: returns all IMAP mailbox names from IMAP server\n- These are registered as MCP tools under rack.* prefix in Skeleton\n- rack.devices: {device_id, name, status, mailbox, registered_at}\n- rack.health: {device_id: {healthy: bool, details: dict, error: str|None}}\n- rack.channels: ['Shared', 'CC.0', 'igor-wild-0001', ...]\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/health.py\n\nDesign rules:\n- oop-first: functions grouped in health.py module, not inlined in skeleton.py\n- docs-in-code: each function's docstring shows the return shape\n\nScope boundary:\nIN: rack.devices, rack.health (stub delegates), rack.channels implementations\nOUT: health fan-out implementation (T-adc-rack-health-rollup)\n\nTest plan:\n- rack.devices() returns list containing at least 'skeleton'\n- rack.channels() returns ['Shared'] after IMAP init (requires T-adc-imap-server-embedded gated)\n- rack.health() returns dict keyed by device_id",
+    "completed_at": "2026-04-27T22:12:50.319381+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f96d3a1b-6034-4beb-bab1-a03a47d22782",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

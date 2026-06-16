@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-calving-post-cleanup.20260417.020512933952",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-calving-post-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T02:05:12.933952",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-calving-post-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-calving-post-cleanup",
+    "size": "S",
+    "title": "Post-calve cleanup — update facia + tree index for both trees",
+    "result": "08392e75 — ensure_blob_facia called for both new root and old tree root after calve. Tagged 'calved'. Non-fatal.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-graph-calving-execution",
+    "claimed_at": "2026-04-17T02:04:07.110039+00:00",
+    "related_to": null,
+    "description": "After a calve, call ensure_blob_facia for both the parent tree root and the new child tree root. Update tree index entries. Log the calve event to ring memory.",
+    "completed_at": "2026-04-17T02:05:12.933952+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "723ab59c-ed81-4683-9e4d-41eb57957e3f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

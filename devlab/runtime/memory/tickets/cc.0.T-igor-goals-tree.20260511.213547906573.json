@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-igor-goals-tree.20260511.213547906573",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-goals-tree"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T21:35:47.906573",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-goals-tree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-goals-tree",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "CLOSED: Igor goals tree — palace nodes concrete enough for NE synthesis",
+    "result": "ALREADY DONE by CC: 3 palace nodes (palace.shared.igor.goals, .roadmap, .self-improvement-loop) + PR_GOAL_STRATEGIC_TICKET_PROCESSING facia. Worker-daemon grabbed this after restart; work was already complete.",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 2,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-05-11T21:35:47.906573+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor has aspirational PR_GOAL_STRATEGIC_* entries in TWM (self-learning, goal-graph reasoning) but no concrete sub-goals the NE can synthesize into actions. Akien's goals_tree.20260507.md section 1.5 defines Igor's roadmap: 1.5a process tickets → 1.5b ticket processing on graph matrix → 1.5c design capability → 1.5d recursive self-improvement. Create palace nodes under a new path (e.g. palace.igor.goals.*) that mirror this tree with concrete, measurable next-states. Each node should name the current state, next milestone, and what 'done' looks like so the NE can produce a result when it integrates them. Also wire the top node as a high-salience TWM attractor so it competes with FACIA noise.\n\n**Affected files:** adc.palace (INSERT via palace_write MCP), possibly clan.memory_palace for Igor-side goal attractor\n**Design rules:** no-sqlite, palace-first\n**Scope boundary:** Palace writes only. No cognition code changes.\n**Test plan:** After insert, palace.igor.goals.* nodes readable; Igor's TWM shows goal attractor in relationship_drift; NE produces a narrative referencing one of the concrete milestones within 10 cycles.",
+    "completed_at": "2026-05-11T22:38:12.139693+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c89b23ff-f0b9-44c9-9c2e-e114fcdc8149",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

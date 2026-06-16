@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.205.20260323.225215245392",
+  "emitter": "cc.0",
+  "namespace": [
+    "205"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T22:52:15.245392",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "205"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "205",
+    "size": "M",
+    "title": "Log all bare except/pass blocks — no silent failures",
+    "result": "Surveyed all 28 bare except/pass blocks. Third-party ebook_drm/ excluded. Applied log_error() for forensic modules, logging.getLogger('forensic').warning() for stdlib-logging modules, and pass-with-comment for truly non-fatal forensic_logger wrapper imports. 10 files changed.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-23T22:46:22.354661+00:00",
+    "description": "No exception should fail silently. Survey all bare except/pass in codebase, add forensic logging. #205",
+    "completed_at": "2026-03-23T22:52:15.245392+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ddb683f7-5099-4bac-84a0-1fabb7b23d01",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-book-ch3-recall.20260528.190127003532",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-book-ch3-recall"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:27.003532",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-and-book-2026-05-28"
+    ],
+    "tickets": [
+      "T-book-ch3-recall"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-book-ch3-recall",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Book",
+      "Docs"
+    ],
+    "title": "Book ch3: add recall-first as preferred path lever",
+    "result": "Added recall-first process lever to Chapter 3 — recall→bash→inference lookup order, connects to compiled inference principle",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "created_at": "2026-05-28T19:01:27.003532+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-and-book-2026-05-28",
+    "description": "Update lab/docs/the_ownership_gap/3.Levers.md to add recall-first as a preferred path lever. The pattern: 'what do I know about X?' before bash/grep. Every re-derivation of stored knowledge is waste. The lever is: recall(X) is the first lookup; bash is the fallback; inference is the last resort. Connect to the compiled inference principle — the more we recall, the less we re-derive.\n\n**Affected files:** lab/docs/the_ownership_gap/3.Levers.md\n**Design rules:** none\n**Scope boundary:** one new lever section in Chapter 3; update version timestamp to current MT\n**Test plan:** read file and verify new lever section present; version stamp updated",
+    "completed_at": "2026-05-28T19:32:09.175407+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T19:31:23.447819+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:27.003574+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "78cab340-4f00-4057-bd95-fc355ed0cb14",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

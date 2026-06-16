@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-tool-synthesis-lean-prompt.20260419.235711736052",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tool-synthesis-lean-prompt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T23:57:11.736052",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tool-synthesis-lean-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tool-synthesis-lean-prompt",
+    "size": "S",
+    "notes": "Spun out from T-retire-legacy-direct-reasoner-path inventory 2026-04-19.\n\n## What\nmain.py:5257 and main.py:6010 both run 'tool-result synthesis' turns — LLM renders a tool's output in natural language with a hard constraint ('report ONLY what tool returned'). These are NOT persona-level reasoning turns. But they call gateway.reason(level='interactive'), which downstream passes role='interactive' to build_system_prompt in openrouter_reasoner.py:398, getting the full fat persona preamble (and the 4800-char truncation that eats the tail). Every tool-synthesis turn pays the persona-prompt token tax unnecessarily.\n\n## Fix\nAdd `prompt_role: Optional[str] = None` parameter to gateway.reason(); thread through to reasoners; when set, reasoners use that role in build_system_prompt() instead of inferring from level/is_user_turn. At the two synthesis sites, pass `prompt_role='analysis'` (or a new 'synthesis' role if we want it smaller still). No behavior change when param is omitted.\n\n## Why S-sized\nAdditive change, no existing call sites break. Touches: cognition/inference_gateway.py (gateway.reason sig), cognition/reasoners/openrouter_reasoner.py (line ~398, use the param), cognition/reasoners/ollama_reasoner.py (line ~514, same), main.py 5257 + 6010 (pass the new param). All MEDIUM inertia but additive.\n\n## Impact\nEvery tool call's synthesis turn gets smaller system prompt → lower tokens → lower OR spend + dodge the truncation issue that's biting the legacy path. Bonus: makes the synthesis turn identifiable in logs (prompt_role='analysis' is traceable).",
+    "title": "Tool-result synthesis turns pay persona-prompt tax — add prompt_role override to gateway.reason",
+    "result": "Shipped f0c9f247. prompt_role override threads through gateway.reason → openrouter_reasoner; both tool-synthesis sites in main.py (5257, 6010) now pass prompt_role='analysis'. Ollama path already used role='analysis'; no change there. All tests at baseline.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T23:49:45.737772+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-19T23:57:11.736052+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

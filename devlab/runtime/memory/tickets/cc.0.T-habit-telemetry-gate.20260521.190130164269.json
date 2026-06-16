@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-habit-telemetry-gate.20260521.190130164269",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-telemetry-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T19:01:30.164269",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-expert-lenses-confidence-2026-05-21"
+    ],
+    "tickets": [
+      "T-habit-telemetry-gate",
+      "T-skill-telemetry-"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-telemetry-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Cognition",
+      "Schmidhuber"
+    ],
+    "title": "Gate PROCEDURAL habit writes on skill telemetry outcome rate (Schmidhuber)",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-05-23T21:29:14.225005+00:00",
+    "created_at": "2026-05-21T19:01:30.164269+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-expert-lenses-confidence-2026-05-21",
+    "description": "Skill telemetry schema, contracts, logger, and rollup all shipped (T-skill-telemetry-* closed). The Schmidhuber gate: before writing a PROCEDURAL memory (habit), check whether the habit's code_ref function has skill telemetry outcome data. If it does and the pass rate < 0.40 (habit actively hurts more than it helps), post to cc_inbox and do not write. If no telemetry exists: write normally (can't block what we can't measure). This prevents accumulation of 'sounds good but unverified' habits.\n\n**Affected files:** wild_igor/igor/memory/memory_store.py (write gate for PROCEDURAL type), wild_igor/igor/tools/skill_telemetry.py (read outcome rate by code_ref)\n**Design rules:** theigors/rules/memory, theigors/rules/database\n**Scope boundary:** In scope: PROCEDURAL write gate using existing telemetry data. Out of scope: retroactively scoring existing habits, changing what code_ref means.\n**Test plan:** Mock telemetry returning 0.3 pass rate for a code_ref; verify habit write is blocked and cc_inbox entry posted. Mock telemetry returning 0.8; verify write proceeds. Mock no telemetry; verify write proceeds.",
+    "completed_at": "2026-05-23T22:09:02.522002+00:00",
+    "github_issue": 773,
+    "dispatched_at": "2026-05-23T21:29:14.225005+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T19:01:30.164287+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9e698830-04af-4d6f-85c1-13372b5e7b68",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

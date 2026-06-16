@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-dicksimnel-device.20260602.175241107457",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T17:52:41.107457",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-worker-registry-2026-06-02"
+    ],
+    "tickets": [
+      "T-dicksimnel-device",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Inference",
+      "Device",
+      "Infrastructure"
+    ],
+    "title": "DickSimnel.0: OR-powered rack device for autonomous ticket work",
+    "result": "DickSimnel.0 v0.1 operational: proper BaseDevice/BaseShim, atomic claim via next --worker, inference dispatch, Granny routing (CC.0→DickSimnel→OR cascade)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "blocked_at": "2026-06-02T18:53:46.686500+00:00",
+    "created_at": "2026-06-02T17:52:41.107457+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-worker-registry-2026-06-02",
+    "description": "DickSimnel (named after the locomotive engineer in Raising Steam) is a persistent OR-powered coding agent and rack device. Started manually, stays running, receives ticket offers from Granny via its device channel (comms://dicksimnel), runs OR inference (wrapping existing MinionDevice), marks ticket in_progress on accept, posts DICKSIMNEL_DONE|ticket=T-xxx or DICKSIMNEL_DECLINE|ticket=T-xxx|reason=... to channel on completion. Granny detects completion by watching the channel.\n\nLifecycle: start -> drop ~/.granny/available/DickSimnel.0.available.true -> poll for offers -> accept/work/signal -> stop -> remove flag.\n\nNot autostart. Can be interacted with interactively (attach to dicksimnel-0 tmux session). Only DickSimnel.0 for now — no parallel instances.\n\n**Affected files:** devices/dicksimnel/device.py (new, BaseDevice subclass), devices/dicksimnel/shim.py (new), config/profiles/granny.yaml (DickSimnel.0 worker entry), skeleton/registry.py (register device)\n**Design rules:** no-sqlite; BaseDevice/BaseShim contract; log every lifecycle event and interface crossing at INFO; availability flag managed by shim start/stop\n**Scope boundary:** IN: device skeleton + channel offer receiver + OR inference integration + accept/decline/done flow + DickSimnel.0.available.* flag management. OUT: DickSimnel.1+ parallel instances, interactive UI beyond tmux attach, auto-restart by Granny.\n**Completion criteria:** python -m devices.dicksimnel starts, registers with skeleton, drops DickSimnel.0.available.true, receives a test offer from Granny channel, marks ticket in_progress, runs one OR inference iteration, posts DICKSIMNEL_DONE; DickSimnel.0.available.true absent after stop.",
+    "completed_at": "2026-06-03T00:18:21.647695+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T18:47:30.235043+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d10327c7-d196-4b17-a38a-3a9ba08c747c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

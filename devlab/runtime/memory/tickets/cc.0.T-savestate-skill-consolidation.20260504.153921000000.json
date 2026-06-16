@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-savestate-skill-consolidation.20260504.153921000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-savestate-skill-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:39:21",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-savestate-skill-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-savestate-skill-consolidation",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Skills",
+      "Refactor"
+    ],
+    "title": "CLOSED: Consolidate /savestate and /savestateauto skills",
+    "result": "Consolidated: /savestateauto deleted, all steps absorbed into /savestate Step 2–5. Callers (ticket, sprint, sprint-batch, day-close, fixit) updated. /savestate is now the single skill.",
+    "status": "done",
+    "worker": "igor",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-04T03:15:19.127755+00:00",
+    "created_at": "2026-05-04T15:39:21Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "/savestate and /savestateauto are now redundant. Both handle slate flush + auto-compact via tmux send-keys two-step (verified 2026-05-03). The only difference was invocation pattern (manual vs auto-firing). Consolidate into a single /savestate skill that always outputs the preserve string and fires the auto-compact via tmux.\n\n**Affected files:** /home/akien/.claude/skills/savestate, /home/akien/.claude/skills/savestateauto\n**Design rules:** no rules apply\n**Scope boundary:** IN: consolidate two skills into one. OUT: change auto-compact behavior or tmux wiring (both working). OUT: change workflow or create new skills.\n**Test plan:** manual test: invoke consolidated skill, verify preserve string outputs AND auto-compact fires via tmux (check tmux status line or next turn shows compact ran)",
+    "completed_at": "2026-05-04T17:02:16.408638+00:00",
+    "github_issue": 583,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1633aacd-00d5-43af-9c72-4ba5936b0015",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

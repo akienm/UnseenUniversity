@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-sqlite-config-hunt.20260504.153933000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-config-hunt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:39:33",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-routing-fix-2026-05-03"
+    ],
+    "tickets": [
+      "T-sqlite-config-hunt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-config-hunt",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Bug",
+      "SQLite-removal",
+      "Observability"
+    ],
+    "title": "CLOSED: Track down the bare 'config' SQLite table caller",
+    "result": "sqlite_caller_trace.py built + wired into main.py (gated IGOR_TRACE_SQLITE_CALLERS=1). Set the flag in .env, restart Igor, run a user turn, read ~/.TheIgors/local/logs/sqlite_caller_trace.log to find offending caller. Commit 5c5c585e.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-04T22:34:21.043998+00:00",
+    "created_at": "2026-05-04T15:39:33Z",
+    "related_to": null,
+    "decision_id": "D-inference-routing-fix-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — wants the real error found, not just the misreport).** Anomaly at 2026-05-03 20:17:27 captured `error=no such table: config` from a cloud reasoner attempt — that's a `sqlite3.OperationalError` format (Postgres uses `relation does not exist`). No file in TheIgors or agent_datacenter has a literal `FROM config` / `INTO config` query. The caller is hidden — likely a tool that fires during reasoning, OR a third-party lib with its own SQLite cache. This is the smoking gun of an unfinished SQLite-removal migration that's silently breaking inference.\n\n**Approach:** add a short-lived debug wrapper that logs the callstack of the FIRST `sqlite3.connect()` call after Igor boot. Run Igor through a normal user turn that triggers the failure. Read the captured stack — find the offending caller. Then file a follow-up ticket to migrate that caller to Postgres (or document why SQLite is acceptable there).\n\n**Affected files:** lab/utility_closet/db_proxy.py (or a new lab/claudecode/sqlite_caller_trace.py wrapper) — add the debug instrumentation. wild_igor/igor/cognition/inference_gateway.py is unchanged here; this ticket finds the caller, doesn't fix it. Follow-up ticket fixes it once located.\n**Design rules:** theigors/rules/database (Postgres-first, no SQLite per CLAUDE.md hard rule), theigors/rules/logging (capture enough to diagnose without spamming), theigors/rules/safeguards (debug instrumentation is removed after the trace is captured — no leaving debug code in prod).\n**Scope boundary:** IN: instrument sqlite3.connect to log first-call stack; reproduce the failure; identify the caller; file follow-up migration ticket. OUT: actual migration of the offending caller (follow-up ticket, scope depends on what we find). OUT: changing inference_gateway behavior (separate tickets in this decision).\n**Test plan:** trace runs with verbose logging enabled; 'no such table: config' reproduces; stack trace points at a specific module:function. Manual: run Igor through a user query that previously failed and verify the debug log captures the caller location.\n**Validation:** new log file at `~/.TheIgors/local/logs/sqlite_caller_trace.log` containing at least one stack trace pointing to the offending caller. **Cleanup:** REMOVE the debug instrumentation after the caller is identified — do not leave it in prod (per safeguards). **Logging:** debug-only, gated on env var `IGOR_TRACE_SQLITE_CALLERS=1` so it's off by default.",
+    "completed_at": "2026-05-04T22:45:44.699616+00:00",
+    "github_issue": 586,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "866fc9d9-28ce-42f2-af1e-8f8b16671b3f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

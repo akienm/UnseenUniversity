@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-inference-outcome-learner.20260601.145342183742",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-outcome-learner"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T14:53:42.183742",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-prescient-agents-north-star-2026-06-01"
+    ],
+    "tickets": [
+      "T-inference-outcome-learner"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-outcome-learner",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Scraps",
+      "Inference"
+    ],
+    "title": "Scraps: inference outcome learner (PA2.0 observe→discover loop)",
+    "result": "built devices/scraps/jobs/inference_outcome_learner.py: reads MINION_RESULT+GRANNY_DISPATCH in one query, aggregates per (tag,task_class,size), writes outcome_report.json, posts OUTCOME_LEARNER_REPORT; 15 tests pass; outcome_summary() wired to context-load step 5.85",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.5,
+    "blocked_at": "2026-06-01T15:10:27.450926+00:00",
+    "claimed_at": "2026-06-01T19:32:55.087056+00:00",
+    "created_at": "2026-06-01T14:53:42.183742+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-prescient-agents-north-star-2026-06-01",
+    "description": "MINION_RESULT channel posts contain rich outcome signal (signal, task_class, iterations, cost_usd, tokens_in, tokens_out, round_count post-D2) but nothing aggregates this into routing intelligence. This is the PA2.0 Layer 1→2 gap: observations exist, relationship discovery doesn't. Same signal also exists in Igor (per user) and should come OUT of Igor into a shared Scraps job.\n\nBuild a Scraps job (periodic run, not daemon) that:\n1. Reads MINION_RESULT posts from shared channel (last N=200 or since ~/.granny/outcome_learner_cursor.txt)\n2. Aggregates per tag, task_class (tier), and size: DONE%, avg_iterations, avg_cost_usd, ESCALATE%, REPROMPT%, UPGRADE%, BLOCKED%, CONFUSED%\n3. Persists report to ~/.granny/outcome_report.json (flat file, overwrite on each run)\n4. Posts OUTCOME_LEARNER_REPORT to shared channel with top 3 actionable routing insights (e.g. 'Platform/M/worker: 80% escalate — try analyst tier')\n5. Exposes outcome_summary() for context-load hook\n\n**Affected files:** new devices/scraps/jobs/inference_outcome_learner.py, new tests/scraps/test_outcome_learner.py; context-load skill (hook to call outcome_summary at step 5.8)\n**Design rules:** no-sqlite; flat JSON output; no-hardcoded-instance-refs; log at INFO; log every interface crossing (channel read, file write)\n**Scope boundary:** Read, aggregate, and report only. Out of scope: automatically updating rules_engine.py routing from patterns (that is a future PA2.0 Layer 3 ticket); extracting from Igor's internal metrics (out of scope — Igor metrics migration is a separate ticket if needed).\n**Completion criteria:** `.venv/bin/pytest tests/scraps/ -q -k outcome_learner` passes with ≥3 tests (aggregate correctness, empty-channel graceful, OUTCOME_LEARNER_REPORT format); running against real channel data produces outcome_report.json with per-tag DONE% values; outcome_summary() callable from context-load",
+    "completed_at": "2026-06-01T19:44:30.082817+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T19:32:55.087056+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7eaca257-54db-4ce6-919c-0807c9d953b3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

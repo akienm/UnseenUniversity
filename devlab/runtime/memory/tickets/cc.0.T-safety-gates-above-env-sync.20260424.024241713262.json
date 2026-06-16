@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-safety-gates-above-env-sync.20260424.024241713262",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-safety-gates-above-env-sync"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:42:41.713262",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-safety-gates-above-env-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-safety-gates-above-env-sync",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Safety",
+      "EnvSync",
+      "TierGating",
+      "SelfEdit",
+      "GraphPoisoning",
+      "Pass2"
+    ],
+    "title": "Move safety gates out of env-hydration path — file-only, never graph",
+    "result": "Shipped in 7d1d5ec9. SAFETY_GATE_NAMES skip-list excludes IGOR_TIER5_ENABLED / IGOR_ARBITER_ENABLED / IGOR_SELF_EDIT_ENABLED from env_sync push and hydrate. Defense-in-depth: hydrate refuses with WARNING log if a gate ever shows up in the graph. File system is the only source of truth — graph-poisoning path closed. 6 tests.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-04-24T02:42:21.760091+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 4 P1-8.1 CONFIRMED_WORSE — highest-stakes finding in Area 4. Three safety flags (IGOR_TIER5_ENABLED, IGOR_ARBITER_ENABLED, IGOR_SELF_EDIT_ENABLED) were round-tripping through the config graph: env_sync.push_vars_to_graph stored them in SYSCFG_* nodes; hydrate_from_graph pulled them back into os.environ on boot. Any engram with cortex.store() access to a SYSCFG_ node could flip them invisibly (no file write needed).\n\nFix: SAFETY_GATE_NAMES skip-list excludes these from push AND hydrate. Defense-in-depth warning logs if a safety-gate node ever appears in the graph. File system is the only source of truth.\n\n**Affected files:** wild_igor/igor/env_sync.py (SAFETY_GATE_NAMES constant + push/hydrate guards), tests/test_env_sync_safety_gates.py (new).\n**Design rules:** docs-in-code, test-plan-or-why-not.\n**Scope boundary:** IN — skip-list + push/hydrate exclusions + warning log. OUT — changing what the flags gate; adding new gates; altering file-load path.\n**Test plan:** 6 tests: name constants, _is_safety_gate helper, push_vars_to_graph excludes all three gates, hydrate refuses to set gates found in graph (logs warning), hydrate still applies non-gate vars unchanged.",
+    "completed_at": "2026-04-24T02:42:41.713262+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7d9be24e-33f5-48d8-89e4-752d660f2247",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

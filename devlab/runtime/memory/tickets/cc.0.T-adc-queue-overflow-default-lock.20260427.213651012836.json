@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-queue-overflow-default-lock.20260427.213651012836",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-queue-overflow-default-lock"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:36:51.012836",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-0-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-bounded-inbound-queue",
+      "T-adc-queue-overflow-default-lock",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-queue-overflow-default-lock",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Design"
+    ],
+    "title": "agent_datacenter: lock queue overflow default and create DeviceConfig dataclass",
+    "result": "DeviceConfig dataclass in config/device_config.py. drop-oldest default, drop_newest override, restart loop protection fields. to_dict() serializes cleanly. Tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T21:34:28.171623+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-0-2026-04-27",
+    "description": "Lock the rack-level queue overflow policy and create the DeviceConfig dataclass that all device implementations import.\n\nDecision confirmed by Akien 2026-04-27:\n- Rack default: drop-oldest (agent traffic is typically state/status; newer supersedes older)\n- Per-device override: DeviceConfig(drop_newest=True) for order-preserving pipelines\n\nProposed shape:\n- agent_datacenter/config/device_config.py:\n  @dataclass\n  class DeviceConfig:\n    max_queue_length: int = 100\n    drop_newest: bool = False  # rack default = drop-oldest\n    max_restart_failures: int = 3\n    restart_window_seconds: int = 60\n    restart_backoff_seconds: float = 5.0\n    manual_block_only: bool = False  # set True for Igor (no auto-unblock)\n\nAffected files:\n- ~/dev/src/agent_datacenter/config/device_config.py (new)\n\nDesign rules:\n- oop-first: DeviceConfig is a dataclass with typed fields and defaults, not a dict or ini file\n- docs-in-code: module docstring explains each field and the drop-oldest rationale\n\nScope boundary:\nIN: DeviceConfig dataclass with all per-device policy fields\nOUT: queue implementation code (T-adc-bounded-inbound-queue, Phase 1)\n\nTest plan:\n- DeviceConfig() instantiates with all defaults\n- DeviceConfig(drop_newest=True) overrides correctly\n- dataclasses.asdict(DeviceConfig()) serializes cleanly (for flat-file registry)",
+    "completed_at": "2026-04-27T21:36:51.012836+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a794560e-6fc0-4a65-b193-406db4bf635f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

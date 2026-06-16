@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-feeds-dicksimnel.20260611.183807745849",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-feeds-dicksimnel"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T18:38:07.745849",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-feeds-taxonomy-2026-06-11"
+    ],
+    "tickets": [
+      "T-feeds-dicksimnel"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-feeds-dicksimnel",
+    "gate": null,
+    "role": "master",
+    "tags": [
+      "DickSimnel",
+      "Feeds"
+    ],
+    "title": "Wire DickSimnel to emit on personal feed with importance flags",
+    "result": "Dick posts lifecycle events to dicksimnel/personal with importance levels. dispatch_ticket MCP tool writes to bare device mailboxes. 19+35 tests green. Commit e8b0b3a666ffa3d16aafe5c9761329c88fee5449.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that DickSimnel posts lifecycle events (dispatch received, working, done, escalated) to its personal feed with appropriate importance levels rather than the current flat channel_event calls.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T18:38:07.745849+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-feeds-taxonomy-2026-06-11",
+    "description": "Update DickSimnelDevice._channel_event() to post to Dick's personal feed (mailbox: dicksimnel/personal, feed_type=personal) via PgBus with importance set per event type: dispatch_received=5, working=3, done=7, escalated=7, error=9. Also fix the MCP dispatch path: add a dispatch_ticket tool to the datacenter MCP that writes to the correct bare mailbox (dicksimnel.0), not feeds/dicksimnel.0.\n\n**Affected files:** devices/dicksimnel/device.py (_channel_event), devices/queue/mcp_server.py (new dispatch_ticket tool)\n**Design rules:** no-sqlite; interface logging at INFO\n**Scope boundary:** IN: personal feed posts with importance, dispatch_ticket MCP tool. OUT: debug feed for ToolLoop console output (separate ticket), web UI rendering of Dick's feed.\n**Completion criteria:** (1) _channel_event posts to dicksimnel/personal with importance kwarg; (2) datacenter MCP has dispatch_ticket tool that appends to bare device mailbox; (3) existing dicksimnel tests pass.",
+    "completed_at": "2026-06-11T19:03:09.808270+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "description_blocked_by": [
+      "T-feeds-bus-types",
+      "T-feeds-importance-flag"
+    ],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-code-index-schema.20260609.224845346527",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-code-index-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:45.346527",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-semantic-indexing-2026-06-09"
+    ],
+    "tickets": [
+      "T-auto-embed-on-creation",
+      "T-code-index-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-code-index-schema",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Search",
+      "Embedding",
+      "CodeIndex"
+    ],
+    "title": "Code index: schema + Nanny Ogg sweep for .py files",
+    "result": "clan.code_index table (m069/m070), code_sweep.py AST walker, nightly_code_sweep in Nanny default schedule — 4,999 symbols on first run, 14 tests",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that every Python function and class in the repo is indexed with its signature, docstring, and a file pointer so semantic search resolves code symbols without requiring full-file reads.",
+    "claimed_at": "2026-06-10T00:10:37.237865+00:00",
+    "created_at": "2026-06-09T22:48:45.346527+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-semantic-indexing-2026-06-09",
+    "description": "Create a code_index table (path, symbol, kind, summary, embedding, content_hash, updated_at). Wire a Nanny Ogg cron job that sweeps devices/**/*.py and unseen_university/**/*.py using AST parsing: extracts function/class name + docstring + signature as the summary, hashes the body for staleness detection. On hash change: update summary, re-queue for embedding via T-auto-embed-on-creation's queue. Summary stored in code_index; embedding stored via embedding_queue drain.\n\n**Affected files:** DB migration (new table: code_index), devices/nanny_ogg/sweeps/code_sweep.py (new), devices/nanny_ogg/cron_backend.py (register sweep job)\n**Design rules:** no-sqlite; AST-level parsing (not full-file text) for summaries; content_hash for staleness\n**Scope boundary:** .py files only (not .md, not chat logs — those are separate). Function + class level granularity. Out of scope: semantic routing improvements, .md file indexing.\n**Completion criteria:** code_index table exists in DB; cron sweep job registered in Nanny Ogg; after running sweep manually, >= 50 rows in code_index with non-null summary; at least one row has a matching embedding_queue entry (or completed embedding).",
+    "completed_at": "2026-06-10T00:18:46.333280+00:00",
+    "deposited_at": "2026-06-09T16:52:16.087062",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

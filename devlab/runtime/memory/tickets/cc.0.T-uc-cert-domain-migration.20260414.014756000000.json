@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-uc-cert-domain-migration.20260414.014756000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-cert-domain-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:47:56",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tailscale-cert-restore",
+      "T-uc-cert-domain-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-cert-domain-migration",
+    "tag": "Ops",
+    "role": "guru",
+    "size": "M",
+    "owner": "cc",
+    "title": "[akien] Migrate UC TLS to real domain theigors.dev",
+    "result": null,
+    "status": "akien",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-14T01:47:56Z",
+    "related_to": null,
+    "description": "Replace mkcert (localhost-only) with real domain theigors.dev for UC TLS. Steps: (1) register theigors.dev (~$12/yr Cloudflare/Porkbun), (2) /etc/hosts entry pointing to 127.0.0.1, (3) Let's Encrypt DNS-01 ACME challenge via lego or certbot+registrar plugin to issue cert valid for theigors.dev + *.theigors.dev, (4) swap igor.cfg IGOR_SSL_CERT/KEY paths, (5) auto-renewal cron. mkcert bootstrap stays as fallback. Goal: zero-warning HTTPS for all UC clients without local CA install.\n\n**Affected files:** /home/akien/.agent_datacenter/Igor-wild-0001/igor.cfg (IGOR_SSL_CERT/KEY paths); a new lego/certbot config (DNS-01 ACME challenge); /etc/hosts (127.0.0.1 → theigors.dev); lab/utility_closet/installer/cert_setup.sh (or wherever cert bootstrap lives).\n\n**Design rules:** no-secrets-in-repo (creds for registrar API stay in .env); docs-in-code (cert_setup.sh top-of-file documents the steps).\n\n**Scope boundary:** IN — domain registration + DNS-01 + cert issuance + igor.cfg path swap + auto-renewal cron. OUT — multi-tenant cert management; non-Tailscale tailnets (separate T-tailscale-cert-restore).\n\n**Test plan:** smoke test: `curl https://theigors.dev:<UC port>` returns 200 with no cert warning; renewal cron dry-run succeeds. mkcert fallback path verified by env override.",
+    "completed_at": null,
+    "github_issue": 413,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e956dedf-c9d3-4507-8cdc-a30c17e02c71",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

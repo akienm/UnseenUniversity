@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.289.20260322.025527695500",
+  "emitter": "cc.0",
+  "namespace": [
+    "289"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T02:55:27.695500",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "289"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "289",
+    "size": "M",
+    "notes": "Trail infra live (tails table, trail_id, sequence_pos). When two nodes co-activate in same trail, strengthen the edge between them in interpretive_edges or links_weighted. Use cortex.hot_paths() to find co-activation pairs. Gate: IGOR_TRAIL_TRAINING_ENABLED. Close #289.",
+    "title": "T-trail-training: Hebbian edge strengthening from co-activation traces",
+    "result": "hot_paths() PGRowProxy alias fix (AS node_a/node_b); _apply_trail_training wired into both search paths with STDP (LTP/LTD), configurable learning rate, creation threshold, max_weight; gated by IGOR_TRAIL_TRAINING_ENABLED=true. Prior session completed the code; this session verified and closed. Closes #289.",
+    "status": "done",
+    "priority": 5,
+    "claimed_at": "2026-03-22T02:55:06.965342+00:00",
+    "completed_at": "2026-03-22T02:55:27.695500+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

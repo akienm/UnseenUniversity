@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-experiment-results-in-context.20260417.015205064969",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-results-in-context"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T01:52:05.064969",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-results-in-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-results-in-context",
+    "size": "S",
+    "title": "Surface experiment outcomes in reasoning context",
+    "result": "cfcaa357 — recent_completed() in scheduler, _recent_experiments_section in prompt_contexts, LLMPeerAdvisor passes recent experiments to reasoning_context. 3 tests.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-experiment-primitive",
+    "claimed_at": "2026-04-17T01:47:04.230441+00:00",
+    "related_to": null,
+    "description": "When building reasoning_context for a workflow, include recent experiment results (OBSERVED/UPDATED) relevant to the current situation. This way the next reasoning cycle knows what was already tried and what was learned. Query experiments table by related memory IDs or topic overlap.",
+    "completed_at": "2026-04-17T01:52:05.064969+00:00",
+    "deposited_at": "2026-05-21T03:57:23.135127",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "241b0917-dab8-46ef-b651-8a886d5636c6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

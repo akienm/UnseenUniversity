@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-acurite-repo-setup.20260615.023147449455",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-acurite-repo-setup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T02:31:47.449455",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-free-2026-06-14"
+    ],
+    "tickets": [
+      "T-acurite-capture-daemon",
+      "T-acurite-repo-setup",
+      "T-acurite-web-ui"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-acurite-repo-setup",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "AcuRite",
+      "Infrastructure"
+    ],
+    "title": "Create acurite-free standalone repo — git init, README, config template, systemd service",
+    "result": "repo created at /home/akien/dev/src/acurite-free; pushed to github.com/akienm/acurite-free",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "intention": "I intend that acurite-free exists as a publishable standalone repo that anyone can clone to replace the AcuRite app ecosystem.",
+    "created_at": "2026-06-15T02:31:47.449455+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-acurite-free-2026-06-14",
+    "description": "Create /home/akien/dev/src/acurite-free/ as a standalone repo (no UU dependency). Contents: acurite-capture.py, config.ini.example, README.md (setup instructions: install rtl-sdr, discover sensors, configure, sync to cloud), .gitignore, weather_monitor.service (systemd). Push to GitHub as akienm/acurite-free public repo.\n\n**Affected files:** /home/akien/dev/src/acurite-free/ (new)\n**Design rules:** no UU imports; standalone Python stdlib only; no web server dependency\n**Scope boundary:** IN — repo structure, README, config template, systemd unit. OUT — capture daemon logic (T-acurite-capture-daemon), web UI (T-acurite-web-ui).\n**Completion criteria:** gh repo view akienm/acurite-free succeeds; README explains setup end-to-end; config.ini.example has all required fields.",
+    "completed_at": "2026-06-15T02:33:58.436697+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-15T02:31:47.501388+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

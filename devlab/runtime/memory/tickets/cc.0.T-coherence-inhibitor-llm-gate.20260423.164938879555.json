@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-coherence-inhibitor-llm-gate.20260423.164938879555",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-coherence-inhibitor-llm-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T16:49:38.879555",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-reply-coherence-inhibitor-fix-2026-04-23"
+    ],
+    "tickets": [
+      "T-coherence-inhibitor-llm-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-coherence-inhibitor-llm-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "BugFix",
+      "WebReplies",
+      "CoherenceInhibitor"
+    ],
+    "title": "Fix: coherence inhibitor suppresses LLM replies (wrong metric for non-habits)",
+    "result": "suppress_incoherent now gates on source_label.startswith('habit:'). LLM replies no longer suppressed. main.py caller passes _source_label. 15 tests. 49030c61.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-23T16:47:46.552996+00:00",
+    "related_to": null,
+    "decision_id": "D-web-reply-coherence-inhibitor-fix-2026-04-23",
+    "description": "suppress_incoherent() gates on flagged=True which fires when Jaccard score < 0.10. Designed for habit misfires (cached template dumps). LLM cloud-interactive replies score 0.07-0.10 because conversational responses introduce new concepts rather than echoing prompt tokens — so suppress_incoherent() returns '' for them, silently dropping every non-habit web reply.\n\nFix: in suppress_incoherent(), only suppress when source_label starts with 'habit:'. LLM-sourced responses should be flagged/logged but never suppressed. Change signature to accept source_label; update caller at main.py:6735 to pass _source_label.\n\n**Affected files:** wild_igor/igor/cognition/response_coherence_inhibitor.py (suppress_incoherent signature + logic), wild_igor/igor/main.py (pass _source_label to suppress_incoherent)\n**Design rules:** docs-in-code, test-plan-or-why-not\n**Scope boundary:** IN — suppress_incoherent gate logic + caller update. OUT — changing Jaccard threshold, removing coherence check for habits, other inhibitors.\n**Test plan:** (a) test that suppress_incoherent with source='habit:X' and flagged=True returns ''; (b) test that suppress_incoherent with source='llm_or_tier0' and flagged=True returns original response; (c) test that coherence drops for 01cb0591/dc50fdc5 style turns would no longer suppress. Verify the two dropped turns (score 0.070, 0.099, source=llm_or_tier0) would now pass through.",
+    "completed_at": "2026-04-23T16:49:38.879555+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d9e753eb-7d37-41f3-93a7-0ecb0981708e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-swadl-performance-points.20260508.162844859479",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-performance-points"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T16:28:44.859479",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-adc-performance-points",
+      "T-python-diagnostic-base-class-repo",
+      "T-swadl-performance-points"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-performance-points",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "SWADL",
+      "Observability",
+      "Logging"
+    ],
+    "title": "CLOSED: Wire ADC performance-point stopwatch into SWADL base automation",
+    "result": "stopwatch()+logger on SWADLBaseAutomation; 8 tests, 51 total (3e85404)",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:46:55.117173+00:00",
+    "created_at": "2026-05-08T16:28:44.859479+00:00",
+    "related_to": null,
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Wire python_diagnostic_base_class stopwatch into SWADL's SWADLBaseAutomation. Gate on T-python-diagnostic-base-class-repo and T-adc-performance-points.\n\n**Logging backend:** loguru (via python_diagnostic_base_class). Same TaggedLogger and PerformanceHandler as ADC — consistent perf CSV format across both frameworks.\n\nSWADLBaseAutomation inherits (or composes) DiagnosticBase from the micro-package, gaining self.stopwatch(), self.logger.perf(), and the full tagged logging interface.\n\n**Affected files:** swadl/SWADL/engine/swadl_base.py, swadl/SWADL/engine/swadl_base_automation.py, requirements.txt\n**Design rules:** no-sqlite; imports from python_diagnostic_base_class only\n**Scope boundary:** wiring only — no flows instrumented in this ticket\n**Test plan:** SWADLBaseAutomation exposes self.stopwatch() and self.logger.perf(); smoke test timing a no-op block writes CSV row",
+    "completed_at": "2026-05-08T18:48:33.315029+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "99f33f69-24d1-4a19-84b3-503160bc9528",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

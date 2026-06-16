@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-adc-imap-server-embedded.20260427.215828664869",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-imap-server-embedded"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:58:28.664869",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-bus-router-comms-uri",
+      "T-adc-imap-24hr-retention",
+      "T-adc-imap-impl-decision",
+      "T-adc-imap-server-embedded",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-imap-server-embedded",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: embedded IMAP server — mailbox lifecycle, IDLE support",
+    "result": "IMAPServer in bus/imap_server.py. Dovecot production / asyncio stub for AGENT_DATACENTER_TEST_MODE=1. IDLE via threading.Event (thread-safe). create_mailbox/append/unseen_count/fetch_unseen/list_mailboxes. Shared mailbox created at start(). All tests pass incl. IDLE notification.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": "2026-04-27T21:50:56.971004+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Implement the embedded IMAP server per the decision made in T-adc-imap-impl-decision. Shared mailbox created at startup; IDLE enabled; localhost-only for v1.\n\nProposed shape (per decision from T-adc-imap-impl-decision):\n- agent_datacenter/bus/imap_server.py:\n  class IMAPServer:\n    start() -> None: start IMAP server on localhost:143 (or configured port)\n    stop() -> None\n    create_mailbox(name: str) -> None\n    delete_mailbox(name: str) -> None (soft-delete; log retained)\n    list_mailboxes() -> list[str]\n    append(mailbox: str, envelope: Envelope) -> None: IMAP APPEND operation\n    unseen_count(mailbox: str) -> int: IMAP UNSEEN flag count\n    fetch_unseen(mailbox: str) -> list[Envelope]: fetch + mark SEEN\n  Shared mailbox created in start()\n  IDLE: enabled — clients can subscribe via IMAP IDLE for push\n  localhost-only: no TLS for v1\n  Production: Dovecot; Tests: Python embedded stub (from T-adc-imap-impl-decision spike)\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/bus/imap_server.py\n- ~/dev/src/agent_datacenter/agent_datacenter/bus/__init__.py\n\nDesign rules:\n- no-sqlite: IMAP server backend handles storage; no sqlite3 in this module\n- oop-first: IMAPServer class, not module-level functions\n\nScope boundary:\nIN: IMAP server lifecycle, create/list/delete mailbox, APPEND, UNSEEN check, IDLE\nOUT: 24hr retention policy configuration (T-adc-imap-24hr-retention), comms:// routing (T-adc-bus-router-comms-uri)\n\nTest plan:\n- IMAPServer.start(); create_mailbox('CC.0'); append('CC.0', envelope); unseen_count('CC.0') == 1\n- fetch_unseen('CC.0') returns [envelope]; unseen_count('CC.0') == 0 after fetch\n- IDLE: client connects with IDLE; append message → client receives notification within 1s\n- Shared mailbox exists immediately after start()",
+    "completed_at": "2026-04-27T21:58:28.664869+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6162df96-b5f1-4747-9481-e8e3de7cfd20",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

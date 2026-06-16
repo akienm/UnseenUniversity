@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-restart-flag-turn-entry.20260328.172524351147",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-restart-flag-turn-entry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-28T17:25:24.351147",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-restart-flag-turn-entry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-restart-flag-turn-entry",
+    "epic": "Operations",
+    "size": "S",
+    "title": "restart.flag: check at _drain_network entry, not just idle loop",
+    "result": "main.py: restart.flag check added to _drain_network entry. Syntax OK. Committed+pushed 08c8afb7.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-28T17:24:38.255204+00:00",
+    "description": "Add restart.flag check at top of _drain_network so a cc_send ping triggers restart even when idle loop is blocked. Fixes: Igor ignoring restart.flag when PROC_FLAG_ANOMALY prevents idle state.",
+    "completed_at": "2026-03-28T17:25:24.351147+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "096780b6-bafe-4573-b234-bbead73afb37",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

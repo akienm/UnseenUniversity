@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-boredom-window-shrink.20260512.000629849262",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-boredom-window-shrink"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T00:06:29.849262",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ne-desperation-pull-2026-05-11"
+    ],
+    "tickets": [
+      "T-boredom-window-shrink",
+      "T-ne-desperation-pull-ltm"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-boredom-window-shrink",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "BoredomDetector WINDOW_MINS 20→5 min",
+    "result": "BoredomDetector WINDOW_MINS 20→5 in push_sources.py; boredom fires 4x faster when idle",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "blocked_at": null,
+    "claimed_at": "2026-05-22T02:31:22.846318+00:00",
+    "created_at": "2026-05-12T00:06:29.849262+00:00",
+    "related_to": null,
+    "decision_id": "D-ne-desperation-pull-2026-05-11",
+    "description": "Reduce BoredomSource.WINDOW_MINS from 20 to 5 minutes in push_sources.py (line 1757). The current 20-min window requires Igor's arousal to be flat for 20 minutes before BoredomSource fires — far too slow for reactive learning. At 5 min, boredom kicks in 4× faster when Igor is genuinely idle. This is complementary to T-ne-desperation-pull-ltm (which is proactive); this makes the reactive path faster. Change the default in the env fallback: int(os.getenv('IGOR_BOREDOM_WINDOW_MINS', '5')).\n\n**Affected files:** wild_igor/igor/cognition/push_sources.py (BoredomSource.WINDOW_MINS constant at line 1757)\n**Design rules:** OOP-first (constant in class body, no structural change needed)\n**Scope boundary:** IN: WINDOW_MINS default 20→5 (env var still overrides). OUT: AROUSAL_THRESH; BoredomSource push() logic; rolling window mechanics\n**Test plan:** No unit test needed. Observe after restart: BoredomSource entries (BOREDOM_DETECTED) appear in TWM within ~5 min of Igor becoming idle; channel message confirms. Compare to prior 20-min baseline.",
+    "completed_at": "2026-05-22T15:50:36.575109+00:00",
+    "github_issue": 727,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c55523ee-60a3-464e-b7f1-144f854b5d26",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

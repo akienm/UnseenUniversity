@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-token-tracking-per-sprint.20260605.030019917396",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-token-tracking-per-sprint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T03:00:19.917396",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-anticipatory-memory-2026-06-04"
+    ],
+    "tickets": [
+      "T-token-tracking-per-sprint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-token-tracking-per-sprint",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Observability",
+      "TokenOptimization",
+      "Workflow"
+    ],
+    "title": "Track tokens per sprint session as optimization metric",
+    "result": "sprint_token_log.py reads real transcript tokens; cc_queue show displays per-sprint consumption; skill records SPRINT_START at in_progress",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "intention": "I intend that every sprint session records token consumption so optimization strategies (compiled inference, anticipatory memory, queue_view, etc.) can be verified to actually reduce token spend.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T03:00:19.917396+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-anticipatory-memory-2026-06-04",
+    "description": "We track dollar cost but not tokens. Without token counts per sprint, we cannot verify that compiled inference, anticipatory memory, or any other optimization strategy actually reduces consumption. We are flying blind on the thing we are actively trying to optimize.\n\nAdd token tracking to the sprint close step: record input tokens + output tokens for the sprint session against the ticket ID. Store in a flat log (append-only, one line per sprint: timestamp, ticket_id, input_tokens, output_tokens, model). Surface as a per-ticket stat in cc_queue.py show output.\n\n**Affected files:** $CC_WORKFLOW_TOOLS/cc_queue.py, ~/.claude/skills/sprint-ticket/SKILL.md (close step)\n**Design rules:** flat-file for sprint log (no Postgres dependency for this); no SQLite\n**Scope boundary:** Record only, no alerting or thresholds yet. The log is the deliverable.\n**Completion criteria:** After a sprint closes, cc_queue.py show <id> displays token consumption for that sprint. The flat log file exists at $IGOR_HOME/claudecode/sprint_tokens.log with correct entries.",
+    "completed_at": "2026-06-05T03:27:37.376035+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

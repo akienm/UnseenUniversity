@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.GH-287.20260320.143219000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-287"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T14:32:19",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-287",
+      "T-task-chain",
+      "T-worker-queue"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-287",
+    "title": "CLOSED: Igor poll-spawn workers",
+    "result": "closed as superseded — push-to-channel pattern (TWM/bouquet) obsoletes polling design; T-task-chain rejected 2026-04-19; architecture moved past this",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 3,
+    "created_at": "2026-03-20T14:32:19Z",
+    "description": "## Imported from GH#287 (created 2026-03-20, open) — **EXPLICITLY DEFERRED**\n\nEnable Igor to spawn Claude Code worker sessions and poll their results — extending Igor's own agentic capabilities to multi-session parallelism.\n\nCurrently Igor can delegate via the arbiter queue (human approval) or cc_send (fire-and-forget). This adds a third pattern: Igor spawns a worker, work happens in a separate CC session, Igor polls for completion and incorporates results.\n\nDesign (deferred): Igor habit triggers worker spawn (via shell or subprocess); worker session connects to same MCP server, picks up task; Igor polls `task_queue_status` MCP tool at interval; on completion, Igor reads result and continues reasoning.\n\nUse cases: bulk reading queue drain (Igor coordinates across instances); long-running research tasks Igor delegates to cheaper workers; overnight habit audit runs.\n\n**Body says: DO NOT BUILD until T-worker-queue is stable and T-task-chain is validated. Polling has high token cost — design carefully.**\n\n**Affected files:** TBD — discovery step. Likely: wild_igor/igor/tools/spawn_worker.py (new); MCP server (new task_queue_status tool); a Python-level subprocess/shell launcher; new spawn habit. Pre-sprint design conversation needed because polling-cost analysis is load-bearing.\n\n**Design rules:** budget-respect (polling has token cost — design must analyze before building); test-plan-or-why-not.\n\n**Scope boundary:** IN — Igor-initiated worker spawn + poll + result incorporation. OUT — designer/worker CC sessions (not appropriate for polling per body).\n\n**Test plan:** TBD — write at design time. Will need a mocked worker queue to assert spawn/poll/complete cycle without real CC sessions.",
+    "completed_at": "2026-05-11T18:16:56.621301+00:00",
+    "deposited_at": "2026-06-10T00:08:20.151649",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": 287,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7bb1112a-18ff-4bd4-a191-07bfb7e68d32",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

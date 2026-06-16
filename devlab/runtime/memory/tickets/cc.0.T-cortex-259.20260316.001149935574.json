@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-cortex-259.20260316.001149935574",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cortex-259"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T00:11:49.935574",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cortex-259"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cortex-259",
+    "body": "cortex.py: replace SELECT * with _MEM_COLS_NO_EMBED in boot-time memory_type scans for EPISODIC (332ms, 4854 rows) and FACTUAL (63ms, 2746 rows). Same fix pattern as T-cortex-258. Add LIMIT where full scan not needed. MEDIUM inertia — read before editing. See #259.",
+    "role": "implementation",
+    "size": "S",
+    "title": "Fix boot-time SELECT * on EPISODIC/FACTUAL type scans (#259)",
+    "result": "cortex.py get_by_type(): SELECT * → SELECT {_MEM_COLS_NO_EMBED} (eliminates embedding blob load on every EPISODIC/FACTUAL type scan). consolidation.py: same SELECT * fix + corrected ORDER BY created_at → timestamp (created_at column doesn't exist). Both syntax OK.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-16T00:08:19.801193+00:00",
+    "completed_at": "2026-03-16T00:11:49.935574+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

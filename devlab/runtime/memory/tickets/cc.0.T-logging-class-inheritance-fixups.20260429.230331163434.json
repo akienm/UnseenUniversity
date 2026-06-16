@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-logging-class-inheritance-fixups.20260429.230331163434",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-logging-class-inheritance-fixups"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T23:03:31.163434",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-detailed-logging-audit",
+      "T-logging-archive-decision",
+      "T-logging-class-inheritance-fixups"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-logging-class-inheritance-fixups",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Logging",
+      "Migration",
+      "Inheritance"
+    ],
+    "title": "Fix 23 classes missing IgorBase/AgentBase inheritance (audit punch list)",
+    "result": "23→0 classes missing inheritance. 7 actual fixups (Transport, MatterController, ConfabScanner, TraceMissAnalyzer, IgorMap, ScanForRestDrafter, InfrastructureBrief) + 6 transitive (5 transports, MockController) + audit refinements (stdlib Handler/Logger/Formatter exempt, EXEMPT_CLASS_NAMES for AgentBase/TimerHandle/PathManager, RackModule+Rack+Transport+MatterController in KNOWN_IGORBASE_ANCESTORS). 4119 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "related_to": "T-detailed-logging-audit",
+    "decision_id": null,
+    "description": "Audit (2026-04-29 logging audit) found 23 classes that don't inherit IgorBase/AgentBase. Per-class triage: (a) inherit IgorBase/AgentBase, (b) document exemption (e.g., AgentBase IS the base; logging_setup.TimerHandle/ConsoleHandler are infra primitives), (c) add to KNOWN_IGORBASE_ANCESTORS or similar exemption list.\n\nList from lab/claudecode/reports/logging_audit_20260429-211639.md:\n- lab/utility_closet/agent_base.py: AgentBase (definitionally exempt — document)\n- lab/utility_closet/comms.py: Transport, CommsModule\n- lab/utility_closet/db_shelf.py: DatabaseShelf\n- lab/utility_closet/matter_shelf.py: MatterController, MockController, MatterShelf\n- lab/utility_closet/transports/*.py: 5 Transport subclasses\n- wild_igor/igor/logging_setup.py: TimerHandle, ConsoleHandler (likely exempt — they ARE the logging infra)\n- wild_igor/igor/paths.py: PathManager (utility, may need IgorBase)\n- lab/claudecode/engram_tools/*: ConfabScanner, TraceMissAnalyzer\n- lab/claudecode/{map_igor,scan_for_rest_drafter,sprint_infrastructure_brief}.py\n- lab/claudecode/archive/local_pool.py: 3 classes (gated by T-logging-archive-decision)\n\n**Affected files:** ~17 files listed above.\n**Design rules:** inherit-base-class palace rule (theigors/rules/inherit-base-class).\n**Scope boundary:** in scope: classify each class (migrate/exempt) + apply. Out of scope: changing what those classes do.\n**Test plan:** re-run audit_logging.py and audit_check_igorbase.py; confirm no regressions in tests/. Each class with new inheritance: verify __init__ super() chain works.",
+    "completed_at": "2026-04-29T23:03:31.163434+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5026cbdd-ad7c-4964-91e8-94c04847e304",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

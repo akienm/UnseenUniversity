@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-nanny-ogg-device.20260609.224830317825",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-nanny-ogg-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:30.317825",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-nanny-ogg-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-nanny-ogg-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-nanny-ogg-device",
+    "gate": "2026-06-23",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Nanny Ogg device and cron wiring",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to verify that introducing Nanny Ogg as the cron device did not cause scheduling logic to leak into Granny or Igor.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T22:48:30.317825+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-nanny-ogg-device-2026-06-09",
+    "description": "**What changed:** Nanny Ogg device created as the rack's cron/scheduler; OS cron wired through her fascia.\n**Predicted unintended effects:** Scheduling calls that were previously implicit (hardcoded timers in Granny or Igor) may now conflict with Nanny Ogg's ownership; Windows crontab abstraction may be a stub that silently does nothing; fascia slash commands may not reach the OS cron if the web server runs as a different user.\n**Signals to watch:** grep devices/granny devices/igor for any scheduling/timer logic added after this ships; test /cron list on a fresh shell to verify user context; check Windows CI if it exists.\n**Gate condition:** Check by 2026-06-23.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

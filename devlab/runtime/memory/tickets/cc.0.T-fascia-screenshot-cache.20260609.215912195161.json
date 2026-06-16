@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-fascia-screenshot-cache.20260609.215912195161",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fascia-screenshot-cache"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T21:59:12.195161",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-comms-fascia-ux-2026-06-09"
+    ],
+    "tickets": [
+      "T-device-fascia-page",
+      "T-fascia-screenshot-cache"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fascia-screenshot-cache",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "WebUI",
+      "UX"
+    ],
+    "title": "Fascia graceful degradation: cached screenshot tier",
+    "result": "screenshot_capture.py (Chrome headless), /api/device/{id}/screenshot endpoint, loadFascia offline detection + greyed cached screenshot overlay, Nanny hourly sweep — 10 tests",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "intention": "I intend that offline devices show a greyed cached screenshot of their last-known fascia state rather than a bare 404.",
+    "claimed_at": "2026-06-10T00:15:24.826576+00:00",
+    "created_at": "2026-06-09T21:59:12.195161+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-comms-fascia-ux-2026-06-09",
+    "description": "When a device tab is clicked and the device is offline, show a greyed cached screenshot of the last-known fascia page rather than the empty 404 stub. Requires periodic headless screenshot capture (playwright or similar) + storage per device + staleness detection.\n\n**Affected files:** devices/web_server/server.py (new /api/device/{id}/screenshot endpoint), new screenshot capture script\n**Design rules:** no-sqlite; screenshots stored as flat files under datacenter_logs/web_server/screenshots/\n**Scope boundary:** Screenshot capture + serve + greyed overlay. NOT the live 4-box fascia (that's T-device-fascia-page).\n**Completion criteria:** Offline device tab shows greyed screenshot of last-known fascia; online device tab shows live fascia.\n**Validation:** Stop Igor, reload page, click Igor tab — greyed screenshot appears.",
+    "completed_at": "2026-06-10T00:22:33.288910+00:00",
+    "deposited_at": "2026-06-09T16:00:51.757852",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "observation",
+    "scraps_validated": "2026-06-09T21:59:12.245749+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

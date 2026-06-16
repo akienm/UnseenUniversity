@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-rack-tool-migration.20260530.172435548248",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-rack-tool-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:24:35.548248",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-igor-rack-tool-migration",
+      "T-shim-traffic-spy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-rack-tool-migration",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Cognition",
+      "Infrastructure"
+    ],
+    "title": "Migrate Igor's direct file/bash calls to use workspace device MCP tools",
+    "result": "run_bash routes through WorkspaceDevice.workspace_run_bash; read_source_file routes through workspace_read_file. write path already blocked by IGOR_SELF_EDIT_ENABLED=false.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-06-08T03:06:15.820249+00:00",
+    "created_at": "2026-05-30T17:24:35.548248+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Igor currently makes direct file system and bash calls in several tools (pe_chain, read_source_file, patch_source_file, run_bash). Migrate these to call the workspace device via MCP instead. This force-tests the rack foundation through Igor's daily use — every coding sprint becomes a live integration test of workspace tools.\n\nSecondary benefit: makes Igor's file operations inspectable via the shim spy log (T-shim-traffic-spy), giving a full trace of what Igor read/wrote during any pe_chain run.\n\nLowest priority in this batch — do after Monday validation tickets are green.\n\n**Affected files:** devices/igor/tools/pe_chain.py, devices/igor/tools/run_bash.py, devices/igor/tools/source_tools.py (or equivalent)\n**Design rules:** no-sqlite; Igor calls tools, does not contain them; workspace device must be running before this migration can go live\n**Scope boundary:** IN — replace direct file/bash calls with workspace MCP tool calls; OUT — change Igor's tool API surface, affect pe_chain phase logic\n**Completion criteria:** pe_chain runs a full INIT→CLOSE cycle using workspace MCP tools; datacenter_logs/shim/trace/ shows workspace tool calls during the run; no direct subprocess.run or open() calls for source files in pe_chain\n\n**Note [2026-06-08 11:08]:** pe_chain.py, run_bash.py, source_tools.py are absent from devices/igor/tools/ — this is a from-scratch port, not a migration. pe_chain is the full INIT→CLOSE coding chain. Given Igor-coding-retired, verify: (a) port pe_chain into UU for DickSimnel use? (b) stale — defer/close? Needs Akien decision before sprint.",
+    "completed_at": "2026-06-08T17:25:09.639002+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:24:35.548273+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ce222a75-cba6-4b99-aa6b-5f26ef19aaac",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

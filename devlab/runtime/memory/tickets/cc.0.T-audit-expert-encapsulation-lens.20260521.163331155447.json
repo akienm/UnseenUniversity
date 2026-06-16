@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-audit-expert-encapsulation-lens.20260521.163331155447",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-expert-encapsulation-lens"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T16:33:31.155447",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-encapsulation-audit-2026-05-21"
+    ],
+    "tickets": [
+      "T-audit-expert-encapsulation-lens"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-expert-encapsulation-lens",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AuditExpert",
+      "Workflow"
+    ],
+    "title": "Add encapsulation question to Systems Architect expert lens",
+    "result": "added encapsulation key question to Systems Architect + Process/Meta Engineer in both TheIgors/EXPERTS.md (2116b8d3) and ADC/EXPERTS.md (4b6bcf2)",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-21T16:33:31.155447+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-encapsulation-audit-2026-05-21",
+    "description": "The Systems Architect expert in EXPERTS.md asks about coupling, cohesion, and contract boundaries but does not explicitly ask the encapsulation question: 'Are there subsystems reaching across interfaces they shouldn't? What could be extracted into a service?' Add this as a key question to the Systems Architect entry in both ~/TheIgors/EXPERTS.md and ~/dev/src/agent_datacenter/EXPERTS.md. Also add to the Process/Meta Engineer entry: 'Is the development process itself encapsulated — are design decisions being made at the right layer, or are implementation details leaking into the design conversation?'\n\n**Affected files:** ~/TheIgors/EXPERTS.md (Systems Architect + Process/Meta sections), ~/dev/src/agent_datacenter/EXPERTS.md (same)\n**Design rules:** none apply\n**Scope boundary:** two expert entries in two files; no changes to audit-expert skill logic\n**Test plan:** no automated tests — doc edit; spot-check that each entry has Lens + Key questions fields after edit\n**Validation:** both EXPERTS.md files contain 'encapsulat' in Systems Architect section\n**Cleanup:** n/a\n**Observable via:** grep 'encapsulat' ~/TheIgors/EXPERTS.md returns a match in Systems Architect section",
+    "completed_at": "2026-05-21T17:04:46.205577+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T16:33:31.155480+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "84220f76-7b18-4344-b210-c18f80b430eb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-observe-pattern-expand.20260404.172403170963",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-observe-pattern-expand"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:24:03.170963",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-observe-pattern-expand"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-observe-pattern-expand",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "OBSERVE: augment grep patterns with interpretive_edges lookup",
+    "result": "_CODE_EXPANSION static table (18 entries) + _expand_patterns_with_synonyms(): checks snake_case base patterns (substring) and raw description (whole-word) for expansion keys. Adds ≤2 extra grep patterns without LLM. Cap 4→6. 8 new tests. Committed 3b85d2ef.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-04T17:19:47.720905+00:00",
+    "related_to": null,
+    "description": "pe_observe _extract_grep_patterns uses regex only. No semantic expansion. A ticket mentioning 'register' won't find registry.register. Add a fast interpretive_edges lookup (not word graph — wrong domain) to expand known code identifiers to their common co-occurrences. Adds 1-2 extra patterns without LLM.",
+    "completed_at": "2026-04-04T17:24:03.170963+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "78bb070c-4f4e-4d93-8ff9-2a136aa0a1fd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-gap-mapping-research.20260605.030037584856",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gap-mapping-research"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T03:00:37.584856",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-gap-mapping-2026-06-04",
+      "D-gap-mapping-proposal-"
+    ],
+    "tickets": [
+      "T-gap-mapping-research"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gap-mapping-research",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Research",
+      "Memory",
+      "Architecture"
+    ],
+    "title": "Design exploration: gap mapping and the intuition interface",
+    "result": "4-question proposal at D-gap-mapping-proposal-2026-06-04.md; recommends passive gap index (Shape A) as first step; measurement challenge documented",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.4,
+    "intention": "I intend that this ticket produces a design proposal for how UU could systematically surface what has NOT been decided, so the boundary between mapped knowledge and unmapped territory is explicit.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T03:00:37.584856+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-gap-mapping-2026-06-04",
+    "description": "The palace maps what we know. Nothing maps what we don't know. The observable outcome of this ticket is genuinely unknown — we think it reduces retries but cannot measure that yet. Akien's framing: this is where intuition starts. The unmapped territory is where human judgment fills in; a system that can locate its own knowledge gaps is closer to genuine understanding than one that only knows what it knows.\n\nThis is a design exploration, not an implementation. Deliverable: a written proposal (decision doc or design note) answering:\n1. What does 'known unknown' look like in this system? (a ticket that's never been filed? a palace path with no node? a concept that's referenced but undefined?)\n2. What would a gap-surfacing mechanism look like mechanically?\n3. What would 'fewer retries' actually mean as a measurable signal, if anything?\n4. Where does human intuition currently fill in — and should it, or should some of those gaps be mapped?\n\n**Note on hypothesis:** Q2 (observable outcome) is explicitly unknown at filing time. This is intentional and honest. The completion criteria is a documented proposal, not a working system.\n\n**Affected files:** lab/design_docs/decisions/ (new design doc)\n**Design rules:** none apply — research ticket\n**Scope boundary:** Written proposal only. No code changes. No palace writes. Explicitly exploratory.\n**Completion criteria:** A design doc exists at lab/design_docs/decisions/D-gap-mapping-proposal-<date>.md answering the four questions above. The doc explicitly states what remains unknown and why.",
+    "completed_at": "2026-06-05T03:48:19.203430+00:00",
+    "deposited_at": "2026-06-04T21:02:09.358576",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

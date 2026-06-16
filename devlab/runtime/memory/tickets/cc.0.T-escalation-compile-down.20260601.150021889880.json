@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-escalation-compile-down.20260601.150021889880",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-escalation-compile-down"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T15:00:21.889880",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-prescient-agents-north-star-2026-06-01"
+    ],
+    "tickets": [
+      "T-escalation-compile-down",
+      "T-tool-loop-advisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-escalation-compile-down",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Inference",
+      "Architecture"
+    ],
+    "title": "Collective operational learner: escalation corpus + routing compiler",
+    "result": "escalation_corpus.py captures non-DONE signals; routing_compiler.py finds UPGRADE_TIER/SETUP_GAP/REPROMPT_RATE patterns; add_compiled_rule gates auto-apply; 153 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.85,
+    "blocked_at": "2026-06-01T15:02:39.278286+00:00",
+    "claimed_at": "2026-06-01T23:56:25.060955+00:00",
+    "created_at": "2026-06-01T15:00:21.889880+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-prescient-agents-north-star-2026-06-01",
+    "description": "Every escalation is a training signal, not a failure. Right now we discard them after blocking the ticket. The vision: aggregate every non-DONE signal into a corpus with full context, analyze it to find compile-down opportunities, and progressively lower the tier required for each class of work. Over time 'do X' replaces 'CC Opus do X' — the collective routes to whatever capability is sufficient, escalating only as genuinely needed. This is the operational learning loop that makes the collective self-improving, in the same way Igor's Hebbian learning was designed to improve cognition.\n\nThree parts:\n\n**1. Escalation corpus** (flat-file JSONL, no SQLite)\nEvery non-DONE outcome from inference_dispatch_fn gets appended to ~/.granny/escalation_corpus.jsonl with:\n- ticket_id, tags, size, task_class (tier attempted)\n- signal (ESCALATE/REPROMPT/UPGRADE/BLOCKED/CONFUSED)\n- advisor_signal (post-D2: what the advisor said)\n- iterations, cost_usd, tokens_in, tokens_out\n- short excerpt of what was attempted (last advisor notes, ≤300 chars)\n- timestamp\n\n**2. Routing compiler** (Scraps job, periodic)\nReads corpus, finds patterns:\n- 'Platform/S tickets UPGRADE to analyst and succeed → route Platform/S directly to analyst, skip worker attempt'\n- 'BLOCKED signals always include \"ECONNREFUSED\" → this is a setup gap, not a model gap'\n- 'REPROMPT rate for Infrastructure tickets > 40% → ticket template for Infrastructure tag needs improvement'\nOutputs COMPILE_DOWN_PROPOSALS to channel: proposed changes to rules_engine.py default routing, ranked by confidence and frequency.\n\n**3. Proposal gate**\nProposals are surfaced to CC/Akien for approval before auto-applying. Low-confidence or novel patterns → hold for review. High-confidence patterns (>90%, >20 samples) → auto-apply to rules_engine.py with a commit and channel post.\n\nThis is PA2.0 Layer 2→3: discovered relationships become future routing decisions. The graph tree outside Igor learns in exactly the way Igor's memory palace learns — by observation, not by manual curation.\n\n**Affected files:** devices/granny/daemon.py (corpus append hook), new devices/scraps/jobs/routing_compiler.py, devices/inference/rules_engine.py (proposal apply), new tests/scraps/test_routing_compiler.py\n**Design rules:** no-sqlite (flat JSONL corpus); log every interface crossing; no-hardcoded-instance-refs; proposals are append-only to the corpus — never mutate historical records\n**Scope boundary:** Corpus capture + compiler job + proposal surfacing. Auto-apply only for high-confidence patterns (>90%, >20 samples). Out of scope: learning prompt improvements (that feeds into ticket template work separately); learning from CC sessions (only inference dispatch signals in scope here).\n**Gate:** T-tool-loop-advisor (advisor signals are the richest corpus input) should land first, but corpus capture can start immediately with current ESCALATE signals.\n**Completion criteria:** ~/.granny/escalation_corpus.jsonl grows with every non-DONE dispatch; routing_compiler.py produces COMPILE_DOWN_PROPOSALS from a seeded test corpus with ≥3 pattern types; `.venv/bin/pytest tests/scraps/ -q -k routing_compiler` passes; at least one auto-apply path tested end-to-end against a mock rules_engine.py",
+    "completed_at": "2026-06-01T23:57:44.978638+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T23:56:25.060955+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a5ee4bd6-0426-448e-acc3-df5bf3ee705d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

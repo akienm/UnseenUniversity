@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-granny-bus-dispatch.20260604.185612714018",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-bus-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T18:56:12.714018",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-shim-dispatch-handshake-2026-06-04"
+    ],
+    "tickets": [
+      "T-granny-bus-dispatch",
+      "T-granny-dispatched-set-ttl",
+      "T-granny-send-keys-idle-check",
+      "T-queue-dispatched-status",
+      "T-shim-dispatch-handshake"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-bus-dispatch",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Infrastructure"
+    ],
+    "title": "Granny: replace send-keys with bus envelope dispatch",
+    "result": "Granny sends bus envelopes, processes handshake replies, DB watchdog for stale dispatched; _cc0_busy includes dispatched+acked; 19 tests; follow-on: worker-side IDLE listener",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that Granny dispatches work via the bus so the handshake protocol catches lost dispatches instead of silently dropping them.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T18:56:12.714018+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-shim-dispatch-handshake-2026-06-04",
+    "description": "Granny currently dispatches CC work via `tmux send-keys`, which is swallowed silently if CC is mid-response. Replace with a bus envelope sent to the worker's `comms://` address. Granny then: marks ticket `dispatched`; listens for 'got it' reply → marks `acked`; listens for 'started' reply → marks `in_progress`; listens for 'timeout' reply → marks `escalated`. If no 'got it' arrives within 3 minutes, Granny marks `escalated` directly (shim never received). Supersedes T-granny-send-keys-idle-check and T-granny-dispatched-set-ttl (dispatched_cycle.json mechanism is no longer needed once the bus handshake confirms delivery).\n\n**Affected files:** `devices/granny/daemon.py` (_dispatch_cc0, run_once watchdog), `devices/granny/device.py`, `tests/igor/test_igor_datacenter_boot.py` or `tests/granny/` test suite\n**Design rules:** no-sqlite; log every interface crossing (bus send, handshake reply received, escalation)\n**Scope boundary:** Granny's dispatch and handshake-response logic only. BaseShim handshake protocol is T-shim-dispatch-handshake (gate). Queue statuses are T-queue-dispatched-status (gate). Do not touch cc_task_listener.py — it becomes redundant but removal is a separate ticket.\n**Completion criteria:** Integration test: Granny dispatches a ticket via bus envelope; shim mock sends 'got it'; ticket status in queue goes `dispatched` → `acked`; shim mock sends 'started'; ticket goes `in_progress`. Timeout path: shim mock sends no reply; ticket goes `escalated` after 3-min watchdog fires. Log lines present at each transition.",
+    "completed_at": "2026-06-04T19:45:02.329583+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

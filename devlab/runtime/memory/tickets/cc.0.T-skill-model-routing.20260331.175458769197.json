@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-skill-model-routing.20260331.175458769197",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-model-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T17:54:58.769197",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skill-model-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-model-routing",
+    "size": "L",
+    "tags": [
+      "Operations"
+    ],
+    "title": "skill model routing: haiku for mechanical commands, sonnet for reasoning",
+    "result": "Implemented: model: haiku frontmatter on filter/audit/slateclose/readigor/slate/fixit; CLAUDE.md routing table + Agent(model=haiku) convention added. D267 recorded.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "Add model: haiku frontmatter to filter/audit/fixit/slateclose/readigor skills; add routing convention to CLAUDE.md so Agent(model=haiku) is spawned for those skills. Saves ~$80/day on mechanical task overhead.",
+    "completed_at": "2026-03-31T17:54:58.769197+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "55d51187-7995-4469-97e7-64eae61b0f94",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

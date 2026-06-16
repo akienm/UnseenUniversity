@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-inference-foreground-flag.20260611.164226966690",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-foreground-flag"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T16:42:26.966690",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-foreground-flag"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-foreground-flag",
+    "gate": null,
+    "role": "builder",
+    "tags": [
+      "Inference",
+      "DickSimnel"
+    ],
+    "title": "Add foreground flag to InferenceRequest for cloud-preferring routing",
+    "result": "foreground=True field on InferenceRequest; rules_engine sort flips to cloud-first when set; ToolLoop + _chat_inference pass it; 3 new tests in test_flat_rate_routing.py all green (232 total passing)",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.6,
+    "intention": "I intend that coding/foreground calls from DickSimnel always route to cloud models (Claude via OR) rather than flat-rate Ollama, since sprint-ticket work is latency-sensitive and requires high capability.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T16:42:26.966690+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "InferenceRequest has no foreground flag. The rules engine currently prefers flat-rate (Ollama Pro) over usage-based (OpenRouter) for all task classes. This means DickSimnel coding calls can silently route to local Ollama instead of cloud Claude. Adding foreground=True on InferenceRequest and honoring it in the rules engine sort order (cloud-first when foreground) fixes this.\n\nDesign open question left for CC review: keep Dick's _TIER_CASCADE manually looping in device.py, or migrate it into the proxy as escalation_hop logic. This ticket only covers the foreground flag + rules engine sort. Cascade migration is explicitly out of scope.\n\n**Affected files:** devices/inference/shim.py (InferenceRequest dataclass), devices/inference/rules_engine.py (candidate sort), devices/dicksimnel/toolloop.py (passes foreground=True), devices/dicksimnel/device.py (_chat_inference passes foreground=True)\n**Design rules:** no-sqlite; interface logging (InferenceRequest is a bus envelope — log the new flag at dispatch)\n**Scope boundary:** IN: foreground field on InferenceRequest, rules_engine sort flips to cloud-first when foreground=True, ToolLoop + Dick chat pass it. OUT: cascade migration into proxy, any change to _TIER_CASCADE logic, budget gates.\n**Completion criteria:** (1) InferenceRequest has foreground: bool = False field; (2) rules_engine.route() accepts foreground kwarg and when True sorts usage_based before flat_rate; (3) ToolLoop builds every InferenceRequest with foreground=True; (4) tests: test_inference.py covers foreground=True routes to usage_based source before flat_rate when both available; (5) existing tests stay green.\n\n## Escalation summary\n**What was tried:** MAX_TURNS: hit 20 turns without DONE: prefix\n**Where it broke:** max turns hit without completing\n**What now?**",
+    "completed_at": "2026-06-11T17:21:26.291876+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-cc-session-hostname-naming.20260606.182336982387",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-session-hostname-naming"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T18:23:36.982387",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-session-hostname-naming"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-session-hostname-naming",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "CC",
+      "UX",
+      "Workflow"
+    ],
+    "title": "CC session name: <hostname>.cc.0 (and .cc.1 for second instance)",
+    "result": "constants._detect_session_name() for N-detection; granny uses hostname.cc.0 default; stop_cc_minions protects .cc.0+.cc.1; autocompact uses $CC_TMUX_SESSION; 9 tests",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": null,
+    "created_at": "2026-06-06T18:23:36.982387+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Right now CC_TMUX_SESSION defaults to 'claude-main' (devices/claude/constants.py:24). The web UI and Granny both reference this as 'CC.0' but the tmux session name gives no hint of hostname or instance number — you can only infer when a session started.\n\nDesired: session name of the form <hostname>.cc.0 for the primary instance, <hostname>.cc.1 for a second concurrent instance, etc. This makes multi-host setups and concurrent CC instances visually distinct in tmux ls and the web UI feeds.\n\n**Affected files:** devices/claude/constants.py (update default TMUX_SESSION), devices/granny/daemon.py (update workers_cfg default session key), possibly lab/claudecode/stop_cc_minions.py (update protected-sessions set if pattern changes)\n\n**Design rules:** Keep CC_TMUX_SESSION env var override so existing setups aren't broken. Instance number detection: check tmux for existing <hostname>.cc.N sessions and use next available N.\n\n**Scope boundary:** IN — change default session name format to <hostname>.cc.N; update protected-sessions list; update Granny workers_cfg default. OUT — changing how sessions are dispatched to, renaming existing running sessions.\n\n**Completion criteria:** Default tmux session name is <hostname>.cc.0 (derived at startup, not hardcoded); a second CC launch on the same host gets <hostname>.cc.1; tmux ls shows the new names; Granny dispatches to the correct session; CC_TMUX_SESSION env var still overrides.",
+    "completed_at": "2026-06-06T18:58:26.237836+00:00",
+    "deposited_at": "2026-06-06T12:24:59.840294",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "36f567a8-3694-473b-a17e-4fe11edb6bcc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

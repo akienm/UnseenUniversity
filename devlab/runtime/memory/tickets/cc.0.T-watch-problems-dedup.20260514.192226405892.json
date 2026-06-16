@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-watch-problems-dedup.20260514.192226405892",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watch-problems-dedup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-14T19:22:26.405892",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-watch-problems-dedup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watch-problems-dedup",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Escalation"
+    ],
+    "title": "CLOSED: watch_problems upsert on watch_condition",
+    "result": "upsert fix shipped; also fixed NE_GRADER empty-response crash and goal_continuation CERT_WALK loop",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-14T19:22:31.646479+00:00",
+    "created_at": "2026-05-14T19:22:26.405892+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "add_watch_problem() always INSERTs a fresh row, so every 30-min NE-empty escalation creates a new 'ne-empty-result' row. 5,469 identical rows have accumulated, burdening lever_watcher with 5,469 UPDATE statements per 5-min scan. Fix: before INSERT, check for an existing unresolved row with the same non-NULL watch_condition; if found, update last_surfaced_at and return the existing id.\n\nAlso run one-time cleanup SQL: resolve all but the most-recent 'ne-empty-result' row.\n\n**Affected files:** wild_igor/igor/cognition/watch_problems.py, tests/test_watch_problems.py\n**Design rules:** no-sqlite, test-plan-or-why-not\n**Scope boundary:** add_watch_problem() upsert logic only; no changes to lever_watcher, escalate.py, or coa.py\n**Test plan:** add test_watch_condition_dedup — call add_watch_problem twice with same watch_condition, verify second call returns the same id",
+    "completed_at": "2026-05-16T14:38:43.325791+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3608d325-f00c-4c83-a45c-487b9d973893",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

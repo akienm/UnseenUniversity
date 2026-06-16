@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-cert-walk-w1-preflight-ignore-twm-context.20260430.213500000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cert-walk-w1-preflight-ignore-twm-context"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T21:35:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cert-walk-w1-preflight-ignore-twm-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cert-walk-w1-preflight-ignore-twm-context",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "cert",
+      "tier1",
+      "replay-old",
+      "list-append-shape"
+    ],
+    "title": "Add tests/test_twm_context.py to _PREFLIGHT_IGNORE in tools/ops.py",
+    "result": "Already shipped via commit 92749474. tests/test_twm_context.py is in _PREFLIGHT_IGNORE at wild_igor/igor/tools/ops.py:1241-1243 with the exact Ollama-prompt-eval-count rationale comment described in the ticket.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 5,
+    "cert_meta": {
+      "walk_id": "W-1",
+      "edit_shape": "constant-set/list-append",
+      "expected_diff": "+3 lines (1 list entry + 2 comment lines) to wild_igor/igor/tools/ops.py around the _PREFLIGHT_IGNORE = [ block",
+      "worktree_path": "/home/akien/TheIgors-cert-walks/W1",
+      "replay_of_commit": "92749474"
+    },
+    "claimed_at": "2026-05-01T03:29:08.979433+00:00",
+    "created_at": "2026-04-30T21:35:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pre-flight check is showing transient false-alarm blocks on tests/test_twm_context.py. Behavior: the file's tests skip cleanly when Ollama is fully unavailable, but transiently fail with 'assertGreater 0 > 0' when Ollama is reachable yet returns no prompt_eval_count. To prevent false-alarm pre-flight blocks, add 'tests/test_twm_context.py' to the _PREFLIGHT_IGNORE list in wild_igor/igor/tools/ops.py with a 2-line comment explaining the Ollama-prompt-eval-count edge case.\n\n**Affected files:** wild_igor/igor/tools/ops.py (single file)\n**Design rules:** test-plan-or-why-not — no new test needed; the change is a list append in an existing ignore list, behavior is 'this file no longer fails pre-flight'\n**Scope boundary:** IN — single list-append entry + 2-line comment in _PREFLIGHT_IGNORE. OUT — investigating WHY Ollama returns no prompt_eval_count (separate concern); adding any new tests; touching any other file.\n**Test plan:** After edit, the _PREFLIGHT_IGNORE list contains 'tests/test_twm_context.py'. No new unit tests required (list append behavior is verified by absence of pre-flight false-alarm in subsequent runs).\n",
+    "completed_at": "2026-05-02T03:16:13.489020+00:00",
+    "github_issue": 570,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8998e0e6-4aae-45c4-9714-197c607447a9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

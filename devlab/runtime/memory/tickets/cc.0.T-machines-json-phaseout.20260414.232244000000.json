@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-machines-json-phaseout.20260414.232244000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-machines-json-phaseout"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:44",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-machines-json-phaseout"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-machines-json-phaseout",
+    "body": "From D117 (closed as ticketed). The environment-tree-in-DB work is mostly done — SYSCFG nodes, SWARM nodes, env_sync, and machine_manager.py (#342, the DB-backed replacement) are all in place. The remaining piece is finishing the machines.json removal so D117's 'machines.json becomes seed file not source of truth' actually holds.\n\n## Current dual-write situation\n\n- machine_manager.py is the canonical DB-backed registry (its docstring says 'Replaces machines.json')\n- BUT main.py:1331-1336 still reads/writes machines.json on first-boot self-registration\n- AND push_sources.py:46 still defines MACHINES_JSON = paths().machines_json with a MachinesWatcher that watches the file\n\nMeaning: writes happen to both the DB and the file, reads sometimes hit the file. Drift is possible if anything updates one and not the other.\n\n## Pick one of two endings\n\n**Option A: machines.json becomes seed-only.** It exists as a starter file for fresh boxes that have no DB yet. On first boot, machine_manager loads it once, populates the SWARM_* + machine config nodes, then never reads it again. machine_manager becomes the only writer. main.py + push_sources.py stop touching the file.\n\n**Option B: delete machines.json entirely.** First-boot bootstraps from a hardcoded default machine config or from environment variables. The file simply doesn't exist anywhere. machine_manager owns everything.\n\nAkien picks. I lean toward Option A because it gives a human-editable starting point for new boxes without needing DB access first. Option B is cleaner but loses the bootstrap convenience.\n\n## Concrete work\n\n1. Pick A or B (Akien decision before sprint)\n2. main.py:1331-1336 — remove the machines.json self-registration block. Self-registration goes through machine_manager → SWARM_* node directly.\n3. push_sources.py:46 + MachinesWatcher — either repoint to watch the SWARM nodes via cortex change events, or delete the watcher entirely if A is chosen and the file is read once at boot.\n4. main.py:733 — first-boot announcement path that mentions self-registering in machines.json — update narrative.\n5. If Option B: delete the file from the runtime instance dir + remove paths().machines_json from PathManager.\n6. Verify: no remaining references to machines.json across wild_igor/. Test the first-boot path on a fresh instance.\n\n## Existing work to check\n\n- wild_igor/igor/cognition/machine_manager.py (#342) — the canonical DB-backed registry\n- wild_igor/igor/main.py:1306-1336 — first-boot announcement + self-register block\n- wild_igor/igor/cognition/push_sources.py:46, 719 — MACHINES_JSON + MachinesWatcher\n- wild_igor/igor/paths.py:83 — paths().machines_json property\n- D211 inference_rank and per-machine fields (in_use_hours, network_type, roles, aliases) — these are in machines.json today; verify machine_manager surfaces them all from the DB\n\n## Why this matters\n\nT-router-off-limits-violation (filed earlier today) is partly about machines knowing their own off-limits hours and the router respecting them. If config still lives in two places, the router might consult the wrong one. Closing this dual-write before sprinting the router fix is the right order.\n\n## Provenance\n\nD117 (Akien 2026-04-11, surfaced 2026-04-14, closed as ticketed). Related: D211 inference_rank, #342 DB-backed machine registry.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "infra",
+      "cleanup",
+      "config",
+      "single-source-of-truth"
+    ],
+    "title": "Finish phasing out machines.json — make it seed-only or delete",
+    "result": "26202e6a — machines.json is now a DB echo. machine_manager gains export_to_machines_json + register_self. main.py self-registration replaced with single machine_manager call. set_machine_override + clear_machine_override refresh the echo on every write. Existing readers untouched — they read a now-always-fresh echo. Verified live: 6 machines exported with _meta block pointing at Postgres as source of truth. 2209 tests pass. Per Akien 2026-04-14: 'the machines json is for me to read. it's an echo of the database, that's all.'",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T01:54:35.782710+00:00",
+    "created_at": "2026-04-14T23:22:44Z",
+    "related_to": null,
+    "completed_at": "2026-04-15T02:02:39.318644+00:00",
+    "github_issue": 444,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

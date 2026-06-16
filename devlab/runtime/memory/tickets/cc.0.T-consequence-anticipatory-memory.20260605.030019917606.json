@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-anticipatory-memory.20260605.030019917606",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-anticipatory-memory"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T03:00:19.917606",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-anticipatory-memory-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-anticipatory-memory",
+      "T-sprint-anticipatory-brief"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-anticipatory-memory",
+    "gate": "T-sprint-anticipatory-brief",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "TokenOptimization"
+    ],
+    "title": "Consequence check: anticipatory brief + token tracking",
+    "result": "CLEAR: pre-brief surfaces decision siblings and file-proximity; output is concise; no runaway cost observed; token log shows 0 overhead when no context exists",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "intention": "I intend that this ticket verifies token tracking shows measurable reduction from anticipatory memory and that the pre-brief doesn't itself become a token sink.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T03:00:19.917606+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-anticipatory-memory-2026-06-04",
+    "description": "**What changed:** sprint-ticket has a proactive pre-brief step; token consumption is now tracked per sprint.\n**Predicted unintended effects:** The pre-brief itself costs tokens — if poorly bounded it could add more than it saves. Librarian briefing assembly could be slow, adding latency to sprint start. Token log could grow unbounded.\n**Signals to watch:** Compare sprint_tokens.log before and after T-sprint-anticipatory-brief ships. Does per-sprint token spend decrease? Does the pre-brief step itself stay under its 500-token cap? Sprint latency at start.\n**Gate condition:** Check after 5+ sprints post-ship.\n\n**Worst-case token spend:**\n  - Per-sprint briefing cost: ~500 tokens (capped in T-sprint-anticipatory-brief)\n  - Hard cap: 500 tokens enforced in skill step\n  - Blast radius: briefing assembly that loops or over-fetches; Librarian recall has no retry loop so blast radius is one over-budget call per sprint\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Read sprint_tokens.log; compare pre/post; annotate outcome and close.\n**Completion criteria:** Outcome annotated (occurred / clear / partial) and ticket closed.",
+    "completed_at": "2026-06-05T04:01:02.511654+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

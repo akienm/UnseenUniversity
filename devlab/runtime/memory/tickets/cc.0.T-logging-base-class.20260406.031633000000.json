@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-logging-base-class.20260406.031633000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-logging-base-class"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-06T03:16:33",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-logging-base-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-logging-base-class",
+    "epic": "Operations",
+    "size": "M",
+    "title": "Centralized logging: logging_setup routes igor.tools.* to per-tool log files",
+    "result": "logging_setup.py auto-scans tools/ at boot, registers per-tool RotatingFileHandler for igor.tools.<name> logger + tree_index. Removed _flog() and _LOG_FILE from 10 files (pe_chain, goal_continuation, boredom_idle, after_action_reviewer, escalation_stats, stale_task_reaper, scope_guard, or_model_refresh, memory_snapshot, tree_index). All log.info() calls now route to both tools.log and <name>.log. 1852/1852 tests pass. Commit bff4b5c4.",
+    "status": "done",
+    "worker": "cc",
+    "priority": 2,
+    "claimed_at": null,
+    "created_at": "2026-04-06T03:16:33Z",
+    "related_to": null,
+    "description": "Eliminate _flog() pattern across all tools. logging_setup.py should auto-attach a file handler for any igor.tools.<name> logger writing to ~/.TheIgors/logs/<name>.log. Tools use logging.getLogger(__name__) only — one call, goes to console (rich) + tool-specific log file. Audit all tools with _flog and remove them. Not changing: log file locations, logging_setup interface, rich console path.",
+    "completed_at": null,
+    "github_issue": 389,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f4417e30-b800-4807-9440-d945ad4460ef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

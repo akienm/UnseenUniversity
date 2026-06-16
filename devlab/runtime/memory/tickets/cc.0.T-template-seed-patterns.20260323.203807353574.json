@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-template-seed-patterns.20260323.203807353574",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-template-seed-patterns"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T20:38:07.353574",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-template-seed-patterns"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-template-seed-patterns",
+    "body": "Seed all ~20 core Engram patterns as TEMPLATE Memory nodes.\n\nOriginal 10: WONDER, FILE_ITERATOR, THRESHOLD_ALERT, SCHEDULER_TICK, READER_LOOP, MEMORY_DEPOSIT, SEARCH_AND_RESPOND, CONDITION_GATE, ERROR_RECOVERY, ASYNC_DELEGATE.\n\nIgor's 10 (2026-03-22): ESCALATION_LADDER (tier.1→fail→tier.2→fail→tier.3 — progressive resource escalation, distinct from ERROR_RECOVERY), CURSOR_RESUME (load_checkpoint→batch→save_cursor→halt — persists across sessions, distinct from FILE_ITERATOR), BLOOM_INHIBIT (score all candidates→lateral inhibition→winner emerges→losers suppressed — BG scoring model, may be primitive for CONDITION_GATE+THRESHOLD_ALERT), PREDICTION_CORRECTION (predict→observe→delta→update weights — NE prospective/actual pair, learning loop in execution), DISTILLATION (cluster EPISODICs→extract pattern→deposit higher-type node — matrix compression toward understanding, MOST IMPORTANT MISSING ONE), SIGNAL_DEBOUNCE (signal→wait N→fire only if persists→cooldown — NE min/max interval), PRIMING (activate A→raise base probability for related B→time window→decay — anticipatory, not reactive), AFFECT_MODULATE (read milieu→adjust thresholds/weights across all active habits→global tuning — milieu as pervasive parameter), REFRAME (observe X→apply interpretive lens→new meaning→push modified obs — interpretive traverse), FANOUT_GATHER (trigger→N parallel delegations→wait all→merge→continue — distinct from ASYNC_DELEGATE which is one branch).\n\nSeed script: claudecode/seed_templates.py. Prereq: T-template-schema.\n\nAkien's addition (2026-03-23): CACHED_PROBE — payload-configured data monitor with dual invocation mode and optional worry branch. trigger→check age; if stale: refresh; if explicit: surface; if worry_after exceeded: worry; end. Payload: source, cache_ttl, worry_after (optional), cached_data, cached_at. Replaces bespoke resource monitors (PROC_DISK_USAGE_CHECK etc). Distinct from THRESHOLD_ALERT (age-based, not accumulation-based).",
+    "size": "M",
+    "title": "Seed ~10 core Igor design patterns as TEMPLATE nodes in the matrix",
+    "result": "seed_templates.py: all 21 Engram patterns seeded as TEMPLATE Memory nodes. WONDER (tpl-wonder) from T-template-schema present. 20 new patterns: FILE_ITERATOR, THRESHOLD_ALERT, SCHEDULER_TICK, READER_LOOP, MEMORY_DEPOSIT, SEARCH_AND_RESPOND, CONDITION_GATE, ERROR_RECOVERY, ASYNC_DELEGATE, ESCALATION_LADDER, CURSOR_RESUME, BLOOM_INHIBIT, PREDICTION_CORRECTION (2 habits), DISTILLATION, SIGNAL_DEBOUNCE, PRIMING, AFFECT_MODULATE, REFRAME, FANOUT_GATHER (2 habits), CACHED_PROBE (2 habits). 30 tests pass.",
+    "status": "done",
+    "created": "2026-03-23T00:14:44.332776",
+    "priority": 2,
+    "completed_at": "2026-03-23T20:38:07.353574+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

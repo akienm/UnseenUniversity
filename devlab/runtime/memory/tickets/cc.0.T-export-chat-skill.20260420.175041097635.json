@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-export-chat-skill.20260420.175041097635",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-export-chat-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T17:50:41.097635",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-palace-source-of-truth-2026-04-20"
+    ],
+    "tickets": [
+      "T-chat-history-igor-backfill",
+      "T-export-chat-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-export-chat-skill",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Recovery",
+      "ChatLogs"
+    ],
+    "title": "/export-chat skill — dump today's CC chat log to /home/akien/TheIgors/claude_chat_logs/YYYYMMDD.md",
+    "result": "lab/claudecode/export_chat.py renders transcripts to claude_chat_logs/YYYY-MM-DD.md. Supports --all (bulk), --session <id>, --dry-run. Elides tool results to 200 chars for readability. SKILL.md wired up. Output verified: 2026-04-20.md written (926KB).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-20T17:49:03.166531+00:00",
+    "related_to": null,
+    "decision_id": "D-palace-source-of-truth-2026-04-20",
+    "description": "Akien: 'if something scrolls off the top, that gives me a way to recover it.'\n\n## Flow\n- Skill reads the current conversation transcript (from CC's transcript file, likely ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl)\n- Renders to readable markdown (user turns, assistant turns, tool calls elided or summarized)\n- Writes/overwrites /home/akien/TheIgors/claude_chat_logs/YYYYMMDD.md (or appends if session crosses midnight)\n- Prints path + bytes written\n\n## On-demand only\nNo auto-run. Akien invokes when he wants a snapshot.\n\n## Not in scope\n- Backfilling older chat logs from scattered sources — separate ticket T-chat-history-igor-backfill\n\n## Implementation notes\n- CC session transcript path: ~/.claude/projects/-home-akien-TheIgors/<session-id>.jsonl (JSONL, one message per line)\n- Needs to pick the current session — the session-id visible in hook context, or the most recent file by mtime in that dir\n- Render: parse each line, format user/assistant turns, strip internal tool-call noise but keep tool-result summaries",
+    "completed_at": "2026-04-20T17:50:41.097635+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1710bfd6-4d28-4708-9ad6-e91b2b018268",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

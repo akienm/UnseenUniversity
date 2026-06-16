@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-flaky-tests-pe-entry-uc-delivery.20260503.025533400741",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-flaky-tests-pe-entry-uc-delivery"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T02:55:33.400741",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-flaky-tests-pe-entry-uc-delivery"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-flaky-tests-pe-entry-uc-delivery",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "TestHygiene",
+      "TestPollution"
+    ],
+    "title": "Fix 6 flaky tests — pe_entry_nodes (3) + uc_delivery_telemetry (3) only fail in full suite",
+    "result": "6 flaky tests fixed (commit c1fc0fb3). Two pollution sources isolated and patched: (A) pe_chain_debugger.start() loads real igor.switches.cfg into os.environ — fixed via autouse env snapshot/restore fixture in test_pe_chain_debugger.py; (B) Python 3.12 + asyncio.run() closes the default loop, breaking later asyncio.get_event_loop() calls — fixed by switching the 3 telemetry tests to asyncio.run(). Suite: 4301 → 4307 passing, 32 skipped, zero regressions.",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-03T02:46:12.899582+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Six tests pass in isolation but fail when the full suite runs. Pattern is classic test pollution — shared module state, port reuse, or fixture leak from earlier tests.\n\n**Failing tests (all green in isolation, all red in full suite):**\n- tests/test_pe_entry_nodes.py::TestPeEntryInit::test_no_error_when_ticket_id_present\n- tests/test_pe_entry_nodes.py::TestRunPeEntryChain::test_full_chain_populates_basket\n- tests/test_pe_entry_nodes.py::TestRunPeEntryChain::test_full_chain_with_situate_uses_required_files\n- tests/test_uc_delivery_telemetry.py::TestApiAgentSend::test_accepted_post_logs_info\n- tests/test_uc_delivery_telemetry.py::TestApiAgentSend::test_empty_content_rejected_with_log\n- tests/test_uc_delivery_telemetry.py::TestApiAgentSend::test_invalid_json_rejected_with_log\n\n**Suspected pollution source:** Full-suite run shows OSError binding port 10143 ('address already in use') in test teardown — points at IMAPServer / utility_closet test fixtures not releasing port. uc_delivery_telemetry uses asyncio.get_event_loop().run_until_complete() (DeprecationWarning), which can trip on a closed loop after another test's teardown.\n\n**Akien's bar:** broken tests are ticketed AND fixed within 24 hours. Not a watch-and-wait — fix this sprint.\n\n**Affected files:** tests/test_pe_entry_nodes.py, tests/test_uc_delivery_telemetry.py, possibly tests/conftest.py, possibly tests/test_utility_closet_server.py (likely culprit for port binding leak).\n\n**Design rules:** test-pollution-isolation, no-event-loop-deprecation.\n\n**Scope boundary:** IN — bisect the pollution source via per-file isolation runs, fix fixture/state leak so all 6 tests pass under the full suite. OUT — broader test-suite refactor; rewriting unrelated tests; fixing the audioop DeprecationWarning (separate ticket if needed).\n\n**Test plan:** primary acceptance test is `python -m pytest tests/ -q` showing 4307 passed (was 4301). Bisection method: split tests/ into halves, find the polluting file via binary search; once isolated, reproduce with minimal pair, then fix the fixture leak.\n\n**Why now:** Akien correction 2026-05-02: 'we don't leave broken tests. so that gets ticketed and fixed. does not have to be this instant, but will be done in the next 24 hours.'",
+    "completed_at": "2026-05-03T02:55:33.400741+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a78acd9f-0712-4104-b3f6-aa73802dfbc8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-consequence-D-granny-worker-registry.20260602.184813965342",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-granny-worker-registry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T18:48:13.965342",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-worker-registry-2026-06-02"
+    ],
+    "tickets": [
+      "T-consequence-D-granny-worker-registry",
+      "T-dicksimnel-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-granny-worker-registry",
+    "gate": "2026-06-16",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Granny worker registry availability + CC.0 dispatch",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-02T18:48:13.965342+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-worker-registry-2026-06-02",
+    "description": "**What changed:** Granny now dispatches CC.0 via tmux send-keys when available (semaphore gates + usage limit + no in_progress); config-driven worker rules from granny.yaml; availability semaphore protocol replaces hardcoded checks.\n\n**Predicted unintended effects:**\n- Dispatch race condition: ticket marked in_progress but send-keys fails (tmux offline)\n- Silent semaphore ignore: CC.0.available.false ignored if file permissions wrong\n- Usage cache stale: _get_usage_pct() reads cached value; CC could exceed 70% in between cache updates\n- DickSimnel device spawn before wiring complete: T-dicksimnel-device in_progress but dispatch_fn not yet integrated\n\n**Signals to watch:**\n- \"tmux send-keys failed\" at INFO level — send-keys not reaching claude-main\n- GRANNY_CC0_OFFER posted but /sprint-ticket never received by CC (check CC.0 mailbox)\n- CC.0.available.false created but tickets still offered (gate evaluation bug)\n- Usage cache age > 5 min with CC usage climbing (indicates timing issue)\n- DickSimnel dispatch attempted before T-dicksimnel-device closes (incomplete gate chain)\n\n**Gate condition:** Check by 2026-06-16 or when both T-dicksimnel-device closes AND first CC.0 dispatch occurs.\n\n**Affected files:** None — observation and verification only\n\n**Design rules:** none apply\n\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": null,
+    "deposited_at": "2026-06-02T12:49:51.224110",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fcbc42d6-7615-4a5f-abda-9e3e921770ad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

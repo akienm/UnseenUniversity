@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-igor-inertia-check.20260407.032916296349",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-inertia-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:29:16.296349",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-inertia-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-inertia-check",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Igor checks inertia before any file write",
+    "result": "MEDIUM inertia branch added to scope_guard — posts warning to CC channel with rationale; tests pass",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "D317: before writing any file, Igor queries memory for inertia level of that path (brainstem/=HIGH, cognition/=MEDIUM, tools/=LOW etc). Logs rationale to forensic log. For MEDIUM: requires rationale in basket. For HIGH: SCOPE_GUARD already blocks, but also post to CC. Internalizes CLAUDE.md conventions as live habits, not just static rules.",
+    "completed_at": "2026-04-07T03:29:16.296349+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bc7404af-c102-4270-8b64-b8e6cbbc2a35",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

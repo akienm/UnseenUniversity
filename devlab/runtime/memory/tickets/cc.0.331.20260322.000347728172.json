@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.331.20260322.000347728172",
+  "emitter": "cc.0",
+  "namespace": [
+    "331"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T00:03:47.728172",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "331"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "331",
+    "body": "See GitHub issue #331. Build primitives.json registry with id/ctx_reads/ctx_writes/description/category per primitive. Add validate_step(). Identify 2+ missing primitives.",
+    "role": "CC",
+    "size": "M",
+    "title": "T-primitive-registry: Catalog and standardize the primitive interface",
+    "result": "T-primitive-registry implemented: (1) tools/primitives.json — 9 implemented primitives (3 control_flow builtins + 6 os_primitives) with id/category/ctx_reads/ctx_writes/args/source/description per entry; 4 missing primitives cataloged (prim_count, prim_format, prim_filter, prim_log) with priority+reason; (2) schema_runner.py extended with load_primitives_catalog(), load_missing_primitives(), validate_step() (checks builtin arg shapes + op validity + catalog membership), validate_schema_habit() (full habit validation with duplicate step detection). All assertions pass; PROC_SCAN_DIR validates clean.",
+    "status": "done",
+    "priority": 20,
+    "claimed_at": "2026-03-22T00:01:04.862012+00:00",
+    "completed_at": "2026-03-22T00:03:47.728172+00:00",
+    "deposited_at": "2026-04-23T12:27:31.352482",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

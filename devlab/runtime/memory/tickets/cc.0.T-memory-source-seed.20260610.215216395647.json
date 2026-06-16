@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-memory-source-seed.20260610.215216395647",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-source-seed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T21:52:16.395647",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-lever-memory-confidence-2026-06-10"
+    ],
+    "tickets": [
+      "T-memory-source-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-source-seed",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Memory",
+      "Cognition"
+    ],
+    "title": "Seed memory confidence from deposit-time source type",
+    "result": "epistemic_source field added; SOURCE_MULTIPLIER in confidence property; stored in metadata, restored on load; 6 tests pass. Commit ea1e9aae.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that a memory's starting confidence reflects where it came from — experimentally verified knowledge starts higher than something read once in a book — so confidence evolves from a meaningful baseline rather than a flat type-based guess.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T21:52:16.395647+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-lever-memory-confidence-2026-06-10",
+    "description": "Add `source: str = 'unknown'` field to the `Memory` dataclass with values `experimental | derived | read | observed | unknown`. Integrate into the `confidence` property as an initial seed multiplier applied to the BASE_CONFIDENCE baseline:\n\n  SOURCE_MULTIPLIER = {\n    'experimental': 1.0,   # you proved it yourself\n    'derived':       0.85,  # you reasoned to it\n    'read':          0.65,  # someone told you in a book\n    'observed':      0.50,  # you saw it happen once\n    'unknown':       0.75,  # default — no source info\n  }\n\nThe source multiplier scales the BASE_CONFIDENCE value. System then evolves confidence from that starting point via existing activation_count / friction_history machinery.\n\nUpdate `cortex.store()` to accept and persist `source` in memory metadata.\n\n**Affected files:** devices/igor/memory/models.py, devices/igor/memory/cortex.py\n**Design rules:** no-sqlite; postgres-only for persistence\n**Scope boundary:** IN — source field, multiplier in confidence property, cortex.store() passthrough. OUT — changing existing deposit callers to pass source (they default to 'unknown' until each is updated).\n**Completion criteria:** `Memory(narrative='x', memory_type=MemoryType.FACTUAL, source='experimental').confidence` > `Memory(narrative='x', memory_type=MemoryType.FACTUAL, source='read').confidence`; `cortex.store()` accepts source kwarg without error; 3 unit tests cover multiplier ordering.",
+    "completed_at": "2026-06-11T22:16:55.212357+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

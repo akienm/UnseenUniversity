@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-critic-testing-harness.20260615.182320199517",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-critic-testing-harness"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:23:20.199517",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-critic-skill-script-pair-2026-06-15"
+    ],
+    "tickets": [
+      "T-critic-testing-harness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-critic-testing-harness",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Critic",
+      "Test"
+    ],
+    "title": "[pending] Testing harness — verify /critic and scripts/critic.py work and find real issues",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that /critic and scripts/critic.py produce useful, actionable critique before wiring them into the build system.",
+    "created_at": "2026-06-15T18:23:20.199517+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-critic-skill-script-pair-2026-06-15",
+    "description": "Build a test harness to verify both /critic skill and scripts/critic.py work correctly and produce useful output. Test cases: (1) Known-good code (no issues expected, should say so); (2) Code with intentional bugs (missing error handling, hardcoded paths, silent exceptions); (3) Ticket descriptions with incomplete scope boundaries (should flag); (4) Decisions with questionable assumptions (should surface). Run both /critic and scripts/critic.py on each, compare outputs (should be identical). Spot-check: do the critiques actually find the bugs/gaps we intentionally planted? Are suggestions actionable? Is anything nonsensical/boilerplate? Iterate on prompt until critiques are useful.\n\n**Affected files:** tests/test_critic.py (new), tests/fixtures/critic_test_cases/ (new directory with known-good and buggy code samples)\n**Design rules:** none apply\n**Scope boundary:** Testing only; implementation refinement is separate\n**Completion criteria:** (1) Test cases defined and in fixtures; (2) both /critic and scripts/critic.py pass all test cases; (3) outputs match between skill and script; (4) critiques find intentional bugs/gaps (≥80% hit rate); (5) no boilerplate/nonsensical output; (6) test harness is easy to extend with new cases\n**Test plan:** Run test suite; inspect outputs manually for quality; iterate on prompt in skill/script if needed",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-reconsolidation-on-recall.20260415.222138736188",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reconsolidation-on-recall"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T22:21:38.736188",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reconsolidation-on-recall",
+      "T-substrate-experiment-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reconsolidation-on-recall",
+    "body": "From Akien-Claude 2026-04-15 design session on T-reasoning-voice-split. Akien's epistemology: every fact is a current best guess. Sources that sound confident are unreliable signals. His anti-PTSD vaccination means he NEVER caches trust — every recall re-tests.\n\nIgor-built-by-Akien should inherit this as architectural property, not learned behavior.\n\n## The biology\n\nReconsolidation (Nader, Schafe, LeDoux). Every memory recall makes that memory LABILE — editable for a window before re-stabilizing. If the memory still fits the current context, it re-stabilizes unchanged. If it doesn't fit, the mismatch triggers revision. So every recall IS an experiment: 'does this memory still predict correctly?'\n\nIn biology this is automatic. In Igor's current substrate, memory recall is a read-only fetch. Cached facts never get re-tested. Priors harden. That's exactly the shape Akien's epistemology rejects — cached trust becomes a liability.\n\n## The feature\n\nEvery cortex.search()/get()/recall() call that surfaces a memory into active cognition runs a small implicit experiment:\n\n1. Form a tiny hypothesis: 'this memory is still relevant to the current situation'\n2. The probe is whatever the memory is about to be USED for (reply, decision, action)\n3. The observation is captured from the downstream use: did the response land? Did the action work? Did the interlocutor react as predicted?\n4. On MATCH: Hebbian strengthening of the memory's current trail\n5. On MISMATCH: memory is flagged for reconsolidation — its confidence decays and its update-window opens\n6. In the next sleep consolidation pass, flagged memories get updated based on accumulated mismatches\n\n## This IS cascade level 0\n\nThe substrate experiment cascade's level 0 (exact recall) isn't just 'fetch the memory.' It's 'fetch the memory AND test whether it still fits.' Match = cache hit, no change. Mismatch = level 0 actually failed even though fetch returned data; cascade walker escalates to level 1 with the mismatch as context.\n\nThis makes level 0 honest. Without reconsolidation, level 0 always 'succeeds' on any fetch, hiding the priors-hardening failure mode from the whole cascade.\n\n## Scope\n\n1. Add `reconsolidation_flag` and `fit_confidence` to memory metadata (per memory_node_shape principle — no new columns)\n2. cortex.search() / cortex.recall() attach a hook that records the use context\n3. Post-use callback: was the prediction confirmed? if not, set reconsolidation_flag=True, decay fit_confidence\n4. Sleep consolidation sweep: flagged memories get updated — narrative refinement, metadata adjustment, or archival\n5. Hard timeout: memories flagged but not re-tested within N hours get automatically marked 'stale, needs re-verification'\n\n## CP grounding\n\n- CP1 — no cached trust, every recall re-tests\n- CP2 — mismatches are learning, mandatory update\n- CP3 — the 'why' of reconsolidation is logged (what prediction failed)\n- CP6 — priors never harden into unverified commitments\n\n## Out of scope\n\n- Full revision of memory narrative (sleep consolidation ticket territory)\n- Cross-memory coherence check (separate, bigger)\n- Multi-level reconsolidation (only level-0 memories for MVP)\n\n## Tests\n\n- Recall triggers reconsolidation hook installation\n- Downstream confirmation → no flag set\n- Downstream contradiction → flag set, fit_confidence decayed\n- Sleep consolidation picks up flagged memories\n- Stale memories get auto-flagged after timeout\n- Audit check for accumulated reconsolidation flags\n\n## Depends on\n\nT-substrate-experiment-cascade (reconsolidation is cascade level 0's experiment shape)",
+    "deps": [
+      "T-substrate-experiment-cascade"
+    ],
+    "size": "M",
+    "tags": [
+      "cognition",
+      "cascade",
+      "memory",
+      "reconsolidation",
+      "biomimicry",
+      "cp-axioms"
+    ],
+    "title": "Reconsolidation-on-recall — every memory retrieval runs a 'does this still fit?' experiment",
+    "result": "reconsolidation.py module + cortex.search hook + 30 tests. In-process tracker (mark/confirm/contradict), CP3-enforced reasons, exempt structural types, bounded fit_confidence decay, reason list capped at 5. Hot path has zero DB writes; contradiction path writes once via cortex.store. 2520 total pass. Follow-ups: sleep consolidation sweep, hard-timeout auto-flag, downstream contradiction wiring.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T22:13:47.264457+00:00",
+    "related_to": "T-substrate-experiment-cascade",
+    "completed_at": "2026-04-15T22:21:38.736188+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

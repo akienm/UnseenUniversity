@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.330.20260322.000011051805",
+  "emitter": "cc.0",
+  "namespace": [
+    "330"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T00:00:11.051805",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "330"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "330",
+    "body": "See GitHub issue #330. Define JSON schema for habits (trigger + steps + loop_on). Migrate at least one existing habit. Acceptance: habit record loadable and executable without Python import.",
+    "role": "CC",
+    "size": "M",
+    "title": "T-habit-schema: Define habits as data, not code",
+    "result": "T-habit-schema implemented: (1) tools/schema_runner.py — step-list executor with built-in prim_set/prim_branch/prim_goto + tool registry dispatch for any other primitive; ctx_init sets traversal context before step 1; MAX_STEPS=100 infinite-loop guard; (2) main.py: 'schema' habit_type wired in both execute_habit() and _process() dispatch, also added to fallthrough exclusion list; (3) seed_schema_habit.py seeded PROC_SCAN_DIR — 7-step dir scan with iteration loop (list→done→branch→iter→detect→goto→set). Smoke tested: 44-file scan confirmed, step trace visible, branch+loop correct.",
+    "status": "done",
+    "priority": 10,
+    "claimed_at": "2026-03-21T23:53:51.927704+00:00",
+    "completed_at": "2026-03-22T00:00:11.051805+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

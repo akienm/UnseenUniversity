@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-d088-superclaude.20260316.013959058032",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-d088-superclaude"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T01:39:59.058032",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-d088-superclaude"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-d088-superclaude",
+    "body": "Rewrite ~/TheIgors/superclaude to: 1) Source ~/.TheIgors/igor_wild_0001/.env to get all keys. 2) Read ~/.TheIgors/cc_channel/anthropic_balance.json if exists and < 24h old. 3) If Anthropic balance > $10 OR file missing: set ANTHROPIC_API_KEY=REAL_ANTHROPIC_API_KEY, unset ANTHROPIC_BASE_URL. 4) If Anthropic balance <= $10: set ANTHROPIC_API_KEY=OPENROUTER_API_KEY, ANTHROPIC_BASE_URL=https://openrouter.ai/api. 5) Log decision + balance to ~/.TheIgors/logs/superclaude.log. 6) exec claude --dangerously-skip-permissions \"$@\". Default to Anthropic when file missing. Once failed over to OR, stays OR (file persists the low balance).",
+    "role": "implementation",
+    "size": "M",
+    "title": "D088: superclaude Anthropic→OR failover",
+    "result": "superclaude rewritten: sources .env, reads anthropic_balance.json (24h TTL), falls over to OR (ANTHROPIC_BASE_URL=https://openrouter.ai/api) when balance<=$10, stays Anthropic direct otherwise; logs every decision+balance to ~/.TheIgors/logs/superclaude.log; exec claude --dangerously-skip-permissions \"$@\". Syntax OK.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-16T01:39:31.713908+00:00",
+    "completed_at": "2026-03-16T01:39:59.058032+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

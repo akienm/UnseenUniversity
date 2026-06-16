@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-sqlite-out-cortex.20260505.233928189322",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-out-cortex"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T23:39:28.189322",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-migration-phase-bc-2026-05-05"
+    ],
+    "tickets": [
+      "T-sqlite-out-cortex"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-out-cortex",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Database",
+      "Cleanup",
+      "Cognition"
+    ],
+    "title": "CLOSED: Migrate cortex.py 129 SQLite sites to native Postgres",
+    "result": "cortex.py fully migrated: INSERT OR REPLACE→ON CONFLICT, lastrowid→RETURNING, dead SQLite branches removed, 129 ?→%s. 4189 tests pass. commit bc7f65f6",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-05T22:20:44.442829+00:00",
+    "related_to": null,
+    "decision_id": "D-sqlite-migration-phase-bc-2026-05-05",
+    "description": "cortex.py has 129 SQL lines with `?` placeholders plus several INSERT OR REPLACE/IGNORE patterns and two lastrowid calls. Load-bearing file (5000+ lines) — HIGH-INERTIA, requires Akien pre-approval before sprinting.\n\nMigration scope:\n- Lines 1508/1514: `INSERT OR REPLACE INTO memories … VALUES (?,×22)` → `ON CONFLICT (id) DO UPDATE SET …` (22 columns), `%s`\n- Lines 1637/1642: same pattern for executemany\n- Lines 1319/1377/1400: `INSERT OR IGNORE INTO _migrations` → `ON CONFLICT DO NOTHING`, `%s`\n- Lines 3932–3947: `_upsert_embedding` already has PGDatabaseProxy ON CONFLICT branch + SQLite fallback → remove else (SQLite) branch\n- Line 4550: `obs_id = cur.lastrowid` (twm_observations integer SERIAL) → add `RETURNING id`; `obs_id = cur.fetchone()[0]`\n- Line 5400: `return cur.lastrowid` (interpretive_edges integer SERIAL) → add `RETURNING id`; `return cur.fetchone()[0]`\n- Line 5697: `INSERT OR REPLACE INTO lists … VALUES (?,×7)` → `ON CONFLICT (list_name, item_key, instance_id) DO UPDATE SET …`, `%s`\n- All other `?` lines → mechanical `%s` sweep\n\n**json_extract investigation required:** Lines 1974/1977/2076 use `json_extract(metadata, ?)` — SQLite JSON function with NO db_proxy translation. These paths are likely broken on Postgres today or dead code. Must grep call sites and test before changing. If dead: remove. If live: replace with JSONB operators.\n\n**Rollback:** `git revert <hash>` restores previous behavior because cortex.py is the sole memory-store writer; a revert fully undoes the SQL changes.\n\n**Affected files:** `wild_igor/igor/memory/cortex.py`\n**Design rules:** theigors/rules/database; theigors/rules/safeguards (HIGH-inertia file)\n**Scope boundary:** cortex.py only; no shim changes; json_extract investigation is part of this ticket.\n**Test plan:** Run full test suite (4164+ tests); grep confirms no `INSERT OR REPLACE`, `INSERT OR IGNORE`, `lastrowid`, `json_extract` in cortex.py after migration.\n**Pass condition:** All tests green; Igor session processes memories without error; `grep -n 'INSERT OR REPLACE\\|INSERT OR IGNORE\\|lastrowid\\|json_extract' wild_igor/igor/memory/cortex.py` returns 0 results.\n\nValidation: Igor memory store accepts inserts; twm_observations and interpretive_edges inserts return correct integer ids in logs.\nCleanup: test fixtures via conftest.pg_test_schema.\nObservable via: log.INFO(\"memory stored id=...\") at cortex.py insert paths.",
+    "completed_at": "2026-05-05T23:39:28.189322+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2feee3c7-d817-4eb3-8ac7-5113d6ba671a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

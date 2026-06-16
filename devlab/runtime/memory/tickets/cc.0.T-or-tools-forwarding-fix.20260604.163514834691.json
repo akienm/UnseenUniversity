@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-or-tools-forwarding-fix.20260604.163514834691",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-or-tools-forwarding-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T16:35:14.834691",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-or-tools-forwarding-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-or-tools-forwarding-fix",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "DickSimnel"
+    ],
+    "title": "Fix: OpenRouterSource.call() drops req.tools — never forwarded to OR API",
+    "result": null,
+    "status": "closed",
+    "worker": "claude",
+    "done_note": "Shipped in e543554d alongside T-flat-rate-provider-routing; 2 tests in test_flat_rate_routing.py",
+    "claimed_at": null,
+    "created_at": "2026-06-04T16:35:14.834691+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "OpenRouterSource.call() built the payload without req.tools, so tool definitions were silently dropped before reaching the OR API. DickSimnel ToolLoop passed tools via InferenceRequest.tools but OR never received them — models couldn't call tools, producing planning-text results (fake-DONE pattern). Fix: add `if req.tools: payload[\"tools\"] = req.tools` in OpenRouterSource.call() and OllamaCloudSource.call(). Tests added in test_flat_rate_routing.py.\n\n**Affected files:** devices/inference/sources.py\n**Design rules:** none apply\n**Scope boundary:** tools forwarding in OpenRouterSource and OllamaCloudSource only\n**Completion criteria:** test_openrouter_forwards_tools_to_api and test_openrouter_no_tools_field_when_tools_none pass",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "980f04b9-2ef1-4f26-8d85-340d7cfc63fb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

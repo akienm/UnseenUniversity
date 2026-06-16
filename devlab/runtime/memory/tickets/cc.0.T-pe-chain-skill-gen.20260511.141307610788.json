@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-pe-chain-skill-gen.20260511.141307610788",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-skill-gen"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T14:13:07.610788",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hermes-patterns-2026-05-11"
+    ],
+    "tickets": [
+      "T-igor-playbook-memory-type",
+      "T-pe-chain-skill-gen"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-skill-gen",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Memory",
+      "WorkflowOverhaul"
+    ],
+    "title": "pe_chain: write PLAYBOOK skill node after M/L/XL ticket close",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 5,
+    "claimed_at": "2026-05-23T21:29:20.533039+00:00",
+    "created_at": "2026-05-11T14:13:07.610788+00:00",
+    "related_to": null,
+    "decision_id": "D-hermes-patterns-2026-05-11",
+    "description": "After pe_chain closes a ticket, no synthesis of what was non-obvious happens — learning is discarded. Hermes's self-improvement is exactly this: post-task, analyze what happened and store a reusable skill file. PLAYBOOK memory type exists (T-igor-playbook-memory-type shipped); pe_chain should use it.\n\nIn run_pe_chain() DONE path: if basket['ticket']['size'] in ('M','L','XL'), call _call_tier2() with a prompt asking 'what non-obvious procedure or decision from this ticket would a future engineer need?' Store result as PLAYBOOK palace node at path theigors/skills/<first_tag_slug>/<ticket_id_slug>. Step is non-blocking: failure logs but does not abort chain.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (add _pe_skill_synthesis helper + call in run_pe_chain DONE path); wild_igor/igor/tools/memory_palace.py (memory_store call)\n**Design rules:** pe_chain must remain non-blocking on this step; use _call_tier2 for synthesis; write via memory_store not raw psql\n**Scope boundary:** In: skill synthesis for M/L/XL on successful close only. Out: S ticket skill-gen, skill deduplication/consolidation (librarian's job), grader scoring.\n**Test plan:** Mock _call_tier2 returns fixed text; verify palace node created under theigors/skills/ after M ticket close. Verify S tickets do NOT trigger skill-gen. Verify skill-gen exception does not abort run_pe_chain.",
+    "completed_at": "2026-05-23T22:08:49.500756+00:00",
+    "github_issue": 716,
+    "dispatched_at": "2026-05-23T21:29:20.533039+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0bbb8c52-e5d2-4176-b8f3-85aa947e0f91",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

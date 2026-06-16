@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-day-close-audit-script-schema-aware.20260504.153939000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-day-close-audit-script-schema-aware"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:39:39",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-day-close-audit-script-schema-aware"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-day-close-audit-script-schema-aware",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DayClose",
+      "Audit",
+      "Maintenance"
+    ],
+    "title": "CLOSED: Day-close audit script — make Steps 8/9/12 schema-aware after multi-tenant split",
+    "result": "skill already updated; Steps 8/9/12 verified working (get_balance_trajectory, clan.* schema, clan.memories — all correct)",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P3",
+    "claimed_at": "2026-05-04T17:36:07.093512+00:00",
+    "created_at": "2026-05-04T15:39:39Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Three day-close-audit steps reference state from before the multi-tenant DB split + budget helper rename:\n\n- Step 8 (OR burn): imports `_tool_balance_trajectory` — renamed to `get_balance_trajectory`.\n- Step 9 (schema spot-check): only checks `public` schema; required tables now live in `clan.*` and `instance.*`.\n- Step 12 (habit health): queries `public.memories` — table is now `clan.memories`.\n\nNone of these caused real regressions yesterday — the audit ran with manual fallback queries during /day-close 2026-05-04. Filing for cleanup so future day-closes don't need ad-hoc patching.\n\n**Affected files:** /home/akien/.claude/skills/day-close-audit/SKILL.md (steps 8, 9, 12)\n**Design rules:** none apply (skill markdown, not Python code)\n**Scope boundary:** IN: update three step bodies to use current symbol names + schema-prefixed table refs. OUT: change audit semantics or thresholds. OUT: refactor the broader audit script.\n**Test plan:** manual — run /day-close-audit fresh; verify Steps 8/9/12 output sensible results without the ad-hoc fallbacks used 2026-05-04.",
+    "completed_at": "2026-05-04T23:37:29.983987+00:00",
+    "github_issue": 587,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1c05b265-0fa2-46b6-bc17-d41b0bf71821",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

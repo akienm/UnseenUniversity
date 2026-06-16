@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-simulator-execution-sandbox.20260613.162857218992",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-simulator-execution-sandbox"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T16:28:57.218992",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-builder-learning-blockade-2026-06-13"
+    ],
+    "tickets": [
+      "T-provider-health-classifier",
+      "T-simulator-execution-sandbox",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-simulator-execution-sandbox",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Builder",
+      "Observability",
+      "Simulator"
+    ],
+    "title": "Simulator — execution sandbox for builder step-tracing",
+    "result": "simulator.py + device.replay_and_analyze already existed; wrote 21 pytest tests across 3 closed-ticket log datasets, all pass",
+    "status": "closed",
+    "worker": "claude",
+    "intention": "I intend that we can replay closed tickets step-by-step to observe why DickSimnel makes its decisions without live inference.",
+    "claimed_at": null,
+    "created_at": "2026-06-13T16:28:57.218992+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-builder-learning-blockade-2026-06-13",
+    "description": "Build TicketSimulator for event-sourcing replay of closed tickets. Enables single-stepping through builder decisions, answering tool calls from cache + CC shim, observing divergence from optimal path. Foundation for Critic training and pattern mining.\n\nReplay API: load datacenter_logs/T-xxx/, iterate turns, answer tool calls from cache (or escalate to CC for reasoning). Immutable event stream: (timestamp, turn, decision_point, tool_call, result, outcome).\n\n**Affected files:** devices/dicksimnel/simulator.py (new), devices/dicksimnel/device.py (integrate TicketSimulator), datacenter_logs/ (source)\n**Design rules:** log every interface crossing (tool calls, decision points), event sourcing pattern from unseenuniversity/rules/event-sourcing\n**Scope boundary:** In: replay engine + cached tool responder + event stream schema. Out: Critic validation, pattern extraction (separate tickets)\n**Completion criteria:** (1) TicketSimulator.replay(T-provider-health-classifier) completes without live inference, (2) all tool calls answered from cache or CC shim, (3) decision_points logged (why builder chose this tool), (4) event stream reconstructable from logs. Tested on 3 closed tickets.",
+    "completed_at": "2026-06-13T23:19:38.845731+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T23:17:28.315895+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

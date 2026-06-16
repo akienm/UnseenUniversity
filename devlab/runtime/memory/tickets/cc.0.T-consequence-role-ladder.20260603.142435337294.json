@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-role-ladder.20260603.142435337294",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-role-ladder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T14:24:35.337294",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-role-ladder-2026-06-03"
+    ],
+    "tickets": [
+      "T-consequence-role-ladder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-role-ladder",
+    "gate": "2026-06-17",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: role-ladder dispatch routing",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-03T14:24:35.337294+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-role-ladder-2026-06-03",
+    "description": "**What changed:** Ticket routing moved from worker= direct assignment to role→worker map; audit gained role-fit check; Granny escalation dedup persisted across restart.\n\n**Predicted unintended effects:**\n- Tickets with no role field and ambiguous worker field silently mis-route (backward-compat fallback unclear)\n- role_map in granny.yaml diverges from actual available workers (config drift)\n- DS receives creator-tier tickets (analyst model) but toolloop behavior is identical — model upgrade has no effect if system prompt doesn't change\n- Audit role-fit warning treated as a block by future automation that checks audit.passed\n\n**Signals to watch:** HOLD count with 'max iter' signature (should drop); audit warnings appearing in channel for correctly-scoped tickets (false positive rate); DS creator-tier tickets completing vs still hitting max-iter\n\n**Gate condition:** Check by 2026-06-17 or when 5+ role-based tickets have been dispatched through the new routing.\n\n**Worst-case token spend:**\n  - Per-failure cost: misconfigured role_map routes all tickets to CC (master) → each ticket costs a full CC sprint (~$0.10–0.50). With 10 queued tickets that's $1–5 worst case.\n  - Hard cap: Granny semaphore + cc_concurrency_mode=cc0_only; max 1 CC dispatch at a time. Budget gate in Granny (usage check) provides a second cap.\n  - Blast radius: if role_map empty/missing, Granny falls back to worker= field inference — existing behavior, no runaway. Worst case is stalled queue, not runaway spend.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated and ticket is closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ae7000e5-6af0-4847-83ff-fe1013caf611",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

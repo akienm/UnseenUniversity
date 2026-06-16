@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-db-proxy-shim-delete.20260506.000056952378",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-proxy-shim-delete"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T00:00:56.952378",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-migration-phase-bc-2026-05-05"
+    ],
+    "tickets": [
+      "T-db-proxy-shim-delete"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-proxy-shim-delete",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Trim SQLite-translation methods from _PGConnWrapper",
+    "result": "207 lines deleted: _INSTR_RE, _translate_insert_or_replace, executescript, PRAGMA no-op, SELECT changes() shim, lastrowid. _PGConnWrapper stays (savepoint/context mgr). commit 5cf77cf8.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": "D-sqlite-migration-phase-bc-2026-05-05",
+    "description": "Once all callers are migrated, remove the dead shim code from db_proxy.py:\n\n- `_INSTR_RE` (~line 404)\n- `_translate_insert_or_replace` (~line 428)\n- `_PGConnWrapper` class (~line 463)\n- `_PGRowProxy` class (~line 609)\n- Any references to `executescript`, PRAGMA no-op, `lastrowid` via LASTVAL()\n\nKeep: connection pool, metrics, `make_home_proxy()`, `PGDatabaseProxy`. Those are live infrastructure.\n\n**Affected files:** `lab/utility_closet/db_proxy.py`\n**Design rules:** theigors/rules/database — Postgres-native only\n**Scope boundary:** Delete dead shim classes only; preserve pool + metrics + PGDatabaseProxy.\n**Test plan:** Full test suite green; grep confirms shim symbols absent.\n**Pass condition:** `grep -n '_PGConnWrapper\\|_PGRowProxy\\|_translate_insert_or_replace\\|_INSTR_RE' lab/utility_closet/db_proxy.py` returns 0 results; all 4164+ tests pass.\n\nValidation: Igor starts and processes a memory cycle without error; no shim-class import errors in logs.\nCleanup: no test artifacts.",
+    "completed_at": "2026-05-06T00:00:56.952378+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bc7b00c8-6ec5-47fa-9ff7-e290e145811a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

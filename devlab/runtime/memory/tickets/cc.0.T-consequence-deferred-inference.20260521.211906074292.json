@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-deferred-inference.20260521.211906074292",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-deferred-inference"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T21:19:06.074292",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-deferred-inference-2026-05-21"
+    ],
+    "tickets": [
+      "T-consequence-deferred-inference"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-deferred-inference",
+    "gate": "2026-06-04",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Inference",
+      "Igor"
+    ],
+    "title": "Consequence check: deferred-resolution node state adoption",
+    "result": "PARTIAL — Igor offline; deferred-resolution nodes cannot be directly observed for watchlist growth; no regressions in inference routing tests; revisit when Igor restarts",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-21T21:19:06.074292+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-deferred-inference-2026-05-21",
+    "description": "**What changed:** Igor nodes with insufficient evidence now return `unresolved` and accumulate edges across passes rather than receiving low-confidence guesses.\n\n**Predicted unintended effects:**\n- Watchlist growth: if the resolution threshold is too high, nodes accumulate on the watchlist indefinitely. Could cause memory/performance issues at scale.\n- Irrelevance decay miscalibration: if decay is too aggressive, nodes fall off the watchlist before they resolve, producing the same lossiness we were trying to fix. If too slow, the watchlist bloats.\n- Skills that expected a value (even low-confidence) now get `unresolved` — any skill that doesn't handle this state will break or produce confusing output.\n- Resolution storms: if a large context pass arrives that satisfies many watched nodes at once, resolution may trigger for many nodes simultaneously, causing a spike in write load.\n- Session boundary persistence: unresolved nodes that survive across sessions need to be garbage-collected at some point. Without a TTL or manual expiry mechanism, the graph will accumulate stubs indefinitely.\n\n**Signals to watch:**\n- Watchlist size after 1 week of normal Igor operation: if >50 unresolved nodes, threshold or decay may be miscalibrated\n- Any skill error logs showing unhandled `unresolved` node state\n- Resolution rate: what % of watched nodes eventually resolve vs stay permanently unresolved\n- Query latency: does watchlist checking on each context pass add measurable overhead?\n\n**Gate condition:** Check by 2026-06-04 or after 2 weeks of Igor running with deferred resolution enabled, whichever comes first.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": "2026-06-05T15:33:14.690529+00:00",
+    "github_issue": 772,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T21:19:06.074363+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4177ac22-e073-41fd-bc97-45cff471ff45",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

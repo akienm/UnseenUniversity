@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-book-learner-report.20260401.210336334991",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-book-learner-report"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T21:03:36.334991",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-book-learner-report"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-book-learner-report",
+    "epic": "Training",
+    "title": "book_learner: write per-book readable report named after READING_ memory ID",
+    "result": "REOPENED — ticket was incorrectly closed. Original issue was only \"Igor can't answer did I finish X?\" but the real bug is completion records not written for Calibre books at all. Nodes deposit mid-run but READING_ node + reading_list status never written. File-based readable report also missing.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "After each book run, book_learner writes ~/.TheIgors/book_learner_progress/READING_<hash>.md with human-readable summary: title, author, status, chunks processed, nodes deposited, per-chunk summaries (from extraction summary field). File name must match the Postgres READING_<hash> node ID so human can correlate run to memory. Currently only raw JSON progress + mixed log exist.",
+    "completed_at": "2026-04-01T21:03:36.334991+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5e937808-938d-4327-8413-0be2d6db6e30",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

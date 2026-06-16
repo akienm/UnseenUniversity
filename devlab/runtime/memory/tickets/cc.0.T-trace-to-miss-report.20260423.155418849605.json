@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-trace-to-miss-report.20260423.155418849605",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-trace-to-miss-report"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T15:54:18.849605",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-engram-engineering-toolkit-2026-04-23"
+    ],
+    "tickets": [
+      "T-trace-to-miss-report"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-trace-to-miss-report",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "EngramEngineering",
+      "Tooling",
+      "Diagnostics"
+    ],
+    "title": "Engram tool: turn_id → retrieval-miss analysis report",
+    "result": "TraceMissAnalyzer with 5 miss-flag heuristics + suggested engram shape. 20 tests including 897ad9c0 real-case fixture from 2026-04-23. Loaders injected for testability. 98569060.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-04-23T15:51:30.345290+00:00",
+    "related_to": null,
+    "decision_id": "D-engram-engineering-toolkit-2026-04-23",
+    "description": "Build one-shot CC-side tool that takes a turn_id and produces a structured retrieval-miss report: input, intent, BG state, activated memories, grounding-gap analysis (what memory should have surfaced but didn't). Wraps turn_trace_recent + traces_recent + memory_get. Enables fast forensics on confabulated turns without manual MCP calls.\n\n**Affected files:** new lab/claudecode/engram_tools/trace_miss_report.py, tests/test_trace_miss_report.py\n**Design rules:** docs-in-code, test-plan-or-why-not, oop-first\n**Scope boundary:** IN — tool consuming existing Igor trace/memory primitives, emits structured report. OUT — changes to tracing/memory internals, auto-remediation of grounding gaps.\n**Test plan:** unit tests against canned turn_trace + traces_recent fixtures; verify report shape for known confabulation case (turn 897ad9c0, 2026-04-23 capability confab — 'I'm in the web channel, I can't execute code')",
+    "completed_at": "2026-04-23T15:54:18.849605+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b3e20c3e-e1b8-4bf6-936a-a537f655d40c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

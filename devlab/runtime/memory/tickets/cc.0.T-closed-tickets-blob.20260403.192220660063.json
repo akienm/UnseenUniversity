@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-closed-tickets-blob.20260403.192220660063",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-closed-tickets-blob"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:22:20.660063",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-closed-tickets-blob",
+      "T-id"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-closed-tickets-blob",
+    "epic": "Claude",
+    "size": "S",
+    "title": "Closed tickets blob — prepend to closed_tickets.txt on done",
+    "result": "cmd_done now prepends YYYY-MM-DD | T-id | title to ~/.TheIgors/claudecode/closed_tickets.txt",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-03T19:21:58.145919+00:00",
+    "related_to": null,
+    "description": "When cc_queue.py done is called, prepend YYYY-MM-DD | T-id | description to ~/.TheIgors/claudecode/closed_tickets.txt (newest at top). Supports clean daily slate model.",
+    "completed_at": "2026-04-03T19:22:20.660063+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b3bd65cd-e58d-414c-9132-7bae943016f1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

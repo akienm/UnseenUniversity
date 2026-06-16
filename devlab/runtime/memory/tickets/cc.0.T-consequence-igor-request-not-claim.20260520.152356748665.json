@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-consequence-igor-request-not-claim.20260520.152356748665",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-igor-request-not-claim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-20T15:23:56.748665",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-request-not-claim-2026-05-20"
+    ],
+    "tickets": [
+      "T-adopt-next-uses-cmd-next",
+      "T-consequence-igor-request-not-claim",
+      "T-test-ticket"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-igor-request-not-claim",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow",
+      "Queue"
+    ],
+    "title": "Consequence check: Igor request model — no more direct claiming",
+    "result": "outcome: clear. LegacyDirectClaimError appeared 2026-05-21 as predicted (old engrams hitting new path); no instances today (2026-05-22 ~11:00 UTC+). Igor has active in_progress tickets. Transition landed cleanly — old code path surfaced and resolved. No stuck loop observed.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-05-21T23:09:44.144621+00:00",
+    "created_at": "2026-05-20T15:23:56.748665+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-request-not-claim-2026-05-20",
+    "description": "**What changed:** D-igor-request-not-claim-2026-05-20 — adopt_next_ticket migrated to cmd_next, LegacyDirectClaimError added for old code paths.\n**Predicted unintended effects:** (1) Old engrams (SKILL_SP, SKILL_SPRINT_ENTRY) still describe the direct-claim model — they may mislead Igor's cognition into attempting the old path, which will now raise rather than fail silently. (2) If cmd_next returns None more often than expected (e.g., all sprint tickets are difficulty>1), Igor may appear 'stuck' when he's actually working correctly — this needs to be distinguished from the previous broken-stuck state. (3) LegacyDirectClaimError in logs may fire during the transition window before old engrams are updated.\n**Signals to watch:** Channel: `LegacyDirectClaimError` log lines indicate old code path hits (good — surfaces location). Absence of `[pe_chain] ✗ T-test-ticket` after 72h. Igor's NE cycles producing results again (not stuck in empty-queue loop).\n**Gate condition:** Check by 2026-06-03 or 72 hours after T-adopt-next-uses-cmd-next closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": "2026-05-22T16:42:50.751510+00:00",
+    "deposited_at": "2026-05-20T18:14:18.937295",
+    "deposited_by": "cc_queue",
+    "github_issue": 770,
+    "required_files": [],
+    "scraps_validated": "2026-05-20T15:23:56.748683+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f31dafa7-349b-48df-af31-2ab23239f112",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

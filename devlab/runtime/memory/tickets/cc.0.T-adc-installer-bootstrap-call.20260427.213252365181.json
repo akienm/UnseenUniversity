@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-installer-bootstrap-call.20260427.213252365181",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-installer-bootstrap-call"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:32:52.365181",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-0-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-installer-bootstrap-call",
+      "T-adc-portable-bootstrap",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-installer-bootstrap-call",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Design"
+    ],
+    "title": "agent_datacenter: document installer bootstrap decision (deferred to Phase 4)",
+    "result": "docs/decisions/installer-bootstrap.md written and pushed. Paradox stated clearly. v0 bridge = igor launcher (not a device). Phase 4 target = agentctl init, pip install, ubuntu+macOS, no igor dep, Postgres found or Docker fallback.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-27T21:32:16.558231+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-0-2026-04-27",
+    "description": "Document the installer bootstrap paradox decision so Phase 1-3 can proceed without resolving it.\n\nParadox: the installer is a device on the rack; the rack is what the installer installs. Something outside the datacenter must bootstrap v0.\n\nDecision (agreed 2026-04-27):\n- v0 bridge: existing igor launcher (~/TheIgors/igor bash script + first_start.py) — already works, not a device, lives outside agent_datacenter\n- Target (Phase 4): agentctl init — pip install agent_datacenter && agentctl init bootstraps a working empty rack on a clean machine (ubuntu + macOS)\n- Constraints on Phase 4 target: no igor required, portable, works at work\n\nProposed shape:\n- Write docs/decisions/installer-bootstrap.md:\n  - The paradox stated clearly\n  - v0 bridge description (igor launcher, not a device)\n  - Phase 4 target spec (agentctl init, pip install, ubuntu+macOS, no igor dep)\n  - What 'init at work' must accomplish: skeleton up, IMAP up, Postgres found or Docker fallback\n\nAffected files:\n- ~/dev/src/agent_datacenter/docs/decisions/installer-bootstrap.md (new)\n\nDesign rules:\n- None apply — design doc only\n\nScope boundary:\nIN: decision doc only\nOUT: any code — agentctl init is T-adc-portable-bootstrap, Phase 1 (gated on skeleton)\n\nTest plan:\n- Doc exists with decision clearly stated and Phase 4 target described\n- No code written in this ticket",
+    "completed_at": "2026-04-27T21:32:52.365181+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0b031bcf-7411-4a3d-919a-d66336d1f1bb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

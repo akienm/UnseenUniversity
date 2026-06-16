@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-claim-rename-dispatch.20260613.205729674395",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-claim-rename-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T20:57:29.674395",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-claim-rename-dispatch-2026-06-13"
+    ],
+    "tickets": [
+      "T-claim-rename-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-claim-rename-dispatch",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Queue",
+      "Terminology",
+      "Workflow"
+    ],
+    "title": "Rename claimed_at → dispatched_at; remove ticket-claim language from queue",
+    "result": "renamed claimed_at→dispatched_at throughout queue stack; removed cmd_claim dead stub; LegacyDirectClaimError retained",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that all ticket-dispatch terminology in the queue uses dispatched_at/dispatch language so LLMs reading the codebase correctly interpret the state machine without confusion.",
+    "blocked_at": null,
+    "claimed_at": "2026-06-13T22:05:33.073514+00:00",
+    "created_at": "2026-06-13T20:57:29.674395+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-claim-rename-dispatch-2026-06-13",
+    "description": "LLMs misread 'claimed_at' as an autonomous-claim action rather than a Granny dispatch event, causing orphaned in_progress tickets. Same principle as renaming confusing terms for human teammates: rename to eliminate the recurring misunderstanding.\n\nRename claimed_at → dispatched_at throughout cc_queue.py and devices/queue/device.py. Remove cmd_claim dead stub (already raises LegacyDirectClaimError). Update log action strings ('claim_via_next' → 'dispatch_via_next', 'stale claim reset' → 'stale dispatch reset'). Update stall_check.py and any other consumers of the claimed_at field.\n\n**Scope boundary — IMPORTANT:** Rename ticket-dispatch terminology ONLY. Do NOT touch devices/igor/cognition/action_claim_verifier.py or test_action_claim_verifier.py — that 'claim' refers to LLM action-claim verification (cognition domain, unrelated). Leave all cognition/action files untouched.\n\n**Affected files:** lab/claudecode/cc_queue.py, lab/claudecode/stall_check.py, devices/queue/device.py, tests/igor/test_cc_queue_claim_worker.py, tests/igor/test_cc_queue_strict_claim.py, tests/igor/test_cc_queue_dispatch_is_assignment.py, and any other test files referencing claimed_at (grep to find all)\n**Design rules:** no-sqlite; log every state change\n**Scope boundary:** In scope: rename claimed_at field and all ticket-claim log strings in cc_queue.py + devices/queue/device.py + referencing test files. Out of scope: cognition action_claim_verifier, Granny state machine (dispatched/acked/in_progress already correct there), any UI beyond field names.\n**Completion criteria:** `grep -r 'claimed_at\\|cmd_claim\\|claim_via_next' lab/claudecode/cc_queue.py` returns 0 results; action_claim_verifier.py is untouched; all tests pass; queue JSON shows dispatched_at field.",
+    "completed_at": "2026-06-13T22:14:32.179686+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-hypothesize.20260402.230133029285",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-hypothesize"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T23:01:33.029285",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-hypothesize",
+      "T-programming-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-hypothesize",
+    "epic": "Training",
+    "size": "M",
+    "title": "pe: Seed HYPOTHESIZE node — tier.2 emits structured edit JSON",
+    "result": "HYPOTHESIZE step added: tier.2 Ollama call with structured edit JSON prompt. _parse_hypothesis (JSON+regex fallback), _validate_hypothesis (old_string must exist verbatim). Validation failure sets hypothesis_error but does NOT block chain. 61 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": "T-programming-engrams",
+    "description": "Tier.2 call: given basket[ticket_description] + basket[actual], emit basket[hypothesis] = {file, old_string, new_string}. Single edit per call (expand to list later). Uses L3 HYPOTHESIZE template. Tests: hypothesis is valid structured edit for a sample input.",
+    "completed_at": "2026-04-02T23:01:33.029285+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f7e7262d-ce83-42a6-922e-cd721fd75c08",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

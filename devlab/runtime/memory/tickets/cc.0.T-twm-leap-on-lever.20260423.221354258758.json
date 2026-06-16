@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-twm-leap-on-lever.20260423.221354258758",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-leap-on-lever"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T22:13:54.258758",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-twm-hygiene-2026-04-23"
+    ],
+    "tickets": [
+      "T-twm-leap-on-lever",
+      "T-twm-salience-time-decay"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-leap-on-lever",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "TWM",
+      "Cognition"
+    ],
+    "title": "TWM leap-on-lever — new observations boost latent items via associative sweep",
+    "result": "Shipped in 47a2728e. New module wild_igor/igor/memory/twm_leap.py with leap_sweep() primitive — word-graph spread from new obs content, then score summed activation against each latent TWM row's tokens, boost salience above threshold. Env-tunable (IGOR_TWM_LEAP_ENABLED/FLOOR/THRESHOLD/BOOST). cortex.py adds self.word_graph attribute + post-eviction hook in twm_push (non-fatal). main.py wires cortex.word_graph after WordGraph construction. 13 unit tests cover all four load-bearing properties from Akien's Christmas-in-June example (accidental/multi-lever/instant/semantic) + negatives. Full suite 3806 pass (+13). Completes the decay-retain-leap pair with T-twm-salience-time-decay.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-23T22:04:01.997914+00:00",
+    "related_to": null,
+    "decision_id": "D-twm-hygiene-2026-04-23",
+    "description": "Paired with T-twm-salience-time-decay — decay handles 'big topics fade into the background'; this ticket handles 'latent items leap to foreground when a lever appears.' Framing captured in memory at project_salience_decay_and_lever.md (Akien's Christmas-present-in-June + Claude-as-lever-for-Igor examples, 2026-04-23).\n\n**Model:** when any new observation enters TWM, spread activation through the memory graph from its content. Any low-salience TWM row whose activation crosses a threshold gets a salience spike — that's the leap. Levers are accidental (not searched-for); one lever can resolve multiple latent items at once; recognition is instant; association is semantic (graph-spreading), not textual (keyword overlap).\n\n**Why this shape:** Akien's examples make four load-bearing properties fall out: (1) levers arrive during unrelated activity, so the leap can't be triggered by a goal-directed scan — has to fire as a side effect of ordinary TWM pushes; (2) one lever sweeps across multiple latent matches simultaneously; (3) match is instant, not deliberative; (4) the association runs through graph structure (shared entities, shared properties), not string match. The word-graph + memory-graph spreading that cortex.search already uses is the right primitive to re-purpose.\n\n**Affected files:** TBD — discovery in sprint. Likely new wild_igor/igor/memory/twm_leap.py (leap-sweep primitive), hook into cortex.twm_push post-insert, uses existing cortex spreading-activation machinery. Possibly extends cortex.py with twm_boost_salience(ids, amount).\n\n**Design rules:** docs-in-code, test-plan-or-why-not, oop-first, no-new-memory-schemas. Re-use existing graph spreading, don't invent a new one.\n\n**Scope boundary:** IN — leap-sweep triggered on twm_push of non-trivial new observations, graph-based match against latent low-salience TWM rows, salience boost on match, log summary at INFO. OUT — changing cortex.search itself, introducing new memory types or tables, building a dedicated lever-ontology (the mechanism is emergent from graph structure — no new bookkeeping).\n\n**Test plan:** unit tests on the sweep: seed low-salience TWM row about topic X, push new observation about thing-that-associatively-connects-to-X, verify X's salience spikes; negative: push unrelated observation, verify no boost. Integration: observe latent topics in live Igor — do things actually leap when a related observation arrives? Baseline via the Christmas-present analog if expressible in-test.\n\n**Sequence:** pairs with T-twm-salience-time-decay. Can land in either order; both are needed for the full decay-retain-leap model. No technical gate between them.",
+    "completed_at": "2026-04-23T22:13:54.258758+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e084b39a-3dcf-43b8-be4f-5d87809d1e97",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

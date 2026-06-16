@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-timestamp-format-normalization.20260429.161119000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-timestamp-format-normalization"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:19",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-timestamp-format-normalization"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-timestamp-format-normalization",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Igor",
+      "agent-datacenter",
+      "Tech-debt"
+    ],
+    "title": "Standardize timestamp formats across Igor and agent-datacenter",
+    "result": "Created ts_format.py (canonical helper: format_display/format_slug/parse_iso). export_chat.py now shows local YYYY-MM-DD HH:MM:SS in message headers + footer. Machine-to-machine paths unchanged.",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-04-29T14:37:59.390592+00:00",
+    "created_at": "2026-04-29T16:11:19Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Timestamp formats are inconsistent across projects: /export-chat uses UTC ISO 8601, while most of Igor and agent-datacenter use local time with compact formats (yyyymmdd, yyyymmddhhmmss, hhmm). Standardize on one format (likely local time + compact for web compatibility, e.g. yyyymmdd-hhmm or yyyymmdd_hhmmss) to reduce confusion and simplify auditing across both projects.\n\n**Affected files:** igor/tools (export_chat.py, ops.py, paths.py), agent_datacenter/*, lab/claudecode/ utilities, any code that reads/writes/displays timestamps\n**Design rules:** docs-in-code — when standardizing, document the canonical format at the top of any utility that reads/writes timestamps\n**Scope boundary:** IN: format audit, selection of standard, code update to use it. OUT: historical log migration, changing actual timestamp values\n**Test plan:** audit: find all timestamp format strings in codebase (grep for iso, strftime, etc); no automated tests needed — verify manually that web view and log output use the chosen format consistently after changes",
+    "completed_at": "2026-04-29T16:46:06.302911+00:00",
+    "github_issue": 557,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e299b8e4-13a0-472e-8bf8-ab26fada40f4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

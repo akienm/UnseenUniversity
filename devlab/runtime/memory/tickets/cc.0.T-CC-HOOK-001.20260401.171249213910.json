@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-CC-HOOK-001.20260401.171249213910",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-CC-HOOK-001"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T17:12:49.213910",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-CC-HOOK-001"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-CC-HOOK-001",
+    "title": "PostToolUse hook: session record summary",
+    "result": "Added PostToolUse hook infrastructure to session_manager. New append-tool-output command records one-line tool summaries to session record for crash recovery. Ready for hook configuration in settings.json.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "p2",
+    "claimed_at": "2026-04-01T17:11:04.115501+00:00",
+    "description": "Add PostToolUse hook to write one-line tool summary (tool name + key output tokens) to session record on each tool call for crash recovery",
+    "completed_at": "2026-04-01T17:12:49.213910+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b181ed90-a71c-48c7-b292-70aad7a998c4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-reasoning-cache-sweep.20260424.025820150828",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reasoning-cache-sweep"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:58:20.150828",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reasoning-cache-sweep"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reasoning-cache-sweep",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infra",
+      "Cache",
+      "Hygiene",
+      "Pass2"
+    ],
+    "title": "Add disk-sweep + size-cap to reasoning_cache",
+    "result": "Shipped in 640d0438. Sweep runs every N puts (default 100), deletes entries >2×TTL old, then evicts oldest-by-mtime until ≤IGOR_REASONING_CACHE_MAX (default 5000). env-tunable. 6 tests cover TTL expiry, size cap, empty/missing dir, put-hook cadence, disable-via-N=0.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-24T02:57:58.423833+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 3 Finding P4 (SHIP). reasoning_cache was a file-backed TTL cache that only deleted entries on next read attempt — no proactive hygiene. Disk usage grew unbounded under cache-miss patterns. Added periodic sweep triggered ~1 in N put() calls (default 100, env IGOR_REASONING_CACHE_SWEEP_EVERY): deletes entries older than 2×TTL by mtime; then if still over cap, evicts oldest-by-mtime until at/under IGOR_REASONING_CACHE_MAX (default 5000).\n\n**Affected files:** wild_igor/igor/cognition/reasoning_cache.py, tests/test_reasoning_cache_sweep.py (new).\n**Design rules:** docs-in-code, test-plan-or-why-not.\n**Scope boundary:** IN — sweep helper + put-hook + size cap. OUT — in-memory LRU layer (unnecessary); changing cache key / TTL / invalidate_on semantics.\n**Test plan:** 6 tests — deletes entries older than 2×TTL, caps directory size (evicting oldest), empty-dir safe, missing-dir safe, sweep runs every N puts, sweep disabled when N=0.",
+    "completed_at": "2026-04-24T02:58:20.150828+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "17ed0280-a560-4651-8106-f421f76f4021",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

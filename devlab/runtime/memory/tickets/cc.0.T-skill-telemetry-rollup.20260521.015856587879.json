@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-skill-telemetry-rollup.20260521.015856587879",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-telemetry-rollup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T01:58:56.587879",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skill-telemetry-2026-05-20"
+    ],
+    "tickets": [
+      "T-skill-telemetry-rollup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-telemetry-rollup",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "SkillTelemetry",
+      "Workflow"
+    ],
+    "title": "Surface top violation targets in context-load briefing",
+    "result": "python run violation-summary in context-load/run; reads top_violations() from violation_log.jsonl; silent when empty; step 5.9 added to SKILL.md; 4 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-21T01:58:56.587879+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-skill-telemetry-2026-05-20",
+    "description": "Surface top recurring violations in context-load so CC sees its own drift pattern at session start — this closes the reinforcement loop.\n\n**Proposed shape:** Add step to skills/context-load/run: call top_violations(5, days=30), format as 'Most-forgotten rules: [1. <flag_name> (N times), ...]', include in session briefing. When log is empty or <7 days old: silent.\n\n**Affected files:** skills/context-load/run, lab/claudecode/skill_telemetry.py (import only)\n**Design rules:** none apply\n**Scope boundary:** Read-only use of violation log; no new logging here\n**Test plan:** Test with fixture violation_log.jsonl; verify correct top-5 output",
+    "completed_at": "2026-05-21T02:43:59.431621+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T01:58:56.587900+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "52f07b65-a0bc-4162-818b-9a66cd1c5529",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

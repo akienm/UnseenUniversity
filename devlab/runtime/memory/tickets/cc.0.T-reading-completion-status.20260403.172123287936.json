@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-reading-completion-status.20260403.172123287936",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-completion-status"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:21:23.287936",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-completion-status"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-completion-status",
+    "epic": "Training",
+    "title": "Reading session completion status — Igor cannot query reading progress",
+    "result": "Already implemented in commit e580b4fc — book_learner deposits READING_<hash> EPISODIC node after each run. Status was erroneously reset to pending by daemon timeout; work is live.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Igor has no reliable way to determine whether a book reading session completed, how far it progressed, or whether corpus was fully deposited. Observed: Igor asked 'did you finish Making Money?' and could not answer. Fix: reader/drain_runner writes a completion record per book (book_id, total_chunks, chunks_processed, status=complete/partial/failed, timestamp) as a memory node (EPISODIC, scope=instance) after each book finishes. Node must be retrievable via normal context search so Igor can answer 'did I finish X?' without human assistance.",
+    "completed_at": "2026-04-03T17:21:23.287936+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0efdd005-efa9-4fb1-84e2-29261e5aec24",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

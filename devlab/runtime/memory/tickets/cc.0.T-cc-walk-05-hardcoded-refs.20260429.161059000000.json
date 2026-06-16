@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-05-hardcoded-refs.20260429.161059000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-05-hardcoded-refs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:10:59",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-cc-walk-05-hardcoded-refs",
+      "T-hardcoded-instance-refs-cleanup",
+      "T-igor-programs-himself"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-05-hardcoded-refs",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor sweeps 3 hardcoded Igor-wild-0001 refs",
+    "result": "Target T-hardcoded-instance-refs-cleanup already done (pe_chain autonomous: pass). Walk admin close.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.83,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:10:59Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-hardcoded-instance-refs-cleanup. Discovery-first ticket — run audit_runner to find the 3 refs, then fix.\n\nChecklist:\n1. Run: audit_runner --drain (or grep -rn 'Igor-wild-0001' wild_igor/igor/ | grep -v __pycache__)\n2. Find the 3 non-exempt hits\n3. Replace with paths().instance_id or equivalent env var\n4. Confirm audit check passes\n5. Commit + close target\n\n**Affected files:** TBD (discovery)\n**Design rules:** none\n**Scope boundary:** IN — 3 specific hardcoded refs\n**Test plan:** audit passes.",
+    "completed_at": "2026-05-02T03:42:06.215018+00:00",
+    "github_issue": 549,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "151d4ce0-22b6-41b0-b32e-19f2af3a646a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

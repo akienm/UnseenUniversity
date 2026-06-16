@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-day-close-creates-next-day-slate.20260424.183003357338",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-day-close-creates-next-day-slate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T18:30:03.357338",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-day-close-slate-rollover-2026-04-24"
+    ],
+    "tickets": [
+      "T-day-close-creates-next-day-slate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-day-close-creates-next-day-slate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Claude",
+      "WorkflowOverhaul"
+    ],
+    "title": "day-close creates new-day slate on date rollover",
+    "result": "Added Step 1 to day-close SKILL.md: ensure current-day slate exists (create from template if missing). Renumbered steps 3-13 to 4-14 and updated hard-rules. Created 20260424.slate.txt to unblock current day.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-24T18:29:16.820850+00:00",
+    "related_to": null,
+    "decision_id": "D-day-close-slate-rollover-2026-04-24",
+    "description": "day-close typically runs at the start of the next day, after midnight rollover. It closes yesterday's slate — but nothing in the skill guarantees today's slate exists. If context-load is skipped (as happened 2026-04-24: /day-close errored 'Prompt is too long' at session start and work pivoted elsewhere), today never gets a slate and every later 'cat today's slate' step silently fails.\n\nFix: add a Step 1 to day-close — ensure current-day slate exists; create from the context-load template if missing. Rule: every day has a slate.\n\n**Affected files:** ~/.claude/skills/day-close/SKILL.md\n**Design rules:** none apply (skill file is markdown procedure).\n**Scope boundary:** IN — day-close SKILL.md edit. OUT — context-load changes, slate_manager changes, session_manager changes.\n**Test plan:** no tests because: skill is markdown procedure, not executable code. Verified by creating today's slate manually as part of this /fixit.",
+    "completed_at": "2026-04-24T18:30:03.357338+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a6f75310-067b-40ae-8e93-5939730095ea",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

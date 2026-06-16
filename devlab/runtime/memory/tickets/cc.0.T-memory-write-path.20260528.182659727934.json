@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-memory-write-path.20260528.182659727934",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-write-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T18:26:59.727934",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-api-2026-05-28"
+    ],
+    "tickets": [
+      "T-librarian-edge-maintenance",
+      "T-librarian-retrieval-service",
+      "T-memory-agent-write-api",
+      "T-memory-write-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-write-path",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Librarian",
+      "WriteAPI"
+    ],
+    "title": "Librarian write path: tag extraction, embedding, typed payloads, source_agent",
+    "result": "write_memory(): 1 Haiku tag call + Scraps embedding → EmbeddingPayload in payloads JSONB + source_agent provenance. Correct clan.memories columns. 17 tests green.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-28T20:11:44.533096+00:00",
+    "created_at": "2026-05-28T18:26:59.727934+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-api-2026-05-28",
+    "description": "Implement the Librarian memory write endpoint that compiles understanding at write time so retrieval is cheap. Write path: (1) extract tags via one inference call; (2) call Scraps embedding engine to compute and store embedding as EmbeddingPayload in payloads jsonb; (3) accept typed payloads (code, link, primitive) from caller; (4) record source_agent for provenance. Supersedes T-memory-agent-write-api (close that ticket on sprint start).\n\nKey principle: inference fires once at write time. Everything stored is pre-computed. Future recall(X) calls use stored embeddings and tags with no write-time inference.\n\n**Affected files:** devices/librarian/ (write endpoint, new or extended)\n**Design rules:** inference at write time only — not query time; tag extraction is one inference call total, not per-tag; source_agent is required field; supersedes T-memory-agent-write-api\n**Scope boundary:** write path only; retrieval (recall(X)) is T-librarian-retrieval-service; edge creation is T-librarian-edge-maintenance\n**Test plan:** write a memory via endpoint; verify tags extracted and stored; verify EmbeddingPayload present with vector + model metadata in payloads jsonb; verify source_agent recorded; verify second write from different source_agent stores differently",
+    "completed_at": "2026-05-28T20:13:45.647892+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:11:44.533096+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T18:26:59.727965+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "81685beb-1821-4722-a2ca-d100a217befa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-thread-coherence.20260325.215152910673",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-thread-coherence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T21:51:52.910673",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-spreading-activation",
+      "T-thread-coherence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-thread-coherence",
+    "title": "Thread coherence — context retention score + self-monitoring signal",
+    "result": "ThreadCoherenceSource (weighted Jaccard on bg_scoring.top, 30s rate limit, drift signal to TWM) + PROC_THREAD_DRIFT habit seeded. 20 tests. Commit 411a3945. Daemon kept resetting due to session timeout; work was complete and committed before first reset.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "After each turn, compute context retention score: semantic overlap between activated nodes in turn N vs turn N-1 (from turn traces). Low overlap = thread drift. Push score into TWM as THREAD_COHERENCE signal. Two uses: (1) external metric — how well is D233/spreading activation maintaining conversational context? (2) self-monitoring — Igor detects his own drift and can flag/correct without human intervention. Same as Akien monitoring his own coherence. Substrate: turn traces (already exist). Implementation: background source reads last 2 turn traces, computes weighted node overlap, pushes TWM entry. Low score triggers self-observation habit. Prereq: T-spreading-activation.",
+    "completed_at": "2026-03-25T21:51:52.910673+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f04e1e1-8aa7-4fd8-8082-9544778d29c7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

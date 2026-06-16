@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-dicksimnel-idle-dispatch.20260606.231736016568",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-dicksimnel-idle-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T23:17:36.016568",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dicksimnel-idle-dispatch-redesign-2026-06-06"
+    ],
+    "tickets": [
+      "T-consequence-dicksimnel-idle-dispatch",
+      "T-dicksimnel-granny-dispatch-wire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-dicksimnel-idle-dispatch",
+    "gate": "2026-06-20",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: DickSimnel dispatch model redesign",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to observe whether the dispatch model switch introduces any silent regressions in ticket flow.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T23:17:36.016568+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dicksimnel-idle-dispatch-redesign-2026-06-06",
+    "description": "**What changed:** DickSimnel's dispatch model switched from cc_queue polling to Granny bus dispatch envelopes on dicksimnel.0; Granny config flipped from set_worker to bus.\n\n**Predicted unintended effects:**\n1. ACK timing: DickSimnel must send dispatch_ack within DISPATCH_ACK_TIMEOUT_S (180s) or Granny auto-escalates to CC. If DickSimnel's listener has startup lag or the IMAP connection is slow, early tickets could escalate before being worked.\n2. Silent listener crash: If DickSimnelWorkerListener's poll thread crashes, Granny dispatches into a void — tickets sit in 'dispatched' forever (until _escalate_stale_dispatched fires). Unlike the old polling model, there's no cc_queue.next activity to indicate the device is alive.\n3. OR floor decline needs bus reply: Old model — balance low → return silently, ticket stays in queue. New model — balance low → ticket already in 'dispatched' status. Must send an explicit decline reply or ticket stalls until timeout.\n4. Deploy-order race: If Granny is flipped to bus dispatch (T-dicksimnel-granny-dispatch-wire) while the old DickSimnel process is still running (not yet restarted with new listener), dispatches go to void.\n\n**Signals to watch:** Any DickSimnel tickets stuck in 'dispatched' > 3 minutes; any auto-escalations from _escalate_stale_dispatched; DickSimnel logs showing poll thread alive between jobs (no cc_queue.next calls).\n\n**Gate condition:** Check by 2026-06-20 after both tickets ship.\n\n**Worst-case token spend:**\n  - Per-failure cost: 0 inference tokens per void dispatch (Granny escalates after 180s timeout without invoking inference; the escalated ticket goes to CC which uses Anthropic tokens to re-triage)\n  - Hard cap: DISPATCH_ACK_TIMEOUT_S=180 per ticket is the per-failure bound; no iteration loop risk\n  - Blast radius: if listener crashes entirely, all DickSimnel tickets auto-escalate to CC; CC re-triages them; no runaway loop since Granny's one-at-a-time per worker guard prevents re-dispatch until prior ticket clears\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

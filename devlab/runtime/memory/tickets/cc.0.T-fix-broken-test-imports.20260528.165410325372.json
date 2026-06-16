@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-fix-broken-test-imports.20260528.165410325372",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-broken-test-imports"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:54:10.325372",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-broken-test-imports"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-broken-test-imports",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Cleanup",
+      "Migration"
+    ],
+    "title": "Fix 4 broken test files with stale module imports post-migration",
+    "result": "fixed/deleted 4 broken test files — 0 collection errors: updated 7 stale igor.* imports in book_learner.py to devices.igor.*, deleted test_swadl_flows_gmail.py + test_swadl_pages_gmail.py (swadl_flows/pages modules never migrated) + test_uc_watchdog.py (uc_watchdog removed, no successor)",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-28T16:54:35.920552+00:00",
+    "created_at": "2026-05-28T16:54:10.325372+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "4 test files fail at collection due to stale import paths from the wild_igor → devices/igor migration. All tests are currently blocked by these errors.\n\n1. tests/test_reading_lever_detection.py — lab/claudecode/book_learner.py imports 'from igor.cognition import milieu' (old path). Fix to 'from devices.igor.cognition import milieu' or find current module path.\n2. tests/test_swadl_flows_gmail.py — imports 'devices.igor.tools.swadl_flows' which does not exist. Check if module was moved; if genuinely gone, delete the test file.\n3. tests/test_swadl_pages_gmail.py — imports 'devices.igor.tools.swadl_pages' which does not exist. Same — check or delete.\n4. tests/test_uc_watchdog.py — imports 'devices.igor.cognition.uc_watchdog' which does not exist. The watchdog was renamed/replaced; update import or delete test.\n\nFor each: grep for the module in UU to find its new home; update import if found; delete test file if module is genuinely gone (note deletion in commit message).\n\n**Affected files:** lab/claudecode/book_learner.py, tests/test_reading_lever_detection.py, tests/test_swadl_flows_gmail.py, tests/test_swadl_pages_gmail.py, tests/test_uc_watchdog.py\n**Design rules:** none\n**Scope boundary:** IN — fix or delete the 4 broken test files; OUT — do not refactor tests or add new coverage\n**Test plan:** cd ~/TheIgors && python -m pytest tests/ -q returns 0 collection errors; all previously-passing tests still pass",
+    "completed_at": "2026-05-28T17:04:29.166903+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T16:54:35.920552+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T16:54:10.378664+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "494aa867-2cee-4800-a02a-577a7c2ff866",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

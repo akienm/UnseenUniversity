@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-dispatched-set-prune.20260604.203914398416",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-dispatched-set-prune"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T20:39:14.398416",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-fast-sprint-2026-06-04"
+    ],
+    "tickets": [
+      "T-active",
+      "T-granny-dispatched-set-prune",
+      "T-sprint-now"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-dispatched-set-prune",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Reliability"
+    ],
+    "title": "Granny: prune dispatched_cycle.json on load — remove tickets no longer active",
+    "result": "_prune_dispatched() on load; fail open; 4 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.72,
+    "intention": "I intend that dispatched_cycle.json never silently blocks re-dispatch of tickets that have returned to sprint status after a failed or interrupted sprint.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T20:39:14.398416+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-fast-sprint-2026-06-04",
+    "description": "dispatched_cycle.json accumulates ticket IDs forever. Tickets reset to sprint (e.g. after a failed sprint, a fake-done reopen, or a manual setstatus) remain permanently blocked because tid in dispatched skips them regardless of current DB status. Today we had to manually clear the file to unblock 26 tickets.\n\nFix: in _load_dispatched(), after loading the JSON, cross-check loaded IDs against the DB — keep only IDs still in status IN ('dispatched','acked','in_progress'). IDs in sprint/done/triage/hold/escalated/cancelled/closed are pruned from the returned set. This runs on every load (Granny restart + optionally each cycle via a periodic reload path).\n\n**Affected files:** devices/granny/daemon.py\n**Design rules:** no-sqlite; graceful degradation — if DB query fails, return the full loaded set (fail open, don't lose state)\n**Scope boundary:** Modify _load_dispatched() only. _save_dispatched() and in-memory set behavior during a run are unchanged. Pruning is a load-time operation only.\n**Completion criteria:** Given dispatched_cycle.json containing ['T-active', 'T-sprint-now'], where T-active has status=in_progress (DB) and T-sprint-now has status=sprint (DB), _load_dispatched() returns a set containing T-active but not T-sprint-now. Test: mock psycopg2.connect returns the status rows; assert returned set is {T-active}. Also test DB failure returns full set.",
+    "completed_at": "2026-06-04T21:07:49.545029+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-inhibitory-pattern-primitive.20260414.014803000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inhibitory-pattern-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:03",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inhibitory-pattern-primitive",
+      "T-response-coherence-inhibitor",
+      "T-twm-attentional-gating"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inhibitory-pattern-primitive",
+    "tag": "Cognition",
+    "body": "\n\n## Update 2026-04-14 evening — inhibitor biases encode the CP axioms\n\nSelection-layer biases (where personality lives per biology) are the CP-axiom layer operationalized at the inhibition-pattern level. Specifically:\n\n- **CP1 bias:** prefer \"I don't know\" outputs over false-confident outputs. Selection layer should not suppress \"uncertain\" as a winning candidate.\n- **CP2 bias:** failed candidates are still learning-producing. Don't suppress them too aggressively — failure paths feed back into trail training.\n- **CP6 bias:** unverified inputs (e.g. LLM outputs without experiments) get lower selection weight than verified inputs. This is the CP6-mandated skepticism at the selection layer.\n\nInhibitors aren't just negative rules — they ENCODE THE EPISTEMOLOGY at the selection layer. Personality emerges because the biases are CP-consistent. Any inhibitor added to the epic should state which CP axiom(s) it's implementing.\n\n**New companion check (register via T-audit-add-checks when the primitive is mature):** \"every inhibitor in the pattern registry states which CP axiom it implements.\"\n\n## Update 2026-04-14 evening — batch-filter aligned with CP axioms\n\nThe batch-filter shape (merged from #227) should evaluate candidates against CP axioms as one of its filter dimensions. A candidate that violates CP1 (claims certainty) or CP6 (trusts an untested source) should get CP-bias penalty during selection.",
+    "size": "L",
+    "owner": "cc",
+    "title": "Promote inhibition to a reusable engram pattern — instances replace scattered ad-hoc verifiers",
+    "result": "Gate primitive: gate_primitive.py + GateEngramNode in inhibition chain + gate dispatch in main.py habit path. 15 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T16:29:49.570251+00:00",
+    "created_at": "2026-04-14T01:48:03Z",
+    "related_to": null,
+    "description": "EPIC. Architectural ticket. Akien framing 2026-04-13:\n\n'A coherence verifier should maybe be a pattern? And that IS INHERENTLY an inhibitory pattern.'\n\nToday Igor's existing inhibitors are scattered and ad-hoc:\n  - action_claim_verifier (22c57af6) — its own module\n  - bare-ack guard (_is_bare_ack helper) — its own function\n  - credential scrubber (scrub() in cortex.twm_push) — inline\n  - G-OVN-1d response habit suppression on factual_question intent — hard-coded gate\n  - TWM_SUPPRESS_AFTER_REPEATS + salience floor in twm_push — inline conditionals\n  - _is_raw_tool_leak — regex helper\n  - T-twm-attentional-gating salience cap — inline\n  - PROC_SUPPRESS_MID_CONV_GREETING — habit at 0.97 score\n\nEach implemented separately. Each catches a specific failure mode. None reusable.\n\nGOAL: promote inhibition to an engram pattern with reusable structure. Each existing scattered inhibitor becomes an INSTANCE of the pattern, parameterized rather than re-coded. New failure modes become parameters, not modules. Sleep consolidation can eventually compose new inhibitors from observed misfires (inhibition becomes trainable).\n\nPATTERN SHAPE (initial sketch):\n  - input_shape: what's being checked (proposed reply, tool call about to dispatch, habit about to fire, TWM push, memory store)\n  - coherence_function: what makes it pass (semantic overlap, evidence anchor, regex match, intent gate, salience floor)\n  - threshold: confidence below which inhibition fires\n  - inhibition_action: SUPPRESS (drop) | REPLACE (fall through) | MARK (let through but flag for next-turn self-correction) | ESCALATE (route to higher tier)\n  - forensic_log: uniform shape across all inhibitors so the firing pattern is observable\n\nBIOMIMETIC FRAMING: inhibition is not a special-case feature. It's the underlying mechanism by which complex cognition produces selectable behavior. Basal ganglia hold cortical actions in suspended inhibition until selection releases the right one. GABAergic interneurons shape every cortical column by deciding which excitatory signals dominate locally. Prefrontal cortex provides top-down inhibition over impulsive responses. The phrase 'cortex is mostly inhibitory' is literally true in neuron count.\n\nFIRST INSTANCES (sub-sprints under this epic):\n  1. INHIBITOR_RESPONSE_COHERENCE — semantic overlap between proposed reply and current prompt. If low overlap AND from a habit (not LLM), inhibit → fall through. Filed separately as T-response-coherence-inhibitor (sprinting first as a single-instance hotfix).\n  2. Refactor INHIBITOR_ACTION_CLAIM — wrap today's action_claim_verifier (22c57af6) as a pattern instance.\n  3. Refactor INHIBITOR_BARE_ACK — _is_bare_ack as a pattern instance, demonstrates habit-firing-time inhibition.\n  4. Refactor INHIBITOR_CREDENTIAL_SCRUBBER — wrap scrub() as an instance, demonstrates content-store inhibition.\n  5. Future: INHIBITOR_LEARNED_FROM_MISFIRE — sleep consolidation composes new inhibitors from observed misfire patterns.\n\nINERTIA: HIGH. Touches habit dispatch, reply emit, TWM push, memory store. Cross-cutting refactor.\n\nDEPENDS ON: T-response-coherence-inhibitor (the single-instance hotfix that proves the shape works in isolation before we generalize).",
+    "completed_at": "2026-04-18T16:40:06.972997+00:00",
+    "deposited_at": "2026-04-23T08:05:49.512425",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": 419,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d1ac26eb-ffa8-44a1-9f4a-466782a7254d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

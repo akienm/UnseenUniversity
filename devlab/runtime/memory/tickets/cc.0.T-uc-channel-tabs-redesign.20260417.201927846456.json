@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-uc-channel-tabs-redesign.20260417.201927846456",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-channel-tabs-redesign"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T20:19:27.846456",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-mcp-cc-bidirectional",
+      "T-mcp-channel-logging",
+      "T-uc-channel-tabs-redesign",
+      "T-uc-named-channels",
+      "T-web-8080-channels"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-channel-tabs-redesign",
+    "size": "L",
+    "tags": [
+      "Operations",
+      "WebUI"
+    ],
+    "title": "Utility closet web UI redesign: channel tabs + per-channel notifications",
+    "result": "Web UI redesigned: channel tabs with notification checkboxes, auto-create agent tabs on connect, blue→green new-message indicator. Removed dashboard, ring/surprise feeds, CC bridge. -162 lines.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T20:11:55.135860+00:00",
+    "related_to": null,
+    "description": "Redesign the utility closet web UI (Svelte, port 8080) based on Akien's revised spec.\n\n## Channel tab bar (top)\n- **Shared channel** always visible, always on — not just when Igor is attached. `[Shared [☐]] +`\n- Notification checkbox per channel: when checked, all MCP devices get notified when someone *else* posts to that channel. Default: unchecked for Shared.\n- Per-connection tabs auto-created on connect: `[CCMAIN [X]]` for Claude Code, `[Igor-wild-0001 [X]]` for Igor, future minions, etc. Each has its own notification checkbox (default: checked for private channels).\n- `+` button to add new channels manually.\n- Akien always sees color change (blue→green) when new messages arrive in any tab.\n- CC gets notified via MCP inbox (UserPromptSubmit hook checks channel). Igor gets notified via MCP channel_send.\n\n## Shared channel purpose\n- Three-way design workspace: Akien + CC + Igor collaborate here.\n- CC can be triggered to read it by any user input in terminal (hook fires on prompt submit).\n- This is where the three of us do design together.\n\n## Layout changes — REMOVE\n- Igor status section (if Igor is online, there's an Igor tab — that's the indicator)\n- CC box (no longer needed)\n- Igor dashboard panel at bottom (Dashboard.svelte — remove entirely)\n\n## Layout changes — KEEP\n- Your Name input box\n- A-/A+ font size controls\n- Message input bar (text input + send)\n\n## Files affected\n- `wild_igor/web_ui/src/App.svelte` — restructure: remove Dashboard import, add tab bar\n- `wild_igor/web_ui/src/lib/Chat.svelte` — channel-aware messaging (filter by active tab)\n- `wild_igor/web_ui/src/lib/Dashboard.svelte` — DELETE\n- `wild_igor/web_ui/src/lib/TabBar.svelte` — NEW: channel tabs + notification checkboxes\n- `lab/claudecode/utility_closet_server.py` — multi-channel WS support, notification dispatch\n- `wild_igor/igor/web/utility_closet_client.py` — channel-aware registration\n- MCP channel_send / cc_hook integration for notification delivery\n\n## Supersedes\n- T-web-8080-channels (#410) — this ticket covers the full redesign\n\n## Related\n- T-uc-named-channels (#403) — backend named channels with provenance\n- T-igor-mcp-cc-bidirectional (#461) — MCP bidirectional comms\n- T-mcp-channel-logging (#400) — channel as log target\n\n## Tests needed\n- Tab creation on agent connect/disconnect\n- Notification checkbox toggling + MCP dispatch\n- Shared channel always present even with no agents\n- Message routing to correct channel\n- Color change indicator for new messages",
+    "completed_at": "2026-04-17T20:19:27.846456+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "98fca495-7a8a-4d15-83df-d2fc2d90bf5e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

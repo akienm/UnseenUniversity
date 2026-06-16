@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-pe-chain-single-step-debugger.20260424.022423521067",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-single-step-debugger"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:24:23.521067",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-self-introspection",
+      "T-pe-chain-inertia-gate-hallucinated-target",
+      "T-pe-chain-single-step-debugger"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-single-step-debugger",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "pe_chain",
+      "Debugger",
+      "Introspection",
+      "Igor-completes-one"
+    ],
+    "title": "pe_chain single-step debugger — inject stimulus, breakpoint at step, inspect state",
+    "result": "Shipped in be11ff4d. New tool wild_igor/igor/tools/pe_chain_debugger.py with start/step_next/snapshot/history/abandon/list_sessions API + 2 registered tools (pe_chain_debug_start, pe_chain_debug_step). Canonical sequence ENTRY → CLAIM → READ_TICKET → PLAN → SITUATE → HYPOTHESIZE → IMPLEMENT → OBSERVE, breakpoint 'END' for full chain. Per-step snapshot combines deepcopy'd basket with self_inspect aspects (affect/attention/pursuits_active). Step exceptions caught (basket.debugger_error), thread-safe session store. 16 tests cover start/step/snapshot/lifecycle/robustness. This is the tool that would have caught T-pe-chain-inertia-gate-hallucinated-target at HYPOTHESIZE pause.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-04-24T02:21:48.515610+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Akien 2026-04-23: 'if we could single step his cognition in a debugger, that's really what you need. inject something, then step, step, step checking all the state info as you went.'\n\nExtends T-igor-self-introspection (shipped today, commit 74d1c59e) from ambient state reads to stepped execution control. Given a stimulus, run pe_chain up to a named breakpoint, pause, and return full basket + cognitive-state snapshot. Stepping forward advances one engram at a time, re-snapshotting at each pause.\n\nMotivating case: the T-pe-chain-inertia-gate-hallucinated-target bug. With single-step: at HYPOTHESIZE pause we'd see `hypothesis.file = 'brainstem/core_patterns.py'` while `ticket.affected_files = ['lab/claudecode/check_no_sqlite.py']` — the gap is visible instantly. Without single-step: the basket only surfaces at the escalation log line, long after the wrong choice.\n\n**Affected files:**\n- wild_igor/igor/tools/pe_chain_debugger.py (new) — session storage + step/resume API\n- wild_igor/igor/tools/pe_chain.py (minor) — expose named-breakpoint pause hook; must be a no-op when no debugger session is active\n- wild_igor/igor/tools/self_inspect.py (wire) — reuse snapshot() to produce the per-pause state dict\n- tests/test_pe_chain_debugger.py (new)\n\n**Design rules:** docs-in-code, test-plan-or-why-not, oop-first (DebugSession dataclass holding basket + cursor + step index), no-sqlite.\n\n**Scope boundary:**\n- IN: inject stimulus, pause at a named engram breakpoint (e.g. 'SITUATE', 'HYPOTHESIZE'), return basket + self_inspect snapshot; step_next(session) advances one engram and re-snapshots; abandon(session) clears state; breakpoint on engram name (not line number, not raw opcode).\n- OUT: modifying engram behavior mid-debug (read-only stepping); TUI/CLI frontend (returns JSON; UI is a separate ticket); historical replay of past real sessions (stimulus must be freshly injected).\n\n**Test plan:**\n1. Inject synthetic stimulus with known target → pause at HYPOTHESIZE → assert basket.hypothesis.file matches expected.\n2. step_next advances exactly one engram, step count increments.\n3. Each pause snapshot contains the 7 self_inspect aspects.\n4. Unknown breakpoint name returns error dict (no exception).\n5. Debug session is isolated — stepping one session does not mutate another session's basket.\n6. When IGOR_PE_CHAIN_DEBUG is unset, normal pe_chain runs unchanged (no hook overhead, no pause).",
+    "completed_at": "2026-04-24T02:24:23.521067+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "714e14b5-2c0e-4b54-b23e-af460bfc17bc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

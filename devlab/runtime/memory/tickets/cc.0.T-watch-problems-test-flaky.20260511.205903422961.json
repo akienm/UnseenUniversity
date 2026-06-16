@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-watch-problems-test-flaky.20260511.205903422961",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watch-problems-test-flaky"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T20:59:03.422961",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-watch-problems-test-flaky"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watch-problems-test-flaky",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Database"
+    ],
+    "title": "CLOSED: watch_problems flaky tests — search_path isolation",
+    "result": "fixed _conn() search_path isolation; unqualified _TABLE; batched lever_watcher UPDATEs; mocked escalate_to_channel in threshold tests — 12/12 pass, 0 regressions",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-11T20:59:03.422961+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "6 lever_watcher tests in test_watch_problems.py timeout (>30s) at every full-suite run. Two root causes: (1) watch_problems._conn() ignores IGOR_LOCAL_SEARCH_PATH so all module operations hit the live instance.watch_problems table instead of the test_instance_* schema created by pg_test_schema — the live table has many production rows, and lever_watcher processes them ALL; (2) lever_watcher opens a new psycopg2.connect() per problem in its update loop instead of one batched connection. Fix: set search_path in _conn() from IGOR_LOCAL_SEARCH_PATH; unqualify _TABLE to 'watch_problems'; simplify _MIGRATE_SQL to use ADD COLUMN IF NOT EXISTS; batch lever_watcher updates into one connection; mock escalate_to_channel in test_lever_watcher_finds_match to prevent live channel writes.\n\n**Affected files:** wild_igor/igor/cognition/watch_problems.py, tests/test_watch_problems.py\n**Design rules:** no-sqlite; test-plan-or-why-not\n**Scope boundary:** In: _conn search_path, _TABLE unqualify, _MIGRATE_SQL simplify, lever_watcher single-conn, mock in test. Out: changing lever_watcher logic, adding new test cases, touching escalate.py.\n**Test plan:** All 12 tests in tests/test_watch_problems.py pass in full suite without timeout.",
+    "completed_at": "2026-05-11T21:17:46.758062+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "08e21a7d-304d-4775-a6c5-497351ee432a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

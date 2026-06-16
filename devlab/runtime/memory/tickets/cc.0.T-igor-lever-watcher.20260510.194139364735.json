@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-lever-watcher.20260510.194139364735",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-lever-watcher"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T19:41:39.364735",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-escalate-as-default-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-lever-watcher",
+      "T-igor-watch-list"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-lever-watcher",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Operations"
+    ],
+    "title": "CLOSED: Implement active lever monitoring — coa.py wiring + watch_problems.lever_watcher",
+    "result": "lever_watcher() wired into coa.py _ne_worker; scans instance.watch_problems against TWM each NE cycle with 24h dedup",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "blocked_at": null,
+    "claimed_at": "2026-05-10T20:18:31.303280+00:00",
+    "created_at": "2026-05-10T19:41:39.364735+00:00",
+    "related_to": null,
+    "decision_id": "D-escalate-as-default-2026-05-10",
+    "description": "Igor parks unsolved problems in instance.watch_problems (T-igor-watch-list). The lever watcher scans active watch_problems entries against recent TWM content, using WATCH_Q_* questions from clan.memories as the matching lens.\n\nImplementation: add lever_watcher(pg_conn) to wild_igor/igor/cognition/watch_problems.py. Steps per NE cycle:\n1. read_active_problems() — filter last_surfaced_at < now()-24h or null\n2. Load recent TWM from instance.twm_observations (last 20 rows)\n3. For each problem: keyword overlap between watch_condition tokens and TWM content. Use WATCH_Q_07 ('Where is the lever?') and WATCH_Q_06 ('How could we get around that?') as lens framing.\n4. On match: post to channel 'Watch: {problem[:80]} — possible lever: {snippet[:120]}'; mark_surfaced(id)\n5. 24h dedup via last_surfaced_at gate\n\nWire lever_watcher(conn) call into coa.py _ne_worker after the purpose_annotator block.\n\n**Affected files:** wild_igor/igor/cognition/watch_problems.py (lever_watcher function), wild_igor/igor/cognition/coa.py (call lever_watcher from _ne_worker)\n**Design rules:** HIGH-inertia pre-approval required for coa.py. PRE-APPROVED by Akien 2026-05-10 ('add it to the queue...now you have stuff to keep you busy for the next couple hours'). Watch questions part of reasoning confirmed 2026-05-10.\n**Scope boundary:** In scope: keyword-overlap match + channel post + 24h dedup. Out of scope: embedding match (upgrade later), auto-resolution, UI.\n**Test plan:** Test lever_watcher finds match when watch_condition keyword appears in TWM; test 24h dedup suppresses repeats; test no match on unrelated TWM content.",
+    "completed_at": "2026-05-10T20:19:17.916479+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6166fc8d-d37d-4d7f-8d46-b127b8d39ef3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

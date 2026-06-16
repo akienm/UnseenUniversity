@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-cc-shim-assignment.20260606.202319932661",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-cc-shim-assignment"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:23:19.932661",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-shim-assignment-model-2026-06-06"
+    ],
+    "tickets": [
+      "T-consequence-cc-shim-assignment"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-cc-shim-assignment",
+    "gate": "2026-06-20",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow",
+      "Dispatch"
+    ],
+    "title": "[sprint] Consequence check: CC shim assignment model dispatch reliability",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-06T20:23:19.932661+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-shim-assignment-model-2026-06-06",
+    "description": "**What changed:** Granny now dispatches via bus envelope only; CC shim owns ack + nag + HALT. tmux knowledge removed from Granny.\n\n**Predicted unintended effects:**\n- Nag loop fires too aggressively if CC_SHIM_NAG_INTERVAL default is too short — CC gets flooded with 'check messages' during long sprints\n- Ack note on ticket accumulates noise if a ticket is nagged many times\n- HALT message gets injected mid-command, corrupting CC's input buffer (three-Enter interrupt mitigates but doesn't eliminate)\n- If CCWorkerListener restarts, it re-nags tickets that CC has already internally queued but not yet moved to in_progress — duplicate nags\n\n**Signals to watch:** nag frequency in CC session transcript; ticket note volume; any reports of corrupted CC input; CCWorkerListener restart behavior under the new model.\n\n**Gate condition:** Check by 2026-06-20 or after first week of live operation.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred/clear/partial; close\n**Completion criteria:** Predicted effects annotated as occurred/clear/partial and ticket closed.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b68b014c-b7c4-4790-8126-2f23020d0b4a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

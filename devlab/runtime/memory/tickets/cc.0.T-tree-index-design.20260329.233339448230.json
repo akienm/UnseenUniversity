@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-tree-index-design.20260329.233339448230",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tree-index-design"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-29T23:33:39.448230",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-node-registry",
+      "T-tree-index-design"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tree-index-design",
+    "epic": "Cognition",
+    "size": "L",
+    "title": "Design: tree as named index over shared node pool",
+    "result": "tree_index.py: TreeIndex(create/get/traverse/list_all/trees_at_node) + trees DDL + 8 well-known trees seeded (CP1-6, reading_pipeline, igor_arch) + 18 tests pass. 556 total.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "CRYSTALLIZATION (2026-03-29):\n\nA tree is a traversal pattern over a shared node pool — the same node can be the facia (entry point) for one tree and an interior node for another. Two trees can index the same node set differently.\n\nTHE FACIA IS THE THREAD.\nA thread-facia node IS the thread object — not a pointer to it. It has:\n  - Edges to history nodes (what happened)\n  - Edges to state nodes (open/in-progress/done)\n  - Edges to spawned memories (completions, new todos)\n  - Attractor weight (how hot the thread is now)\n  - Watchlist attachment (how long it stays warm)\n\nThread state IS the graph — no separate state machine needed.\n  'What's in progress' = traverse edges tagged in_progress.\n  'Close thread' = lower facia attractor weight + remove from watchlist.\n  'Spawn todo' = new node with timestamp ID + edge from facia.\n\nThreading and task management are the same substrate.\ncc_queue.json tickets are thread-faciae with a particular edge signature — eventually they live in the graph, not a JSON file.\n\nNew primitive needed: edge type distinguishing history/state/spawned relationships (interpretive_edges likely covers this or nearly does).\n\nPrerequisites: T-node-registry (timestamp IDs + Redis cache + calving protocol).",
+    "completed_at": "2026-03-29T23:33:39.448230+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "01abd9c4-ec4c-41a3-a98e-3096f5a16374",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

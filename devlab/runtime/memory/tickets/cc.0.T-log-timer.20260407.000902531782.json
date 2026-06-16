@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-log-timer.20260407.000902531782",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-log-timer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T00:09:02.531782",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-log-timer",
+      "T-reading-measure-baseline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-log-timer",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "log.get_timer() instrumentation primitive",
+    "result": "TimerHandle + get_timer() in logging_setup.py. start/stop emits structured log line. 5 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Add TimerHandle class to logging_setup.py. timer = log.get_timer(name, level=logging.DEBUG, **context_kwargs); timer.stop(**result_kwargs) writes one structured log line: name, started=YYYYMMDDHHMMSSuuuuuu, ended=..., elapsed=X.XXXXXX, plus all kwargs. Used by measurement tools and pe_chain steps. Prerequisite for T-reading-measure-baseline.",
+    "completed_at": "2026-04-07T00:09:02.531782+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "634fcf7a-d471-48a9-bd9f-b624c1b1bb63",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

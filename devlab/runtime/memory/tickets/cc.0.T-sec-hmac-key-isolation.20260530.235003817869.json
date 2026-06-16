@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-sec-hmac-key-isolation.20260530.235003817869",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sec-hmac-key-isolation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T23:50:03.817869",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-murderbot-security-review",
+      "T-provenance-identity",
+      "T-sec-hmac-key-isolation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sec-hmac-key-isolation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Security"
+    ],
+    "title": "Security: specify HMAC signing key storage and access control",
+    "result": "rack.secret 0o600 enforced on load/create; broker.py documents key access restriction",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "blocked_at": "2026-06-02T19:49:31.724418+00:00",
+    "claimed_at": "2026-06-02T02:12:08.386288+00:00",
+    "created_at": "2026-05-30T23:50:03.817869+00:00",
+    "created_by": null,
+    "related_to": "T-provenance-identity",
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Gap surfaced by T-murderbot-security-review. T-provenance-identity states 'HMAC shared secret is sufficient for v1' but does not specify where the key lives or which processes may read it. If stored in a config file readable by all rack agent processes, any compromised agent can forge provenance tokens for any agent_id, defeating the provenance model.\n\nSpecify: the HMAC key lives in a dedicated secret store or file with permissions restricted to the rack service user only (not readable by agent worker processes). CC workers and ContainerShim agents must not be able to read the key. Document the key rotation procedure (even if manual for v1).\n\n**Affected files:** unseen_university/announce/broker.py (key loading), config/ or .env (key location), docs/security_known_limitations.md (update when resolved)\n**Design rules:** no live keys in source; .env is gitignored\n**Scope boundary:** IN — key file location, file permission spec, which process(es) read the key; OUT — key rotation automation, HSM, multi-party signing\n**Completion criteria:** HMAC key is stored at a path readable only by the rack service user; agent worker processes (including CC) cannot read it; this is documented in a comment in broker.py",
+    "completed_at": "2026-06-02T22:06:39.412764+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-30T23:50:03.951697+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "251c8abd-dec1-4af5-bc08-ee69775a904a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

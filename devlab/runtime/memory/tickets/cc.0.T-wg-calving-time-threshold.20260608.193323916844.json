@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-wg-calving-time-threshold.20260608.193323916844",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wg-calving-time-threshold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T19:33:23.916844",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wg-node-tree-architecture-2026-06-08"
+    ],
+    "tickets": [
+      "T-wg-calving-time-threshold"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wg-calving-time-threshold",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Performance",
+      "Database"
+    ],
+    "title": "Instrument memory traversal timing to set calving threshold",
+    "result": "instance.traversal_timing table (m060) + traverse_from/interpretive_traverse instrumented with daemon-thread writes; 3 integration tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that the calving threshold is set by observed search time, not an arbitrary row count.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T19:33:23.916844+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-wg-node-tree-architecture-2026-06-08",
+    "description": "The live calving threshold (IGOR_CALVING_THRESHOLD=1000) was set without timing data. The real signal should be search time. Add timing instrumentation to cortex.traverse_from() and traverse_interpretive() — log (tree_name, node_count, search_time_ms) to a new instance.traversal_timing table. After 2 weeks of live data, surface the time-vs-size curve to inform the threshold decision.\n\n**Affected files:** devices/igor/memory/cortex.py (timing wrapper on traverse_from + traverse_interpretive; migration: CREATE TABLE instance.traversal_timing(id SERIAL, tree_name TEXT, node_count INT, search_time_ms REAL, recorded_at TIMESTAMPTZ))\n**Design rules:** no-sqlite; timing overhead < 1% of traversal time; graceful degradation (timing failure never blocks traversal); log at DEBUG level\n**Scope boundary:** IN: timing instrumentation, traversal_timing table. OUT: changing IGOR_CALVING_THRESHOLD (follow-on ticket once data is reviewed)\n**Completion criteria:** After 100 traversal calls, SELECT COUNT(*) FROM instance.traversal_timing > 0; rows show node_count and search_time_ms; a threshold recommendation is filed as a follow-on S ticket within 2 weeks.",
+    "completed_at": "2026-06-08T20:11:48.266624+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

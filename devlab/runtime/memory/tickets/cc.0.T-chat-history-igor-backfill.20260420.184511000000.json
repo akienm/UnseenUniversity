@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-chat-history-igor-backfill.20260420.184511000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-chat-history-igor-backfill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:11",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-palace-source-of-truth-2026-04-20"
+    ],
+    "tickets": [
+      "T-chat-history-igor-backfill",
+      "T-export-chat-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-chat-history-igor-backfill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "ChatLogs",
+      "Backfill",
+      "Background"
+    ],
+    "title": "Igor background job: convert older chat logs into /home/akien/TheIgors/claude_chat_logs/",
+    "result": "Registered StaleChatLogBackfiller push source to run export_chat.py --all hourly as background job",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-20T19:04:06.099096+00:00",
+    "created_at": "2026-04-20T18:45:11Z",
+    "related_to": null,
+    "decision_id": "D-palace-source-of-truth-2026-04-20",
+    "description": "Akien 2026-04-20: 'we should do a background job in igor to convert all the older stuff too if we have it?'\n\n## Source discovery\nScan: ~/.claude/projects/-home-akien-TheIgors/*.jsonl — every CC session transcript Claude has cached. These are dated by file mtime; newer sessions are the ones that would already be in /export-chat output.\n\n## Conversion\nFor each transcript file:\n- Derive date (from mtime or first message ts)\n- Render the same way /export-chat does\n- If claude_chat_logs/YYYYMMDD.md already exists, append a separator and the new content (don't overwrite)\n- Skip transcripts already present (idempotent)\n\n## Runs as Igor background source\nSlot into push_sources.py, run at low priority during idle. Rate-limited so it doesn't flood /home/akien/TheIgors/claude_chat_logs/.\n\n## Not in scope\n- Indexing the chat logs into the graph — that's a bigger project\n- Cross-machine transcripts (akiendell/yoga9i/yogai7) — future if needed\n\n## Blocked by\n- T-export-chat-skill (shares the render logic)\n\n## ONE-SHOT BACKFILL DONE 2026-04-20 (CC, during day-close)\n\nRan export_chat.py --all once at day-close. 94 CC transcripts in ~/.claude/projects/-home-akien-TheIgors/ rendered to 23 dated files in claude_chat_logs/ (29MB total). Dir is gitignored — these files live as local recovery state, not source.\n\n## Remaining scope = ongoing Igor background task only\n\nThis ticket narrows to the Igor-side part: register as a background push source (lab/claudecode/push_sources.py or equivalent) that runs export_chat.py --all at low priority during idle. Rate-limited to once per hour or once per idle-tick. Because --all is idempotent (appends with separator), running it repeatedly is safe — it only picks up newly-finished transcripts.\n\nNote: one-shot made 2026-04-20.md redundant with the earlier /export-chat test run (same session content appears twice in that file with a separator). Minor polish follow-up if it matters: change --all behavior to write the union-per-day rather than simple append.",
+    "completed_at": "2026-04-20T19:05:30.383055+00:00",
+    "github_issue": 498,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8c0811c7-7252-4dbc-9750-dd1b24bc3815",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

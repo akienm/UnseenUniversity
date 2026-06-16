@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-programming-engrams-layer4.20260403.185033545392",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-programming-engrams-layer4"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T18:50:33.545392",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-programming-engrams-layer4"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-programming-engrams-layer4",
+    "epic": "Training",
+    "size": "L",
+    "title": "Programming engrams layer 4 — sketch + seed templates to live DB",
+    "result": "5 layer 4 TEMPLATE nodes seeded (READ_CODEBASE, WRITE_TEST, RUN_BASH, PATCH_FILE, VERIFY_RESULT). All 8 layer 3 nodes also seeded to live DB. pe_run_bash() added to pe_chain.py. 133 new tests, 1602 total passing.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-03T18:36:22.040987+00:00",
+    "related_to": null,
+    "description": "Layer 3 stdlib (8 TEMPLATE nodes: PARSE_GOAL, SITUATE, DECOMPOSE, CONSTRAIN, OBSERVE, HYPOTHESIZE, REPLAN, SCOPE_CHECK) is done. Layer 4: design the concrete programming-task templates that compose layer 3 bricks — e.g. READ_CODEBASE, WRITE_TEST, RUN_BASH, PATCH_FILE, VERIFY_RESULT. Sketch the layer 4 basket contracts, seed TEMPLATE nodes to live DB, write tests.",
+    "completed_at": "2026-04-03T18:50:33.545392+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fe43cfb2-0a66-48cb-ac77-cdc451673002",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

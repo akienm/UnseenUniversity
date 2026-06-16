@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-uc-base-class.20260411.005012000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-base-class"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-11T00:50:12",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-base-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-base-class",
+    "size": "L",
+    "title": "D335: Extract Igor base class into utility closet substrate",
+    "result": "Superseded by T-uc-base-class-extract (completed 2026-04-17). AgentBase extracted, IgorBase thin subclass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "created_at": "2026-04-11T00:50:12Z",
+    "related_to": null,
+    "description": "Move IgorBase (logging, diagnostics, forensic logger) from wild_igor into the utility closet. Igor imports from there. External tools built on same substrate get logging for free. Enables: diagnostics available when Igor crashes, shared logging substrate for all agentic tools (copilot, minions, etc).",
+    "completed_at": "2026-04-17T19:56:54.567299+00:00",
+    "github_issue": 402,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "91c289f3-580e-460d-924a-fdbc7278815f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

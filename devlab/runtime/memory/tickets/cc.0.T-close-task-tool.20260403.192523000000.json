@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-close-task-tool.20260403.192523000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-close-task-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:23",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-close-task-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-close-task-tool",
+    "tags": [
+      "Cognition",
+      "Operations"
+    ],
+    "title": "close_task_by_name tool — proper fix for task-closure habit",
+    "result": "close_task_by_name() built in ops.py — phrase extraction, exact+semantic search, status=closed on match. Habit 20260310192223347663 updated cognitive→tool with code_ref=tools.ops:close_task_by_name.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-05T00:19:14.509055+00:00",
+    "created_at": "2026-04-03T19:25:23Z",
+    "description": "Build close_task_by_name(text: str) tool: extract task name from text, search cortex for matching episodic/task memories, update metadata status=closed. Convert memory 20260310192223347663 habit_type from cognitive to tool, add code_ref=tools.close_task:close_task_by_name. Fixes HABIT_FALLTHROUGH on threading-shaky cognitive dispatch. response_template fallback already added as interim.",
+    "completed_at": "2026-04-05T00:20:51.590480+00:00",
+    "github_issue": 345,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "af16e805-98a0-4fa6-b6cf-6c08144abb57",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

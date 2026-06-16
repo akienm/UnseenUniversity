@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-engram-logging-primitive.20260504.233233858381",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-logging-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T23:32:33.858381",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engram-logging-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-logging-primitive",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Engrams",
+      "Logging",
+      "Debug"
+    ],
+    "title": "CLOSED: Logging primitive for engram execution",
+    "result": "engram_log + engram_execution_context; wired push_sources×2 + main.py; 4 tests; commit d1159fc5",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-04T23:14:05.384058+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Engrams (procedural memories / habits) currently execute as black boxes — no log output during execution. This means stepping through cognition or auditing habit behavior has no instrumentation at the engram level. When stepping catches a missing data point, there's no way to add a log call from inside an engram's code_ref.\n\nAdd a log primitive callable from inside engram execution:\n- `engram_log(message, level='info')` — emits a line to pe_chain.log (or a dedicated engram.log) tagged with the engram id and execution context\n- Available in the engram execution environment (wherever code_ref functions run)\n- Captured in turn_trace so /cognition-debug stepping can show engram log lines alongside phase outputs\n\n**Affected files:** wild_igor/igor/cognition/pe_chain.py or wherever code_ref is invoked, wild_igor/igor/tools/registry.py (expose engram_log to registered tools)\n**Design rules:** docs-in-code. logging-as-debug-base (feedback rule: log what would have pointed at the bug immediately).\n**Scope boundary:** IN: engram_log primitive + wiring into execution context + turn_trace capture. OUT: adding log calls to existing engrams (that's a follow-on pass), modifying the engram schema.\n**Test plan:** register a test engram with an engram_log() call; fire it; verify the log line appears in pe_chain.log and in the turn_trace for that execution.",
+    "completed_at": "2026-05-04T23:32:33.858381+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "19b981ea-df22-4ddb-baf4-2fa4724c6a0e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

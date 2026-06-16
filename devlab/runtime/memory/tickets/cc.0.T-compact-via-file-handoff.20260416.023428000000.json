@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-compact-via-file-handoff.20260416.023428000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-compact-via-file-handoff"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T02:34:28",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-compact-via-file-handoff"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-compact-via-file-handoff",
+    "body": "Follow-up from T-compact-via-tmux-bug (#463) partial fix. The short-term fix added defensive validation but the root cause remains: calling tmux send-keys from WITHIN CC's response path fails because CC's TUI is streaming output and drops input keystrokes.\n\n## The real fix\n\n1. When mcp__igor__request_compaction is called, write the preserve string to a well-known file path (e.g. ~/.TheIgors/claudecode/pending_compact.txt)\n2. Add a UserPromptSubmit hook on the CC side (in ~/.claude/settings.json or similar) that runs at the start of the next user turn\n3. The hook checks for the pending_compact file; if present, it (a) reads the preserve string, (b) deletes the file, (c) triggers /compact with the preserve text\n4. Because UserPromptSubmit fires at the start of a new turn, CC is GUARANTEED to be idle — the keystrokes can't be dropped\n\n## Why this works\n\nThe tmux send-keys approach fights CC's state machine. The hook approach cooperates with it: we just stash the intent, and CC picks it up at the next moment it's ready. Same moment human Akien would type /compact himself.\n\n## Scope\n\n1. Update igor_mcp._request_compaction to write the preserve file instead of (or in addition to) sending keys\n2. Write the hook script — bash or Python, reads pending_compact, emits /compact command via CC's hook command-execution mechanism\n3. Document how to wire the hook into .claude/settings.json\n4. Decide: fall back to send-keys as a secondary path if no hook is configured? Or hook-only?\n5. Test the file-write path + hook triggering in isolation (hook can be tested by simulating a turn start)\n6. Update /savestate skill to document the new mechanism\n\n## Out of scope\n\n- Cross-machine compaction (assumes CC runs on the same host as igor_mcp)\n- Multi-session arbitration (if multiple CC windows, which one gets the pending compact?)\n\n## Dependencies\n\nNone — the short-term fix is already in place, this is the robust successor.\n\n## Provenance\n\nDiagnosis from T-compact-via-tmux-bug sprint 2026-04-15. Root cause identified during investigation: send-keys during CC streaming gets dropped by the TUI.",
+    "size": "M",
+    "tags": [
+      "mcp",
+      "savestate",
+      "hook",
+      "tmux",
+      "robustness"
+    ],
+    "title": "Robust compact: write preserve to file, UserPromptSubmit hook triggers /compact next turn",
+    "result": "File-based handoff: write_compact_pending → cc_compact_pending.txt → hook reads on next turn → injects compact instruction. Fires exactly once. request_compaction tries file first, tmux fallback. 7 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:48:49.880956+00:00",
+    "created_at": "2026-04-16T02:34:28Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T19:51:04.397369+00:00",
+    "github_issue": 464,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

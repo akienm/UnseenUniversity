@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-constraint-normalizer-agent.20260614.001802637251",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-constraint-normalizer-agent"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T00:18:02.637251",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-storage-layer-formalization-2026-06-14"
+    ],
+    "tickets": [
+      "T-constraint-normalizer-agent",
+      "T-devlab-schema-create"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-constraint-normalizer-agent",
+    "gate": "gates on T-devlab-schema-create (devlab schema must exist before constraints table is written)",
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "CompiledInference",
+      "Factory"
+    ],
+    "title": "Constraint normalizer: unify design rules + completion criteria into queryable schema",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "priority": 0.25,
+    "intention": "I intend that constraints from palace rules, design rules, safeguards, and completion criteria are normalized into a single schema other agents can reason against without re-parsing prose.",
+    "created_at": "2026-06-14T00:18:02.637251+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-storage-layer-formalization-2026-06-14",
+    "description": "Currently constraints live in multiple places in different formats: palace rules (prose), ticket design rules (field), completion criteria (field), safeguards (palace node), CLAUDE.md hard rules. No agent can reason uniformly across all of them.\n\nA constraint normalizer agent ingests all constraint sources and produces a uniform schema (e.g. {id, source, constraint_text, domain, severity}). Downstream agents (judge, scenario generator) query this schema rather than knowing about all the sources.\n\nThis is the load-bearing missing piece between IBD ticket intentions and compiled-inference test generation. Observed in working form at a parallel project (test automation context).\n\n**Affected files:** TBD — new agent, likely devices/hubert/ or new devices/normalizer/\n**Design rules:** external-state (schema persisted, not in-memory)\n**Scope boundary:** IN — ingest + normalize constraints into schema. OUT — using the schema (that's judge + scenario-generator tickets).\n**Completion criteria:** Constraint normalizer produces a queryable list from at least 3 sources (palace rules, ticket completion criteria, safeguards); downstream query returns matching constraints by domain/severity.",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

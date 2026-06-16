@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-typed-silent-except-audit.20260415.030241000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-typed-silent-except-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T03:02:41",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-typed-silent-except-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-typed-silent-except-audit",
+    "body": "Surfaced by /day-close audit 2026-04-14. The audit's inline AST scan found 109 sites with the pattern `except SomeError: pass` (typed except with bare-pass body). These are NOT the same as bare `except: pass` (which the registered audit check no-bare-except-pass already covers — only 2 hits, both in vendored ebook_drm/ code). Typed silent-excepts are a separate noise class.\n\n## Why it matters\n\nA `except SomeError: pass` block silently swallows a specific exception. Sometimes legitimate (e.g. 'this specific error is harmless and we don't care' for a known optional dependency, a graceful-degradation path that already logged elsewhere, etc.). Often lazy — a developer suppressed an annoying error without thinking through the consequences.\n\n109 such sites is too many for inline review during day-close. Per the delegate-research-to-igor rule, this is an Igor inventory task.\n\n## Step 1 — Igor categorization (delegated)\n\nIgor walks the 109 sites and classifies each into:\n- **LEGITIMATE** — the swallow is correct. Annotate WHY (e.g. 'optional dep import', 'best-effort logging side-channel', 'expected race').\n- **NEEDS_LOG** — the swallow is OK but should add `log_error(...)` or `logger.warning(...)` so the silenced failure is observable.\n- **NEEDS_HANDLE** — the swallow is wrong. The exception should be handled, not suppressed.\n- **DELETE** — the swallow is dead code or vestigial.\n\nReports per-file structured findings.\n\n## Step 2 — CC sprint based on Igor's findings\n\n- LEGITIMATE: comment with rationale per the explanation Igor provided\n- NEEDS_LOG: add log_error / logger.warning calls\n- NEEDS_HANDLE: rewrite with proper error handling (case-by-case; some may need their own tickets if scope grows)\n- DELETE: remove the dead code\n\nFor each pass, run full test suite to verify no regressions.\n\n## Step 3 — Prevent reintroduction\n\nOnce the count drops to a known-good baseline (legitimate-only), register an audit_add forever check that flags increases above that baseline.\n\n## Existing data\n\nThe full list of 109 sites is in:\n  ~/.TheIgors/claudecode/logs/20260414.code_maintenance_reviews.log\n  Section: 'Step 3: Code smell scan'\n\n## Out of scope\n\n- Bare except: pass — already handled by the no-bare-except-pass registered audit check\n- Vendored DRM code (ebook_drm/) — exempted by the existing audit_check_bare_except.py helper\n- Architectural changes to error handling philosophy\n\n## Provenance\n\n/day-close audit 2026-04-14. CC will not fix inline because 109 sites is too much for a day-close window and many require judgment. Igor inventory + CC sprint per Igor findings.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "cleanup",
+      "audit",
+      "igor-inventory",
+      "found-by-audit"
+    ],
+    "title": "Audit + reduce 109 typed-silent-except sites in wild_igor/igor/",
+    "result": "98 typed-silent-except sites replaced with log_error(SILENT_EXCEPT) across 37 files. Skipped ebook_drm (third-party). Fixed import paths for cognition/dashboard/network packages.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:30:31.980049+00:00",
+    "created_at": "2026-04-15T03:02:41Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T19:43:17.513354+00:00",
+    "github_issue": 457,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-pe-chain-preflight-timeout-misdiagnosis.20260424.185823981415",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-preflight-timeout-misdiagnosis"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T18:58:23.981415",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-pe-chain-preflight-timeout-misdiagnosis",
+      "T-pe-chain-via-uc-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-preflight-timeout-misdiagnosis",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "pe_chain",
+      "Tests",
+      "IgorCompletesOne"
+    ],
+    "title": "pe_chain preflight times out on full suite + misreads timeout as test failure",
+    "result": "ops.run_tests + pe_test fallback: timeout 120s→300s. ops.run_tests returns '[run_tests] timeout' distinct from '[run_tests] error' on TimeoutExpired. pe_chain pre-flight classifies timeout marker as stuck_reason='preflight_timeout' with different consult summary, keeping the existing preflight_unrelated branch for actually-red suites. 15 tests pass (4 run_tests_tool incl. new timeout test, 11 pe_chain_consult incl. new regression guard). Full suite: 3958 pass + 30 skip in 208s. Commit 523f6d5d.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.95,
+    "claimed_at": "2026-04-24T18:56:19.366658+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "pe_chain's pre-flight step runs `pytest tests/ -x -q` via ops.run_tests() with a 120s subprocess timeout. The suite has 3988 tests — cannot complete in 120s even with -x on a green suite. `subprocess.run(..., timeout=120)` raises TimeoutExpired, which is caught by the broad `except Exception` at ops.py:1242 and returned as `[run_tests] error: <exception>`. pe_chain sees a non-'pass' return, classifies it as preflight fail, and escalates with 'test suite already broken' — which is misleading: the tests aren't broken, they just can't complete.\n\nEvidence: Igor's consult log all afternoon — every ~6 min a consult fires with summary 'pre-flight blocked (no recognizer) for T-pe-chain-via-uc-proxy'. Consult hypothesis (Haiku): 'The pre-flight test suite itself has an unrelated hang/infinite loop, blocking all work' — correct that it's not ticket-related, wrong about the cause. The Haiku is being asked why tests are red when they aren't red; they're timing out. This is the ACTUAL root blocker for Igor-completes-one today.\n\nFix options (pick one in the sprint):\n(a) Raise the subprocess timeout to 300s+ in ops.run_tests and pe_test fallback.\n(b) Run a smaller/faster test subset as preflight (SITUATE-relevant files only).\n(c) Distinguish TimeoutExpired from a test-fail return and surface 'preflight timeout' as a separate stuck_reason — Igor's consult and reply should say 'tests didn't finish in time' not 'tests broken'.\n\nPreference: (a)+(c) — raise timeout to 300s AND distinguish the signals. (b) is bigger scope, file separately if wanted.\n\n**Affected files:** wild_igor/igor/tools/ops.py:1224 (run_tests), wild_igor/igor/tools/pe_chain.py:1805 (pe_test + preflight hook at ~2417), tests/test_ops_run_tests.py (new or existing).\n**Design rules:** test-plan-or-why-not, docs-in-code.\n**Scope boundary:** IN — timeout raise + TimeoutExpired surfacing. OUT — building a smaller-subset preflight (separate ticket), adding progress reporting.\n**Test plan:** unit test for ops.run_tests that mocks subprocess to raise TimeoutExpired and asserts the return string includes 'timeout' distinctly. Unit test for pe_chain's pre-flight classification that treats a timeout signal as stuck_reason='preflight_timeout' not 'preflight_unrelated'.",
+    "completed_at": "2026-04-24T18:58:23.981415+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "374ecb76-eccd-4e48-ab57-cc65fa536409",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

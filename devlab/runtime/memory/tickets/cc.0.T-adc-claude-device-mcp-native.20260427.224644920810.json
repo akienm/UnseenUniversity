@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-adc-claude-device-mcp-native.20260427.224644920810",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-claude-device-mcp-native"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:46:44.920810",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-3-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-claude-device-mcp-native",
+      "T-adc-claude-mailbox-naming-lock",
+      "T-adc-imap-server-embedded",
+      "T-adc-ygm-nudge-pipeline",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-claude-device-mcp-native",
+    "gate": "T-adc-imap-server-embedded",
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: Claude device — MCP-native registration, CC.0 and CC.N mailboxes",
+    "result": "ClaudeDevice + ClaudeShim + ygm_check.py shipped; UserPromptSubmit hook + JSONL fallback",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-3-2026-04-27",
+    "description": "Register Claude as a rack device via MCP natively. Claude's device is unique: it registers through the MCP connection, not via subprocess.\n\nProposed shape:\n- agent_datacenter/devices/claude/device.py:\n  class ClaudeDevice(BaseDevice):\n    who_am_i() → {'name': 'claude', 'mailbox': current_mailbox(), 'session': session_id_or_global}\n    capabilities() → {'ygm': True, 'stop': True, 'nudge': True, 'read_write': True}\n    comms() → {'nudge': True} — only device with Nudge flag\n    health() → {'mcp_connected': bool, 'mailbox': mailbox_name, 'unseen_count': int}\n    Mailboxes: CC.0 (global) + CC.{session_id} if CLAUDE_SESSION_ID is set\n    Uses constants from devices/claude/constants.py (T-adc-claude-mailbox-naming-lock)\n    Registration: Claude registers itself on session start by calling rack.register (via MCP)\n    Shim: ClaudeShim handles the MCP handshake; 'restart' for Claude = re-establish MCP session\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/claude/device.py\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/claude/shim.py\n\nDesign rules:\n- oop-first: ClaudeDevice class; capabilities() explicitly marks Nudge=True\n- docs-in-code: module docstring explains why Claude is the only Nudge device (query pipeline hook)\n\nScope boundary:\nIN: ClaudeDevice + ClaudeShim, mailbox registration via MCP, CC.0 + CC.N naming\nOUT: YGM pipeline implementation (T-adc-ygm-nudge-pipeline), session scoping details (handled by constants.py)\n\nTest plan:\n- ClaudeDevice() instantiates (all abstract methods implemented)\n- capabilities()['nudge'] == True\n- health() returns mailbox name = CC.0 when CLAUDE_SESSION_ID not set\n- health() returns mailbox name = CC.{id} when CLAUDE_SESSION_ID is set\n- ClaudeDevice registers on Skeleton; appears in rack.devices()",
+    "completed_at": "2026-04-27T22:46:44.920810+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7d672830-8e69-423d-85d6-6fc7f9b67713",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

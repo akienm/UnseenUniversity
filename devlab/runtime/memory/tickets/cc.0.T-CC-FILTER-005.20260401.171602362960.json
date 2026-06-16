@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-CC-FILTER-005.20260401.171602362960",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-CC-FILTER-005"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T17:16:02.362960",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-CC-FILTER-005"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-CC-FILTER-005",
+    "title": "Wire /filter into L-ticket flow",
+    "result": "Wired /filter into L-ticket flow in sprint skill. Filter runs before plan is posted to channel; blocking failures stop execution. Result logged to worker_daemon.log. Both cc_skills (repo) and ~/.claude/skills (live) updated.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "p2",
+    "claimed_at": "2026-04-01T17:14:38.049614+00:00",
+    "description": "Automatically run /filter on L-ticket plans before human approval gate in worker_daemon",
+    "completed_at": "2026-04-01T17:16:02.362960+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b09acd77-6a65-4890-a735-8c4361e97710",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-logs-to-markdown.20260531.021953133721",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-logs-to-markdown"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T02:19:53.133721",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-logs-to-markdown"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-logs-to-markdown",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure"
+    ],
+    "title": "Convert Igor human-readable logs from .log/.txt to .md",
+    "result": "forensic_logger writes narrative_turn.YYYYMMDD.md with # header; existing .log migrated to .md; 5 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.0,
+    "claimed_at": "2026-06-01T23:57:25.303901+00:00",
+    "created_at": "2026-05-31T02:19:53.133721+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "CC's session logs are .md files, Igor's are .log or .txt. Kate handles .md files consistently and can't parse the other formats. Convert Igor's human-readable output logs to .md so the same log-viewing tooling works for both agents.\n\n**Affected files:** devices/igor/logging.py (or wherever Igor writes readable logs), TheIgorsProject/akien/Readings directory structure\n**Design rules:** none apply\n**Scope boundary:** In scope: identify Igor's readable log locations, convert format to .md, ensure header/body structure matches CC's pattern. Out of scope: changing where Igor writes logs, changing log content.\n**Completion criteria:** (1) Igor's next session writes to .md file. (2) Kate can view it with the same tooling as CC logs. (3) Old .log/.txt files migrated or marked as archive.",
+    "completed_at": "2026-06-02T00:02:02.671856+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T23:57:25.303901+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-31T02:19:53.676881+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8fc8056b-012c-4200-9342-0edac703e498",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

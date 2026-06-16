@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-engram-mcpcall-register-pe-steps.20260421.164305998506",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-mcpcall-register-pe-steps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T16:43:05.998506",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-worker-mode-routing-2026-04-21"
+    ],
+    "tickets": [
+      "T-engram-mcpcall-register-pe-steps",
+      "T-engram-trigger-cell-name-mismatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-mcpcall-register-pe-steps",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Engrams",
+      "pe_chain",
+      "MCP",
+      "Dead-code"
+    ],
+    "title": "Register pe_* per-step functions as MCPCALL tools",
+    "result": "12 per-step pe_* functions registered as MCPCALL tools; registration tests added",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-04-21T16:27:37.406672+00:00",
+    "related_to": null,
+    "decision_id": "D-worker-mode-routing-2026-04-21",
+    "description": "ENGRAM_CODE_* payloads MCPCALL the per-step pe_* functions (pe_entry_init, pe_claim, pe_read_ticket, pe_plan, pe_filter, pe_situate, pe_observe, pe_hypothesize, pe_implement, pe_test, pe_probe, pe_close_loop). These functions exist in pe_chain.py but are NOT registered as tools via registry.register — only the high-level wrappers (run_pe_chain, run_pe_plan, run_pe_filter, run_pe_probe) are registered (pe_chain.py:2076-2145). So even after T-engram-trigger-cell-name-mismatch lands, MCPCALL pe_entry_init hits the unknown-tool branch (node_executor.py:387-396) silently. Fix: add registry.register calls for each of the 12 per-step pe_* functions. Each registration needs name, description (one-liner from function docstring), parameters schema (derive from signature), and fn lambda. Scope: pe_chain.py registrations only. Does not change per-step function signatures. Does not touch node_executor. Test plan: after registration, run a dry MCPCALL on each of the 12 steps, assert no 'unknown tool' warnings. Then T-engram-trigger-cell-name-mismatch's integration test can validate the full chain end-to-end.",
+    "completed_at": "2026-04-21T16:43:05.998506+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c2ced9e9-faf1-41ff-a33e-d46d9313c389",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

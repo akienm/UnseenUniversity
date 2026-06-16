@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-uu-cli-script-naming-clarify.20260605.180529456674",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-cli-script-naming-clarify"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T18:05:29.456674",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-cli-script-naming-clarify",
+      "T-uu-cli-ticket-views"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-cli-script-naming-clarify",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Documentation",
+      "UX"
+    ],
+    "title": "CLI scripts are named uumytickets/uuopentickets — not mytickets",
+    "result": "aliases mytickets/opentickets added to ~/.bashrc; resolve to uumytickets/uuopentickets in interactive shells",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that the ticket-view CLI commands work under intuitive short names.",
+    "created_at": "2026-06-05T18:05:29.456674+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The scripts created in T-uu-cli-ticket-views are named `uumytickets` and `uuopentickets` (not `mytickets`/`opentickets`). User tried `mytickets` which doesn't exist.\n\nOptions:\n1. Create shell aliases: `alias mytickets=uumytickets && alias opentickets=uuopentickets`\n2. Rename the scripts to drop the 'uu' prefix (shorter)\n3. Document the correct names in a README or shell init snippet\n\nUser requested the 'uu' prefix ('they're on the path') so option 1 (aliases in ~/.bashrc or ~/.zshrc) is probably the right call.\n\n**Affected files:** ~/bin/uumytickets, ~/bin/uuopentickets, ~/.bashrc or ~/.zshrc (for aliases)\n**Design rules:** CLI usability — names should be memorable and match what the user expects\n**Scope boundary:** Add aliases so both `mytickets` and `uumytickets` work; verify from a fresh shell\n**Completion criteria:** Both `mytickets` and `opentickets` commands work; `which mytickets` points to the script; aliased from ~/.bashrc/.zshrc",
+    "completed_at": "2026-06-05T21:47:11.424791+00:00",
+    "deposited_at": "2026-06-05T12:08:29.614565",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-experiment-predictor-primitive.20260415.204535823932",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-predictor-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T20:45:35.823932",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-predictor-primitive",
+      "T-substrate-experiment-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-predictor-primitive",
+    "body": "Sub-ticket of T-substrate-experiment-cascade. Each cascade level needs a cheap predictor that answers 'given this situation, is my actor likely to succeed here?' The predictor lets the walker skip levels that know they'll miss, which is the compounding efficiency story for the shrinkage roadmap.\n\n## Why this matters\n\nWithout predictors, the cascade walker always tries every level in order. That works but doesn't compound. With predictors, level 2 can learn 'situations with these tokens have never matched at level 0, skip it' and short-circuit directly. Moves start MIGRATING DOWNWARD through the cascade as higher levels train lower levels' predictors.\n\nThis is the biomimetic shrinkage story at the cascade level. Biology: cerebellar forward models are predictors for motor commands. BG striatum is a predictor for reward. Every level in the predictive coding hierarchy has its own predictor. When the predictor says 'I don't see how to reduce error here' the level defers upward.\n\n## Scope\n\n1. `CascadeLevel.predict(situation) -> float` — confidence that this level's actor can match (0.0-1.0)\n2. Simple initial predictors: token-overlap with matched history, recency-weighted hit rate per situation shape\n3. `training_feedback(situation, matched: bool)` updates the predictor via Hebbian reinforcement\n4. Graduation tracking: per-level hit rate over last N walks, surfaces in audit\n5. Predictor agreement measurement: compare predictor's prediction to actual outcome, log mismatches as learning signal\n\n## Start dumb, let it learn\n\nThe predictor starts at 0.5 (maximally uncertain). Every walk updates it. Over time it biases. The update rule is Hebbian: matched level's predictor strengthens on its probe signature; missed level's predictor weakens on that signature.\n\n## Out of scope\n\n- Neural-network predictors (stays rule-based for MVP; can escalate to learned models later)\n- Cross-level predictor interaction (each level predicts independently)\n- Dynamic level reordering (walker order stays fixed; predictors just skip)\n\n## Tests\n\n- Predictor starts at 0.5 for novel situations\n- Repeated match on a signature pulls predictor above 0.5 for that signature\n- Repeated miss pulls it below\n- Walker skips levels whose predictor is below skip threshold\n- Graduation counter accumulates correctly\n\n## Depends on\n\nT-substrate-experiment-cascade (the walker must exist to consume predictors)",
+    "deps": [
+      "T-substrate-experiment-cascade"
+    ],
+    "size": "S",
+    "tags": [
+      "cognition",
+      "epic-child",
+      "cascade",
+      "hebbian",
+      "prediction",
+      "graduation"
+    ],
+    "title": "Per-level predictor — 'do I think I can handle this?' for each cascade level",
+    "result": "SignaturePredictor + BaseCascadeLevel + walker skip gate with floor rule. Hebbian per-signature tracking. 30 new tests + graduation simulation showing Level 0 skipping after consistent misses. 2448 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T20:35:53.077250+00:00",
+    "related_to": "T-substrate-experiment-cascade",
+    "completed_at": "2026-04-15T20:45:35.823932+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

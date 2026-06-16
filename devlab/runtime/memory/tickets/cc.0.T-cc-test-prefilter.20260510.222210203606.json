@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-test-prefilter.20260510.222210203606",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-test-prefilter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:10.203606",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-session-hygiene-2026-05-10"
+    ],
+    "tickets": [
+      "T-cc-test-prefilter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-test-prefilter",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "CC"
+    ],
+    "title": "CLOSED: sprint-ticket: pre-filter pytest output before Claude ingests it",
+    "result": "grep -A5 FAIL|ERROR|assert|Exception | head 120 replaces tail -20 in sprint-ticket step 8; synced to skills/ repo (45c9f16)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-05-10T22:23:53.988790+00:00",
+    "created_at": "2026-05-10T22:22:10.203606+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-session-hygiene-2026-05-10",
+    "description": "Update sprint-ticket Step 8 (test) to pre-filter pytest output: `python -m pytest tests/ -x -q 2>&1 | grep -A 5 -E 'FAIL|ERROR|assert|Exception' | head -120 || true`. Replace the current `| tail -20`. The grep pattern captures failure-relevant lines + 5 lines after each match for traceback context. When the suite passes cleanly, grep returns nothing — that's the pass signal. Add `|| true` to prevent false failure when grep matches nothing.\n\n**Affected files:** `/home/akien/.claude/skills/sprint-ticket` (Step 8 test command)\n**Design rules:** `|| true` prevents pipeline false-failure on clean pass; grep -A 5 captures enough traceback context; head -120 caps output if many failures\n**Scope boundary:** IN — sprint-ticket Step 8 command only. OUT — no test suite changes, no other skills.\n**Test plan:** known-failing test: grep captures failure + traceback; passing suite: empty output (pass signal); no functional regression on existing sprint flow",
+    "completed_at": "2026-05-10T22:26:43.323616+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "15d17a02-a1d7-4c5e-93b7-cc228f13f5e2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

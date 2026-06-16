@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-main-logger-hierarchy.20260423.165159975401",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-main-logger-hierarchy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T16:51:59.975401",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-reply-coherence-inhibitor-fix-2026-04-23"
+    ],
+    "tickets": [
+      "T-main-logger-hierarchy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-main-logger-hierarchy",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "BugFix",
+      "Logging",
+      "Observability"
+    ],
+    "title": "Fix: main.py uses wrong logger name — diagnostics silently discarded",
+    "result": "5 getLogger(__name__) → getLogger('igor.main'). b9688b6b.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-23T16:49:49.218348+00:00",
+    "related_to": null,
+    "decision_id": "D-web-reply-coherence-inhibitor-fix-2026-04-23",
+    "description": "main.py uses `_logging.getLogger(__name__)` where __name__=wild_igor.igor.main. logging_setup.py only registers handlers for the igor.* hierarchy (cognition.log, tools.log, etc). wild_igor.igor.main is outside this hierarchy → all INFO/WARNING from main.py's inline diagnostic log calls (web_server.send attempt, bare-ack suppressed, web-source turn produced empty response, etc.) are silently discarded.\n\nFix: change all `_logging.getLogger(__name__)` in main.py to `logging.getLogger('igor.main')` so they route to master.log (WARNING+) and console (INFO+).\n\n**Affected files:** wild_igor/igor/main.py (3 getLogger(__name__) call sites)\n**Design rules:** docs-in-code, test-plan-or-why-not\n**Scope boundary:** IN — fix logger name at 3 inline call sites (lines 8024, 8030, 8041, 8057). OUT — logging_setup.py changes, other logger name issues elsewhere.\n**Test plan:** grep confirms no remaining `_logging.getLogger(__name__)` in main.py's web-reply path; manual trace confirms 'web_server.send attempt' would now appear in cognition.log or master.log.",
+    "completed_at": "2026-04-23T16:51:59.975401+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cc08fc54-fe95-44ff-8f77-a9a12a39d5db",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

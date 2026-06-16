@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-routing-gateway-wiring.20260323.155443462992",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-routing-gateway-wiring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T15:54:43.462992",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-routing-gateway-wiring"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-routing-gateway-wiring",
+    "size": "M",
+    "notes": "Update _local_preferred(), _cloud_preferred(), reason() to use is_user_turn, research_mode, cloud_funded, complexity. Local-first default. Cloud only when flags say so AND cloud_funded. D211.",
+    "title": "inference_gateway: wire new InferenceContext flags into DAG routing",
+    "result": "DAG edge conditions (_local_preferred/_cloud_preferred/_cloud_ok) already consume D211 InferenceContext fields. All call sites verified correct. boot_check.py bad import (igor.paths → .paths) fixed — was crashing Igor on boot.",
+    "status": "done",
+    "priority": 2,
+    "completed_at": "2026-03-23T15:54:43.462992+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-palace-cli.20260508.212315258115",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-cli"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T21:23:15.258115",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-db-review-tools-2026-05-08"
+    ],
+    "tickets": [
+      "T-librarian-palace-mcp-tools",
+      "T-palace-cli"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-cli",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Palace",
+      "CLI",
+      "AgentDatacenter"
+    ],
+    "title": "CLOSED: palace_cli.py — ls/read/search/edit/delete subcommands",
+    "result": "palace_cli.py with ls/read/search/edit/delete; 20 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-08T21:27:53.116049+00:00",
+    "created_at": "2026-05-08T21:23:15.258115+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-db-review-tools-2026-05-08",
+    "description": "Build scripts/palace_cli.py with subcommands: ls [prefix] (indented tree view); read <path> (full node); search <query> [--tag TAG] [--limit N]; edit <path> [--content TEXT] [--title TEXT] (upsert); delete <path> [--yes] (with confirmation). Human-readable by default; --json flag for scripting. Reuses palace_tools.py functions from T-librarian-palace-mcp-tools.\n\n**Affected files:** scripts/palace_cli.py (new)\n**Design rules:** palace DB always; no SQLite; delete requires --yes or interactive y/n\n**Scope boundary:** IN: ls/read/search/edit/delete for adc.palace nodes. OUT: flat table browser (psql covers that), bulk export, multi-user locking.\n**Test plan:** ls returns nodes under a prefix; read returns full content; search matches known content; edit upserts and read confirms; delete with --yes removes node.",
+    "completed_at": "2026-05-08T21:29:39.083600+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "97462041-64f1-4fa9-96c1-ea1701c2448a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

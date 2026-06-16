@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-scraps-embed-rack-tool.20260608.193323915930",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scraps-embed-rack-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T19:33:23.915930",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wg-node-tree-architecture-2026-06-08"
+    ],
+    "tickets": [
+      "T-scraps-embed-rack-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scraps-embed-rack-tool",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Scraps",
+      "Embedding",
+      "Architecture"
+    ],
+    "title": "Expose Scraps embedding_engine as rack MCP tool",
+    "result": "embed_text() on ScrapsDevice + scraps_embed_text MCP tool in librarian registry; hash fallback works without OPENAI_API_KEY; 5 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that any rack device can request text embeddings by calling scraps_embed_text via MCP without knowing the provider.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T19:33:23.915930+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-wg-node-tree-architecture-2026-06-08",
+    "description": "The embedding engine in devices/scraps/embedding_engine.py computes text→vector (OpenAI text-embedding-3-small primary, hash-sha256 fallback) but is not callable as a rack MCP tool. ScrapsDevice is currently only a ticket gatekeeper. Add embed_text(text, model='auto') → {vector, model, dimension} as a ScrapsDevice method exposed via the rack MCP server.\n\n**Affected files:** devices/scraps/scraps_device.py (add embed_text method), devices/scraps/shim.py (expose via MCP handler if needed), devices/scraps/embedding_engine.py (already implements logic — wiring only)\n**Design rules:** OOP-first — add as ScrapsDevice method; no-sqlite; interface logging at every MCP crossing per AR-009\n**Scope boundary:** IN: expose embed_text via rack MCP; fallback works when OPENAI_API_KEY unset. OUT: changing embedding models, batch endpoint, any DB writes (caller owns writes per embedding_engine.py design rule), word graph migration (decoupled)\n**Completion criteria:** mcp__scraps__embed_text(text='hello world') returns dict with vector + model + dimension; test verifies hash-sha256 fallback fires when OPENAI_API_KEY unset; existing scraps_validate_ticket tests still pass.",
+    "completed_at": "2026-06-08T20:01:27.847878+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

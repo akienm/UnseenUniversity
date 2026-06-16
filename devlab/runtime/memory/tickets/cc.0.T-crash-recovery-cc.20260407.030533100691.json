@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-crash-recovery-cc.20260407.030533100691",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-crash-recovery-cc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:05:33.100691",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-crash-recovery-cc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-crash-recovery-cc",
+    "epic": "Operations",
+    "size": "M",
+    "title": "Fatal crash launches Claude Code via superclaude with error context",
+    "result": "Already implemented: D273 (3d68a1bf) — igor.sh captures stderr, invokes claude auto-fixer on unexpected exit. Ticket predates the implementation.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "blocked_at": "2026-04-07T01:54:41.604744+00:00",
+    "claimed_at": "2026-04-07T01:39:42.209124+00:00",
+    "related_to": null,
+    "description": "Currently: fatal exception → log → sys.exit(1) → igor.sh restarts blindly. Wanted: exit code 2 on bug crash → igor.sh reads last_crash.json → invokes superclaude with traceback + context so CC can fix it. Steps: (1) main.py except block writes structured last_crash.json (ts, exception type, traceback, last_intent), exits code 2. (2) igor.sh: exit_code==2 → call superclaude with crash context. Check ~/TheIgors/superclaude for invocation pattern.",
+    "completed_at": "2026-04-07T03:05:33.100691+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a59ea684-7afe-45dc-a7c2-695d3ba47d5f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

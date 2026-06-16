@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-daily-github-discussion.20260403.192332420972",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-daily-github-discussion"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:23:32.420972",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-daily-github-discussion"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-daily-github-discussion",
+    "epic": "Claude",
+    "size": "S",
+    "title": "day-close: create new GitHub Discussion per day",
+    "result": "day-close Step 10 now creates new GitHub Discussion per day (Repo R_kgDORR89gw, category General); slateclose Step 3 updated to post there too",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-03T19:22:51.326179+00:00",
+    "related_to": null,
+    "description": "day-close creates a new GitHub Discussion (not a comment on #62) echoing the day slate — tickets opened/closed, decisions made, notes captured. #62 stays as master plan/roadmap thread.",
+    "completed_at": "2026-04-03T19:23:32.420972+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "41317d2a-0e5c-44ae-9940-0bf2ba8bd6bb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

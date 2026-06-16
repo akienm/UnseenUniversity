@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-homeostatic-setpoints.20260403.171516735412",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-homeostatic-setpoints"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:15:16.735412",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-homeostatic-setpoints"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-homeostatic-setpoints",
+    "title": "Homeostatic setpoints — arousal and valence decay toward resting state, not zero",
+    "result": "Already fully implemented in milieu.py. HOMEOSTATIC_VALENCE_SETPOINT=0.1, HOMEOSTATIC_AROUSAL_SETPOINT=0.05 (env-configurable). Decay formula: s.dim = s.dim * DECAY_DIM + SETPOINT * (1 - DECAY_DIM) — decays toward resting state not zero. Boredom mechanism live.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-03T17:14:50.554810+00:00",
+    "related_to": null,
+    "description": "D277 gap. Biological pattern: the brain has homeostatic setpoints. Cortisol, arousal, mood all have resting states they return to — not zero. Igor implementation: add HOMEOSTATIC_AROUSAL_SETPOINT=0.3 and HOMEOSTATIC_VALENCE_SETPOINT=0.1 to milieu config. In NE._decay_step() (or milieu.tick()), replace pure multiplicative decay: `arousal *= decay` → `arousal = arousal + (setpoint - arousal) * gain`. Same for valence. gain = 1 - decay (so equilibrium = setpoint). Effect: Igor at rest sits at arousal 0.3 (mildly alert) not 0.0 (comatose). Valence drifts toward +0.1 (mild positive affect) not 0 (flat). PROC_BOREDOM_TRIGGER threshold may need recalibration after this change. Files: cognition/milieu.py or narrative_engine.py decay section. Inertia: MEDIUM. Tests: verify arousal converges to setpoint after many ticks.",
+    "completed_at": "2026-04-03T17:15:16.735412+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5ac0a51a-e96a-45c2-9df0-136397e4cde6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

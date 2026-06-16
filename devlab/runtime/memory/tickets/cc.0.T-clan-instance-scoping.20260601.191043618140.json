@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-clan-instance-scoping.20260601.191043618140",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-clan-instance-scoping"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T19:10:43.618140",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-clan-instance-scoping"
+    ],
+    "tickets": [
+      "T-clan-instance-scoping",
+      "T-memory-scope-layers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-clan-instance-scoping",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Clan",
+      "Memory",
+      "Architecture"
+    ],
+    "title": "Clan: global vs. instance-local knowledge scoping",
+    "result": "C-clan-instance-scoping concept node; bus/memory_protocol.py typed schemas; 9 tests; bus-not-DB invariant verified",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "blocked_at": "2026-06-02T02:06:03.568730+00:00",
+    "created_at": "2026-06-01T19:10:43.618140+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Define the boundary between global clan knowledge and instance-local knowledge. A UU instance running someone's legal citation project should not receive our sprint ticket history, and we should not receive their domain patterns — but both instances can benefit from shared universal patterns (how to structure a ticket, common coding idioms, agent bootstrap sequences).\n\nGlobal clan knowledge: universal patterns, agent bootstrap templates, Igor-template baseline memories. Instance-local: our sprint outcomes, our project patterns, our Akien/Leah client data. The clan IS the global layer — joining the clan means sharing global, not local.\n\nAlso defines the inter-agent knowledge request protocol: an agent asking another agent for access to agent-specific data sends a structured bus request; the owning agent approves or denies. This is distinct from the access control model in T-memory-scope-layers (which handles the DB-level isolation).\n\n**Affected files:** TBD — palace concept node (C-clan-instance-scoping); skeleton or bus layer for inter-agent request protocol\n\n**Design rules:** palace-first for concept; bus+shim for protocol; no direct cross-agent DB access\n\n**Scope boundary:** IN — global vs. local boundary definition; clan join protocol; inter-agent knowledge request protocol (bus-native). OUT — actual global DB population; encryption; human-facing access management UI\n\n**Completion criteria:** (1) palace concept node defines global/local/agent/client boundary; (2) inter-agent knowledge request has a typed bus message schema; (3) a test agent requesting Igor's memories gets a bus response, not a direct DB query",
+    "completed_at": "2026-06-05T04:15:16.277852+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T02:04:16.240642+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "50fde5ec-00ee-40aa-bc94-c268ac32a160",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

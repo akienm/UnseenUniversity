@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-pr-retrieval-bias.20260413.203448699168",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-retrieval-bias"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T20:34:48.699168",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-investment-weight-propagation",
+      "T-pr-load-as-primary-attractor",
+      "T-pr-retrieval-bias"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-retrieval-bias",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "cortex.search() applies a small additive score bonus to memories linked to the active relationship frame",
+    "result": "12fd238f — Closes the PR epic loop. cortex._apply_pr_frame_bias helper looks up active relationship_frame, walks candidates, bumps relevance_score on memories whose metadata.pr_facia_id matches. Wired into BOTH return paths in cortex.search() — embedding-rerank path (after affect weighting, before slice) and Phase 1 fallback path (after candidate merge, before slice). Re-sorts after bias so memories at the cutoff edge can be promoted. Pure formula pr_compute_retrieval_bias(weight) = clamp(0.10 + (w-1)*0.05, 0.05, 0.20). Even max bias (0.20) is small enough to nudge ties without overwhelming text/embedding signals. 13 new tests including the never-overwhelming invariant. 2047 total pass, zero regressions in search.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T20:26:13.824315+00:00",
+    "related_to": null,
+    "description": "Closes the persistent-relationships epic loop. Six tickets shipped today (PR schema, frame load, accretion, consolidation, weight propagation, secondary attractor nesting) build the architecture, but cortex.search() does not yet prefer relationship-linked memories. Igor accretes everything into PR_AKIEN's subtree but searches as if the subtree were just more memories.\n\nFIX: at the end of cortex.search() scoring (after Phase 1 text and Phase 2 embedding), apply a small additive bonus to candidate memories whose metadata.pr_facia_id matches the currently-active relationship_frame in TWM. The bonus magnitude is modulated by the facia's cumulative_investment_weight (same formula as the frame salience modulation from T-pr-investment-weight-propagation, scaled appropriately for the search-score range).\n\nThe biomimetic principle: when you talk to Krissy, the things you remember about Krissy come to you faster than facts unrelated to her. Not because they're shoved into working memory ahead of time (no flooding) but because the activation context biases retrieval at the moment of need. A frame-loaded conversation pulls relationship-linked memories preferentially.\n\nIMPLEMENTATION: an additive post-scoring pass, NOT a refactor of search. Find the active frame via cortex.twm_read(category='relationship_frame'). If a frame is active, walk the candidate memories, look up each one's metadata.pr_facia_id, and apply +bonus to matches. Bonus is small (~0.05-0.10) so it nudges retrieval without overwhelming text/embedding signals. Bias only fires when a frame is active — no behavior change in non-conversational contexts.\n\nINERTIA: MEDIUM. cortex.search() core, but additive only — does not touch existing scoring phases. Risk-managed.\n\nTESTS: pure formula for the bonus, unit test of the post-scoring application (synthetic candidates with/without pr_facia_id), integration test that a search during an active frame returns relationship-linked memories ahead of unrelated ones with otherwise equal scores.\n\nDEPENDS ON: T-pr-load-as-primary-attractor (needs frame in TWM), T-pr-investment-weight-propagation (needs the weight formula concept). Both shipped today.",
+    "completed_at": "2026-04-13T20:34:48.699168+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d7fbe48b-320c-48ba-b791-410e71c512d1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-weekly-evals.20260518.164429530338",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-weekly-evals"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530338",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-weekly-evals"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-weekly-evals",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Evals",
+      "Metrics",
+      "Skills"
+    ],
+    "title": "Create /eval-run skill — weekly capability snapshot feeding goal KRs",
+    "result": "Created /eval-run skill — 5 weekly capability questions feeding goal KRs",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530338+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "Tests verify code correctness; evals verify capability. No weekly snapshot exists of whether Igor can actually do the things goals say he should. /eval-run asks 5 capability questions and feeds results to goal KRs.\n\n**Affected files:** agent_datacenter/skills/eval-run/SKILL.md (new); day-close SKILL.md (add Friday trigger)\n**Design rules:** evals are independent of implementation — they ask behavioral questions, not code questions; output stored to palace.evals.YYYYMMDD\n**Scope boundary:** in scope: 5 weekly questions: (1) did pe_chain complete a ticket end-to-end this week + rate, (2) NE stuck cycle rate trending up/down, (3) non-test proposals in instance.proposals this week, (4) done:closed gap widening or narrowing, (5) any action requiring unexpected human intervention. Each question answered from observable data (logs, DB queries). Output feeds relevant goal KR progress notes. Out of scope: automated KR numeric updates, adding new eval questions (those come from /goal KR definitions).\n**Test plan:** skill file; manual smoke: run /eval-run and verify output references observable data not assumptions.",
+    "completed_at": "2026-05-18T16:58:57.829829+00:00",
+    "github_issue": 745,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1b0be78b-0b15-441b-bb9f-9e59c35fe99d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

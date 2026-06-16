@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-pypi-tagged-release.20260508.171019931262",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-pypi-tagged-release"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:10:19.931262",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-akien-gets-pypi",
+      "T-igor-pypi-tagged-release"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-pypi-tagged-release",
+    "gate": "Requires T-akien-gets-pypi (no PyPI account yet)",
+    "size": "S",
+    "tags": [
+      "Operations",
+      "Infrastructure"
+    ],
+    "title": "GitHub Action: tagged release → PyPI publish for TheIgors",
+    "result": "Igor is not released standalone — ticket is moot. No action required.",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-05-08T17:10:19.931262+00:00",
+    "related_to": null,
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Add a GitHub Actions workflow to TheIgors repo that publishes to PyPI on every semver tag push (v*.*.*). Uses pypa/gh-action-pypi-publish. Requires PyPI API token in repo secrets.\n\n**Affected files:** .github/workflows/publish.yml, pyproject.toml (verify metadata complete)\n**Design rules:** none\n**Scope boundary:** publish workflow only; does not bump versions automatically\n**Test plan:** push a test tag to a TestPyPI target first; verify install from TestPyPI",
+    "completed_at": "2026-06-11T17:03:09.882470+00:00",
+    "github_issue": 713,
+    "required_files": [],
+    "no_commit_reason": "not applicable",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3e5e47b9-2765-4455-8167-4baf4ee5ef29",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

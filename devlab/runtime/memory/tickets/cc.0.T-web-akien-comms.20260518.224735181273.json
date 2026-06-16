@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-web-akien-comms.20260518.224735181273",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-akien-comms"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:47:35.181273",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-web-control-station-2026-05-18"
+    ],
+    "tickets": [
+      "T-web-akien-comms"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-akien-comms",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "WebUI",
+      "Bus"
+    ],
+    "title": "CLOSED: Wire web browser as comms://akien/ channel",
+    "result": "comms://akien/ registered at UC startup; WS messages logged as comms://akien/web to channel_messages — commit 865bcdf, 825 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:47:35.181273+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-web-control-station-2026-05-18",
+    "description": "Currently web browser messages go directly to the channel DB. They should route through comms://akien/ so web traffic is indistinguishable from Discord traffic at the bus level — same structure, same routing, same address.\n\nWhen Akien sends from browser Tab 1, the message is wrapped as a comms://akien/web envelope and delivered to the bus. Replies addressed to comms://akien/ reach both web and Discord.\n\nThis makes the web browser 'just another comms:// channel' — like Discord, like IMAP. Akien is a device, his channels are delivery methods, the bus routes between them.\n\n**Affected files:** devices/web_server/server.py (_api_cc_send), devices/akien/shim.py\n**Design rules:** comms:// envelope shape consistent with Discord and IMAP channels; no TheIgors imports\n**Scope boundary:** web→bus routing only. Not full bidirectional push to web (that's a future WebSocket enhancement). Replies still appear via channel polling.\n**Test plan:** message sent from web Tab 1 appears in infra.channel_messages with author matching comms://akien/web pattern. Bus can address responses to comms://akien/.",
+    "completed_at": "2026-05-19T00:33:51.056754+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6c462bb6-3136-4d2c-bf1c-43a2d1c2093e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

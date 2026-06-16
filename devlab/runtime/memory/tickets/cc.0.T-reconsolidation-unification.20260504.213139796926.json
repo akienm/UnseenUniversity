@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-reconsolidation-unification.20260504.213139796926",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reconsolidation-unification"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T21:31:39.796926",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reconsolidation-unification"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reconsolidation-unification",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "memory",
+      "dead-code",
+      "reconsolidation"
+    ],
+    "title": "CLOSED: Delete reconsolidation Path B — confirm_recall, contradict_recall, hook_search_results",
+    "result": "Deleted Path B: reconsolidation.py (229 lines) + test file (316 lines) + cortex hook. Two flag keys → one. commit daf0bce4",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-04T21:25:15.580482+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two parallel reconsolidation mechanisms exist with different flag keys and zero crosstalk. Path A (cortex._flag_for_reconsolidation → metadata.reconsolidate_pending → NE._reconsolidation_pass) is live and wired. Path B (reconsolidation.hook_search_results → _recall_pending dict → confirm_recall/contradict_recall → metadata.reconsolidation_flag) has no consumers — the dict grows forever under long runs (memory leak). Delete Path B.\n\n**Affected files:** wild_igor/igor/memory/reconsolidation.py (remove confirm_recall, contradict_recall, hook_search_results), wild_igor/igor/memory/cortex.py (remove hook_search_results call at ~line 2780)\n**Design rules:** none-apply (pure deletion)\n**Scope boundary:** IN: delete Path B consumer functions + cortex hook call. OUT: do not touch Path A (_flag_for_reconsolidation, NE._reconsolidation_pass, reconsolidate_pending key).\n**Test plan:** remove tests that exercise confirm_recall/contradict_recall/hook_search_results from tests/test_reconsolidation.py; verify test_d126_postgres still passes.\n**Pass condition:** pytest passes; grep for hook_search_results in cortex.py returns nothing; _recall_pending dict is gone.",
+    "completed_at": "2026-05-04T21:31:39.796926+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8bdfdfaf-12ac-49e9-80d7-8c3b2b59c576",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

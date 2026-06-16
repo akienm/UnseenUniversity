@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-sprint-minion.20260403.192602000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-minion"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:02",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sprint-minion"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-minion",
+    "epic": "Claude",
+    "size": "S",
+    "title": "/sprint-minion skill — push ticket to minion queue, signal daemon",
+    "result": "Created /sprint-minion skill at ~/.claude/skills/sprint-minion/SKILL.md. Skill validates ticket, resets to pending if needed, ensures daemon running via worker-launch, posts to channel. Hard rules: no in_progress push without confirm, no L tickets without plan approval.",
+    "status": "done",
+    "claimed_at": "2026-04-03T23:01:01.779970+00:00",
+    "created_at": "2026-04-03T19:26:02Z",
+    "completed_at": "2026-04-03T23:10:23.838094+00:00",
+    "github_issue": 364,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

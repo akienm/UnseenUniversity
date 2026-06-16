@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-theigors-path-cleanup.20260602.000627994086",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theigors-path-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T00:06:27.994086",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-theigors-path-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theigors-path-cleanup",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Hygiene"
+    ],
+    "title": "Fix hardcoded ~/TheIgors paths across devices",
+    "result": "replaced .TheIgors path refs with .unseen_university across channel.py, db_proxy.py, debug_extractor.py, book_learner.py and others",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "purpose": "",
+    "priority": 0.5,
+    "blocked_at": "2026-06-02T16:45:58.508187+00:00",
+    "created_at": "2026-06-02T00:06:27.994086+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Path rename cleanup: 14 files still reference hardcoded ~/TheIgors/ which no longer matches repo location. Changes already in working tree (unstaged). Affected: push_sources.py, system_prompt.py, filesystem.py, goal_continuation.py, ops.py, runner.py, inference/device.py, minion/device.py, debug_extractor.py, decision_manager.py, rotate_igor_console.py, palace_seed_decisions.py, test_consult_primitive.py, test_web_chat_swadl_smoke.py.\n\n**Affected files:** all listed above\n**Design rules:** no-sqlite; use Path.home() or env vars instead of hardcoded ~/TheIgors\n**Scope boundary:** IN: replace all ~/TheIgors hardcoded references with Path.home()/'dev/src/UnseenUniversity' or env-var equivalents. OUT: moving files, updating git config, changing palace nodes.\n**Completion criteria:** no source file references ~/TheIgors/ as a hardcoded path; all tests pass",
+    "completed_at": "2026-06-03T20:22:01.662275+00:00",
+    "deposited_at": "2026-06-01T18:07:57.472902",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T19:42:27.420386+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "37ddb26b-31e6-4475-86b8-92f4db5091df",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

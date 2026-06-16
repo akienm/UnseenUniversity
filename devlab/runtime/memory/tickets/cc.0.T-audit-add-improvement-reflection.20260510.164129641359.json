@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-audit-add-improvement-reflection.20260510.164129641359",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-add-improvement-reflection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T16:41:29.641359",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-add-improvement-reflection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-add-improvement-reflection",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Process"
+    ],
+    "title": "Add 'what could we do better?' reflection step to expert audit",
+    "result": "Added Step 20 — improvement reflection to day-close-audit; updated findings report format with Improvements: line; updated audit-day step count reference",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-10T16:41:29.641359+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "The expert audit checklist should explicitly ask auditors to identify improvement opportunities, not just surface defects. Adding a 'what could we do better?' reflection step will surface gaps in process, infrastructure, and architecture that the mechanical checks miss.\n\n**Affected files:** lab/claudecode/day-close-audit skill (or wherever the expert audit checklist lives)\n\n**Design rules:** none apply\n\n**Scope boundary:** Add the reflection step as step 20 (or first, if reflections should precede findings). The question should ask: what patterns emerged? What's the biggest friction point? What one change would unblock the next batch? In scope: one clear prompt. Out of scope: implementing the improvements (those become separate tickets).\n\n**Test plan:** Run the full audit once with the new step enabled; verify the reflection produces 1-3 actionable improvement ideas that could reasonably become future tickets.",
+    "completed_at": "2026-05-10T17:07:27.368274+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "51352f09-f09b-43da-89fe-a38e4784cf01",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-palace-fts-index.20260511.141307610497",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-fts-index"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T14:13:07.610497",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hermes-patterns-2026-05-11"
+    ],
+    "tickets": [
+      "T-palace-fts-index"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-fts-index",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Database",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Add FTS to palace + memory_search",
+    "result": "FTS already in place: palace_fts_gin GIN index + palace_search already used plainto_tsquery. Real gap was memory_search using LIKE on 114K rows — upgraded to FTS hitting idx_memories_narrative_tsvector. abea27c",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": null,
+    "created_at": "2026-05-11T14:13:07.610497+00:00",
+    "related_to": null,
+    "decision_id": "D-hermes-patterns-2026-05-11",
+    "description": "palace.sessions.* nodes accumulate after every session but are not searchable by content — only by path/title. Hermes Agent's #1 ranking is partly attributed to its FTS layer over past sessions; our analogue is Postgres full-text search over adc.palace.\n\nAdd a tsvector column + GIN index to adc.palace.content. Update memory_search() to use the FTS index when a content query is provided.\n\n**Affected files:** ADC migration script (new: scripts/migrations/YYYYMMDD_palace_fts.sql); wild_igor/igor/tools/memory_palace.py (memory_search update)\n**Design rules:** no-sqlite (Postgres FTS only); migration must be backward-compatible (add column, don't alter existing)\n**Scope boundary:** In: tsvector column on adc.palace, GIN index, memory_search() updated to use FTS. Out: pgvector embeddings, relevance tuning beyond ts_rank, cross-table search.\n**Test plan:** psql query using to_tsvector/plainto_tsquery returns expected rows after migration. memory_search() test: verify FTS path taken when query contains content keyword.",
+    "completed_at": "2026-05-11T19:55:19.472811+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2a098b08-191b-4def-b822-d6ff31282b51",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

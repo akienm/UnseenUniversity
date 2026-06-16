@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-curiosity-loop.20260327.195329655425",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-curiosity-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-27T19:53:29.655425",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-curiosity-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-curiosity-loop",
+    "title": "curiosity-loop",
+    "result": "learn_top_gap() added to learner.py — queries twm_observations NARRATIVE_GAP, queues to reading_list. PROC_CURIOSITY_DRAIN habit seeded (schedule=1800s). Fixed add_to_reading_list RL_WEB_ ID bug. Tested: gap inserted → RL_040 queued correctly.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Habit primitive chain: NE gap/wonder signal → threshold fires → learn queue entry. Igor self-directs learning without Python call or external prompt.",
+    "completed_at": "2026-03-27T19:53:29.655425+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "97301c83-a462-4987-b5f1-e31e0302e108",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

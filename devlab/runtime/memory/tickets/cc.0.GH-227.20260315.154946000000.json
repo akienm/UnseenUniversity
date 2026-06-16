@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-227.20260315.154946000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-227"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T15:49:46",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-227"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-227",
+    "title": "Inhibitory traversal layer — at-least-two-pass graph settling before output",
+    "result": "merged into T-inhibitory-pattern-primitive #419 — batch-filter insight + hierarchy preserved",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-15T15:49:46Z",
+    "description": "GitHub issue #227. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-14T16:59:38.756401+00:00",
+    "github_issue": 227,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f6acbf2-1574-4f36-b25b-02b6426b8f44",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-claude-json-mcp-update.20260508.173947109477",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-claude-json-mcp-update"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:39:47.109477",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-rack-agent-2026-05-08"
+    ],
+    "tickets": [
+      "T-claude-json-mcp-update"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-claude-json-mcp-update",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Operations"
+    ],
+    "title": "CLOSED: update claude.json mcpServers for librarian",
+    "result": "added librarian mcpServers entry to agent_datacenter project in ~/.claude.json",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T19:00:57.968109+00:00",
+    "created_at": "2026-05-08T17:39:47.109477+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "description": "Update ~/.claude.json mcpServers config: replace 'igor' (igor_mcp.py) and 'cc_mcp' (cc_mcp_server.py) entries with a single 'librarian' entry pointing at the Librarian MCP server in agent_datacenter.\n\n**Affected files:** ~/.claude.json\n**Design rules:** none\n**Scope boundary:** config update only\n**Test plan:** `claude mcp list` shows librarian connected; igor and cc_mcp entries removed or commented",
+    "completed_at": "2026-05-08T19:03:45.033004+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a02c468f-fea3-4021-a3ac-131dbac5d12d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

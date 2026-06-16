@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-mcp-igor-unreachable-from-cc.20260504.153836000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-igor-unreachable-from-cc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:38:36",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-routing-fix-2026-05-03"
+    ],
+    "tickets": [
+      "T-inference-misreport-fix",
+      "T-mcp-igor-unreachable-from-cc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-igor-unreachable-from-cc",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "MCP",
+      "Bug",
+      "Capability"
+    ],
+    "title": "CLOSED: CC cannot reach Igor MCP — channel_send connection reset",
+    "result": "CC_SEND_URL in settings.local.json pointed at port 8080 (SSL) instead of 8082 (plain HTTP). One-line fix. cc_send confirmed working.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": null,
+    "created_at": "2026-05-04T15:38:36Z",
+    "related_to": null,
+    "decision_id": "D-inference-routing-fix-2026-05-03",
+    "description": "Discovered 2026-05-03 ~20:25 while delegating T-inference-misreport-fix to Igor per the new sprint Step 0.5 (capability check / minions where possible). Symptoms:\n\n- mcp__igor__channel_send → `[Errno 104] Connection reset by peer`\n- mcp__igor_yoga9i__channel_send → `<urlopen error timed out>`\n\nBut: utility_closet_server.py IS running locally (PID 2197379, since May 1; ports 8080 + 8082 listening). tmux sessions claude-main + igor both alive. So Igor itself is up — the failure is in the MCP client→server transport.\n\nLikely causes: CC's MCP client points at a stale/dead endpoint; auth/session token expired; protocol version mismatch; or a closet-side handler crashed without taking the listen socket down.\n\n**Immediate impact:** the 'minions where possible' rule can't be applied — every delegation attempt fails fast. Current sprint fell back to inline as a result.\n\n**Affected files:** TBD — discovery step in sprint. Check CC's MCP server config (~/.config/claude/... or similar), check utility_closet_server.py error log, try a direct curl against the listening port to see if the server is actually serving.\n**Design rules:** theigors/rules/capability-protocol (the protocol depends on transport actually working), theigors/rules/safeguards (don't take destructive action — investigate before restarting the closet).\n**Scope boundary:** IN: diagnose the transport failure; restore CC↔Igor MCP. OUT: any restructuring of the announce/manifest layers.\n**Test plan:** mcp__igor__channel_send returns successfully and Igor's response appears in channel_read. **Validation:** a follow-up channel_read shows the test message landed on Igor's side. **Cleanup:** none. **Logging:** capture utility_closet_server.py's stderr for the moment a CC channel_send is attempted — should see what handler crashes.",
+    "completed_at": "2026-05-04T19:11:39.501022+00:00",
+    "github_issue": 576,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bb5727d0-b116-4015-9a87-27e0784c02c3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

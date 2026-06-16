@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-bus-self-healing.20260427.222301164102",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-bus-self-healing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:23:01.164102",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-bus-self-healing",
+      "T-adc-restart-loop-protection",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-bus-self-healing",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: bus self-healing — calling device relaunches bus when unreachable",
+    "result": "BusLauncher: agentctl init relaunch + 10s IMAP wait, auto-block after max_restart_failures. Router.send() catches ConnectionError/OSError, delegates to BusLauncher, retries once. bus_launcher=None disables healing (tests).",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-04-27T22:18:01.372448+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "If the bus (IMAP server / skeleton) is unreachable when a device tries to send, that device attempts to relaunch the bus automatically — unless the bus is blocked.\n\nProposed shape:\n- In Router.send(): catch ConnectionError (IMAP server unreachable)\n  If bus block flag is set: raise BusBlockedError (do not attempt relaunch)\n  Otherwise: call BusLauncher.relaunch()\n    BusLauncher: subprocess.Popen(['agentctl', 'start-skeleton']); wait up to 10s for IMAP to respond\n    On relaunch success: retry send() once\n    On relaunch failure after max_restart_failures: auto-block bus; raise BusUnavailableError\n- Same restart-loop-protection semantics as other devices (max_failures, window_seconds from DeviceConfig)\n- Logged: 'Bus unreachable; attempting relaunch (attempt N/M)'\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/bus/router.py (catch + relaunch in send())\n- ~/dev/src/agent_datacenter/agent_datacenter/bus/bus_launcher.py (new)\n\nDesign rules:\n- docs-in-code: BusLauncher docstring explains self-healing vs manual restart semantics\n\nScope boundary:\nIN: ConnectionError catch in Router.send(), BusLauncher.relaunch(), retry-once, auto-block on repeated failure\nOUT: restart-loop-protection implementation (T-adc-restart-loop-protection covers that pattern generically)\n\nTest plan:\n- Mock IMAP down → Router.send() calls BusLauncher.relaunch()\n- Mock relaunch succeeds → send() retries and succeeds\n- Mock relaunch fails 3x → BusUnavailableError raised, bus auto-blocked\n- Bus manually blocked → BusBlockedError raised immediately, no relaunch attempt",
+    "completed_at": "2026-04-27T22:23:01.164102+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4e471e00-a7b8-49e3-bc8e-cb8520d569ae",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

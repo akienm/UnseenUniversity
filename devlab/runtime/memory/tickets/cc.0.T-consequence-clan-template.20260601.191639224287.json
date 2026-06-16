@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-clan-template.20260601.191639224287",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-clan-template"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T19:16:39.224287",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-clan-template-memory-ownership-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-clan-template"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-clan-template",
+    "gate": "2026-06-15",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: clan template + memory domain ownership",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-01T19:16:39.224287+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-clan-template-memory-ownership-2026-06-01",
+    "description": "**What changed:** Igor becomes an instance of a clan template; Granny and Vetinari declared as memory domain owners for builds and task management respectively; clan = all-agent shared layer.\n\n**Predicted unintended effects:**\n- Template update governance gap — if the Igor template changes (personality, baseline memories), existing Igor instances get a divergent identity silently\n- Memory domain ownership creates turf — Granny and Vetinari refuse bus requests from other agents for build/task data even for legitimate read queries\n- Clan-as-all-agents blurs the local/global distinction — agents start treating local-shared as 'clan' and write cross-instance data there\n- A second Igor instance boots but has no clan-merge conflict resolution — two Igors modify the same clan memory and last-write-wins\n\n**Signals to watch:**\n- Igor template version field in profile (should match across instances)\n- Bus MEMORY_REQUEST denials (Granny refusing Vetinari = probably wrong)\n- Local DB growing with data tagged 'clan' that belongs in global\n- Palace: look for duplicate/conflicting clan memory entries across Igor instances\n\n**Gate condition:** Check by 2026-06-15.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Completion criteria:** Observation ticket — done when each predicted effect is annotated",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b55539f6-62a3-4672-9572-ce1e1866734b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-warm-context-post-turn.20260404.174314665083",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-warm-context-post-turn"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:43:14.665083",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-warm-context-post-turn"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-warm-context-post-turn",
+    "size": "S",
+    "tags": [
+      "Operations"
+    ],
+    "title": "Write warm_context after every turn, not only on clean exit",
+    "result": "Added post-turn _save_warm_context() call in _process() finally block (main.py:2731). Throttled to 30s, gated on not is_impulse. Crash now loses ≤30s state instead of ≤4h. Committed 84e25831.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T17:41:41.165258+00:00",
+    "related_to": null,
+    "description": "main.py _shutdown() calls _save_warm_context() only on intentional exit. If Igor crashes mid-turn, the next boot resumes with warm context up to 4h stale while the DB has moved forward. Fix: call _save_warm_context() at the end of every successful turn (after _process_inner() returns). Accept the 5-10ms disk cost — crash recovery coherence is worth it. SRE finding from deep-audit Panel 11.",
+    "completed_at": "2026-04-04T17:43:14.665083+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "682b66c0-9be8-4d77-ba4c-9eef0857747b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

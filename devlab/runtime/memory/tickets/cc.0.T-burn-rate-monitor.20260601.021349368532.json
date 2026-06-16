@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-burn-rate-monitor.20260601.021349368532",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-burn-rate-monitor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T02:13:49.368532",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-constraints-first-class-2026-05-31"
+    ],
+    "tickets": [
+      "T-burn-rate-monitor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-burn-rate-monitor",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Burn rate: tokens/hour + time-to-blackout at session start",
+    "result": "added burn_rate() to context-load/run + Step 5.93 in SKILL.md; surfaces Burn: X%/hr (Y% used), ~Z min until pause at session start",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.95,
+    "blocked_at": "2026-06-01T02:58:49.775472+00:00",
+    "claimed_at": "2026-06-01T19:29:54.251634+00:00",
+    "created_at": "2026-06-01T02:13:49.368532+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-constraints-first-class-2026-05-31",
+    "description": "Compute burn rate from usage-cache.json at context-load: tokens consumed / elapsed hours in current 5h window = tokens/hour. Project forward: time until 90% threshold = actionable 'X minutes until pause.' Surface in context-load briefing as one line.\n\n**Affected files:** lab/claudecode/context_load.py or equivalent context-load step; reads ~/.claude/usage-cache.json\n**Design rules:** read-only; graceful degradation (cache missing = skip silently); no external calls\n**Scope boundary:** in: burn rate computation, time-to-blackout projection, surface in briefing. out: enforcement (Granny already has threshold gate)\n**Completion criteria:** (1) context-load briefing includes 'Burn rate: X tokens/hr, ~Y min until pause' when cache is available; (2) silent when cache missing; (3) verified against a real cache reading",
+    "completed_at": "2026-06-01T19:33:51.809722+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T19:29:54.251634+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8afca1d9-5ace-4cf8-ad88-662914f32d9f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

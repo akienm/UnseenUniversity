@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-chat-log-backfiller-fix.20260512.123658366275",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-chat-log-backfiller-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T12:36:58.366275",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-chat-log-backfiller-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-chat-log-backfiller-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Maintenance"
+    ],
+    "title": "CLOSED: Fix StaleChatLogBackfiller overwriting log with TheIgors-only sessions",
+    "result": "swapped export_chat.py → cc_log_stop_hook.py; TWM obs unconditional; docstring updated",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-12T12:37:32.821900+00:00",
+    "created_at": "2026-05-12T12:36:58.366275+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "StaleChatLogBackfiller in push_sources.py called export_chat.py, which was hardcoded to scan ~/.claude/projects/-home-akien-TheIgors/ — missing all agent_datacenter CC sessions. Running every 5 min, it overwrote the day log with only TheIgors session content, shrinking it from ~1MB to 74K.\n\n**Affected files:** wild_igor/igor/cognition/push_sources.py (StaleChatLogBackfiller.push() ~line 2762)\n**Design rules:** no-sqlite (N/A — no DB changes)\n**Scope boundary:** IN: swap export_chat.py call → cc_log_stop_hook.py with cwd=agent_datacenter; make TWM obs unconditional (no 'wrote' string check). OUT: export_chat.py itself; other callers.\n**Test plan:** no unit test — observable: stop hook runs produce 815K+ log; backfiller no longer smashes it to 74K. Verified manually.",
+    "completed_at": "2026-05-12T12:44:06.794448+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "86dfed14-da66-4fed-9bfa-00e1b77a496b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

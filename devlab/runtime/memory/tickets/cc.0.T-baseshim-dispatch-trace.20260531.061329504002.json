@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-baseshim-dispatch-trace.20260531.061329504002",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-baseshim-dispatch-trace"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T06:13:29.504002",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-baseshim-dispatch-trace",
+      "T-shim-output-validation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-baseshim-dispatch-trace",
+    "gate": null,
+    "size": "XS",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "BaseShim.dispatch() + JSONL call-trace logging",
+    "result": "Shipped incidentally in T-shim-output-validation commit 5ebb4016 — BaseShim.dispatch() + JSONL call-trace to datacenter_logs/shim/trace/",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-05-31T06:13:29.504002+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Retroactive ticket for dispatch() method and _write_shim_trace() added to BaseShim. Routes all tool calls through the shim with JSONL trace logging to datacenter_logs/shim/trace/YYYYMMDD.jsonl; override via UU_SHIM_TRACE_DIR. Shipped as incidental in T-shim-output-validation commit 5ebb4016.\n\n**Affected files:** unseen_university/shim.py\n**Completion criteria:** dispatch() routes calls through shim with JSONL trace; already shipped",
+    "completed_at": "2026-05-31T06:13:35.638884+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T06:13:29.574457+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d8a4668e-a16a-44de-b5c5-91b06ee13b1b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

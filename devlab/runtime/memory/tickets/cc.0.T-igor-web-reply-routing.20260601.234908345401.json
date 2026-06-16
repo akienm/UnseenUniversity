@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-igor-web-reply-routing.20260601.234908345401",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-web-reply-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T23:49:08.345401",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-web-reply-2026-06-01"
+    ],
+    "tickets": [
+      "T-igor-web-reply-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-web-reply-routing",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Igor",
+      "WebUI",
+      "Observability"
+    ],
+    "title": "Diagnose: Igor replies don't reach web UI",
+    "result": "Traced round-trip: UU routing correct (16:17:41 fanout=1 confirms it). Failures at 16:19/16:20 had no POST — Igor gates degenerate cognition output upstream of send(). Added web_send: INFO log (AR-009) + 7 round-trip routing tests.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.65,
+    "created_at": "2026-06-01T23:49:08.345401+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-web-reply-2026-06-01",
+    "description": "Igor receives messages sent from the web UI (confirmed: he replied to 'hello?' on 2026-06-01) but his replies don't appear in the web UI. The web→Igor path uses HTTP polling (devices/igor/web/adc_client.py poll_messages() → /api/agents/igor/poll). The Igor→web reply path is unconfirmed — trace where Igor posts replies and whether those reach the web server's WebSocket hub.\n\n**Affected files:** devices/igor/web/adc_client.py (send_reply or equivalent), devices/web_server/server.py (/api/agents/{id}/poll response path), devices/igor/web/server.py (background poll loop)\n**Design rules:** log every interface crossing (reply send + receive)\n**Scope boundary:** IN: trace Igor's outbound reply path; fix the gap so replies appear in web UI chat pane. OUT: three-pane UI redesign (separate ticket).\n**Completion criteria:** Sending 'hello' from the web UI to Igor's tab and getting a response that appears in the same chat pane within 30s. Add a test or log line confirming the round-trip path.",
+    "completed_at": "2026-06-02T00:40:08.407982+00:00",
+    "deposited_at": "2026-06-01T17:49:47.736944",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T00:22:18.370358+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "observation",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7e26a9da-f1ac-41d4-a82f-7f174871d292",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-agent-datacenter-workspaces.20260504.153845000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agent-datacenter-workspaces"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:38:45",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-agent-datacenter-workspaces",
+      "T-docs-live-in-code"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-agent-datacenter-workspaces",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Workspace"
+    ],
+    "title": "CLOSED: Agent datacenter workspaces — Claude + Igor workspace directories",
+    "result": "workspaces/claude + igor dirs; README; moved test logs; .gitignore updated; commit c878abd4",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-05T00:28:07.698486+00:00",
+    "created_at": "2026-05-04T15:38:45Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Create dedicated workspace directories for Claude and Igor inside agent_datacenter for ephemeral logs, debugging artifacts, and temporary state.\n\n**Affected files:** agent_datacenter/workspaces/claude/ (NEW), agent_datacenter/workspaces/igor/ (NEW), test_*.log → move to workspace, .gitignore (update)\n**Design rules:** workspace files are ephemeral/throwaway (ignored by git). T-docs-live-in-code: workspace shape docstring in agent_datacenter/workspaces/README.md. No shared mutable state across machines — each instance has its own workspace.\n**Scope boundary:** IN: define workspace structure, document purpose (test artifacts, debug logs, scratch memory). IN: move existing test_*.log files from repo root. OUT: task-related memory consolidation (separate ticket if needed). OUT: workspace cleanup/rotation policies (file size, age).\n**Test plan:** no tests — this is structural. Acceptance: workspaces/claude and workspaces/igor directories exist with documented purpose; test_*.log files are moved; .gitignore updated to exclude workspace/.",
+    "completed_at": "2026-05-05T00:29:07.817241+00:00",
+    "github_issue": 579,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b1b76678-1b66-43ed-a954-70c2aa637225",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

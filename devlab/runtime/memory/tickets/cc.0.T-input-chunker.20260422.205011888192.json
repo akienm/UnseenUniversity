@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-input-chunker.20260422.205011888192",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-input-chunker"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T20:50:11.888192",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-distribution-2026-04-22"
+    ],
+    "tickets": [
+      "T-capacity-profiler",
+      "T-input-chunker",
+      "T-preparse-router"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-input-chunker",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Preparse",
+      "Cognition"
+    ],
+    "title": "Atomic input chunker — sentence/clause/discourse-marker split",
+    "result": "chunker.chunk_input() pure function. Sentence-split with quote-awareness + abbrev tolerance + discourse-marker force-splits + clause fallback on oversized. Chunk dataclass with kind (sentence/clause/fragment) and context_carry tuple. 18 tests. Commit febc51e3.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-04-22T20:48:08.508231+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-distribution-2026-04-22",
+    "description": "Long input borks preparse timeouts; multi-intent input (greeting + question + meta-comment in one message) gets mashed into a single muddled classification. No reusable atomic splitter exists. Build a pure function chunker that emits sentence-level atoms with force-splits at discourse markers and a clause-level fallback for oversized sentences. Chunks carry a context-carry field referencing the prior 1-2 atoms (for pronoun/reference resolution by downstream consumers). No routing or capacity awareness here — pure splitter, reusable everywhere preparse runs.\n\n**Affected files:** new module `wild_igor/igor/cognition/chunker.py`; new `tests/test_input_chunker.py`\n**Design rules:** test-plan-or-why-not (covered); oop-first (pure function is fine — stateless and reused; note in docstring); no other palace checks apply (no SQLite, no memory schemas, no cross-subsystem entanglement).\n**Scope boundary:** IN: sentence-split with quote-awareness; discourse-marker force-splits (but/however/also/oh-and/by-the-way/anyway); size-cap triggers clause-level split; paragraph boundaries are hard; context-carry field on each chunk. OUT: routing (T-preparse-router); per-machine capacity awareness (T-capacity-profiler); merge/reconcile logic downstream.\n**Test plan:** unit tests cover — single-sentence passthrough; multi-sentence split on .!?; quote-aware (don't split inside \"quoted. text.\"); discourse-marker force-splits at mid-sentence boundaries; clause-fallback when a single sentence exceeds token cap; paragraph double-newline = hard boundary; empty input returns empty list; single-word input returns one chunk; context-carry populated correctly (chunk N sees chunks N-1 and N-2).",
+    "completed_at": "2026-04-22T20:50:11.888192+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2e3d6249-25a7-4020-89b9-c38a6d968d5e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

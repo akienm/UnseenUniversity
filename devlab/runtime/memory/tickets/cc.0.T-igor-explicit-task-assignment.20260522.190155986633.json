@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-igor-explicit-task-assignment.20260522.190155986633",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-explicit-task-assignment"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-22T19:01:55.986633",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-queue-encapsulation-2026-05-19"
+    ],
+    "tickets": [
+      "T-igor-explicit-task-assignment",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-explicit-task-assignment",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Safety",
+      "Cognition"
+    ],
+    "title": "Igor only works tickets explicitly dispatched by CC",
+    "result": "adopt_next_ticket + adopt_top_queue_ticket raise LegacyDirectClaimError; launch_next_worker returns dispatch hint; PROC_QUEUE_DRAIN seeder removed; 46 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 2,
+    "blocked_at": null,
+    "claimed_at": "2026-05-22T19:33:14.516982+00:00",
+    "created_at": "2026-05-22T19:01:55.986633+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-queue-encapsulation-2026-05-19",
+    "description": "Igor currently autonomously pulls from the queue via adopt_top_queue_ticket(), which can run without CC awareness. This enabled the phantom-goal bug (any TWM observation could trigger goal_adopt via habit dispatch). The correct model: Igor only works tickets that CC explicitly dispatches to him — CC sends a dispatch message on the channel or sets a dispatched_by field on the ticket before Igor picks it up.\n\nThe blacklist guard in goal_adopt (shipped 2026-05-22) is a stopgap. The root fix is structural.\n\nProposed shape:\n- Add dispatched_by and dispatched_at fields to ticket schema (cc_queue.py)\n- adopt_top_queue_ticket() checks dispatched_by IS NOT NULL before adopting\n- CC dispatch command: cc_queue.py dispatch <ticket-id> → sets dispatched_by='cc', dispatched_at=now()\n- goal_adopt() additionally validates task_description matches 'work ticket T-xxx' pattern when called from habit dispatch path\n- The audit check (from Akien's original diagnosis) can verify: is the ticket Igor is working one that CC dispatched?\n\n**Affected files:** lab/claudecode/cc_queue.py, wild_igor/igor/tools/ops.py, wild_igor/igor/tools/worker_foreman.py\n**Design rules:** no-sqlite; test-plan-or-why-not\n**Scope boundary:** Add dispatch gate to ticket ownership; out of scope: changing how CC decides which tickets to dispatch\n**Test plan:** unit test adopt_top_queue_ticket rejects un-dispatched tickets; integration test CC dispatch → Igor adoption flow",
+    "completed_at": "2026-05-22T19:35:24.887615+00:00",
+    "github_issue": null,
+    "timeout_count": 1,
+    "required_files": [],
+    "scraps_validated": "2026-05-22T19:01:56.043124+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "94e00454-7973-40c9-9d78-d5e74a1ccce1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

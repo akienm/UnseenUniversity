@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-web-ui-three-pane.20260601.234908344952",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-ui-three-pane"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T23:49:08.344952",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-ui-controls-2026-06-01"
+    ],
+    "tickets": [
+      "T-web-ui-three-pane"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-ui-three-pane",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "WebUI",
+      "Observability",
+      "Infrastructure"
+    ],
+    "title": "Web UI: four-section layout per device tab (health+controls+chat+announce)",
+    "result": "tabbed /rack page with Announce/Health/Controls/Chat sections per device; /api/device/list and /api/device/{id}/events endpoints",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "blocked_at": "2026-06-02T15:40:44.263913+00:00",
+    "claimed_at": "2026-06-02T15:38:48.902272+00:00",
+    "created_at": "2026-06-01T23:49:08.344952+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-web-ui-controls-2026-06-01",
+    "description": "Per-device tabs in the web UI each show four sections: (1) Announce — scrolling feed of recent channel events for this device (GRANNY_DISPATCH, MINION_RESULT, etc. — machine-to-machine log, most important recent entries); (2) Health/Status — alpha-sorted key=value pairs from the device's health surface, values age out after a configurable TTL and disappear, all cleared on start or when web server asks each device's health; (3) Controls — circuit breakers and action buttons for this device, populated from health surface on startup; (4) Chat — edit box + scrollable chat history for human↔device interaction.\n\nDesign: devices generate their own panel from a template/base class in BaseShim or a device health mixin — the web page just renders each device's panel (iframe or div from source). Default format: one long scroll with 4 sub-sections. The status/health/controls pane is the same surface — the health panel IS the control panel for each device.\n\nStatus key/value protocol: a device posts messages with key=value pairs to its status channel. The web server collects these, alpha-sorts them, renders live. Any key not updated within TTL (device-configurable) ages out. On web startup, server calls each device's /health endpoint to populate initial state — anything paused/disabled shows as open circuit.\n\n**Affected files:** devices/web_server/server.py; BaseShim or new devices/base/health_mixin.py; each device's shim for health surface implementation; static HTML/JS for four-section layout\n**Design rules:** OOP-first — device panel generation lives in BaseShim/mixin, not in server.py; log every status update at DEBUG; no new dependencies\n**Scope boundary:** IN: four-section layout; health surface protocol (key/value + TTL); devices generate own panel template; announce feed wired to channel; controls = circuit breakers. OUT: per-device custom CSS, fancy graphics (text + emoji for now), iframe vs div implementation choice (decide at build time).\n**Completion criteria:** Opening Granny's tab shows all four sections. Granny posting a GRANNY_DISPATCH causes an entry in the announce pane. A device posting a key=value status message causes it to appear in the health pane and age out after TTL. Existing chat functionality still works. BaseShim has a health_surface() method subclasses can override.",
+    "completed_at": "2026-06-04T22:19:01.046529+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T15:38:48.902272+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d844cc02-c3b8-47a9-90aa-22b390fde44a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-intent-extractor-device.20260614.224400875431",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intent-extractor-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:44:00.875431",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intent-extractor-learning-substrate-2026-06-14"
+    ],
+    "tickets": [
+      "T-intent-extractor-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-intent-extractor-device",
+    "gate": null,
+    "role": "master",
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "CompiledInference",
+      "Learning",
+      "Factory",
+      "TEST_TAG"
+    ],
+    "title": "Build intent extractor device — predict/validate/patterns API",
+    "result": "IntentExtractorDevice built — predict/validate/patterns API with few-shot learning; devlab.predictions + devlab.validations schema; 28 tests all pass including criterion 5 learning test",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that a callable intent extractor device exists that accepts predict/validate/patterns calls, stores validated predictions in devlab, and improves its predict accuracy over successive validation rounds.",
+    "created_at": "2026-06-14T22:44:00.875431+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-intent-extractor-learning-substrate-2026-06-14",
+    "description": "The system has no canonical learning substrate. Every device that learns does it privately and incompatibly. The intent extractor is the shared service all learning passes through.\n\nThree-method API:\n  predict(context: str, domain: str) -> {prediction_id, intent: str, confidence: float}\n  validate(prediction_id: str | None, actual_outcome: str) -> None\n    (prediction_id=None is valid: adds a ground-truth example with no prior prediction)\n  patterns(domain: str) -> list[{pattern, confidence, validation_count}]\n\nV1 learning mechanism: store-and-retrieve. Every validate() call persists prediction+outcome pair to devlab.validations. predict() retrieves top-K validated examples for the domain and uses them as few-shot context in a lightweight inference call (Haiku-class). patterns() aggregates validated pairs into recurring intent patterns.\n\nStorage:\n  devlab.predictions (id, context, domain, predicted_intent, confidence, created_at)\n  devlab.validations (id, prediction_id NULLABLE FK->devlab.predictions, actual_outcome, match bool, created_at)\n  prediction_id is nullable by design: Librarian and other post-hoc callers log ground-truth examples without a prior predict() call.\n\nDevice home: devices/intent/ (own device — domain-agnostic, not nested in hubert).\n\nLibrarian exception built into API: validate(prediction_id=None) is the post-hoc path. Librarian never calls predict().\n\n**Affected files:** devices/intent/__init__.py, devices/intent/device.py, devices/intent/store.py (new); SQL migrations devlab.predictions + devlab.validations; MCP tool registration\n**Design rules:** external-state; no SQLite; MCP bus; prediction_id nullable in schema\n**Scope boundary:** IN — device + API + devlab storage + V1 few-shot learning + nullable prediction_id schema. OUT — fine-tuning a model; wiring callers (separate tickets); prediction accuracy dashboard.\n**Completion criteria:**\n  1. predict() returns intent string and prediction_id; verifiable via MCP call\n  2. validate() stores to devlab.validations — verifiable via psql row count\n  3. validate(prediction_id=None) succeeds and stores a row with null prediction_id\n  4. patterns() returns non-empty list after 10+ validations in a domain\n  5. LEARNING TEST: measure predict() accuracy on 10 held-out tickets at baseline (0 validations) then again after 20 validation signals in the same domain. Require positive delta (after-20 accuracy > baseline). This is the criterion that proves few-shot retrieval earns its complexity — a static threshold is not sufficient.\n\nCC.0 acked at 2026-06-15T20:25:18Z\n\nCC.0 acked at 2026-06-15T20:25:24Z\n\nCC.0 acked at 2026-06-15T20:25:28Z\n\nCC.0 acked at 2026-06-15T20:25:32Z",
+    "completed_at": "2026-06-15T20:44:04.545935+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

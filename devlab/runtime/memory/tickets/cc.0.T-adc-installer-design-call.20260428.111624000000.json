@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-adc-installer-design-call.20260428.111624000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-installer-design-call"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T11:16:24",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-4-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-installer-bootstrap-call",
+      "T-adc-installer-design-call",
+      "T-adc-portable-bootstrap",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-installer-design-call",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Design"
+    ],
+    "title": "agent_datacenter: installer bootstrap paradox — design call and agentctl init full spec",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T22:44:23.079768+00:00",
+    "created_at": "2026-04-28T11:16:24Z",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-4-2026-04-27",
+    "description": "Resolve the installer bootstrap paradox and produce the full agentctl init spec for production (not the Phase 1 stub).\n\nProblem: T-adc-portable-bootstrap (Phase 1) delivers a basic agentctl init for development. This ticket (Phase 4) locks the production installer story: what's the minimal bootstrap that lives outside the datacenter to get v1.0 running?\n\nProposed shape:\n- Review T-adc-portable-bootstrap result: what did agentctl init actually ship?\n- Gap analysis: what does a production install need that the dev init lacks?\n- Make the design call: a pip install + shell script is sufficient, OR a dedicated installer device is needed\n- Write docs/decisions/installer-bootstrap-v1.md with final decision\n- Update T-adc-installer-bootstrap-call (Phase 0 doc) to point to this final decision\n\nAffected files:\n- ~/dev/src/agent_datacenter/docs/decisions/installer-bootstrap-v1.md (new)\n\nDesign rules: None — design doc only\n\nScope boundary:\nIN: design call doc, gap analysis vs Phase 1 portable-bootstrap\nOUT: any installer code changes (those would be a follow-up ticket)\n\nTest plan:\n- docs/decisions/installer-bootstrap-v1.md exists with clear decision stated",
+    "proposed_at": "2026-04-28T02:05:01.091313+00:00",
+    "completed_at": "2026-04-29T22:58:24.690668+00:00",
+    "github_issue": 543,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f9d29cc7-e1f1-48ae-838e-ab652099b659",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

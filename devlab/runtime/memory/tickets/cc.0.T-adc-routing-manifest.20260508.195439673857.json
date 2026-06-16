@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-routing-manifest.20260508.195439673857",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-routing-manifest"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T19:54:39.673857",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-shared-agent-substrate-2026-05-08"
+    ],
+    "tickets": [
+      "T-adc-routing-manifest",
+      "T-skill-capability-check-dynamic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-routing-manifest",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Infrastructure",
+      "Capability"
+    ],
+    "title": "CLOSED: ADC routing manifest — opinionated task-shape → MCP tool map",
+    "result": "datacenter_manifest tool + routing map; 8 tests; f30794f",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-08T19:57:27.649683+00:00",
+    "created_at": "2026-05-08T19:54:39.673857+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-shared-agent-substrate-2026-05-08",
+    "description": "datacenter_manifest currently lists what exists but does not say when to use each tool. Upgrade it to return an opinionated routing map: task_shape → {tool, when, example}. Both CC (via CAPABILITY CHECK in sprint-ticket) and Igor (via habit routing) consume this manifest to pick the right MCP tool without reasoning overhead or hardcoded heuristics.\n\n**Affected files:** agent_datacenter/skeleton/manifest.py (or equivalent), agent_datacenter/skeleton/mcp_server.py\n**Design rules:** OOP-first (BaseDevice/BaseShim), no SQLite, no TheIgors imports\n**Scope boundary:** In scope: add routing_map field to datacenter_manifest tool response; include entries for db_query, web_research, palace_read at minimum. Out of scope: skill file updates (T-skill-capability-check-dynamic), Igor habit wiring.\n**Test plan:** Test manifest returns routing_map with entries for known task shapes; test unknown task_shape returns empty gracefully; test each entry has tool + when fields.",
+    "completed_at": "2026-05-08T20:00:11.819375+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "495d7e25-67da-44ac-9ceb-07b556c677f0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

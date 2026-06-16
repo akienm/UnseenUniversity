@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-deadend-ack-filter.20260403.172113845550",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-deadend-ack-filter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:21:13.845550",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-deadend-ack-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-deadend-ack-filter",
+    "title": "Post-response filter: block bare acknowledgment phrases before channel post",
+    "result": "Already fully implemented in main.py: _is_bare_ack() + _BARE_ACK_PATTERNS regex filter applied pre-channel-post. Tests in test_deadend_ack_filter.py.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-02T17:57:25.203250+00:00",
+    "related_to": null,
+    "description": "Igor responded Fair. On it. to akien despite system_prompt.py line 142-143 explicitly banning it. Root cause: tier.2 (small Ollama model) does not reliably follow nuanced system_prompt constraints. Fix strategy: add a post-generation filter in main.py response pipeline. Before posting an LLM response to channel, check if it matches bare-ack patterns: [Fair. On it., Got it., On it., Understood., Will do., etc.]. If match: suppress the response entirely (the action IS the response). Alternative: reinforce via a habit that fires on conversation-closure signals and emits a structured response instead of a bare ack. Note: system prompt fix is insufficient — tier.2 ignores it. Need code-level enforcement. Files: main.py (post-LLM, pre-post filter). Inertia: MEDIUM.",
+    "completed_at": "2026-04-03T17:21:13.845550+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d721f102-e2c2-42fc-8a9c-fc5b4225ebe2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

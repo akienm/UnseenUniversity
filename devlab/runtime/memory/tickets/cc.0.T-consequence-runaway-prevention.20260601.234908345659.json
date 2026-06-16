@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-runaway-prevention.20260601.234908345659",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-runaway-prevention"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T23:49:08.345659",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-runaway-prevention-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-runaway-prevention"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-runaway-prevention",
+    "gate": "2026-06-15",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Safety"
+    ],
+    "title": "Consequence check: Granny concurrency gate + stop command",
+    "result": "GRANNY_THROTTLED: 0 in recent logs (old code removed THROTTLED posting; no queue backlog observed); STOP command not needed since spawn path eliminated. Effect: clear.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-01T23:49:08.345659+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-runaway-prevention-2026-06-01",
+    "description": "**What changed:** Granny now enforces cc_max_concurrent=1 before dispatch; CC.0 stop command kills all cc-T-* sessions reliably.\n**Predicted unintended effects:** (1) GRANNY_THROTTLED events may mask legitimate dispatch failures — a ticket that should dispatch looks like throttling; (2) stop_cc_minions may race with a session that just committed and is about to close cleanly — killing it mid-close-ticket could leave a ticket in_progress; (3) cc_max_concurrent=1 means a large queue drains slowly — Granny may appear stalled if a single CC session takes a long time.\n**Signals to watch:** GRANNY_THROTTLED events in channel; in_progress tickets that should have been closed but weren't after stop; queue depth growing faster than it drains.\n**Gate condition:** Check by 2026-06-15 or after 10+ dispatch cycles observed.\n\n**Worst-case token spend:**\n  - Per-failure cost: GRANNY_THROTTLED fires with no dispatch — zero inference tokens, just a channel post\n  - Hard cap: cc_max_concurrent=1 enforced in code; no dispatch fires if any cc-T-* session exists\n  - Blast radius: if check fails (tmux returns wrong count), worst case is 2 concurrent sessions — same as today minus the runaway\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": "2026-06-02T19:38:58.642069+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "05edcede-619f-41f5-b42c-c1cb9419710a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-daemon-supervisor-polling.20260404.175430574861",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-daemon-supervisor-polling"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:54:30.574861",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-daemon-supervisor-polling",
+      "T-main-loop-exception"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-daemon-supervisor-polling",
+    "size": "S",
+    "tags": [
+      "Operations"
+    ],
+    "title": "DaemonSupervisor: add active health polling thread (5s interval) + restart.flag on thread death",
+    "result": "start_polling() added to DaemonSupervisor: 5s poll, critical thread death → DAEMON_DEAD log + restart.flag, wired from main.py run() before loop. 1684 tests pass. Committed 366f0e52.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T17:52:45.957331+00:00",
+    "related_to": null,
+    "description": "DaemonSupervisor exists (daemon_supervisor.py) and registers 7 threads, but has no polling loop — it only reports status on demand. Panel 11: if a worker thread dies mid-flight (e.g. embedder-warmup, consolidation-worker), nothing detects it until next status() call. Fix: add a daemon supervisor polling thread (5s interval) that calls health_fn() for each registered thread, logs CRITICAL if thread is dead, and writes restart.flag if ne-worker or consolidation-worker dies. Pair with T-main-loop-exception outer handler.",
+    "completed_at": "2026-04-04T17:54:30.574861+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ded31f73-1078-407b-84f6-e88210305940",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

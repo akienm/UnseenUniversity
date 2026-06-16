@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-decision-blob-schema.20260415.021049731406",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decision-blob-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T02:10:49.731406",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-decision-blob-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decision-blob-schema",
+    "body": "From T-reasoning-voice-split parent epic — this is the small prerequisite ticket that defines the shared vocabulary every downstream sub-ticket consumes. Named in the parent body but never filed as its own ticket; filing now so it can be sprinted cleanly.\n\n## What it is\n\nA structured data object that Igor's substrate produces, the reasoning LLM refines (if called), the experiment primitive tests, and the voice actor consumes. It's the cognitive equivalent of an HTTP request body — every layer below substrate-work and above voice-production speaks this shape.\n\n## Fields (post-CP-axiom reframe)\n\n- **intent** (str) — what kind of move this is: answer / ask / observe / adopt_goal / decline / defer / experiment\n- **selected_action** (str | None) — the committed decision, if one has been made. None means reasoning is still open.\n- **hypothesis** (str | None) — if the content originated from an LLM consultation, THIS field carries the LLM's proposal AS A HYPOTHESIS. Not committed. Must be tested (by experiment) before it can populate selected_action.\n- **considered_alternatives** (list[dict]) — other candidates that competed and lost, with scores and reasons. CP1 honors: uncertainty is visible, winners show their margin.\n- **importance_weights** (dict) — what dimensions mattered to the decision (urgency / milieu / goal alignment / recency / etc.), with values. Makes selection bias legible.\n- **confidence** (float, 0.0-1.0) — how confident the substrate is in selected_action (or the current best hypothesis). Low confidence = should not commit without experimenting.\n- **cp_validation** (dict) — per-CP flags: {cp1_provisional: True, cp2_failure_captures_learning: True, cp3_has_why: \"...\", cp6_sources_verified: [list-or-null]}. Engrams check these before executing. Audit checks validate them.\n- **register_hints** (dict) — cues for the voice actor about tone, formality, length, person-addressed. Optional; voice actor has defaults.\n- **proposed_experiment** (dict | None) — if strategy 2 is the right next move, THIS field carries the experiment to run (hypothesis + probe + expected observation shape). Consumed by T-experiment-primitive.\n- **provenance** (dict) — who made this decision, from what inputs, at what timestamp. Required. CP6 demands verifiability.\n- **trail_id** (str | None) — activation trail id linking back to the substrate work that produced this blob. Lets us retrace how the decision formed.\n- **blob_id** (str) — yyyymmdd.hhmmssuuuuuu.xxxxxxx per D256 / T-architecture-core-principles timestamp_id_format_uniform. Makes every decision blob queryable.\n\n## Constraints (derived from the six CP patterns)\n\n- **CP1:** `selected_action` can be None (the substrate is allowed to say 'I don't know'). A blob with confidence < 0.5 MUST NOT commit — must produce an experiment or defer.\n- **CP2:** if the downstream voice actor produces output and the outcome is wrong, the blob is captured as learning data, not discarded. The outcome field (added post-execution) feeds back to trail training.\n- **CP3:** `cp_validation.cp3_has_why` is a required human-readable string (or null with explicit reason). Every decision has a causal story or explicitly confesses absence.\n- **CP6:** any field sourced from an untested LLM output lands in `hypothesis`, NOT in `selected_action`. Acting on hypothesis without testing it is a CP6 violation that audit_add.py should eventually catch.\n\n## What to ship\n\n1. **Data model** — Python dataclass (or Pydantic, your call) in `wild_igor/igor/cognition/decision_blob.py`. Fields as above. Validation on construction.\n2. **Serialization** — to/from dict, to/from JSON, to/from memory metadata. Enables storing blobs as metadata on EPISODIC memories or in a dedicated field.\n3. **Tests** — construction, validation, cp_validation enforcement, serialization roundtrip. ~20 tests.\n4. **A helper** — `DecisionBlob.from_substrate(...)` that takes the output of a substrate pass (BG score table, milieu, retrieved memories, considered candidates) and produces a half-populated blob ready for reasoning/experiment/voice. Reduces boilerplate at every call site.\n\n## Out of scope\n\n- The reasoning path that USES blobs (T-reasoning-voice-split subticket)\n- The experiment primitive that consumes proposed_experiment (T-experiment-primitive)\n- The voice actor that consumes register_hints and selected_action (T-voice-actor-ab-framework)\n- Multi-round-trip reasoning conversations (T-llm-collaboration-protocol)\n\nThis ticket is JUST the schema + data model + tests. The rest consumes it.\n\n## Dependencies\n\n- None outbound. Everything downstream will depend on this.\n- Consumers (once shipped): T-reasoning-voice-split, T-llm-collaboration-protocol, T-experiment-primitive, T-voice-actor-ab-framework, T-boredom-llm-escalation, T-self-capability-awareness\n\n## Provenance\n\nNamed in T-reasoning-voice-split epic body but never filed as its own ticket. Akien 2026-04-14 evening: 'stack up everything that can be pushed through and go.' Filing + shipping in the 2000-2100 window.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "cognition",
+      "schema",
+      "biomimicry",
+      "cp-axioms",
+      "foundational"
+    ],
+    "title": "Decision blob schema — contract between substrate, reasoning, experiment, and voice",
+    "result": "a0d224b9 — DecisionBlob dataclass + CPValidation + Alternative + ProposedExperiment + Provenance + Intent enum + can_commit() CP-axiom guard + to/from_dict + to/from_json + from_substrate() helper. blob_id in canonical D256 format. 21 tests covering construction, validation, CP-blocking, serialization roundtrip. 2230 tests pass. Unblocks the downstream consumers: T-reasoning-voice-split, T-llm-collaboration-protocol, T-experiment-primitive, T-voice-actor-ab-framework, T-boredom-llm-escalation, T-self-capability-awareness.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T02:03:21.539782+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-15T02:10:49.731406+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

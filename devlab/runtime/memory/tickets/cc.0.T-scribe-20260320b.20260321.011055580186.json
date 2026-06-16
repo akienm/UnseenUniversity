@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320b.20260321.011055580186",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320b"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:55.580186",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320b"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320b",
+    "body": "Decisions: D152, D153, D154, D155. Gaps closed: T-fix-memories-scan, T-db-populate-embeddings, T-trails-infra (already done), T-graph-calving (designed). New gaps: T-graph-calving #288, T-trail-training #289, T-task-chain #285, T-worker-queue #286, T-igor-poll-spawn #287. Session theme: cognition architecture crystallization — cloud of graphs, attractor-based calving, Hebbian trail training. Subsystems touched: cortex.py (get_by_type limit, _upsert_embedding), narrative_engine.py (NE scan limit). See sessions.md for full detail.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-20b",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:55.580186+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

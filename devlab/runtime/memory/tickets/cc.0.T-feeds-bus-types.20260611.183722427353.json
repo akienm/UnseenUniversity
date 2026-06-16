@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-feeds-bus-types.20260611.183722427353",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-feeds-bus-types"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T18:37:22.427353",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-feeds-taxonomy-2026-06-11"
+    ],
+    "tickets": [
+      "T-feeds-bus-types"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-feeds-bus-types",
+    "gate": null,
+    "role": "master",
+    "tags": [
+      "Bus",
+      "Infrastructure",
+      "Feeds"
+    ],
+    "title": "Add feed type field to PgBus envelopes; enforce 1K debug cap",
+    "result": "Bus test suite: 27/27 pass. Debug cap verified with 1000-msg eviction test. feed_type column in mailboxes, Envelope roundtrip clean. Commit b2618a00.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that every bus envelope carries a feed type (public/personal/debug) and that debug feed mailboxes are capped at 1000 messages, evicting oldest on write.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T18:37:22.427353+00:00",
+    "created_by": null,
+    "related_to": null,
+    "commit_hash": "b2618a009255d66fced320bbca844f9ec6fcd865",
+    "decision_id": "D-feeds-taxonomy-2026-06-11",
+    "description": "Implement the bus-layer foundation for the feeds taxonomy (D-feeds-taxonomy-2026-06-11). Add `feed_type` field to Envelope dataclass (default: 'personal'). Add `debug_cap` enforcement to PgBus.append(): when the destination mailbox has feed_type=debug and message count >= 1000, delete the oldest message before inserting. Store feed_type in bus.messages and bus.mailboxes tables.\n\n**Affected files:** bus/envelope.py, bus/pg_bus.py (append + schema), possibly a migration for bus.mailboxes.feed_type column\n**Design rules:** no-sqlite; Postgres only\n**Scope boundary:** IN: feed_type on Envelope, 1K cap on debug mailboxes, schema changes. OUT: notification logic, importance flag, web UI, device changes.\n**Completion criteria:** (1) Envelope has feed_type: str = 'personal'; (2) PgBus.create_mailbox() accepts feed_type kwarg stored in bus.mailboxes; (3) PgBus.append() enforces 1000-message cap for debug mailboxes; (4) existing bus tests pass; (5) new tests: debug mailbox evicts oldest when cap hit, personal/public unaffected.",
+    "completed_at": "2026-06-11T18:55:00.035105+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

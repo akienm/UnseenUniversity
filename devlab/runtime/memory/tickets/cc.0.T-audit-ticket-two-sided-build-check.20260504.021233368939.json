@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-audit-ticket-two-sided-build-check.20260504.021233368939",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-ticket-two-sided-build-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T02:12:33.368939",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-capability-protocol-2026-05-03"
+    ],
+    "tickets": [
+      "T-audit-ticket-two-sided-build-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-ticket-two-sided-build-check",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Audit",
+      "Capability"
+    ],
+    "title": "CLOSED: audit-ticket two-sided-build check — enforce capability tickets ship handler + skill consumer",
+    "result": "Added Check 16 (two-sided-build) to audit-ticket SKILL.md. Triggers on capability-tagged tickets or MCP/shim/handler keywords; verifies both handler + skill-consumer files in Affected files; SPLITs with sequencing if only one side; honors explicit exemption line. Test cases documented in skill for CC.1 integration. Synced to agent_datacenter master + pushed (3bc3b30).",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-04T02:08:55.088870+00:00",
+    "related_to": null,
+    "decision_id": "D-capability-protocol-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — 'all is approved! go!').** Enforcement ticket for theigors/rules/capability-protocol/two-sided-build. Without filing-time enforcement, capability tickets will drift back to single-sided shipping and the rule rots.\n\n**Filing-time check:** when a ticket's tags include 'Capability' OR its description mentions 'MCP capability' / 'shim' / 'handler', audit-ticket verifies the Affected files list includes BOTH at least one shim/handler file (e.g., agent_datacenter/devices/, lab/claudecode/mcp_*) AND at least one skill file (/home/akien/.claude/skills/*). If only one side is present, audit-ticket returns SPLIT with a recommended sequencing (handler first, then consumer with explicit gate).\n\nNo handler change — this is pure skill-consumer-side work modifying /audit-ticket. Therefore exempt from theigors/rules/capability-protocol/two-sided-build itself (it's the enforcer, not a consumer of a new capability).\n\n**Affected files:** /home/akien/.claude/skills/audit-ticket/SKILL.md (add the two-sided-build check as a new step or extend the design-rules check)\n**Design rules:** theigors/rules/capability-protocol/two-sided-build (the rule being enforced), theigors/rules/ticket_design_checks (audit-ticket's home for filing-time positive checks).\n**Scope boundary:** IN: pattern-match for capability tickets, two-sided file-check, SPLIT recommendation with handler-first sequencing. OUT: detection beyond Affected files inspection (no AST analysis of the actual code). OUT: silently auto-splitting tickets (always returns SPLIT for human review, never modifies).\n**Test plan:** unit test for the check (capability ticket with both sides → PASS; capability ticket with only handler → SPLIT; capability ticket with only skill → SPLIT; non-capability ticket → check skipped). CC.1 integration test that runs audit-ticket against three fixture tickets and asserts the right return value for each.",
+    "completed_at": "2026-05-04T02:12:33.368939+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cef88ad8-f4c4-4f2a-882b-475f4dcc7d2a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

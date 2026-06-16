@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-goal-blocked.20260518.164429529932",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-blocked"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.529932",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-goal-blocked"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-blocked",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Goals",
+      "Skills"
+    ],
+    "title": "Add blocked_by field to goal schema — explicit 'not doing' record",
+    "result": "Added /goal block command and blocked_by field to /goal skill",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.529932+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "When a goal is intentionally not pursued yet (e.g. Gmail blocked until Igor can self-configure), that decision has no home and the same conversation recurs. Add blocked_by to the goal schema so 'not doing' is as explicit as 'doing'.\n\n**Affected files:** agent_datacenter/skills/goal/SKILL.md (add /goal block command)\n**Design rules:** palace-first; blocked_by stored as metadata field on the palace.goals.* node\n**Scope boundary:** in scope: /goal block G-xxx --until G-yyy (stores blocked_by=G-yyy on the node); /goal list shows blocked goals with unlock condition; /audit-goal flags goals blocked by already-achieved goals. Out of scope: auto-unblocking when unlock condition is met.\n**Test plan:** manual smoke: block a goal, verify it shows in list with unlock condition, verify audit-goal surfaces it when blocker is achieved.",
+    "completed_at": "2026-05-18T16:58:45.303424+00:00",
+    "github_issue": 740,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e44b0f7d-b50f-439a-8855-9e5091ebdcf0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

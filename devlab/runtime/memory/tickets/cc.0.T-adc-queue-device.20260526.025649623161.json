@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-adc-queue-device.20260526.025649623161",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-queue-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T02:56:49.623161",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-queue-device-2026-05-25"
+    ],
+    "tickets": [
+      "T-adc-queue-device",
+      "T-adc-queue-no-claiming",
+      "T-query-ticket-mcp-switch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-queue-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "ADC",
+      "Queue",
+      "MCP"
+    ],
+    "title": "Build ADC queue rack device — queue_next MCP tool, no claiming",
+    "result": "QueueDevice BaseDevice subclass + MCP server + 21 tests; commit d2230e4d",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-26T02:59:43.133583+00:00",
+    "created_at": "2026-05-26T02:56:49.623161+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-adc-queue-device-2026-05-25",
+    "description": "Build a queue rack device in UnseenUniversity that IS the work ticket queue. All consumers (CC, Igor, Librarian) call queue_next(worker) → ticket JSON or None via MCP. No claiming — queue_next is atomic: it reads the next pending ticket for the given worker and marks it in_progress in one DB operation. Backend: reads/writes cc_queue.py's Postgres table (public schema, queue table).\n\nDevice shape:\n- devices/queue/ directory with __init__.py + device.py (BaseDevice subclass)\n- MCP tools: queue_next(worker: str) → dict | None; queue_peek(worker: str) → dict | None (non-atomic, read-only); queue_show(ticket_id: str) → dict | None; queue_list(worker: str = None, status: str = 'pending') → list[dict]\n- No queue_claim tool — raises LegacyDirectClaimError if somehow invoked\n- Shim registration so the device appears in the MCP manifest\n\n**Affected files:** /home/akien/dev/src/UnseenUniversity/devices/queue/__init__.py (new), devices/queue/device.py (new), devices/queue/tests/test_queue_device.py (new), unseen_university/shim.py (register new device)\n**Design rules:** BaseDevice subclass (CLAUDE.md); no TheIgors imports; OOP-first; datacenter_logs/queue/ for device logs\n**Scope boundary:** build the device + MCP tools + tests; NOT update /query-ticket skill (T-query-ticket-mcp-switch); NOT remove cc_queue.py claim (T-adc-queue-no-claiming); both gated on this ticket\n**Test plan:** queue_next returns ticket dict when pending tickets exist for worker; queue_next returns None when queue empty or no tickets for worker; queue_next marks returned ticket in_progress atomically (second call returns None); queue_list returns full pending list; integration test with real Postgres cc_queue data",
+    "completed_at": "2026-05-26T03:14:00.822198+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T02:56:49.672941+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fd2fbd8a-cd57-4e92-8012-ce9c15f9bdc0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

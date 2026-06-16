@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-doc-habit-duplicates.20260414.184405014533",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-doc-habit-duplicates"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T18:44:05.014533",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-doc-habit-duplicates"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-doc-habit-duplicates",
+    "body": "Caught during T-canned-response-refractory-leak investigation 2026-04-14. The DB has 5 named PROC_ documentation-as-action habits (PROC_WG_PREPARSE_TUNING, PROC_PREPARSE_TUNING, PROC_LATENCY_ADAPTIVE_TUNING, PROC_BACKUP_RUN, PROC_NOTEBOOK_SAVE) AND a parallel set of numeric-ID rows from 2026-03-29 with identical trigger + identical action text:\n\n  PROC_WG_PREPARSE_TUNING       ↔ 20260329164658680441\n  PROC_PREPARSE_TUNING          ↔ 20260329164658680448\n  PROC_LATENCY_ADAPTIVE_TUNING  ↔ 20260329164658680445\n  PROC_BACKUP_RUN               ↔ 20260329164658680432\n  PROC_NOTEBOOK_SAVE            ↔ 20260329164658680452\n\nPLUS one orphan: 20260308151614209000 — long action_text starting 'CC: CC> All verified: Phase 1 was already complete...' — no trigger, looks like stale chat content seeded as a habit by mistake.\n\nIMPACT: Refractory is per habit_id. Adding twm_ttl_seconds to the named PROC_ rows (just done in 39c7381f) doesn't suppress the numeric-ID rows. The BG can match either row on any given turn, so the same canned text can fire twice in a row from different ids — exactly what we saw in the 2026-04-13 transcript (same canned reply twice in unrelated contexts).\n\nINVESTIGATION QUESTIONS:\n1. Where did the 2026-03-29 duplicates come from? Look at git log around 2026-03-29 for habit seeding scripts. Probably a re-seed pass that didn't dedupe by content.\n2. Are the duplicates linked from anywhere? interpretive_edges, tails, parent/child? cortex.recall traces?\n3. Is the 20260308 orphan dead too?\n\nFIX OPTIONS (pick one with Akien):\nA) DELETE the 6 duplicate rows (5 numeric-ID dupes + 1 orphan). Risk: low if no edges/tails reference them. Cleanest.\nB) Add ttl to the duplicates too. Doesn't fix the underlying duplication, just defends in depth on top of A's work.\nC) Convert the doc-as-action habits to FACTUAL/REFERENCE memories so they don't fire as habits at all (only retrieved on relevance). Ticket separately.\n\nRECOMMENDATION: A first (clean up the dupes), then C as a follow-up to demote documentation out of PROC entirely. The 'biomimicry engineer' framing: documentation about how the system works should be retrieved when relevant, not fired as a response. Habits are for behavior selection, not knowledge transfer.\n\nDEPENDENCIES: None hard. Related to T-typed-memories-to-tags (#NEW) — these doc-as-action habits are exactly the kind of misclassification that goes away when types become tags and 'fires as habit' becomes a tag rather than a type.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "habits",
+      "cleanup",
+      "biomimicry",
+      "duplicates"
+    ],
+    "title": "Duplicate doc-as-action habits — numeric-ID rows shadow PROC_* named rows",
+    "result": "Option A applied. Verified 5 numeric-ID dupes (20260329164658680432/41/45/48/52) had ZERO activation, ZERO interpretive_edges (in or out), ZERO tails, ZERO blobs, ZERO parent_id refs. Had memory_embeddings rows so deleted those first then memories — both in single transaction. Verified the 5 named PROC_ rows survived with refractory intact (PROC_BACKUP_RUN ttl=600, PROC_LATENCY_ADAPTIVE_TUNING ttl=1800, PROC_NOTEBOOK_SAVE ttl=300, PROC_PREPARSE_TUNING ttl=1800, PROC_WG_PREPARSE_TUNING ttl=1800). Inhibition seeder still 15/15 idempotent. 59 targeted tests pass. NOT TOUCHED in this sprint: 20260308151614209000 orphan — has 4 outgoing + 6 incoming interpretive edges so deleting CASCADEs them; surfaced for separate Akien decision. No source change, DB-only operation.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-14T18:42:27.387238+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-14T18:44:05.014533+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

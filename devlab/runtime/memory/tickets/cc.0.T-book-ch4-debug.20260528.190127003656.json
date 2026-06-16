@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-book-ch4-debug.20260528.190127003656",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-book-ch4-debug"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:27.003656",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-and-book-2026-05-28"
+    ],
+    "tickets": [
+      "T-book-ch4-debug"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-book-ch4-debug",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Book",
+      "Docs"
+    ],
+    "title": "Book ch4: add /debug autonomous skill description",
+    "result": "Added /debug skill section to Chapter 4 — escalation ladder, report format, report-first principle",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-28T19:32:21.548952+00:00",
+    "created_at": "2026-05-28T19:01:27.003656+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-and-book-2026-05-28",
+    "description": "Update lab/docs/the_ownership_gap/5.Skills.md (Chapter 4) to add /debug as an autonomous mixed-mode skill. Describe: pointer resolution input pattern, Scraps→Haiku→Sonnet escalation ladder, structured report format (SUMMARY/WHERE/WHAT/STATE/LOG WINDOW/HYPOTHESIS/NEXT), and the report-first principle — CC reads a report rather than investigating interactively. This is the compiled inference ladder applied to debugging.\n\n**Affected files:** lab/docs/the_ownership_gap/5.Skills.md\n**Design rules:** none\n**Scope boundary:** one new skill section (/debug); update version timestamp to current MT\n**Test plan:** read file and verify /debug section present with escalation ladder and report format; version stamp updated",
+    "completed_at": "2026-05-28T19:33:00.841540+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T19:32:21.548952+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:27.003683+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d318016-9e37-46f3-b138-45a04e3a414d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

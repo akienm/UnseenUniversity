@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-typed-memories-to-tags.20260414.232234000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-typed-memories-to-tags"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:34",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-typed-memories-to-tags"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-typed-memories-to-tags",
+    "body": "From Akien 2026-04-14 morning: 'T-typed-memories-to-tags can be s. we just start behaving that way (stop creating new types) and when we go to access one that needs updating, we update it. simple.'\n\nBIOMIMETIC REASON: the brain doesn't have memory types. Same neurons store everything; the procedural/episodic/declarative distinction is about which retrieval circuit fires, not about what the storage substrate is. Types are a retrieval-path label, not a storage fact. A memory that has to know its own type before being used can't participate in cross-circuit integration — exactly what T-goals-as-persistent-relationships (#422) is trying to break down (goals as PRs with abstract second-nodes rather than their own type).\n\nCURRENT TYPES: ROOT, CP, ID, RM, EPISODIC, PROCEDURAL, INTERPRETIVE, EXPERIENTIAL, FACTUAL. They do three jobs:\n1. Inertia defaults — already computed from structure (depth + activation + children), could drop type term\n2. Retrieval routing — get_by_type for fast filtering; tags+indexes do this with more flexibility\n3. Code-path dispatch — brittle, already getting weird post-D260 (payload blurs PROC/EPISODIC boundary)\n\nAPPROACH (deliberately NOT a big bang):\n1. **Stop creating new types.** Any new type-shaped distinction becomes a tag in metadata, not an enum value. This is the only immediate behavioral change.\n2. **Opportunistic conversion.** When touching code that reads/writes a memory_type, convert that path to tag-based at the same time. No sweep. No dedicated sprint. Just: if you're there anyway, fix it.\n3. **Tag substrate verification.** Before step 1 is real, verify metadata tags + indexes can carry everything types carry: fast filter by tag (add GIN index on metadata->'tags' if missing), tag-based inertia lookup, tag-based retrieval routing in cortex.\n4. **Let the type column become vestigial.** Over time it stops being the source of truth; it's one tag among many. Final removal is far-future HIGH-inertia work, not this ticket.\n\nDO NOT:\n- Sweep-refactor all existing memories\n- Drop the memory_type column\n- Touch models.py beyond adding tag index if needed\n\nEXISTING WORK TO CHECK:\n- memory/models.py — MEMORY_TYPES enum, current type→inertia mapping\n- memory/cortex.py — get_by_type(), type-filtered queries\n- D260 payload — already demonstrates PROC/EPISODIC blur; review whether tag approach would be cleaner there too\n- metadata tag usage in existing memories — is there already an informal tag convention?\n- GIN index on metadata — #261 added narrative tsvector GIN; check if metadata has similar\n\nDEPENDENCIES: none hard. Aligns with #422 (goals as PRs not a new type) and the whole everything-is-memory DP1 principle.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "memory",
+      "biomimicry",
+      "refactor",
+      "opportunistic"
+    ],
+    "title": "Deprecate memory types in favor of tags — opportunistic, not big-bang",
+    "result": "Pattern established: MemoryType enum frozen, new distinctions go in metadata tags. DECISION type removed (last row converted to FACTUAL today). store_note demonstrates the tag pattern (note_category). CLAUDE.md + MEMORY.md already document the rule.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:55:44.917603+00:00",
+    "created_at": "2026-04-14T23:22:34Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T19:56:25.792765+00:00",
+    "github_issue": 433,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

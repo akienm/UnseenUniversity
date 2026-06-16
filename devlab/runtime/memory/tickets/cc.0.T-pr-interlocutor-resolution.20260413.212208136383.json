@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-pr-interlocutor-resolution.20260413.212208136383",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-interlocutor-resolution"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T21:22:08.136383",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-interlocutor-resolution",
+      "T-pr-load-as-primary-attractor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-interlocutor-resolution",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Per-thread interlocutor resolution — match thread/author to the right persistent-relationship facia",
+    "result": "38585540 — Multi-user unblock. _resolve_relationship_frame now derives the active facia from each turn's author identity via metadata.author_handles lookup. New resolve_facia_by_author helper in persistent_relationships.py walks facia metadata case-insensitively. PR_AKIEN re-seeded with author_handles=['akien', 'claude-code']. Author gate is now case-insensitive too (network sources can vary capitalization). Falls back to PR_AKIEN for known human authors with no facia mapping (single-user safety net). 11 new tests. 2086 total pass, zero regressions. When new humans get their own facia, the resolver picks them up automatically without further code changes.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T21:12:12.855661+00:00",
+    "related_to": null,
+    "description": "T-pr-load-as-primary-attractor (72978a10) shipped _resolve_relationship_frame which currently always returns PR_AKIEN for any human author. That was correct for single-user but blocks the productization path: when Igor talks to a second human (Discord guild member, Gmail correspondent, future multi-user web UI), the wrong relationship frame would load.\n\nFIX: extend _resolve_relationship_frame to derive a per-thread/per-author facia id. The simplest stable mapping is by author identity:\n\n  - 'akien' or 'claude-code' → PR_AKIEN (preserves current behavior)\n  - other human authors → look up by author name first, then by thread channel\n  - if no facia exists for the interlocutor, return None (no frame loaded — Igor still functions, just without relationship context)\n\nLATER: a tool to auto-create a nascent persistent-relationship facia when a new interlocutor appears for the first time. For now, registered interlocutors only — unknown senders don't load a frame.\n\nThe lookup uses the existing persistent_relationships._list_facia_memories to find candidates by metadata.display_name or a new metadata.author_handles list. Add author_handles to PR_AKIEN's metadata: ['akien', 'claude-code'].\n\nINERTIA: LOW. main.py _resolve_relationship_frame extension + small persistent_relationships.py helper. No new tables.\n\nTESTS: akien/claude-code resolve to PR_AKIEN; unknown human author returns None; non-human authors continue to return None; lookup is case-insensitive.",
+    "completed_at": "2026-04-13T21:22:08.136383+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a91358fa-32a7-46a2-ad11-4531f132cd15",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

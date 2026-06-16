@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-remove-utility-closet-registry.20260523.173918278222",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-utility-closet-registry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T17:39:18.278222",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-remove-utility-closet-registry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-utility-closet-registry",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Infrastructure"
+    ],
+    "title": "Remove utility_closet registry imports from ops.py and scope_guard.py",
+    "result": "Created wild_igor/igor/tools/registry.py re-export shim; ops.py + scope_guard.py migrated off utility_closet path; singleton preserved",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.2,
+    "claimed_at": "2026-05-23T20:38:34.474579+00:00",
+    "created_at": "2026-05-23T17:39:18.278222+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "ops.py and scope_guard.py both import from lab.utility_closet.registry: `from lab.utility_closet.registry import Tool, registry`. This is utility_closet debt — any mention of utility_closet is a removal ticket.\n\nDetermine the correct replacement registry path (likely a direct ADC registry or a path within wild_igor/ that doesn't go through the utility_closet symlink). Update both files.\n\n**Affected files:** wild_igor/igor/tools/ops.py, wild_igor/igor/tools/scope_guard.py\n**Design rules:** theigors/rules/database (no utility_closet)\n**Scope boundary:** Registry import replacement only — no behavior change.\n**Test plan:** pytest tests/test_queue_consumer.py passes (exercises ops.py registry). Verify scope_guard tool is still registered.",
+    "completed_at": "2026-05-23T20:56:33.366919+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-23T20:38:34.474579+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-23T17:39:18.278238+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "940fadf6-c7db-4398-9e46-791d42bf5e9c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

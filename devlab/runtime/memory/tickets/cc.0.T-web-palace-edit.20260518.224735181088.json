@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-web-palace-edit.20260518.224735181088",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-palace-edit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:47:35.181088",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-web-control-station-2026-05-18"
+    ],
+    "tickets": [
+      "T-web-palace-edit",
+      "T-web-palace-read"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-palace-edit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "WebUI",
+      "Palace"
+    ],
+    "title": "CLOSED: Palace node edit forms with ADC_EDIT_TOKEN auth",
+    "result": "GET /palace-edit/{path} + POST with token auth; edit link on node pages; 5 new tests — commit 5d98652",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:47:35.181088+00:00",
+    "related_to": null,
+    "commit_hash": "5d98652",
+    "decision_id": "D-adc-web-control-station-2026-05-18",
+    "description": "Extend the read-only palace browser (T-web-palace-read) with edit capability. Palace nodes contain goals, decisions, hypotheses — write access must be gated.\n\nAuth: bearer token via ADC_EDIT_TOKEN env var (if unset, edit routes return 403). Token passed as a query param or Authorization header. Simple but sufficient for a single-user homelab.\n\nEdit routes:\n  GET  /palace/{path}/edit  — edit form pre-filled with current content\n  POST /palace/{path}/edit  — save updated content (auth required)\n  POST /goals/{id}/status   — update goal status (auth required)\n\n**Affected files:** devices/web_server/server.py\n**Design rules:** no-sqlite; write via IGOR_HOME_DB_URL to adc.palace; auth via ADC_EDIT_TOKEN env var\n**Scope boundary:** edit existing nodes only. No node creation via web (that's /decided + /goal skills). Auth is bearer token — not full session auth.\n**Test plan:** POST /palace/{path}/edit without token → 403. POST with valid token → 200 and node updated in DB. Edit form pre-fills with current content.",
+    "completed_at": "2026-05-19T00:38:03.549888+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d54f8845-2dec-4d1a-b1aa-b1d61b046b68",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-skills-triage.20260508.000654575308",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-skills-triage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T00:06:54.575308",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-shared-palace-schema-2026-05-07"
+    ],
+    "tickets": [
+      "T-cc-skills-triage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-skills-triage",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Swarm"
+    ],
+    "title": "CLOSED: Triage cc_skills/: cross-machine vs Igor-internal, move cross-machine to ADC",
+    "result": "Triage complete: 27 machine-agnostic in ADC, 4 igor-internal (cognition-debug/debug-pe-chain/map-igor/readigor) recorded in manifest with deploy=false. No moves needed — already correctly organized. Commit 32c9fe5.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-08T00:06:54.575308+00:00",
+    "related_to": null,
+    "decision_id": "D-shared-palace-schema-2026-05-07",
+    "description": "TheIgors/lab/cc_skills/ contains skills that fall into two categories: (a) cross-machine skills (belong in agent_datacenter, useful on any machine), (b) Igor-internal skills (TheIgors-specific, keep in place). Triage all skills, produce a classification table, then move cross-machine ones to agent_datacenter/.\n\nClassification heuristic: if the skill requires TheIgors-specific DB, Igor's palace, or Igor subsystem imports → Igor-internal. If the skill only needs CC_WORKFLOW_TOOLS, git, or standard shell → cross-machine candidate.\n\n**Affected files:** TheIgors/lab/cc_skills/* (source), agent_datacenter/skills/* (new destination for cross-machine ones)\n**Design rules:** No TheIgors imports in ADC-resident skills.\n**Scope boundary:** Move/copy existing skills only — no rewriting, no new skill creation. agentctl init already deploys skills to ~/.local/bin — verify deployed path still works after move.\n**Test plan:** After move, verify each moved skill loads and runs from ADC path. Check agentctl init still deploys correctly.",
+    "completed_at": "2026-05-08T00:19:04.753483+00:00",
+    "github_issue": 628,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a3792d80-b6ed-4559-93bd-4c249187bfdb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

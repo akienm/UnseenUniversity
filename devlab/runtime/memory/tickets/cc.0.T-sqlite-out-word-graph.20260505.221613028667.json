@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-sqlite-out-word-graph.20260505.221613028667",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-out-word-graph"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T22:16:13.028667",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-migration-phase-bc-2026-05-05"
+    ],
+    "tickets": [
+      "T-sqlite-out-word-graph"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-out-word-graph",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Database",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Migrate word_graph.py to native Postgres SQL",
+    "result": "word_graph.py fully migrated: INSTR→strpos, INSERT OR REPLACE/IGNORE→ON CONFLICT, ?→%s, SELECT changes()→RETURNING; 4483 tests pass; commit 8cf0af9a",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-05T22:08:09.089801+00:00",
+    "related_to": null,
+    "decision_id": "D-sqlite-migration-phase-bc-2026-05-05",
+    "description": "word_graph.py has several SQLite-isms that route through db_proxy's shim:\n\n- Line 287: `INSERT OR REPLACE INTO wg_meta (key, value) VALUES ('word_count', ?)` → `ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, `%s`\n- Lines 387/399/413/425: already use ON CONFLICT syntax but still have `?` → change to `%s`\n- Line 464: `INSERT OR IGNORE INTO wg_word_lang (word, lang) VALUES (?, ?)` → `ON CONFLICT DO NOTHING`, `%s`\n- Line 487: `INSERT OR REPLACE INTO wg_idf (word, score) VALUES (?, ?)` → `ON CONFLICT (word) DO UPDATE SET score = EXCLUDED.score`, `%s`\n- Lines 776, 810, 828, 845: `INSTR(col, '__') = 0` → `strpos(col, '__') = 0`\n- Lines 511, 519, 582, 585, 599, 779, 789, 809, 812, 830, 832, 845, 861, 918, 919: `?` placeholders → `%s`\n\nNote: Lines 334–347 already use strpos in index creation — skip those.\n\n**Affected files:** `wild_igor/igor/cognition/word_graph.py`\n**Design rules:** theigors/rules/database — native Postgres syntax only\n**Scope boundary:** word_graph.py only; do not touch db_proxy.py shim yet.\n**Test plan:** Run full test suite; grep confirms no `INSERT OR REPLACE`, `INSERT OR IGNORE`, `INSTR(` in word_graph.py after change.\n**Pass condition:** All tests green; `grep -n 'INSERT OR REPLACE\\|INSERT OR IGNORE\\|INSTR(' wild_igor/igor/cognition/word_graph.py` returns 0 results; word graph queries return expected results.\n\nValidation: Igor word-graph query log shows no SQL syntax errors; wg_meta/wg_idf upserts succeed.\nCleanup: test fixtures via conftest.",
+    "completed_at": "2026-05-05T22:16:13.028667+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a05ca616-858e-4216-820b-1695f22a7948",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

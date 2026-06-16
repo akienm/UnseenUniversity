@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-build-log-digester.20260616.203103013640",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-build-log-digester"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T20:31:03.013640",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rewind-as-workflow-primitive",
+      "D-rewind-as-workflow-primitive-2026-06-16"
+    ],
+    "tickets": [
+      "T-build-log-digester"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-build-log-digester",
+    "title": "[sprint] Build-log digester — inference-free minion that keeps build state pick-up-ready",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Observability",
+      "Infrastructure"
+    ],
+    "description": "Inference-free daemon that tails datacenter_logs and maintains a compact, ticket-keyed build digest so a context resuming mid-build reads a small digest instead of re-tokenizing raw logs. Highest-value content is the attempt-to-outcome timeline + current blocker (the anti-loop fuel: stops a resuming context from re-trying an already-failed approach). Doubles as the narrative build story (observability). Helps BOTH the rewind path and the compact path. Key it by ticket id so the build digest (qualitative) and per-ticket-usage-metrics (quantitative) are the same row.\n\nGround-Loop supervised, symmetric with web_server. First instance of the 'active-maintenance store' class from D-rewind-as-workflow-primitive (workstream 3).\n\n**PRECONDITION (advisor):** 'inference-free' holds only if logs carry structured attempt/outcome boundary markers. Raw events (test pass/fail, file touched) parse cleanly, but grouping events into attempt->outcome needs the log lines to mark those boundaries. This ticket may need a companion structured-build-event logging upgrade (AR-009 already logs state changes — confirm the markers exist); otherwise the digester degrades to a flat event timeline. Do NOT let 'inference-free' silently smuggle in a logging-format change — scope it explicitly.\n\n**Affected files:** TBD — discovery step in sprint (new daemon under devices/, a Ground Loop descriptor under config/ground_loop/, log-parsing module; check datacenter_logs/ AR-009 line format first).\n**Design rules:** no-sqlite (Postgres or flat-file for the digest store), test-plan-or-why-not, external-state-principle (digest held externally, keyed by ticket id), AR-009 (the digester reads AR-009 logs; may need to extend their structure).\n**Scope boundary:** IN — tail+parse build logs into a ticket-keyed digest (attempt/outcome timeline + current blocker), Ground-Loop supervised, inference-free. OUT — any LLM summarization; the rewind cadence itself; per-ticket-usage-metrics (sibling ticket, same key).\n**Test plan:** unit-test the log parser against captured AR-009 log fixtures (event extraction + attempt/outcome grouping); integration test that a digest round-trips and a resume reads it; verify graceful degradation to flat timeline when boundary markers are absent.\n**Completion criteria:** Digester daemon runs under Ground Loop; a mid-build resume reads a ticket-keyed digest carrying the attempt->outcome timeline + current blocker; the log parser passes against captured AR-009 fixtures; the degrade-to-flat-timeline path (no boundary markers) is verified.",
+    "decision_id": "D-rewind-as-workflow-primitive-2026-06-16",
+    "created_at": "2026-06-16T20:31:03.013640+00:00",
+    "updated_at": "2026-06-16T14:31:03.027219-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.65,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that a context resuming a build reads a small ticket-keyed digest of attempt->outcome + current blocker, never re-tokenizing raw logs, maintained by an inference-free minion.",
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

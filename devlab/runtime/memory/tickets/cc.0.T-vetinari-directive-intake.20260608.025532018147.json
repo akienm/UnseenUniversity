@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-vetinari-directive-intake.20260608.025532018147",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-directive-intake"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T02:55:32.018147",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-gap-map-2026-06-08"
+    ],
+    "tickets": [
+      "T-vetinari-directive-intake"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-directive-intake",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Vetinari",
+      "Orchestration",
+      "Infrastructure"
+    ],
+    "title": "Vetinari: receive path — directive intake via bus",
+    "result": "VetinariShim + DirectiveListener (fetch_unseen polling, malformed-envelope-safe); accept_directive() + get_pending_directives() on device; atomic flat-file write; 15 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that Vetinari can receive a natural-language directive from Akien via comms://vetinari/inbox and persist it to flat-file pending state.",
+    "claimed_at": "2026-06-08T03:01:30.971356+00:00",
+    "created_at": "2026-06-08T02:55:32.018147+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-vetinari-gap-map-2026-06-08",
+    "description": "Vetinari currently has no receive path (comms() returns pull: False). The autonomous directive vision requires him to accept goals from Akien.\n\nAdd a VetinariShim with an IMAP idle_wait listener on comms://vetinari/inbox. On message receipt, parse the envelope body as a directive dict {id, text, from, received_at} and append to ~/.unseen_university/vetinari/pending_directives.json (atomic write). No processing yet — intake only.\n\n**Affected files:** devices/vetinari/shim.py (NEW), devices/vetinari/device.py (add accept_directive(), get_pending_directives()), tests/test_vetinari_intake.py (NEW)\n**Design rules:** BaseShim for shim; IMAP via bus/ only; flat-file for pending state (must survive restart); no SQLite\n**Scope boundary:** IN — shim skeleton, IMAP listener loop, directive persistence, accept_directive() on device; OUT — decomposition, any processing of the directive\n**Completion criteria:** VetinariShim starts without error; send a test envelope to comms://vetinari/inbox; verify pending_directives.json gains the new entry; 5+ tests covering: receive, persist, restart-survives, malformed-envelope-graceful, duplicate-id-handled",
+    "completed_at": "2026-06-08T03:31:53.913616+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

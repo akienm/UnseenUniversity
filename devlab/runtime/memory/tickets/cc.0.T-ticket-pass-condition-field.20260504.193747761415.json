@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-ticket-pass-condition-field.20260504.193747761415",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-pass-condition-field"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T19:37:47.761415",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pass-condition-required-2026-05-04"
+    ],
+    "tickets": [
+      "T-ticket-pass-condition-field"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-pass-condition-field",
+    "gate": null,
+    "size": "S",
+    "title": "CLOSED: Add Pass condition as required section to ticket template + audit-ticket check",
+    "result": "Added Pass condition as 5th required section to /ticket template; added check 8.5 + [pass-condition] finding to /audit-ticket. Skills updated.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-05-04T19:35:43.447615+00:00",
+    "related_to": null,
+    "decision_id": "D-pass-condition-required-2026-05-04",
+    "description": "All tickets must include an explicit 'Pass condition' labeled section — one observable sentence proving end-to-end delivery, distinct from Test plan. Update /ticket SKILL.md description template to include the section. Update /audit-ticket SKILL.md to flag tickets where Pass condition is absent or is just 'tests pass'.\n\n**Affected files:** ~/.claude/skills/ticket/SKILL.md, ~/.claude/skills/audit-ticket/SKILL.md\n**Design rules:** none apply\n**Scope boundary:** IN = add Pass condition to template and audit check; OUT = no cc_queue.py schema changes (field lives inside description text, not a new column)\n**Test plan:** manual — /ticket SKILL.md shows the new section in the template; /audit-ticket SKILL.md shows the flag rule with examples\n**Pass condition:** a ticket filed via /ticket shows 'Pass condition:' in its description; /audit-ticket flags a description missing it",
+    "completed_at": "2026-05-04T19:37:47.761415+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c1c21bd9-50ef-44bf-accc-14ee8013e472",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

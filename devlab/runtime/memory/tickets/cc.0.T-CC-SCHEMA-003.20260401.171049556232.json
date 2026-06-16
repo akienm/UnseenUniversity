@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-CC-SCHEMA-003.20260401.171049556232",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-CC-SCHEMA-003"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T17:10:49.556232",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-CC-SCHEMA-003"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-CC-SCHEMA-003",
+    "title": "Add related_to field to ticket schema",
+    "result": "Added related_to field to ticket schema. Enables daemon to track related tickets and systematize the leave-running-minion pattern. Field is nullable, default=None.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "p2",
+    "claimed_at": "2026-04-01T17:10:22.697317+00:00",
+    "description": "Add related_to FK field to ticket schema in cc_queue.py for leave-running minion pattern support",
+    "completed_at": "2026-04-01T17:10:49.556232+00:00",
+    "deposited_at": "2026-05-20T20:56:07.642187",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5cf88c86-3038-4b34-9dcc-4d5554f8e71d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-repo-auditor-semantic-eval.20260610.173345264809",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-repo-auditor-semantic-eval"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T17:33:45.264809",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-repo-auditor-device-2026-06-10"
+    ],
+    "tickets": [
+      "T-repo-auditor-semantic-eval",
+      "T-repo-auditor-semantic-wire",
+      "T-repo-auditor-structural"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-repo-auditor-semantic-eval",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Hygiene",
+      "Hubert",
+      "Inference"
+    ],
+    "title": "[hold] Repo auditor: evaluate whether semantic layer adds precision",
+    "result": "structural auditor returns 0 flags: get_closed_tickets() returns size=None for all tickets; no M/L/XL tickets in audit set to eval against. Fix get_closed_tickets() size field first.",
+    "status": "sprint",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.4,
+    "intention": "I intend that the semantic (embedding cosine similarity) layer is only wired into the auditor if it demonstrably improves flag precision over structural-only — not on faith.",
+    "blocked_at": "2026-06-15T00:41:09.297232+00:00",
+    "claimed_at": null,
+    "created_at": "2026-06-10T17:33:45.264809+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-repo-auditor-device-2026-06-10",
+    "description": "After T-repo-auditor-structural ships and produces its first real flag list, run a precision eval:\n\n1. Take the top-30 structural flags from the first run\n2. Manually review 10 of them (sample) to establish a ground-truth precision baseline for structural-only\n3. For the same 30 tickets: embed ticket description + commit summary using the existing embedding pipeline; compute cosine similarity; compare structural scores vs structural+semantic scores against the ground-truth labels\n4. Report: does semantic add >= 10% precision lift? If yes → file T-repo-auditor-semantic-wire. If no → close the semantic thread with a note.\n\n**Affected files:** lab/competition/ (read: reuse embedding pipeline); devices/hubert/repo_auditor.py (read)\n**Design rules:** none — this is an eval script, not production code\n**Scope boundary:** IN — eval script + precision measurement. OUT — wiring semantic into the nightly run (only if eval passes).\n**Completion criteria:** Eval script runs end-to-end; produces a one-screen report showing structural-only precision vs structural+semantic precision on the 10-sample ground truth; verdict (wire / don't wire) written to `hubert.audit_flags` metadata field.",
+    "completed_at": null,
+    "deposited_at": "2026-06-10T11:37:18.156642",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-06-10T17:33:45.264909+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

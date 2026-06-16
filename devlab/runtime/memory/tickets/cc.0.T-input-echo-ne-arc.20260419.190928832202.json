@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-input-echo-ne-arc.20260419.190928832202",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-input-echo-ne-arc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T19:09:28.832202",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-input-echo-thread-history",
+      "T-input-echo-ne-arc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-input-echo-ne-arc",
+    "size": "M",
+    "tags": [
+      "Bug",
+      "Cognition",
+      "Prompt-assembly"
+    ],
+    "title": "NE arc rendering doubles thread-context lines (second input-echo surface)",
+    "result": "NE deterministic-arc builder now pulls top 6 observations, substring-dedups on normalized form, keeps first 3 distinct. Matches Akien's exact pattern. 4 tests pass. Commit e65931c8. Igor restart to activate.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T19:07:06.018173+00:00",
+    "related_to": null,
+    "description": "Yesterday's T-igor-input-echo-thread-history (659bb5a4) fixed the thread-anchor write path — anchors no longer store recursively-prefixed user_input. But Akien's 2026-04-19 paste shows NE's own arc-rendering still duplicates context:\n\n  [NE] arc: Igor is engaged with (positive): relationship: operator\n  [Web message from akien]: hello; relationship: operator\n  [Web message from akien]: hello\n  TALKING WITH: Akien | re;\n\n'[Web message from akien]: hello' appears twice in one arc line. This is a DIFFERENT surface from the thread_anchor write — it's NE's context assembly for arc / prompt construction. Same kind of duplication (two copies of same tag+content), different producer.\n\n## Suspect paths\n- narrative_engine.py _arc_build or equivalent — pulls from multiple memory sources (TWM + ring + relevant) and concatenates without dedup\n- The TWM push path: thread.recent_user + thread.prior_user both end up in arc context without a de-dup pass\n- reasoners/base.py _build_session_context — might be appending the same message via two paths (e.g. ring entry + TWM observation)\n\n## First step\nLog or pdb what the NE arc line is BUILT from — which memory IDs contribute. If the same (source, content) pair comes from two different observation IDs, that's the dedup gap.\n\n## Acceptance\n- No adjacent duplicate [Web message from X]: lines in NE arc output\n- No regression in the parts of arc context that SHOULD repeat (some things are correctly repeated for salience; this ticket is about ACCIDENTAL duplication)\n\n## Related\n- T-igor-input-echo-thread-history (659bb5a4, done) — sibling surface, same kind of bug",
+    "completed_at": "2026-04-19T19:09:28.832202+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e75b5d65-095d-4bde-b349-44b346fb3a65",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

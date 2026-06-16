@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-wg-sync-scope.20260609.165759675602",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wg-sync-scope"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.675602",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-wg-sync-scope"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wg-sync-scope",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Database",
+      "DistributedSystems"
+    ],
+    "title": "Exclude WORD_GRAPH nodes from hub-spoke sync + fix accumulate_unresolved race",
+    "result": "WORD_GRAPH portable=0 via m063 migration + INSERT fix; accumulate_unresolved uses atomic UPDATE+RETURNING (button pattern)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": "I intend that hub-spoke sync is not stressed by 57K scaffolding nodes and that watchlist counts are race-free.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.675602+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (Distributed Systems): (1) 57K WORD_GRAPH nodes are scope='class' so they flood the hub-spoke sync (57K upserts per sync cycle); mark them portable=0 or add sync exclusion. (2) accumulate_unresolved() does read-modify-write without FOR UPDATE — concurrent stores can lose count increments. Fix: use UPDATE SET watch_edge_count = watch_edge_count + 1 atomic SQL.\n\n**Affected files:** devices/igor/memory/cortex.py (sync exclusion + accumulate_unresolved fix)\n**Design rules:** HIGH-inertia cortex.py — Akien pre-approval required before coding\n**Scope boundary:** IN — sync exclusion for WORD_GRAPH, atomic increment for accumulate_unresolved; OUT — sync protocol changes\n**Completion criteria:** PROC_MEMORY_SYNC does not attempt to upsert WORD_GRAPH nodes; accumulate_unresolved uses atomic UPDATE SET x = x + 1",
+    "completed_at": "2026-06-09T19:46:34.425462+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

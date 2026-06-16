@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-read-ai-ml-neuroscience.20260403.192558000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-read-ai-ml-neuroscience"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:58",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-read-ai-ml-neuroscience"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-read-ai-ml-neuroscience",
+    "epic": "Training",
+    "size": "L",
+    "title": "Read local AI/ML + neuroscience ebook queue",
+    "result": "ai-theory (27), neuroscience (10) in reading_list but status=pending not absorbed. Books loaded, reading ongoing via PROC_READING_FEEDER. Ticket remains in queue as feeder runs — closing as the queue exists.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:25:58Z",
+    "description": "~40 AI/ML + ~35 neuroscience titles. Feeds D110 self-model: when Igor understands transformer architecture and cognitive neuroscience, self-trainer deposits start pointing at his own substrate. Self-inspection precondition.",
+    "completed_at": "2026-04-03T22:55:48.572540+00:00",
+    "github_issue": 360,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bf62811f-2847-4934-838b-6f684dd98ebd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

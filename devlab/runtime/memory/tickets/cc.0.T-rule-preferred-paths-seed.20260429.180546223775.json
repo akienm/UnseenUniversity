@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-rule-preferred-paths-seed.20260429.180546223775",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rule-preferred-paths-seed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:05:46.223775",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-rule-preferred-paths-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rule-preferred-paths-seed",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Rules",
+      "Palace",
+      "Sonnet-Constraints"
+    ],
+    "title": "Palace rule preferred_paths — initial seed of deprecated→preferred pairs",
+    "result": "Seeded 7 palace nodes: theigors/rules/preferred_paths/* with 6 deprecated→preferred pairs (raw-psql, channel-direct-write, direct-db-write, print-statement, new-memory-type, feature-flag) plus parent index node",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-29T18:05:04.957262+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "New palace rule theigors/rules/preferred_paths — declarative list of (deprecated_path → preferred_path) pairs that Sonnet keeps falling back to. Seed list:\n- raw psql (in code) → memory_get / memory_search MCP tools\n- channel.py direct write → IMAP bus (when available)\n- direct DB write → db_proxy\n- print() → base-class logger (covered by inherit-base-class rule)\n- new memory type → tag on existing type\n- new feature flag (IGOR_*_ENABLED) → build to intent + go-live-when companion ticket\n\nShape: each entry is a child node with applies_when, deprecated, preferred, why fields. audit-precode reads this list; audit-smell catches violations post-write.\n\n**Affected files:** new palace subtree theigors/rules/preferred_paths/*. No code.\n**Design rules:** no persistence beyond palace.\n**Test plan:** audit-precode flags a plan that proposes raw psql in code → AMEND with preferred suggestion. audit-smell catches a fresh diff that writes channel.py call when IMAP bus is available.",
+    "completed_at": "2026-04-29T18:05:46.223775+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "761c9937-e086-475a-b6fd-ba455129f750",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-utility-closet-igor-launcher.20260409.210616252123",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-utility-closet-igor-launcher"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T21:06:16.252123",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-utility-closet-igor-launcher"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-utility-closet-igor-launcher",
+    "size": "S",
+    "title": "D335 Phase 3: Igor launcher starts utility closet",
+    "result": "D335 Phase 3 complete: Igor launcher starts utility closet before boot. Same pattern as superclaude.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-09T21:05:33.521074+00:00",
+    "related_to": null,
+    "description": "Igor bash launcher (igor alias / igor.sh) starts utility closet if not running before launching Igor. Same pattern as superclaude.",
+    "completed_at": "2026-04-09T21:06:16.252123+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "86176e4d-55a3-47fb-b763-8357dec05ef4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

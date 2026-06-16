@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-halt-caller-auth-token.20260531.023345280997",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-halt-caller-auth-token"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T02:33:45.280997",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-agent-kill-switch",
+      "T-halt-caller-auth-token",
+      "T-murderbot-security-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-halt-caller-auth-token",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure",
+      "Security"
+    ],
+    "title": "Kill switch: authenticate halt/block/resume caller via provenance token, not self-reported string",
+    "result": "provenance token required for agent_halt/resume + device_halt/block; 7 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "blocked_at": "2026-06-02T21:56:10.257634+00:00",
+    "claimed_at": "2026-06-02T15:46:22.455944+00:00",
+    "created_at": "2026-05-31T02:33:45.280997+00:00",
+    "created_by": null,
+    "related_to": "T-agent-kill-switch",
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "CRITICAL gap found in T-murderbot-security-review.\n\nskeleton._check_caller_auth() trusts the self-reported from_device string. Any caller that passes from_device='skeleton' passes the auth check for halt and block. This defeats the kill switch: a prompt-injected agent can halt any device, or resume itself after being halted, by claiming from_device='skeleton'.\n\nCurrent code in skeleton.py _add_device_control_tools:\n  def device_halt(from_device: str) -> dict:\n      skel._check_caller_auth(from_device, did, 'halt')\n      # from_device is a string the caller supplies -- unverified\n\nFix: halt, block, and resume tools must verify the caller via the provenance registry. The caller supplies their active provenance token; skeleton calls ProvenanceService.verify() before allowing the operation. The existing code comment says 'localhost trust; crypto ACL Phase 5+' -- this is the upgrade. Must ship before or with T-agent-kill-switch.\n\n**Affected files:** unseen_university/skeleton/skeleton.py (_check_caller_auth, _add_device_control_tools)\n**Design rules:** BaseDevice/BaseShim; flat-file registry; ProvenanceService.verify() is the gate\n**Scope boundary:** IN -- token-backed auth for halt/block; OUT -- full PKI, cross-rack ACL\n**Completion criteria:** calling {device_id}_halt without a valid provenance token is denied; a prompt-injected agent cannot halt a device by self-reporting from_device='skeleton'; tests cover the auth rejection path",
+    "completed_at": "2026-06-02T22:05:29.097293+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T02:33:45.488257+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4e2642bd-9d98-42ac-8c82-0e991488cb89",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

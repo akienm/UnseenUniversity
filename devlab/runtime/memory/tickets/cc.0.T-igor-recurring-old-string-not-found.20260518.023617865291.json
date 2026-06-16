@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-recurring-old-string-not-found.20260518.023617865291",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-recurring-old-string-not-found"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T02:36:17.865291",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-recurring-old-string-not-found"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-recurring-old-string-not-found",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "PeChain",
+      "Metacognition",
+      "SelfImprovement"
+    ],
+    "title": "Recurring pe_chain failure: old_string_not_found",
+    "result": "pattern was test pollution — infra.pe_failure_log count inflated by test_pe_chain_inertia_gate.py calling _pe_escalate without DB mock; all production pe_hypothesize calls have response_len=0 (tier2 unavailable); zero real old_string_not_found retries in LLM IO logs; fix is T-pe-failure-log-test-isolation",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "blocked_at": null,
+    "claimed_at": "2026-05-21T23:28:51.262828+00:00",
+    "created_at": "2026-05-18T02:36:17.865291+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "pe_chain has escalated with failure_type='old_string_not_found' 3 times. Recurring pattern detected by failure accumulator.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py\n**Design rules:** theigors/rules/coding\n**Scope boundary:** In scope: root-cause analysis and fix for old_string_not_found. Out of scope: other failure types.\n**Test plan:** After fix, infra.pe_failure_log count for 'old_string_not_found' stops growing.",
+    "completed_at": "2026-05-22T16:09:10.708700+00:00",
+    "github_issue": 728,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "34dd076f-0c58-42b2-add0-bd4eacea1666",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

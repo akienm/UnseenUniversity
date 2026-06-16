@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-migrate-comms-web-server.20260526.234541292028",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-migrate-comms-web-server"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T23:45:41.292028",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-migrate-comms-web-server"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-migrate-comms-web-server",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Cleanup"
+    ],
+    "title": "Migrate lab.utility_closet.comms out of web_server/server.py",
+    "result": "lab.utility_closet.comms optional import removed; _init_comms() is no-op stub; comms migration deferred to separate ticket when comms module moves to UU",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-26T23:45:41.292028+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "devices/web_server/server.py has optional lazy imports of lab.utility_closet.comms, MemoryTransport, PostgresTransport for the channel panel feature. This is the last live utility_closet import in UU. The comms module (CommsModule, Delivery, Direction) and its transports need to either be migrated into a UU device or the web_server should use the devices-layer equivalents.\n\n**Affected files:** devices/web_server/server.py, lab/utility_closet/comms.py (TheIgors), lab/utility_closet/transports/*.py (TheIgors)\n**Design rules:** database rule (Postgres not SQLite for transport persistence)\n**Scope boundary:** Migrate comms.py + postgres transport into UU (probably devices/web_server/comms.py), update web_server/server.py imports. Memory transport for testing is OK to keep.\n**Test plan:** Channel panel still functional; no import errors on server startup without TheIgors on path",
+    "completed_at": "2026-05-27T00:06:59.485558+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T23:45:41.292056+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e112a77d-b9d8-49de-8418-87b19ac65634",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

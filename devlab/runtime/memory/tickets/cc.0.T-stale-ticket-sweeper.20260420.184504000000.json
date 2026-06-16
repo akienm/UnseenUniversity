@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-stale-ticket-sweeper.20260420.184504000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stale-ticket-sweeper"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:04",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-review-as-filing-time-skill",
+      "T-stale-ticket-sweeper"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stale-ticket-sweeper",
+    "gate": "T-review-as-filing-time-skill must ship first",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Maintenance"
+    ],
+    "title": "Stale-ticket sweeper — auto-/review pending tickets after N weeks",
+    "result": "lab/claudecode/stale_ticket_sweeper.py — scans queue.json for pending tix aged past threshold (default 4wk) + gated tix where gate text mentions shipped ticket id. Dry-run yields candidates; real run writes log to ~/.TheIgors/claudecode/logs/stale_sweep_YYYY-MM-DD.md + one-liner to today's slate ## Ad hoc. Caught 5 legit stale gates on first run, ungated them. --include-gated flag enables gated-check. No auto-/review (judgment call). Can be wired to cron or Igor push_source later.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-20T18:55:40.346192+00:00",
+    "created_at": "2026-04-20T18:45:04Z",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Tickets that sit pending > N weeks (default 4) auto-route to /review with context 'is this still real? premise rotted? decision reversed? shipped under different ticket?'\n\nAlso checks gated tickets: 'is the gate still real? is the milestone dead?'\n\n## Schedule\nRun via Igor cron or CC skill on session start. Emits a report to slate ## Ad hoc if any findings.\n\n## Blocked by\n- T-review-as-filing-time-skill (so sweeper can call /review)\n\n## Not in scope\n- Auto-closing stale tickets — only flags, never closes.",
+    "completed_at": "2026-04-20T18:57:37.196593+00:00",
+    "github_issue": 491,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9dd8777b-9b39-423b-abdd-7a4689292187",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

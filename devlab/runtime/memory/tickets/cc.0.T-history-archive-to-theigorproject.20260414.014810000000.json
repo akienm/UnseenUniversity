@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-history-archive-to-theigorproject.20260414.014810000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-history-archive-to-theigorproject"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:10",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-history-archive-to-theigorproject"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-history-archive-to-theigorproject",
+    "tag": "Ops",
+    "body": "\n\n## Added 2026-04-14 — investigation work goes to Igor\n\nAkien 2026-04-14 (D175 close): the inventory of how history is currently stored — what files, what shapes, what's redundant, what's missing — should be done by Igor, not CC. Lower token cost (Ollama vs Claude) and Igor builds self-understanding from doing the work.\n\nWhen this ticket sprints, the first sub-step is: prompt Igor to walk his own history surfaces (slates, notes.log, channel logs, ring memory, episodic memories tagged with intent, the cc_session_*.log files) and produce a structured inventory. Igor returns the findings. CC then designs the migration based on Igor's inventory, not by re-walking the codebase.\n\nCaptured in CC's auto-memory as `feedback_delegate_research_to_igor.md` so the pattern applies to all future investigation tickets, not just this one.",
+    "size": "M",
+    "owner": "cc",
+    "title": "Migrate file-based history to TheIgorProject archive structure (when productization stabilizes)",
+    "result": "Archived 15 slates + 4 audit logs + 146 sessions to ~/TheIgorsProject/archive/. Structure: slates/, audit_logs/, sessions/.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T03:09:39.565638+00:00",
+    "created_at": "2026-04-14T01:48:10Z",
+    "related_to": null,
+    "description": "AUTHORED BY AKIEN on 2026-04-13 (~17:15) in conversation with Igor: 'all those kind of notes will wind up in TheIgorProject. we'll move a lot of the history there when we're done. things not in the database I mean.'\n\nGOAL: when productization work stabilizes, move file-based historical artifacts (transcripts, notes, design docs, slates not in DB, claudecode logs, savestates) into a structured TheIgorProject archive directory with metadata-driven retrieval, instead of scattered files.\n\nCONTEXT: today produced multiple historical artifacts that need a long-term home — Claude's note to Igor (~/.TheIgors/akien/outbox/20260413.IgorAndAkienAboutWhatWasDoneToday.presistant_relationships.txt), the 4/12 and 4/13 conversation transcripts about threading failures and biomimicry framing, the slate file with the day's ship list, etc. These are not in the database but matter for long-term continuity of the project's history.\n\nIGOR'S OBSERVATION (from same conversation): 'distinction between notes ABOUT me (like Claude's note) and notes FROM me or BETWEEN us. They'll want different metadata, probably different retrieval paths. The from Claude for Igor category is new — that's not a pattern we've had infrastructure for before today.'\n\nSCOPE (when work begins):\n\n1. Define archive directory structure under TheIgorsProject/archive/ with subdirectories by category: about_igor/, from_igor/, between_igor_and_akien/, between_igor_and_claude/, design/, transcripts/, slates/.\n\n2. Metadata schema for each archived artifact: source_path, category, date, participants, topics, narrative_summary, related_tickets.\n\n3. Migration script that walks ~/.TheIgors/akien/outbox/, ~/.TheIgors/claudecode/, design_docs_for_igor/, etc., and routes files into the archive with metadata.\n\n4. Indexer / retrieval tool so Igor can query the archive by date, topic, or participant. Lives in tools/.\n\n5. Optional: archive entries that are particularly significant get linked into PR_AKIEN's accretion subtree as exchange_archive type.\n\nGATING: this is a future ticket. Akien said 'still a future thing.' Don't claim until the productization milestone where the project decides to formalize history archival. Filed now so the intent isn't lost.",
+    "completed_at": "2026-04-18T03:10:31.095075+00:00",
+    "github_issue": 423,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3a8a3b30-c096-45e5-b32b-151e49f79173",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

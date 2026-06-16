@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-guru-loop-master-control.20260613.171226194132",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-guru-loop-master-control"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T17:12:26.194132",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-guru-loop-master-control"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-guru-loop-master-control",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "System Resilience",
+      "Master Control"
+    ],
+    "title": "Guru Loop — Master control for dynamic service management",
+    "result": null,
+    "status": "cancelled",
+    "worker": "cc",
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-13T17:12:26.194132+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Design and implement a stable, immutable master control loop that manages all rack services dynamically.\n\n**Problem:** Services go down (web_server), must manually restart. Design principle \"easy to the point of disappearing\" is violated.\n\n**Solution:** Guru Loop (Master Control)\n- Stays running, stable, immutable (~300 LOC)\n- Health-checks all services\n- Auto-launches on demand (if circuit breaker closed)\n- Proxies requests to services\n- Services pluggable via YAML config\n- Circuit breaker for maintenance mode\n\n**Affected files:** TBD — discovery step in sprint\n**Design rules:** system-resilience, dynamic-service-management, graceful-degradation\n**Scope boundary:**\n  IN: Guru loop core, service registry, health checks, HTTP proxy, circuit breaker\n  OUT: Service-specific monitoring, metrics collection, advanced scheduling\n**Completion criteria:**\n  1. Guru loop spawned and monitored, survives child service crashes\n  2. Service registration via YAML config (no code changes to add services)\n  3. On-demand launch: request to missing service triggers spawn\n  4. Circuit breaker: touch flag to disable service, prevents restart loop\n  5. Test: kill web_server, next HTTP request auto-restarts it\n  6. All 3+ existing services registered and working under Guru\n\n**Intention:** I intend that any single service can crash or be recycled without affecting the master control loop, and that the system self-heals transparently with circuit breaker control.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5e889555-46ae-41bc-b0ce-d0c7e6fa665a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

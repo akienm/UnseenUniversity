@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320a.20260321.011055378495",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320a"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:55.378495",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320a"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320a",
+    "body": "Decisions: D151. Session theme: habit audit (13 habits fixed) + slow query tool + Layer 1.5 committed. Subsystems touched: tools/slow_query.py (new), tools/__init__.py, decisions_log.dsb, DB habit fixes (13 habits). Tickets closed: T-slow-query-analysis, T-traversal-context, T-os-primitives. New bugs identified: CREATE INDEX 710x, memories full-scan 506ms avg.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close for session 2026-03-20a",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:55.378495+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

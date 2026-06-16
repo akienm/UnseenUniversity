@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-context-load-review.20260411.005018000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-context-load-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-11T00:50:18",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-context-load-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-context-load-review",
+    "epic": "Claude",
+    "size": "M",
+    "title": "Review and optimize context-load: directory tree + source map + drift prevention",
+    "result": "Done in two prior sessions (CC + Opus rounds). Closing stale ticket.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 40,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-04-11T00:50:18Z",
+    "related_to": null,
+    "description": "Context load needs review after significant drift in session 2026-04-10c. Start with directory-style tree view of everything that gets loaded, where each item is sourced from (DB, file, env, machines.json), and where fallback/mirror copies live (e.g. decisions_log.dsb is file but also in docs_entries DB table). Map: what's authoritative, what's derived, what's stale-prone. Then optimize load order and content for drift prevention — machine specs, model inventory, routing state should be verifiable at load time, not assumed.",
+    "completed_at": "2026-04-28T21:17:59.962251+00:00",
+    "github_issue": 408,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9ade6a35-51f4-43fe-84e8-30fb13ff8501",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

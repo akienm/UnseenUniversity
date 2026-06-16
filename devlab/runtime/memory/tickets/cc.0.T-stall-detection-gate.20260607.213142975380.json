@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-stall-detection-gate.20260607.213142975380",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stall-detection-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T21:31:42.975380",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-credentials-split-structure",
+      "T-stall-detection-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stall-detection-gate",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Observability",
+      "Queue"
+    ],
+    "title": "in_progress stall detection + stall-check skill",
+    "result": "stall_check.py (age-based in_progress detection) + /stall-check skill + context-load Step 5.5 (15 tests, 44 total passing)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that any ticket stuck in_progress for more than 2 hours is automatically surfaced as stalled so it doesn't silently block the queue.",
+    "claimed_at": null,
+    "created_at": "2026-06-07T21:31:42.975380+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Tickets that enter in_progress and are never closed (CC session died, compact happened mid-sprint, worker got stuck) become invisible blockers. Need two things: (1) a /stall-check skill that lists all in_progress tickets with their age in hours, and (2) a staleness gate — either a periodic check or a context-load step — that escalates tickets >2h old to hold with a note 'stalled in_progress: check status'.\n\nRecommended shape: /stall-check reads cc_queue for in_progress tickets, computes age from started_at (or updated_at as fallback), prints sorted by age. The gate logic runs inside context-load (Step 5) — if any in_progress ticket is >2h old, surface it with [STALL?] prefix so Akien sees it on every session open. Optionally: auto-move to hold with a canned note to force explicit re-claim.\n\n**Affected files:** lab/claudecode/cc_queue.py (or a new stall_check.py), ~/.claude/skills/stall-check (new skill file), ~/.claude/skills/context-load (add stall surfacing to Step 5)\n**Design rules:** no-sqlite — cc_queue uses Postgres; read-only query is safe\n**Scope boundary:** In scope: /stall-check skill, stall surfacing in context-load, optional auto-hold on >2h tickets. Out of scope: changes to ticket lifecycle, new queue columns (use started_at or updated_at from existing schema).\n**Completion criteria:** Running /stall-check lists in_progress tickets with age. context-load surfaces any ticket >2h old with [STALL?] label. T-credentials-split-structure (currently stuck in_progress) is immediately visible on next /context-load. Tests: unit test for age calculation logic.",
+    "completed_at": "2026-06-07T23:50:51.034446+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-design-escalation-path.20260408.195445744229",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-design-escalation-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T19:54:45.744229",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-design-escalation-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-design-escalation-path",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D331: Design escalation — Igor proposes, CC approves, Igor resumes",
+    "result": "D331 live: propose/approve commands in cc_queue.py. _pe_escalate composes design proposals for HIGH inertia instead of blocking. context-load surfaces 🟠 awaiting_approval tickets. Full flow verified: propose→awaiting_approval→approve→pending with approved_plan. Arbiter deletion deferred (separate ticket). 1880 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "When Igor hits HIGH inertia or needs design approval: compose proposal (what+why), post to CC channel as awaiting_approval, park ticket, move on. CC context-load surfaces pending approvals. On approval, ticket resumes with approved plan. Replaces arbiter (old scaffolding — delete). The missing piece for Igor-as-programmer.",
+    "completed_at": "2026-04-08T19:54:45.744229+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ed38355c-4988-433a-a4e3-737dbda37e4b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-bg-score-debug.20260324.164755399108",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bg-score-debug"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T16:47:55.399108",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bg-score-debug"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bg-score-debug",
+    "size": "S",
+    "title": "Add BG scoring dump to turn trace",
+    "result": "Added _emit_bg() helper to select_habit() that emits bg_scoring stage to TurnContext on every scoring pass: top-5 candidates with id/score/type, winner, milieu-modulated threshold, near-miss count, and decision rationale. Covers all 4 exit paths (winner, no-candidates, compile-phrase, notebook pre-checks). Fire-and-forget — never crashes main loop. 12 tests. Commit 99562ca.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T16:42:38.091910+00:00",
+    "description": "Emit top 5 BG candidates with scores, winner, and decision rationale into the turn trace on each scoring pass. Modify basal_ganglia.select_habit() to return scoring details alongside the winner. Turn recorder writes them to turn_traces. Makes habit selection observable and self-debuggable.",
+    "completed_at": "2026-03-24T16:47:55.399108+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8fdfd919-44f3-4362-bde4-de33df04629e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

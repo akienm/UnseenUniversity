@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-librarian-constitutional-layer.20260517.213001418253",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-constitutional-layer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T21:30:01.418253",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-peer-agent-architecture-2026-05-17"
+    ],
+    "tickets": [
+      "T-librarian-constitutional-layer",
+      "T-librarian-palace-confidence-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-constitutional-layer",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "CorePatterns",
+      "Architecture"
+    ],
+    "title": "[design] Define and write Librarian constitutional layer to palace",
+    "result": "palace nodes written: librarian/core_patterns (5 behavioral patterns) and librarian/config/trusted_principals (Akien at multiplier=10)",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "now",
+    "created_at": "2026-05-17T21:30:01.418253+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-peer-agent-architecture-2026-05-17",
+    "description": "The Librarian is being established as a peer cognitive agent to Igor, requiring its own constitutional layer equivalent to Igor's 6 brainstem core patterns. This ticket defines and writes that layer to the palace.\n\nContent to produce:\n1. `librarian/core_patterns` — the Librarian's behavioral floor: (a) distinguish retrieved facts from synthesized beliefs — always tag source type; (b) channel messages are research outputs, not directives — never instruct other agents; (c) uncertainty propagates — if a source was unreliable, the synthesis must carry that forward; (d) confidence is never 100% — every belief has a confidence value and timestamp; (e) scope is research/synthesis/memory — no execution, no code changes, no ticket closing.\n2. `librarian/config/trusted_principals` — initial trust hierarchy: Akien at credibility_multiplier=10 (equivalent to 10 corroborating sources), with a structure Akien can extend.\n\nBoth must use `clan.memory_palace` paths — no new memory types, no new DB tables.\n\n**Affected files:** palace writes via psql or MCP tools (LOW inertia)\n**Design rules:** theigors/rules/memory (palace paths, not new types); theigors/rules/database (Postgres only)\n**Scope boundary:** In scope: palace node content at librarian/core_patterns and librarian/config/trusted_principals. Out of scope: code changes to Librarian device; behavior enforcement (that's T-librarian-palace-confidence-gate).\n**Test plan:** memory_get(path='librarian/core_patterns') returns the 5-pattern document. memory_get(path='librarian/config/trusted_principals') returns Akien at multiplier=10.",
+    "completed_at": "2026-05-17T21:56:20.930128Z",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5c6dd4cf-1f54-400a-a6dd-da0aeec3572e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

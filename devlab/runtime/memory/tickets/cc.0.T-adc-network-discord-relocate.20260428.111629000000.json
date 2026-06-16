@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-adc-network-discord-relocate.20260428.111629000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-network-discord-relocate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T11:16:29",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-5-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-discord-device",
+      "T-adc-discord-shim",
+      "T-adc-network-discord-relocate",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-network-discord-relocate",
+    "gate": "T-adc-discord-device",
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Cleanup",
+      "Migration"
+    ],
+    "title": "agent_datacenter: relocate wild_igor/igor/network/discord_bot.py to agent_datacenter",
+    "result": "Code already relocated to devices/discord_bot/ in UnseenUniversity — ticket predates rename",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "blocked_at": "2026-04-28T03:17:24.074550+00:00",
+    "claimed_at": "2026-04-28T02:19:04.970629+00:00",
+    "created_at": "2026-04-28T11:16:29Z",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-5-2026-04-27",
+    "description": "Move the existing Discord bot code from wild_igor/igor/network/discord_bot.py into agent_datacenter's Discord device.\n\nCurrent state: wild_igor/igor/network/ has discord_bot.py, listener.py, proxy.py, system_proxy.py. Discord logic belongs in agent_datacenter/devices/discord_bot/ per the new architecture.\n\nProposed shape:\n- Review wild_igor/igor/network/discord_bot.py for salvageable logic (reconnect, token mgmt)\n- Merge salvageable parts into agent_datacenter/devices/discord_bot/shim.py (if they add value over the Phase 4 implementation)\n- Add deprecation notice to wild_igor/igor/network/discord_bot.py\n- After T-adc-discord-device is verified live: remove discord_bot.py from network/\n- Review wild_igor/igor/network/ for other candidates (listener.py, proxy.py may also relocate)\n\nAffected files:\n- ~/TheIgors/wild_igor/igor/network/discord_bot.py (deprecate then remove)\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/discord_bot/shim.py (receive salvaged logic)\n\nDesign rules:\n- docs-in-code: deprecation notice before removal\n\nScope boundary:\nIN: discord_bot.py review + salvage + deprecation + removal; quick assessment of other network/ files\nOUT: listener.py, proxy.py relocation (separate ticket if needed; scope that work after review)\n\nTest plan:\n- After removal: Igor still connects to Discord (via agent_datacenter discord device)\n- wild_igor/igor/network/ has no orphaned discord references\n- discord_bot tests (if any) migrated or replaced by T-adc-discord-shim tests",
+    "completed_at": "2026-06-05T15:25:05.522733+00:00",
+    "github_issue": 544,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9f53ce14-e185-48d8-9d21-b26effe540ef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

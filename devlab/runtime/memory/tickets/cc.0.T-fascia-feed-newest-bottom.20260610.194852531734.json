@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-fascia-feed-newest-bottom.20260610.194852531734",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fascia-feed-newest-bottom"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T19:48:52.531734",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fascia-feed-newest-bottom"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fascia-feed-newest-bottom",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "WebUI",
+      "UX"
+    ],
+    "title": "Fascia feed: newest messages at bottom, not top",
+    "result": "messages render oldest→newest (top→bottom)",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that new messages in the device feed appear at the bottom and the natural read direction is top-to-bottom, with auto-scroll following new arrivals.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T19:48:52.531734+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "In the Comms fascia Feed box (device's own comms:// channel), messages currently render newest-first (at top). When new messages arrive, scrollTop=scrollHeight scrolls to bottom, creating confusing read direction: old at bottom, new at top, then jump-to-bottom.\n\nReverse the event array before rendering so newest messages are at the bottom. Keep auto-scroll-to-newest behavior (scrollTop=scrollHeight).\n\n**Affected files:** devices/web_server/server.py (_loadFasciaBox_chat function)\n**Design rules:** none apply\n**Scope boundary:** IN — reverse event render order, keep auto-scroll. OUT — API order (leave DESC for DB efficiency), other fascia boxes (Status/Console/Settings unaffected).\n**Completion criteria:** Open device feed in Comms; messages display with newest at bottom; new messages auto-scroll to bottom; scroll-up shows older messages at top.",
+    "completed_at": "2026-06-10T19:49:38.623344+00:00",
+    "deposited_at": "2026-06-10T13:49:56.333579",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

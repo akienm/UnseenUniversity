@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-replan-cooldown.20260405.220258381500",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-replan-cooldown"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T22:02:58.381500",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-replan-cooldown",
+      "T-scope-guard-proc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-replan-cooldown",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "PE chain: evict GOAL_READY from TWM after SCOPE_GUARD escalation so sprint doesn't re-fire",
+    "result": "Added _evict_goal_ready_twm(ticket_id): expires GOAL_READY TWM slots so PROC_CODING_SPRINT stops re-firing. Called in pe_claim abort (not-pending) and after SCOPE_GUARD escalation. Non-fatal — logs and continues on DB error.",
+    "status": "done",
+    "worker": "claude-code",
+    "priority": 1,
+    "claimed_at": "2026-04-05T22:01:31.721912+00:00",
+    "related_to": "T-scope-guard-proc",
+    "description": "When SCOPE_GUARD sets basket['escalate_reason'], run_pe_entry_chain() returns early — before CLOSE_LOOP's attempt counter runs. GOAL_READY stays in TWM, PROC_CODING_SPRINT fires again immediately, same wrong hypothesis, SCOPE_GUARD blocks again — infinite loop. Fix: in run_pe_entry_chain() after scope_guard escalation, evict GOAL_READY TWM slot (cortex.twm_get_slots + expire/decay the GOAL_READY slot for this ticket) and increment attempt counter in GOAL metadata. Also: pe_claim abort (non-pending) should evict GOAL_READY the same way.",
+    "completed_at": "2026-04-05T22:02:58.381500+00:00",
+    "github_issue": null,
+    "required_files": [
+      "wild_igor/igor/tools/pe_chain.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4675bffd-8d14-49b5-acb2-d80ae6a4b230",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

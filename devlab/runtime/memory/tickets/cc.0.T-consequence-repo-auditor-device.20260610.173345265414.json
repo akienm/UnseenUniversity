@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-repo-auditor-device.20260610.173345265414",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-repo-auditor-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T17:33:45.265414",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-repo-auditor-device-2026-06-10"
+    ],
+    "tickets": [
+      "T-closed-ticket-commit-audit",
+      "T-consequence-repo-auditor-device",
+      "T-repo-auditor-semantic-eval"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-repo-auditor-device",
+    "gate": "2026-06-24",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: repo auditor device precision + false-positive rate",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the repo auditor is verified to produce actionable flags rather than noise, and that the decision to wire or skip the semantic layer is made based on measured evidence.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T17:33:45.265414+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-repo-auditor-device-2026-06-10",
+    "description": "**What changed:** A structural commit-vs-ticket auditor was added to Hubert, replacing the prior one-shot `T-closed-ticket-commit-audit` approach with a nightly device.\n\n**Predicted unintended effects:**\n- Flag noise: auditor produces mostly false positives (flags things that were actually fine), gets ignored → review top-10 flags manually\n- Prior audit's 322 no-commit tickets resurface as HIGH flags → verify they're genuinely pre-convention, not real phantom closes\n- Cron timing conflicts with other nightly jobs (embedding drain, code sweep) causing DB lock contention\n- Structural heuristics (< 20 lines for L ticket) over-flag legitimate refactors that touch few files but are correct\n\n**Signals to watch:** flag volume per run; fraction dismissed vs confirmed; any new HIGH flags that weren't caught by the prior audit; whether T-repo-auditor-semantic-eval verdict changes the useful-flag rate.\n\n**Gate condition:** Check by 2026-06-24. Review top-10 unreviewed flags; record false-positive rate; decide on semantic layer wire.\n\n**Affected files:** None — observation only\n**Design rules:** none\n**Scope boundary:** Observe flag quality; annotate outcome as: precision-good / noisy-threshold-needs-tuning / structural-insufficient-wire-semantic\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-10T17:33:45.265500+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

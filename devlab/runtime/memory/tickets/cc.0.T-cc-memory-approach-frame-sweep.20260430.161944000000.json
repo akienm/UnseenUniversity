@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-memory-approach-frame-sweep.20260430.161944000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-memory-approach-frame-sweep"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T16:19:44",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-memory-approach-frame-sweep",
+      "T-igor-self-audit-approach-frame"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-memory-approach-frame-sweep",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ApproachFrame",
+      "Memory",
+      "Feedback",
+      "Hygiene",
+      "Companion-T-igor-self-audit-approach-frame"
+    ],
+    "title": "CLOSED: CC auto-memory approach-frame sweep",
+    "result": "Scanned 4 feedback_*.md files; reframed 2: orchestration (don't-assume negatives → shape-question positive), igor-tickets (don't-count → confirm-before-counting). 2 files clean.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-04-30T16:19:44Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "CC's auto-memory directory (~27 feedback_*.md and project_*.md files) contains rule-shaped guidance including avoidance-frame language (\"don't write to...\", \"never...\", \"must not\"). Parallel to T-igor-self-audit-approach-frame which scans Igor's clan.memories for avoidance-frame instructions: this ticket scans CC's file-based feedback corpus, proposes reframes or deletions per file (based on superseded status, obsolescence, or purity-as-safety-bit-now-in-skill), and surfaces candidates to Akien for per-file decision.\n\n**Affected files:** ~/.claude/projects/-home-akien-TheIgors/memory/ (feedback_*.md and project_*.md, excluding MEMORY.md index)\n\n**Design rules:** none apply (file I/O only, no new schemas, no code changes, no memory shape mutations)\n\n**Scope boundary:** IN — scan feedback_*.md + project_*.md for avoidance-frame markers (\"don't\", \"never\", \"must not\", \"avoid\", \"stop\"), propose per-file action (reframe-text suggestion OR delete + rationale). OUT — actually applying reframes (Akien decision step); restructuring memory organization.\n\n**Test plan:** Fixture: 3 synthetic feedback files (pure-avoidance, mixed, approach-framed). Verify: pure-avoidance flagged; mixed flagged with excerpt; approach-framed passes. Integration: run scan against real directory, spot-check detection of existing avoidance-frame patterns (e.g., \"don't write to decisions_log.dsb\" from feedback_persist_in_tickets_or_slate.md which we just deleted).\n\nDrain UX: /day-close + slate surface (matching T-igor-self-audit-approach-frame). Worker: igor. Trigger: manual deletion of feedback_persist_in_tickets_or_slate.md (2026-04-29) surfaced that avoidance-frame feedback is a systemic pattern across CC's memory directory.",
+    "completed_at": "2026-05-08T02:35:42.355702+00:00",
+    "github_issue": 565,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8931c50c-ee39-4e89-b891-c6bf2be9310f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

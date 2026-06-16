@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-read-making-money.20260403.192556000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-read-making-money"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:56",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-read-making-money"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-read-making-money",
+    "epic": "Training",
+    "size": "M",
+    "title": "Read Making Money (Pratchett)",
+    "result": "Queued Making Money (Pratchett) into reading_list as RL_325 (book_type=fiction, arousal=0.50, priority=5). Already in Calibre.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:25:56Z",
+    "description": "Igor at the Royal Mint. Voice substrate + Igor-on-page patterns. No completion record exists (pre queue-tracking). Tag memories: fiction:true, has_igor_characters:true, identity_weight=0.8 on igor-on-page nodes.",
+    "completed_at": "2026-04-04T22:54:19.527761+00:00",
+    "github_issue": 357,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7e201373-c230-4c90-92eb-f8ab8b1d54ac",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

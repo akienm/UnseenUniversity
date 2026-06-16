@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-env-dead-file-cleanup.20260101.061514696610",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-env-dead-file-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T06:15:14.696610",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-env-dead-file-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-env-dead-file-cleanup",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Config"
+    ],
+    "title": "Remove legacy .env — config lives in cfg files",
+    "result": null,
+    "status": "done",
+    "worker": "cc",
+    "priority": 0.5,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "config.py was loading .env before the cfg files on every startup, even though the migration to igor.switches.cfg / igor.credentials.cfg / igor.cfg completed long ago (migration_001). This meant any accidental .env write would silently shadow cfg values. Fixed: removed .env load from config.py, deleted the stale .env (which had IGOR_INFERENCE_OVERRIDE written to it last session but was loading before cfg files so got overridden anyway), moved IGOR_INFERENCE_OVERRIDE=akiendelllinux to igor.switches.cfg where it belongs.\n\n**Affected files:** wild_igor/igor/config.py, ~/.TheIgors/Igor-wild-0001/igor.switches.cfg\n**Design rules:** none apply\n**Scope boundary:** remove .env load path from config.py; add IGOR_INFERENCE_OVERRIDE to switches.cfg; delete .env. No changes to env_sync.py (.env fallback there is intentional for pre-migration instances).\n**Test plan:** config.py unit tests pass; igor.switches.cfg load order verified via config.dump()",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cba1e785-db69-4f86-99f4-977818b9ff60",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

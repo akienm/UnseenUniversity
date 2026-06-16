@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-09-web-identify.20260429.161117000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-09-web-identify"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:17",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-cc-walk-09-web-identify",
+      "T-igor-programs-himself",
+      "T-web-channel-identify-not-interaction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-09-web-identify",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor fixes __identify__ ping counted as interaction",
+    "result": "Target ticket already done. Walk admin close.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:11:17Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-web-channel-identify-not-interaction. Stale proposal cleared. Touches web/server.py or main.py inbound router.\n\nChecklist:\n1. Set priority=0.95 on target; watch Igor claim\n2. PLAN: web/server.py or main.py — not HIGH-inertia\n3. Watch implementation: __identify__: prefix → auth handler, not interaction loop\n4. Verify no interaction counter bump in tests\n5. Commit + done\n\n**Affected files:** wild_igor/igor/web/server.py or wild_igor/igor/main.py\n**Design rules:** none\n**Scope boundary:** IN — scaffold T-web-channel-identify-not-interaction\n**Test plan:** target done.",
+    "completed_at": "2026-05-02T03:44:15.321923+00:00",
+    "github_issue": 556,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8334d774-063b-4269-9911-0838d4ec621c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

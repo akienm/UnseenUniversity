@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-output-shaping-trees-wire-in.20260414.232238000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-output-shaping-trees-wire-in"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:38",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-output-shaping-trees-wire-in"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-output-shaping-trees-wire-in",
+    "body": "From Akien 2026-04-14: 'igor does have a graph tree, multiple ones, that shape output. and we're not using that.' Surfaces work that exists in code (or partially exists) but isn't actually invoked during the LLM-call path.\n\n## What needs investigation first\n\nAkien named 2-3 output-shaping graph trees. He didn't remember exact names but pointed at akien/Readings/20260311.gemini.new-layers.txt for the conceptual frame. From that conversation: Selection graph + Output graph + possibly Habit/Pattern graph as the three. In Igor's current code these likely correspond to:\n\n- Selection layer — basal_ganglia + winnow logic (already runs but only picks 1 winner, not N candidates; see T-inhibitory-pattern-primitive #419 batch-filter shape)\n- Output graph — possibly trees/tree_index.py, possibly cognition/narrative_engine.py, possibly something in word_graph for n-pass production. NEEDS GREP\n- Habit/Pattern graph — PROCEDURAL memories + habit cache\n\n## Concrete first step\n\nBefore designing the wire-in, walk the code:\n1. grep for 'output' and 'production' graph references in cognition/\n2. inspect tree_index.py — what are the well-known trees and what was their intended role\n3. read narrative_engine.py — does the NE walk an output graph already?\n4. read word_graph.py for n-pass production (G37 dual graph work — commit a8a8e9fa was 'asymmetric dual word graphs + comprehension signal + milieu tilt + n-pass infrastructure' — that's likely one of the trees)\n5. confirm with Akien which trees he was pointing at before designing the wire-in\n\n## Why this matters\n\nUnder the cockpit reframe (parent epic T-reasoning-voice-split), Igor's preparation work is what makes the LLM call cheap. The output-shaping trees are part of that preparation — they should produce candidate replies / response structures BEFORE the LLM is consulted. Right now the LLM does both jobs in one call. Wiring the trees back in means Igor presents the LLM with already-shaped candidates, not raw context.\n\n## Existing work to check\n\n- wild_igor/igor/memory/tree_index.py (D257 — well-known trees infrastructure)\n- wild_igor/igor/cognition/narrative_engine.py\n- wild_igor/igor/cognition/word_graph.py (G37 dual word graphs)\n- wild_igor/igor/cognition/redis_word_graph.py\n- akien/Readings/20260311.gemini.new-layers.txt\n- T-inhibitory-pattern-primitive #419 (the batch-filter shape these trees feed into)\n\n## Dependencies\n\n- Parent: T-reasoning-voice-split\n- Co-evolves with T-inhibitory-pattern-primitive #419 (selection layer)\n- Co-evolves with T-decision-blob-schema (downstream consumer)\n\n## Update 2026-04-14 evening — CP-consistency framing\n\nAkien conversation clarified that this isn't just \"wire the existing trees into the production loop.\" The wiring has to be done IN A WAY THAT PRESERVES THE SIX CP AXIOMS at every output point.\n\nSpecifically:\n- Outputs produced by the trees should be **provisional** (CP1), not committed\n- The trees should emit **multiple candidates** for the selection layer to compete between, not a single committed answer (CP1 + the inhibitor batch-filter shape)\n- No output from the trees should \"assume safety\" — every candidate carries uncertainty metadata (CP6)\n- Failed output candidates are learning data, not errors (CP2)\n\nCandidate outputs consumed by the next layer (selection) should therefore include uncertainty and experiment history, not just a raw payload. Selection can then apply CP6-bias (unverified → lower weight) and CP1-bias (I-don't-know is a valid winner).",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "cognition",
+      "production-loop",
+      "biomimicry"
+    ],
+    "title": "Wire Igor's existing output-shaping graph trees into the production loop",
+    "result": "ABVoiceProducer wired into TurnPipeline with _generation_graph (G37) + gateway. Falls back to stub. 6 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:51:10.532273+00:00",
+    "created_at": "2026-04-14T23:22:38Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T19:53:39.731764+00:00",
+    "github_issue": 437,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

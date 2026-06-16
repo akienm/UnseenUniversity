@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-dicksimnel-escalate.20260603.015913670965",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-escalate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T01:59:13.670965",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-escalate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-escalate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Escalation",
+      "Granny"
+    ],
+    "title": "DickSimnel: escalation signal when confidence low or HIGH-inertia hit",
+    "result": "_escalate_ticket() + _should_escalate(); pre/post-inference escalation paths; 9 tests; cc0_dispatch reset to claude worker",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "blocked_at": "2026-06-03T02:03:39.718763+00:00",
+    "claimed_at": "2026-06-03T02:02:38.841477+00:00",
+    "created_at": "2026-06-03T01:59:13.670965+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When DickSimnel's inference returns '## Confidence: low' or encounters a HIGH-inertia file pattern in the ticket description, it should escalate cleanly to CC rather than just declining. The current _decline_ticket() resets the ticket to sprint status with no signal — CC has no way to know Dick looked at this and bounced it.\n\nThe escalation path: DickSimnel posts a channel message (DICKSIMNEL_ESCALATE) with its analysis so far, then sets ticket worker to 'claude' and re-queues it to sprint status. CC picks it up with Dick's analysis already attached as a note.\n\n**Affected files:** devices/dicksimnel/device.py, devices/granny/dispatch.py\n\n**Design rules:** no-sqlite; log every escalation at INFO; calm signals (no urgency=high in channel post per memory feedback_calm_signals).\n\n**Scope boundary:** In scope: _escalate_ticket(ticket_id, reason, analysis) method; confidence=low parser from inference response; HIGH-inertia tag detection from ticket tags list; DICKSIMNEL_ESCALATE channel post; worker reset to 'claude'. Out of scope: Granny routing changes, CC inbox integration.\n\n**Completion criteria:** test_dicksimnel_escalate.py passes; _escalate_ticket() posts DICKSIMNEL_ESCALATE to channel, sets worker=claude, resets status=sprint; confidence='low' in inference response triggers escalation path rather than plain decline.",
+    "completed_at": "2026-06-03T02:54:14.014241+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T02:02:38.841477+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "20c6fcfe-e7c7-47c3-8b23-0806afc37519",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

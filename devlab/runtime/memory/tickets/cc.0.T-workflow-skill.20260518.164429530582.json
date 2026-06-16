@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-workflow-skill.20260518.164429530582",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-workflow-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530582",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-workflow-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-workflow-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Reference",
+      "Skills"
+    ],
+    "title": "Create /workflow skill — 30-second map of the full system",
+    "result": "Created /workflow skill — full 30-second system map with WHERE AM I guide",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530582+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "No single reference exists for 'what skills are there and when do I use them.' After a long absence or context compaction, Akien has no quick map. /workflow prints the full stack in one screen.\n\n**Affected files:** agent_datacenter/skills/workflow/SKILL.md (new)\n**Design rules:** output fits in one screen (~50 lines); written last so it reflects the actual final system\n**Scope boundary:** in scope: the full stack diagram (Goals → Questions → Hypothesis → Design → Decision → Tickets → Outcomes); each skill listed with: name, one-line purpose, when to invoke; weekly tracks section (eval-run, weekly-retro, audit-expert); 'where am I?' guide for common situations (starting a session, ending a session, new idea, something broke). Out of scope: auto-detecting current state, interactive mode.\n**Test plan:** skill file; verify it reads in under 60 seconds and answers 'what do I do when I have a new idea?' without ambiguity.",
+    "completed_at": "2026-05-18T16:59:04.979504+00:00",
+    "github_issue": 749,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ff77d1c3-2227-4df1-b049-739cb4b1e361",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

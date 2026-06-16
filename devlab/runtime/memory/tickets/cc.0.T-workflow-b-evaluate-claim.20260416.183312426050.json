@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-workflow-b-evaluate-claim.20260416.183312426050",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-workflow-b-evaluate-claim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T18:33:12.426050",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-workflow-b-evaluate-claim"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-workflow-b-evaluate-claim",
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "WorkflowB: evaluate-claim reasoning workflow",
+    "result": "WorkflowB_EvaluateClaim: verdict + confidence extraction. ClaimEvaluation output struct. 8 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T18:25:10.524498+00:00",
+    "related_to": null,
+    "description": "WorkflowB_EvaluateClaim — peer conversation to evaluate whether a claim/memory still holds. Same pattern as WorkflowA. Opening: state the claim + evidence. Workflow steps: probe for counter-evidence, check recency, assess confidence. Output: ClaimEvaluation(claim, verdict, confidence, counter_evidence). Sub-ticket of #436.",
+    "completed_at": "2026-04-16T18:33:12.426050+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0dd9c027-28d8-46e8-b829-5b3a39623288",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

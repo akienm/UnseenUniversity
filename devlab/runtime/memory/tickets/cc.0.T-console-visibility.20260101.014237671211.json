@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-console-visibility.20260101.014237671211",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-console-visibility"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T01:42:37.671211",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-console-visibility"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-console-visibility",
+    "title": "Console must show tier routing, habit match, reply status in real time",
+    "result": "Added real-time console prints: coherence gate, habit result preview, LLM fallthrough reason, reply status+tier+elapsed.",
+    "status": "done",
+    "priority": 1,
+    "description": "Akien has asked repeatedly. During turn processing, console should show: which tier routed, which habit matched (or none), whether LLM is being called, reply preview. Currently only the post-turn dashboard box shows. Need real-time status during processing.",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "edaf7d27-f102-4826-99a3-d402ac8a4432",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

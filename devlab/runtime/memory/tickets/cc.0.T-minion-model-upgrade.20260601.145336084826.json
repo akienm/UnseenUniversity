@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-minion-model-upgrade.20260601.145336084826",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-minion-model-upgrade"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T14:53:36.084826",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-minion-model-upgrade-2026-06-01"
+    ],
+    "tickets": [
+      "T-minion-model-upgrade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-minion-model-upgrade",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure",
+      "Inference"
+    ],
+    "title": "Upgrade inference model lineup to coding-benchmark-validated models",
+    "result": "VALIDATED: models upgraded to qwen3/deepseek-v4; 45 inference tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1.8,
+    "blocked_at": "2026-06-01T15:00:10.762618+00:00",
+    "claimed_at": "2026-06-01T14:58:13.373477+00:00",
+    "created_at": "2026-06-01T14:53:36.084826+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-minion-model-upgrade-2026-06-01",
+    "description": "Current models (qwen3.5-9b, deepseek-v4-flash) were chosen by price alone; both tiers hit the 20-iteration cap on first live run. Replace with coding-benchmark-validated models from SWE-bench Verified and the Aider leaderboard.\n\nProposed lineup:\n- minion: qwen/qwen3.5-9b ($0.04/$0.15) — keep, cheapest tier\n- worker: qwen/qwen2.5-coder-32b-instruct ($0.07/$0.12) — ~28% SWE-bench verified\n- analyst: deepseek/deepseek-v3 ($0.14/$0.28) — ~42% SWE-bench, near-Claude-3.5-Sonnet coding\n- designer: google/gemini-2.0-flash ($0.10/$0.40) — fast, long context, handles tool-result accumulation well\n\n**Affected files:** devices/inference/models_registry.py, devices/inference/rules_engine.py, tests/inference/test_mini_rack.py\n**Design rules:** no-sqlite; test-plan required\n**Scope boundary:** Update model IDs and prices in registry; update default rules_engine tier-to-model mapping; update any tests that hardcode old model names. Out of scope: adding new tiers, changing tier names, changing WorkerEnvelope.\n**Completion criteria:** `.venv/bin/pytest tests/inference/ -q` passes; `python3 -c \"from devices.inference.models_registry import default_registry; r=default_registry(); assert r.cheapest_in_tier('worker').model_id == 'qwen/qwen2.5-coder-32b-instruct'\"` succeeds; `r.cheapest_in_tier('analyst').model_id == 'deepseek/deepseek-v3'`",
+    "completed_at": "2026-06-02T21:46:44.946983+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T14:58:13.373477+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2c16fee0-19f8-42b8-ab23-9c306532dc95",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

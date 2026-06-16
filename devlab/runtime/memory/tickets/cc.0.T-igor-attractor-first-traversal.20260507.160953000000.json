@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-attractor-first-traversal.20260507.160953000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-attractor-first-traversal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:09:53",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-noise-2026-05-06"
+    ],
+    "tickets": [
+      "T-igor-attractor-first-traversal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-attractor-first-traversal",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Cognition",
+      "Memory",
+      "Performance"
+    ],
+    "title": "CLOSED: Attractor-first graph traversal in cortex.search",
+    "result": "attractor-first BFS in cortex.search Phase 0; depth=2/limit=20 from TWM anchors; CP/ID fallback at depth=2/limit=50; 5 tests; commit 3bc2fdb6",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-05-07T00:01:58.849228+00:00",
+    "created_at": "2026-05-07T16:09:53Z",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-noise-2026-05-06",
+    "description": "cortex.search currently traverses from all 20 CP/ID roots at depth=3, touching up to 200 nodes and issuing 100+ parameter IN queries (282-387ms each). This is expensive and retrieves everything rather than what's relevant to the current focus. The biological model: attention is already focused (attractor set by user's message), so traversal should START from the attractor and follow its edges — not from all identity roots. Supersedes D199 (CP-roots traversal) for the hot path.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (traverse_from call at ~line 2508)\n**Design rules:** no-sqlite; test-plan-or-why-not\n**Scope boundary:** In scope: change traversal seed from all CP/ID roots to current TWM attractor node(s); depth=2 from attractor; limit=20. Fall back to CP/ID roots at depth=2, limit=50 when no attractor exists (first message of session) or attractor has no graph links. Out of scope: changing the attractor weight mechanism (G50); changing the factual-kw-supplement path.\n**Test plan:** Set a known attractor memory with specific child links. Run cortex.search. Assert returned candidates include the attractor's children and NOT arbitrary CP-root descendants. Measure IN query param count before/after — should drop from 100+ to <25.\n**Pass condition:** Slow query log shows no IN queries with >30 parameters during a normal Igor turn. Narrative turn log shows retrieved memories are linked to the current conversation topic, not generic CP/ID tree nodes.",
+    "completed_at": "2026-05-07T00:30:22.390084+00:00",
+    "github_issue": 601,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3082f9b8-68a6-4c82-b2f2-23044409cc5c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

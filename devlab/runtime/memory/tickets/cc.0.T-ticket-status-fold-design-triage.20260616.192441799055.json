@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-ticket-status-fold-design-triage.20260616.192441799055",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-status-fold-design-triage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T19:24:41.799055",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ticket-status-model-2026-06-16"
+    ],
+    "tickets": [
+      "T-ticket-status-fold-design-triage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-status-fold-design-triage",
+    "title": "Fold design/open_questions/needs_review → triage (status model step 1)",
+    "status": "closed",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "TicketStatus",
+      "Queue",
+      "ArchitectureAsCode"
+    ],
+    "description": "Step 1 of D-ticket-status-model-2026-06-16: collapse design/open_questions/needs_review into TRIAGE.\n\n**Affected files:** lab/claudecode/cc_queue.py, queue_view.py, uuquestions.py, uushowticket.py, devices/web_server/server.py; DB clan.memories + devlab.tickets.\n**Design rules:** no-sqlite (Postgres only), log-state-change (AR-009 — migration logged), test-plan.\n**Scope boundary:** IN — fold the three intake statuses + migrate rows. OUT — approval/akien removal (step 2), ASSIGNED+shim-nag (step 3).\n**Test plan:** py_compile all edited files; opentickets renders; actionable pool returns sprint, excludes design; 0 folding statuses remain in DB. All passed.",
+    "decision_id": "D-ticket-status-model-2026-06-16",
+    "created_at": "2026-06-16T19:24:41.799055+00:00",
+    "updated_at": "2026-06-16T13:24:41.810374-06:00",
+    "completed_at": null,
+    "result": "Shipped 2026-06-16. Code: cc_queue.py (STATUS_ORDER, _ACTIONABLE_STATUSES dropped design, emoji, _PREFIX_STATUS, legacy_map, cmd_needs_review, docstring), queue_view.py, web_server/server.py, uuquestions.py (rewritten), uushowticket.py. DB: T-scenario-generator design→triage (snapshot + AR-009 log). Verified: opentickets shows canonical labels, actionable pool intact, design no longer auto-claimable.",
+    "role": "master",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

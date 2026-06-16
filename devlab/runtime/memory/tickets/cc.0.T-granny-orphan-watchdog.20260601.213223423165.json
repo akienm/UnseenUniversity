@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-granny-orphan-watchdog.20260601.213223423165",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-orphan-watchdog"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T21:32:23.423165",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-orphan-watchdog-2026-06-01"
+    ],
+    "tickets": [
+      "T-granny-orphan-watchdog",
+      "T-ticket-build-time"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-orphan-watchdog",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Granny",
+      "Reliability"
+    ],
+    "title": "Granny: auto-reset orphaned in_progress tickets",
+    "result": "OrphanWatchdog in devices/scraps/jobs/; Granny calls it every 10 poll cycles; S=120m M=240m L=360m XL=480m timeouts; 15 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "blocked_at": "2026-06-02T01:57:47.365277+00:00",
+    "claimed_at": "2026-06-02T01:57:25.287974+00:00",
+    "created_at": "2026-06-01T21:32:23.423165+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-orphan-watchdog-2026-06-01",
+    "description": "When a CC session dies without closing a ticket (crash, timeout, OOM), the ticket stays in_progress forever with no worker behind it. Currently requires manual `setstatus sprint`. Granny is the orchestrator — she should detect and recover these automatically.\n\nProposed shape: in GrannyDaemon.run_once(), after the dispatch loop, iterate all in_progress tickets. For each, check: (1) is there a live process matching `claude.*sprint-ticket.*<ticket_id>` in cmdline? Use `ps aux` via subprocess. (2) Has `claimed_at` exceeded the size-keyed timeout (S=2h, M=4h, L=6h, XL=8h)? If no live process AND timeout exceeded, call `cc_queue.py setstatus <id> sprint` and post `GRANNY_ORPHAN_RESET|ticket=<id>|age_minutes=<n>|reason=no_live_session` to the granny-weatherwax channel.\n\nInitial timeouts are fixed defaults (S=2h etc.). T-ticket-build-time will add calibration later.\n\n**Affected files:** devices/granny/daemon.py\n**Design rules:** no-sqlite; ps check must grep cmdline for ticket ID to avoid false matches on unrelated claude sessions\n**Scope boundary:** detection + reset only; no re-dispatch (Granny's normal poll cycle handles that on next tick); no change to claimed_at semantics\n**Completion criteria:** kill a CC session mid-sprint without closing the ticket; Granny resets it to sprint within 2h (or configured timeout); GRANNY_ORPHAN_RESET appears in channel log",
+    "completed_at": "2026-06-02T15:51:35.762241+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T01:57:25.287974+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9df68498-87de-42cc-b935-33de8ee953b1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-search-trace-console.20260407.033435473830",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-search-trace-console"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:34:35.473830",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-search-trace-console"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-search-trace-console",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Search tree traversal emits narrative assembly to console",
+    "result": "_emit_search_trace() added to cortex.py; fires at both search() return points; gated on IGOR_SEARCH_TRACE=true env var",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-07T03:32:36.246371+00:00",
+    "related_to": null,
+    "description": "When cortex.search() fires and activates nodes, print a brief trace of what's assembling: activated node IDs + narrative snippets (first 60 chars). Helps diagnose conversation flow gaps — see which memories are being activated (or not) per turn. Format: [SEARCH] query='...' → node1: narrative... / node2: narrative... Display only when IGOR_SEARCH_TRACE=true env var set, so it's off by default.",
+    "completed_at": "2026-04-07T03:34:35.473830+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "12f59a4c-9b4a-4d7e-80c0-520aeaf9d5a1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

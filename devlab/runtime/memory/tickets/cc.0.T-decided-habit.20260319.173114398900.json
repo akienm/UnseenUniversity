@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-decided-habit.20260319.173114398900",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decided-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-19T17:31:14.398900",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-decided-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decided-habit",
+    "body": "Build PROC_DECIDED habit chain: on /decided, write decision to docs_entries (decisions_log), flush to Igor memory, run docs_sync. Eliminates savestate Steps 0.5+2 as manual batched work. See T-proc-9 reference in decided/SKILL.md.",
+    "size": "M",
+    "title": "PROC_DECIDED habit — /decided fires per-decision not batched at end",
+    "result": "decision_manager.py: atomic DSB+DB+Igor flush; /decided + /savestate skills updated. Tests: none.",
+    "status": "done",
+    "created": "2026-03-19T10:50",
+    "priority": 1,
+    "completed_at": "2026-03-19T17:31:14.398900+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

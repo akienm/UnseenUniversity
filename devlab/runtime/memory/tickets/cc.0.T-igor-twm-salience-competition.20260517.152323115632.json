@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-twm-salience-competition.20260517.152323115632",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-twm-salience-competition"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.115632",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17"
+    ],
+    "tickets": [
+      "T-igor-twm-salience-competition"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-twm-salience-competition",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "TWM",
+      "Attention"
+    ],
+    "title": "CLOSED: TWM lateral inhibition: same-category items attenuate lower-salience competitors",
+    "result": "lateral inhibition added to twm_read(): same-category items within 0.25 of dominant attenuated *0.4 at read time",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-17T15:37:29.152706+00:00",
+    "created_at": "2026-05-17T15:23:23.115632+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "description": "Akien has noted cognitive noise as a long-standing problem. Igor's TWM passes all items at full salience to NE — items of the same category compete equally. Biological lateral inhibition: high-salience items suppress semantically nearby lower-salience items, ensuring 1-2 dominant signals per category reach attention.\n\nAdd a post-read filter in cortex.twm_read(): group returned items by category. Within each category, if the highest-salience item exceeds 0.7 and other items are within 0.25 of its value, attenuate the lower items by multiplying salience * 0.4 before returning. NE sees dominant signal per category, not N competing equals.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (MEDIUM inertia)\n**Design rules:** theigors/rules/coding (MEDIUM inertia — discuss shape first; Igor or CC authors); theigors/rules/database (read-time computation only, no stored salience change)\n**Scope boundary:** In scope: twm_read() post-read salience attenuation using existing category + salience fields. Out of scope: changing how items are written to TWM; changing stored salience values.\n**Test plan:** With 4 items in TWM category='goal_ready' at saliences 0.9, 0.68, 0.65, 0.62 — twm_read() returns the 0.9 item unchanged and the others at ~0.27, ~0.26, ~0.25. NE cycle count per effective signal drops. Channel messages show fewer competing signals per NE run.",
+    "completed_at": "2026-05-17T15:42:52.618428+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "42a772f9-ea93-4f99-9605-b2f439f8dbad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

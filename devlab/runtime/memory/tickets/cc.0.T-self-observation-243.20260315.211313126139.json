@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-self-observation-243.20260315.211313126139",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-observation-243"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T21:13:13.126139",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-self-observation-243"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-observation-243",
+    "body": "Implement #243. Async NE-pattern runner that watches main pipeline outputs over time. Habit subtree: fires on Igor own output patterns as triggers. Pushes observations back into TWM. Wire inward-facing watchlist entries (watch_direction=inward in metadata). Prerequisite: T-meaning-to-me-244 must be done first. Post plan before implementing.",
+    "size": "L",
+    "title": "Self-observation habit subtree (#243)",
+    "result": "PLAN (awaiting Designer approval):\n\nSCOPE: Add SelfObservationSource push source + inward watch habit type + seed habits.\n\n## What 'inward watch' means\nCurrent watch habits fire on user INPUT patterns (BG selects from user input).\nInward watch fires on IGOR'S OWN OUTPUT patterns — metadata.watch_direction='inward'.\nThe trigger field matches against response_text, not user input.\n\n## Files touched\n1. wild_igor/igor/cognition/push_sources.py (LOW) — add SelfObservationSource class\n   - Runs every 30s\n   - Reads last N 'IGOR_SAID' entries from ring_memory (ring has them via write_ring at line 4098)\n   - Tracks cursor: only processes entries newer than last run\n   - For each IGOR_SAID entry, scores all inward-watch habits against that text\n   - On match: pushes SELF_OBS_HIT|{habit_id}|{matched_text[:200]} to TWM at salience 0.5, urgency 0.3, ttl 300s\n   - Rate-limited, deduplicates (same habit+same content won't fire twice in 5min)\n   Wire into run_background_sources().\n\n2. wild_igor/igor/main.py (MEDIUM) — no logic changes needed\n   - 'IGOR_SAID' is already pushed to TWM at line 4132 AND ring at line 4097\n   - SelfObservationSource reads from ring — no main.py changes needed\n\n3. claudecode/seed_self_observation_habits.py (new, LOW) — seed 2-3 inward habits:\n   - PROC_WATCH_INWARD_UNCERTAIN: trigger='not sure|i don't know|uncertain' → TWM push 'Igor expressed uncertainty'\n   - PROC_WATCH_INWARD_CLAIM: trigger='the reason is|this means|therefore|because' → TWM push 'Igor made a causal claim'\n   - PROC_WATCH_INWARD_FACTUAL: trigger='according to|research shows|studies show' → TWM push 'Igor cited external source'\n\n## What I will NOT do\n- No basal_ganglia changes (inward watches bypass BG scoring path entirely)\n- No outward watch handler changes in _process()\n- No NE changes (NE already integrates SELF_OBS_HIT TWM entries)\n- No schema changes (watch_direction is metadata only)\n\n## Risk\nLow — SelfObservationSource is a new class following established BasePushSource pattern.\nNo changes to critical paths. Worst case: SelfObservationSource crashes silently (run_background_sources already swallows exceptions).\n\nReady to implement on Designer approval.",
+    "status": "done",
+    "claimed_at": "2026-03-15T21:11:46.935287+00:00",
+    "depends_on": "T-meaning-to-me-244",
+    "completed_at": "2026-03-15T21:13:13.126139+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

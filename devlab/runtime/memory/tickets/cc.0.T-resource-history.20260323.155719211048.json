@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-resource-history.20260323.155719211048",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-resource-history"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T15:57:19.211048",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-resource-history"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-resource-history",
+    "size": "M",
+    "notes": "All resources need a history Igor can watch. Cash resources (OR balance, Anthropic balance) need special care — rate of spend, trajectory, not just point-in-time. Surface as grounded body reality (InteroceptionSource analog for external resources). OBSERVED: OR balance $150→$90 over ~2 days = $30/day burn. $90 remaining ≈ 3 days at current rate. Igor should feel the spend rate, not just see a number. Needs: resource_history table (resource, balance, sampled_at), delta/hour trend, TWM entry with trajectory signal (rising/stable/falling fast), milieu nudge when burn rate is high. OR balance already polled via check_openrouter_balance — wire that into the history table on each poll.",
+    "title": "Resource history tracking — OR balance + all resources get a watchable time-series",
+    "result": "balance_history table + get_balance_trajectory() in budget.py; HeartbeatSource._check_burn_trajectory() pushes TWM alert when >0/day or <3d remaining; check_openrouter_balance tool shows burn rate inline. Tests: 30 passed.",
+    "status": "done",
+    "priority": 1,
+    "completed_at": "2026-03-23T15:57:19.211048+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

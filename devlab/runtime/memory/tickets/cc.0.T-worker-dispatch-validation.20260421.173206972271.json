@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-worker-dispatch-validation.20260421.173206972271",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-dispatch-validation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T17:32:06.972271",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-worker-mode-routing-2026-04-21"
+    ],
+    "tickets": [
+      "T-worker-dispatch-validation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-dispatch-validation",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Orchestration",
+      "Validation",
+      "Integration"
+    ],
+    "title": "Validate end-to-end: worker=igor ticket processes via Qwen in-process",
+    "result": "All 4 prereqs verified end-to-end: dispatch routed to igor branch (not konsole), goal_adopt succeeded, pe_chain fired via MCPCALL registry, pe_test pre-flight escalated correctly on pre-existing test_memory_scope failure. Commit 744157fa. Productive igor work blocked by T-fix-memory-scope-portable-test (filed).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "blocked_at": null,
+    "claimed_at": "2026-04-21T17:19:22.567473+00:00",
+    "related_to": null,
+    "decision_id": "D-worker-mode-routing-2026-04-21",
+    "description": "After the four prior tickets land, validate the full in-process path end-to-end. Seed a deliberately simple test ticket (e.g., 'append then remove a test-only line in a scratch file'), trigger foreman (foreman_scan or BOREDOM_DETECTED), observe: did adopt_next_ticket fire (not launch_next_worker)? did Qwen do the reasoning (not Claude)? did the engram chain walk without WARN-and-noop? did the ticket close with a channel post? If the chain breaks anywhere: capture the specific failure, file a new ticket for the bug, gate this one on the bug's completion. Don't fix unrelated issues in passing. Scope: one validation run. Does NOT flip the default worker field — tickets still default to worker=claude, igor path remains opt-in pending validation success. Flipping the default is a follow-up decision. Test plan: this ticket IS the test. Success = one clean end-to-end run on Qwen, model logged in turn_trace, closure posted to channel. Failure = a well-scoped child ticket capturing the specific breakage.",
+    "completed_at": "2026-04-21T17:32:06.972271+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "54738e31-5876-4500-9c87-a0a4ad791e6b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

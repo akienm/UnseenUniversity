@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-callmap-tool.20260503.223010877036",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-callmap-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T22:30:10.877036",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-callmap-tool",
+      "T-cc-queue-write-race"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-callmap-tool",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Tooling",
+      "Audit",
+      "Refactor"
+    ],
+    "title": "callmap.py — reverse callgraph for designated API functions; audit-check-wired",
+    "result": "Shipped commit ee03c1a5. callmap.py + lab/docs/callmap.md (10458 lines, 741 APIs, 6410 caller refs) + 13 unit tests + audit-check `callmap-fresh` registered. Performance: 4.2s full regen (was timing out >120s before single-AST-walk refactor). 6 of 6 audit checks PASS. Suite 4326 → 4339. Unblocks T-cc-queue-write-race — that migration now uses the callmap as planning input.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-03T00:00:00+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Akien (2026-05-03): once upon a time we had an architecture doc + implementation map. Docs-in-code rollout handles the forward axis (concept → location) already via top-of-file canonical docstrings. The reverse axis (function → who calls it) is missing. A callmap would have made today's 'find every queue.json reader' a 3-second query instead of a grep+eyeball pass.\n\nFiled as the planning input for T-cc-queue-write-race (now gated on this ticket).\n\n**API marking convention:**\n- Default: all top-level non-_ functions and class methods in `lab/claudecode/*.py` + `wild_igor/igor/tools/*.py` count as API\n- Override per-module: `__api__ = ['name1', 'name2']` module-level list for explicit narrowing\n- Or `# API: <one-line>` comment immediately above the function for richer descriptions\n\n**Caller detection:**\n1. Direct calls — `from mod import f; f(...)` and `import mod; mod.f(...)` resolved via AST + import graph\n2. Subprocess invocations — `subprocess.run([..., 'cc_queue.py', ...])` detected by string-matching the script path. Important because pe_chain calls cc_queue via subprocess, not import.\n3. os.system / os.popen / Popen — same string-match shape\n\n**Output:**\n- `lab/docs/callmap.md` — one section per module → API → caller list (file:line + brief context)\n- Sorted: APIs alphabetical within module; callers alphabetical within API\n- Generated, committed to git, refreshed by audit\n\n**Wire as audit check:** add to audit_runner.py registered checks. Failure mode: regenerating produces a different file than the committed copy (drift detection).\n\n**Affected files:**\n- `lab/claudecode/callmap.py` (NEW — tool + AST walker + emitter)\n- `tests/test_callmap.py` (NEW — unit tests for AST parsing, subprocess pattern, output format)\n- `lab/docs/callmap.md` (NEW — generated output, committed)\n- Audit registration via `lab/claudecode/audit_add.py` add forever\n\n**Design rules:** docs-in-code (callmap.py needs canonical top-of-file docstring); test-plan-required; audit-as-staleness-detector.\n\n**Scope boundary:** IN — AST-based caller detection (direct + subprocess), markdown output, audit-check wiring, tests on a fixture + smoke test on the real repo. OUT — dynamic dispatch resolution (getattr-style — note as known blind spot in tool docstring); palace integration (markdown only for now; promote later if it earns the upgrade); type analysis; cross-repo callmap (TheIgors only).\n\n**Test plan:**\n- Unit: parse a 3-file fixture, assert API functions identified per convention\n- Unit: assert direct callers found (intra-module, cross-module, dotted access)\n- Unit: assert subprocess invocations matched by script path string\n- Smoke: run on the real repo, assert known callers appear (e.g., `cc_queue._load` has callers in `cmd_done`/`cmd_claim`/etc.; `cc_queue.py` script-path appears in pe_chain subprocess calls)\n- Audit: re-running the tool with no code changes produces an identical file (idempotent)\n\n**Why now:** about to migrate 25+ queue.json readers in T-cc-queue-write-race; pre-built callmap = trivial planning input + verification (after migration, callmap should show the new uses). Generally useful for any future broad refactor.",
+    "completed_at": "2026-05-03T22:30:10.877036+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "83dfb24c-5d7d-475b-8329-976a246bfd73",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

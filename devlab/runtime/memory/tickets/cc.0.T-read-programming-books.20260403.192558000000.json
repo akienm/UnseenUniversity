@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-read-programming-books.20260403.192558000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-read-programming-books"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:58",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-read-programming-books"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-read-programming-books",
+    "epic": "Training",
+    "size": "L",
+    "title": "Read local programming ebook queue",
+    "result": "108 calibre-igor books status=completed in reading_list. Books already read by Igor — Design Patterns, Software Arch, C#/.NET stack, etc. Ticket predated calibre ingest being tracked.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:25:58Z",
+    "description": "~25 titles in local Calibre queue. Substrate for self-trainer: deposits FACTUAL memories about code patterns, enriches self-edit loop, lets Igor reason about his own code. Run after Igor books.",
+    "completed_at": "2026-04-03T22:55:48.501452+00:00",
+    "github_issue": 359,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d61794e5-6131-46d4-8541-c49dff47f0e2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

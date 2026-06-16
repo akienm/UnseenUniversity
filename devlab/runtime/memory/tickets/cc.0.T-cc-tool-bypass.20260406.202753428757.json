@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-cc-tool-bypass.20260406.202753428757",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-tool-bypass"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-06T20:27:53.428757",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-tool-bypass"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-tool-bypass",
+    "title": "CC: tool commands should dispatch directly",
+    "result": "CC: <tool> and CC: hot_reload <file> commands now dispatch directly to tool registry without triggering semantic parsing or LLM reasoning turns. Eliminates wasted inference on unrelated semantic matches. Gate added to main.py with 4 test cases; all 1856 tests pass. Commit 40a3d2f4.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-06T20:25:43.940111+00:00",
+    "related_to": null,
+    "description": "Igor receives'CC: <tool>' should dispatch tool directly without memory search or LLM reasoning turn",
+    "completed_at": "2026-04-06T20:27:53.428757+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8da1f6d1-e384-4da3-8da1-e83c00e1206a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

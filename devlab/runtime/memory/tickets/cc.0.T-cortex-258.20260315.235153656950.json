@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-cortex-258.20260315.235153656950",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cortex-258"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T23:51:53.656950",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cortex-258"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cortex-258",
+    "body": "cortex.py lines 1061, 1155, 1191, 2158, 2338 — replace SELECT * with explicit column list excluding embedding in id IN batch fetches that do not use embeddings. Only keep SELECT * where cosine rerank needs the vector. MEDIUM inertia — read each site before editing. See #258.",
+    "role": "implementation",
+    "size": "S",
+    "title": "Fix SELECT * embedding blob in batch id IN fetches (#258)",
+    "result": "cortex.py: added _MEM_COLS_NO_EMBED constant; replaced SELECT * with explicit 19-column list (excludes embedding blob) at 5 batch id IN fetch sites (lines ~1070, 1164, 1201, 2169, 2349). Syntax OK.",
+    "status": "done",
+    "priority": 2,
+    "blocked_at": "2026-03-15T23:49:50.429331+00:00",
+    "claimed_at": "2026-03-15T23:49:31.543421+00:00",
+    "completed_at": "2026-03-15T23:51:53.656950+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

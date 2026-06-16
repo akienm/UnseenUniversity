@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-pa20-palace-foundation.20260601.145342183286",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pa20-palace-foundation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T14:53:42.183286",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-prescient-agents-pa20",
+      "D-prescient-agents-north-star-2026-06-01"
+    ],
+    "tickets": [
+      "T-pa20-palace-foundation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pa20-palace-foundation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Memory",
+      "Architecture"
+    ],
+    "title": "Palace: G-factory-of-factories goal + C-prescient-agents-pa20 concept",
+    "result": "VALIDATED: palace.goals.factory-of-factories, palace.goals.factory-factory, palace.concepts.prescient-agents-pa20 all present in adc.palace",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1.9,
+    "blocked_at": "2026-06-01T14:56:55.627885+00:00",
+    "claimed_at": "2026-06-01T14:54:42.751185+00:00",
+    "created_at": "2026-06-01T14:53:42.183286+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-prescient-agents-north-star-2026-06-01",
+    "description": "UU has been building Prescient Agents 2.0 without naming it. The architectural north star needs to be recorded in the palace so all decisions, tickets, and devices can link to it.\n\nCreate:\n1. Palace goal node G-factory-of-factories: 'The framework can build anything; Claude stays accessible for design with Akien while cheap workers handle execution; the system continuously improves the quality of its own future decisions'\n2. Palace concept node C-prescient-agents-pa20: four-layer architecture (Observe → Relationship Discovery → Future Modeling → Human Decision Support); contrast with Observe→Reason→Act automation; Radar O'Reilly model; key insight: a Prescient Agent is not trying to make decisions — it is trying to continuously improve the quality of future decisions\n3. Update all D-*.md stubs in lab/design_docs/decisions/ to carry goal_link: G-factory-of-factories\n4. Add concept_links: C-prescient-agents-pa20 to decisions where the four-layer framing applies\n\n**Affected files:** lab/design_docs/decisions/*.md (all open decision stubs), palace DB (adc.palace or memory_palace)\n**Design rules:** none apply (documentation + palace writes only)\n**Scope boundary:** Palace nodes and decision stub updates only. Out of scope: implementing any PA2.0 layer capability (those are separate tickets).\n**Completion criteria:** `psql $IGOR_HOME_DB_URL -tAc \"SELECT path FROM adc.palace WHERE path LIKE 'palace.goals.factory%' OR path LIKE 'palace.concepts.prescient%'\"` returns both new nodes; all D-*.md files in lab/design_docs/decisions/ have a goal_link line",
+    "completed_at": "2026-06-02T21:46:48.359668+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T14:54:42.751185+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "36c0550a-5a6b-40fd-8e58-4ec3d939a5a0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice3b-invalidator.20260501.225637401889",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice3b-invalidator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:56:37.401889",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice3b-invalidator"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice3b-invalidator",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice3b",
+      "Datacenter",
+      "Invalidator"
+    ],
+    "title": "Polling-based invalidator — publishes kind=invalidate to announce-events on profile change",
+    "result": "Polling-based Invalidator ships: snapshots profile etags + registry etag, diffs on pump_once(), publishes kind=invalidate to announce-events. Background thread driven by stop event. Skipped inotify (portable polling). 11 new tests; 199 passed. agent_datacenter commit 4ba64e6.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-01T22:54:13.688605+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "When a profile YAML or device-registry changes, agents holding cached manifests need to re-announce. Slice 3b ships the push side: a polling Invalidator that snapshots all profiles' SHA-256 etags + the registry etag at startup, then on a fixed interval diffs the snapshot. Any changed profile triggers a kind=invalidate envelope on comms://announce-events naming the affected agent_id; a registry change triggers a 'registry' invalidate that all agents heed. Polling rather than inotify keeps this portable (no Linux-specific dep); inotify can be a slice-3b-2 optimization later. The invalidator runs as a background thread driven by a stop event so callers can shut it down cleanly.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/invalidator.py (NEW — Invalidator class with start/stop and pump-once seam), /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/__init__.py (export Invalidator), /home/akien/dev/src/agent_datacenter/tests/test_invalidator.py (NEW)\n**Design rules:** stable etag derivation (SHA-256 of YAML bytes for profiles, deterministic JSON of registry snapshot for registry); pump_once() seam keeps tests deterministic — no sleep timing. Background loop calls pump_once() on the configured interval and stops cleanly on event.set(). Unknown failures during pump are logged at WARNING and do not kill the thread.\n**Scope boundary:** in — Invalidator class with snapshot + diff + publish, pump_once() for tests, start/stop background loop driven by a stop event. Out — DatacenterClient automatic re-announce on invalidate (separate ticket), inotify backend, throttling/coalescing across many rapid changes.\n**Test plan:** test_no_changes_no_invalidate (snapshot then pump → no envelope); test_profile_change_publishes_invalidate (edit a profile YAML → pump → kind=invalidate on announce-events with agent_id); test_new_profile_added_publishes_invalidate (drop new YAML in profiles_dir → pump → invalidate names new agent_id); test_profile_deleted_publishes_invalidate; test_registry_change_publishes_registry_invalidate (registry etag differs → kind=invalidate with target=registry); test_pump_once_handles_yaml_load_failure_gracefully; test_background_loop_stops_on_event.",
+    "completed_at": "2026-05-01T22:56:37.401889+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2313febb-c4b8-4e90-90f5-f349ac56f166",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

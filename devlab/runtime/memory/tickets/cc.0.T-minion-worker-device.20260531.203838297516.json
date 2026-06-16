@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-minion-worker-device.20260531.203838297516",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-minion-worker-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T20:38:38.297516",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-minion-worker-escalation-2026-05-31"
+    ],
+    "tickets": [
+      "T-minion-worker-device",
+      "T-repo-map-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-minion-worker-device",
+    "gate": null,
+    "tags": [
+      "inference",
+      "worker",
+      "sprint"
+    ],
+    "title": "Non-Claude worker: minion-class task executor via inference proxy",
+    "result": "MinionDevice + ToolLoop + MinionShim shipped in 1306e0df. 33 tests. DONE/ESCALATE tiered escalation in system prompt. Unblocks T-granny-worker-dispatch.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1.8,
+    "blocked_by": [
+      "T-repo-map-context"
+    ],
+    "claimed_at": null,
+    "created_at": "2026-05-31T20:38:38.297516+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-minion-worker-escalation-2026-05-31",
+    "description": "Build a rack device that receives tickets from Granny and executes them using cheap models (DeepSeek V4 Flash, ~$0.10/1M tokens). Replaces claude CLI dispatch with native agent loop: device listens on comms://worker-inbox, receives ticket+context, calls InferenceDevice.dispatch() with task_class=\"worker\", loops on MCP tool calls (Read/Edit/Write/Bash) until tests pass and ticket closes.\n\n**Affected files:** devices/minion/ (new device)\n**Design rules:** device.py + shim.py pattern, MCP tools only, no external service calls, test coverage required\n**Scope boundary:** in: device lifecycle, MCP tool loop, DeepSeek routing. out: Granny dispatch wiring (separate ticket), repo-map loading (T-repo-map-context separate)\n**Completion criteria:** (1) Device starts/stops cleanly; (2) receives mock ticket via comms:// envelope; (3) calls InferenceDevice.dispatch() with task_class=\"worker\"; (4) parses tool calls from response; (5) executes Read/Edit/Write/Bash; (6) loops until completion; (7) tests pass (>80% coverage for tool loop, mock inference call)",
+    "completed_at": "2026-05-31T20:59:35.753938+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T20:38:38.346674+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "30de187b-7379-443d-8344-3c4661bb73d0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-runtime-path-cleanup.20260325.222201017305",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-runtime-path-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T22:22:01.017305",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-runtime-path-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-runtime-path-cleanup",
+    "title": "Fix runtime path references after .TheIgors reorganization",
+    "result": "paths.py updated: logs→local/logs, milieu→instance/, word_graph→instance/. Three hardcoded bypasses fixed (memory_sync, misfire_counter, slow_query). Runtime files moved with Igor down: milieu_global.json and word_graph.db (4.6GB) to Igor-wild-0001/, active logs from ~/.TheIgors/logs/ to local/logs/. Commit 0a262f5f.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-25T22:16:00.545680+00:00",
+    "description": "~/.TheIgors root reorganized: local/ = machine-global, Igor-wild-0001/ = swarm home. Code still writes to old paths. Fix: (1) milieu_global.json writer → Igor-wild-0001/milieu_global.json; (2) logs/ writer → local/logs/; (3) word_graph.db path → Igor-wild-0001/word_graph.db (then move the 4.6GB file); (4) any other code using ~/.TheIgors/<file> directly instead of paths() calls. After fixes: root should have only cc_channel symlink, Igor-wild-0001/, local/, word_graph.db (until moved).",
+    "completed_at": "2026-03-25T22:22:01.017305+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f3997f2b-4bbb-444f-b2e3-4b572522d7d4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

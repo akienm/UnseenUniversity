@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-lab-migration-to-agent-datacenter.20260507.161004000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-lab-migration-to-agent-datacenter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:10:04",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-lab-migration-to-agent-datacenter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-lab-migration-to-agent-datacenter",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Infrastructure",
+      "Migration"
+    ],
+    "title": "Move non-Igor code from TheIgors/lab to agent_datacenter/lab",
+    "result": "Canonical 4 Igor-imported claudecode files + engram_tools now in ADC. Shim __path__ extension maintains backward compat for existing imports. 4520 tests pass.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-05-08T23:13:56.580475+00:00",
+    "created_at": "2026-05-07T16:10:04Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Separate Igor-specific lab code (palace echo, design docs) from datacenter-shared code (CC workflow tools, benchmarks). TheIgors/lab currently houses both. Move claudecode/, tools/, benchmarks/, and related support code to agent_datacenter/lab; keep theigors/ (palace rules/decisions) and design_docs/ (Igor context) in TheIgors.\n\n**Affected files:** TheIgors/lab/claudecode/*, TheIgors/lab/tools/*, TheIgors/lab/benchmarks/*, TheIgors/lab/seed/*, (create agent_datacenter/lab/claudecode/ and subdirs)\n**Design rules:** migrate-not-delete, test-all-paths, git-mirror-intent\n**Scope boundary:** IN: all CC-facing tools (queue, audit, session, workflow), compute utilities (benchmarks, seed scripts). OUT: Igor palace (theigors/), Igor context (design_docs/), shared DB utilities (utility_closet stays near Igor).\n**Test plan:** (1) grep TheIgors/lab imports in CC code, verify all resolve to agent_datacenter; (2) pytest import discovery on CC tools from new paths; (3) Igor startup with palace pointer updates; (4) verify git mirrors: lab/ → agent_datacenter/lab/\n**Pass condition:** CC tools import from agent_datacenter/lab and run without path errors; Igor starts cleanly; git status shows clean migration (no broken symlinks).",
+    "completed_at": "2026-05-08T23:38:35.119913+00:00",
+    "github_issue": 603,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e3060d15-dd74-4821-bcff-c20aebf0270f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

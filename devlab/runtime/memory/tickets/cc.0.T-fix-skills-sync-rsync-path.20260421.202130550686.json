@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-fix-skills-sync-rsync-path.20260421.202130550686",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-skills-sync-rsync-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T20:21:30.550686",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-skills-sync-rsync-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-skills-sync-rsync-path",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DevLoop",
+      "Hooks",
+      "Hygiene"
+    ],
+    "title": "Fix skills-sync rsync path in pre-commit hook",
+    "result": "pre-commit hook SKILLS_DST fixed (added lab/). First commit after fix auto-synced ~/.claude/skills → lab/claudecode/cc_skills with --delete: 8 retired skills cleaned up (audit, filter, igor, notethat, probe, slate, slateclose, sprint-minion) + current skills updated. Commit 3ef288a6.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-21T20:20:47.978805+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "pre-commit hook at lab/claudecode/hooks/pre-commit line 65 sets SKILLS_DST=\"$REPO_ROOT/claudecode/cc_skills\" — missing the `lab/` prefix. Every commit emits:\n\n    rsync: [Receiver] mkdir \"/home/akien/TheIgors/claudecode/cc_skills\" failed: No such file or directory (2)\n    fatal: pathspec '/home/akien/TheIgors/claudecode/cc_skills' did not match any files\n\nSince the path doesn't exist, rsync fails and the subsequent `git add $SKILLS_DST` on line 69 fails. Non-fatal (commit still succeeds) but pollutes every commit's output and means skills don't get synced into the repo at all — we've been manually `cp`ing them.\n\nFix: change line 65 from `$REPO_ROOT/claudecode/cc_skills` to `$REPO_ROOT/lab/claudecode/cc_skills`.\n\n**Affected files:** lab/claudecode/hooks/pre-commit\n\n**Design rules:** docs-in-code (doesn't apply — shell hook, not a load-bearing subsystem); test-plan-or-why-not (applies — plan below); others don't apply\n\n**Scope boundary:** In: line 65 SKILLS_DST path fix. Out: rest of the hook (staged-file guards, pre-commit guard logic, prepare-commit-msg hook, other hook files).\n\n**Test plan:** After edit, make any commit — observe that the rsync error no longer appears in commit output and lab/claudecode/cc_skills/ is auto-updated (git status should show the skill files as staged alongside whatever else was committed). No unit tests — shell hook, verify via real commit.",
+    "completed_at": "2026-04-21T20:21:30.550686+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5b8cfbf5-5100-4bef-9699-b86da8a3e97b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-db-proxy-sqlite-shim-retire.20260505.153704000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-proxy-sqlite-shim-retire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T15:37:04",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-removal-2026-04-22"
+    ],
+    "tickets": [
+      "T-db-proxy-sqlite-shim-retire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-proxy-sqlite-shim-retire",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "infra",
+      "db",
+      "simplification",
+      "cleanup-D126-tail"
+    ],
+    "title": "CLOSED: Retire db_proxy SQLite-compat translation layer — Phase A inventory complete",
+    "result": "Phase A complete: callsite inventory at lab/design_docs/db-proxy-sqlite-callsites-20260505.md — 6 files enumerated, all patterns mapped, Phase B/C children to follow",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-04T23:51:33.129805+00:00",
+    "created_at": "2026-05-05T15:37:04Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "db_proxy.py still contains a SQLite-compat translation layer (_PGConnWrapper, _PGRowProxy, _translate_insert_or_replace, _INSTR_RE, executescript, PRAGMA no-op, lastrowid via LASTVAL, blanket ?->%s replace). Post-D126 all live callers run Postgres; the SQLite fallback is the dead branch. D-sqlite-removal-2026-04-22 approved the direction. The proxy layer itself (connection pool, slow-query metrics, search_path management) stays. This is an INVESTIGATE ticket: Phase A = grep all SQLite-ism callsites (?-placeholder, INSERT OR REPLACE, PRAGMA, INSTR, executescript, lastrowid) across the codebase. Phase B/C (implementation + deletion) follow after Phase A firms up the size.\n\n**Affected files:** lab/utility_closet/db_proxy.py (SQLite shim classes), wild_igor/igor/memory/cortex.py (uses executescript for schema init), all callsites found in Phase A\n**Design rules:** no-sqlite\n**Scope boundary:** IN: Phase A grep + callsite map; identify all SQLite-ism usage. OUT: Phase B/C implementation deferred to child tickets after Phase A.\n**Test plan:** Phase A produces a callsite inventory doc. tests/test_d126_postgres.py pins some shim behavior — note which tests need updating in Phase B.\n**Pass condition:** A callsite inventory doc exists naming every file using SQLite-isms, with proposed Postgres equivalents for each.",
+    "completed_at": "2026-05-05T21:47:51.432486+00:00",
+    "github_issue": 591,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a05ef17f-40b3-45c9-8b43-48eb19a448f0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

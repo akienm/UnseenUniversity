@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-models-version-ui.20260603.215840374960",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-models-version-ui"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.374960",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-models-version-ui",
+      "T-inference-models-versioned"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-models-version-ui",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "ModelRegistry",
+      "Versioning",
+      "WebServer"
+    ],
+    "title": "Inference web UI: show model version history",
+    "result": "/api/inference/models/{id}/history + /inference/models page with inline history; 8 tests; c3b7d26b",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.35,
+    "claimed_at": null,
+    "created_at": "2026-06-03T21:58:40.374960+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Gated on T-inference-models-versioned. Once versioned model entries exist, surface the history in the web UI so Akien can see how a model's capability profile changed over time. A simple expandable section on the inference device page: model name → current entry → archived versions (date, delta summary).\n\n**Affected files:** devices/web_server/server.py, templates or inline HTML\n**Design rules:** no-sqlite; log at INFO when history route is accessed\n**Scope boundary:** In scope: read-only version history view for each registered model. Out of scope: editing entries from UI, triggering manual version rotation from UI.\n**Completion criteria:** /api/inference/models/<id>/history returns list of versioned entries; web UI renders the history inline; tests: route returns history list; empty history returns empty array",
+    "completed_at": "2026-06-04T01:19:56.034368+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ff8b5586-24f1-482c-bb80-04fe651b3e6f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

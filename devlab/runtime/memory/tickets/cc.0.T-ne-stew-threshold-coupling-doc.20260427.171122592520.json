@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ne-stew-threshold-coupling-doc.20260427.171122592520",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ne-stew-threshold-coupling-doc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T17:11:22.592520",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cap-map-followups-2026-04-27"
+    ],
+    "tickets": [
+      "T-ne-stew-threshold-as-constant",
+      "T-ne-stew-threshold-coupling-doc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ne-stew-threshold-coupling-doc",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DocsHygiene",
+      "Palace",
+      "Cognition",
+      "Reading"
+    ],
+    "title": "Document NE force-run / stew salience coupling invariant (0.6 / 0.65)",
+    "result": "Appended INVARIANT block to theigors/subsystem_index/narrative_engine: 'stew salience (0.65) > NE force-run threshold (0.6)' constraint with file:line cites.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-27T17:10:54.830533+00:00",
+    "related_to": null,
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "description": "narrative_engine.py:477 force-runs NE only when an observation has salience >= 0.6. ebook_reader.py:745 + 4 other sites deposit at salience 0.65 specifically so they reliably trigger force-run. This invariant (stew salience strictly > NE force-run threshold) is undocumented — change either value and stew chunks silently stop integrating into LTM.\n\nDONE 2026-04-27: Appended INVARIANT block to theigors/subsystem_index/narrative_engine palace node naming both values, both source lines, and the constraint.\n\nAffected files:\n- clan.memory_palace path='theigors/subsystem_index/narrative_engine' (UPDATE: appended INVARIANT block).\n- (No code change — invariant already correct in code.)\n\nDesign rules:\n- docs-in-code: invariant lives in palace node now; future sprints touching either value must read the NE subsystem node first.\n- postgres-only: ✓.\n- test-plan-or-why-not: no automated test (constraint check would have to trace constants across 5+ files; cost > value). Manual: a /day-close-audit step could grep for the two constants and warn if they invert.\n\nScope boundary:\nIN: palace doc of the invariant.\nOUT: refactoring to a shared CONSTANT (would be T-ne-stew-threshold-as-constant — file separately if useful), automated invariant check.\n\nTest plan:\n- SELECT from palace shows the INVARIANT block at the bottom of the NE node.\n- Verified 2026-04-27.\n\nFollow-up candidate (not blocking): hoist both values into a shared module so one source change covers all callers.",
+    "completed_at": "2026-04-27T17:11:22.592520+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ea3dc6cb-db5f-4da2-870b-8c5e7c52c520",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

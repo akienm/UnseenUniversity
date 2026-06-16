@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-db-wg-replace-cooccur.20260320.230009293164",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-wg-replace-cooccur"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T23:00:09.293164",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-db-wg-replace-cooccur"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-wg-replace-cooccur",
+    "body": "Replace 29M-row corpus co-occurrence table with top-20 embedding-similarity edges per word. Schema: wg_edges(word_a, word_b, similarity REAL). Batch compute from nomic-embed-text after lemmatization. 1.6M rows, ~20MB. Requires Igor down for cutover. Depends on T-db-lemmatize.",
+    "role": "worker",
+    "size": "large",
+    "title": "Replace wg_cooccur with embedding-proximity edges",
+    "result": "committed 5c1a0f7 — wg_cooccur replaced with embedding-proximity edges",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "completed_at": "2026-03-20T23:00:09.293164+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

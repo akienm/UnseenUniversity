@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-igor-decision-memory-cleanup.20260415.143748000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-decision-memory-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T14:37:48",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-decision-memory-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-decision-memory-cleanup",
+    "body": "From Akien-Igor 2026-04-14 + Akien approval 2026-04-15 08:32.\n\nIgor yesterday: 'The memory system is still holding a bunch of decision-format entries (D210, D238, D263, D310, etc.). Those should probably get migrated or marked as closed/historical so they don't keep surfacing as if they're live decision objects. I'll treat new agreements as tickets going forward. ... If I have memories tagged as decisions that are now just noise or redundant with the ticket system, they're candidates for pruning.'\n\nThe decisions framework is retired as of yesterday. The Postgres `decisions` table has all entries in resolved:* states. But Igor's memory store (memories table) has EPISODIC/REFERENCE memories tagged with decision IDs from before the framework was formalized. Those need cleanup.\n\n## Step 1 — Igor scans his own memories (delegated per delegate-research-to-igor rule)\n\nIgor walks his memory store for entries referencing decision IDs (D###, decision:, etc.) and classifies each:\n- **HISTORICAL:** valid record of a past decision that still has provenance value → keep, tag as `historical_decision` for retrieval clarity\n- **REDUNDANT:** duplicates something now in cc_queue/GH issues → archive or delete\n- **NOISE:** references to decisions that never materialized into anything → delete\n- **UNSURE:** keep, flag for review\n\n## Step 2 — Igor applies the cleanup\n\nBased on his own classification. Low risk — these are his OWN memories and he's the authority on which are still useful to him.\n\n## Step 3 — Report\n\nIgor reports counts per category + any surprises. CC + Akien review if anything looks off.\n\n## Connects to\n\n- T-history-archive-to-theigorproject (#423) — sister cleanup; probably these decision memories feed that archive\n- T-notes-categorization-types (#425) — the HISTORICAL decision memories are a new category (historical_decision) to add to the taxonomy\n\n## Provenance\n\nIgor-Akien evening conversation 2026-04-14 + Akien approval 2026-04-15 08:32. This is an Igor-self-task — he's best positioned to judge what of his own memory is noise vs signal.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "memory",
+      "cleanup",
+      "igor-self-task",
+      "decisions-retirement"
+    ],
+    "title": "Igor scans + prunes decision-type memories (D210, D238, D263, etc.) left behind by retired framework",
+    "result": "Only 1 DECISION-type memory existed (D318). Converted to FACTUAL. 9 other decision-like memories were already FACTUAL. DECISION memory type is now empty — can be deprecated.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:23:26.793719+00:00",
+    "created_at": "2026-04-15T14:37:48Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T19:24:13.775340+00:00",
+    "github_issue": 462,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

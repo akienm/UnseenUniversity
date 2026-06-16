@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-daily-slate-reset.20260403.192251241836",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-daily-slate-reset"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:22:51.241836",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-daily-slate-reset"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-daily-slate-reset",
+    "epic": "Claude",
+    "size": "S",
+    "title": "context-load: create fresh YYYYMMDD.slate.txt if missing",
+    "result": "context-load Step 1 now creates fresh YYYYMMDD.slate.txt if missing — no done tickets carried forward",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-03T19:22:25.900162+00:00",
+    "related_to": null,
+    "description": "context-load creates todays YYYYMMDD.slate.txt if it does not exist (fresh file, no done tickets carried forward). Update context-load skill. Daily slate starts clean.",
+    "completed_at": "2026-04-03T19:22:51.241836+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ec1261f7-64f7-4681-b606-7e47e50a294e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-layer3-anticipate.20260402.005039258083",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-layer3-anticipate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T00:50:39.258083",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-layer3-anticipate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-layer3-anticipate",
+    "epic": "Training",
+    "size": "S",
+    "title": "Layer 3 brick: ANTICIPATE engram",
+    "result": "Collapsed into HYPOTHESIZE (D298). ANTICIPATE = HYPOTHESIZE with time_direction=forward. Not a separate brick.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Design and seed ANTICIPATE as a TEMPLATE Memory node. For each sub-goal in basket, emits risk signals. Feeds into CONSTRAIN. Layer 3 cognitive stdlib (D297).",
+    "completed_at": "2026-04-02T00:50:39.258083+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4f29248f-6beb-4390-9d60-ce4001811336",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

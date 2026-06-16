@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-mgmt-bypass-inference.20260328.144045246071",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mgmt-bypass-inference"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-28T14:40:45.246071",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-mgmt-bypass-inference"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mgmt-bypass-inference",
+    "epic": "Operations",
+    "size": "M",
+    "title": "management habits: bypass inference when habit matches",
+    "result": "basal_ganglia.py: MANAGEMENT_PHRASES pre-check added. update swarm/cluster status → 0.97 direct dispatch. Import OK. Committed + pushed 11ccdd60.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-28T14:39:50.233612+00:00",
+    "description": "Action habits marked bypass_inference=true skip LLM entirely when BG score >= threshold — call tool directly. Targets: PROC_SWARM_UPDATE, cluster_status, restart. Fixes: management commands going to cloud inference and getting conversational responses instead of tool execution.",
+    "completed_at": "2026-03-28T14:40:45.246071+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e8642432-03ed-4289-9deb-65491109cc0c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

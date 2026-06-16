@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-confidence-surface-audit.20260521.190130164071",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-confidence-surface-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T19:01:30.164071",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-expert-lenses-confidence-2026-05-21"
+    ],
+    "tickets": [
+      "T-confidence-surface-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-confidence-surface-audit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AuditPipeline",
+      "Memory",
+      "Shankar"
+    ],
+    "title": "Surface low/negative confidence memories in day-close-audit",
+    "result": "registered negative-confidence-memories SQL audit check in audit_checks.json; fires as LOW finding at day-close",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-23T21:29:14.120961+00:00",
+    "created_at": "2026-05-21T19:01:30.164071+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-expert-lenses-confidence-2026-05-21",
+    "description": "Once confidence exists on clan.memories, make it visible at day-close. Add a step (or extend an existing step) in day-close-audit that queries for: (1) PROCEDURAL memories with confidence < 0 (actively harmful habits — flag for human review), (2) SEMANTIC memories with confidence < 0 (wrong facts — flag for correction). Surface as LOW findings in the audit report. This closes the Shankar feedback loop: the system surfaces what it knows it got wrong.\n\n**Affected files:** wild_igor/igor/tools/day_close_audit.py or the registered audit_checks.json (new check), psql query\n**Design rules:** theigors/rules/database\n**Scope boundary:** In scope: read-only query + audit report entry. Out of scope: auto-correcting or deleting negative-confidence memories.\n**Test plan:** Seed one memory with confidence=-0.5; verify audit step returns it in findings. Seed only null-confidence memories; verify no findings.",
+    "completed_at": "2026-05-28T01:54:13.933917+00:00",
+    "github_issue": 776,
+    "dispatched_at": "2026-05-23T21:29:14.120961+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T19:01:30.164095+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7981b05c-ad30-44a4-b37c-da50af72b4df",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

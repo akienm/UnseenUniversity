@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-audit-audits-skill.20260429.181046496360",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-audits-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:10:46.496360",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-audits-skill",
+      "T-audit-telemetry-shape"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-audits-skill",
+    "gate": "T-audit-telemetry-shape",
+    "size": "L",
+    "tags": [
+      "Audit",
+      "Skills",
+      "MetaAudit"
+    ],
+    "title": "Build audit-audits skill — meta-audit over all audit telemetry",
+    "result": "Built ~/.claude/skills/audit-audits/SKILL.md describing 8 analyzers (recurring smell promotion, upstream-miss accumulation, watch-for ROI, dead-check retirement, false-positive sweeps, cost-per-finding, habit health, cross-layer coherence). Inputs from telemetry corpus only (no codebase reads). Outputs candidate proposals as palace nodes; /decided is the gate. Habit metrics update direct. CRITICAL/HIGH/MED/LOW severity. Cadence: Sonnet weekly (7d), Opus monthly (30d). Helper described: AuditAuditsEngine(IgorBase) with one method per analyzer; schema locked in T-audit-telemetry-shape; engine builds against contract. Tests: 3998 passed.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T18:07:02.954484+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "Meta-audit that consumes every other audit's structured output. Inputs: all theigors/audits/*/runs/* in window; theigors/audits/*/watch_next/*; audit-skip override log; SensorTree counter trends. NO codebase reads.\n\nAnalyses: recurring smell patterns (≥3 runs across ≥2 tickets → propose palace-rule promotion); upstream-miss accumulation (audit-smell catching what audit-ticket should catch → propose layer-rebalance); watch-for ROI (notes hitting ≥2 times → promote to check; never-hit in 14d → expire); audit dwelling on noise (checks always-pass / always-overridden → propose retirement); false-positive sweeps (overrides clustering on one check → propose tightening); cost-per-finding (tokens / material findings → propose downgrade or pruning); habit health (cadence drift, TTR on findings); cross-layer coherence (e.g., audit-design said 'atomic' but audit-ticket flagged splits → tighten decomposition).\n\nOutputs: candidate palace-rule promotions (auto-drafted, /decided to file); candidate check retirements (auto-drafted, manual gate); layer-rebalance proposals; watch-for promotions/demotions (automated, idempotent); habit-health metric updates; 'audit-process drift' report.\n\nCadence: Sonnet weekly, Opus monthly.\n\n**Affected files:** new ~/.claude/skills/audit-audits/SKILL.md. Helper at lab/claudecode/audit_audits_engine.py (analyzers).\n**Design rules:** no persistence beyond palace telemetry. oop-first: AnalysisRun class with analyzer methods. docs-in-code: top-of-file docstring on audit_audits_engine.py.\n**Test plan:** seed 3 weeks of run-records with a recurring smell → audit-audits flags promotion candidate. Watch-for note that hit 3x → promoted to check candidate. Check that fired 50x and was overridden 50x → retirement candidate. Telemetry recorded (yes, audit-audits emits its own record — recursion ends at 1 level).",
+    "completed_at": "2026-04-29T18:10:46.496360+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6b0971e0-9c89-4087-bc7a-024eca186803",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

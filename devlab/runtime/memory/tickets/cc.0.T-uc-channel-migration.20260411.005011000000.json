@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-uc-channel-migration.20260411.005011000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-channel-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-11T00:50:11",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-channel-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-channel-migration",
+    "size": "L",
+    "title": "D335: Move messaging channels (Discord, Gmail) to utility closet",
+    "result": "Discord comms transport: DiscordTransport wraps discord_bot.send() as Transport subclass. comms://discord/<channel_id> addressing. 11 tests.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-18T16:52:15.465152+00:00",
+    "created_at": "2026-04-11T00:50:11Z",
+    "related_to": null,
+    "description": "Move Discord bot, Gmail poller, and future channels out of Igor into the utility closet. Agents subscribe to channels via registration. Enables: channel availability when Igor is down, intermittency handling for Discord, multi-agent channel sharing. Dovetails with D335 platform layer.",
+    "completed_at": "2026-04-18T16:54:18.534427+00:00",
+    "github_issue": 401,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3e9b3641-cba4-4557-977f-44a351344cd8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

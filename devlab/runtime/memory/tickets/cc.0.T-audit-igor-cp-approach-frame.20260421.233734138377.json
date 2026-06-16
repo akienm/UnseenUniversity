@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-audit-igor-cp-approach-frame.20260421.233734138377",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-igor-cp-approach-frame"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T23:37:34.138377",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-approach-frame-principle-2026-04-21"
+    ],
+    "tickets": [
+      "T-audit-design-thread-pass2",
+      "T-audit-igor-cp-approach-frame",
+      "T-igor-self-audit-approach-frame",
+      "T-palace-approach-frame-rule"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-igor-cp-approach-frame",
+    "gate": "T-palace-approach-frame-rule",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Rules",
+      "ApproachFrame",
+      "CharacterSheets"
+    ],
+    "title": "Score Igor CP1-6 against approach-frame; propose CP6 reframe for Akien review",
+    "result": "CP1-6 scored. 5 already approach-framed. CP6 mixed-shape flagged, 5 reframe options proposed (A-E); Igor's direct call: keep original — hard edge is load-bearing axiom, not pessimism. Rationale saved to project_cp6_hard_edge.md. Metric updated: rules_reviewed += 6, rules_kept_with_rationale += 1. No palace write to CP6.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "blocked_at": "2026-04-21T23:18:53.319865+00:00",
+    "claimed_at": "2026-04-21T23:17:49.283481+00:00",
+    "related_to": null,
+    "decision_id": "D-approach-frame-principle-2026-04-21",
+    "description": "Igor's 6 cornerposts (CP1-6) already largely follow approach-frame. CP1-CP5 are positive-framed. CP6 ('The world is not a safe place. We have to build and care for safety as we go.') is mixed: first sentence descriptive/negative, second positive.\n\n**Task:** score each CP against approach-frame rule. Propose a reframe for CP6 (e.g. 'Build and care for safety continuously — the world requires it'). Surface proposal to Akien+Claude via T-audit-design-thread-pass2 BEFORE writing any palace node. HIGH-inertia (character sheets ~0.9x per project_character_sheets_are_living.md) — no write without Akien approval.\n\n**Pre-approved:** Akien approved the audit itself and proposal-surface flow on 2026-04-21. Actual CP6 reframe write requires explicit Akien sign-off at sprint time.\n\n**Affected files:** palace nodes at `theigors/character_sheets/cp*` (or equivalent — locate via `SELECT path FROM memory_palace WHERE path LIKE '%cp%' OR path LIKE '%character%'` at sprint start). No code files.\n\n**Design rules:** no-sqlite (no persistence change); approach-frame (scoring against it); test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: score CP1-6, produce scored table, propose CP6 reframe, surface for Akien approval.\n- Out: other Igor memory rules beyond CP1-6 (T-igor-self-audit-approach-frame). Out: writing until approved.\n\n**Gate:** T-palace-approach-frame-rule (need the scoring criterion).\n\n**Test plan:** no new tests. Output = scored markdown table + CP6 reframe option presented to Akien. No palace write until explicitly approved.",
+    "completed_at": "2026-04-21T23:37:34.138377+00:00",
+    "deposited_at": "2026-04-21T20:23:01.980118",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e0f62f38-645c-4c63-af22-10ce843eb04a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

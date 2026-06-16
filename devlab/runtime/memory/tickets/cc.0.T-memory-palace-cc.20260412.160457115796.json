@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-memory-palace-cc.20260412.160457115796",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-palace-cc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-12T16:04:57.115796",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-palace-cc",
+      "T-memory-palace-populate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-palace-cc",
+    "epic": "Claude",
+    "size": "M",
+    "title": "Memory palace: CC context-load reads palace, slim CLAUDE.md, kill memory files",
+    "result": "CLAUDE.md slimmed 32% (rules first, palace pointer). context-load skill rewritten to query palace. MEMORY.md reduced to palace bootstrap. .claude/memory files left in place (orphaned — not indexed by MEMORY.md so CC won't autoload). Akien can delete after verification.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 4,
+    "claimed_at": "2026-04-12T15:58:34.235595+00:00",
+    "related_to": null,
+    "description": "Rewrite context-load skill to query memory palace instead of reading .claude/memory files. Slim CLAUDE.md to rules + DB bootstrap only. Delete .claude/memory/*.md after migration confirmed. Blocked by T-memory-palace-populate.",
+    "completed_at": "2026-04-12T16:04:57.115796+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "822b5035-1210-4b28-998c-949f0294a436",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

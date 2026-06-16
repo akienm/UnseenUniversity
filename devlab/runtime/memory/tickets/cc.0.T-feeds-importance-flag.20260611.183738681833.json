@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-feeds-importance-flag.20260611.183738681833",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-feeds-importance-flag"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T18:37:38.681833",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-feeds-taxonomy-2026-06-11"
+    ],
+    "tickets": [
+      "T-feeds-importance-flag"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-feeds-importance-flag",
+    "gate": null,
+    "role": "master",
+    "tags": [
+      "Bus",
+      "Infrastructure",
+      "Feeds"
+    ],
+    "title": "Add importance flag to Envelope + receiver-selectable notification threshold",
+    "result": "35 bus tests green. importance field on Envelope, notified column on messages, notify_threshold on mailboxes. NOTIFY always fires (device wake); notified column for UI filter. Commit d1bfc122eeab84dede09020f799c311b6e9eecc1.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that every envelope carries an importance level (0-10) and that personal feed owners are notified only when incoming importance meets their configured threshold.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T18:37:38.681833+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-feeds-taxonomy-2026-06-11",
+    "description": "Add importance flag to Envelope and wire notification gating into PgBus. Envelope gains importance: int = 3 (0=trace, 3=normal, 7=significant, 10=urgent). PgBus stores importance in bus.messages. A mailbox-level threshold (default 5) is stored in bus.mailboxes; PgBus.append() sets a notified flag only when importance >= threshold. Notification delivery mechanism is a LISTEN/NOTIFY on the existing pg_bus channel — the flag enables callers to filter before waking.\n\n**Affected files:** bus/envelope.py, bus/pg_bus.py, schema migration for bus.mailboxes.notify_threshold + bus.messages.importance\n**Design rules:** no-sqlite; Postgres only\n**Scope boundary:** IN: importance field, threshold stored per-mailbox, notification gating at append. OUT: actual push notification delivery to web UI, device-level threshold configuration UI.\n**Completion criteria:** (1) Envelope.importance: int = 3; (2) bus.mailboxes has notify_threshold int default 5; (3) PgBus.append() only fires NOTIFY when importance >= mailbox threshold; (4) PgBus.create_mailbox() accepts notify_threshold kwarg; (5) tests cover threshold gating.",
+    "completed_at": "2026-06-11T19:00:24.066297+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "description_blocked_by": [
+      "T-feeds-bus-types"
+    ],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

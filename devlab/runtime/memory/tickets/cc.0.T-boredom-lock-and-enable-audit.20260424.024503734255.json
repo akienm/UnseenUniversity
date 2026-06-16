@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-boredom-lock-and-enable-audit.20260424.024503734255",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-boredom-lock-and-enable-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:45:03.734255",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-boredom-lock-and-enable-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-boredom-lock-and-enable-audit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Concurrency",
+      "Boredom",
+      "ThreadSafety",
+      "Observability",
+      "Pass2"
+    ],
+    "title": "Boredom module — add lock around _traversal_log; document three-concept confusion",
+    "result": "Shipped in b0059caf. threading.Lock wraps append+prune+read+reset on _traversal_log. Docstring names the three distinct boredoms (retrieval penalty, arousal-flat detector, idle habit) to prevent future merge-confusion. 3 concurrency tests + 15 existing boredom tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.55,
+    "claimed_at": "2026-04-24T02:44:41.503157+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 4 P1-4.1 (SHIP). cognition/boredom.py::_traversal_log is mutated without a lock. Latent (main-loop-only today) but race opens the moment pe_chain or any background source calls record_traversal. Also documented: three distinct 'boredom' concepts in Igor are easy to confuse — cognition/boredom.py (retrieval-score penalty), push_sources.BoredomSource (arousal-flat detector), tools/boredom_idle.py (idle-traversal habit). Do not merge; note which-is-which in the docstring.\n\n**Affected files:** wild_igor/igor/cognition/boredom.py (add threading.Lock around _traversal_log; update docstring to name the three concepts), tests/test_boredom_concurrency.py (new).\n**Design rules:** docs-in-code, test-plan-or-why-not.\n**Scope boundary:** IN — threading.Lock + docstring + concurrency tests. OUT — merging the three boredoms; changing enable gate; altering penalty semantics.\n**Test plan:** three threads hammering record_traversal simultaneously; concurrent read during write; reset mid-read. No crashes, all snapshots in valid [0.0, 1.0] range.",
+    "completed_at": "2026-04-24T02:45:03.734255+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9b22dc7c-5a6f-4f61-b3b0-8db6751d148a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

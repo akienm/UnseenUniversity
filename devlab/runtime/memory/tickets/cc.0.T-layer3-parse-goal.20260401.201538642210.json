@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-layer3-parse-goal.20260401.201538642210",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-layer3-parse-goal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T20:15:38.642210",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-layer3-parse-goal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-layer3-parse-goal",
+    "epic": "Training",
+    "size": "S",
+    "title": "Layer 3 brick: PARSE_GOAL engram",
+    "result": "All 8 Layer 3 TEMPLATE nodes seeded with full tests (1305 passing). Session 2026-04-01h.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Design and seed PARSE_GOAL as a TEMPLATE Memory node. Extracts actual intent from input, distinct from literal surface meaning. Emits parsed_goal and confidence to basket. Layer 3 cognitive stdlib (D297). Prerequisite for DECOMPOSE.",
+    "completed_at": "2026-04-01T20:15:38.642210",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cae16b4a-5d24-41bf-9a93-b496bcc96a4a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

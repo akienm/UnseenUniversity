@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-web-chat-timestamp-prefix.20260420.201735168686",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-chat-timestamp-prefix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T20:17:35.168686",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-chat-timestamp-prefix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-chat-timestamp-prefix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Comms",
+      "Operations"
+    ],
+    "title": "Comm channels: per-channel timestamp-prefix option (HHMMSS author:)",
+    "result": "Comms Channel.show_timestamp bool + web chat HHMMSS prefix in addMsg. Default on, infra channels opt out via show_timestamp=False. Format 132204 akien: (6-digit HHMMSS). Dim ts CSS span. 36 comms tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1.0,
+    "claimed_at": "2026-04-20T20:13:11.321955+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Render HHMMSS timestamp prefix on author labels for comm channel output: \"akien:\" → \"132204 akien:\". Easier log lookup. Scope: implement in the shared comms:// render/formatter layer so web, Discord, console, MCP consumers all benefit uniformly — not a web-only tweak. Per-channel opt-in: each channel config carries a show_timestamp flag (default off for infrastructure/system channels, on for human-facing chat). Stored messages already carry ts in channel store — this is render only, no schema change. Format: 6-digit zero-padded local time HHMMSS, space, existing author label, colon. Check for consumers that parse bare \"author:\" as a protocol marker before flipping — add regression guard. Inertia: LOW-MEDIUM (comms layer is shared but change is additive + flagged).",
+    "completed_at": "2026-04-20T20:17:35.168686+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b5164e51-3e7d-49cc-8991-6d5ad2450512",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

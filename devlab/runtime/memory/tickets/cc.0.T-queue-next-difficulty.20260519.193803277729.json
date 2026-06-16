@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-queue-next-difficulty.20260519.193803277729",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-queue-next-difficulty"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-19T19:38:03.277729",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-target-difficulty-tiers-2026-05-19"
+    ],
+    "tickets": [
+      "T-igor-difficulty-cap",
+      "T-queue-gate",
+      "T-queue-next-difficulty",
+      "T-ticket-difficulty-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-queue-next-difficulty",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Routing"
+    ],
+    "title": "cc_queue.py next --max-difficulty=N filters by target_difficulty",
+    "result": "next_ticket_id_for_worker gains max_difficulty param; cmd_next parses --max-difficulty=N. 9 tests. Commits ffbe2c6 + 6b2f41dd.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-05-20T21:17:45.872801+00:00",
+    "created_at": "2026-05-19T19:38:03.277729+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-target-difficulty-tiers-2026-05-19",
+    "description": "Consumers need to declare capability so they only receive tickets they can execute. Add `--max-difficulty=N` flag to `cc_queue.py next`. When set, only return the next ticket where `target_difficulty <= N` (tickets with no difficulty field default to 1). Without the flag, `next` returns any ticket (no filter). Note: T-queue-gate must also be complete since `next` command is added there; this ticket extends it.\n\n**Affected files:** ~/TheIgors/lab/claudecode/cc_queue.py\n**Design rules:** backward-compat (no flag = no filter); unset-difficulty treated as 1\n**Scope boundary:** --max-difficulty filtering only. No schema changes (T-ticket-difficulty-schema). No daemon/config changes (T-igor-difficulty-cap). Depends on T-queue-gate for the `next` command to exist.\n**Test plan:** `next --max-difficulty=1` skips a manually-inserted difficulty=2 ticket; `next --max-difficulty=5` returns it; `next` with no flag still returns it (backward-compat); a ticket with no difficulty field is treated as difficulty=1 and returned by `--max-difficulty=1`.",
+    "completed_at": "2026-05-20T21:18:49.558893+00:00",
+    "github_issue": 760,
+    "required_files": [],
+    "scraps_validated": "2026-05-19T19:38:03.277759+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "656d6cdd-0991-46bf-8968-3283bbaa3dd5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

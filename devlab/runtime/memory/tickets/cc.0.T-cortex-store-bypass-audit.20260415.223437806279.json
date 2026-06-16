@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-cortex-store-bypass-audit.20260415.223437806279",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cortex-store-bypass-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T22:34:37.806279",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cortex-store-bypass-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cortex-store-bypass-audit",
+    "body": "Surfaced during T-goal-graph-use-cortex-store sprint 2026-04-15. grep of tools/ for 'INSERT INTO memories' found multiple bypass sites. Most are seed_*.py scripts (arguably legitimate for genesis/boot paths) but two are runtime tools that should be converted:\n\n## Confirmed bypasses\n\n- habit_chunker.py:121 — INSERT INTO memories in a runtime habit-chunking path\n- skill_importer.py:258 — INSERT INTO memories (id, memory_type, narrative, metadata, payload, timestamp) for skill import\n- memory_sync.py:68, 204 — explicitly the sync layer, may be legitimate\n- seed_*.py (many) — seed_cc_direction_habit, seed_tool_discovery, seed_inhibit_mid_conv_greeting, seed_strategic_goals, seed_reply_obligation_look, etc.\n\n## Why this matters\n\ncortex.store() is the single place where per-memory metadata stamps apply: scrub, credential leakage filter, test_data tagging (IGOR_TEST_MODE), D256 id regeneration, link auto-creation. Every bypass is a hole in those systems. The test-pollution bug this morning was caused exactly by one of these bypasses (goal_graph) — the tag never reached the table so session cleanup couldn't find it.\n\n## Scope\n\n1. Convert habit_chunker and skill_importer to use cortex.store() with proper Memory objects (same pattern as goal_graph fix, commit 362f969e)\n2. Decide on seed_*.py scripts: either convert them OR document the exemption (seed scripts bypass scrub+test-data on purpose because they run at boot with known-clean genesis content). My recommendation: document the exemption and add a marker comment \"# GENESIS BYPASS — do not run at runtime\" on each seed file\n3. memory_sync.py is the sync layer, should stay as-is but document why\n4. Add an audit check to audit_checks.json: grep for 'INSERT INTO memories' in tools/ excluding seed_*.py and memory_sync.py; fail if any new bypass appears\n\n## Out of scope\n\n- Converting every seed_*.py (too many, low value)\n- Refactoring memory_sync (it's the layer that does sync, not a consumer)\n\n## Provenance\n\nGrep during T-goal-graph-use-cortex-store audit. The goal_graph bypass caused today's test-pollution feedback loop; this ticket prevents the next instance.",
+    "size": "S",
+    "tags": [
+      "cortex",
+      "single-chokepoint",
+      "hygiene",
+      "audit",
+      "DP4"
+    ],
+    "title": "Audit runtime tools/ for cortex.store() bypasses — single-chokepoint enforcement",
+    "result": "Converted 6 runtime tools (habit_chunker, skill_importer, after_action_reviewer, output_trainer, learner, self_trainer) to cortex.store. Audit check audit_check_cortex_bypass.py registered as no-cortex-store-bypass. Exempts seed_*.py + memory_sync.py. Zero regressions, 2520 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T22:22:23.164501+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-15T22:34:37.806279+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

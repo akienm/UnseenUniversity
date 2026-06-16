@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-evaluator-device.20260530.183045394326",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-evaluator-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T18:30:45.394326",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-evaluator-device",
+      "T-provenance-trust-scoring"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-evaluator-device",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Research"
+    ],
+    "title": "Evaluator rack device: LLM judge panel for agent output quality",
+    "result": "3-judge LLM panel rack device shipped: evaluate/rubric_create/rubric_list/eval_history MCP tools, rubrics in adc.palace, 28 unit+integration tests all green",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": "2026-05-31T02:26:26.481591+00:00",
+    "created_at": "2026-05-30T18:30:45.394326+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "A rack device that accepts an agent output + a rubric and returns a scored verdict from a panel of LLM judges. Rubrics are stored as palace nodes (adc.palace) so they accumulate over time. Results feed back into provenance trust tiers (T-provenance-trust-scoring) — an agent that consistently passes evals earns higher trust.\n\nMCP tools exposed: evaluate(output, rubric_id) → {score, verdict, judge_reasoning[]}; rubric_create(name, criteria[]) → rubric_id; rubric_list() → rubric[]; eval_history(agent_id, limit) → eval[].\n\nJudge panel: 3 independent LLM calls with the same rubric, majority verdict. Rubric format: list of named criteria each with pass/fail/score instruction.\n\n**Affected files:** devices/evaluator/ (new), config/profiles/evaluator.yaml\n**Design rules:** BaseDevice/BaseShim contract; inference device handles all LLM calls (evaluator does not call LLM directly); rubrics in adc.palace\n**Scope boundary:** IN — judge panel, rubric storage, eval history, trust tier integration; OUT — automated rubric generation, eval scheduling (that's nanny's job)\n**Completion criteria:** evaluate(output='hello world', rubric_id='R-basic') returns scored verdict with 3 judge reasoning entries; eval history queryable; rubric stored and retrievable from palace",
+    "completed_at": "2026-05-31T02:41:32.873396+00:00",
+    "deposited_at": "2026-05-30T12:33:02.752336",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T02:26:26.481591+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T18:30:45.394430+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "aa7ed3b8-d6c7-4258-8299-d0ae46e8e430",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

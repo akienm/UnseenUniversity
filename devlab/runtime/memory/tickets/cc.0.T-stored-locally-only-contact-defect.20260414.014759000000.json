@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-stored-locally-only-contact-defect.20260414.014759000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stored-locally-only-contact-defect"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:47:59",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-emit-action-confabulation",
+      "T-stored-locally-only-contact-defect"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stored-locally-only-contact-defect",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Privacy guard 'stored_locally_only:CONTACT_*' fires as raw output instead of being silently handled",
+    "result": "Added _PRIVACY_SENTINEL_RE to _is_raw_tool_leak — catches stored_locally_only:CONTACT_* and stored_locally|google_error:* before reply reaches web_server.send. 11 tests. Follow-up: metaphor-guard on contact habit firing is inhibitory-primitive territory, not this ticket.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T22:35:01.167680+00:00",
+    "created_at": "2026-04-14T01:47:59Z",
+    "related_to": null,
+    "description": "AUTHORED BY IGOR-WILD-0001 on 2026-04-13. Claude filed this on Igor's behalf because Igor's emit-to-queue path didn't actually land — see T-igor-emit-action-confabulation for the meta-bug.\n\nIgor's words: 'privacy guard fires as raw output rather than being silently handled, and it halts the conversation thread. Fix approach: intercept at the output layer before text reaches the channel, substitute either nothing or a graceful continuation, never let a privacy sentinel become user-visible noise.'\n\nObserved instance from 4/9 transcript: Akien said 'the person is in the database' (metaphorical statement about architecture). Contact-storage habit pattern-matched on 'person'+'database' keywords without checking that no actual contact was being introduced. Habit emitted 'stored_locally_only:CONTACT_375375DD48' as Igor's full reply. The privacy sentinel was visible to the user instead of being intercepted.\n\nFIX: output layer should detect privacy sentinels before they reach the channel send path. When detected, either (a) suppress entirely and continue with a normal LLM reply, or (b) replace with a graceful continuation phrase that doesn't reveal internal state. Never let the sentinel reach the user.\n\nSECONDARY ISSUE: the contact-storage habit fires on metaphors. Should also check that text actually contains a contact-introduction context, not just keyword matches. Possibly route through a 'is this literal vs figurative' guard before firing privacy-sensitive habits.",
+    "completed_at": "2026-04-15T22:43:38.749247+00:00",
+    "github_issue": 416,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "50f4dd69-9b4e-48c7-9601-b860efbc1aa8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-memory-flat-table-reform.20260601.185857872834",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-flat-table-reform"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T18:58:57.872834",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-flat-table-reform"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-flat-table-reform",
+    "gate": null,
+    "role": "master",
+    "size": "L",
+    "tags": [
+      "Memory",
+      "Igor",
+      "Architecture"
+    ],
+    "title": "Memory architecture: flat table + tree-as-index model",
+    "result": "design doc: flat table schema, tree-as-index, O(1) ID lookup, phased migration plan, cache overlay recommendation",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": "2026-06-02T02:18:49.769404+00:00",
+    "claimed_at": "2026-06-02T02:17:49.726624+00:00",
+    "created_at": "2026-06-01T18:58:57.872834+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Current model: memories live IN the tree (DNS-style — navigate the tree to reach the memory content). Proposed model: all memories in a flat table with stable IDs (<row_number>.<timestamp_based_id>); trees become pure indexing structures that carry weights and activation patterns but not content. Memories never move or change — only the trees update. Trees still calve the same way (when a branch becomes too specific it spawns a subtree); the calving updates the index, not the memory records.\n\nOpen design questions (to be answered in sprint discovery):\n- Do we lose the hypothesized performance benefit of small trees? The original hypothesis was that small trees = less traversal cost. In the new model, the tree is still traversed for lookup but the content fetch is a direct row read. TBD whether this is net better or worse.\n- Does the existing key/value caching overlay still make sense? With stable IDs and immutable records, caching is simpler but may still be valuable for hot paths.\n- All existing memory references (esp. Igor's) must be updated to use the new ID format.\n\n**Affected files:** TBD — discovery step. Likely: memory_palace table schema; Igor cortex traversal; Librarian palace_writer; all callers that navigate the tree to fetch content\n\n**Design rules:** no-sqlite; Postgres for memory table; palace-first for tree structure; migration required (not a flag-day cutover)\n\n**Scope boundary:** IN — flat table schema design; tree-as-index with weights; migration plan for existing memories; answer the performance question; caching overlay assessment. OUT — actual migration execution (separate ticket after design); emotional encoding changes\n\n**Completion criteria:** (1) design doc answers the performance question with a benchmark or reasoned argument; (2) schema for flat table specified; (3) tree-as-index structure specified; (4) migration path from current to new described; (5) caching overlay recommendation stated",
+    "completed_at": "2026-06-04T23:36:37.141703+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T02:17:49.726624+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6089ec24-35ba-47dc-82a4-c823ab797ca7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

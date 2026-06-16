@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-audit-precode-skill.20260429.182030992217",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-precode-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:20:30.992217",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-precode-skill",
+      "T-audit-rename-pyramid"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-precode-skill",
+    "gate": "T-audit-rename-pyramid",
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Skills",
+      "Sprint",
+      "Sonnet-Constraints"
+    ],
+    "title": "Build audit-precode skill — between /sprint plan and first edit",
+    "result": "Created ~/.claude/skills/audit-precode/SKILL.md: 7 checks (file existence, symbol grep, HIGH-inertia reaffirmation, preferred-paths, test plan named, docstring plan, diff-size estimate). Model: Haiku.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-04-29T18:11:26.017344+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "New skill audit-precode — invoked by /sprint after plan-review and before first edit. The cheapest place to catch hallucinated targets (P1 bug context). Checks: every file in the plan exists (path verification); every named symbol exists (grep verification); HIGH-inertia targets get explicit reaffirmation gate (not 'ticket said so'); plan doesn't introduce new memory types / SQLite / fallbacks (re-check design rules); plan doesn't propose any deprecated form from theigors/rules/preferred_paths; test file named; fixture path named; top-of-file docstring file named (load-bearing touches); diff size estimate vs ticket size — flag mismatch >2x.\n\nReturn AMEND when checks fail. Emits per-run record.\n\nModel: Haiku, escalate to Sonnet when HIGH-inertia in plan.\n\n**Affected files:** new ~/.claude/skills/audit-precode/SKILL.md, /sprint skill updated to invoke audit-precode after plan-review step.\n**Design rules:** no persistence beyond palace telemetry. /sprint invocation is the integration point.\n**Test plan:** seed a sprint plan that names a fictional file → audit-precode flags missing path. Plan that hits HIGH-inertia → reaffirmation gate fires. Plan with diff-size mismatch → AMEND. Telemetry recorded.",
+    "completed_at": "2026-04-29T18:20:30.992217+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2b38980e-bb56-439a-924e-d0d99f3d1569",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

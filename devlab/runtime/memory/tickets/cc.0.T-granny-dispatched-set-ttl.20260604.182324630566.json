@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-granny-dispatched-set-ttl.20260604.182324630566",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-dispatched-set-ttl"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T18:23:24.630566",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-dispatched-set-ttl",
+      "T-web-ui-circuit-breakers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-dispatched-set-ttl",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Bug"
+    ],
+    "title": "Granny: dispatched_cycle.json accumulates stale IDs, blocks re-dispatch of bounced tickets",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that Granny re-dispatches tickets that bounce from in_progress back to sprint.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T18:23:24.630566+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "dispatched_cycle.json persists ticket IDs across Granny restarts. When a ticket bounces from in_progress back to sprint (e.g. after a fake-DONE reset or a swallowed send-keys recovery), Granny sees it in the dispatched set and skips it permanently. Observed: all reopened fake-DONE tickets (T-web-ui-circuit-breakers etc.) were in the dispatched set and required manual pruning before Granny would pick them up.\n\nFix: when a ticket's status is sprint AND its ID is in dispatched_cycle.json, remove it from the set (let Granny re-evaluate). The simplest implementation: in run_once(), before the `if tid in dispatched: continue` check, verify the ticket's current status is not already done/closed. If it's back to sprint, remove from dispatched and proceed.\n\n**Affected files:** devices/granny/daemon.py (run_once, _load_dispatched)\n**Design rules:** external state — dispatched set persists in ~/.granny/dispatched_cycle.json\n**Scope boundary:** fix stale-ID accumulation; preserve IDs for done/closed tickets to avoid re-dispatch\n**Completion criteria:** ticket that bounces in_progress→sprint is re-dispatched by Granny within one poll cycle without manual dispatched_cycle.json editing",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

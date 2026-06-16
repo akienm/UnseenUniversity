@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-feeds-mcp-tools.20260529.200813650659",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-feeds-mcp-tools"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T20:08:13.650659",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-feeds-mcp-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-feeds-mcp-tools",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Feeds architecture: per-device feed mailboxes + MCP send_to/view_feed tools",
+    "result": "feeds/<device> IMAP convention: fetch_recent + send_to/send_feed/view_feed MCP tools in datacenter server + Granny publisher + GET /feeds/{device} web route + 20 tests",
+    "status": "closed",
+    "worker": "claude",
+    "created_at": "2026-05-29T20:08:13.650659+00:00",
+    "created_by": null,
+    "related_to": null,
+    "commit_hash": "1379316b",
+    "decision_id": null,
+    "description": "Devices currently have no first-class way to publish activity streams or send directed messages without wiring up IMAPServer + Envelope directly. Introduce a 'feeds' layer built on the existing IMAP bus: per-device broadcast mailboxes at feeds/<device>, and three MCP tools on the datacenter server that any CC session can call without knowing the transport.\n\n**Affected files:** bus/imap_server.py (create_mailbox helper), devices/granny/daemon.py (publish to feeds/granny), lab/claudecode/cc_mcp_server.py or equivalent datacenter MCP server (new tools), web service feeds route (new), tests/\n**Design rules:** no-sqlite; no-TheIgors-imports; MCP tools for inter-agent comms (not CC skills — skills are for CC-side workflow; MCP tools are device-side capabilities any session can call)\n**Scope boundary:** IN: feeds/<device> mailbox convention; Granny as first publisher (dispatch events + audit_fail + route_fail to feeds/granny); three MCP tools: send_to(receiver, message), send_feed(event), view_feed(sender, limit=20); web route GET /feeds/<device> returning last N events as JSON. OUT: IMAP IDLE push (use poll for now); Igor or other devices publishing feeds (follow-on tickets); UI feed reader beyond raw JSON route.\n**Completion criteria:** (1) mcp__datacenter__send_to, mcp__datacenter__send_feed, mcp__datacenter__view_feed exist and are callable from a CC session. (2) Granny daemon publishes dispatch/audit_fail/route_fail events to feeds/granny. (3) GET /feeds/granny returns those events as JSON. (4) All existing Granny + bus tests pass. (5) Restart checklist: restart UU web service (new route), restart Granny daemon (new feed publishing), reload datacenter MCP server (new tools).",
+    "completed_at": "2026-05-29T20:54:52.690516+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-29T20:13:35.603494+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-29T20:08:13.723222+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8c3f36ef-2a18-4a43-a49d-ade17eb7189e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

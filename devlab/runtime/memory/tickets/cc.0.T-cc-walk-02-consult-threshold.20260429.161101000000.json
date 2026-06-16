@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-02-consult-threshold.20260429.161101000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-02-consult-threshold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:01",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-cc-walk-02-consult-threshold",
+      "T-consult-confidence-threshold-raise",
+      "T-igor-programs-himself"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-02-consult-threshold",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor raises consult confidence threshold 0.3→0.55",
+    "result": "W-2 cert work covered by T-consult-confidence-gate (commit b5469f55) — abort-on-low-confidence gate at DEFAULT_MIN_CONFIDENCE=0.55; 7 tests in TestConcludeConfidenceGate. The pre-implement HIGH-inertia filter (commit f8dd2999) supplements as the cognition-bypass-advisor companion fix.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.89,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:11:01Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-consult-confidence-threshold-raise. Stale proposal cleared. Affected file: cognition/consult.py — NOT HIGH-inertia.\n\nChecklist:\n1. Verify stale proposal cleared (done)\n2. Set T-consult-confidence-threshold-raise priority=0.95\n3. Watch Igor claim + PLAN — verify proposal touches consult.py only\n4. If false brainstem/core_patterns.py proposal: note exact pe_chain log, reset, inject: 'T-consult-confidence-threshold-raise: only edit wild_igor/igor/cognition/consult.py constants. No brainstem files.'\n5. Watch pre-flight + implementation\n6. Verify commit + done\n\n**Affected files:** wild_igor/igor/cognition/consult.py\n**Design rules:** none apply\n**Scope boundary:** IN — scaffold this one ticket\n**Test plan:** T-consult-confidence-threshold-raise done.",
+    "completed_at": "2026-05-02T03:15:17.915983+00:00",
+    "github_issue": 550,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "add6a8a3-2614-4a16-b4bc-0881a49ba2a9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

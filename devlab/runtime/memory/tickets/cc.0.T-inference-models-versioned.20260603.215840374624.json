@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-inference-models-versioned.20260603.215840374624",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-models-versioned"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.374624",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-models-autoversion",
+      "T-inference-models-versioned"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-models-versioned",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "ModelRegistry",
+      "Versioning"
+    ],
+    "title": "Inference models registry: versioned entries with creation dates",
+    "result": "created_at on ModelSpec, update_model() archives facia+retired_at, list_model_history() oldest-first, 8 tests; fb7ec20f",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-06-04T01:13:31.614598+00:00",
+    "created_at": "2026-06-03T21:58:40.374624+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "As models are revved (e.g. deepseek-v3 → deepseek-v4, qwen3-coder-30b gets a patch), the old capability data should be preserved rather than overwritten. Pattern: the facia entry (identified by stable ID) gets updated with new data; the old entry is copied to a versioned archive row with a creation_date in metadata. This gives us a historical record of model capability evolution and allows rollback comparisons. The facia row retains the same DB row ID so existing rules-engine references stay valid.\n\n**Affected files:** devices/inference/models_registry.py, devices/inference/sources.py, schema migration if models are stored in Postgres\n**Design rules:** no-sqlite; versioned memory pattern (facia row stable, archive rows appended); creation_date in metadata\n**Scope boundary:** In scope: update_model() method that archives old entry + updates facia; creation_date field in model metadata; read path unchanged. Out of scope: automated version detection (T-inference-models-autoversion), UI for browsing history.\n**Completion criteria:** (1) update_model(id, new_data) archives the current entry with creation_date and updates the facia row; (2) list_model_history(id) returns archived versions in chronological order; (3) facia row ID is stable across updates; (4) tests: update preserves old data in archive; history returns versions in order; facia ID unchanged",
+    "completed_at": "2026-06-04T01:18:36.774483+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:59:47.322427+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9ad52827-9c45-452e-a2dd-83c486725f54",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-acurite-capture-daemon.20260615.023147501659",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-acurite-capture-daemon"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T02:31:47.501659",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-free-2026-06-14"
+    ],
+    "tickets": [
+      "T-acurite-capture-daemon"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-acurite-capture-daemon",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "AcuRite",
+      "Infrastructure"
+    ],
+    "title": "Build acurite-capture.py — rtl_433 → CSV append + WU upload + discover mode",
+    "result": "acurite-capture.py built: rtl_433→CSV+WU, discover mode, all rtl_433 field variants handled, stdlib only",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "intention": "I intend that acurite-capture.py captures AcuRite sensor data via rtl_433, appends rows to weather.csv, uploads to WU, and has a --discover mode that prints all visible sensor IDs.",
+    "created_at": "2026-06-15T02:31:47.501659+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-acurite-free-2026-06-14",
+    "description": "Single Python script, stdlib only. Reads config.ini for write_path, sensor map (id→name), WU credentials, rtl_433 protocols. Runs rtl_433 as subprocess, reads JSON stdout line by line.\n\n--discover mode: listen 5 minutes, print all AcuRite packets seen with sensor ID and model — lets user find their IDs without digging in the AcuRite app.\n\nDaemon mode: filter by whitelisted sensor IDs (or capture all if [sensors] section is empty), parse fields (temp_F or temp_C→F, humidity, wind_mph or km/h→mph, wind_dir_deg, rain_mm→in), append CSV row, spawn background thread for WU upload. Auto-restarts rtl_433 subprocess on error.\n\nCSV fields: timestamp,sensor_id,sensor_name,model,temp_f,humidity_pct,wind_mph,wind_dir_deg,rain_in,battery_ok\n\n**Affected files:** acurite-free/acurite-capture.py\n**Design rules:** stdlib only (subprocess, csv, json, urllib, configparser, threading, argparse); no SQLite; no Flask\n**Scope boundary:** IN — capture, CSV write, WU upload, discover mode. OUT — web UI, cloud API calls (cloud sync is OS-level).\n**Completion criteria:** --discover prints sensor IDs from a live rtl_433 stream; daemon mode appends rows to weather.csv; WU upload fires on each valid packet when enabled.",
+    "completed_at": "2026-06-15T02:34:02.803785+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-15T02:31:47.501703+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

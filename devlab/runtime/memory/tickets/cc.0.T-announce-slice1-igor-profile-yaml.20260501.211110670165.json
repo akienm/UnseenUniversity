@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-announce-slice1-igor-profile-yaml.20260501.211110670165",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice1-igor-profile-yaml"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T21:11:10.670165",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice1-igor-profile-yaml",
+      "T-announce-slice1-round-trip-test",
+      "T-datacenter-capability-announce-protocol"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice1-igor-profile-yaml",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice1",
+      "Datacenter",
+      "Config"
+    ],
+    "title": "config/profiles/igor.yaml — minimal viable profile for round-trip test",
+    "result": "Canonical igor.yaml at config/profiles/igor.yaml. Validated against profile loader. agent_datacenter commit 6f3867a.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T21:10:15.734839+00:00",
+    "related_to": "T-datacenter-capability-announce-protocol",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Author the canonical Igor profile per design § 4.3. Lives at /home/akien/dev/src/agent_datacenter/config/profiles/igor.yaml (canonical, repo-checked-in). Sync-on-install copies to ~/.agent_datacenter/profiles/ at runtime (sync mechanism is slice 2/3 work; slice 1 reads from canonical path for the test).\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/config/profiles/igor.yaml (NEW)\n**Design rules:** canonical-in-repo, runtime-read-from-runtime-dir\n**Scope boundary:** in — full Igor profile YAML matching design § 4.3 (devices_allow_list, devices_overlay, channels, state_refs, permissions, surfaces); out — cc.yaml/research-orca.yaml (slice 2), inheritance markers (slice 5)\n**Test plan:** ensured by T-announce-slice1-round-trip-test (the file is consumed there); standalone YAML lint via pyyaml load",
+    "completed_at": "2026-05-01T21:11:10.670165+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ad8d49dc-9e40-46b6-b837-12e5a335903f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

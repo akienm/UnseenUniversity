@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-pe-chain-llm-paraphrase-stickiness.20260430.190000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-llm-paraphrase-stickiness"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T19:00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-claim-honors-worker",
+      "T-pe-chain-hypothesize-retry",
+      "T-pe-chain-llm-paraphrase-stickiness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-llm-paraphrase-stickiness",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "pe_chain",
+      "HYPOTHESIZE",
+      "engram-repair",
+      "cert-driven"
+    ],
+    "title": "pe_chain HYPOTHESIZE: LLM stuck on paraphrase across retries — verbatim feedback ignored",
+    "result": "Superseded by routing diagnosis: the 'stickiness' was 7B-model behavior; cert debugger silently routed to local Ollama qwen2.5:7b instead of cloud qwen-2.5-coder-32b. With 32B routing (Igor's autonomous default), HYPOTHESIZE produces verbatim-valid edits cleanly (validated cert walk-02 substitute attempt 8 → commit b092865d). Test-rig fix tracked in T-cert-debugger-env-mirror. The 5 candidate interventions documented here remain reusable if future 32B failures emerge.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "created_at": "2026-04-30T19:00:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Cert walk-02 substitute attempt 4 (T-cc-queue-claim-honors-worker, 2026-04-30 18:48 UTC) exercised the new validate-then-retry path (T-pe-chain-hypothesize-retry). Both retries produced the SAME paraphrased old_string `if t['status'] == 'pending':` (single quotes, ==) even though actual code is `if t[\"status\"] != \"pending\":` (double quotes, !=) and the retry prompt explicitly said: 'copy old_string EXACTLY as it appears — same quote style, same operators'.\n\nDump preserved: ~/.TheIgors/local/logs/cert_walk_02_substitute_attempt_4_retries_exhausted.json\n\nThe retry pattern is sound (Aider/Cursor use it). But this specific LLM (qwen-2.5-coder-32b via OpenRouter, temp 0.2) appears to have token-level stickiness: once it commits to a paraphrase in attempt 1, retries don't break the pattern. Possible interventions (NONE attempted yet — held per advisor stop rule):\n\n1. Higher temperature on retry (0.2 → 0.7) to break the local minimum\n2. Switch model on retry (e.g., escalate to a stronger tier on validation failure)\n3. Pre-extract the line numbers from `actual` and ask LLM to specify line+target instead of copy-old_string\n4. Auto-correct: when LLM's paraphrase resembles a real line in `actual`, substitute the real line transparently and proceed\n5. Replace old_string-based diff with structured edits (line numbers, AST-based, or character offsets)\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (pe_hypothesize + helpers)\n**Design rules:** test-plan-or-why-not\n**Scope boundary:** IN — investigating + picking ONE intervention from the list above. OUT — switching to a different LLM provider; rewriting the basket schema.\n**Test plan:** integration test = re-run cert walk on T-cc-queue-claim-honors-worker (which now has documented failure-mode data). Success criteria: HYPOTHESIZE produces a verbatim-valid old_string matching one of consult.py / cc_queue.py / similar real codebase patterns.\n\nLogged in cert dataset (~/.TheIgors/local/logs/cert_walk_02_substitute_attempt_4_retries_exhausted.json) for engram-repair training.\n",
+    "completed_at": "2026-04-30T22:27:13.450408+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0c20c6a2-9df9-4baf-b371-702332e9265f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

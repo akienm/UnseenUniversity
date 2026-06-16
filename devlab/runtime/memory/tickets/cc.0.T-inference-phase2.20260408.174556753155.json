@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-inference-phase2.20260408.174556753155",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-phase2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T17:45:56.753155",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-phase2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-phase2",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D327 Phase 2: openrouter_reasoner → inference_openrouter.py",
+    "result": "Phase 2 merged into Phase 1 — inference_openrouter.py created with re-exports from openrouter_reasoner.py. Both main.py and inference_gateway.py migrated. 1875 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Move openrouter_reasoner.py to inference_openrouter.py. Strip model names — all model selection via cfg/tier. Update all imports. Tests must pass.",
+    "completed_at": "2026-04-08T17:45:56.753155+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "158c85fc-afd7-4c31-b34b-1b12dc1c34fb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

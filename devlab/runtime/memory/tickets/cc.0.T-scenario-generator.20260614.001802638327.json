@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-scenario-generator.20260614.001802638327",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scenario-generator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T00:18:02.638327",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-constraint-normalizer-agent",
+      "T-intent-extractor-agent",
+      "T-scenario-generator"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scenario-generator",
+    "gate": "T-constraint-normalizer-agent",
+    "role": "master",
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "CompiledInference",
+      "Factory"
+    ],
+    "title": "[triage] Scenario generator: auto-generate test scenarios from intent + constraints",
+    "result": null,
+    "status": "triage",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that test scenarios are compiled from intent + normalized constraints rather than written by hand.",
+    "created_at": "2026-06-14T00:18:02.638327+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The completion criteria field on tickets is manually-written scenarios in prose. A scenario generator takes (extracted intent, normalized constraints) and produces structured test scenarios — the compiled-inference version of the test plan.\n\nThis is the core capability of the automated test builder observed at a parallel project (specifically designed so non-automation engineers can create automated cases from intent descriptions). Our factory will eventually produce a general-purpose version of this.\n\nPipeline position: intent-extractor → constraint-normalizer → scenario-generator → judge.\n\nPreconditions: T-intent-extractor-agent and T-constraint-normalizer-agent should be solid before this is ready to sprint.\n\n**Affected files:** TBD — new capability; depends on intent extractor + normalizer outputs\n**Design rules:** none apply at design stage\n**Scope boundary:** IN — scenario list from (intent, constraints). OUT — executing scenarios (that's the test runner) or judging results (that's judge-agent).\n**Completion criteria:** Scenario generator produces ≥3 distinct test scenarios from a sample ticket intent; at least 2 are non-obvious (not just the happy path).",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-audit-goal.20260518.164429529834",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-goal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.529834",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-audit-goal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-goal",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Goals",
+      "Audit",
+      "Skills"
+    ],
+    "title": "Create /audit-goal skill — 7 checks + better-way challenge",
+    "result": "Created /audit-goal skill — 7 checks + better-way challenge, PASS/AMEND output",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.529834+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "Goals need an audit the same way decisions and tickets do. /audit-goal runs 7 checks on any active goal and always ends with the challenge question.\n\n**Affected files:** agent_datacenter/skills/audit-goal/SKILL.md (new)\n**Design rules:** audit pattern matches audit-design and audit-ticket shape — PASS / AMEND output\n**Scope boundary:** in scope: 7 checks: (1) positive target/approach-frame, (2) at least one measurable KR, (3) time horizon set, (4) why-now still valid, (5) linked decisions actually pointing at goal, (6) conflicts with other active goals named, (7) falsification condition exists. Plus mandatory challenge: 'Is there a better way to achieve this goal?' Out of scope: auto-running on every /goal create (that's a future gate); checking ticket-level alignment.\n**Test plan:** skill file; manual smoke against one real goal.",
+    "completed_at": "2026-05-18T16:58:42.779488+00:00",
+    "github_issue": 739,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7f62127e-5f3d-43b4-a1c8-8690b9b01f30",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

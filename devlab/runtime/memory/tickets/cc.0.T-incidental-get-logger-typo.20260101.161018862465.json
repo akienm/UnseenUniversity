@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-incidental-get-logger-typo.20260101.161018862465",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-incidental-get-logger-typo"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T16:10:18.862465",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-routing-fix-2026-05-03"
+    ],
+    "tickets": [
+      "T-incidental-get-logger-typo",
+      "T-inference-misreport-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-incidental-get-logger-typo",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Typo",
+      "Incidental"
+    ],
+    "title": "CLOSED: Fix _get_logger typo in inference_gateway.py:553 (latent NameError when _t4 is None)",
+    "result": null,
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P3",
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": "D-inference-routing-fix-2026-05-03",
+    "description": "Retroactive incidental ticket per workflow rule (every change has a ticket). Fixed inline during T-inference-misreport-fix sprint when test_message_distinguishes_local_only_failed (which sets gw._t4=None) hit a NameError at line 553: `_get_logger(__name__).debug(...)` — should be `get_logger` (the actual import name from igor_base at line 130). Pre-existing latent bug; only triggered when _t4 is None at this specific debug-log path, which is rare in production but surfaces as soon as cloud is unavailable. Fix: 1-character rename. Shipped in commit ed3ae6bb alongside T-inference-misreport-fix.\n\n**Affected files:** wild_igor/igor/cognition/inference_gateway.py:553 (renamed `_get_logger` → `get_logger`)\n**Design rules:** none (typo fix)\n**Scope boundary:** IN: the one-character typo. OUT: any other latent typos in the file (would be its own audit ticket).\n**Test plan:** verified by tests/test_inference_gateway_misreport.py::test_message_distinguishes_local_only_failed which now passes (would have hit NameError before).\n**Validation:** test passes. **Cleanup:** none. **Logging:** the fixed line itself adds the missing log.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8152c07a-126b-429a-8da2-199a3da42061",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

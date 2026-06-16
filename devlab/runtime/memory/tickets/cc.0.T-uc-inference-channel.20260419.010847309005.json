@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-uc-inference-channel.20260419.010847309005",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-inference-channel"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T01:08:47.309005",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-comms-module",
+      "T-uc-inference-channel",
+      "T-uc-rack-architecture"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-inference-channel",
+    "size": "L",
+    "tags": [
+      "Operations",
+      "Architecture"
+    ],
+    "title": "Inference as comms channel: comms://model/* for LLM routing",
+    "result": "InferenceTransport MVP at lab/utility_closet/transports/inference.py — inference/request → gateway call → inference/response with reply_to correlation via JSON envelope in content column (no schema migration yet). 6 tests pass. Follow-ups noted in commit message: schema migration for correlation columns, per-model hard routing, async response, CommsModule wiring. Commit fd69b3b1.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T01:06:05.116856+00:00",
+    "related_to": null,
+    "description": "Move the inference proxy into the utility closet as a comms transport. Every LLM call becomes a channel message.\n\n## Design\n- comms://model/claude-sonnet, comms://model/ollama-qwen, comms://model/openrouter-*\n- Inference request = ChannelMessage with content_type=inference/request\n- Inference response = ChannelMessage with content_type=inference/response, reply_to=request.id\n- metadata carries: tokens_used, cost, model_id, latency_ms, finish_reason\n\n## Benefits\n- Every LLM call logged in same format as every other conversation\n- Replay/debug inference by reading the channel log\n- Budget tracking = read the channel, count messages, sum metadata.cost\n- Model swapping = reroute channel, not code change\n- Igor's tier system (local→OR→cloud) becomes routing rules on comms://model/* channels\n\n## Transport: inference\n- New transport type in lab/utility_closet/transports/inference.py\n- Wraps existing inference_gateway.py routing logic\n- Request/response via reply_to correlation ID\n\n## Depends on\n- T-uc-comms-module (comms infrastructure)\n- T-uc-rack-architecture (module interface)",
+    "completed_at": "2026-04-19T01:08:47.309005+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5846f2f4-ad5f-406b-9300-d54a9370b152",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

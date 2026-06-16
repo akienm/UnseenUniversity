@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-delete-absorbed-skills.20260429.235013297473",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-delete-absorbed-skills"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T23:50:13.297473",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-delete-absorbed-skills-2026-04-29"
+    ],
+    "tickets": [
+      "T-delete-absorbed-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-delete-absorbed-skills",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Cleanup"
+    ],
+    "title": "Delete /review and /validate-files skills, update all callers",
+    "result": "Deleted both skill dirs, updated 8 callers, committed.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T23:45:22.061235+00:00",
+    "related_to": null,
+    "decision_id": "D-delete-absorbed-skills-2026-04-29",
+    "description": "Delete ~/.claude/skills/review/ and ~/.claude/skills/validate-files/ — both are fully absorbed by /audit-ticket and /audit-debris respectively. Update all callers to reference the audit skills directly.\n\nAffected files:\n- ~/.claude/skills/review/ (delete)\n- ~/.claude/skills/validate-files/ (delete)\n- ~/.claude/skills/decided/SKILL.md (/review → /audit-ticket)\n- ~/.claude/skills/fixit/SKILL.md (/review → /audit-ticket)\n- ~/.claude/skills/sprint-batch/SKILL.md (/review on plan → /audit-precode)\n- ~/.claude/skills/ticket/SKILL.md (/review → /audit-ticket)\n- ~/.claude/skills/day-close/SKILL.md (update description)\n- ~/.claude/skills/day-close-audit/SKILL.md (/validate-files → /audit-debris)\n- papers/thoughts/workflow_overview.md (remove /review and /validate-files entries)\n\nDesign rules: docs-in-code (workflow_overview.md update included)\nScope boundary: in=deletion + caller updates; out=any behavior changes\nTest plan: ls ~/.claude/skills/ confirms dirs gone; grep confirms no stale /review or /validate-files calls in callers\nValidation: grep -r '/review\\b\\|validate-files' ~/.claude/skills/ --include='*.md' | grep -v 'review/\\|validate-files/'",
+    "completed_at": "2026-04-29T23:50:13.297473+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "71b34a86-5217-49e8-9f2d-777b5d236480",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

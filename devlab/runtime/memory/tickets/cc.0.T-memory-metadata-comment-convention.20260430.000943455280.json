@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-memory-metadata-comment-convention.20260430.000943455280",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-metadata-comment-convention"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T00:09:43.455280",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-metadata-comment-convention"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-metadata-comment-convention",
+    "gate": null,
+    "size": "XS",
+    "tags": [
+      "Memory",
+      "Convention"
+    ],
+    "title": "Memory metadata.comment field — convention + writer-side helper",
+    "result": "Memory.add_comment helper, .comment property, palace rule theigors/rules/memory-comment-convention. 11 new tests, 4144 regression pass. Audit/lint check deferred.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-04-30T00:06:19.688341+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Memory.metadata is a free-form dict; using metadata['comment'] for human-readable annotations (why this memory exists, gotchas, sources) is a zero-cost convention. Establish it formally:\n- Add memory.add_comment(text) helper on Memory model\n- Document in palace rule theigors/rules/memory or theigors/rules/memory-conventions\n- Add audit/lint check that flags HIGH-inertia memory writes (e.g. inertia>=0.9) without a metadata.comment explaining why\n\n**Affected files:** wild_igor/igor/memory/models.py (helper), palace rule, optional new audit check.\n**Design rules:** memory palace rule (theigors/rules/memory).\n**Scope boundary:** in scope: helper + convention + flag. Out of scope: backfilling comments on existing memories.\n**Test plan:** unit test for add_comment helper; integration test that the lint check fires on a high-inertia memory without comment.",
+    "completed_at": "2026-04-30T00:09:43.455280+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "987f1a39-f046-4b92-a0c8-585421457eea",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

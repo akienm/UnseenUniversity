@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-difficulty-tiers.20260520.152356748585",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-difficulty-tiers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-20T15:23:56.748585",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-target-difficulty-tiers-2026-05-19"
+    ],
+    "tickets": [
+      "T-consequence-difficulty-tiers",
+      "T-igor-difficulty-cap",
+      "T-test-ticket"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-difficulty-tiers",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow",
+      "Queue"
+    ],
+    "title": "Consequence check: difficulty tier routing (retroactive — D-target-difficulty-tiers)",
+    "result": "Observed all 3 effects. Effect 1 (default difficulty=1 makes legacy/test tickets Igor-eligible): OCCURRED — T-test-ticket proves it, pe_chain fails on missing description as secondary guard. Effect 2 (adopt_next_ticket): CLEAR — T-adopt-next-uses-cmd-next shipped. Effect 3 (higher-difficulty unclaimed): STRUCTURAL — no automated higher-tier consumer, CC fills manually, no backlog alarm.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-05-20T23:24:35.120743+00:00",
+    "created_at": "2026-05-20T15:23:56.748585+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-target-difficulty-tiers-2026-05-19",
+    "description": "**What changed:** D-target-difficulty-tiers-2026-05-19 added target_difficulty field + --max-difficulty filtering + IGOR_MAX_DIFFICULTY=1 daemon config so Igor only claims Apprentice-tier tickets.\n**Predicted unintended effects:** (1) Tickets without target_difficulty default to 1 — test fixtures and legacy tickets become Igor-eligible, defeating the filter. (2) adopt_next_ticket was not updated to use cmd_next, so Igor still picks up any sprint ticket regardless of difficulty filter. (3) Higher-difficulty tickets sit unclaimed indefinitely if no higher-tier consumer is wired up.\n**Signals to watch:** Channel: no more `[pe_chain] ✗ T-test-ticket` or similar bare-ticket failures after the chain ships. `cc_queue.py list` shows igor-worker tickets are all difficulty=1. Tickets with difficulty>1 have a non-igor consumer picking them up or remain in sprint with expected pending state.\n**Gate condition:** Check by 2026-06-03 or when T-igor-difficulty-cap closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred/clear/partial and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": "2026-05-20T23:27:42.656569+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-20T15:23:56.748604+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "338593e0-6ec4-4e01-ad17-844447fe92a4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

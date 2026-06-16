@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ds-cost-cap.20260611.231414358105",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ds-cost-cap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T23:14:14.358105",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ds-cost-cap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ds-cost-cap",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "dicksimnel",
+      "inference",
+      "cost"
+    ],
+    "title": "DS ToolLoop: per-ticket cost cap + DONE: prompt fix",
+    "result": "cost cap  + DONE: prompt rewrite + cascade guard + temperature=0 explicit — 19 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that DS completes S-size tickets at haiku tier without cascading to opus, and that cost overruns produce a diagnostic artifact rather than a silent money sink.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T23:14:14.358105+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "OR models complete work correctly but return bare analysis text instead of DONE: prefix. DONE: gate fires, escalates to CC, Granny re-dispatches, full haiku→sonnet→opus cascade runs again. Burned ~$80 on 2026-06-11.\n\nTwo fixes:\n\n1. PROMPT FIX — DONE: is the only valid non-tool-call response. Rewrite SYSTEM_PROMPT and SYSTEM_RULES so this is the first rule, not a footnote. Any prose response without DONE: or ESCALATE: is a model output bug.\n\n2. COST CAP — replace the open-ended tier cascade with a per-ticket dollar ceiling. Cap = $3.00 (OR-rate equivalent of CC median ~$0.83 flat-rate; gives enough run to gather diagnostic data). Each turn accumulates running_cost from token counts at OR rates ($3/MTok input, $0.30/MTok cache_read, $15/MTok output). When running_cost > cap, ToolLoop exits with:\n\n  COST_EXCEEDED: $X.XX of $3.00 cap — inference did not complete within cost constraint\n\nThis is NOT a budget failure and NOT an exception. It is a diagnostic signal: DS got to $X before completing. The escalation to CC carries the full turn log as a diagnostic artifact so the next attempt starts informed.\n\nThe cap IS the quality bar. If DS cannot close a ticket for what CC costs, escalate. No sense burning more to find out.\n\nCascade guard (orthogonal): do not advance haiku→sonnet when haiku executed tool calls but hit MAX_TURNS. Complexity signal, not a tier miss. Only advance tiers on zero-tool-call response.\n\n**Affected files:** devices/dicksimnel/device.py (SYSTEM_PROMPT, _run_inference), devices/dicksimnel/toolloop.py (SYSTEM_RULES, ToolLoop.run)\n**Design rules:** no-sqlite, test-plan-or-why-not\n**Scope boundary:** In: prompt rewrite enforcing DONE:, per-ticket cost accumulator with COST_EXCEEDED exit, cascade guard on tool-call count. Out: cross-ticket budget tracking, billing system integration, new OR models.\n**Completion criteria:** (1) DS runs a trivial S-size ticket; haiku returns DONE: without cascading to sonnet/opus. (2) A ticket exceeding $3.00 exits with COST_EXCEEDED: $X of $3.00 cap (not an exception). (3) Escalation summary includes cost log as diagnostic artifact.",
+    "completed_at": "2026-06-11T23:40:02.081526+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

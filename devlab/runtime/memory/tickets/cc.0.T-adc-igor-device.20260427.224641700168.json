@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-adc-igor-device.20260427.224641700168",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-igor-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:46:41.700168",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-base-class-extract",
+      "T-adc-igor-block-manual-only",
+      "T-adc-igor-device",
+      "T-adc-igor-shim",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-igor-device",
+    "gate": "T-adc-base-class-extract",
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: Igor device — full self-description, health, ops",
+    "result": "IgorDevice + IgorShim shipped; tmux health check, blocked.flag, 96/96 tests pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "Implement IgorDevice — Igor's concrete BaseDevice implementation. This registers Igor on the rack and gives the skeleton visibility into Igor's health.\n\nProposed shape:\n- agent_datacenter/devices/igor/device.py (lives in agent_datacenter repo):\n  class IgorDevice(BaseDevice):\n    who_am_i() → {'name': igor_instance_name, 'version': git_hash, 'purpose': 'graph matrix reasoning engine'}\n    requirements() → {'postgres': True, 'imap_bus': True, 'tmux_session': IGOR_TMUX_SESSION}\n    capabilities() → reads igor.switches.cfg, returns dict of enabled features\n    comms() → {'read_write': True, 'push': True, 'pull': True, 'nudge': False}\n    health() → {'brainstem_running': bool, 'ne_running': bool, 'recent_error_rate': float, 'queue_depth': int}\n    uptime() → seconds from igor_boot_history record\n    startup_errors() → query clan.memories for ERROR type in last 5min\n    logs() → {'path': datacenter_logs/igor/, 'subsystems': list of subdirs}\n    update_info() → {'method': 'git pull + restart', 'current_commit': git_hash}\n    where_and_how() → {'tmux_session': IGOR_TMUX_SESSION, 'instance': instance_name, 'pid': os.getpid()}\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/igor/device.py\n\nDesign rules:\n- oop-first: IgorDevice class; capabilities() reads switches.cfg (no hardcoding)\n- no-sqlite: health() queries Postgres, not SQLite\n\nScope boundary:\nIN: full BaseDevice implementation for Igor, 16 methods, reads live Igor state\nOUT: subprocess lifecycle (T-adc-igor-shim), block-manual-only rule (T-adc-igor-block-manual-only)\n\nTest plan:\n- IgorDevice() instantiates (all abstract methods implemented)\n- health() returns correct shape when Igor is running\n- capabilities() returns dict with at least 'hypothesize' key (always enabled)\n- where_and_how() returns tmux session name from env",
+    "completed_at": "2026-04-27T22:46:41.700168+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ee65d352-c6bb-4b8f-8e33-3ebf769d5d52",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

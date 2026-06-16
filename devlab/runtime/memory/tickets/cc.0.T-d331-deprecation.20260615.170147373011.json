@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-d331-deprecation.20260615.170147373011",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-d331-deprecation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T17:01:47.373011",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dicksimnel-escalation-chain"
+    ],
+    "tickets": [
+      "T-d331-deprecation",
+      "T-design-escalation-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-d331-deprecation",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Deprecation",
+      "Decision"
+    ],
+    "title": "[pending] Deprecate D331 — superseded by no-Igor-programming rule + DickSimnel escalation",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that stale decision infrastructure from April does not distract from current architecture.",
+    "created_at": "2026-06-15T17:01:47.373011+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "D331 (2026-04-08) implemented Igor propose→CC approve→resume flow for HIGH inertia escalation. Superseded by: (1) No Igor Programming rule (May 2026) — Igor coding retired, all work routes to CC; (2) D-dicksimnel-escalation-chain (2026-06-10) — DickSimnel tier routing + summarize-before-escalate already handles HIGH inertia escalation. T-design-escalation-path is done, T-design-escalation-path consequence was never filed. D331 infrastructure remains (cc_queue.py propose/approve commands, context-load 🟠 awaiting_approval surfacing) but is unused.\n\n**Affected files:** lab/design_docs/, cc_queue.py (propose/approve commands)\n**Design rules:** none\n**Scope boundary:** Mark D331 closed; remove unused propose/approve command references; verify DickSimnel escalation is the canonical path\n**Completion criteria:** D331 marked closed in palace.decisions.d331 or design_docs; T-design-escalation-path consequence ticket filed (deferred in original) or formally closed without; cc_queue.py propose/approve commands either (a) used by DickSimnel or (b) removed as dead code",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

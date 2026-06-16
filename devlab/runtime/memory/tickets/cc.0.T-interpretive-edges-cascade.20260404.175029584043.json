@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-interpretive-edges-cascade.20260404.175029584043",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-interpretive-edges-cascade"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:50:29.584043",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-interpretive-edges-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-interpretive-edges-cascade",
+    "size": "S",
+    "tags": [
+      "Database"
+    ],
+    "title": "interpretive_edges: add ON DELETE CASCADE + orphan cleanup query",
+    "result": "Migrations m027-m033: ON DELETE CASCADE on interpretive_edges.from_id + to_id + memory_blobs.memory_id; one-time orphan cleanup m031. Runs on next Igor restart. Committed d58b0993.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T17:48:59.801357+00:00",
+    "related_to": null,
+    "description": "cortex.py schema lines 171-185: interpretive_edges FK to memories lacks ON DELETE CASCADE. When a memory is deleted, its 36K+ edges become dangling references slowing traversal. Fix: (1) ALTER TABLE interpretive_edges ADD CONSTRAINT fk_from FOREIGN KEY (from_id) REFERENCES memories(id) ON DELETE CASCADE; same for to_id. (2) Add one-time backfill: DELETE FROM interpretive_edges WHERE from_id NOT IN (SELECT id FROM memories) OR to_id NOT IN (SELECT id FROM memories). (3) Add periodic cleanup in cortex. DB finding from deep-audit Panel 1.",
+    "completed_at": "2026-04-04T17:50:29.584043+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2aa7f2da-adb4-4591-a68b-47382140153e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

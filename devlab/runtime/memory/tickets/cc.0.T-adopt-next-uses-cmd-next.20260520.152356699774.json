@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-adopt-next-uses-cmd-next.20260520.152356699774",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adopt-next-uses-cmd-next"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-20T15:23:56.699774",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-request-not-claim-2026-05-20",
+      "D-target-difficulty-tiers-2026-05-19"
+    ],
+    "tickets": [
+      "T-adopt-next-uses-cmd-next"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adopt-next-uses-cmd-next",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Igor",
+      "Reliability"
+    ],
+    "title": "adopt_next_ticket delegates to cmd_next --max-difficulty=1",
+    "result": "adopt_next_ticket now calls cmd_next --worker igor --max-difficulty=1 via subprocess. Empty result → early return. 3 tests. Commit 316cd7b1.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-05-20T21:18:57.378606+00:00",
+    "created_at": "2026-05-20T15:23:56.699774+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-request-not-claim-2026-05-20",
+    "description": "adopt_next_ticket in worker_foreman.py directly browses all sprint tickets and picks the top-priority one regardless of worker assignment. This means any sprint ticket — test fixtures, non-Igor work, anything with status=sprint — is eligible. Fix: replace the direct queue browse with a call to `cc_queue.py next --max-difficulty=1`. If the result is a ticket ID, proceed with goal_adopt + pe_chain as now. If the result is empty (None), return 'no eligible tickets' without creating a goal.\n\nThis is the missing piece from D-target-difficulty-tiers-2026-05-19: that decision added the filtering mechanism to cmd_next but didn't update the caller.\n\n**Affected files:** wild_igor/igor/tools/worker_foreman.py (~line 288 adopt_next_ticket, replace pending-browse block with subprocess call to cc_queue.py next --max-difficulty=1)\n**Design rules:** no-sqlite; use subprocess/bash call to cc_queue.py (same pattern as pe_claim calling cc_queue.py claim); do not import cc_queue directly to avoid circular dep\n**Scope boundary:** IN: adopt_next_ticket internal browse → cmd_next call; None result → early return. OUT: pe_chain internals; goal_adopt shape; weighted_ticket_score (no longer called from this path; cmd_next handles priority sort)\n**Test plan:** adopt_next_ticket returns 'no eligible tickets' when queue has sprint tickets with worker=claude only; adopt_next_ticket returns the ticket and runs pe_chain when a worker=igor difficulty=1 sprint ticket exists; adopt_next_ticket does NOT pick up a sprint ticket with target_difficulty=2",
+    "completed_at": "2026-05-20T21:22:23.665906+00:00",
+    "deposited_at": "2026-05-20T20:56:09.787265",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-20T15:23:56.748200+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4a10b630-85d0-4314-8f66-ac43433cbd67",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

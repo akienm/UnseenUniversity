@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-goal-continuation-gate.20260404.180436075925",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-continuation-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:04:36.075925",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-continuation-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-continuation-gate",
+    "size": "S",
+    "tags": [
+      "Operations",
+      "Cognition"
+    ],
+    "title": "goal_continuation: add human-author gate + claim attempt cap",
+    "result": "Added D259 human-author gate (_is_human_recently_active) that reads cc_channel/messages.jsonl and skips goal continuation if no human (claude-code/akien) has been active in the last 30 minutes. Also added claim_attempt_count tracking in goal metadata — hard-stops at 3 attempts and posts GOAL BLOCKED to channel, preventing indefinite re-claims on crash+restart cycles.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T18:02:52.355002+00:00",
+    "related_to": null,
+    "description": "goal_continuation.py runs every 120s unattended (line 21). Missing D259 human-author check — goal auto-advances even when last turn was background (not claude-code/akien). Also: no claim attempt cap, so crash+restart can re-claim same ticket indefinitely. Fix: (1) gate goal_continuation to only fire if most recent turn author is in _HUMAN_AUTHORS (D259); (2) increment per-goal claim_attempt_count in metadata, hard-stop at >2; (3) add file-based lock on queue.json during claim. Safety finding from deep-audit Panel 5.",
+    "completed_at": "2026-04-04T18:04:36.075925+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c4452c2d-2bb2-4145-8661-13dd7af69ca7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

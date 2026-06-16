@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-prescient-agents.20260601.145342184161",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-prescient-agents"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T14:53:42.184161",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-prescient-agents-north-star-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-prescient-agents",
+      "T-inference-outcome-learner",
+      "T-pa20-palace-foundation",
+      "T-vetinari-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-prescient-agents",
+    "gate": "2026-06-15",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: PA2.0 adopted as UU north star",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-01T14:53:42.184161+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-prescient-agents-north-star-2026-06-01",
+    "description": "**What changed:** Prescient Agents 2.0 adopted as UU's explicit architectural north star; G-factory-of-factories filed as master goal; outcome learner + pattern tracker wired as Layer 1→2; Vetinari spec updated as Layer 3.\n\n**Predicted unintended effects:**\n- Linking all decisions to G-factory-of-factories will surface decisions that don't fit the goal — design debt that was invisible before. These are worth surfacing but may be disorienting.\n- OUTCOME_LEARNER_REPORT channel posts may overwhelm the channel if the Scraps job runs too frequently before a rate-limit is tuned\n- Vetinari spec update may conflict with in-progress design work Akien hasn't shared yet\n- PA2.0 Layer 3 (future modeling) will feel urgently missing once Layer 1+2 exist — risk of pulling priority from more immediate work\n- The 'improve quality of future decisions' framing may create pressure to make the advisor loop self-modifying (scope creep risk)\n\n**Signals to watch:** Any D-*.md files where goal_link = G-factory-of-factories feels dishonest (misaligned decisions worth surfacing to Akien); OUTCOME_LEARNER_REPORT frequency in channel; T-vetinari-device sprint attempts before Layer 1+2 data exists\n\n**Gate condition:** Check by 2026-06-15 or after T-pa20-palace-foundation + T-inference-outcome-learner both close.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate and close\n**Completion criteria:** No automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ec622f92-f59a-4b2b-9c49-3716d5c72aa7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

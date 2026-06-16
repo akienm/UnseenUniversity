@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-base-shim-contract.20260427.214116237195",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-base-shim-contract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:41:16.237195",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-base-shim-contract",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-base-shim-contract",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Architecture"
+    ],
+    "title": "agent_datacenter: abstract BaseShim class — device lifecycle contract",
+    "result": "BaseShim ABC in agent_datacenter/shim.py: 6 abstract methods (device_id, start, stop, restart, self_test, rollback). self_test returns {passed: bool, details: str}. TypeError on missing method. All tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-27T21:39:22.518621+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Define the abstract BaseShim class. Every device needs a shim — the translation and management layer between the device's native interface and the rack contract.\n\nProblem: Shims are where lifecycle (start/stop/restart/self_test/rollback) lives. Without an abstract base, each shim diverges and loses the uniform interface guarantee.\n\nProposed shape:\n- agent_datacenter/shim.py:\n  from abc import ABC, abstractmethod\n  class BaseShim(ABC):\n    @abstractmethod\n    def start(self) -> bool: ...  # True = success\n    @abstractmethod\n    def stop(self) -> bool: ...\n    @abstractmethod\n    def restart(self) -> bool: ...\n    @abstractmethod\n    def self_test(self) -> dict: ...  # {passed: bool, details: str}\n    @abstractmethod\n    def rollback(self) -> None: ...  # called if start() fails\n    @property\n    @abstractmethod\n    def device_id(self) -> str: ...  # unique device identifier\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/shim.py\n\nDesign rules:\n- oop-first: ABC with abstractmethod; device_id as abstract property forces every shim to declare its target\n- docs-in-code: module docstring explains shim responsibility (translate native interface, own lifecycle)\n\nScope boundary:\nIN: abstract base shim only\nOUT: any concrete shim implementations (those are Postgres/Igor/Claude device tickets)\n\nTest plan:\n- Class inheriting BaseShim missing start() raises TypeError on instantiation\n- self_test() return type documented as {passed: bool, details: str}\n- device_id property is abstract (subclass must declare)",
+    "completed_at": "2026-04-27T21:41:16.237195+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c5527846-7bc6-438f-be12-940fdfa2627a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

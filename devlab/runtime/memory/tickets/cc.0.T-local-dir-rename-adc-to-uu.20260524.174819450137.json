@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-local-dir-rename-adc-to-uu.20260524.174819450137",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-local-dir-rename-adc-to-uu"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-24T17:48:19.450137",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-rename-adc-to-unseen-university-2026-05-24"
+    ],
+    "tickets": [
+      "T-codebase-refs-adc-to-uu",
+      "T-local-dir-rename-adc-to-uu"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-local-dir-rename-adc-to-uu",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Rename"
+    ],
+    "title": "Rename local dir + migrate CC memory to UnseenUniversity path",
+    "result": "Repo dir renamed /home/akien/dev/src/agent_datacenter → /home/akien/dev/src/UnseenUniversity; runtime ~/.agent_datacenter → ~/.unseen_university; TheIgors symlink updated",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-24T17:48:19.450137+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-rename-adc-to-unseen-university-2026-05-24",
+    "description": "Rename ~/dev/src/agent_datacenter to ~/dev/src/UnseenUniversity on disk and migrate Claude Code's project memory from ~/.claude/projects/-home-akien-dev-src-agent_datacenter/ to -home-akien-dev-src-UnseenUniversity/. Update any shell aliases or tmux configs referencing the old path. Gated on T-codebase-refs-adc-to-uu so source is clean before the path changes.\n\n**Affected files:** Filesystem paths only; ~/.claude/projects/ memory directory (MEMORY.md + *.md memory files)\n**Design rules:** none apply\n**Scope boundary:** Local filesystem rename + CC memory migration; no source file content changes (those are in T-codebase-refs-adc-to-uu)\n**Test plan:** `ls ~/dev/src/UnseenUniversity` succeeds; CC memory loads correctly in new path; `ls ~/dev/src/agent_datacenter` returns not-found; no broken symlinks",
+    "completed_at": "2026-05-24T18:24:05.741642+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-24T17:48:19.450163+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e761989b-0ef9-48bc-9ccb-327a335a91eb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

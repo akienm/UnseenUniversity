@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-orphan-threshold-fix.20260324.030548824639",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-orphan-threshold-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T03:05:48.824639",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-orphan-threshold-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-orphan-threshold-fix",
+    "size": "S",
+    "tags": [
+      "memory",
+      "search",
+      "cortex"
+    ],
+    "probe": "Newly inserted orphan node (no parent_id) surfaces in memory_search within 1 turn without restart",
+    "title": "cortex.search orphan supplement threshold — 80-node gate never opens at scale",
+    "result": "Added unconditional orphan rescue pass in cortex.search(): always fetches up to 20 recently-activated nodes WHERE parent_id IS NULL and adds them to all_memories before scoring, regardless of traversal pool size. Deduped against traversal+supplement. The old 80-node supplement gate was never opening at 11k+ memorie scale. 3 unit tests verify SQL always fires, nodes enter candidate pool, and no dedup violations. 146 pass.",
+    "status": "done",
+    "claimed_at": "2026-03-24T03:00:59.059644+00:00",
+    "description": "The orphan supplement (activation-index fallback) in cortex.search() only runs when traversal pool < 80 nodes. At 11k+ memories rooted at CP roots, this gate never opens. Any node with parent_id=NULL is invisible to search. Fix options: (a) always add orphan nodes with activation_count > N to supplement pool regardless of traversal size, (b) enforce parent assignment on insert (store_memory raises if parent_id is None). Igor flagged this as design debt during 2026-03-23c teaching session.",
+    "completed_at": "2026-03-24T03:05:48.824639+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "55ebff45-dea8-4d82-b04c-9e86672cecf2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

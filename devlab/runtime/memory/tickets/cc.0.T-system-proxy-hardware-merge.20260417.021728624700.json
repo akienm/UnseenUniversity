@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-system-proxy-hardware-merge.20260417.021728624700",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-system-proxy-hardware-merge"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T02:17:28.624700",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-system-proxy-hardware-merge"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-system-proxy-hardware-merge",
+    "size": "S",
+    "title": "Merge hardware_detect into SystemProxy as static inventory",
+    "result": "1ad216f6 — SystemProxy.hardware property, register_self populates real values. 3 tests.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-system-gateway",
+    "claimed_at": "2026-04-17T02:16:10.425622+00:00",
+    "related_to": null,
+    "description": "hardware_detect.py becomes SystemProxy.hardware — one-shot inventory at boot (OS, CPU model, RAM total, GPU, hostname, IP, Ollama model). Separate from live metrics (CPU%, mem%). register_self() reads from SystemProxy instead of calling detect_hardware() directly.",
+    "completed_at": "2026-04-17T02:17:28.624700+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "76171e36-e0c2-4758-8d87-038f1341f24e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

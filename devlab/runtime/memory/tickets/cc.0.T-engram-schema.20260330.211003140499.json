@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-engram-schema.20260330.211003140499",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T21:10:03.140499",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engram-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-schema",
+    "epic": "Cognition",
+    "title": "Memory payload field + schema validation",
+    "result": "Memory.payload Optional[Dict] field added to models.py + embedding_text property (payload.NARRATIVE fallback). MEM_COLS updated in db_proxy.py. INSERT + _to_memory updated in cortex.py. DB migration: ALTER TABLE memories ADD COLUMN payload TEXT. 555 tests passing.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Add payload JSONB field to Memory model. Embedder reads payload.NARRATIVE if present, falls back to top-level narrative. Triggers dict (string->cell_name), payload dict (cell_name->instruction_list, NARRATIVE, data_fields). Legacy nodes unaffected. MEDIUM inertia (models.py).",
+    "completed_at": "2026-03-30T21:10:03.140499+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f29d1c72-019d-4171-b3d4-5c018bef88cb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

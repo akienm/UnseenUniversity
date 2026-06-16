@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-diagnosticbase-json-log-sink.20260523.173918231498",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-diagnosticbase-json-log-sink"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T17:39:18.231498",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-diagnosticbase-json-log-sink",
+      "T-igorbase-migrate-to-diagnosticbase"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-diagnosticbase-json-log-sink",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Infrastructure"
+    ],
+    "title": "Add JSON file-per-record loguru sink to DiagnosticBase",
+    "result": "loguru sink in DiagnosticBase.__init__; prune_json_logs(days=30); 39 tests pass",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.3,
+    "claimed_at": "2026-05-23T17:39:24.413541+00:00",
+    "created_at": "2026-05-23T17:39:18.231498+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Every device that inherits DiagnosticBase should automatically write one JSON file per log record to <log_root>/<device_id>/log/json/. Zero per-device wiring: add one loguru sink in DiagnosticBase.__init__ (or a module-level add() call on the root loguru logger).\n\nFilename: YYYYMMDD-HHMMSS-mmm_<logger_name>_<level>.json\nContent: {ts, level, logger, message, device_id, extra fields from bound context}\nRetention: 30 days — prune_json_logs() called from day-close step 9.5 (analogous to prune_emissions() already wired there).\n\nThis is the architectural home for the one-file-per-event operational log pattern. The hand-wired emit() calls in pe_chain/ops/scope_guard (added 2026-05-23) are a stopgap pending this and T-igorbase-migrate-to-diagnosticbase.\n\n**Affected files:** ~/dev/src/python_diagnostic_base_class/diagnostic_base/base.py, diagnostic_base/tagged_logger.py\n**Design rules:** none (standalone library, no palace rules apply)\n**Scope boundary:** In scope: sink + prune function in python_diagnostic_base_class. Out of scope: wiring into Igor or ADC devices (separate tickets).\n**Test plan:** Add test to tests/test_base.py — instantiate DiagnosticBase subclass, call .info(), verify JSON file created in expected location with correct fields.",
+    "completed_at": "2026-05-23T17:41:40.338800+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-23T17:39:24.413541+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-23T17:39:18.277730+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "96a5e716-ecc7-463c-9efa-5ccc4c30a591",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

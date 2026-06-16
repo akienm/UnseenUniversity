@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-retrieval-cost-accounting.20260521.175415341079",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retrieval-cost-accounting"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.341079",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-retrieval-cost-accounting"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retrieval-cost-accounting",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "MemorySystem",
+      "Observability"
+    ],
+    "title": "Instrument memory retrieval with freshness metadata and per-call cost telemetry",
+    "result": "memory_search: latency_ms + node_age_days added; pe_chain basket telemetry deferred (pe_chain.py not in current UU codebase)",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.4,
+    "blocked_at": null,
+    "claimed_at": "2026-05-23T21:29:13.474668+00:00",
+    "created_at": "2026-05-21T17:54:15.341079+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "From URL 16 (context architecture): four questions every retrieval call should answer — what does it need to know, how fresh must it be, who can access it, what does it cost. Currently burn rate tracks total spend but not per-retrieval latency, freshness of retrieved content, or per-call accumulation. Add: latency + result count to memory_search telemetry; node_age_days field in results; retrieval cost accumulation in pe_chain basket close telemetry. Enables the four-question framework as a monitoring surface.\n\n**Affected files:** wild_igor/igor/tools/memory_search.py, wild_igor/igor/tools/pe_chain.py\n**Design rules:** theigors/rules/database, theigors/rules/coding\n**Scope boundary:** In scope: telemetry fields on retrieval; freshness metadata in results. Out of scope: enforcing freshness thresholds (observation only), changing retrieval logic.\n**Test plan:** Run memory_search; verify result objects include node_age_days field. Run pe_chain; verify close telemetry includes total_retrieval_calls and avg_retrieval_latency_ms.",
+    "completed_at": "2026-05-28T02:01:42.042978+00:00",
+    "github_issue": 775,
+    "dispatched_at": "2026-05-23T21:29:13.474668+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.341093+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f28443c6-d346-4436-ba7e-6292ea207db9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

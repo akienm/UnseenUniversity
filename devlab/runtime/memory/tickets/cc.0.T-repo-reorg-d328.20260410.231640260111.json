@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-repo-reorg-d328.20260410.231640260111",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-repo-reorg-d328"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-10T23:16:40.260111",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-repo-reorg-d328"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-repo-reorg-d328",
+    "epic": "Operations",
+    "size": "L",
+    "title": "D328: Repo reorganization — wild_igor/ + lab/ + papers/",
+    "result": "D328 implemented: lab/ (design_docs, claudecode, benchmarks, deploy, tools, audit_reports, hosted_igor, docs), papers/ (history, thoughts, case_study). Deleted stale: install_igor.ps1, start_igor_windows.ps1, sign_igor_script.ps1. All path refs updated: CLAUDE.md, .mcp.json, settings, skills, tests. 1961 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 50,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Implement D328 repo reorg. Current state: 15 top-level dirs + 16 root files, many misplaced.\n\nTarget structure:\n  wild_igor/          — runtime code (stays)\n  tests/              — tests (stays)\n  lab/                — design_docs, design_docs_for_igor, claudecode, benchmarks, deploy, tools, audit_reports\n  papers/             — history, thoughts, case_study\n  Root keeps:         CLAUDE.md, README.md, requirements.txt, igor.ps1, igor.bat, install_igor.ps1, docker-compose.yml, superclaude.bat, sign_igor_script.ps1, start_igor_windows.ps1, sudo_relay.sh\n\nMoves:\n  design_docs/ → lab/design_docs/\n  design_docs_for_igor/ → lab/design_docs_for_igor/\n  claudecode/ → lab/claudecode/\n  benchmarks/ → lab/benchmarks/\n  deploy/ → lab/deploy/\n  tools/ → lab/tools/\n  audit_reports/ → lab/audit_reports/\n  history/ → papers/history/\n  thoughts/ → papers/thoughts/\n  docs/glossary.md → lab/docs/glossary.md\n  memory/sessions.md → lab/docs/sessions.md\n  hosted_igor/ → lab/hosted_igor/\n\nDelete from root:\n  5624.log (stale git log)\n  case_study_statistics_2026-04-01.md → papers/\n  ebook_candidates.md → lab/\n  STARTUP_SHIM.md → lab/docs/\n  SYSTEM_PACKAGES.md → lab/docs/\n\nUpdate all path refs in: CLAUDE.md, skills, cc_queue.py, session_manager.py, decision_manager.py, cron scripts, .claude/settings.json, seed scripts.\n\nInstance output: ~/.TheIgors/lab/ for audit_reports, training output.",
+    "completed_at": "2026-04-10T23:16:40.260111+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "999b9cb8-b94b-4631-9892-5bbe46aea00e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

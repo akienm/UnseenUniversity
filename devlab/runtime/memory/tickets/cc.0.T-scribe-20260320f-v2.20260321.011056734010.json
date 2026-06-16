@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320f-v2.20260321.011056734010",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320f-v2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:56.734010",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320f-v2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320f-v2",
+    "body": "Decisions: D178 (habit-audit-pipeline), D179 (reading-experiment-roadmap), D180 (pipeline-arch-resolved). Key changes: T-trails-infra committed (b2e0b06), T-habit-audit-pipeline done (995 habits archived, 124 remain), drain runner cron fixed (IGOR_INSTANCE_ID=igor_wild_0001). Session theme: cognition prep complete + experiment 6 unblocked. Subsystems touched: cortex.py, tools/trail_inspector.py, tools/__init__.py, crontab.",
+    "role": "scribe",
+    "size": "small",
+    "title": "day-close for session 2026-03-20e (final)",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:56.734010+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

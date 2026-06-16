@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-cc-concurrency-gate.20260601.234908343926",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-cc-concurrency-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T23:49:08.343926",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-runaway-prevention-2026-06-01"
+    ],
+    "tickets": [
+      "T-granny-cc-concurrency-gate",
+      "T-granny-orphan-watchdog"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-cc-concurrency-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Safety",
+      "Infrastructure"
+    ],
+    "title": "Granny: enforce cc_max_concurrent=1 before dispatch",
+    "result": "GRANNY_THROTTLED channel post added to run_once(); gate was already in code but fired silently",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.95,
+    "claimed_at": null,
+    "created_at": "2026-06-01T23:49:08.343926+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-runaway-prevention-2026-06-01",
+    "description": "Granny dispatched 6 concurrent CC sessions on 2026-06-01, consuming 96% context and losing ~4h of work. Before calling _launch_cc_instance(), check tmux list-sessions for sessions matching 'cc-T-*'. If count >= cc_max_concurrent (config, default 1), post GRANNY_THROTTLED to channel and return False instead of dispatching. Also: after killing a CC session (orphan reset), verify it's actually dead before marking ticket back to sprint.\n\n**Affected files:** devices/granny/dispatch.py, devices/granny/daemon.py (config), devices/granny/config.py (or daemon config dict)\n**Design rules:** no-sqlite; log every state change; structural rules — OOP-first, device.py is design center\n**Scope boundary:** IN: check-before-dispatch guard in cc_dispatch_fn; cc_max_concurrent config key; GRANNY_THROTTLED channel event. OUT: web circuit breakers (separate ticket), orphan watchdog (T-granny-orphan-watchdog).\n**Completion criteria:** `tmux list-sessions | grep cc-T-` returning 1 existing session → second dispatch attempt posts GRANNY_THROTTLED to channel and returns False. Test in tests/granny/ verifying the guard. No new tmux session spawned when limit reached.",
+    "completed_at": "2026-06-01T23:54:35.476733+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "83d69da2-8ba5-47d4-bfa4-bfc0a7bbbfa0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

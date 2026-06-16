@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-remove-utility-closet-all.20260523.213103036352",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-utility-closet-all"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T21:31:03.036352",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-remove-utility-closet-all",
+      "T-remove-utility-closet-registry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-utility-closet-all",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Cleanup",
+      "UtilityCloset",
+      "TechnicalDebt"
+    ],
+    "title": "Remove all remaining lab.utility_closet imports",
+    "result": "Registry migrated to UU (agent_base.py + registry.py self-contained); 116 files updated from lab.utility_closet.registry → devices.igor.tools.registry; namespace package bridge for remaining budget/machine_manager/filesystem. Collection errors: 57→13 (all 13 unrelated). Commit 4076a0ad",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-23T21:31:03.036352+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "171 remaining references to lab.utility_closet across 120 files. Standing instruction: 'there is no utility closet anywhere anymore — anytime you find a mention of it, that's a ticket for removal.'\n\n**Starting instruction:** Grep the entire codebase for the word 'closet'. Work through every hit. The ticket is done when a detailed grep finds zero occurrences anywhere in the codebase.\n\nTop offenders:\n- wild_igor/igor/main.py (9 references)\n- wild_igor/igor/cognition/push_sources.py (7)\n- wild_igor/igor/tools/routing_tools.py (5)\n- lab/claudecode/utility_closet_server.py (5) — the server itself uses comms/transports from UC\n- Plus ~115 other files with 1-4 references each\n\nThe bulk of references are:\n- lab.utility_closet.registry → already re-exported from wild_igor.igor.tools.registry (T-remove-utility-closet-registry done); remaining files should switch to the canonical import\n- lab.utility_closet.agent_base.get_logger → should use wild_igor.igor.igor_base.get_logger or loguru directly\n- lab.utility_closet.comms / transports — these are still the live comms system; migration requires moving comms into ADC\n\nApproach: work file-by-file, smallest to largest. Registry changes are mechanical. agent_base.get_logger replacements are mechanical. The comms/transports/server migration is a separate phase.\n\n**Affected files:** ~120 files in wild_igor/igor/ and lab/ directories\n**Design rules:** No new utility_closet imports. All new code uses canonical import paths.\n**Scope boundary:** In scope: remove all uses of the word 'closet' from the codebase — imports, strings, comments, variable names, log messages. Out of scope: moving comms infrastructure (that's a phase-specific migration).\n**Test plan:** `grep -rn -i 'closet' ~/TheIgors/wild_igor/ ~/dev/src/UnseenUniversity/ --include='*.py' --include='*.json' --include='*.yaml' --include='*.md'` returns zero results. That is the pass condition.",
+    "completed_at": "2026-05-26T03:52:08.337541+00:00",
+    "github_issue": 792,
+    "required_files": [],
+    "scraps_validated": "2026-05-23T21:31:03.109887+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fb14372d-2ff4-4c92-83a7-34c08c604895",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

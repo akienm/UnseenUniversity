@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-gist-before-retrieve.20260422.204205652727",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gist-before-retrieve"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T20:42:05.652727",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-architecture-2026-04-22"
+    ],
+    "tickets": [
+      "T-confidence-gated-depth",
+      "T-gist-before-retrieve",
+      "T-local-preparse-fallback"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gist-before-retrieve",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Preparse",
+      "Ordering"
+    ],
+    "title": "Reorder preparse — graph-tree lookup BEFORE cortex.search",
+    "result": "gist_gate.should_skip_memory_search() + main.py wire. Reflex intents (greeting) skip cortex.search when thalamus/BG gist-pass is confident (habit selected OR confidence≥0.7, tunable via IGOR_GIST_CONFIDENCE_THRESHOLD). command intent preserved unconditional skip. 9 tests, all green. Commit 1f92d6f4.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": "2026-04-22T20:35:40.727882+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-architecture-2026-04-22",
+    "description": "Currently preparse runs cortex.search (full memory retrieval) for all non-command input, regardless of whether the input matches a known habit or tree-node pattern. For reflex intents (greeting, ack, farewell, simple command) the retrieval is wasted work — adds latency with no decision value. Reorder: first pass is graph-tree gist lookup (habit_list match + hot_attractors + NE-predict). If gist-pass returns high-confidence classification for a reflex intent, skip cortex.search entirely. If gist-pass is low-confidence, fall through to cortex.search as today. This is a classic monkey-brain pattern (gist-then-detail) and should cut user-facing preparse latency significantly for common inputs.\n\n**Affected files:** `wild_igor/igor/main.py` preparse-call region (approximately lines 4062-4077 per earlier inspection — HIGH-inertia, PRE-APPROVED by Akien 2026-04-22); `tests/test_preparse_ordering.py` new.\n**Design rules:** docs-in-code (explain the gist-then-detail ordering in main.py); test-plan-or-why-not (covered); no-sqlite; no-new-memory-schemas.\n**Scope boundary:** IN: graph-tree gist-pass before cortex.search; confidence-gated short-circuit for high-confidence reflex intents (greeting, ack, farewell, command); instrumentation (log when short-circuit fires). OUT: confidence calibration across stages (T-confidence-gated-depth follow-on); local LLM fallback (T-local-preparse-fallback).\n**Test plan:** input=\"hi\" → gist matches greeting habit with high confidence → cortex.search NOT called; input=\"can you explain how X works in this codebase?\" → gist low-confidence → cortex.search IS called; latency measurement — short-circuit path ≤100ms p50 vs pre-change baseline (20s+); instrumentation emits short_circuit_fired counter.",
+    "completed_at": "2026-04-22T20:42:05.652727+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ed1a4118-22e2-40b0-82fe-2477b1004a2a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

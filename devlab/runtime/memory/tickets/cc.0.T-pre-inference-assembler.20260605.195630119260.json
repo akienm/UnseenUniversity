@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-pre-inference-assembler.20260605.195630119260",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pre-inference-assembler"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T19:56:30.119260",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pre-inference-assembly-2026-06-05"
+    ],
+    "tickets": [
+      "T-pre-inference-assembler",
+      "T-sprint-wire-pre-inference",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pre-inference-assembler",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "DickSimnel",
+      "Sprint"
+    ],
+    "title": "Pre-inference context assembler script",
+    "result": "script at lab/claudecode/pre_inference_assemble.py: pattern matching, symbol map, domain terms; 12 tests",
+    "status": "closed",
+    "worker": null,
+    "purpose": "",
+    "priority": 0.7,
+    "intention": "I intend that a script assembles a complete pre-inference context block from a ticket's affected files, pattern inventory, and word graph traversal — before any LLM call fires.",
+    "created_at": "2026-06-05T19:56:30.119260+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-pre-inference-assembly-2026-06-05",
+    "description": "A script (tools/pre_inference_assemble.py or similar) that takes a ticket ID and produces a pre-assembled context block. Steps: load patterns inventory doc, extract file symbols via existing repo_map.py, run word graph traversal for domain terms from ticket title/description, format as structured context block ready to prepend to the LLM prompt. No LLM involved — pure file reads, AST, and graph traversal.\n\n**Affected files:** TBD — new script; calls existing tools/repo_map.py and word graph machinery; reads docs/design_patterns_inventory.md\n\n**Design rules:** none apply — new tooling file\n\n**Scope boundary:** In scope: file symbol extraction, pattern inventory load, word graph lookup, structured output. Out of scope: small-model arch summarization (future ticket), LLM involvement, modifying sprint-ticket (that's T-sprint-wire-pre-inference).\n\n**Completion criteria:** Script accepts a ticket ID, reads affected files from ticket metadata, and emits a context block to stdout containing: matched patterns, file symbol map, word graph hits for ticket domain terms. Runnable standalone: python tools/pre_inference_assemble.py T-xxx produces non-empty output for any ticket with known affected files.",
+    "completed_at": "2026-06-05T21:39:54.163258+00:00",
+    "deposited_at": "2026-06-05T13:57:25.885231",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

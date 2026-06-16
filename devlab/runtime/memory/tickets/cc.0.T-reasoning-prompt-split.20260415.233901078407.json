@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-reasoning-prompt-split.20260415.233901078407",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reasoning-prompt-split"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T23:39:01.078407",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reasoning-prompt-split",
+      "T-reasoning-voice-split"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reasoning-prompt-split",
+    "body": "From T-reasoning-voice-split (#436) afternoon design session. Decision 2 was: 'Same LLM, two prompts.' The reasoning step gets a SMALL cockpit prompt (milieu + identity + six rules + escalation trail). The voice step gets a BIG character-coherence prompt (PR facia + recent ring + persistent relationship context). Both feed the same underlying LLM initially; voice actors A/B framework comes later.\n\nThis ticket adds the two builder functions WITHOUT removing or rewiring the existing build_system_prompt. Additive-only — everything current continues working. The new builders become the conductor's handoff points when T-turn-pipeline-module lands.\n\n## Scope\n\n1. New module `wild_igor/igor/cognition/prompt_contexts.py`\n2. `reasoning_context(situation, *, milieu=None, identity=None, escalation_trail=None)` — builds the small cockpit prompt for the reasoning LLM call. Returns a string or a structured dict the conductor passes to inference_gateway. Includes:\n   - CP1-CP6 six rules\n   - Identity one-liner\n   - Milieu summary (emotional + arousal)\n   - The escalation trail (cascade walk that led here)\n   - The original situation query\n3. `voice_context(decision_blob, *, pr_facia=None, recent_ring=None, character_hints=None)` — builds the character-coherent prompt for voice production. Receives the resolved DecisionBlob from upstream reasoning and produces the LLM context to turn that decision into Igor-voiced words. Includes:\n   - Identity with character traits\n   - PR facia summary (who Igor is talking to)\n   - Recent ring memory (conversation history)\n   - Character coherence hints (register, humor tolerance, etc.)\n   - The decision blob's selected_action for encoding\n4. Both return structured outputs (dict or namedtuple) so downstream can choose to serialize to a system prompt string OR to a structured message list for multi-turn protocols\n5. Unit tests exercising: minimal/maximal inputs, fallback paths when optional fields missing, deterministic ordering, token length estimates\n\n## Out of scope\n\n- Wiring into inference_gateway (that's the conductor ticket)\n- Removing the existing build_system_prompt — additive only\n- Voice actor A/B framework (separate sub-ticket)\n- Multi-turn message threading (that's T-llm-collaboration-protocol)\n\n## CP grounding\n\n- CP1 — both builders refuse to emit prompts that claim certainty\n- CP3 — provenance fields are required: where did this situation come from, which cascade levels exhausted\n- CP6 — the reasoning builder tags its prompt with 'LLM OUTPUT IS A HYPOTHESIS TO TEST' so downstream doesn't commit on faith\n\n## Dependencies\n\n- T-decision-blob-schema ✅\n- T-substrate-experiment-cascade ✅",
+    "size": "M",
+    "tags": [
+      "cognition",
+      "reasoning-voice-split",
+      "prompt",
+      "cp-axioms"
+    ],
+    "title": "Split system_prompt into reasoning_context() + voice_context() — two prompts, one LLM (for now)",
+    "result": "reasoning_context + voice_context builders in prompt_contexts.py. PromptContext dataclass with phase/system_text/sections/provenance. CP1/CP3/CP6 guards throughout: refuses empty situations, requires provenance, tags outputs with hypothesis-vs-committed disclaimers. Additive — no changes to main.py/system_prompt.py/inference_gateway.py. 34 tests, 2617 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T23:31:33.004813+00:00",
+    "related_to": "T-reasoning-voice-split",
+    "completed_at": "2026-04-15T23:39:01.078407+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

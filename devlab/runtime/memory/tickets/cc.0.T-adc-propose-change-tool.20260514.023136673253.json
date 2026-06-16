@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-propose-change-tool.20260514.023136673253",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-propose-change-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-14T02:31:36.673253",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-action-agency-tools-2026-05-13"
+    ],
+    "tickets": [
+      "T-adc-propose-change-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-propose-change-tool",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Agency"
+    ],
+    "title": "CLOSED: ADC MCP tool: propose_change — formal code change proposals for CC review",
+    "result": "propose_change + list_proposals MCP tools; adc.code_proposals table; 5 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-05-14T02:42:18.961586+00:00",
+    "created_at": "2026-05-14T02:31:36.673253+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-action-agency-tools-2026-05-13",
+    "description": "The Librarian can research and identify improvements but has no way to formally propose a code change for CC review. Informal channel messages get lost; there's no queryable proposal queue.\n\nProposed shape: Create `adc.code_proposals` Postgres table (id UUID PK DEFAULT gen_random_uuid(), file_path TEXT, old_snippet TEXT, new_snippet TEXT, rationale TEXT, related_ticket_id TEXT NULL, status TEXT DEFAULT 'pending', proposed_by TEXT, proposed_at TIMESTAMPTZ DEFAULT now(), reviewed_at TIMESTAMPTZ NULL). Add `propose_change(file_path, old_snippet, new_snippet, rationale, related_ticket_id=None)` MCP tool — inserts row, posts brief channel notification ('librarian: code proposal for <file_path>, see list_proposals()'). Add `list_proposals(status='pending')` companion tool. Logs to action_log.\n\n**Affected files:** new migration for `adc.code_proposals`, new `agent_datacenter/devices/librarian/tools/proposal_tools.py`, update `agent_datacenter/devices/librarian/tools/__init__.py`\n**Design rules:** no-sqlite; postgres-only; no-TheIgors-imports; CC makes all apply decisions\n**Scope boundary:** propose_change + list_proposals only. No auto-apply; no diff generation (caller supplies old/new snippets). Duplicate proposals (same file_path + old_snippet) are allowed — dedup is CC's call.\n**Test plan:** propose_change inserts row in adc.code_proposals; list_proposals returns it; channel notification sent; second call with same args creates second row (no silent dedup).",
+    "completed_at": "2026-05-14T02:43:20.777000+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "08d548a9-3abe-498f-bd0e-e56e4f9ca7fa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

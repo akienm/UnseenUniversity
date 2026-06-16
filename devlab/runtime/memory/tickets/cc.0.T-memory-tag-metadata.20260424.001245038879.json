@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-memory-tag-metadata.20260424.001245038879",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-tag-metadata"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T00:12:45.038879",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-tag-metadata"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-tag-metadata",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Tagging"
+    ],
+    "title": "Memory tags via metadata — tag:<name> as new relationship layer",
+    "result": "Shipped in e09e1b0b. Tag layer as metadata convention: tag:<name> keys in memories.metadata JSONB. New module wild_igor/igor/memory/tag_tree.py with pure extract_tag_names + build_tag_tree (slash-separated paths produce nested tree with aggregating _count). Cortex methods: apply_tag, get_tags_for, memories_with_tag, tag_tree. Reuses existing idx_memories_metadata_gin. 17 tests (10 pure + 7 DB-backed).",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-23T20:32:35.317299+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Akien's framing (2026-04-22): 'to put tags on memory, just put them in the metadata. an extra level of linked relationships. and the collection of tags itself can become a tree just from having tag:<name> in the metadata.'\n\nShape: memories already have a JSONB metadata column. Add convention: any key with prefix 'tag:' (e.g. tag:workflow, tag:debugging, tag:anticipation) marks a tag on that memory. Collection of all tag:* keys across memories implicitly forms a tag-tree (hierarchy emerges when tags share prefixes like tag:pe_chain/situate, tag:pe_chain/hypothesize). No new table, no new memory type.\n\nMinimum needed:\n1. A tag-read helper: get_tags_for(memory_id) -> list[str] and memories_with_tag(tag) -> list[memory_id]. Index the tag-value pattern in JSONB for fast lookup (gin index on metadata with path ops).\n2. A tag-write helper on cortex.store or a tag-apply tool.\n3. A tag-tree summariser: tag_tree() -> dict returns nested dict of all tags, counts per leaf.\n\nThis is about adding a lightweight relationship layer that Igor can use without promoting tags to a full schema. Tags are descriptive metadata, not edges in the graph.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (tag helpers), wild_igor/igor/memory/tag_tree.py (new module for tree assembly), tests/test_memory_tags.py (new).\n**Design rules:** no-new-memory-schemas (tags live in existing metadata JSONB — compliant by design), test-plan-or-why-not.\n**Scope boundary:** IN — tag read/write helpers, tag-tree summariser, gin index on metadata. OUT — UI/dashboard tag browser, tag-driven auto-retrieval (separate concern — let wandering-search use tags as candidates).\n**Test plan:** (a) setting metadata['tag:foo']=true on a memory and fetching memories_with_tag('foo') returns it; (b) hierarchical tags (tag:a/b, tag:a/c) produce correct nested tree; (c) tag counts are accurate across a small fixture set.",
+    "completed_at": "2026-04-24T00:12:45.038879+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "12fc7eba-a565-40d0-a859-7d66e8e10689",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

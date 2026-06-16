@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.123.20260324.182205610817",
+  "emitter": "cc.0",
+  "namespace": [
+    "123"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T18:22:05.610817",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "123"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "123",
+    "body": "Some memories belong to a specific Igor instance (episodic, TWM state), others are class-level (CORE_PATTERN, IDENTITY, semantic knowledge). Current model conflates them. Define split: what scopes to instance vs shared. HIGH inertia — models.py touch likely. NOTE: Igor will spec the design (storage split, scope field, table strategy) before this is worker-ready. Do not implement without his spec.",
+    "size": "M",
+    "notes": " | SPEC COMPLETE (D220): scope col (class/instance/session), one table, migrate by memory_type. Prereq: confirm IgorInstance model in models.py.",
+    "title": "Instance vs class memory split",
+    "result": "Added MemoryScope enum (class/instance/session) to models.py. Memory.__post_init__ derives scope from memory_type. DB migration (ALTER TABLE + backfill) runs on next Igor restart for both SQLite and Postgres. get_portable() updated to use scope='class'. 9 tests in test_memory_scope.py. Commit 5d13b39.",
+    "status": "done",
+    "created": "2026-03-22T11:50:47.647353",
+    "priority": 6,
+    "blocked_at": null,
+    "blocked_by": null,
+    "claimed_at": "2026-03-24T18:14:59.048746+00:00",
+    "completed_at": "2026-03-24T18:22:05.610817+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

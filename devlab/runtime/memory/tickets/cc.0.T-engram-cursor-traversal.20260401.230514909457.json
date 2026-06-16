@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-engram-cursor-traversal.20260401.230514909457",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-cursor-traversal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T23:05:14.909457",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engram-cursor-traversal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-cursor-traversal",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Wire engram cursor traversal loop (G-ENGRAM-CURSOR1)",
+    "result": "Traversal loop wired: follows next_node via __entry__ trigger, basket-snapshot loop detection, FORKIF→background jobs. 730 tests green.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Wire the engram cursor traversal loop in main.py so BRANCHIF actually follows next_node and FORKIF actually spawns background jobs. D292/D293/D294.\n\nCurrent state (main.py ~line 4225): when execute_node() returns next_node, it only logs ENGRAM_BRANCH to ring then drops it. Same for spawned.\n\nRequired changes:\n1. After execute_node() returns, if next_node is set: fetch that memory from self.cortex by node ID, then re-run execute_node() on it with trigger=__entry__ and the same basket. Loop until next_node is None or loop detected.\n2. Loop detection (D294): maintain visit_log = {node_id: basket_snapshot} per traversal. On each node arrival, snapshot basket (exclude non-serializable keys like _cortex, _salience). If node_id already in visit_log AND snapshot matches last snapshot → break (infinite loop detected, log warning).\n3. Basket snapshot helper: shallow copy of basket excluding keys starting with _ (internal refs). Convert to sorted JSON string for comparison.\n4. FORKIF spawned nodes (D293): for each node_id in result.spawned, queue as background job (use existing background job mechanism — look at how other bg jobs are dispatched in main.py). Pass basket snapshot (excluding _ keys) as job context.\n5. Keep the existing ENGRAM_BRANCH/ENGRAM_FORK ring writes — they are the trail record (D292).\n6. Add tests: traversal follows next_node, loop detection fires on repeated visit with same basket, loop continues on basket mutation, fork spawns background job.\n\nInertia: MEDIUM (main.py). Read the engram dispatch block (~line 4194-4237) before editing. Do not touch anything outside that block.",
+    "completed_at": "2026-04-01T23:05:14.909457+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4725cd9e-1659-4753-ab8c-7d86855a6260",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

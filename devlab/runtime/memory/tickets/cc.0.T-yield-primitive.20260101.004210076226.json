@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-yield-primitive.20260101.004210076226",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-yield-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T00:42:10.076226",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-basket-schema",
+      "T-condition-evaluator",
+      "T-yield-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-yield-primitive",
+    "size": "S",
+    "notes": " | BLOCKED: Encode yield_to = attention shift semantic in primitives catalog first. Basket handoff contract needs to be defined before implementation.",
+    "title": "Yield primitive: yield_to(habit_id) — pass control to another habit with shared basket",
+    "result": "Won't implement. Call stack semantics are non-biological — no saved namespace, no return address in biology. Superseded by T-habit-templates: templates expand into reactive habit chains at design time. At runtime there's only habits.",
+    "status": "done",
+    "priority": 5,
+    "blocked_by": "design_prereq",
+    "claimed_at": null,
+    "description": "prim_yield_to(habit_id_key) -> suspend current habit, launch target habit with current basket as its starting basket, resume when target sets basket[__status__]=done. Enables coroutine-style composition: habit A does setup, yields to habit B for the heavy work, resumes for cleanup. In v1: synchronous (A waits). Async version deferred. Requires T-basket-schema (done) and T-condition-evaluator.",
+    "completed_at": null,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "332166f1-f1a3-4425-abcc-8c3cee58da36",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

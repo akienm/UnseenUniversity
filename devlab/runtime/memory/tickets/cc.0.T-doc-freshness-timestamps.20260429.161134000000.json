@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-doc-freshness-timestamps.20260429.161134000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-doc-freshness-timestamps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:34",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-doc-freshness-timestamps"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-doc-freshness-timestamps",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Docs",
+      "Infrastructure"
+    ],
+    "title": "Add Updated <timestamp> markers to architectural doc blocks for drift detection",
+    "result": "Updated 2026-04-29T17:08:53Z added to 9 HIGH-inertia doc blocks: brainstem/core_patterns.py, memory/models.py, cognition/reasoners/base.py, memory/cortex.py, db_proxy.py, pending_replies.py, word_graph.py, pe_chain.py, main.py",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-29T17:08:15.695888+00:00",
+    "created_at": "2026-04-29T16:11:34Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "During high churn, architectural docs at the top of code files drift from the code silently. Fix: each file's doc block ends with a comment line 'Updated YYYY-MM-DDTHH:MM:SSZ'. Any reader (Haiku builder, audit step) can compare that timestamp against the file's last commit time to flag stale docs without reading the whole file.\n\n**Affected files:** wild_igor/igor/brainstem/ (all modules), wild_igor/igor/memory/models.py, wild_igor/igor/cognition/reasoners/base.py, and other load-bearing subsystems with doc blocks. Step 1 = HIGH-inertia files; Step 2 = remaining.\n**Design rules:** docs-in-code applies — doc blocks are canonical; the timestamp makes their freshness mechanically verifiable.\n**Scope boundary:** IN: Add/update 'Updated YYYY-MM-DDTHH:MM:SSZ' as the last comment line of each doc block in load-bearing files. OUT: No Haiku builder wiring in this ticket; no automated staleness check (separate ticket).\n**Test plan:** No automated tests. Manual: grep each file's doc block, verify Updated line exists and timestamp is within 7 days of last commit (spot-check 5 files).",
+    "completed_at": "2026-04-29T17:12:24.130290+00:00",
+    "github_issue": 560,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ed17affe-0200-43bf-acce-774c5a1e73ec",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

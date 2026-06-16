@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-fix-reading-status-query.20260403.192610000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-reading-status-query"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:10",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-reading-status-query"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-reading-status-query",
+    "epic": "Operations",
+    "size": "S",
+    "title": "PROC_LIST_ABSORBED_BOOKS: add reading_list completed query + trigger fix",
+    "result": "filter trace:// sources from completed query — commit 7ac868d5",
+    "status": "done",
+    "priority": 2,
+    "created_at": "2026-04-03T19:26:10Z",
+    "resolution": "fixed: list_absorbed_books now queries reading_list completed + trigger updated",
+    "description": "list_absorbed_books() queries memory nodes only, not reading_list completions. Fix: also query reading_list WHERE status=completed and merge into report. Add completed trigger variants.",
+    "completed_at": "2026-04-06T21:43:47.195531+00:00",
+    "github_issue": 372,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d69bfdb1-09fe-4d9e-a102-2f79439c469f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

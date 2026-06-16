@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-sessions-in-db.20260319.173114344350",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sessions-in-db"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-19T17:31:14.344350",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sessions-in-db"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sessions-in-db",
+    "body": "Add sessions table (theme, decisions, key_changes, next, in_flight, created_at). sessions.md rendered from DB like slate.md. Eliminates savestate Step 3 as a manual file write. Part of dissolving savestate ritual.",
+    "size": "S",
+    "title": "sessions table in Postgres — sessions.md becomes rendered view",
+    "result": "session_manager.py: start/append/finalize/current; state file; ID-free append commands. Tests: none (tooling scripts).",
+    "status": "done",
+    "created": "2026-03-19T10:50",
+    "priority": 1,
+    "completed_at": "2026-03-19T17:31:14.344350+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

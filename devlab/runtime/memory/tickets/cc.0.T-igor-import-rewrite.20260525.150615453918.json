@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-igor-import-rewrite.20260525.150615453918",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-import-rewrite"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-25T15:06:15.453918",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-into-adc-2026-05-25"
+    ],
+    "tickets": [
+      "T-igor-import-rewrite",
+      "T-igor-subtree-import",
+      "T-igor-theigers-archive",
+      "T-remove-utility-closet-all"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-import-rewrite",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Architecture",
+      "Igor"
+    ],
+    "title": "Rewrite all wild_igor.igor.* imports to devices.igor.*",
+    "result": "Rewrote all wild_igor.igor.* imports to devices.igor.* across devices/igor/, tests/igor/, and lab/claudecode/. Removed 298 duplicate Igor test files from tests/ (now live only in tests/igor/). Removed pytest_ignore_collect safety gate. 935 UU-native tests pass; 44 tests/igor/ collection errors are pre-existing lab.utility_closet not-yet-migrated.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "blocked_at": null,
+    "claimed_at": "2026-05-25T19:39:04.257762+00:00",
+    "created_at": "2026-05-25T15:06:15.453918+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-into-adc-2026-05-25",
+    "description": "After devices/igor/ is populated (T-igor-subtree-import), update every import statement across the entire codebase: `wild_igor.igor` → `devices.igor`, `from wild_igor` → `from devices.igor`, `import wild_igor` → `import devices.igor`. Also update sys.path insertions that reference TheIgors/wild_igor. Also update any string references in JSON config, yaml files, and comments. Igor must remain stopped during this step. Restart Igor from the new location after tests pass.\n\n**Affected files:** All .py files in devices/igor/, lab/claudecode/, tests/igor/, and any remaining TheIgors scripts that reference wild_igor; also pyproject.toml if it references wild_igor\n**Design rules:** After this step, zero occurrences of `wild_igor` anywhere in UnseenUniversity repo; devices.igor is the sole import prefix for Igor internals\n**Scope boundary:** In scope: import rewrite across both repos. Out of scope: removing wild_igor/ directory from TheIgors (T-igor-theigers-archive). Out of scope: utility_closet removal (T-remove-utility-closet-all).\n**Test plan:** `grep -rn 'wild_igor' ~/dev/src/UnseenUniversity/ --include='*.py'` returns zero results. Full test suite `pytest tests/ -x -q` passes. Igor starts cleanly from new location: `tmux new-session -d -s igor igor` and `tmux has-session -t igor` succeeds. `python -c \"from devices.igor.main import main\"` succeeds.",
+    "completed_at": "2026-05-25T20:03:54.052315+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-25T19:39:04.257762+00:00",
+    "dispatched_by": "cc",
+    "timeout_count": 3,
+    "required_files": [],
+    "scraps_validated": "2026-05-25T15:06:15.453954+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fc46a825-eea7-4b70-991a-98e1e6cb352a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

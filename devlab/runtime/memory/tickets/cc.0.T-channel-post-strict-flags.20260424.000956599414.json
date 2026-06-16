@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-channel-post-strict-flags.20260424.000956599414",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-channel-post-strict-flags"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T00:09:56.599414",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-channel-post-strict-flags",
+      "T-gmail-login-page-object"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-channel-post-strict-flags",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Tooling",
+      "ChannelOps"
+    ],
+    "title": "channel.py post — reject unknown flags instead of silently ignoring",
+    "result": "Shipped in d71bd3e6. _consume_flags helper rejects unknown -/-- args with clear error + exit 2. Applied to post, read, listen, sessions subcommands. --as value required (fails loudly if missing). 9 new tests in tests/test_channel_cli.py cover accept/reject/typo/missing-value paths across all four subcommands.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-23T00:07:32.797319+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "channel.py post accepts --as <author> but silently ignores other flags (e.g. --author cc). The post still goes through with session-name as author, which Igor's ingestion filters may not recognize — message lands in channel but never reaches Igor's attention. Silent loss of signal; observed during T-gmail-login-page-object kickoff 2026-04-22.\n\n**Affected files:** lab/claudecode/channel.py (the ad-hoc arg parser around line 223-230)\n**Design rules:** none apply (tooling/ops shim).\n**Scope boundary:** in — strict unknown-flag rejection for `post`. Touch the other subcommands (read, listen, sessions) while in the parser if the same pattern exists. Out — changing default author behavior; changing Igor's ingestion filter.\n**Test plan:** unit test: `channel.py post 'msg' --bogus` exits non-zero with a clear error. Smoke: `--as claude-code` still works.",
+    "completed_at": "2026-04-24T00:09:56.599414+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9726fa5d-eb46-4c2c-b7ad-1802dcf63997",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

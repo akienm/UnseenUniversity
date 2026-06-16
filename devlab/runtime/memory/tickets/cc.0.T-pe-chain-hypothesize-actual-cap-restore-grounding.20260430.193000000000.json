@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-pe-chain-hypothesize-actual-cap-restore-grounding.20260430.193000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-hypothesize-actual-cap-restore-grounding"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T19:30:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-chain-hypothesize-actual-cap-restore-grounding",
+      "T-pe-chain-llm-paraphrase-stickiness",
+      "T-pe-chain-observe-window-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-hypothesize-actual-cap-restore-grounding",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "pe_chain",
+      "HYPOTHESIZE",
+      "cert-driven",
+      "root-cause"
+    ],
+    "title": "pe_chain HYPOTHESIZE: actual[:4000] truncates real targets out — LLM hallucinates from prior",
+    "result": "Closed two-part fix: (1) actual char cap 4000→16000 restored grounding (cmd_claim now in LLM context); (2) _strip_line_prefix removes line-number prefixes when serializing for the LLM (LLM no longer has to mentally strip prefix → preserves indent and quote style). 23 new unit tests pin the prompt-assembly behavior. Cert walk-02 attempt 7 follows as live integration test.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": "2026-04-30T19:12:16.492922+00:00",
+    "created_at": "2026-04-30T19:30:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Cert walk-02 substitute attempt 4 surfaced the actual root cause of the paraphrase pattern: pe_hypothesize caps `actual` at 4000 chars before sending to the LLM. For mid-to-large files (e.g. cc_queue.py at 750 lines / ~30KB), the OBSERVE step's 11428-char window is truncated to 4000 chars — the relevant target (cmd_claim at offset 10084) is cut off entirely. The LLM is asked to modify cmd_claim while seeing only lines 1-94 of the file. With nothing real to copy, it hallucinates a plausible Python pattern from prior (`if t['status'] == 'pending':`) — and on retry, sees the same truncated window, hallucinates the same prior, locks in.\n\nThis explains the 'paraphrase stickiness' filed earlier today (T-pe-chain-llm-paraphrase-stickiness) — it wasn't model stickiness, it was model-generates-from-prior-when-target-not-in-prompt.\n\nFix: bump `actual[:4000]` to `_HYPOTHESIZE_ACTUAL_CHAR_CAP=16000` (constant) and apply consistently in initial prompt and retry prompt. Modern LLMs (qwen-2.5-coder, haiku, sonnet) handle 16K context comfortably; the 4000-char cap was a defensive measure for a smaller model era and now defeats the OBSERVE window-widening shipped earlier today (T-pe-chain-observe-window-fix).\n\nThis is the cert walk-02 root cause we'd been three layers deep on. The OBSERVE fix and retry-feedback fix shipped today are still useful (different concerns) but neither was sufficient because both fed into the same 4000-char bottleneck.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (constant + 2 callsites)\n**Design rules:** test-plan-or-why-not\n**Scope boundary:** IN — single cap constant + applying it. OUT — adaptive sizing per model tier; per-file-size cap; rewriting the prompt structure.\n**Test plan:** 105 pe_chain regression tests pass. Live integration: cert walk-02 substitute attempt 5 — predicted to produce a verbatim-valid edit on the first attempt (no retries needed) since LLM now actually sees cmd_claim in its prompt.\n",
+    "completed_at": "2026-04-30T21:32:38.924556+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5856c94e-a8d1-4b18-b1fd-c8503320c43e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

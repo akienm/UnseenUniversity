@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-wire-graph-preparse-pipeline.20260429.161054000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wire-graph-preparse-pipeline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:10:54",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cognition-module-audit",
+      "T-wire-graph-preparse-pipeline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wire-graph-preparse-pipeline",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Wire graph_integrator and preparse_router into reading pipeline",
+    "result": "implement_skipped: HYPOTHESIZE produced an invalid old_string and no edit was applied — ticket needs re-queue with a cor",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "blocked_at": "2026-04-30T02:48:56.082524+00:00",
+    "claimed_at": "2026-04-30T02:39:36.862317+00:00",
+    "created_at": "2026-04-29T16:10:54Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two D230/D231-era cognition modules are built but unconnected to any caller. Both have example usage in their own docstrings indicating intended wiring points:\n- graph_integrator.py: reads indexed content, builds co-occurrence edges. Entry: integrate_graph(). Should be called from reading pipeline after a chunk is indexed.\n- preparse_router.py: distributed dispatcher for atomic preparse chunks. Entry point unclear until audit classifies it — gate on T-cognition-module-audit for classification first.\n\n**Affected files:** TBD — discovery step. Likely reading_tool.py or inbound message handling path for preparse_router.\n**Design rules:** docs-in-code. no-new-memory-schemas.\n**Scope boundary:** IN: identify call sites, wire both modules, verify indexing and preparse still work. OUT: modifying the modules themselves, D230/D231 feature work beyond wiring.\n**Test plan:** Integration test: trigger a reading job, verify graph_integrator deposits edges. Trigger an inbound message, verify preparse_router is invoked. Full suite after wiring.",
+    "completed_at": null,
+    "github_issue": 547,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "52afb825-44e6-4ed8-9f12-ed5cc2469c61",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

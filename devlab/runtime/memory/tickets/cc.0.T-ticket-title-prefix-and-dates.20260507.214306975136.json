@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-ticket-title-prefix-and-dates.20260507.214306975136",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-title-prefix-and-dates"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:43:06.975136",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-web-tab-ui",
+      "T-ticket-title-prefix-and-dates"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-title-prefix-and-dates",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Workflow",
+      "Hygiene"
+    ],
+    "title": "CLOSED: Backfill ticket status prefixes in titles + created_at dates from GitHub",
+    "result": "status prefixes embedded in title on every status change; backfill-prefixes applied to 22 open tickets; backfill-dates populated 272 created_at from GitHub",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two ticket hygiene gaps making queue unworkable:\n\n1. **Status not in title** — searching the DB or GitHub for 'sprint tickets' requires querying the status JSON field. Title must embed the status so grep works: `[sprint] Swarm web tab UI`. When status changes, update the title prefix. This makes `cc_queue list | grep sprint` and GitHub issue search both work in one pass.\n\n2. **created_at missing on ~1000 tickets** — can't do 'tickets filed this week' queries. Fix: for each ticket with null created_at that has a github_issue number, fetch the GitHub issue creation date via `gh api`. Write back to metadata.\n\n**Affected files:** TheIgors/lab/claudecode/cc_queue.py (add title-prefix sync on every status change + add a backfill command `cc_queue.py backfill-dates`)\n\n**Design rules:** no-sqlite; docs-in-code\n\n**Scope boundary:** IN — add `[STATUS]` prefix to title on every cmd_done/cmd_claim/cmd_setstatus/cmd_block; `cc_queue.py backfill-dates` fetches GH issue created_at for all null-date tickets; strip old DESIGNED:/SPRINT:/etc prefixes before adding new ones. OUT — changing the status emoji display, changing underlying status field.\n\n**Test plan:** test_cc_queue_status_prefix.py — setstatus updates title prefix; backfill-dates populates created_at from GH mock; listing output is grep-able by status.\n\n**Pass condition:** `cc_queue.py list | grep -c '\\[sprint\\]'` returns the correct count; `cc_queue.py show T-swarm-web-tab-ui | jq .created_at` returns a non-null ISO date; `cc_queue.py backfill-dates --dry-run` prints N dates to fill without erroring.",
+    "completed_at": "2026-05-07T21:43:06.975136+00:00",
+    "github_issue": 627,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fb59b617-438b-4746-85d8-b5f97f648221",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

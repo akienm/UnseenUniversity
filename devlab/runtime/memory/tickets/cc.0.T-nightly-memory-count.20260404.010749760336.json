@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-nightly-memory-count.20260404.010749760336",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nightly-memory-count"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T01:07:49.760336",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-nightly-memory-count"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nightly-memory-count",
+    "epic": "Cognition",
+    "title": "Nightly memory-count snapshot habit",
+    "result": "memory_snapshot.py: nightly count by type, self-gates hour>=22 + once/day stamp, logs to memory_count.log. PROC_MEMORY_COUNT_SNAPSHOT seeded (12h interval). 3 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "PROC_ habit that fires nightly (heartbeat_check + time gate: after 22:00, once per day). Counts memories via SELECT COUNT(*) FROM memories, logs (date, count) to ~/.TheIgors/logs/memory_count.log or a dedicated postgres table. Goal: trend tracking — can see if memory base is growing, stagnant, or shrinking. S-size. worker=igor",
+    "completed_at": "2026-04-04T01:07:49.760336+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4f1fe5e9-bdf3-43b2-8367-cd1d0b677184",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

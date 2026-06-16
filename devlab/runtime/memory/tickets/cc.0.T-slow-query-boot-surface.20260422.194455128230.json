@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-slow-query-boot-surface.20260422.194455128230",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slow-query-boot-surface"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T19:44:55.128230",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-slow-query-triage-2026-04-22"
+    ],
+    "tickets": [
+      "T-slow-query-analysis",
+      "T-slow-query-boot-surface"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slow-query-boot-surface",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Performance",
+      "Observability"
+    ],
+    "title": "Surface slow-query report proactively on boot (PROC_SLOW_QUERY_REPORT habit)",
+    "result": "00a0599b — boot_surface_slow_queries + main.py wire (post BOOT_INVENTORY). Top-5 by worst-elapsed pushed to ring as db_diagnostic. Silent on failure. 5 tests.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "claimed_at": "2026-04-22T19:42:59.479847+00:00",
+    "related_to": null,
+    "decision_id": "D-slow-query-triage-2026-04-22",
+    "description": "db_queries.log is actively collecting slow-query data (55k entries, 10MB, updating live) and analyze_slow_queries() tool exists, but findings are never surfaced proactively — only on-demand when explicitly asked. Register a PROC_SLOW_QUERY_REPORT habit that fires on boot or daily, calling analyze_slow_queries() and pushing the top-5 offenders to ring_memory. The T-slow-query-analysis done ticket noted this habit but it was never actually registered in code or DB.\n\n**Affected files:** wild_igor/igor/tools/slow_query.py (add boot hook or habit registration). No main.py touch needed — use habit/scheduler infrastructure instead.\n**Design rules:** no-sqlite: reads db_queries.log (flat file), writes to ring_memory (Postgres, existing table). oop-first: none apply (single function registration). docs-in-code: none apply (slow_query.py is not a load-bearing subsystem file). test-plan-or-why-not: applies.\n**Scope boundary:** IN — register proactive habit, surface top-5 to ring_memory on boot. OUT — automated ticketing from findings, Slack/Discord surfacing, threshold alerting.\n**Test plan:** Unit test — mock analyze_slow_queries() output, assert ring_memory receives a slow_query_report event with correct top offenders on boot trigger.",
+    "completed_at": "2026-04-22T19:44:55.128230+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68a86a0a-730c-4572-87ca-c80695afd5d2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

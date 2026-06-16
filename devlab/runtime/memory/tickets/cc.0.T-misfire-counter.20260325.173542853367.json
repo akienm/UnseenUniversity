@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-misfire-counter.20260325.173542853367",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-misfire-counter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:35:42.853367",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-misfire-counter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-misfire-counter",
+    "body": "Track repeated tool dispatch failures. When a pattern exceeds a threshold, surface it as a habit repair candidate.\n\nTRIGGER: run_bash exit code 127 (command not found) where the attempted command matches a registered tool name. Also: any tool call that errors with the same error type N times within a rolling window.\n\nCOUNTER KEY: (attempted_name, dispatch_path, error_type)\nTHRESHOLD: configurable, default=3\nWINDOW: rolling 24h\n\nSTORAGE: misfire_counts table in Postgres, or a dedicated misfire_log.jsonl in ~/.TheIgors/logs/\n\nSURFACING: when counter > threshold, add entry to habit repair queue (or surface in audit Step 12 habit health). Do NOT auto-fix — flag for human review.\n\nSCOPE: instrument run_bash result handler (tools/runner.py) for exit-127 detection. Instrument tool registry execute() for repeated error detection. Do NOT change habit dispatch logic or BG scoring.\n\nFORENSIC LOGGING: log_error when threshold crossed.\n\nTESTS: test that exit-127 increments counter; test threshold triggers surfacing; test counter resets after window.",
+    "role": "worker",
+    "size": "S",
+    "title": "Misfire counter: threshold-based habit repair surfacing",
+    "result": "MisfireCounter implementation complete: tracks repeated tool failures (exit-127 bash, repeated tool errors) via jsonl log with rolling 24h window. Threshold default=3, configurable. Instrumented runner.py and registry.py. 18 tests passing, all 381 suite ✓. Commit: 35b864cb.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": "2026-03-25T17:32:44.757930+00:00",
+    "completed_at": "2026-03-25T17:35:42.853367+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

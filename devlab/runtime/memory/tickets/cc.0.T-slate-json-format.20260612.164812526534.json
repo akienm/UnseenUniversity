@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-slate-json-format.20260612.164812526534",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slate-json-format"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T16:48:12.526534",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-json-envelope-principle-2026-06-12"
+    ],
+    "tickets": [
+      "T-slate-json-format"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slate-json-format",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Slate",
+      "Cost"
+    ],
+    "title": "Slate files: JSON format with prose_render field",
+    "result": "JSON slates with backward-compat markdown read; create-slate, midstream, close, _append_to_todays_slate, stale_slate_check all updated",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.5,
+    "intention": "I intend that slate files are JSON so agents can parse them without regex, with prose_render carrying the human-readable markdown render when it already exists.",
+    "blocked_at": "2026-06-12T21:00:21.384035+00:00",
+    "claimed_at": null,
+    "created_at": "2026-06-12T16:48:12.526534+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-json-envelope-principle-2026-06-12",
+    "description": "Slate files are currently freeform markdown. Convert to JSON with fields: date, in_flight[], planned[], done[], notes[], prose_render (optional — carried forward when it already exists, not generated). Slate writer (python run create-slate, midstream, close) emits JSON. Slate reader in context-load parses fields directly.\n\n**Affected files:** lab/claudecode/slate.py (or equivalent writer), context-load skill, savestate skill\n**Design rules:** no-sqlite; flat-file format (no Postgres dependency — slate must load before DB)\n**Scope boundary:** In scope: slate file format + read/write tooling. Out of scope: DB-backed slates (already separate), bus envelopes, inference responses.\n**Completion criteria:** T-slate-json-format is CLOSED; today's slate file is valid JSON; context-load parses in_flight/planned/done fields without regex; existing prose_render field preserved on read.",
+    "completed_at": "2026-06-13T18:08:39.321253+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

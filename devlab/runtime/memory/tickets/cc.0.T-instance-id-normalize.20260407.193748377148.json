@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-instance-id-normalize.20260407.193748377148",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-instance-id-normalize"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T19:37:48.377148",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-instance-id-normalize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-instance-id-normalize",
+    "title": "Normalize igor_wild_0001 to Igor-wild-0001 everywhere",
+    "result": "Superseded — scope expanded to include PG DB rename",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Normalize all igor_wild_0001 refs to Igor-wild-0001 (filesystem/instance_id only; PG DB name stays). Root cause: paths.py default + 60+ hardcoded strings in seed scripts, shell, docs. 12+ prior partial fixes.",
+    "completed_at": "2026-04-07T19:37:48.377148+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "759e080a-1f44-4f56-9da0-4787ff226292",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

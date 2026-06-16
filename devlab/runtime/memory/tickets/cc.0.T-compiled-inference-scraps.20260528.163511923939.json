@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-compiled-inference-scraps.20260528.163511923939",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-compiled-inference-scraps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:35:11.923939",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-compiled-inference-scraps",
+      "T-log-parsing-out-of-igor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-compiled-inference-scraps",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Scraps",
+      "Compiled_Inference"
+    ],
+    "title": "Compile deterministic Igor patterns into Scraps device per Compiled_Inference.md",
+    "result": "Compiled 3 inference patterns: purpose_classifier (8-category memory annotator), task_completion_check (YES/NO with overlap), habit_tiebreaker (word-overlap selector). Each is a new Scraps script with LLM fallback for ambiguous cases. 28 tests pass. Discovery doc at lab/design_docs/compiled_inference_scraps_discovery.md.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-28T16:35:11.923939+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Per lab/docs/Compiled_Inference.md: deterministic patterns currently executed as freeform inference (IMAP lookups, ticket reply formatting, DB lookups, etc.) should be compiled into the Scraps device as scripts. This reduces inference cost for operations that do not need it.\n\nDiscovery step: catalog the top 5 highest-ROI deterministic patterns in devices/igor/ and lab/claudecode/ that run inference today but could be a script. Implement each as a Scraps callable. Wire Igor/Librarian to call the script instead of running freeform inference.\n\nGate on T-log-parsing-out-of-igor completing first — that ticket may surface additional candidates.\n\n**Affected files:** TBD — discovery required. New Scraps scripts under devices/scraps/ (or equivalent). Callers in devices/igor/ updated to use tool call.\n**Design rules:** Compiled_Inference.md (lab/docs/), igor-uses-not-contains (memory)\n**Scope boundary:** IN — identify and implement 3-5 highest-ROI patterns as Scraps scripts; wire callers; OUT — do not redesign all of Igor or all of Scraps in one ticket\n**Test plan:** Each compiled script has a unit test; behavior unchanged; at least one pattern demonstrably cheaper (token count reduction measurable via infra.llm_calls table)",
+    "completed_at": "2026-05-29T01:30:41.388342+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T16:35:11.973223+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2d354f6a-a73d-4aab-8710-d5f3ce9d4c68",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

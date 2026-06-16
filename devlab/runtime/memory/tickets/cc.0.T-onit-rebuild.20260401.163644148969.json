@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-onit-rebuild.20260401.163644148969",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-onit-rebuild"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T16:36:44.148969",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-onit-rebuild"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-onit-rebuild",
+    "size": "M",
+    "tags": [
+      "goals",
+      "cognition",
+      "D275"
+    ],
+    "title": "On it rebuilt: task to goal adoption trigger",
+    "result": "Rebuilt On it habit from response→action type with code_ref: tools.ops:goal_adopt. New goal_adopt tool stores EPISODIC goal memory (goal_active=True, goal_type=TACTICAL) and posts adoption to channel. Trigger updated to fire on task-assignment phrases. Inertia restored to 0.3. D275 task→goal translation now fires on habit dispatch. 567 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-01T16:32:27.961665+00:00",
+    "description": "When Igor says On it, that phrase IS the moment of goal adoption. Rebuild the On it habit to: (1) parse goal from triggering message, (2) create GOAL_TACTICAL node in TWM + memories, (3) set current_strategy to relevant habit/engram, (4) emit On it as confirmation, (5) immediately dispatch step 1. Without this, D275 goal machinery has no trigger — task to goal translation never fires.",
+    "completed_at": "2026-04-01T16:36:44.148969+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0cd7accd-8d72-40e1-b72b-58003df53bb2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-consult-log-test-mode-gate.20260427.033951000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-log-test-mode-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:51",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-consult-log-test-mode-gate",
+      "T-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-log-test-mode-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consult",
+      "Tests",
+      "Hygiene"
+    ],
+    "title": "Gate consults.log behind IGOR_TEST_MODE — .test suffix for fixture traffic",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T07:29:06.423151+00:00",
+    "created_at": "2026-04-27T03:39:51Z",
+    "related_to": null,
+    "approved_at": "2026-04-28T01:40:30.341854+00:00",
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "Consult observe-and-tune Finding 3: 24% of consults.log entries (25/104) are test fixtures (ticket_id=T-test, pursuit_id=GOAL_123). Contaminates the prod log and skews any tuning analysis. Follow the pattern used by other logs: when IGOR_TEST_MODE is set, write to consults.log.test instead.\n\n**Affected files:** wild_igor/igor/cognition/consult.py (forensic-log path), tests/test_consult_primitive.py (new assertion: test-mode writes to .test suffix).\n**Design rules:** test-plan-or-why-not.\n**Scope boundary:** IN — path switch gated on env var. OUT — retroactively cleaning the existing polluted log (observe-and-tune said to filter at analysis-time instead).\n**Test plan:** new test sets IGOR_TEST_MODE, runs a consult, asserts .test file exists and main log untouched.",
+    "proposed_at": "2026-04-28T04:04:15.085123+00:00",
+    "completed_at": "2026-04-29T07:48:01.130167+00:00",
+    "github_issue": 537,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Approved by Akien 2026-04-27",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d8902295-add3-405c-9ae3-e5b8e7365929",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

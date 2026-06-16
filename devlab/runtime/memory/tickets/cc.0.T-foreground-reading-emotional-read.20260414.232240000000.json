@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-foreground-reading-emotional-read.20260414.232240000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-foreground-reading-emotional-read"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:40",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-foreground-reading-emotional-read"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-foreground-reading-emotional-read",
+    "body": "From D050 (now closed as ticketed) and Akien 2026-04-14: 'foreground reading should allow more attention and time than background reading to get an emotional read on the material. ticket it as something to ask igor if he needs. lowest priority for now.'\n\n## The conjecture\n\nSlow/fast reading = same extraction pipeline. The difference is the EMOTIONAL MILIEU STATE during the read. All books get a fast matrix pass (current background reading). Important books also get a slow pass later — same pipeline, different milieu, more attention budget, more time per chunk. The slow pass is what gives the material an 'emotional read' rather than just a structural extraction.\n\n## Why ask Igor first\n\nAkien explicitly framed this as 'ask Igor if he needs.' Don't build the slow pass before knowing whether Igor's reading pipeline actually leaves something on the table that more time + emotional engagement would capture. Two paths:\n\n1. **Igor says he needs it** — he can name a book or chapter where he wishes he'd had more time, or describe what he'd extract differently with full emotional engagement. Then we know what to build.\n2. **Igor says he doesn't need it** — current pipeline is enough; the conjecture was right that fast extraction is sufficient and the slow pass would be polish, not capability. Close.\n\n## Existing work to check before asking\n\n- D334 unified reading tool (commit 6627ae1f) — current reading pipeline, single mode\n- D356 reading-lever-detection — attractor-guided chunk scoring; this is one form of 'pay more attention to important parts' and might already deliver what the slow pass would\n- D333 situated-reading-pass2 — pass-2 reading uses prompt-as-simulator with watch list / hot attractors / gap_analysis. This sounds like it might ALREADY be the slow/foreground mode the decision was proposing, just under a different name.\n- The ebook_reader pipeline + book_learner.py\n- Whether milieu state is already captured/varied during reading passes\n\n**Before asking Igor, verify whether D333 situated-reading-pass2 is already what D050 was reaching for.** If it is, close as already-shipped instead of asking.\n\n## How to ask\n\nWhen ready: send Igor a focused question via channel. Frame it as 'is there something the current reading pipeline is missing that more time + emotional engagement would capture?' Capture his answer. If yes, follow-up sprint to build it. If no, close.\n\n## Priority\n\nLowest. Akien explicit. Don't surface above other cognition work.\n\n## Provenance\n\nD050 (closed as ticketed by this ticket). Akien-Claude 2026-04-14.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "reading",
+      "low-priority",
+      "ask-igor",
+      "emotional"
+    ],
+    "title": "Ask Igor: do you want a foreground reading mode with more time + emotional engagement?",
+    "result": "Asked Igor twice (18:57 post-channel.py, 19:00 post-/api/cc_send). Pre-restart he only ack'd boilerplate. Post-restart he engaged on SWADL/testing but didn't name a book where emotional engagement would have mattered. No capability-gap identified. Akien flagged lowest priority. Closing; re-open if Igor's reading-pass surfaces a specific chapter he wished he'd had more time + arousal for.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T00:59:38.101238+00:00",
+    "created_at": "2026-04-14T23:22:40Z",
+    "related_to": null,
+    "completed_at": "2026-04-19T01:42:30.815364+00:00",
+    "github_issue": 440,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-hardcoded-instance-refs-cleanup.20260424.160201000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-hardcoded-instance-refs-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:01",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-hardcoded-instance-refs-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-hardcoded-instance-refs-cleanup",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Hygiene",
+      "Portability"
+    ],
+    "title": "Sweep 3 hardcoded instance refs (Igor-wild-0001) outside exempt list",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-04-29T09:02:03.262947+00:00",
+    "created_at": "2026-04-24T16:02:01Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Day-close audit 2026-04-23 found 3 hardcoded 'Igor-wild-0001' refs outside the audit exempt list. Hostname-coupled — should use paths().instance_id or env var. Run audit_runner --drain to surface the file:line list, then sweep.\n\n**Affected files:** TBD — discovery first via audit output.\n**Test plan:** audit_runner --drain shows no-hardcoded-instance-refs PASS.",
+    "completed_at": "2026-04-29T09:13:55.223233+00:00",
+    "github_issue": 513,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d3a756e-1148-4fc7-8b31-4f418629af52",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

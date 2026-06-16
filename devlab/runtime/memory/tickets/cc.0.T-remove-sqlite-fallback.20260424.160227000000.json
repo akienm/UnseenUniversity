@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-remove-sqlite-fallback.20260424.160227000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-sqlite-fallback"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:27",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-removal-2026-04-22"
+    ],
+    "tickets": [
+      "T-remove-sqlite-fallback",
+      "T-test-postgres-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-sqlite-fallback",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Database",
+      "TechDebt",
+      "Audit"
+    ],
+    "title": "Remove SQLite fallback entirely — db_proxy, cortex init branches, IGOR_DB_PATH",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-30T00:45:56.264165+00:00",
+    "created_at": "2026-04-24T16:02:27Z",
+    "related_to": null,
+    "decision_id": "D-sqlite-removal-2026-04-22",
+    "description": "Remove SQLite code paths entirely per 'no SQLite anywhere' rule. Kill: make_home_proxy() SQLite branch (db_proxy.py:841-848), `DatabaseProxy` class (db_proxy.py:134+), SQLite branches in cortex._init_db() (lines 959-1230), IGOR_DB_PATH env var handling. Update Cortex class docstring ('SQLite-backed memory graph' at line 843) to reflect Postgres reality. Closes pass-2 audit Gap 1 (severity high). Pre-approved by Akien 2026-04-22 for HIGH-inertia touches on db_proxy.py + cortex.py — reason: audit finding + kill-SQLite rule enforcement.\n\n**Affected files:** lab/utility_closet/db_proxy.py (remove DatabaseProxy class + SQLite branch in make_home_proxy + update top-of-file docstring), wild_igor/igor/memory/cortex.py (remove SQLite branch 959-1230 + update class docstring at line 843), wild_igor/igor/paths.py (IGOR_DB_PATH handling), any remaining IGOR_DB_PATH references across codebase (discovery).\n**Design rules:** no-sqlite: IS the rule enforcement — this is the removal. oop-first: no new shared state. docs-in-code: Cortex class docstring + db_proxy.py top-of-file docstring both updated. test-plan-or-why-not: applies.\n**Scope boundary:** IN — remove SQLite code paths + docstring updates + IGOR_DB_PATH env removal. OUT — renaming PGDatabaseProxy, new DB abstractions, broader proxy refactor.\n**Gate:** T-test-postgres-schema must ship first.\n**Test plan:** Full test suite passes post-removal (all tests → Postgres via T-test-postgres-schema). Grep-assert no `sqlite3` imports, no `DatabaseProxy(` instantiations remain. Manual Igor boot + smoke (`hello`) confirms no regression.",
+    "proposed_at": "2026-04-27T05:27:46.530573+00:00",
+    "completed_at": "2026-04-30T00:57:37.906811+00:00",
+    "github_issue": 525,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7481ee9b-be91-4bf4-8886-eb4d7dc5acdc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

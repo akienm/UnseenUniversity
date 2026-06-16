@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-gap-scan-consequence-debt.20260609.201108065119",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gap-scan-consequence-debt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:11:08.065119",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uurecall-search-gaps-2026-06-08",
+      "D-web-ui-controls"
+    ],
+    "tickets": [
+      "T-consequence-",
+      "T-gap-scan-consequence-debt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gap-scan-consequence-debt",
+    "gate": null,
+    "role": "apprentice",
+    "size": "L",
+    "tags": [
+      "Audit",
+      "Process",
+      "Workflow"
+    ],
+    "title": "Audit: which closed designs have unverified implementation?",
+    "result": "Found 12 open decisions with unverified implementations. 6 NO_CONSEQUENCE gaps: filed T-consequence-igor-web-reply (HIGH), T-consequence-shared-memory-svc (HIGH), T-consequence-dsimnel-parity (MED), T-consequence-or-tiered-cascade (MED), T-consequence-minion-model-upgrade (MED). 6 CONSEQUENCE_OPEN gaps already have consequence tickets in dependency/sprint state. D-web-ui-controls already handled by T-consequence-web-ui-controls.",
+    "status": "closed",
+    "worker": "igor",
+    "intention": "I intend that we identify all designs with closed implementation tickets but no consequence-check completion, so we can triage verification work.",
+    "created_at": "2026-06-09T20:11:08.065119+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-uurecall-search-gaps-2026-06-08",
+    "description": "**Symptom:** D-web-ui-controls spawned two tickets (both closed 2026-06-04) but the intended four-pane layout never shipped. No consequence-check ticket was filed. Similar pattern likely exists in other designs.\n\n**Task:** Scan all design decisions. For each with status=open or status=closed, check:\n1. Are all implementation tickets (non-consequence) status=closed?\n2. Is there a consequence-check ticket? If yes, is it also closed?\n3. If all impl closed but no consequence or consequence not closed: this is a gap.\n\nFor each gap found:\n- Decision name, spawned tickets, gap type\n- Brief hypothesis: what might not have shipped\n- Triage level: HIGH (UI/control visible), MED (internal mechanism), LOW (edge case)\n\nOutput format: one finding per line, for filing follow-on tickets per finding.\n\n**Affected files:** lab/design_docs/decisions/*.md (read-only); no code changes\n**Design rules:** none apply\n**Scope boundary:** IN: identify gaps, triage level, brief reason. OUT: fix any gaps (separate tickets per finding).\n**Completion criteria:** Report lists all gaps by triage level with decision name, impl tickets, and brief hypothesis. File one follow-on consequence ticket per HIGH/MED finding (file as T-consequence-{design-slug}).\n**Test plan:** Manual inspection of findings. Spot-check 3 HIGH findings via grep/code review to confirm gap is real.",
+    "completed_at": "2026-06-09T20:32:19.689565+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

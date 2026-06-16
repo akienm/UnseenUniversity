@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-anticipation-primitive.20260424.160212000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-anticipation-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:12",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-anticipation-primitive",
+      "T-twm-goal-ready-listener"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-anticipation-primitive",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Cognition",
+      "WantPrimitive",
+      "Biology"
+    ],
+    "title": "Anticipation primitive — dopamine-like predicted-valence-delta signal",
+    "result": "Slice 1 substrate shipped (commit 6819d2a5). New file wild_igor/igor/cognition/anticipator.py provides Anticipation dataclass + Anticipator (rolling-mean predictor with RPE register_outcome) + AnticipationBus (active-set with confidence-weighted top_k and settle) + module singletons. 17 unit + integration tests. Suite 4308 → 4325. Plug-points (HIGH-inertia: pursuits.py, basal_ganglia.py) deferred to follow-on tickets T-anticipation-slice2-pursuit-emit (S, gated on Akien pre-approval) and T-anticipation-slice3-action-selection-read (M, gated on Akien pre-approval). Existing cognition/anticipation.py (closure-valence-for-ticket-selection) untouched — possible future consolidation through this primitive.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.95,
+    "claimed_at": "2026-05-03T03:06:14.540327+00:00",
+    "created_at": "2026-04-24T16:02:12Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "The 'want' Igor is missing (see memory/project_missing_want_primitive.md). Forward-looking pull-signal distinct from backward-looking bliss/valence. Two-part: (1) referent — model of the predicted state/outcome; (2) anticipation signal — predicted-valence-delta toward that referent. Dopaminergic analogue: RPE-trained predictor whose output biases action selection BEFORE outcome is observed.\n\nProposed shape (sketch, not binding):\n- `Anticipation` dataclass: referent_id, referent_type, predicted_delta, confidence, created_at.\n- `Anticipator`: .predict(referent) -> Anticipation; .register_outcome(ant, actual_delta) -> rpe; updates predictor weights.\n- `AnticipationBus`: module-level active-set; top_k() reads biased by predicted_delta; settle() closes out.\n\nPlug points:\n- Pursuit adoption -> Anticipator.predict -> Bus.push (emit 'I want this')\n- Action/workflow selection (basal_ganglia, reasoner depth, TWM consumers) reads top_k and biases toward high predicted_delta instead of deterministic rules\n- Outcome observation -> register_outcome -> RPE -> updates predictor AND milieu (positive surprise lifts valence; negative deflates — the *teaching* signal)\n\nT-twm-goal-ready-listener (shipping today) is the pre-RPE scaffold: deterministic wire with confidence=1.0, no learning. Real anticipator swaps that wire for a prediction call — today's work makes the later swap a one-file change.\n\n**Affected files:** TBD — new modules in cognition/, plug-points into pursuits, basal_ganglia, milieu, possibly reasoner base.\n**Design rules:** oop-first; docs-in-code; no-new-memory-schemas (anticipations are a working-memory structure, TWM-shaped or in-process cache — NOT a new memories_* table); test-plan-or-why-not.\n**Scope boundary:** IN — Anticipation dataclass, Anticipator with simple initial prediction rule (experiential-memory lookup), AnticipationBus, one concrete plug-point (Pursuit adoption -> emit, workflow selection -> read) to prove the loop. OUT — RL training of the predictor (separate future ticket), full multi-module rewrite, milieu rebuild.\n**Test plan:** unit tests per class; integration test where Pursuit adoption emits an anticipation and action selection surfaces it; settle() test showing RPE computation and predictor weight update.\n**Inertia check:** plug-points into basal_ganglia (MEDIUM+) and pursuits (MEDIUM). Pre-approval required before editing those.\n**Related:** gates on T-twm-goal-ready-listener. Design-linked to memory/project_missing_want_primitive.md.\n\n## P1 status (Akien 2026-05-01)\n\nThis is P1 for the next sprint batch. Before sprint, **consider Opus-level consult** on the Anticipator design (RPE training shape, predicted-valence-delta computation, integration with TWM/milieu). Sized at XL — split-or-decide-Opus-consult is a pre-sprint decision.",
+    "completed_at": "2026-05-03T03:15:53.361367+00:00",
+    "deposited_at": "2026-04-25T23:48:38.550958",
+    "deposited_by": "cc_queue",
+    "github_issue": 518,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7244aa30-3509-4e41-8bfb-883e17fbd31f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

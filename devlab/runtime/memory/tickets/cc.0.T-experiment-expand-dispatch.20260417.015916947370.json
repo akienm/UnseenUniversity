@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-experiment-expand-dispatch.20260417.015916947370",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-expand-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T01:59:16.947370",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-expand-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-expand-dispatch",
+    "size": "M",
+    "title": "Implement remaining probe dispatchers — HABIT_DRYRUN, CHANNEL_SEND, SIM_TURN",
+    "result": "1af6eb1a — 3 new dispatchers (habit_dryrun, channel_send, sim_turn), all 6 ProbeKinds in SAFE_PROBE_KINDS + _DISPATCH. 8 new tests, 23 total scheduler tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-experiment-primitive",
+    "claimed_at": "2026-04-17T01:52:15.526113+00:00",
+    "related_to": null,
+    "description": "Add dispatchers for the 3 ProbeKinds defined but not yet implemented. HABIT_DRYRUN: fire a habit in dry-run mode, observe whether it would succeed. CHANNEL_SEND: send a message and observe response. SIM_TURN: simulate a turn through the pipeline without committing. Add to SAFE_PROBE_KINDS and _DISPATCH after implementation.",
+    "completed_at": "2026-04-17T01:59:16.947370+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "233ab82f-00c2-4b75-b4e4-5b012fc91c71",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

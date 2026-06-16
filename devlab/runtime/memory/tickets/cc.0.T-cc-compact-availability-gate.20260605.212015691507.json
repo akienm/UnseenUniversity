@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-cc-compact-availability-gate.20260605.212015691507",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-compact-availability-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T21:20:15.691507",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-compact-availability-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-compact-availability-gate",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Granny",
+      "Compaction"
+    ],
+    "title": "CC.0 marks unavailable before compact, available at session start",
+    "result": "/autocompact writes CC.0.available.false; /context-load restores .true; Granny defers during compact",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "intention": "I intend that Granny never dispatches tickets to CC.0 during compaction.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T21:20:15.691507+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When /autocompact fires, CC.0 is still marked available.true, so Granny dispatches tickets into the void — CC is mid-compact and can't process them. Fix: /autocompact writes CC.0.available.false before firing /compact; /context-load writes CC.0.available.true at session start. This gates Granny dispatch on whether CC has actually resumed.\n\n**Affected files:** skills/autocompact/SKILL.md, skills/context-load/SKILL.md (repo canonical), plus ~/.claude/skills/ copies\n**Design rules:** external state principle — availability flag lives in ~/.granny/available/ not in memory\n**Scope boundary:** In scope: write .false before compact, write .true on resume. Out of scope: full dispatch_ack handshake protocol for tmux-based dispatch (larger refactor).\n**Completion criteria:** After /autocompact runs, CC.0.available.false exists; Granny's is_available('CC.0') returns False. After /context-load runs, CC.0.available.true exists; is_available returns True.",
+    "completed_at": "2026-06-05T21:21:40.510793+00:00",
+    "deposited_at": "2026-06-05T15:20:24.610283",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

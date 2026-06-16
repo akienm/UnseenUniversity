@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-fix-stale-no-gate-test.20260604.193003486465",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-stale-no-gate-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T19:30:03.486465",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-stale-no-gate-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-stale-no-gate-test",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Policy"
+    ],
+    "title": "Fix stale test_no_gate_wired_skips_check for cold-start fail-closed",
+    "result": "already shipped 440fa2fd — renamed test + cold-start fail-closed assertion",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that the policy gate test suite correctly documents the cold-start fail-closed contract so no reader mistakes the deny behavior for a bug.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T19:30:03.486465+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "test_no_gate_wired_skips_check expects dispatch to succeed when _policy_gate is None — but the shim now intentionally raises PolicyDeniedError in that case (cold-start fail-closed, see shim.py comment). The test documents the old, less-secure behavior and needs updating to assert the deny.\n\n**Affected files:** `tests/test_shim_policy_gate.py` (one test method + test name)\n**Design rules:** none apply\n**Scope boundary:** update the one test method and its name to match current behavior; do not change shim logic.\n**Completion criteria:** `test_shim_policy_gate.py` passes green; test name updated to `test_no_gate_wired_fails_closed`; assertion changed to `pytest.raises(PolicyDeniedError)`.",
+    "completed_at": "2026-06-04T20:01:46.846004+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

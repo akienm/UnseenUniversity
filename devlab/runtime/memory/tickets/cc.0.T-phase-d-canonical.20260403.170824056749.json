@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-phase-d-canonical.20260403.170824056749",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-phase-d-canonical"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:08:24.056749",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-phase-d-canonical"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-phase-d-canonical",
+    "title": "Phase D canonical exercise — unattended cc_send task completion",
+    "result": "Phase D ex1-ex5 complete. ex5: added STORE_OBSERVE_RESULTS node to pe_chain — after OBSERVE, grep findings deposited as FACTUAL memory via store_factual. Igor now builds persistent codebase knowledge from each coding sprint. Chain: OBSERVE→STORE_OBSERVE_RESULTS→HYPOTHESIZE. 82 tests passing.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-31T23:17:53.599536+00:00",
+    "description": "Three-exercise sequence to validate Igor autonomous task execution: A=proprioception self-diagnostic, C=tool census from warm TWM, B=gap_analysis arch doc reasoning. Each requires 2-3 tool calls + channel report.",
+    "completed_at": "2026-04-03T17:08:24.056749+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3905aa9a-c7eb-4068-a381-63cdfae74901",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

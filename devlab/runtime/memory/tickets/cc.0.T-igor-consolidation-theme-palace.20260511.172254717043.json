@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-igor-consolidation-theme-palace.20260511.172254717043",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-consolidation-theme-palace"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T17:22:54.717043",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-xmemory-patterns-2026-05-11"
+    ],
+    "tickets": [
+      "T-igor-consolidation-theme-palace"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-consolidation-theme-palace",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Cognition",
+      "Palace"
+    ],
+    "title": "Deposit high-importance consolidation patterns as palace theme nodes",
+    "result": "upsert_theme_palace() helper + _THEME_IMPORTANCE_THRESHOLD config; called after cortex.store() for importance >= 0.75",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 5,
+    "claimed_at": "2026-05-23T21:29:27.384637+00:00",
+    "created_at": "2026-05-11T17:22:54.717043+00:00",
+    "related_to": null,
+    "decision_id": "D-xmemory-patterns-2026-05-11",
+    "description": "consolidation.py extracts durable patterns (FACTUAL, INTERPRETIVE, PROCEDURAL) via LLM and deposits them to clan.memories via cortex.store(). It NEVER writes to palace (adc.palace). xMemory's 'themes' level is exactly this: high-importance patterns that have graduated beyond the episodic/semantic layer and deserve a navigable top-level node.\n\nAmend consolidation.py: after cortex.store() succeeds for a result with importance >= 0.75, upsert a node into adc.palace at path theigors/themes/{keyword_slug} (slug from first keyword, max 40 chars). If the node already exists, append the new narrative as a bullet to its content (don't overwrite — accumulate). If it doesn't exist, create with content = narrative + '\\n\\nSource: consolidation pass'. Set node_type='theme', updated_at=now().\nNon-blocking: if palace write fails, log and continue — clan.memories deposit already succeeded.\n\n**Affected files:** wild_igor/igor/cognition/consolidation.py; adc.palace table (UPSERT)\n**Design rules:** non-blocking on palace write failure; importance threshold 0.75 (env IGOR_THEME_IMPORTANCE_THRESHOLD); accumulate don't overwrite for existing nodes; slug from first keyword only\n**Scope boundary:** In: palace UPSERT for high-importance consolidation results, slug from keyword, accumulate content. Out: changing consolidation clustering logic, changing clan.memories deposit, reading or modifying existing palace nodes other than theigors/themes/*.\n**Test plan:** consolidation cycle with cluster yielding importance=0.8 → adc.palace row at theigors/themes/{slug} created. Second consolidation cycle for same theme → content has both narratives. importance=0.6 → no palace row. palace write failure → clan.memories deposit still recorded (non-blocking verified).",
+    "completed_at": "2026-05-28T01:55:55.108534+00:00",
+    "github_issue": 729,
+    "dispatched_at": "2026-05-23T21:29:27.384637+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "59693eb6-572e-4485-975d-9e7f44b75326",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

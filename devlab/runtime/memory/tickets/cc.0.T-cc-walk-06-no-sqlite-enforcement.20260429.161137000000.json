@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-06-no-sqlite-enforcement.20260429.161137000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-06-no-sqlite-enforcement"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:37",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-cc-walk-06-no-sqlite-enforcement",
+      "T-igor-programs-himself",
+      "T-no-sqlite-enforcement"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-06-no-sqlite-enforcement",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor adds CI no-sqlite grep check",
+    "result": "Target ticket already done. Walk admin close.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.81,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:11:37Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-no-sqlite-enforcement. Stale proposal cleared. New file: lab/claudecode/check_no_sqlite.py.\n\nChecklist:\n1. Set priority=0.95 on target; watch Igor claim\n2. PLAN: touches lab/claudecode/ only — not HIGH-inertia\n3. If false brainstem proposal: reset+inject\n4. Verify new check_no_sqlite.py exists + tests pass\n5. Commit + done\n\n**Affected files:** lab/claudecode/check_no_sqlite.py (new)\n**Design rules:** none\n**Scope boundary:** IN — scaffold T-no-sqlite-enforcement\n**Test plan:** target done.",
+    "completed_at": "2026-05-02T03:44:09.772163+00:00",
+    "github_issue": 561,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f8854faf-fea5-4945-8810-1dfa383123a5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

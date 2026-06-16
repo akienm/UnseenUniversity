@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-agent-scaffold.20260530.172435548164",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agent-scaffold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:24:35.548164",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-agent-scaffold"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-agent-scaffold",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Research"
+    ],
+    "title": "Librarian: 'new agent' creation skill — questions → scaffold from template",
+    "result": "Built skills/new-agent/ — 5-question scaffold CLI copies devices/template/ with class renames, json.dumps injection, yaml profile; hyphens normalised to underscores for valid Python imports",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "created_at": "2026-05-30T17:24:35.548164+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "When someone wants to add a new agent to the rack, they currently copy devices/template/ manually and edit files by hand. Build a Librarian skill (or CC skill) that asks 4-5 questions (agent name, purpose in one sentence, which rack services it needs, whether it's long-running or stateless) and scaffolds a new device directory from devices/template/ with the answers filled in. Similar to 'claude --init' or 'aider --new-agent'.\n\nOutput: a complete devices/<name>/ directory with device.py, shim.py, __init__.py, and a config/profiles/<name>.yaml pre-populated. The new device must pass 'pip install -e .' without errors.\n\n**Affected files:** devices/template/ (read-only seed), skills/ (new scaffold skill), devices/installer/ (may need manifest update)\n**Design rules:** no-sqlite; template device is the seed — do not modify it, copy and fill\n**Scope boundary:** IN — scaffold directory from answered questions; OUT — auto-registration on live rack, automatic test generation\n**Completion criteria:** running the scaffold skill with test answers produces a devices/test-agent/ directory that passes 'pip install -e .' and imports without error",
+    "completed_at": "2026-05-30T17:39:19.940373+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T17:38:25.510114+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:24:35.548189+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "37b7cbdb-2913-4f04-a80c-d82e54bed86c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

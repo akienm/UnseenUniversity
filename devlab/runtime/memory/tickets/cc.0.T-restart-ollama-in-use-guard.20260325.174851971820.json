@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-restart-ollama-in-use-guard.20260325.174851971820",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-restart-ollama-in-use-guard"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:48:51.971820",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-restart-ollama-in-use-guard"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-restart-ollama-in-use-guard",
+    "title": "Add in_use_now() check to restart_ollama tool",
+    "result": "Added in_use_now() guard to restart_ollama tool to prevent restarting Ollama when humans are actively using the machine. Matches existing pattern in cluster_router.score(). Tests pass (412). Commit: aaf19e8c",
+    "status": "done",
+    "priority": 10,
+    "claimed_at": "2026-03-25T17:47:42.965804+00:00",
+    "description": "restart_ollama fires when Ollama slow but skips in_use_now(). Spawned second instance on yoga9i during human use. Fix: add in_use_now(hostname) check in tools/cluster_ssh.py restart_ollama — if in-use, log warning and return. Same guard already in cluster_router.score(). S-size.",
+    "completed_at": "2026-03-25T17:48:51.971820+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8ed2361e-3587-4a4d-bfed-cb9482baa6d6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

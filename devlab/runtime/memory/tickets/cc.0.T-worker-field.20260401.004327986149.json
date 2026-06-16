@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-worker-field.20260401.004327986149",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-field"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T00:43:27.986149",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-worker-field"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-field",
+    "epic": "Claude",
+    "size": "S",
+    "title": "Add worker field to cc_queue ticket schema",
+    "result": "worker field (igor|claude), needs_review status, set-worker and needs-review commands added to cc_queue. 567 tests pass.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-04-01T00:42:10.609879+00:00",
+    "description": "Add worker field to cc_queue JSON (worker: igor|claude, default claude). cc_queue list/show displays it. PROC_WORK_TICKET queries for unclaimed worker=igor tickets. Small schema addition, no breaking change.",
+    "completed_at": "2026-04-01T00:43:27.986149+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6d0fe7d3-c9e5-4401-b14f-72f2118df630",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

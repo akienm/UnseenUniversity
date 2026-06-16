@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-verify-retrieval.20260423.160154710360",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-verify-retrieval"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T16:01:54.710360",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-engram-engineering-toolkit-2026-04-23"
+    ],
+    "tickets": [
+      "T-deposit-grounding-engram",
+      "T-verify-retrieval"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-verify-retrieval",
+    "gate": "T-deposit-grounding-engram",
+    "size": "S",
+    "tags": [
+      "EngramEngineering",
+      "Tooling",
+      "Verification"
+    ],
+    "title": "Engram tool: verify deposited engram surfaces for target queries",
+    "result": "verify() wrapping cortex.search per target query, with rank + top-k checks. all_pass() helper. 22 tests covering happy path, input validation, result shape tolerance (Memory/dict/string). fc2a2895.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-23T16:00:25.607401+00:00",
+    "related_to": null,
+    "decision_id": "D-engram-engineering-toolkit-2026-04-23",
+    "description": "Build CC-side verification tool: given an engram ID + list of target queries, runs cortex search for each query and reports whether engram surfaces in top-K. Returns per-query pass/fail + rank. Used after T-deposit-grounding-engram to confirm the engram is retrievable.\n\n**Affected files:** new lab/claudecode/engram_tools/verify_retrieval.py, tests/test_verify_retrieval.py\n**Design rules:** docs-in-code, test-plan-or-why-not\n**Scope boundary:** IN — verification wrapper over existing cortex search; pass/fail report. OUT — tuning retrieval weights, auto-promotion on failure.\n**Test plan:** unit tests: deposit known engram, verify surfaces for target queries at top-3; verify unrelated engram does not surface for same queries.",
+    "completed_at": "2026-04-23T16:01:54.710360+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "750f7c1a-fb5d-4182-b1cb-e206bb57ffba",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

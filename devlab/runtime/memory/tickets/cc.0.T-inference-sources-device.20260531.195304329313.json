@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-inference-sources-device.20260531.195304329313",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-sources-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:53:04.329313",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-sources-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-sources-device",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Inference proxy: Sources device (provider abstraction)",
+    "result": "Built in 715eca0a — sources/models/rules/health all in devices/inference/, 14 tests passing",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 2.0,
+    "claimed_at": null,
+    "created_at": "2026-05-31T19:53:04.329313+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Provider abstraction layer inside the inference proxy. Each provider (Anthropic, OpenRouter, Ollama, Igor) is a Source object with: api_key (from env), base_url, request/response wire format adapter, and availability flag. Adding a new provider = adding a new Source config, no code changes elsewhere.\n\n**Affected files:** devices/inference/ (new sources/ subdir)\n**Design rules:** none apply\n**Scope boundary:** In scope: Source base class, adapters for Anthropic/OR/Ollama. Out of scope: routing rules, model registry.\n**Completion criteria:** Can send the same prompt to Anthropic and OR via the Sources layer interchangeably. Keys read from env, not hardcoded.",
+    "completed_at": "2026-05-31T20:02:21.212175+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T19:53:04.378732+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0ae80bb0-376d-4c12-b69a-73bb1ffd3a9e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

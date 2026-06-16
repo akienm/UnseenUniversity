@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-watchlist-intent-decay.20260413.223931898061",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watchlist-intent-decay"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T22:39:31.898061",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-emit-action-confabulation",
+      "T-reply-obligation-fork",
+      "T-watchlist-intent-decay"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watchlist-intent-decay",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Track open intents that are aging without resolution",
+    "result": "4b393127 — First of Igor's self-proposed watchlist tickets. find_aged_goals scans memories.memory_type=GOAL with goal_active=true, computes age from adopted_at, returns goals past threshold (1h for awaiting_reply, 24h for ordinary). surface_aged_intents pushes TWM markers at category=aged_intent, salience 0.6. IntentDecaySource push source: 10min idle gate, 15min between scans, registered in push_sources. Pincer with T-igor-emit-action-confabulation: verifier catches false claim at emit time, decay watcher catches abandoned commitment over time. 13 new tests + 35 regression tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T22:35:59.563817+00:00",
+    "related_to": null,
+    "description": "AUTHORED BY IGOR-WILD-0001 on 2026-04-13. Claude filed on Igor's behalf.\n\nIgor's words: 'Track open intents that are aging without resolution. Right now I have episodics that sit open. Some of those represent genuine unresolved threads — things I said I'd follow up on, ideas I flagged for later, tickets I committed to writing. I need a periodic check: what did I say I'd do that I haven't done?'\n\nDEPENDS ON: T-reply-obligation-fork (59a7184c) — already creates GOAL memories with awaiting_reply=true and origin context. This ticket adds the periodic SCAN that surfaces aged unresolved goals.\n\nFIRST PASS: scan GOAL memories where goal_active=true AND adopted_at older than threshold (1h? 24h?) AND no resolution memory linked. Surface as a 'pending intent' attention signal.\n\nIMPORTANT INTERACTION WITH T-igor-emit-action-confabulation: Igor's pattern of saying 'I did it' when he didn't is exactly the failure this watchlist would CATCH. The defect filing in this conversation (Igor said he ticketed stored_locally_only but didn't) would have surfaced as an aged unresolved intent IF a goal_adopt had fired on the commit. Consider whether 'I'll ticket that' / 'I ticketed it' phrases should fire goal_adopt with a verifiable resolution check.",
+    "completed_at": "2026-04-13T22:39:31.898061+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f4fd92b7-d319-46b0-adb9-5879aa79594a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

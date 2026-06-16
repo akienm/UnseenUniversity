@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-skill-telemetry.20260521.015856587960",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-skill-telemetry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T01:58:56.587960",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skill-telemetry-2026-05-20"
+    ],
+    "tickets": [
+      "T-consequence-skill-telemetry",
+      "T-skill-telemetry-rollup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-skill-telemetry",
+    "gate": "2026-06-19",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: skill telemetry signal vs noise",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "blocked_at": null,
+    "created_at": "2026-05-21T01:58:56.587960+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-skill-telemetry-2026-05-20",
+    "description": "**What changed:** Per-skill telemetry contracts + violation logger added.\n**Predicted unintended effects:** Violation log grows without bound if not rotated; forget-flag definitions may be too broad (everything fires) or too narrow (nothing fires); metric postconditions may not reflect actual skill quality.\n**Signals to watch:** violation_log.jsonl size after 30 days; top_violations() result — is the list stable (good signal) or rotating every run (noise)?\n**Gate condition:** Check 30 days after T-skill-telemetry-rollup closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate outcome as signal/noise/partial and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": 768,
+    "timeout_count": 1,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T01:58:56.587986+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9c39a9d3-d650-4180-9fc6-1e4d36257660",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

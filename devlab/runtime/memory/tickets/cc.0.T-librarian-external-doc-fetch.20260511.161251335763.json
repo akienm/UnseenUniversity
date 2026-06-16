@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-librarian-external-doc-fetch.20260511.161251335763",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-external-doc-fetch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T16:12:51.335763",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-external-fetch-2026-05-11"
+    ],
+    "tickets": [
+      "T-librarian-external-doc-fetch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-external-doc-fetch",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "Research",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Wire external doc fetch into librarian research pipeline",
+    "result": "sources.py curated index + ResearchEngine.fetch_fn, triggers at depth>=0.6, non-blocking on failure (525249b)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": null,
+    "created_at": "2026-05-11T16:12:51.335763+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-external-fetch-2026-05-11",
+    "description": "librarian/research.py _research_deep() has an explicit stub: `sources=[]  # populated when external search is wired`. The method currently synthesizes an answer from the LLM alone with no external grounding. Context 7 MCP is what general CC users lean on for live doc lookup — our librarian IS our equivalent and this stub is the missing piece.\n\nImplement external fetch for _research_deep: (1) add a curated source index (librarian/sources.py) mapping topic patterns to authoritative doc URLs — Anthropic API docs, psycopg2, Python stdlib, ADC README, TheIgors palace index; (2) in _research_deep, match the query against the source index, fetch relevant pages using urllib (already used in research.py for Ollama), extract relevant sections; (3) feed fetched content into the LLM synthesis prompt; (4) populate sources= with the URLs actually used. Non-blocking: if fetch fails, log and continue with empty sources rather than raising.\n\n**Affected files:** agent_datacenter/devices/librarian/research.py (_research_deep implementation); agent_datacenter/devices/librarian/sources.py (new — curated source index)\n**Design rules:** no-theigors-imports (ADC must be portable); non-blocking on fetch failure; curated source list first — not open web search\n**Scope boundary:** In: curated doc source fetch, sources= populated, synthesis grounded. Out: search engine API integration, full web crawl, vector embedding of fetched content.\n**Test plan:** research(query='psycopg2 execute', depth='deep') returns ResearchResult with non-empty sources list. research() with unreachable URL logs error and returns result (not raises). Curated source index has at least Anthropic docs + psycopg2 + Python docs entries.",
+    "completed_at": "2026-05-11T20:20:38.149532+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "172e2799-e913-45eb-a42f-a9c549d0f209",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-pe-failure-log-test-isolation.20260522.160922439315",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-failure-log-test-isolation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-22T16:09:22.439315",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-failure-log-test-isolation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-failure-log-test-isolation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Testing",
+      "PeChain"
+    ],
+    "title": "Mock infra.pe_failure_log in escalate tests to prevent DB contamination",
+    "result": "added autouse fixture to TestEscalateGateIntegration that stubs psycopg2.connect; DB counts no longer change during test runs; 417c6fa7",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-22T16:09:22.439315+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "test_pe_chain_inertia_gate.py calls _pe_escalate() without mocking the DB connection, causing real writes to infra.pe_failure_log. This inflates failure counts and can trigger the auto-ticket-filing logic (count >= 3) during test runs. Confirmed: running the test suite increments all pe_failure_log counts.\n\n**Affected files:** tests/test_pe_chain_inertia_gate.py\n**Design rules:** none apply\n**Scope boundary:** Add psycopg2 connection mock or patch _escalate_step's DB write path in test_pe_chain_inertia_gate.py. Do NOT mock the entire pe_chain — only the DB write in the escalate path. Out of scope: test_pe_chain_priors.py (already correctly mocks DB).\n**Test plan:** After fix, run tests twice and verify infra.pe_failure_log counts do not change between runs.",
+    "completed_at": "2026-05-22T16:19:38.550701+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-22T16:09:22.485026+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bd4063e0-b948-48a4-8cf1-008cb58a7383",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

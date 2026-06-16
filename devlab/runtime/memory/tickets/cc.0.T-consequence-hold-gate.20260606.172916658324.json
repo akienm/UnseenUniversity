@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-consequence-hold-gate.20260606.172916658324",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-hold-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T17:29:16.658324",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hold-gate-enforcement-2026-06-06"
+    ],
+    "tickets": [
+      "T-audit-ticket-hold-gate",
+      "T-consequence-hold-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-hold-gate",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: /audit-ticket hold-gate enforcement",
+    "result": "CLEAR: Check 18 in place; only pre-existing hold passes on AKIEN DECISION note; no AMENDs or bypasses in 1-day observation window",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "intention": "I intend that no spurious hold tickets reach the queue after the gate ships.",
+    "claimed_at": "2026-06-06T18:39:37.034367+00:00",
+    "created_at": "2026-06-06T17:29:16.658324+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-hold-gate-enforcement-2026-06-06",
+    "description": "**What changed:** /audit-ticket now flags hold-status tickets without a named dependency.\n\n**Predicted unintended effects:** (1) Legitimate holds (rare) might be blocked if the description isn't explicit enough — easy fix but watch for friction; (2) The check might not fire on all /sorted paths if the ticket is re-filed directly via cc_queue.py.\n\n**Signals to watch:** Any AMEND from /audit-ticket on a legitimate hold; any hold-status tickets in queue post-change that lack named dependencies (would indicate the check is bypassed).\n\n**Gate condition:** After T-audit-ticket-hold-gate closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Completion criteria:** observation ticket; done when predicted effects annotated and ticket closed",
+    "completed_at": "2026-06-06T18:41:16.016045+00:00",
+    "deposited_at": "2026-06-06T12:03:53.951576",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "experience",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-comms-fascia-ux.20260609.214359858523",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-comms-fascia-ux"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T21:43:59.858523",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-comms-fascia-ux-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-comms-fascia-ux",
+      "T-device-fascia-page"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-comms-fascia-ux",
+    "gate": "2026-06-23",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: Comms fascia UX redesign",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the fascia UX redesign is verified as actually shipped and usable by a new user.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T21:43:59.858523+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-comms-fascia-ux-2026-06-09",
+    "description": "**What changed:** Comms page redesigned — Public landing, device fascia tabs with 4 independent boxes (Status/Chat/Console/Settings).\n**Predicted unintended effects:** Channel filter behavior may break for users who relied on checkboxes to see combined feeds; console tail endpoint may expose sensitive log data; box resize state not persisted across reloads.\n**Signals to watch:** Open web UI cold — does Public load? Click Igor tab — do all 4 boxes load? Try chat — does message appear? Grandmother test: can someone unfamiliar navigate without guidance?\n**Gate condition:** Check by 2026-06-23 or when T-device-fascia-page closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe and annotate: shipped / partial / not shipped\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-09T21:43:59.858552+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

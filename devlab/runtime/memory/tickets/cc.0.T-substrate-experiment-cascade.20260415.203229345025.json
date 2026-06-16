@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-substrate-experiment-cascade.20260415.203229345025",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-substrate-experiment-cascade"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T20:32:29.345025",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reasoning-voice-split",
+      "T-substrate-experiment-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-substrate-experiment-cascade",
+    "body": "From Akien-Claude 2026-04-15 afternoon design session on T-reasoning-voice-split (#436). Foundation ticket. Subsumes what was going to be T-turn-pipeline-module.\n\n## The cascade (biomimetic claim, not phenomenological)\n\nIgor should NOT escalate to an LLM until a cascade of cheaper substrate experiments has exhausted without surfacing new levers. The cascade is architecturally explicit (discrete levels) but subjectively continuous (Akien's experience is 'well shit, I don't recall a solution, so I'll try an experiment' — the levels are invisible from the outside). Biology endorses: predictive coding runs the same cascade at millisecond timescales through V1→V2→V4→IT→PFC; cerebellum→cortex motor escalation is the same shape; hippocampal completion→separation→escalate-to-cortex is the same shape.\n\n## Level definitions (concrete, wire into existing machinery)\n\n- **Level 0** — exact recall: cortex.search(query), cortex.get(id), habit lookup\n- **Level 1** — widen-on-miss (SHIPPED today as T-retrieval-widen-on-miss, commit 7dcab891): token-loosened LIKE, word-graph neighbors, pg_trgm\n- **Level 2** — interpretive_edge traversal: spread activation from current attractor to adjacent nodes; walks learned associations\n- **Level 3** — tool combination: sequence cheap tools (facia scan, list_get, palace_read, experiment_queue lookup); each tool is its own mini-probe\n- **Level 4** — past-experiment lookup: check experiment_queue OBSERVED rows for hypothesis shapes matching current situation; cheapest form of reusing prior learning\n- **Level 5** — LLM reasoning workflows (T-reasoning-workflow-primitive + T-llm-collaboration-protocol, downstream). Only reached when levels 0-4 exhaust without surfacing levers.\n\nEach level is Experiment-shaped (hypothesis + probe + observation + update), using the primitive shipped today.\n\n## The walker contract\n\n```python\ncascade.attempt(situation) -> CascadeResult\n  # result can be: matched (level_k, result), leveraged (level_k, new_lever -> restart),\n  # or exhausted (escalate to next_level)\n```\n\n- Walks levels in order\n- At each level: form hypothesis, run probe, compare expected vs actual\n- On match: return with level + result\n- On lever surfaced mid-probe: abort this level, restart cascade with new hypothesis (see T-lever-interrupt-pattern)\n- On exhaustion without levers: advance to next level\n- Only after level 4 exhausts does level 5 (LLM) fire\n\nThe walker is ONE CALL from the outside — feels continuous, walks discretely inside.\n\n## CP grounding\n\n- CP1 — each level honestly reports 'I don't know' when its probe is empty, never fakes confidence\n- CP2 — mismatches at any level are learning signal, not failure\n- CP3 — each level explains (via Experiment.update.reason) why it escalated\n- CP6 — LLM escalation is last resort, not default; every cheaper verification runs first\n\n## Scope MVP\n\n1. New module `wild_igor/igor/cognition/experiment_cascade.py`\n2. `CascadeLevel` abstract class with `try_probe(situation) -> CascadeResult`\n3. `ExperimentCascade` walker that iterates registered levels in order\n4. Wire existing machinery as first 4 levels (reuse existing code, don't rewrite)\n5. Level 5 stub that returns 'would escalate to LLM' without actually calling; LLM wiring is separate sub-ticket\n6. Record every walk: which levels fired, which matched, which surfaced levers — feeds graduation tracking (T-experiment-predictor-primitive)\n7. Unit tests for each level's happy path + exhaustion path + interrupt\n\n## Out of scope (separate sub-tickets)\n\n- The per-level predictor (T-experiment-predictor-primitive) — cascade walker will work without it initially; predictors are the optimization that lets you SKIP levels you know won't match\n- Lever interrupt detection logic (T-lever-interrupt-pattern) — stub for now, wire when that ships\n- Engineered-failure experimental design under urgency (T-engineered-failure-experiments) — orthogonal\n- Actually calling the LLM at level 5 (T-reasoning-workflow-primitive + #438)\n\n## Why this is the foundation ticket\n\nEverything else on this design plugs into the cascade. Predictors make it efficient. Interrupt pattern gives it lever-surfacing behavior. Engineered-failure is a decision policy at level selection. Reasoning workflows are level 5. None of those can land cleanly without the walker existing first.\n\n## Provenance\n\nAkien-Claude 2026-04-15 afternoon design session. Akien's loop description ('do a thing, was the result what i expected, yes=next step, no=look for levers i missed') + his explicit architectural proposal ('one thing we need to be able to do BEFORE hitting the LLM is hypothesize from the experience we have. and run that test. like can i find the facia index? and if the answer is no, and no new options are presented, then escalate'). Claude recognized this as a cascade (not a single experiment) and Akien confirmed biology endorses it. The widen-on-miss shipped this morning is level 1 built without seeing the frame.",
+    "size": "M",
+    "tags": [
+      "cognition",
+      "epic-child",
+      "cascade",
+      "biomimicry",
+      "cp-axioms",
+      "strategy-2",
+      "foundation"
+    ],
+    "title": "Substrate experiment cascade — the conductor that walks levels before escalating to LLM",
+    "result": "Walker + CascadeLevel protocol + CascadeResult/CascadeSituation + Level 0 (cortex.search) and Level 1 (widen-on-miss) concrete + Levels 2-4 stubs + Level 5 LLM escalation stub + build_default_cascade assembly. TWM marker on each outcome. Budget prevents infinite flipping. 27 tests; 2418 total pass. Foundation for T-experiment-predictor-primitive, T-lever-interrupt-pattern, T-engineered-failure-experiments, T-reconsolidation-on-recall.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T20:24:34.251418+00:00",
+    "related_to": "T-reasoning-voice-split",
+    "completed_at": "2026-04-15T20:32:29.345025+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

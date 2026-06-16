@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-notify-skill.20260607.220141146421",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-notify-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T22:01:41.146421",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agent-notification-system-2026-06-07"
+    ],
+    "tickets": [
+      "T-notif-config-schema",
+      "T-notify-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-notify-skill",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Notifications",
+      "Skills"
+    ],
+    "title": "/notify skill: set level, show config, list pending",
+    "result": "/notify skill: status/set/pending subcommands; reads/writes NotificationConfig; deployed to ~/.claude/skills/",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that CC and Akien can inspect and change notification levels from the command line without editing config files manually.",
+    "claimed_at": null,
+    "created_at": "2026-06-07T22:01:41.146421+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agent-notification-system-2026-06-07",
+    "description": "Write a /notify skill that provides a CLI for managing notification settings. Commands: `notify status` — show current effective level for this session (default + any active overrides, current agent state), `notify set LOUD|QUIET|SILENT` — write to notifications.cfg default level, `notify set <sender> LOUD|QUIET|SILENT` — write per-sender override, `notify pending` — list messages queued in notify_pending.txt. The skill reads from the same NotificationConfig introduced in T-notif-config-schema.\n\n**Affected files:** skills/notify (new skill file)\n**Design rules:** skills live in repo root skills/ — not ~/.claude/skills/\n**Scope boundary:** In scope: status/set/pending subcommands, reads/writes notifications.cfg, reads notify_pending.txt. Out of scope: changes to shim dispatch logic, message content display (just sender + timestamp in pending list).\n**Completion criteria:** `notify status` prints current level and overrides. `notify set LOUD` updates notifications.cfg and confirms. `notify pending` lists queued senders with timestamps or 'nothing pending'. Skill is callable from bash as `/notify` in CC session.",
+    "completed_at": "2026-06-07T23:06:29.858268+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-author-model-header-on-new-files.20260430.002548518634",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-author-model-header-on-new-files"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T00:25:48.518634",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-author-model-header-on-new-files",
+      "T-blame-with-model"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-author-model-header-on-new-files",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Convention",
+      "Attribution"
+    ],
+    "title": "Convention: new files include author-model docstring tag",
+    "result": "audit_check_author_model_tag.py + palace rule + 28 tests. Header tag (# author-model: <token>) recognized in comment OR docstring, case-insensitive. Enforcement on new files in wild_igor/, lab/utility_closet/, lab/claudecode/; exempt: tests/, __init__.py. Forward-only. New files self-comply. 4193 regression pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-04-30T00:21:43.407354+00:00",
+    "related_to": "T-blame-with-model",
+    "decision_id": null,
+    "description": "Add a convention: when a model creates a NEW file, the top-of-file docstring includes a `# author-model: <name>` tag. Companion to T-blame-with-model — blame enrichment handles edits, header tag handles new-file provenance (which blame loses when files get rewritten).\n\nMechanism:\n- Update audit-precode skill (or audit-debris) to flag new files (added in diff, not modified) without the tag\n- Add palace rule theigors/rules/author-model-tag with the convention\n- Add audit_check_author_model_tag.py — scans for new files in a diff range, reports those without the tag\n\n**Affected files:** new lab/claudecode/audit_check_author_model_tag.py + new palace rule + minor edit to audit-precode/audit-debris skill.\n**Design rules:** approach-frame (positive: 'tag new files with author model').\n**Scope boundary:** in scope: convention + audit check. Out of scope: retroactive tag injection on existing files (let it apply forward only).\n**Test plan:** unit tests for the audit check on synthetic file fixtures.",
+    "completed_at": "2026-04-30T00:25:48.518634+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "89f92fd1-ed4f-484a-8037-a5691091f471",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

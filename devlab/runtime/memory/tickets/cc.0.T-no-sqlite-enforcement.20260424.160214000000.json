@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-no-sqlite-enforcement.20260424.160214000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-no-sqlite-enforcement"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:14",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-removal-2026-04-22"
+    ],
+    "tickets": [
+      "T-audit-findings-to-tickets",
+      "T-no-sqlite-enforcement",
+      "T-remove-sqlite-fallback"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-no-sqlite-enforcement",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CI",
+      "Enforcement",
+      "Audit"
+    ],
+    "title": "CI grep-check enforces 'no SQLite' — narrow pattern set, soft-then-hard",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T11:04:36.345643+00:00",
+    "created_at": "2026-04-24T16:02:14Z",
+    "related_to": null,
+    "approved_at": "2026-04-24T02:02:53.232674+00:00",
+    "decision_id": "D-sqlite-removal-2026-04-22",
+    "description": "Add a CI/pre-commit check that fails on SQLite pattern reintroduction. Narrow initial set: `import sqlite3`, `sqlite3\\.`, `DatabaseProxy(`, `\\.db` filename pattern (excluding approved exceptions like db_proxy.py during transition). Ships soft-warn initially (can run while T-remove-sqlite-fallback is in flight), flipped to hard-fail once removal completes. Addresses the 'rule stated but never enforced' gap that let SQLite survive for weeks.\n\n**Affected files:** new `lab/claudecode/check_no_sqlite.py` (grep runner + pattern list). Hook into pre-commit (lab/claudecode/git_hooks/) or add to CI config — decide at sprint time based on current hook infra. Update CLAUDE.md Destructive-action blocklist to reference the check.\n**Design rules:** no-sqlite: enforces the rule. No persistence — pure static check. oop-first: single check function with pattern list — functional shape appropriate, no state. docs-in-code: script top-of-file docstring names the patterns + approved-exception list + rationale. test-plan-or-why-not: applies.\n**Scope boundary:** IN — grep check + CI/hook wiring + soft-warn→hard-fail flag. OUT — palace-rule-to-lint-rule general translator (separate work under T-audit-findings-to-tickets), enforcement of rules beyond no-sqlite.\n**Test plan:** Unit test — feed fixture Python files with/without SQLite patterns to the checker, assert expected pass/fail. Integration — inject `import sqlite3` into a scratch file, assert check fires.",
+    "proposed_at": "2026-04-28T22:21:19.627425+00:00",
+    "completed_at": "2026-04-29T11:23:28.413624+00:00",
+    "github_issue": 519,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "false-positive brainstem/core_patterns.py gate — ticket does not touch HIGH-inertia files; cleared 2026-04-23",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ecaa3237-292c-464b-a4da-2193ae5690b3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

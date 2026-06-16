@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-wg-spread-via-cortex.20260608.193323916664",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wg-spread-via-cortex"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T19:33:23.916664",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wg-node-tree-architecture-2026-06-08"
+    ],
+    "tickets": [
+      "T-wg-cooccur-retire",
+      "T-wg-spread-via-cortex"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wg-spread-via-cortex",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "WordGraph",
+      "Cognition",
+      "Architecture"
+    ],
+    "title": "Replace spread_from_words with cortex spreading on WORD_GRAPH nodes",
+    "result": "cortex.spread_word_graph() added; spread_from_words + predict_next delegate via _cortex back-ref; no wg_edges in word_graph.py; 14 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that spreading activation is one unified primitive over the memory graph, covering both cognitive memories and word-graph nodes.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T19:33:23.916664+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-wg-node-tree-architecture-2026-06-08",
+    "description": "After wg words are memory nodes, spread_from_words() currently queries wg_edges (flat 1.1M-row table). Replace with cortex.spreading_activation() starting from WORD_GRAPH seed nodes traversing links_weighted edges. predict_next() similarly updated. Spreading activation traversal is now bounded by tree/calving limits, not flat table size.\n\n**Affected files:** devices/igor/cognition/word_graph.py (spread_from_words delegates to cortex; predict_next queries links_weighted from WORD_GRAPH memories), devices/igor/memory/cortex.py (spreading_activation handles WORD_GRAPH seed type), devices/igor/cognition/narrative_engine.py (verify callers unchanged)\n**Design rules:** no-sqlite; OOP-first; no new standalone functions — extend cortex.spreading_activation(); WORD_GRAPH tree interim calving threshold = 5000 (bigger than 1000 default while timing data is gathered)\n**Scope boundary:** IN: spread_from_words delegates to cortex; predict_next uses links_weighted from WORD_GRAPH memories; IGOR_CALVING_THRESHOLD for WORD_GRAPH tree set to 5000. OUT: wg_cooccur write path removal (T-wg-cooccur-retire), graph_cache Redis layer (also T-wg-cooccur-retire)\n**Completion criteria:** spread_from_words() returns equivalent top-5 words as pre-migration for 3 known seed phrases (integration test uses pre-recorded expected output); spread latency < 5ms for 2-hop from 10 seeds (benchmark); no direct SELECT on wg_edges in word_graph.py post-merge.",
+    "completed_at": "2026-06-08T21:16:27.421154+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

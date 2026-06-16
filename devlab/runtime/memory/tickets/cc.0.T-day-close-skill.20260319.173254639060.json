@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-day-close-skill.20260319.173254639060",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-day-close-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-19T17:32:54.639060",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-day-close-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-day-close-skill",
+    "body": "Replaces savestate Steps 4-9. Steps: docs_sync.py partial sync on staged .dsb files, render sessions.md from DB, update gap_analysis.dsb + subsystem DSBs for session changes, post GitHub discussion #62, commit. Also: wire docs_sync into /commit skill as pre-step.",
+    "role": "designer",
+    "size": "M",
+    "title": "Build day-close skill",
+    "result": "day-close skill written. docs_sync wired into commit. Tests: none (skill file).",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-19T17:32:54.639060+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-swarm-manager.20260417.030756000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-manager"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T03:07:56",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-remote-igor-bootstrap",
+      "T-swarm-manager",
+      "T-uc-system-proxy-shelf"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-manager",
+    "size": "L",
+    "notes": "## Updated 2026-04-19 with Akien's dictation (recovering 2026-04-18 conversation)\n\nSwarmManager lives in the **utility closet** (`lab/utility_closet/swarm_manager.py`).\n\n## What it does\n\n- Houses the machines info: who's up, ollama availability, inference capability, in-use status, etc. Replaces/absorbs existing MachinesWatcher + machine_manager query patterns.\n- Aggregates SystemProxy snapshots from all boxes (local + remote over SSH or UC API).\n- Provides fleet-wide view — best routing target, who's offline, CPU load across fleet.\n- **Absorbs T-remote-igor-bootstrap**: accepts \"here's a new box, here's the SSH creds\" directive, clones the repo, runs the Igor installer endpoint, launches Igor.\n\n## Bootstrap workflow (from T-remote-igor-bootstrap, rolled in here)\n\n1. Caller hands SwarmManager a new box entry: hostname, IP, SSH auth.\n2. SwarmManager clones the repo to that box.\n3. Runs the Igor installer endpoint, which installs deps + sets up env.\n4. Launches Igor on the new box.\n5. New instance registers back into the swarm via the home DB / UC.\n\n## Instance-ID allocation\n\nThe installer today asks the instance_id + home_db_url when env vars aren't set. SwarmManager uses the same pattern: reaches back to the user via Igor (\"what's the instance_id for this new box?\") rather than auto-assigning. Keeps the naming human-intentional.\n\n## API shape (rough)\n\n- `swarm_manager.fleet_status()` → per-machine health + availability\n- `swarm_manager.best_inference_target(criteria)` → hostname\n- `swarm_manager.add_box(hostname, ssh_auth)` → bootstrap flow\n- `swarm_manager.machines()` → the whole registry\n\n## Prereq\nSystemProxy facade on each box (shipped 04-16, T-uc-system-proxy-shelf).\n\n## Provenance\nAkien dictation, 2026-04-19.\n",
+    "title": "SwarmManager — aggregate SystemProxy reports across machines",
+    "result": "Withdrawn per Akien 2026-05-03.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-system-gateway",
+    "claimed_at": null,
+    "created_at": "2026-04-17T03:07:56Z",
+    "related_to": null,
+    "description": "## Updated 2026-04-19 with Akien's dictation (recovering 2026-04-18 conversation)\n\nSwarmManager lives in the **utility closet** (`lab/utility_closet/swarm_manager.py`).\n\n## What it does\n\n- Houses the machines info: who's up, ollama availability, inference capability, in-use status, etc. Replaces/absorbs existing MachinesWatcher + machine_manager query patterns.\n- Aggregates SystemProxy snapshots from all boxes (local + remote over SSH or UC API).\n- Provides fleet-wide view — best routing target, who's offline, CPU load across fleet.\n- **Absorbs T-remote-igor-bootstrap**: accepts \"here's a new box, here's the SSH creds\" directive, clones the repo, runs the Igor installer endpoint, launches Igor.\n\n## Bootstrap workflow (from T-remote-igor-bootstrap, rolled in here)\n\n1. Caller hands SwarmManager a new box entry: hostname, IP, SSH auth.\n2. SwarmManager clones the repo to that box.\n3. Runs the Igor installer endpoint, which installs deps + sets up env.\n4. Launches Igor on the new box.\n5. New instance registers back into the swarm via the home DB / UC.\n\n## Instance-ID allocation\n\nThe installer today asks the instance_id + home_db_url when env vars aren't set. SwarmManager uses the same pattern: reaches back to the user via Igor (\"what's the instance_id for this new box?\") rather than auto-assigning. Keeps the naming human-intentional.\n\n## API shape (rough)\n\n- `swarm_manager.fleet_status()` → per-machine health + availability\n- `swarm_manager.best_inference_target(criteria)` → hostname\n- `swarm_manager.add_box(hostname, ssh_auth)` → bootstrap flow\n- `swarm_manager.machines()` → the whole registry\n\n## Prereq\nSystemProxy facade on each box (shipped 04-16, T-uc-system-proxy-shelf).\n\n## Provenance\nAkien dictation, 2026-04-19.\n\n**Affected files:** lab/utility_closet/swarm_manager.py (new); lab/utility_closet/uc_registry.py (register); tests/test_swarm_manager.py; cross-cuts existing MachinesWatcher + machine_manager query call sites (migrate or wrap).\n\n**Design rules:** docs-in-code (subsystem doc-block at top of swarm_manager.py); no-sqlite (state in Postgres or in-memory cache); test-plan-or-why-not.\n\n**Scope boundary:** IN — fleet aggregation + add_box/bootstrap workflow + SystemProxy snapshot collection + best-routing-target API. Absorbs T-remote-igor-bootstrap. OUT — actual remote-execution layer (defer to per-OS install ticket); multi-datacenter federation.\n\n**Test plan:** tests/test_swarm_manager.py — mocked SystemProxy snapshots from N boxes; assert aggregation, offline detection, best-routing-target selection. add_box bootstrap covered by remote-bootstrap subticket E2E.",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": 471,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6dfe5c71-1e07-4daf-ade3-37b6ed7ed555",
+    "description_updated_at": "2026-04-19T23:45:27.125367+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-igor-log-strip-ansi.20260502.002040028994",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-log-strip-ansi"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T00:20:40.028994",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-log-strip-ansi"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-log-strip-ansi",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Logging",
+      "DX"
+    ],
+    "title": "Strip ANSI escape sequences from Igor's console .log files",
+    "result": "Root cause: tmux pipe-pane in TheIgors/igor captured raw terminal stream verbatim into console.log files. Fix: pipe through 'sed -u -E' with CSI + OSC strip regex. Live console keeps colors; .log files now plain text. 7 regression tests + drift-guard. Takes effect on next igor launch. TheIgors commit 956ab78a.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-05-02T00:18:01.969698+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": null,
+    "description": "Igor's console log files (the .log targets capturing what Rich prints to console.print) contain raw ANSI escape sequences (e.g. \\x1b[31m for red). They render as garbage in plain text editors like Kate. Need to strip ANSI sequences when writing to .log files — terminal output stays colored, but the file capture is plain text.\n\n**Affected files:** TBD — discovery step in sprint. Likely candidates: wherever Rich console is initialized (wild_igor/igor/main.py and wild_igor/igor/logging_setup.py), and any FileHandler/file-tee that captures console output. Search for 'force_terminal=True' and FileHandlers that pass-through Rich output.\n**Design rules:** terminal output unchanged — colors stay in the live console; file output stripped — .log files readable in any editor. The simplest path is to use a regex strip (re.sub(r'\\x1b\\[[0-9;]*[a-zA-Z]', '', s)) in the file-writing seam. Rich also has Console(record=True).export_text() which strips natively if the seam allows it.\n**Scope boundary:** in — strip ANSI from .log file writes only. Out — change the live console rendering, change log levels, restructure logging.\n**Test plan:** test_log_file_has_no_ansi_escapes — write a colored Rich message, read the captured log file, assert no \\x1b in contents. Plus a smoke test that the live console output still includes the escape (so we didn't accidentally strip the wrong stream).",
+    "completed_at": "2026-05-02T00:20:40.028994+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6702816a-7813-43b2-a967-ffba31508612",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

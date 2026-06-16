@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-foreman-schedule-scan.20260511.213523499105",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-foreman-schedule-scan"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T21:35:23.499105",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-foreman-schedule-scan"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-foreman-schedule-scan",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "PROC_WORKER_FOREMAN: add schedule_interval_sec so queue is scanned without worker_done trigger",
+    "result": "Added schedule_interval_sec=120 to PROC_WORKER_FOREMAN metadata in clan.memories — SchedulerSource now fires queue scan every 2 min without needing a worker_done trigger",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1,
+    "claimed_at": null,
+    "created_at": "2026-05-11T21:35:23.499105+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "PROC_WORKER_FOREMAN is trigger='worker_done' only — no scheduled scan. When no worker is running, the ticket pickup chain never fires (boredom path is blocked by arousal > 0.08). Add schedule_interval_sec=120 to PROC_WORKER_FOREMAN metadata so SchedulerSource fires check_worker_queue every 2 minutes autonomously.\n\n**Affected files:** clan.memories (PROC_WORKER_FOREMAN habit metadata — UPDATE via psql)\n**Design rules:** no-sqlite, palace-first\n**Scope boundary:** Only the PROC_WORKER_FOREMAN habit metadata UPDATE. No code changes.\n**Test plan:** After update, observe SCHEDULER_TICK entries in TWM within 2 minutes; verify Igor adopts a goal.",
+    "completed_at": "2026-05-11T21:58:25.157410+00:00",
+    "deposited_at": "2026-05-13T12:18:19.764812",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "48ba8f7f-3bbb-4b86-abf6-73af3e57ca81",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

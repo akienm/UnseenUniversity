@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice3b-idle-loop.20260501.231744796157",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice3b-idle-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T23:17:44.796157",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice3b-idle-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice3b-idle-loop",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice3b",
+      "Datacenter",
+      "IDLE"
+    ],
+    "title": "AnnounceIdleLoop — IMAP IDLE-driven push wakeup wrapping announce_pump",
+    "result": "AnnounceIdleLoop ships: IMAP IDLE daemon thread runs callback on EXISTS, startup-catchup pump, clean stop via direct sock.shutdown. Bonus: stub IDLE handler now exits cleanly on peer disconnect (previously blocked asyncio loop shutdown). 5 new tests; 210 passed. agent_datacenter commit db54d6d.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-01T23:06:48.208525+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Today Skeleton.announce_pump() is called manually (e.g. test pumper threads, slice-3b Invalidator already polls). For production the broker should wake on IMAP IDLE EXISTS notifications instead of polling — when an agent posts to comms://announce, the broker pumps within milliseconds. Slice 3b ships AnnounceIdleLoop: a background thread that holds an imaplib IDLE connection on comms://announce, exits IDLE on EXISTS, calls a configured callable (e.g. skeleton.announce_pump), then re-enters IDLE. Clean shutdown closes the socket so readline() returns and the loop exits.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/idle_loop.py (NEW — AnnounceIdleLoop class), /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/__init__.py (export), /home/akien/dev/src/agent_datacenter/tests/test_idle_loop.py (NEW)\n**Design rules:** holds its own imaplib connection (does NOT share with IMAPServer's internal client); shutdown closes socket from outer thread to unblock readline() — no signal/select trickery; reconnect-on-disconnect is OUT of scope (slice 3b-2 — single-shot loop is fine for v1).\n**Scope boundary:** in — AnnounceIdleLoop class, start/stop, callback fires on EXISTS, clean socket close on stop, integration test that verifies push-wake within 1s. Out — auto-reconnect on connection drop, multi-mailbox watching, integration into Skeleton.__init__ (caller wires it explicitly).\n**Test plan:** test_idle_loop_wakes_callback_on_append (start loop, append envelope, callback called within 1s); test_stop_unblocks_idle_cleanly (start loop on empty mailbox, stop, thread exits within 1s); test_callback_exception_does_not_kill_loop (callback raises, loop continues to wake on next EXISTS); test_double_start_is_idempotent.",
+    "completed_at": "2026-05-01T23:17:44.796157+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "31007f92-8a1e-423b-8312-b63bad7804bb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

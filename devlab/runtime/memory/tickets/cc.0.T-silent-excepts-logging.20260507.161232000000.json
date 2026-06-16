@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-silent-excepts-logging.20260507.161232000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-silent-excepts-logging"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:12:32",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-silent-excepts-logging"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-silent-excepts-logging",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Hygiene",
+      "Logging",
+      "Audit"
+    ],
+    "title": "CLOSED: Add logging to 59 silent except blocks in wild_igor/igor/",
+    "result": "50 silent except blocks fixed across 22 files; 0 remaining in first-party code (ebook_drm/ skipped as third-party); 4478 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-07T19:24:28.575127+00:00",
+    "created_at": "2026-05-07T16:12:32Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Day-close audit (2026-05-05) found 59 bare except/pass or silent except blocks with no log call. Each needs at minimum a log.warning() so errors don't disappear silently.\n\n**Affected files:** wild_igor/igor/ — grep for bare except handlers\n**Design rules:** no-bare-except-pass, docs-live-in-code\n**Scope boundary:** Add log call to each silent except in wild_igor/igor/; no other changes. Skip blocks that have a deliberate comment explaining why silence is correct.\n**Test plan:** Run audit scan after — zero bare-except-pass findings expected. Existing tests must still pass.",
+    "completed_at": "2026-05-07T19:36:09.256496+00:00",
+    "github_issue": 623,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "414e9c26-8e4d-4f0c-b5e4-7844535aac3c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

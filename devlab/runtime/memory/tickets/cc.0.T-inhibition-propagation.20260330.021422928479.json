@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-inhibition-propagation.20260330.021422928479",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inhibition-propagation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T02:14:22.928479",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inhibition-propagation",
+      "T-spreading-activation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inhibition-propagation",
+    "epic": "Cognition",
+    "title": "Active inhibition propagation through graph",
+    "result": "BG inhibition propagation wired: _inhibit_neighbors() in basal_ganglia.py writes direction=inhibition edges from winner to graph-connected near-misses; set_cortex() injected at boot from main.py. Graceful no-op until graph has edges. Syntax OK.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "description": "When a node wins (habit fires, NE selects a frame), propagate suppression to competing hot nodes via graph edges. Currently BG lateral inhibition only affects habit scoring; this extends suppression into the graph itself — winners cool their semantic competition. Implementation: after habit dispatch or NE frame selection, identify winning node(s), walk neighbors, apply heat penalty proportional to edge weight and activation overlap. Prereq: T-spreading-activation.",
+    "completed_at": "2026-03-30T02:14:22.928479+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "df4633f3-5938-4363-b9f1-ab75338d802e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

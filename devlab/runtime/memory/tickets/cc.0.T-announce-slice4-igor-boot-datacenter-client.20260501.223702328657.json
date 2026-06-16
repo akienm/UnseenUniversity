@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice4-igor-boot-datacenter-client.20260501.223702328657",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice4-igor-boot-datacenter-client"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:37:02.328657",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice4-igor-boot-datacenter-client"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice4-igor-boot-datacenter-client",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice4",
+      "Igor",
+      "Boot"
+    ],
+    "title": "Igor.__init__ wires DatacenterClient with graceful no-datacenter fallback",
+    "result": "Igor.__init__ wires DatacenterClient at end of __init__ (after _push_state_inventory). Build-to-intent: always tries to connect; absence is failure mode. Graceful fallback on any error. self.datacenter_client + self.datacenter_manifest exposed. 3 tests via Igor-shaped stub. TheIgors commit d1d4d47b.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T22:33:32.431805+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Slice 4 minimal — Igor reads its own manifest at boot. Igor.__init__ attempts to instantiate IMAPServer + DatacenterClient + announce(). On any failure (no daemon, missing profile, timeout), logs warning and sets self.datacenter_client = None; Igor continues without the manifest. Build-to-intent: no IGOR_*_ENABLED flag — Igor always tries to connect; absence is the failure mode, not a configuration switch.\n\n**Affected files:** /home/akien/TheIgors/wild_igor/igor/main.py (Igor.__init__ adds 1 try-block ~20 lines), /home/akien/TheIgors/tests/test_igor_datacenter_boot.py (NEW — verifies graceful fallback + successful wire-up against in-process skeleton)\n**Design rules:** never crash Igor when the datacenter is unavailable; manifest is optional context, not a load-bearing dependency in slice 4; no env-var gate.\n**Scope boundary:** in — DatacenterClient instantiation in Igor.__init__, graceful failure mode, cache the client + manifest as Igor.datacenter_client and Igor.datacenter_manifest. Out — tool dispatch via manifest (slice 4b), peer advisor via manifest (slice 4b), inotify-driven re-announce (slice 3b), IDLE loop wakeup (slice 3b).\n**Test plan:** test_igor_boots_without_datacenter (default — no skeleton running, datacenter_client=None, no exception); test_igor_boots_with_in_process_skeleton (boot a skeleton in-process with IMAP stub, Igor's __init__ wires client + receives manifest); test_igor_continues_when_announce_times_out (skeleton not running but IMAP stub up, timeout triggers fallback).",
+    "completed_at": "2026-05-01T22:37:02.328657+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3da16dc3-b51c-4042-9692-749bfc0409d8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

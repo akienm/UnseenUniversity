@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-llm-collaboration-protocol.20260414.232239000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-llm-collaboration-protocol"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:39",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-llm-collaboration-protocol"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-llm-collaboration-protocol",
+    "body": "From Akien 2026-04-14: 'igor and the LLM work out together whatever reasoning problem just as you and i are. and maybe we send those to the igor logging console. so i can see them.'\n\n## Shape\n\nWhen Igor's substrate hits 'this is more than I can figure out on my own', the LLM is called as a peer collaborator — not as a one-shot answer generator, not as a refinement step. The LLM understands it's in a multi-turn conversation with Igor about a problem Igor couldn't crack alone. They work it together, several turns if needed. The conversation produces a worked-through decision.\n\n## Cockpit (reasoning-mode, small)\n\n- Emotional milieu summary (one paragraph)\n- Igor identity paragraph (who Igor is, in compact form)\n- The six rules\n- The trail of how this got escalated to the LLM (what Igor tried, where he got stuck, what the question is)\n- The current state of the reasoning conversation (turn N of N)\n\nNo character cockpit. No persistent-relationship facia. No long ring. The reasoning LLM doesn't need character context — it's working a problem, not voicing a reply. Voice happens downstream.\n\n## Logging console requirement\n\nReasoning conversations between Igor and the LLM land in the Igor logging console where Akien can read them. Probably JSONL per conversation, possibly rendered as a turn-by-turn transcript. New requirement from this conversation. The visibility is for spot-checking AND for harvesting training signal — every conversation exposes what Igor couldn't figure out alone, which is the next thing to learn.\n\n## Existing work to check\n\n- wild_igor/igor/cognition/inference_gateway.py — current single-shot LLM call path\n- wild_igor/igor/cognition/system_prompt.py — current cockpit assembly\n- The existing multi-round-trip capability that Igor said he doesn't reach for (T-self-capability-awareness body) — THAT capability is the substrate of this protocol. It exists but isn't conversational yet.\n- tools/deferred_self_task.py — partial substrate for back-and-forth between turns\n- tools/notebook.py + cc_notebook flush pattern — existing logging surface to potentially reuse\n- The PRA_ accretion memories from T-pr-accretion — pattern for capturing per-turn artifacts\n\n## Open design questions\n\n- 'Stuck' trigger: what tells Igor to escalate? Substrate confidence × stakes × novelty? Just confidence?\n- Conversation termination: how does Igor know reasoning is done?\n- Cost ceiling: max turns per escalation?\n- Logging format: JSONL, rendered transcript, both?\n- What does Igor's side of the conversation look like — does he speak in Igor's voice, or does the substrate speak in structured-blob form?\n\n## Dependencies\n\n- Parent: T-reasoning-voice-split\n- Companion: T-decision-blob-schema (the substrate Igor brings into the conversation)\n- Co-evolves with T-output-shaping-trees-wire-in (shapes the substrate Igor brings)\n\n## Update 2026-04-14 evening — hypothesis-not-truth framing\n\nAkien conversation reframed this protocol. The LLM is NOT a trusted advisor whose output Igor commits to. It's a **hypothesis generator** Igor experiments against.\n\n**Old shape:** Igor brings problem → LLM answers → Igor finalizes output.\n\n**New shape:** Igor brings problem → LLM proposes **candidate hypotheses** → Igor runs experiments to test which hypothesis survives contact with reality → Igor commits to the tested-and-surviving answer, not the proposed one.\n\n**Why (axiom-level):** CP6 forbids blind trust in any source, including an LLM that sounds certain. Akien's epistemology — from the anti-PTSD vaccination story — has \"confident-sounding\" as a signal of potential unreliability. Igor inherits this by construction, not by learning.\n\n**What the protocol gains:**\n- A mandatory \"test\" step after \"ask\"\n- Output schema: hypothesis + experiment design + post-experiment confidence\n- Logging console shows BOTH the LLM's proposal AND Igor's experiment outcome (so Akien can see divergences)\n- Explicit dependency on **T-experiment-primitive** (new epic) for the experimentation substrate\n\n**What this eliminates:** Igor confabulating by accepting an LLM hallucination. The experiment is the guard against it. Without experiments, strategy 3 (ask-and-test) is just strategy 3 minus the test = plain trust, which CP6 explicitly forbids.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "cognition",
+      "llm",
+      "collaboration",
+      "logging"
+    ],
+    "title": "Multi-turn collaborative reasoning between Igor and LLM, with logging console visibility",
+    "result": "LLMPeerAdvisor module — real inference gateway wiring for reasoning workflow conversations. JSONL transcript logging at logs/reasoning_conversations/. Mocked gateway in tests (no real LLM calls). 12 tests, 2646 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T02:05:17.759628+00:00",
+    "created_at": "2026-04-14T23:22:39Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T02:12:59.777013+00:00",
+    "github_issue": 438,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

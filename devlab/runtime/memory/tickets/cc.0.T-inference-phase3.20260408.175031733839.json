@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-inference-phase3.20260408.175031733839",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-phase3"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T17:50:31.733839",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-phase3"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-phase3",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D327 Phase 3: delete anthropic.py + merge base.py into gateway",
+    "result": "anthropic.py deleted (D329). Ethics gate (core_patterns.py) rerouted through OR. MODEL_ALIASES moved to openrouter_reasoner.py. prefrontal_cortex.py fallback → OpenRouterReasoner. inference_gateway.py tier.5 nulled. base.py stays as shared ABC. 1875 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Delete anthropic.py (D329 tier.5 dead). Move interactive routing from base.py into inference_gateway.py. Reduce base.py to BaseReasoner ABC or delete. Remove all tier.5 references. Tests must pass.",
+    "completed_at": "2026-04-08T17:50:31.733839+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9d214829-9dff-4d9c-a412-28889eaf7c99",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

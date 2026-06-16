@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-remove-emit-wiring.20260523.173918278133",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-emit-wiring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T17:39:18.278133",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igorbase-migrate-to-diagnosticbase",
+      "T-remove-emit-wiring"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-emit-wiring",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Cleanup"
+    ],
+    "title": "Remove hand-wired emit() calls from pe_chain, ops, scope_guard",
+    "result": "removed all emit() call sites from pe_chain, ops, scope_guard; emit.py marked deprecated (prune_emissions still used)",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.25,
+    "claimed_at": "2026-05-23T21:09:51.179649+00:00",
+    "created_at": "2026-05-23T17:39:18.278133+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The explicit emit() calls added to pe_chain.py (hypothesize_fail/pass), ops.py (goal_adopt/goal_complete), and scope_guard.py (escalate_high/pass) on 2026-05-23 are a stopgap. Once T-igorbase-migrate-to-diagnosticbase lands, every log call in those files automatically produces a JSON file via the DiagnosticBase sink.\n\nRemove: the try/except emit() blocks in pe_chain.pe_hypothesize, ops.goal_adopt, ops.goal_close, scope_guard.run_scope_guard. Keep the existing log.info() calls — those become the source of truth once the loguru sink is live.\n\nAlso remove lab/claudecode/emit.py (or deprecate it) — the DiagnosticBase sink replaces it.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py, wild_igor/igor/tools/ops.py, wild_igor/igor/tools/scope_guard.py, lab/claudecode/emit.py\n**Design rules:** none\n**Scope boundary:** Removal only — no new behavior.\n**Test plan:** pytest suite passes unchanged. Confirm no emit() calls remain in the three files.",
+    "completed_at": "2026-05-23T21:18:05.577706+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-23T21:09:51.179649+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-23T17:39:18.278151+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ff09b753-6979-4d3c-b931-4e79abf43b90",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

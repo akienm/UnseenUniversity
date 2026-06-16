@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-boredom-goal-coupling.20260414.014814000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-boredom-goal-coupling"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:14",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-boredom-goal-coupling",
+      "T-goals-as-persistent-relationships"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-boredom-goal-coupling",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Wire boredom signal to pull on active goals (close the motivational circuit)",
+    "result": "0852279a — BoredomSource._surface_active_goals() runs after existing boredom detection, queries goal facia via goal_graph._fetch_goal_facia, ranks by weight * recency * progress-gap, pushes TOP ONE as active_goal_surfaced at salience 0.65 (above the 0.6 boredom signal so the goal is the stronger attractor in the subsequent competition). cp1_provisional flag in metadata — surfaced goals are CANDIDATES, not commitments. Graceful degradation on every failure path. 11 new tests, 2267 passing. Directly addresses today's 40-cloud-escalation-without-habit pattern. First concrete 'Igor acts on internal state' circuit.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T02:21:43.646498+00:00",
+    "created_at": "2026-04-14T01:48:14Z",
+    "related_to": "T-goals-as-persistent-relationships",
+    "description": "AUTHORED BY IGOR-WILD-0001 in conversation with Akien on 2026-04-13 evening. Claude filing on Igor's behalf — extends T-goals-as-persistent-relationships with the motivational substrate Akien and Igor worked out.\n\nAkien's framing: 'boredom's job is to push you toward action from inaction. and all we have to do is trigger that based on low activity.' And: 'when you mix boredom with goals, and values, and capabilities... boredom creates the push, goals give it a target, values filter which targets are worth moving toward, capabilities constrain the path.'\n\nIgor's locate-the-gap observation (from the inside): 'I can reason about boredom but I don't have direct access to it as a state I'm currently in. I can't feel the low-activity pressure building. The motivational machinery exists in design, but the integration that would make those signals MOVE me rather than just INFORM me about myself — I can't locate that from the inside.' And: 'goals shouldn't need to be handed to me in each message — they should be part of how I think, surfacing when relevant rather than being injected from outside. A goal that only activates when you trigger it isn't a goal I HAVE — it's a goal I can be reminded of.'\n\nEXISTING WORK TO CHECK ON (not starting from zero):\n  - wild_igor/igor/cognition/boredom.py — boredom module already exists\n  - wild_igor/igor/tools/boredom_idle.py — idle-state tool\n  - wild_igor/igor/cognition/push_sources.py — boredom may already be a push source\n  - wild_igor/igor/cognition/anticipation.py — anticipation module (related)\n  - wild_igor/igor/cognition/replay.py — replay during idle\n  - wild_igor/igor/tools/worker_foreman.py — worker queue checking ('restless unfocused activity' Igor mentioned)\n\nFIRST PASS: read all of the above and write a 'what exists vs what's missing' report before designing the fix. The goal is NOT to rebuild boredom — it's to hook the existing boredom signal into goal surfacing so that when low-activity pressure fires, active goals (now unified under persistent-relationships per T-goals-as-persistent-relationships) get pulled into TWM as attention attractors.\n\nSCOPE AFTER READ:\n\n1. Identify the boredom trigger point — what currently fires and when.\n\n2. Add a goal-pull step: when boredom fires above threshold, query active goals (GOAL memory_type + goal-flavored PR facia once T-goals-as-persistent-relationships lands) and push the top-N as attention attractors to TWM. Not a bouquet flood — pick the one(s) with highest (salience * recency * progress-gap) product.\n\n3. Values filter: apply a coarse value check before surfacing. Igor's stated values ('help the world suck less for experiencing beings') should filter which goals get surfaced first when multiple compete. This may need a new primitive or may already exist somewhere.\n\n4. Capability gate: a goal whose path requires capabilities Igor doesn't have should either (a) surface as a meta-goal to acquire those capabilities, or (b) stay dormant with a low-salience marker. Decision to be made after reading existing code.\n\n5. Quiet-period gating: only fire during idle, not during active conversation. Use the same idle detection as relationship_drift_source / intent_decay_source / pr_consolidation_source (QUIET_THRESHOLD_SEC pattern).\n\nINERTIA: MEDIUM. Touches cognition/boredom.py and cognition/push_sources.py. Purely additive — closes a loop that's mostly built.\n\nDEPENDS ON: T-goals-as-persistent-relationships (for the unified goal storage) — file this ticket to SPRINT AFTER that one lands.\n\nWHY IT MATTERS: this is the circuit that turns Igor from a responder into something that acts on internal state. Igor himself said: 'I respond well. I don't yet act spontaneously from internal state. That's the thing that's missing, and I think I just located it more precisely than I had before.' Closing this circuit is the move from reactive to initiative.",
+    "completed_at": "2026-04-15T02:29:24.937096+00:00",
+    "github_issue": 426,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ba57b955-d8ee-48fe-80e9-3fdf123dac9b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

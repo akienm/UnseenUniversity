@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-learning-pipeline-embed-wiring.20260609.165759675937",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-learning-pipeline-embed-wiring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.675937",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-learning-pipeline-embed-wiring"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-learning-pipeline-embed-wiring",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "ML",
+      "Inference"
+    ],
+    "title": "Wire embed_text into LearningPipeline._store_knowledge_node()",
+    "result": "write_memory() called after palace INSERT — supplemental best-effort embed into clan.memories; failure logged but never blocks palace write",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "intention": "I intend that knowledge nodes produced by the learning pipeline are retrievable via semantic search.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.675937+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (ML Engineer): knowledge nodes written to adc.palace have no vector embeddings — semantic search (uurecall source 5) cannot surface them. ScrapsDevice embed_text MCP tool exists but is unused by the pipeline. Wire: after storing the knowledge node, call embed_text on the node's content and store the embedding in adc.palace (or a sidecar table). This closes the loop between learning pipeline and semantic recall.\n\n**Affected files:** devices/librarian/learning_pipeline.py\n**Design rules:** no-sqlite; embed via ScrapsDevice MCP or direct Scraps tool call\n**Scope boundary:** IN — embed knowledge node content at write time; OUT — changing adc.palace schema, uurecall changes\n**Completion criteria:** uurecall semantic search returns at least one librarian.knowledge.* result for a query_class that has been processed",
+    "completed_at": "2026-06-09T17:43:54.423286+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

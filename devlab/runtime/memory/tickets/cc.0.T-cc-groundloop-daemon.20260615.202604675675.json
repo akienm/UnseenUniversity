@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-groundloop-daemon.20260615.202604675675",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-groundloop-daemon"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T20:26:04.675675",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-groundloop-daemon",
+      "T-groundloop-cron-bootstrap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-groundloop-daemon",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Daemon",
+      "CC"
+    ],
+    "title": "CC device: CCWorkerListener as devices/claude/groundloop/runme.py",
+    "result": "CCWorkerListener daemon created at devices/claude/groundloop/runme.py; acking Granny dispatch, nag loop running. Commit b73baafc.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "intention": "I intend that CC.0 reliably acks Granny dispatch envelopes so tickets flow without timeout-reset loops.",
+    "created_at": "2026-06-15T20:26:04.675675+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "CCWorkerListener wasn't running — Granny dispatched tickets but got no ack within 120s, causing dispatch timeout and retry loop. Fix: establish devices/claude/groundloop/ directory with runme.py wrapping CCWorkerListener.run_forever() and config.yaml. Runme.py is the pattern for Ground Loop supervisor to discover and manage. Started immediately; T-groundloop-cron-bootstrap wires auto-start on boot.\n\n**Affected files:** devices/claude/groundloop/runme.py, devices/claude/groundloop/config.yaml\n**Design rules:** external-state-principle (nag state in ~/.granny/nag_state/), daemon pattern (file placement)\n**Scope boundary:** CC daemon only; ground loop supervisor is T-groundloop-cron-bootstrap\n**Completion criteria:** CCWorkerListener running, acks Granny dispatch within poll interval, nag thread starts, commit b73baafc",
+    "completed_at": "2026-06-15T20:26:08.666166+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.328.20260322.011751925589",
+  "emitter": "cc.0",
+  "namespace": [
+    "328"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T01:17:51.925589",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "328"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "328",
+    "size": "S",
+    "notes": "Add covering index or materialized column for INSTR filter slow queries on wg_cooccur. See issue #328 for query patterns. Close #328.",
+    "title": "T-wg-instr-index: Fix slow SELECT on wg_cooccur INSTR filter",
+    "result": "Fixed two separate issues: (1) INSTR() doesn't exist in PostgreSQL — added _INSTR_RE regex to db_proxy.py _PGConnWrapper.execute() and executemany() to translate INSTR( → strpos( at query time (same semantics: 0=not found). (2) Full-table-scan for bigram filter — added idx_wgc_a_unigram and idx_wgc_b_unigram partial indexes WHERE strpos(word_a/b, '__')=0 to wg_cooccur; hot_nodes() now uses Index Only Scan. Partial index creation added to WordGraph.__init__() for PGDatabaseProxy path so new DB instances get them automatically.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-22T01:09:45.058180+00:00",
+    "completed_at": "2026-03-22T01:17:51.925589+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-dicksimnel-chat.20260603.015913671358",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-chat"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T01:59:13.671358",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-chat"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-chat",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "DickSimnel",
+      "WebUI",
+      "Chat"
+    ],
+    "title": "DickSimnel: chat interface for direct conversation with Akien",
+    "result": "chat() method + POST/GET /api/dicksimnel/chat; 12 tests; committed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.75,
+    "blocked_at": "2026-06-03T02:08:19.673156+00:00",
+    "claimed_at": "2026-06-03T02:07:09.912372+00:00",
+    "created_at": "2026-06-03T01:59:13.671358+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Akien needs to be able to talk directly to DickSimnel: ask what it's working on, explain a ticket, give corrections, probe its reasoning. Without this, the 2-week training period is flying blind.\n\nTwo pieces: (1) DickSimnel.chat(message) method that routes through BaseShim.handle_command() for skill verbs (/help, /health, etc.) and falls through to a short conversational inference call for freeform text; (2) web_server endpoint /dicksimnel/chat (POST message, GET recent) using the same HTTP-polling pattern as the Igor chat pane.\n\nBaseShim.handle_command() is already the router — this ticket wires the transport layer.\n\n**Affected files:** devices/dicksimnel/device.py, devices/web_server/server.py, tests/inference/test_dicksimnel_chat.py (new)\n\n**Design rules:** no-sqlite; OOP-first; log interface crossing at INFO; web→DickSimnel uses HTTP poll (same pattern as web→Igor per memory feedback_web_ui_igor_path).\n\n**Scope boundary:** In scope: DickSimnel.chat(message) method; /dicksimnel/chat POST and GET endpoints; conversational system prompt for freeform inference; skill verb passthrough via handle_command(). Out of scope: WebSocket, streaming, conversation history persistence (stateless per-message for v0.1), mobile UI.\n\n**Completion criteria:** POST /dicksimnel/chat with message='hello' returns a non-empty response; /help routes to BaseShim skill list; freeform text triggers inference call; test_dicksimnel_chat.py green.",
+    "completed_at": "2026-06-03T03:04:39.102347+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T02:07:09.912372+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e20d80de-44ed-4efd-a1f7-89d471d4da3f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

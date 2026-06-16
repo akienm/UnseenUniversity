@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-blob-store.20260325.172404040109",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-blob-store"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:24:04.040109",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-blob-store",
+      "T-reading-indexer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-blob-store",
+    "title": "Blob store — content_id index + chapter-aware storage",
+    "result": "Persistent blob storage with PostgreSQL schema. Chapter-aware chunking preserves boundaries for proximity signals. Implements store_blob_chapters(), get_chunks(), blob_index.json manifest. Tests: 354/354. Committed: f5357f6.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": "2026-03-25T17:23:02.639150+00:00",
+    "description": "D230. Persistent store for raw acquired content.\n\nSchema:\n  blobs table: content_id (uuid), title, author, source_channel, acquired_at, format\n  blob_chunks table: content_id, chapter_title, chapter_idx, chunk_idx, text, char_start, char_end\n\nChapter boundaries preserved — co-occurrence edges within a chapter weighted higher than across chapters (proximity signal for graph-integrator).\n\nIndex files:\n  ~/.TheIgors/igor_wild_0001/blob_index.json — lightweight manifest: {content_id, title, author, status: [acquired|indexed|graphed|tested]}\n\nOn write: append to blob_index.json, queue T-reading-indexer with content_id\n\nFile: wild_igor/igor/cognition/blob_store.py (new)\nInertia: LOW\nSize: S",
+    "completed_at": "2026-03-25T17:24:04.040109+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "09f277f2-b32d-4358-9304-fd413e32004c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

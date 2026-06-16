@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-test-intent-decoration.20260615.205438919236",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-intent-decoration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T20:54:38.919236",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-intent-decoration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-intent-decoration",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Architecture"
+    ],
+    "title": "[triage] Test intent decoration",
+    "result": null,
+    "status": "triage",
+    "worker": null,
+    "intention": null,
+    "created_at": "2026-06-15T20:54:38.919236+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Build a new API endpoint that returns user profile data. The endpoint should validate authentication, check permissions, and return structured JSON.",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b04e8dbc-5a2b-475e-ab32-329a73b57306",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

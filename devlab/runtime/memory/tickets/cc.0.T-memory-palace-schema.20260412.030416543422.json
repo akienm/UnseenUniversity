@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-memory-palace-schema.20260412.030416543422",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-palace-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-12T03:04:16.543422",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-palace-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-palace-schema",
+    "epic": "Database",
+    "size": "M",
+    "title": "Memory palace: Postgres table + Igor tool + CC MCP query",
+    "result": "memory_palace table in Postgres + palace_read/palace_write/palace_tree tools. Path-based tree, JSONB pointers. Migration m042-m044. Seeded 7 initial nodes (theigors root + rules/history/igor/cognition/claude/akien). 156 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-12T02:56:00.716207+00:00",
+    "related_to": null,
+    "description": "Create memory_palace table in Postgres: path (text, tree-structured like 'theigors/igor/cognition'), content (text — signpost, not full memory), pointers (jsonb — file paths, DB tables, tool names), parent_path (text), updated_at. Add Igor tool to read/navigate/update palace nodes. CC reads via MCP. Foundation for replacing .claude/memory/ files and CLAUDE.md bloat with a shared navigable tree.",
+    "completed_at": "2026-04-12T03:04:16.543422+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b62cf8d8-3607-443a-be2f-035b579eea61",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

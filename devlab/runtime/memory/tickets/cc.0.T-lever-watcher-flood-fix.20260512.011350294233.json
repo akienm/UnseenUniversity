@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-lever-watcher-flood-fix.20260512.011350294233",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-lever-watcher-flood-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T01:13:50.294233",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-lever-watcher-flood-fix-2026-05-11"
+    ],
+    "tickets": [
+      "T-lever-watcher-flood-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-lever-watcher-flood-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Bugfix"
+    ],
+    "title": "CLOSED: lever_watcher: stop-word filter + 5-min self-throttle",
+    "result": "stop-word filter + 5-min self-throttle in watch_problems.py; test fixture reset for isolation",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.95,
+    "claimed_at": "2026-05-12T01:14:07.220418+00:00",
+    "created_at": "2026-05-12T01:13:50.294233+00:00",
+    "related_to": null,
+    "decision_id": "D-lever-watcher-flood-fix-2026-05-11",
+    "description": "lever_watcher() floods the channel when NE cycles fast on empty TWM. Two fixes in watch_problems.py: (1) add _LEVER_STOP word set (recent, recently, surfaced, problem, found, possible, studies, observations and other common English words) and raise min keyword length from >3 to >4 so noise words can't accumulate confidence; (2) add a module-level 5-min self-throttle (_LEVER_WATCHER_LAST_RUN monotonic timestamp) so the function returns 0 immediately if called within 300s of its last run — regardless of how often coa.py calls it. Root cause: watch condition 'Recently surfaced problem' contains only common words; NE empty cycles fire lever_watcher every cycle; 20+ posts/sec before in-process dedup closes the window.\n\n**Affected files:** wild_igor/igor/cognition/watch_problems.py (lever_watcher function + module-level stop set and throttle)\n**Design rules:** OOP-first not applicable (module-level function); no-sqlite (no DB changes)\n**Scope boundary:** IN: _LEVER_STOP set; len>4 filter; 5-min self-throttle via monotonic timestamp. OUT: changing watch condition strings in DB; changing confidence accumulation math; changing coa.py call site\n**Test plan:** After fix, restart Igor and confirm channel is quiet (no lever burst). Verify lever_watcher still fires eventually for a genuine keyword match by checking confidence accumulation in watch_problems table. No unit test (channel integration only).",
+    "completed_at": "2026-05-12T01:30:04.596013+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b5fbf4b2-c4b8-4405-a9a4-1d85e435c0ed",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

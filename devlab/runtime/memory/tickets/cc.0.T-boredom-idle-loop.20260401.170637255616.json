@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-boredom-idle-loop.20260401.170637255616",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-boredom-idle-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T17:06:37.255616",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-boredom-idle-loop",
+      "T-ef-tree-complete",
+      "T-topics-tree-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-boredom-idle-loop",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Boredom idle loop — D272 milieu too-settled trigger + traversal",
+    "result": "Implemented D272 boredom idle loop: boredom_idle.py tool (run_boredom_check), PROC_BOREDOM_TRIGGER habit (schedule_interval_sec=600). Milieu settled check (arousal<0.08, |valence|<0.15) → alternating EF question traversal / topics traversal → [Igor wonders] channel post. Rate-limited 15min. 567 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-01T17:03:10.893563+00:00",
+    "description": "Implement D272: (1) PROC_BOREDOM_TRIGGER habit on milieu too-settled threshold, (2) idle traversal: open threads -> EF questions tree -> topics tree (long-term projects stub pending design), (3) output to channel as Igor noticing or wondering. Depends on T-ef-tree-complete + T-topics-tree-seed.",
+    "completed_at": "2026-04-01T17:06:37.255616+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "64b95b90-3db8-411a-b8f0-9218c8d9f72b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

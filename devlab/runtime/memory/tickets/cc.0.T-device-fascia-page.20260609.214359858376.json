@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-device-fascia-page.20260609.214359858376",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-device-fascia-page"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T21:43:59.858376",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-comms-fascia-ux-2026-06-09"
+    ],
+    "tickets": [
+      "T-device-fascia-page"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-device-fascia-page",
+    "gate": null,
+    "role": "apprentice",
+    "size": "L",
+    "tags": [
+      "WebUI",
+      "UX"
+    ],
+    "title": "Device fascia pages: 4 independent sub-page boxes per device",
+    "result": "4-box fascia (Status/Chat/Console/Settings) with independent fetches; /api/device/{id}/console + /breaker endpoints; T-fascia-screenshot-cache split off (6e23f6bd)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that each device tab shows a fascia page with 4 independently-loading boxes so status is visible even when other boxes fail.",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-06-09T21:43:59.858376+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-comms-fascia-ux-2026-06-09",
+    "description": "Each device tab shows a fascia page (rename from 'health page'). The fascia has 4 boxes, each is its own independently-loading sub-page — if one fails the others still render:\n\n- **Box 1 — Status:** Live K/V pairs from /api/device/{id}/events?kind=health. Auto-updating. Keys unused for 1 week are removed. Order configurable, alpha default. Existing health TTL in server.py is 5min — extend to 1 week for stale-key removal (separate from display refresh rate).\n- **Box 2 — Chat:** Conversation only (no status noise). Name field, message input, send, size +/-.\n- **Box 3 — Console:** Last 1000 lines from this device's log file. Scrollable. Tail endpoint per device.\n- **Box 4 — Settings:** Circuit breaker toggle for this device + visible env vars/adjustable params.\n\nAll boxes: resizable relative to each other, individually scrollable.\nGraceful degradation: live data → greyed cached screenshot → large '404' centered if no cache.\nBox content is device-defined — Igor's box 3 is his console; other devices define their own.\n\n**Affected files:** devices/web_server/server.py (new JS layout, 4-box component, resize handles), new endpoints: /api/device/{id}/console (tail 1000 lines), /api/device/{id}/breaker (toggle)\n**Design rules:** no-sqlite; log every interface crossing at INFO\n**Scope boundary:** Igor, Librarian, Granny-Weatherwax fascia pages. Not Hubert (not yet built). Graceful degradation included. No device-specific box customization yet — default 4-box layout for all.\n**Completion criteria:** Igor's fascia page shows live K/V health values; chat sends and appears; console shows recent log lines; breaker toggle visible. Each box loads independently (can verify by blocking one endpoint).\n**Validation:** Open Igor tab — all 4 boxes render. Block /api/device/igor/console — other 3 boxes still show.\n**Cleanup:** No test fixtures — UI only.\n**Observable via:** log.INFO('FASCIA_BOX_LOAD device={id} box={n} status={ok|err}') at each box load.",
+    "completed_at": "2026-06-09T22:03:08.914488+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-09T21:43:59.858439+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

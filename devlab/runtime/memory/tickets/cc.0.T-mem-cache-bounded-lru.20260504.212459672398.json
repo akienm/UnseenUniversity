@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-mem-cache-bounded-lru.20260504.212459672398",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mem-cache-bounded-lru"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T21:24:59.672398",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-mem-cache-bounded-lru"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mem-cache-bounded-lru",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "infra",
+      "memory",
+      "long-run-stability"
+    ],
+    "title": "CLOSED: Bound Cortex._mem_cache to LRU with size cap",
+    "result": "OrderedDict + _MEM_CACHE_MAX=5000 cap; LRU eviction skips genesis; cache_stats(); 5 tests — commit 7428c136",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-04T21:11:19.500540+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Cortex._mem_cache is a plain dict with TTL-only eviction (cortex.py:968). TTL only fires when the same id is fetched again — fetch-once-and-never-revisit entries sit forever. Under a 72h session with heavy reading this is a slow monotonic leak. Fix: swap dict for OrderedDict + _MEM_CACHE_MAX = int(os.getenv('IGOR_MEM_CACHE_MAX', '5000')). In _cache_put: if over cap, pop oldest non-genesis entry first. Add cache_stats() metric. Genesis-immortal behavior unchanged.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (lines 968, _cache_put, _cache_get)\n**Design rules:** none-apply (implementation detail)\n**Scope boundary:** IN: add size cap + LRU eviction. OUT: do not change genesis-immortal behavior, TTL logic, or any caller.\n**Test plan:** add one test: insert 6000 entries with non-genesis type, assert len(_mem_cache) <= 5000; genesis entries survive eviction.\n**Pass condition:** After inserting 6000 non-genesis entries, cache size is bounded at 5000; pytest passes.",
+    "completed_at": "2026-05-04T21:24:59.672398+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "69944fb9-6b70-4b41-877e-03c1b5427910",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

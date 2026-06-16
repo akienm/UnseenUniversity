@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-memory-search-tool.20260405.031619410419",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-search-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T03:16:19.410419",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-search-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-search-tool",
+    "epic": "Cognition",
+    "title": "Register memory_search as direct tool",
+    "result": "Added memory_search(query,limit=5) as registered sync tool in memory_query.py — Igor can now look up his own memories in-turn without a deferred task. Calls cortex.search(), formats results as readable string.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-05T03:12:41.474282+00:00",
+    "related_to": null,
+    "description": "Igor has no sync in-turn way to search his own memories; register memory_search(query) in tool registry so it is callable without a deferred task",
+    "completed_at": "2026-04-05T03:16:19.410419+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e1f2bd46-4bb3-42f3-ac10-4a9a2ee10816",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

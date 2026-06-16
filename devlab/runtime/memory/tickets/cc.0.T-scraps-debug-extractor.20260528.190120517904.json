@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-scraps-debug-extractor.20260528.190120517904",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scraps-debug-extractor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:20.517904",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-debug-skill-2026-05-28"
+    ],
+    "tickets": [
+      "T-debug-skill",
+      "T-scraps-debug-extractor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scraps-debug-extractor",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Scraps",
+      "Debug",
+      "Tooling"
+    ],
+    "title": "Scraps: debug extractor — log window, state capture, test runner",
+    "result": "debug_extractor.py in devices/scraps/: log window, state snapshot (pe_chain/NE/test/schema), stack trace, error classifier (9 types); 18 tests green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-28T19:44:14.693026+00:00",
+    "created_at": "2026-05-28T19:01:20.517904+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-debug-skill-2026-05-28",
+    "description": "Implement the deterministic layer of the /debug skill as Scraps scripts. Given a structured query (component, timestamp window, ticket ID), extract: (1) log window — 20-30 lines around the event timestamp from the appropriate log file; (2) state snapshot — relevant fields for known component types (pe_chain: basket fields; NE: goal + cycle count + last narrative; test failure: assertion + test name; schema error: SQL + table + error); (3) test runner output — structured pass/fail with assertion detail; (4) stack trace parser — file+line+function extraction from raw tracebacks; (5) error classifier — map error pattern to known type (old_string_not_found, test_failure, ne_stuck, schema_error, etc.).\n\nAll steps are deterministic — zero inference. Output is a structured dict that T-debug-skill (Haiku/Sonnet layer) consumes.\n\n**Affected files:** devices/scraps/ (new debug_extractor.py script or similar)\n**Design rules:** zero inference; all extraction is string parsing, file reads, subprocess calls; structured dict output format must be stable (T-debug-skill depends on it)\n**Scope boundary:** extraction only — no hypothesis generation, no report formatting (those are T-debug-skill); handles pe_chain, NE, test, schema error types to start\n**Test plan:** given a known log file + timestamp, returns correct 20-30 line window; state snapshot returns correct fields for each component type; error classifier returns correct type for each known pattern",
+    "completed_at": "2026-05-28T19:46:28.465697+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T19:44:14.693026+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:20.594703+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c0ceb7e3-14df-4bee-8c7e-f6b726158f7e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

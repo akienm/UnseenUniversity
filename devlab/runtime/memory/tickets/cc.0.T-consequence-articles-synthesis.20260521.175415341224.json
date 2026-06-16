@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-articles-synthesis.20260521.175415341224",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-articles-synthesis"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.341224",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-consequence-articles-synthesis"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-articles-synthesis",
+    "gate": "2026-06-04",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: articles synthesis — 14 insights landing in practice",
+    "result": "PARTIAL — HTML output artifacts working as designed; ~8 of 14 spawned tickets remain open (pe_chain eval split, habit quality gating etc.) — those are tracked in their own tickets, not a consequence; no confusion from HTML artifacts",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "created_at": "2026-05-21T17:54:15.341224+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "**What changed:** 14 tickets filed from synthesis of 20 external articles, spanning HTML output, audit finding codes, palace decay, trace lesson extraction, pe_chain evaluation split, habit quality gating, memory search RRF, and credential audit.\n\n**Predicted unintended effects:** HTML planning artifacts may create browser-dependency friction for Akien reading specs in terminal; audit finding codes may add verbosity that obscures prose findings; RRF in memory_search may degrade known-keyword lookup performance if semantic signal is noisy; pe_chain evaluator split adds latency to every sprint close.\n\n**Signals to watch:** Are HTML specs actually being generated and read, or are they being generated and ignored? Are audit finding codes showing up in consequence-check ticket descriptions? Is memory_search RRF measurably better in practice? Are LegacyDirectClaimErrors gone from channel?\n\n**Gate condition:** Check by 2026-06-04. Look at: channel for LegacyDirectClaimErrors (should be zero), day-close-audit findings for new palace-decay step output, any pe_chain runs that triggered the evaluator loop.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** No tests — observation ticket",
+    "completed_at": "2026-06-05T15:33:11.345197+00:00",
+    "github_issue": 779,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.341243+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "aad19bc6-6762-48e3-9798-5033bc1fea00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

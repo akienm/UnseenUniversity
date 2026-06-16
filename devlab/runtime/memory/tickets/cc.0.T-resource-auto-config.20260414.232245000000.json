@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-resource-auto-config.20260414.232245000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-resource-auto-config"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:45",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-resource-auto-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-resource-auto-config",
+    "body": "From D124 (closed as ticketed). Akien 2026-04-14: 'on a new box, igor should query the cpu type and speed, ram size, gpu if any, storage devices, network type (wired/wifi)... ssh, ollama version and models... basically on a new box, a thorough inventory of hardware relevant to igor either for his own use, or for him to assist in the maintenance of. and then as the machine evolves we just note that in the data.'\n\n## What gets inventoried\n\nFor any box Igor runs on (or is responsible for), capture:\n\n**Hardware:**\n- CPU: model, base/boost speed, cores, threads, architecture\n- RAM: total, available at boot, type if discoverable\n- GPU: present/absent, model, vram, driver version\n- Storage: device list with type (ssd/nvme/hdd), capacity, mount points\n- Network: wired vs wifi, link speed, IP, hostname\n\n**OS / runtime:**\n- OS family + version (linux distro, windows version, macos version)\n- Python version\n- Ollama version + installed models (`ollama list`)\n- SSH key fingerprint(s) for the Igor key\n- Disk usage at boot\n\n**Igor-relevant services:**\n- Postgres present? version?\n- Utility closet running?\n- Other Igor instances detected on the box?\n\n## Storage shape\n\nEach box gets a HARDWARE_<hostname> facia memory under HARDWARE_ROOT. Children for each subsystem (cpu, ram, gpu, storage, network, services). **Each child can have its own children** — so when storage evolves from 'one disk' to 'three disks plus a USB stick', you just add children to the storage node. This is the 'any node can be a parent' principle from the tree-based architecture (see T-architecture-core-principles candidate principle).\n\nMetadata for each leaf: collected_at timestamp, source (lscpu, /proc/meminfo, ollama list, etc.), confidence.\n\n## Re-inventory cadence\n\n- Full inventory on first boot of a new instance\n- Light re-check on every boot (compare to stored, write deltas as new child nodes with timestamps rather than overwriting — preserves history)\n- Manual re-inventory tool: `inventory_hardware()` callable from a habit or directly\n- Background re-check periodic via a push source (low frequency, hours)\n\n## Why this matters\n\n- **Routing:** the cluster router (T-router-off-limits-violation, also today) needs to know each box's actual capability — picking the right machine for an inference task means knowing CPU + RAM + GPU on each one. machines.json had some of this manually; auto-discovery is the right shape.\n- **Self-knowledge:** Igor's interoception today reads CPU load but doesn't know what 'high CPU' MEANS on a particular box (10% on a 4-core i3 is different from 10% on a 16-core threadripper). Inventory data gives interoception a baseline.\n- **Maintenance assistance:** Akien framed this as 'either for his own use, or for him to assist in the maintenance of.' Igor knowing the storage layout means he can warn when a disk is filling up, suggest cleanup targets, and help with hardware-aware decisions.\n- **Self-modification gate:** any future 'install X on box Y' work needs to know Y's OS + capabilities first. Auto-config is the prereq.\n\n## Existing work to check\n\n- wild_igor/igor/cognition/interoception.py — current resource-reading via psutil\n- wild_igor/igor/tools/filesystem.py:check_resource_load() — current resource report\n- wild_igor/igor/cognition/machine_manager.py — current machine registry (hostname + roles + inference_rank, but not detailed hardware)\n- machines.json fields (model, cpu, ram_gb, gpu, storage) — these are the manual baseline; auto-config replaces them\n- D211 inference_rank + per-machine fields — context for what routing already uses\n\n## Dependencies\n\n- **Ideally lands after T-system-gateway-host-info (S)** — that sub-slice gives a uniform interface for hostname/OS detection. Inventory uses it for the 'where am I running' part. Soft dependency — could ship before with raw psutil/platform calls and refactor later.\n- Co-evolves with T-router-off-limits-violation (router needs the inventory data once it exists)\n- Connects to T-machines-json-phaseout (auto-config replaces the manual machines.json fields)\n\n## Out of scope\n\n- Installing services on new boxes (D124 mentioned 'installs what role needs via D123' — that's a separate concern)\n- Role assignment from taxonomy (db_primary/db_replica/etc) — ticket the inventory layer first; role assignment is a separate decision later\n- Cross-machine inventory sync — local inventory only; cross-machine is a memory_sync concern\n\n## Provenance\n\nD124 (Akien 2026-04-11, surfaced 2026-04-14, closed as ticketed)",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "infra",
+      "hardware",
+      "inventory",
+      "self-knowledge"
+    ],
+    "title": "Hardware inventory auto-config — Igor sizes up a new box and tracks evolution",
+    "result": "detect_hardware: cross-platform CPU/RAM/GPU/OS/network/Ollama detection. Graceful fallbacks. detect_hardware_report tool. 8 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T20:22:26.857511+00:00",
+    "created_at": "2026-04-14T23:22:45Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T20:23:52.427990+00:00",
+    "github_issue": 445,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

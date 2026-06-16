@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-implement-test.20260402.231053341696",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-implement-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T23:10:53.341696",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-implement-test",
+      "T-programming-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-implement-test",
+    "epic": "Training",
+    "size": "S",
+    "title": "pe: Seed IMPLEMENT + TEST nodes — apply edit + run tests",
+    "result": "IMPLEMENT applies hypothesis edit (single replace, skips on no/invalid hypothesis). TEST calls run_tests() or fallback pytest subprocess. Both pure tool steps, no LLM. 10 new tests (71 total).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": "T-programming-engrams",
+    "description": "IMPLEMENT: pure tool call — apply basket[hypothesis] via Edit(file, old_string, new_string). TEST: run_tests() → basket[test_result]. No LLM in either node. Tests: edit applied correctly, test_result populated.",
+    "completed_at": "2026-04-02T23:10:53.341696+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "84878646-8c6d-4238-8b40-a02474a43877",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

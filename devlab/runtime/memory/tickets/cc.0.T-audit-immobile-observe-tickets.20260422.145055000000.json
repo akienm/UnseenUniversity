@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-audit-immobile-observe-tickets.20260422.145055000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-immobile-observe-tickets"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T14:50:55",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-immobile-observe-tickets"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-immobile-observe-tickets",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CCWorkflow",
+      "Audit",
+      "Hygiene",
+      "PreP3"
+    ],
+    "title": "Audit queue for observe/wait tickets without explicit trip conditions",
+    "result": "Shipped in 23910757. Audit tool lab/claudecode/audit_immobile_tickets.py sweeps pending/blocked/in_progress/awaiting_approval tickets for observe/wait/monitor shape, classifies MOBILE (has trip condition: TTL/count/event/companion/body-explicit) vs IMMOBILE. Today's report: 49 tickets scanned, 4 observe-shape candidates, 0 immobile — queue hygiene clean. Re-runnable for future audits.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.55,
+    "claimed_at": "2026-04-24T00:17:53.335853+00:00",
+    "created_at": "2026-04-22T14:50:55Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Sweep the existing ticket queue for observe/wait/monitor-shaped tickets that lack an explicit trip condition, per feedback_no_immobile_observe_tickets.md. Shape to look for: body text like 'observe', 'wait for', 'monitor until', 'run and see', 'check back', or 'see if it's still a problem' — without a concrete next-move trigger.\n\nFor each match: either (a) add a trip condition (TTL, count threshold, traversal count, event gate, companion ticket, or body-explicit next-move spec) via /ticket update; or (b) if the observation is no longer relevant, close the ticket with a reason. No ticket should remain immobile in the queue.\n\nScope: review-and-annotate pass across existing tickets in clan.memories where parent_id='TICKETS_ROOT' and status IN ('pending','blocked'). Produce a report (lab/design_docs/queue_hygiene/immobile_tickets_2026-04-21.md or similar) listing the audit outcome per ticket.\n\nContext: part of pre-Pass-3 cleanup. Pass 3 cannot begin until all addressable tickets resolve, so immobile-ticket hygiene matters. Akien 2026-04-21.\n\ntest_plan: after the audit, re-run the same grep/filter and confirm zero immobile tickets remain. Any remaining matches must have been deliberately left with an explicit next-move note in the body.",
+    "completed_at": "2026-04-24T00:20:00.733754+00:00",
+    "github_issue": 505,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cafd948c-a4c4-43d6-9723-25f8372744aa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

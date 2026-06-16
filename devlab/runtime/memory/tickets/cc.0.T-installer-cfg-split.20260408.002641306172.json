@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-installer-cfg-split.20260408.002641306172",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-installer-cfg-split"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T00:26:41.306172",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-installer-cfg-split"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-installer-cfg-split",
+    "epic": "Operations",
+    "size": "L",
+    "title": "D319-D325: Config file split + unified installer with migration filters",
+    "result": "Superseded by T-installer-stage1/2/3 (D319-D325 plan approved 2026-04-07)",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Retire .env via migration filters. installer.py runs on every 'igor' launch: checks migration_level, applies pending migrations in order, then launches. Migration N = .env → split cfg files. No separate one-time script — migrations are idempotent and automatic. Files: wild_igor/setup_assets/ (new: installer.py, cfg templates), env_sync.py (load multiple files in order), igor.ps1 + igor bash wrapper (hand off to installer.py), igor.bat (fix igor_loop.ps1→igor.ps1), install_igor_linux.sh (fix hardcoded /home/akien path). Split: swarm/swarm.cfg, swarm/machines.json, instance/igor.cfg, igor.switches.cfg, igor.models.cfg, igor.credentials.cfg, igor.context.<person>.cfg, igor.context.<person>.confidential.cfg. D319-D325.",
+    "completed_at": "2026-04-08T00:26:41.306172+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e7cfaf95-3c97-4b42-ae00-ad2bae0dfafc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

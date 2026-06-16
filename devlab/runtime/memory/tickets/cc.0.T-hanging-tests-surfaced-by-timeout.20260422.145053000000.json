@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-hanging-tests-surfaced-by-timeout.20260422.145053000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-hanging-tests-surfaced-by-timeout"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T14:50:53",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-hanging-tests-surfaced-by-timeout",
+      "T-pytest-runner-pipe-hang"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-hanging-tests-surfaced-by-timeout",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Tests",
+      "DevLoop"
+    ],
+    "title": "Fix tests that hang indefinitely (now surfaced by pytest-timeout)",
+    "result": "Resolved in-code. Full-suite run today (3844 passed, 30 skipped, 15 warnings in 286.81s under IGOR_HOME_DB_URL + pytest.ini timeout=30): grep for '+++ Timeout +++' returns 0. The hangs surfaced at T-pytest-runner-pipe-hang land have been fixed by subsequent test/source work (no single commit attributable — natural cleanup through the pass-2 batch). Test plan success criterion met: N→0.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.35,
+    "claimed_at": "2026-04-24T00:27:04.795331+00:00",
+    "created_at": "2026-04-22T14:50:53Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "After T-pytest-runner-pipe-hang shipped pytest.ini with timeout=30, at least 3-4 tests now show `+++ Timeout +++` markers instead of hanging the runner forever. Full stack traces point at `self._cond.wait(timeout)` and `self._selector.poll(timeout)` — looks like threading/socket waits in test code.\n\n**Scope:** identify each hanging test (grep `+++ Timeout +++` in a full pytest run), root-cause each (mock/fixture missing a close? real network call in a unit test? deadlock?), and either fix the test or mark it skip/xfail with a linked ticket for the underlying code fix.\n\n**Affected files:** tests/* (specific files TBD by running pytest and collecting timeout markers); possibly source files if fixes belong there\n\n**Design rules:** docs-in-code (doesn't apply — test fixes, not load-bearing docs); test-plan-or-why-not (applies — plan: before/after count of `+++ Timeout +++` markers should go to 0); others don't apply directly\n\n**Scope boundary:** In: tests currently showing timeout markers. Out: test coverage improvements, test refactors not related to hangs, fixing tests that merely fail (non-hang failures like test_pe_chain's TestPeStepRegistration are separate tickets).\n\n**Test plan:** Before: `python -m pytest tests/ -q 2>&1 | grep -c '+++ Timeout +++'` returns N. After fix: returns 0. Also: `time python -m pytest tests/ -q` drops from 1m38s (with -x bailing) to whatever the full-suite time is, proportional to how many were hanging.",
+    "completed_at": "2026-04-24T00:27:08.701828+00:00",
+    "github_issue": 504,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5c14ca2f-d10d-4ccd-a14b-867eed13ea81",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

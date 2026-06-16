@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice3-datacenter-client.20260501.222555397121",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice3-datacenter-client"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:25:55.397121",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice3-datacenter-client"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice3-datacenter-client",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice3",
+      "Datacenter",
+      "Client"
+    ],
+    "title": "Generic DatacenterClient — agent-side announce + manifest cache + accessors",
+    "result": "DatacenterClient ships: announce() with bounded poll, manifest cache, accessor methods (get_tool/get_tools/get_state_ref/get_state_refs/get_channels/get_acl/get_surface_address/get_primary_address). AnnounceTimeoutError + AnnounceRejectedError. Multi-agent safe (replies filtered by primary_mailbox). 13 new tests; 162 passed. agent_datacenter commit 0347f4c.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T22:23:29.679099+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "DatacenterClient is the generic agent-side counterpart to AnnounceListener. An agent process instantiates it with its IdentityEnvelope + a connection to the bus, calls announce(), and the client posts the envelope to comms://announce + polls comms://announce-events for the matching Manifest. Once cached, the client exposes accessor methods so cognition / cortex / CC adapter can read tool bindings, state refs, channels, and surface addresses without re-parsing the wire format. Reusable across agent types (Igor, CC, research-orca) — agent-specific subclasses or wrappers (IgorShim, etc.) compose around it.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/client.py (NEW), /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/__init__.py (export DatacenterClient), /home/akien/dev/src/agent_datacenter/tests/test_datacenter_client.py (NEW)\n**Design rules:** client is pure agent-side (no datacenter-side state); announce() is synchronous in slice 3 — slice 3b/3c will add IDLE wakeup; manifest cache is in-memory only, no disk persistence (re-announce on process restart).\n**Scope boundary:** in — DatacenterClient class, announce() that posts and polls with a bounded timeout, manifest property, get_tool(name), get_state_ref(name), get_channels(), get_surface_address(name); unit tests covering announce success / timeout / error-envelope-from-broker / accessor methods on a manually-set manifest. Out — IDLE loop wakeup (slice 3b), inotify invalidation (slice 3b), IgorShim (slice 3b), CC-side MCP adapter (slice 3c), Igor cognition wiring (slice 4), persistent manifest cache.\n**Test plan:** test_announce_returns_manifest (fake bus, listener pumps once, client gets manifest); test_announce_timeout_raises (no listener, timeout fires); test_announce_error_envelope_raises (broker publishes kind=error, client raises informative exception); test_get_tool_returns_binding_or_none; test_get_state_ref_returns_ref_or_none; test_get_channels_returns_subscriptions; test_get_surface_address_returns_address_or_none; test_manifest_property_none_before_announce.",
+    "completed_at": "2026-05-01T22:25:55.397121+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7ae76d1e-587b-448e-89ee-ba6e1401d57a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

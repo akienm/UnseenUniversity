@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-rename-audit-to-day-close-audit.20260420.164754760343",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rename-audit-to-day-close-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T16:47:54.760343",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-rename-audit-to-day-close-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rename-audit-to-day-close-audit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Skills"
+    ],
+    "title": "Rename /audit → /day-close-audit (debris check, not review)",
+    "result": "Renamed across ~/.claude/skills/ (dir mv + SKILL.md frontmatter), CLAUDE.md, lab/claudecode/cc_skills/*, lab/design_docs/*, wild_igor/igor/network/proxy.py, daemon_supervisor.py, tools/metrics.py, slate_manager.py, cc_memory_seed/MEMORY.md, and ClaudeAndAkien repo (skills/audit.md → day-close-audit.md + README.md). TheIgors commit bf86a1cb; ClaudeAndAkien commit ee46e83. Historical files (papers/, sessions.md, *.dsb) left alone.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-04-20T16:40:57.628083+00:00",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Current /audit is mostly about not leaving debris (temp files, leaked runtime state, dead code) and is invoked during /day-close. /review is the one actually reviewing plans/code/diffs. Renaming clarifies roles.\n\n## Changes\n- mv ~/.claude/skills/audit/ ~/.claude/skills/day-close-audit/\n- Update SKILL.md frontmatter name + description\n- Update ~/.claude/skills/day-close/SKILL.md to reference /day-close-audit\n- Grep TheIgors repo for '/audit' references that mean the debris check (vs /review); update those\n\n## Not in scope\n- Changing what /audit does — just the name.\n- Changing /review — separate ticket.",
+    "completed_at": "2026-04-20T16:47:54.760343+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "532c7602-09dd-4a5b-b7c6-ccd576213c1e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-sqlite-out-main-pragma.20260505.220748783801",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-out-main-pragma"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T22:07:48.783801",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-migration-phase-bc-2026-05-05"
+    ],
+    "tickets": [
+      "T-sqlite-out-main-pragma"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-out-main-pragma",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Remove PRAGMA wal_checkpoint block from main.py",
+    "result": "Removed PRAGMA wal_checkpoint try/except block from main.py — was a shim no-op; commit 44b5d500",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-05T21:49:43.695075+00:00",
+    "related_to": null,
+    "decision_id": "D-sqlite-migration-phase-bc-2026-05-05",
+    "description": "main.py lines 497–499 call `conn.execute(\"PRAGMA wal_checkpoint(TRUNCATE)\")` through `self.cortex._db()` (PGDatabaseProxy). The shim no-ops all PRAGMA statements — this call does nothing on Postgres. Remove the entire try/except block.\n\n**Affected files:** `wild_igor/igor/main.py` (lines 497–499)\n**Design rules:** theigors/rules/database — no SQLite-isms; Postgres-native only\n**Scope boundary:** Delete the PRAGMA try/except block only. No other changes to main.py.\n**Test plan:** Run full test suite; grep confirms no PRAGMA in main.py after change.\n**Pass condition:** `grep 'PRAGMA' wild_igor/igor/main.py` returns 0 results; Igor starts without error; test suite green.\n\nValidation: Igor session log shows no PRAGMA-related errors or warnings.\nCleanup: no test artifacts.",
+    "completed_at": "2026-05-05T22:07:48.783801+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bf401b9d-763b-4a01-8431-f15fe041ac6f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

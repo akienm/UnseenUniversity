@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-uc-db-proxy-shelf.20260417.195133834582",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-db-proxy-shelf"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T19:51:33.834582",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-comms-module",
+      "T-uc-db-proxy-shelf",
+      "T-uc-rack-architecture"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-db-proxy-shelf",
+    "size": "M",
+    "tags": [
+      "Operations",
+      "Architecture"
+    ],
+    "title": "Move db_proxy to utility closet as rack shelf module",
+    "result": "db_proxy.py moved to lab/utility_closet/. Re-export shim at old path. DatabaseShelf rack module with health/metrics. 883 lines out of Igor.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T19:42:44.715564+00:00",
+    "related_to": null,
+    "description": "Migrate db_proxy from Igor internals to a UC rack module. DB queries stay direct-call (no comms:// overhead for high-frequency reads), but all queries log audit trail to comms://log/db-proxy.\n\n## Principle\n- Conversations (back and forth, human-readable, history matters) → route through comms://\n- Service calls (low-latency, high-frequency, internal) → direct call, log audit trail to comms channel\n- comms is the observer, not the transport for everything\n\n## Scope\n- Move db_proxy to lab/utility_closet/db_proxy.py (or db_shelf/)\n- Register as UC rack module (health endpoint, standard interface)\n- Add comms://log/db-proxy channel for query audit logging\n- Igor imports from UC shelf instead of internal module\n- Redis/Valkey cache same pattern: direct API, log to comms://log/cache\n\n## Does NOT change\n- Query API (db_proxy interface stays the same)\n- ?→%s translation, connection pooling, all existing behavior\n- Igor code that calls db_proxy (just import path changes)\n\n## Depends on\n- T-uc-comms-module (for audit logging channel)\n- T-uc-rack-architecture (module interface)",
+    "completed_at": "2026-04-17T19:51:33.834582+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "071bdd5d-21f3-4638-b2ab-e87fe2fe4b92",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

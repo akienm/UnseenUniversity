@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-dream-command.20260511.170926512033",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-dream-command"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T17:09:26.512033",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dreaming-enhancements-2026-05-11"
+    ],
+    "tickets": [
+      "T-cc-dream-command",
+      "T-igor-dreaming-module"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-dream-command",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Memory",
+      "Automation"
+    ],
+    "title": "CLOSED: /dream skill to trigger Igor dreaming",
+    "result": "dream skill created + deployed; triggers Igor dreaming via channel, polls 30s, graceful timeout",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 6,
+    "claimed_at": "2026-05-11T18:58:40.309068+00:00",
+    "created_at": "2026-05-11T17:09:26.512033+00:00",
+    "related_to": null,
+    "decision_id": "D-dreaming-enhancements-2026-05-11",
+    "description": "Igor's dreaming module is shipped (T-igor-dreaming-module) but there is no CC-side command to trigger it manually. AutoDream (Claude's memory management) exposes /dream for exactly this pattern. Right now triggering Igor's dreaming requires manually posting to the channel.\n\nCreate ~/.claude/skills/dream: (1) call mcp__librarian__channel_send with content 'trigger dreaming pass' to Igor's channel; (2) wait briefly (poll channel_read up to 30s) for Igor's dreaming summary response; (3) report what was synthesized and proposed. If no response in 30s, report 'dreaming triggered — check channel for result when Igor completes pass'.\n\n**Affected files:** ~/.claude/skills/dream (new skill file)\n**Design rules:** skill-file only — no changes to dreaming.py or Igor internals; uses existing channel_send MCP tool\n**Scope boundary:** In: skill file, channel trigger, response poll, report. Out: modifying dreaming.py, changing dreaming schedule.\n**Test plan:** /dream sends message to channel. Skill reports dreaming summary when Igor responds, or timeout message if not. Skill does not error if Igor is offline.",
+    "completed_at": "2026-05-11T18:59:16.728668+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "669ede21-626e-44df-b369-23f66f46d59f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

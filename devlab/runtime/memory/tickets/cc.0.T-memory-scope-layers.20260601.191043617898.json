@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-memory-scope-layers.20260601.191043617898",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-scope-layers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T19:10:43.617898",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-flat-table-reform",
+      "T-memory-scope-layers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-scope-layers",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Memory",
+      "Architecture",
+      "Clan"
+    ],
+    "title": "Memory architecture: 4-tier scope model (global/local/agent/client)",
+    "result": "4-tier memory scope design doc + db_proxy factories (make_global_proxy, make_agent_proxy, make_client_proxy) + 11 unit tests; bus access control model documented; migration path from Igor-wild-0001 described",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "blocked_at": "2026-06-01T19:14:39.990411+00:00",
+    "claimed_at": "2026-06-01T21:32:31.160693+00:00",
+    "created_at": "2026-06-01T19:10:43.617898+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Design and implement the 4-tier memory scope model for the rack:\n\n- **Global DB** — universal patterns, how-to, bootstraps. Shared across all UU instances. Read by all agents. Write governance-controlled (not free-for-all). This is the compiled inference commons.\n- **Local/Instance DB** — 'how did we do last week.' All non-blocked local agents on this bus can read. Write by owning agent. Our instance's shared working memory (tickets, outcomes, patterns specific to this deployment).\n- **Agent DB (per device)** — Igor's memories, Granny's build history, Vetinari's task state. Owner reads/writes freely. Other agents request access via bus (inter-agent permission protocol).\n- **Client DB (per human)** — Akien's, Leah's personal data. Private by default. Owner controls access grants.\n\nA device typically connects to 3 DBs: Global (read), Local (read/write for its domain), Agent (own). Client DBs are separate per person. This replaces the current model where everything co-habits the Igor-wild-0001 Postgres instance.\n\nRelates to T-memory-flat-table-reform — the flat-table reform should be designed against this 4-tier model from the start.\n\n**Affected files:** TBD — discovery step. Likely: new Postgres databases or schemas per tier; connection management in skeleton or shim; access control primitives\n\n**Design rules:** no-sqlite; Postgres; isolation by DB (not just schema or table prefix — separate DB instances for client data); inter-agent access via bus not direct DB connection\n\n**Scope boundary:** IN — tier definitions + schema design; connection management; access control model; migration plan from current single-DB. OUT — full migration execution (separate ticket); client UI for access control; encryption at rest (follow-on)\n\n**Completion criteria:** (1) design doc specifies 4 tiers with schema per tier; (2) connection config supports pointing each tier to a different DB; (3) agent accessing another agent's data goes via bus request, not direct query; (4) migration path from Igor-wild-0001 single DB described",
+    "completed_at": "2026-06-01T21:45:29.150855+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T21:32:31.160693+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ac1d8c08-cb36-418c-94f7-c3a57e5750a2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

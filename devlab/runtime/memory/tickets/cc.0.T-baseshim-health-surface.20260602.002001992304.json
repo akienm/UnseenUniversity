@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-baseshim-health-surface.20260602.002001992304",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-baseshim-health-surface"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T00:20:01.992304",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-ui-controls-2026-06-01"
+    ],
+    "tickets": [
+      "T-baseshim-health-surface",
+      "T-foo",
+      "T-web-ui-circuit-breakers",
+      "T-web-ui-three-pane"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-baseshim-health-surface",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Device"
+    ],
+    "title": "BaseShim: health_surface() + check_circuit() hooks",
+    "result": "BaseShim.health_surface()+check_circuit()+_post_status() added; GrannyShim override with relaunch_count+daemon; 17 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.75,
+    "claimed_at": "2026-06-02T00:20:17.879901+00:00",
+    "created_at": "2026-06-02T00:20:01.992304+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-web-ui-controls-2026-06-01",
+    "description": "Both web UI tickets (T-web-ui-three-pane, T-web-ui-circuit-breakers) depend on BaseShim having two new hooks. Without them, the web server has no standard surface to query.\n\n1. `health_surface() -> dict[str, str]` — returns key/value pairs representing this device's current state (e.g. {\"active_sessions\": \"1\", \"last_dispatch\": \"T-foo\"}). Default returns empty dict. Each device overrides to add its fields. The web server calls this on startup and on demand.\n\n2. `check_circuit() -> bool` — reads the runtime circuit_state.json flat file, returns True if this device's circuit is OPEN (paused). Default implementation reads the shared file; no per-device override needed unless custom behavior wanted.\n\nAlso add a convention: devices can post key=value status by calling `self._post_status(key, value)` which writes to both health_surface() cache and to the device's channel (for the TTL-aged web pane).\n\n**Affected files:** unseen_university/shim.py (BaseShim), unseen_university/skeleton/skeleton.py (if skeleton exposes BaseShim), tests for both methods\n**Design rules:** OOP-first — hooks in BaseShim, never per-device standalone functions; no-sqlite; log circuit state read at DEBUG\n**Scope boundary:** IN: health_surface(), check_circuit(), _post_status() convenience method; default implementations. OUT: per-device field definitions (each device implements those in its own override), web rendering (T-web-ui-three-pane), circuit UI (T-web-ui-circuit-breakers).\n**Completion criteria:** `BaseShim().health_surface()` returns empty dict by default. A subclass that overrides it returns its fields. `BaseShim().check_circuit()` returns False when circuit_state.json doesn't exist or device circuit is CLOSED, True when OPEN. Tests cover both defaults and override. GrannyShim overrides health_surface() with at least one field.",
+    "completed_at": "2026-06-02T00:25:10.883791+00:00",
+    "deposited_at": "2026-06-01T18:20:26.550358",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T00:20:17.879901+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d00a811e-ad4d-4c79-9484-26f3a0aa91c5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

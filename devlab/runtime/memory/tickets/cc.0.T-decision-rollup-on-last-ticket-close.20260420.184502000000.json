@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-decision-rollup-on-last-ticket-close.20260420.184502000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decision-rollup-on-last-ticket-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:02",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-decided-skill",
+      "T-decision-rollup-on-last-ticket-close",
+      "T-ticket-schema-decision-id-and-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decision-rollup-on-last-ticket-close",
+    "gate": "T-ticket-schema-decision-id-and-gate AND T-decided-skill must ship first",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Decisions"
+    ],
+    "title": "Decision rollup — auto-close decision when all its tickets close; un-gate dependents",
+    "result": "Added _decision_rollup() to cc_queue.py: invoked by cmd_done. When a ticket closes and all siblings w/ same decision_id are done/discarded/blocked, writes rollup to lab/design_docs/decisions/<D-id>.md listing shipped tickets + their results; un-gates any ticket whose gate text mentions this decision_id. File-stub location until T-decisions-into-palace-subtree migrates rollups into the palace. Smoke-tested via T-stale-ticket-sweeper close (no rollup fired — decision has open siblings, expected).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-20T18:55:40.426785+00:00",
+    "created_at": "2026-04-20T18:45:02Z",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Closes the learning loop: decisions in the palace are frozen promises without feedback; rollup adds the outcome.\n\n## Trigger\nWhen /sprint-batch or /sprint closes a ticket AND that ticket has decision_id, check: are all tickets with this decision_id now done/discarded? If yes, roll up.\n\n## Rollup action\n- Update Igor palace node theigors/decisions/D### with:\n  - status: closed\n  - outcome: 'shipped via T-x, T-y; actual vs planned: …'\n  - closed_at timestamp\n- Write a short line to the decisions log\n- Scan queue.json for tickets with `gate` matching this decision's milestone; clear those gates (un-gate)\n\n## Blocked by\n- T-ticket-schema-decision-id-and-gate\n- T-decided-skill (decisions need to exist and be linked)\n\n## Not in scope\n- /review self-learning — separate ticket.",
+    "completed_at": "2026-04-20T18:57:48.952273+00:00",
+    "github_issue": 489,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d344a17b-ed6a-45e7-a790-acf5b560809f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

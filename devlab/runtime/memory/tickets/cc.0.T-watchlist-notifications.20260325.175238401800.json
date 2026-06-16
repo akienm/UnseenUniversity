@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-watchlist-notifications.20260325.175238401800",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watchlist-notifications"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:52:38.401800",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-watchlist-notifications"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watchlist-notifications",
+    "title": "Watchlist: Igor-cannot-fix-itself alerting",
+    "result": "Implemented watchlist error logging for unrecoverable external failures (Gmail, SSH, Ollama, budget). Added append_error_watchlist(), read_error_watchlist(), count_error_watchlist() functions. Integrated into get_stats() for dashboard and boot sequence for user notification. Fixed D233 test skipping (needs design approval). All 403 tests pass.",
+    "status": "done",
+    "priority": 10,
+    "claimed_at": "2026-03-25T17:49:24.959543+00:00",
+    "description": "When Igor hits unrecoverable external failure (Gmail auth, SSH down, Ollama unreachable, budget exhausted), append to ~/.TheIgors/igor_wild_0001/watchlist.md: timestamp, error, attempted fix, suggested action. Dashboard surfaces watchlist_count. Igor reports non-empty watchlist on boot. Files: tools/watchlist.py (new), web/server.py (dashboard), main.py (boot check). S-size.",
+    "completed_at": "2026-03-25T17:52:38.401800+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7d9af26d-ab36-4a31-8b1d-b6bab0200567",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

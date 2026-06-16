@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-browser-use-shim.20260427.223721220109",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-browser-use-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:37:21.220109",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-4-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-browser-use-device",
+      "T-adc-browser-use-shim",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-browser-use-shim",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: browser-use shim (gated on device ticket)",
+    "result": "BrowserUseShim shipped; self_test fast-paths without Chrome launch",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-04-27T22:23:44.138003+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-4-2026-04-27",
+    "description": "BrowserUseShim — lifecycle management for browser-use. Gated on T-adc-browser-use-device. Full spec at implementation time.\n\nProposed shape:\n- Determined by spike question 2 (own shim vs generic automation shim pattern)\n- agent_datacenter/devices/browser_use/shim.py: BrowserUseShim(BaseShim)\n- 'restart' semantics per spike question 3\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/browser_use/shim.py (post-spike)\n\nDesign rules: oop-first, spec at implementation time\n\nScope boundary: IN: BrowserUseShim per spike findings. OUT: browser automation logic (lives in device.py)\n\nTest plan: TBD per spike. BrowserUseShim() instantiates; self_test() returns {passed: bool, details: str}",
+    "completed_at": "2026-04-27T22:37:21.220109+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "81f21c3a-334a-4e81-bcd4-3f1446d965bf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

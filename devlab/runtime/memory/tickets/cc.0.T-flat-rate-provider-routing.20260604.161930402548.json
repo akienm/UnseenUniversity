@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-flat-rate-provider-routing.20260604.161930402548",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-flat-rate-provider-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T16:19:30.402548",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dsimnel-cc-parity-2026-06-04"
+    ],
+    "tickets": [
+      "T-dsimnel-cc-parity",
+      "T-flat-rate-provider-routing",
+      "T-inference-caching-all-providers",
+      "T-inference-provider-priority"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-flat-rate-provider-routing",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Cost",
+      "Architecture"
+    ],
+    "title": "Inference proxy: prefer flat-rate subscription sources over usage-based",
+    "result": "billing_type on Source; OllamaCloudSource (flat_rate, OLLAMA_PRO_API_KEY-gated); flat-rate routing preference in RulesEngine; ollama-pro model entries; OR tools forwarding fix (incidental); 17 tests; e543554d",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-06-04T16:19:30.402548+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dsimnel-cc-parity-2026-06-04",
+    "description": "Usage-based accounts (OR, Anthropic API) will eventually end or become cost-prohibitive. Flat-rate subscription providers ($20/mo Ollama Pro, CC $20/mo plan) should be preferred for DickSimnel work when capacity is available.\n\nUpdate T-inference-provider-priority (already sprint) to include: (1) a `billing_type: flat_rate | usage_based` field on provider config; (2) routing priority: flat-rate before usage-based within the same capability tier; (3) Ollama Pro (ollama.com hosted API, $20/mo) as a provider entry with flat_rate billing. The inference proxy picks the cheapest flat-rate source first, falls back to usage-based only when needed.\n\nThis ticket extends T-inference-provider-priority — coordinate or merge if that ticket is actively being sprinted.\n\n**Affected files:** devices/inference/device.py, config/profiles/ (provider config), devices/inference/models_registry.py\n**Design rules:** no-sqlite; OOP-first\n**Scope boundary:** billing_type field + routing preference + Ollama Pro as provider; does not change caching (T-inference-caching-all-providers) or DickSimnel protocol (T-dsimnel-cc-parity)\n**Completion criteria:** Inference proxy routes DickSimnel requests to Ollama Pro when available and flat-rate is preferred; falls back to OR when Ollama Pro quota exhausted. Config-driven — no hard-coded routing.",
+    "completed_at": "2026-06-04T16:34:50.610317+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a6a74164-405a-4958-9cf5-83b43b6dce01",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

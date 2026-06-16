@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-d125-igorbase-drift.20260414.233637000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-d125-igorbase-drift"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:36:37",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-d125-igorbase-drift"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-d125-igorbase-drift",
+    "body": "Surfaced by T-audit-add-checks (#446) on first run of the new primary-classes-must-inherit-igorbase registered check. **105 classes** in wild_igor/igor/{cognition,memory,tools,network,brainstem}/ don't inherit from IgorBase.\n\n## Why this matters\n\nD125 (closed earlier today as resolved:implemented) said: 'Global base class for all Igor objects; moves diagnostics, monitoring, and common concerns onto one substrate.' But while IgorBase exists and 22 subclasses use it, 105 OTHER classes don't. The diagnostics/timer/logging substrate isn't actually uniform — it's spotty.\n\n## Pattern of drift\n\nLargely subclass chains where the PARENT class doesn't inherit IgorBase, so all its children also don't:\n- **EmitChannel + 7 children** (BasketChannel, EmotionalMilieuChannel, CognitiveMilieuChannel, ConsoleChannel, WebChannel, DiscordChannel, MemoryChannel) — fix EmitChannel and all 7 cascade\n- **InhibitionNode + 4 children** (TWMCheckNode, InferenceCheckNode, EstimateCheckNode, ActionGateNode) + InhibitionChain\n- **BaseInterruptor + N children** (BudgetInterruptor, ContextInterruptor, MilieuInterruptor, ...)\n- **EmitChannelRegistry, _RouterShim, DaemonSupervisor** — standalone classes\n\nFixing the parent of each chain probably cuts the count from 105 to ~20.\n\n## Approach\n\n1. **Inventory pass (Igor task per delegate-research-to-igor rule):** Igor walks the 105 violations and groups them by inheritance chain. Reports each chain root + child count. Identifies any classes that genuinely shouldn't be IgorBase (data containers, registries, exception subclasses).\n2. **Fix parents (CC sprint):** For each chain root, add IgorBase as a base. Run tests after each fix. Each chain root fix should drop multiple violations.\n3. **Fix standalones:** The non-chain classes either get IgorBase or get explicitly acked (via audit_add.py ack) with a documented reason.\n4. **Re-run check:** verify count drops to zero or to acked-only count.\n\n## Existing work to check\n\n- wild_igor/igor/igor_base.py — the IgorBase class\n- wild_igor/igor/cognition/emit_channels.py — biggest single chain (8 classes)\n- wild_igor/igor/cognition/inhibition_chain.py — second biggest (6 classes)\n- wild_igor/igor/cognition/interruptors.py — BaseInterruptor chain\n- lab/claudecode/audit_check_igorbase.py — the check that surfaced this\n- lab/claudecode/audit_add.py — for ack-ing legitimate exemptions\n\n## Out of scope\n\n- Restructuring class hierarchies beyond adding IgorBase\n- Removing IgorBase from anywhere (the rule is ADD, not migrate)\n- Refactoring the chain root parents (just add IgorBase to existing class signature)\n\n## Provenance\n\nT-audit-add-checks first run 2026-04-14. The audit-add infrastructure works — this is the kind of finding it exists to surface. The check is a forever check so reintroduction of D125 drift will be caught in future sweeps.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "cleanup",
+      "d125",
+      "inertia-medium",
+      "found-by-audit"
+    ],
+    "title": "D125 drift — 105 primary classes don't inherit from IgorBase",
+    "result": "41 classes now inherit IgorBase. Bootstrap PathManager split resolves circular import. Dynamic __class__ mixin on promotion. Skipped ebook_drm + brainstem. All classes get: instance naming, lazy logger, perf timing, dump().",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T20:37:19.663901+00:00",
+    "created_at": "2026-04-14T23:36:37Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T21:03:12.988529+00:00",
+    "github_issue": 455,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

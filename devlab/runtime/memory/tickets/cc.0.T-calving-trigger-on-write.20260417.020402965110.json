@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-calving-trigger-on-write.20260417.020402965110",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-calving-trigger-on-write"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T02:04:02.965110",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-calving-trigger-on-write"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-calving-trigger-on-write",
+    "size": "M",
+    "title": "Calving trigger — on write, calve if tree exceeds 1000 nodes",
+    "result": "a71db938 — _maybe_calve in store(), gated by IGOR_CALVING_ENABLED + IGOR_CALVING_THRESHOLD (default 1000). Splits at parent of deepest node. Switch enabled in igor.switches.cfg. 4 tests.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-graph-calving-execution",
+    "claimed_at": "2026-04-17T02:01:49.762240+00:00",
+    "related_to": null,
+    "description": "After cortex.store() inserts a node, check the tree size. If >1000 nodes, find the deepest subtree (reuse find_calving_candidates logic) and call calve_subtree. Threshold configurable via IGOR_CALVING_THRESHOLD (default 1000). Gate behind IGOR_CALVING_ENABLED switch.",
+    "completed_at": "2026-04-17T02:04:02.965110+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ef940472-4b05-4be0-9ba7-09ebeb7a00a7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

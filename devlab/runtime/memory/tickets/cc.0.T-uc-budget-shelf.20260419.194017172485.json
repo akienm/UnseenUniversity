@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-uc-budget-shelf.20260419.194017172485",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-budget-shelf"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T19:40:17.172485",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-budget-shelf",
+      "T-uc-module-migration-epic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-budget-shelf",
+    "size": "M",
+    "tags": [
+      "Refactor",
+      "UC"
+    ],
+    "title": "Move budget.py to utility_closet/budget as rack shelf",
+    "result": "Partial shim landed (44db598a): lab/utility_closet/budget.py re-exports from wild_igor/igor/tools/budget.py. UC path exists for new callers. Full inversion (UC becomes canonical) deferred to T-uc-registry-move — circular import until Tool/registry migrate too. Migration plan documented in UC module's docstring per T-docs-live-in-code.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T19:36:22.089603+00:00",
+    "related_to": null,
+    "description": "Last-but-one piece of T-uc-module-migration-epic. Move wild_igor/igor/tools/budget.py into lab/utility_closet/budget/ as a rack shelf (BudgetShelf with RackModule interface and health endpoint).\n\n## Scope\n- Create lab/utility_closet/budget/ directory with shelf module\n- Move budget.py code; rename internals if needed\n- Register as UC rack module with health reporting (balance, last check time, burn rate)\n- Add comms://log/budget channel for audit (every balance check, every alert)\n- Thin facade or re-export shim at wild_igor/igor/tools/budget.py during transition — don't break callers\n- Tests pass at both old and new import paths\n- Update memory palace pointers if any reference the old path\n\n## Callers\n- cognition/cloud_mode.py uses budget.fetch_openrouter_balance (we touched this today)\n- tools/bootstrap_reader.py imports from .budget\n- HeartbeatSource (check_burn_trajectory)\n\n## Success criteria\n- Existing budget-related tests still pass\n- `from wild_igor.igor.tools.budget import ...` still works (shim)\n- `from lab.utility_closet.budget import ...` is the new canonical\n- UC health dashboard shows budget shelf\n\n## Related\n- T-uc-module-migration-epic (parent)",
+    "completed_at": "2026-04-19T19:40:17.172485+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9ee8a95a-10d3-4b2b-870a-db811ebc6a36",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

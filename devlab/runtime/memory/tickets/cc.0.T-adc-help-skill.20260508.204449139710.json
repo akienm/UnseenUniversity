@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-help-skill.20260508.204449139710",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-help-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T20:44:49.139710",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-help-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-help-skill",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skill",
+      "Workflow",
+      "ADC"
+    ],
+    "title": "T-adc-help-skill",
+    "result": "/ADCHelp skill created — 31 skills organized by category, key flows, status icons, key paths; console or file output",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-08T20:53:16.358602+00:00",
+    "created_at": "2026-05-08T20:44:49.139710+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Create a /ADCHelp skill that outputs workflow reference documentation. Akien used to have a workflow_reference.md file in the tree, but it was lost during a recent edit session. Rather than keeping a manually-updated file, build a skill that generates the reference on demand.\n\nUsage: `/ADCHelp` outputs to console; `/ADCHelp ~/tmp/workflow_reference.md` writes to a file. Content should cover the ADC tools Akien is building or using frequently (skills, MCP tools, device capabilities, common patterns).\n\n**Affected files:** ~/.claude/skills/adc-help/ (new skill directory)\n**Design rules:** skills-are-tools; reference-lives-in-code (source references from CLAUDE.md, palace nodes, skills themselves)\n**Scope boundary:** Workflow reference only — not a full manual. Keep it concise and link to fuller docs where they exist. In scope: common skill use patterns, MCP tool reference, ADC architecture snapshot. Out of scope: detailed tutorials (those live in docs/).\n**Test plan:** Manual verification: /ADCHelp outputs useful content; file write preserves formatting; Akien confirms workflow patterns are current and helpful.",
+    "completed_at": "2026-05-08T20:54:11.143243+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "needs_review_at": "2026-05-08T20:52:41.550306+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c66b3bb3-2d8a-4459-b9e4-9b33e5de4c2f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

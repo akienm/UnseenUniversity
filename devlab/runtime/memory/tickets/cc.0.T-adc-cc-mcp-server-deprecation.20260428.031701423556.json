@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-adc-cc-mcp-server-deprecation.20260428.031701423556",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-cc-mcp-server-deprecation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T03:17:01.423556",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-5-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-cc-mcp-server-deprecation",
+      "T-adc-skeleton-mcp-aggregator",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-cc-mcp-server-deprecation",
+    "gate": "T-adc-skeleton-mcp-aggregator",
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Cleanup",
+      "Migration"
+    ],
+    "title": "agent_datacenter: deprecate and remove lab/claudecode/cc_mcp_server.py",
+    "result": "DEPRECATED header added to cc_mcp_server.py; CC_MCP_REGISTRATION.md rewritten to point to igor_mcp.py. Commit 88369599.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-28T03:16:08.787121+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "approved_at": "2026-04-28T03:16:03.702420+00:00",
+    "decision_id": "D-adc-phase-5-2026-04-27",
+    "description": "Once the skeleton MCP aggregator is live and CC connects through it, the old cc_mcp_server.py (lab/claudecode/cc_mcp_server.py, 203 lines) is superseded. Remove it cleanly.\n\nProblem: Two MCP servers running creates confusion and a split namespace. Old one must go.\n\nProposed shape:\n- Verify no callers of cc_mcp_server.py remain outside the file itself: grep -r 'cc_mcp_server' ~/TheIgors/\n- Add deprecation notice to cc_mcp_server.py: 'DEPRECATED: superseded by agent_datacenter skeleton MCP aggregator. Remove after YYYY-MM-DD.'\n- After one release with both running in parallel and verified no issues: rm lab/claudecode/cc_mcp_server.py\n- Update lab/claudecode/CC_MCP_REGISTRATION.md to point to agent_datacenter skeleton docs\n\nAffected files:\n- ~/TheIgors/lab/claudecode/cc_mcp_server.py (remove)\n- ~/TheIgors/lab/claudecode/CC_MCP_REGISTRATION.md (update pointer)\n\nDesign rules:\n- docs-in-code: CC_MCP_REGISTRATION.md updated to reflect new home\n\nScope boundary:\nIN: grep for callers, deprecation notice, file removal after verification\nOUT: any functionality changes — this is cleanup only\n\nTest plan:\n- grep -r 'cc_mcp_server' ~/TheIgors/ returns no callers after removal\n- CC still connects to skeleton MCP after removal\n- CC_MCP_REGISTRATION.md points to correct new location",
+    "proposed_at": "2026-04-28T00:30:13.360285+00:00",
+    "completed_at": "2026-04-28T03:17:01.423556+00:00",
+    "github_issue": null,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Deprecation approach approved — add header, update CC_MCP_REGISTRATION.md. The core_patterns.py proposal was the P1 hallucination bug; this ticket touches only lab/claudecode/.",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "31c3a394-cd6d-4258-b49b-1b619c65e7b8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

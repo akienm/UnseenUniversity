@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-adc-conn-search-path.20260518.155544710594",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-conn-search-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T15:55:44.710594",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-conn-search-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-conn-search-path",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Database",
+      "Testing",
+      "ADC"
+    ],
+    "title": "Make _conn() respect IGOR_LOCAL_SEARCH_PATH env var",
+    "result": "already implemented — _conn() reads IGOR_LOCAL_SEARCH_PATH at line 127; 14 watch_problems tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-18T17:34:48.574047+00:00",
+    "created_at": "2026-05-18T15:55:44.710594+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "_conn() ignores IGOR_LOCAL_SEARCH_PATH, causing lever_watcher and other callers to hit the live instance.* schema during tests, polluting production data. Thread the env var through _conn() so tests can target a synthetic schema.\n\n**Affected files:** wild_igor/igor/cognition/watch_problems.py (_conn definition), tests/test_watch_problems*.py\n**Design rules:** no-sqlite; Postgres search_path set at connection time\n**Scope boundary:** in scope: honor IGOR_LOCAL_SEARCH_PATH in _conn(); assert in lever_watcher test; verify fix resolves the known flaky watch_problems tests. Out of scope: refactoring connection pool, other _conn() callers outside watch_problems.\n**Test plan:** unit test _conn() sets search_path to IGOR_LOCAL_SEARCH_PATH when set; existing flaky lever_watcher tests should pass without hitting live instance table after fix.",
+    "completed_at": "2026-05-18T17:35:09.109118+00:00",
+    "github_issue": 736,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e1d6678e-7023-438c-9cd3-8b35f8884880",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

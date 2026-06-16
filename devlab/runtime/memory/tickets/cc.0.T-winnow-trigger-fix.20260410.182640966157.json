@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-winnow-trigger-fix.20260410.182640966157",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-winnow-trigger-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-10T18:26:40.966157",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-winnow-trigger-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-winnow-trigger-fix",
+    "size": "S",
+    "tags": "Cognition",
+    "title": "Fix WINNOW trigger extraction — learning from wrong signal",
+    "result": "D357: stripped think_context from keyword extraction. Cleaned 267 dead WINNOW nodes. New WINNOWs will learn from actual user input.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "267 WINNOW habits exist, 100% have 0 activations. Root cause: _deposit_winnow_breadcrumb() in reasoners/base.py (HIGH inertia) extracts keywords from think_context, not user input. Triggers like [think_context intent=general] never match actual user messages. Fix: extract keywords from core_input (stripped of thread context) instead. This is the graph learning the wrong thing — fixing it means the graph starts learning useful patterns from every conversation turn.",
+    "completed_at": "2026-04-10T18:26:40.966157+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "226e3180-8357-485b-9efd-d0bce348f150",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

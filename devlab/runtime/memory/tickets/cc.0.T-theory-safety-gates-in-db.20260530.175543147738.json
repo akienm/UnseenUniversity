@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-theory-safety-gates-in-db.20260530.175543147738",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theory-safety-gates-in-db"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:55:43.147738",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-theory-safety-gates-in-db"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theory-safety-gates-in-db",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Research"
+    ],
+    "title": "Investigate SYSCFG safety gate nodes in clan.memories",
+    "result": "deleted 3 pre-fix SYSCFG nodes from clan.memories; §8 Check 4 updated GAP→RESOLVED in ToO doc",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-05-30T18:06:29.088567+00:00",
+    "created_at": "2026-05-30T17:55:43.147738+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "TheoryOfOperation §8 check 4 says SYSCFG_IGOR_TIER5_ENABLED, SYSCFG_IGOR_ARBITER_ENABLED, SYSCFG_IGOR_SELF_EDIT_ENABLED should not exist in clan.memories (0 rows expected). 2026-05-30 alignment check returned 3 rows — all 3 are present.\n\nDoc claims safety gates are filesystem-only. Actual state contradicts this.\n\n**Affected files:** docs/TheoryOfOperation.md §4 (safety gates section), possibly devices/igor/ or skeleton/ code\n**Scope boundary:** IN — determine whether SYSCFG nodes should be in DB; if not, remove them and update doc; if yes, update doc to match reality; OUT — do not change gate behavior, only align doc with truth\n**Test plan:** After fix, re-run query 4 — either returns 0 rows (if removed) or §8 doc updated to say they may exist\n**Completion criteria:** DB state and doc are consistent",
+    "completed_at": "2026-05-30T18:19:20.064116+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T18:06:29.088567+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:55:43.216376+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9b31a599-8a6a-4f44-9b36-dee27d9a2f3b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

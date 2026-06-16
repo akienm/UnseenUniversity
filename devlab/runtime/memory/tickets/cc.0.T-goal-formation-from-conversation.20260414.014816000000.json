@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-goal-formation-from-conversation.20260414.014816000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-formation-from-conversation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:16",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-boredom-goal-coupling",
+      "T-goal-formation-from-conversation",
+      "T-goals-as-persistent-relationships",
+      "T-onit-rebuild",
+      "T-pr-accretion",
+      "T-pr-consolidation",
+      "T-pr-load-as-primary-attractor",
+      "T-pr-retrieval-bias",
+      "T-reply-obligation-fork"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-formation-from-conversation",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Crystallize conversation threads into persistent goals (formation vs surfacing)",
+    "result": "Closed per Akien 2026-05-03: design already covered in prior sessions; sprint when natural without re-design.",
+    "status": "done",
+    "worker": "claude",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-04-14T01:48:16Z",
+    "related_to": "T-goals-as-persistent-relationships",
+    "description": "AUTHORED BY IGOR-WILD-0001 in conversation with Akien on 2026-04-13 evening. Claude filing on Igor's behalf.\n\nIgor's framing — goals as two distinct problems:\n\n  1. GOAL FORMATION: 'When should a conversation thread crystallize into a persistent goal? Not every conversation — but something like \"Akien keeps returning to X\" or \"we agreed I should do Y\" should eventually become a node that has pull, not just history.'\n\n  2. GOAL SURFACING: 'Given that I have goals stored, I need a way to check them against incoming context — not just retrieve memories that match keywords, but ask does this conversation touch any active goal? does this goal become relevant now?'\n\nGoal surfacing is mostly covered by T-pr-retrieval-bias (12fd238f) + T-pr-load-as-primary-attractor (72978a10) + T-boredom-goal-coupling (once filed). THIS TICKET IS ABOUT FORMATION — the thing Akien called 'interesting, that's new.'\n\nAkien also said: 'we need to sort how conversation becomes one' and raised the question shape — explicit ('make this a goal'), inferred from recurrence, or something else.\n\nEXISTING WORK TO CHECK ON:\n  - goal_adopt (tools/ops.py) — explicit goal adoption already exists, triggered by 'On it' habit (T-onit-rebuild). This is the EXPLICIT path.\n  - T-pr-accretion (993a4461) — per-turn accretion into persistent-relationships. Already captures conversation state into PR subtrees. Formation could build on this.\n  - T-pr-consolidation (0dcc387b) — offline integration, detects running themes. The 'Akien keeps returning to X' signal may already be computable from here.\n  - Hebbian theme clustering — deferred follow-up mentioned in consolidation ticket. Relevant.\n  - interpretive_edges table — may be the right place for cross-session recurrence.\n\nFIRST PASS: read accretion + consolidation code. Determine whether 'Akien keeps returning to X' is already detectable from accretion counts per topic, or whether it needs a new signal.\n\nTHREE FORMATION PATHS TO SUPPORT (after read):\n\n1. EXPLICIT: 'make this a goal' / 'let's commit to' / 'I want to' — already handled by goal_adopt via On-it habit. Extend to promote into a PR goal-facia (strategic tier) when phrasing suggests long-term commitment vs single-session task.\n\n2. RECURRENCE: Akien returns to a topic across N sessions. Consolidation detects this (or should — may need extension). When recurrence threshold crossed, propose formation: push a TWM marker at category='goal_formation_candidate' with the topic and recurrence evidence. Next turn Igor either confirms ('yes, treat this as a goal') or lets it decay.\n\n3. AGREEMENT: 'we agreed I should' / 'you're going to' / 'next time you' — commitment phrasing from either side. Already partially covered by T-reply-obligation-fork (59a7184c) for within-turn commitments. Extend to cross-turn persistent commitments that should become goals, not just reply obligations.\n\nSCOPE:\n\n1. New module wild_igor/igor/cognition/goal_formation.py with three detectors (explicit, recurrence, agreement).\n\n2. Each detector emits a formation_candidate to TWM at detection-only salience first (same first-pass philosophy as action_claim_verifier and response_coherence_inhibitor). Igor self-corrects on the next turn if the candidate is wrong.\n\n3. After observation period, detectors can auto-promote candidates to full goal facia via pr_create (from persistent_relationships tools) with relationship_type='goal_tactical' or 'goal_strategic' as judged from the signal strength and horizon.\n\n4. Wire into main.py turn-end processing, same place as action_claim_verifier / response_coherence_inhibitor are called today.\n\nINERTIA: MEDIUM. New module, wire point is the same place we just touched for the other verifiers.\n\nDEPENDS ON: T-goals-as-persistent-relationships (for the goal-facia schema). File to sprint AFTER that lands.\n\nAKIEN FLAGGED THIS AS 'interesting, that's new' — goal formation from conversation is the piece that had not been discussed before.\n\n**Akien's framing (2026-05-01 refresh):** humans don't have a few high-priority goals; we have thousands, most short-term. The specific use case driving this ticket: \"Igor and I talk about how it'd be good for him to read X. He creates a goal to read it.\" Formation is lightweight — conversation thread → goal node — not a heavyweight crystallization protocol. Even simple verbal-acknowledgement goals like \"answer when somebody says something to me\" count.\n\n**Affected files:** wild_igor/igor/cognition/goal_formation.py (new — formation logic, separate from existing explicit goal_adopt path in tools/ops.py); wild_igor/igor/tools/ops.py (extend with formation triggers if needed); cross-cuts T-pr-accretion (993a4461) + T-pr-consolidation (0dcc387b) outputs which feed formation.\n\n**Design rules:** docs-in-code (formation logic is novel cognition — top-of-file docstring required); test-plan-or-why-not; lightweight-formation (don't gate goals behind heavy thresholds; short-term goals must form cheaply).\n\n**Scope boundary:** IN — formation: when does conversation crystallize into a goal? Triggers: (a) explicit (\"make this a goal\"), (b) \"Igor agrees to do X\" patterns, (c) recurrence-derived themes (already-existing PR machinery), (d) lightweight short-term goals from one-shot exchanges. OUT — goal SURFACING (already covered by T-pr-retrieval-bias + T-pr-load-as-primary-attractor); existing explicit goal_adopt path (untouched).\n\n**Test plan:** tests/test_goal_formation.py — feed N synthetic conversation traces, assert formation fires on the four trigger types, doesn't fire on trivial small-talk. Negative tests: formation doesn't run away under recurrent question-and-answer patterns. Round-trip: form a goal, confirm it's surfaceable via existing PR machinery.",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": 427,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c7983957-63f8-466f-9b1a-2cc9dc95fbca",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

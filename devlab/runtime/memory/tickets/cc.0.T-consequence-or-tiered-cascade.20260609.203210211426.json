@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-or-tiered-cascade.20260609.203210211426",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-or-tiered-cascade"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:32:10.211426",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-or-tiered-cascade-2026-06-02"
+    ],
+    "tickets": [
+      "T-consequence-or-tiered-cascade",
+      "T-inference-tiered-fallback",
+      "T-models-registry-refresh"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-or-tiered-cascade",
+    "gate": "2026-06-23",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Inference",
+      "Granny"
+    ],
+    "title": "[sprint] Consequence check: OR tiered cascade fires in live dispatch",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that inference dispatch observably routes through analyst→worker→minion tiers before hitting the CC block.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:32:10.211426+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-or-tiered-cascade-2026-06-02",
+    "description": "D-or-tiered-cascade-2026-06-02 shipped T-inference-tiered-fallback and T-models-registry-refresh (both closed), but no consequence check was filed.\n\n**What changed:** OR inference dispatch restructured as tiered cascade: analyst tier → worker tier → minion tier, with CC block only as last resort.\n\n**Predicted unintended effects:** Tiered fallback may exist in code but not be invoked — Granny may still be routing directly to CC for all tasks. Registry refresh may have updated model names without connecting them to the tier selector.\n\n**Signals to watch:** Watch a Granny dispatch cycle — does the channel log show analyst/worker/minion tiers being attempted before CC? Is the model registry queried at dispatch time or cached from startup?\n\n**Gate condition:** Check by 2026-06-23\n\n**Affected files:** None — observation and channel log review\n**Design rules:** none apply\n**Scope boundary:** Observe live dispatch and verify tier progression in channel logs. Out of scope: model quality, cost analysis.\n**Test plan:** no tests — live observation ticket\n**Completion criteria:** Observe one Granny dispatch cycle in channel log; verify tier progression is visible (analyst attempted first, fallback to worker/minion if analyst fails). Record: working / not firing / partial.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

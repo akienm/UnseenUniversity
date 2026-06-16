@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-pytest-runner-pipe-hang.20260421.210255174438",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pytest-runner-pipe-hang"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T21:02:55.174438",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-palace-ticket-design-rules",
+      "T-pytest-runner-pipe-hang"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pytest-runner-pipe-hang",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DevLoop",
+      "Tests",
+      "Debug"
+    ],
+    "title": "Investigate pytest runner hanging with no pipe output",
+    "result": "pytest.ini timeout=30 + pytest-timeout dep. Root cause was hanging tests, not pipe buffering. /sprint test step now produces output in ~96s.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-04-21T20:54:18.822134+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "During T-palace-ticket-design-rules sprint (2026-04-21), `python -m pytest tests/ -x -q 2>&1 | tail -12` was backgrounded and produced zero output across 60+ minutes — output file stayed at 0 bytes. The test suite is expected to complete in well under a minute when piped through `tail`. This was eventually killed.\n\nSymptoms: no progress lines, no errors, no final summary reached stdout/the output file. Either pytest itself hung, or the `| tail -12` pipe buffered the whole stream and the process never got around to closing it, or the venv was initialized in a state that blocked.\n\nRepro attempt: run `cd ~/TheIgors && source venv/bin/activate && IGOR_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 python -m pytest tests/ -x -q` WITHOUT `| tail` and see if it completes. If yes: the tail pipe is the issue (buffering). Fix: adjust /sprint step 7 to redirect to a file and tail after, or use `stdbuf -oL` to force line-buffered.\n\nAlso check: did the earlier `python -m pytest ... | tail -10` (without env var) error-out and leave pytest's state/fixtures in an unknown state that blocked the second invocation?\n\ntest_plan: no automated test — this is a runner-fix ticket. Verification is: after fix, /sprint's test step consistently produces output within ~60s.\n\nScope: /sprint SKILL.md test step + possibly /sprint-batch test step. Does NOT touch actual pytest code or tests.",
+    "completed_at": "2026-04-21T21:02:55.174438+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a94a8e6e-4cf8-421f-9578-a2a51b89b759",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

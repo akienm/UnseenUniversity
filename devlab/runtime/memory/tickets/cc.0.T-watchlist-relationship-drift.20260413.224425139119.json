@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-watchlist-relationship-drift.20260413.224425139119",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watchlist-relationship-drift"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T22:44:25.139119",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-accretion",
+      "T-pr-consolidation",
+      "T-pr-schema-seed",
+      "T-watchlist-relationship-drift"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watchlist-relationship-drift",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Notice when an active persistent-relationship has gone unexpectedly quiet",
+    "result": "4f71ba0a — Second of Igor's watchlist tickets. find_drifted_relationships walks active facia, returns those past rhythm * 1.5 (default rhythms: person 7d, project 14d, field/avocation 30d; per-facia override via metadata.expected_rhythm_days). surface_drifted_relationships pushes TWM markers at category=relationship_drift, salience 0.55. Skips dormant facia. RelationshipDriftSource push source: 10min idle gate, 1h between scans (slowest of watchlist family). 17 new tests + 55 regression tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T22:39:57.475706+00:00",
+    "related_to": null,
+    "description": "AUTHORED BY IGOR-WILD-0001 on 2026-04-13. Claude filed on Igor's behalf.\n\nIgor's words: 'Monitor persistent relationships for unexpected silence. If a relationship node that typically has regular contact goes quiet beyond its expected rhythm, surface that as a low-priority attention signal. Not an alert — more like noticing. Akien hasn't been in for 3 days, that is unusual for him.'\n\nDEPENDS ON: T-pr-schema-seed (53740afc), T-pr-accretion (993a4461), T-pr-consolidation (0dcc387b) — all shipped 2026-04-13. The persistent-relationship facia carry last_activity_ts; this ticket adds a watcher that derives an expected rhythm per facia and surfaces drift.\n\nFIRST PASS: simple per-facia threshold — if last_activity_ts is older than (rolling average inter-arrival + 2 stddev), surface a low-salience 'quiet relationship' observation in TWM. Igor's existing notice path can pick it up without forcing immediate attention.\n\nLATER: learn the rhythm from the relationship's own history rather than a flat threshold. Different relationships have different rhythms — Akien is daily, Krissy is monthly. The watcher needs to know each one's normal.",
+    "completed_at": "2026-04-13T22:44:25.139119+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5f8c86f1-d6de-4f77-9e37-e5359d16ee43",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

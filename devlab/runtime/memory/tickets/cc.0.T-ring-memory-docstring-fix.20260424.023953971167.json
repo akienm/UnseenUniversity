@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-ring-memory-docstring-fix.20260424.023953971167",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ring-memory-docstring-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:39:53.971167",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ring-memory-docstring-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ring-memory-docstring-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Docs",
+      "Cortex",
+      "Schema",
+      "Pass2"
+    ],
+    "title": "Fix ring_memory docstring: no instance_id column; scoping is via local-DB proxy",
+    "result": "Shipped in 78803953. Replaced false 'indexed by instance_id column' claim with truth: per-instance isolation comes from make_local_proxy (each box owns its own DB). Column list corrected to match CREATE TABLE: id, category, content, timestamp, thread_id.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-24T02:39:30.865759+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 1 Gap G1 (SHIP). cortex.py docstring (lines 39-42) claims ring_memory is `Indexed by instance_id so each Igor box gets its own ring. Columns: id, content, timestamp, instance_id, thread_id.` But the CREATE TABLE (line 336) has no instance_id column — the columns are (id, category, content, timestamp, thread_id). Per-instance isolation comes from make_local_proxy per-box DB, not from a column filter.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (lines 39-42 docstring).\n**Design rules:** test-plan-or-why-not (no tests because: docstring-only change).\n**Scope boundary:** IN — docstring truth-repair. OUT — adding instance_id column; changing schema; altering local-DB scoping.\n**Test plan:** no tests because: docstring-only change. Verification = grep the new docstring and cross-read against the CREATE TABLE.",
+    "completed_at": "2026-04-24T02:39:53.971167+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "92cbe54e-bc38-4081-ad28-96a6c5fcb9b8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

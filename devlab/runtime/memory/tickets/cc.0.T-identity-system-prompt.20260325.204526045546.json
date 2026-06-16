@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-identity-system-prompt.20260325.204526045546",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-identity-system-prompt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T20:45:26.045546",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-identity-system-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-identity-system-prompt",
+    "title": "Identity anchor → system prompt injection (voice bleed fix)",
+    "result": "Added VOICE GUARD to system_prompt.py (both main and fallback paths) blocking lisped/Discworld-accented LLM output. Also prepends high-inertia CORE_PATTERN+IDENTITY anchors (inertia>=0.95) at LAYER 0, before any character text, so they win positionally before retrieval context. Fixes voice bleed from Pratchett FACT_CLOUD nodes. Commit 525ce732.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-25T20:36:39.460029+00:00",
+    "description": "IGOR_IDENTITY_ANCHOR (inertia=0.95) is in the DB but Pratchett FACT_CLOUD nodes run hotter at retrieval time and still bleed through. Fix: inject IGOR_IDENTITY_ANCHOR text into the system prompt at startup so it wins before retrieval, not during it. Implementation: load IDENTITY memories with inertia>=0.95 at boot, prepend to system prompt. Memory node stays as backup. The prompt must win the competition before LLM sees context. Verified broken: Igor still outputs 'Mashter'/'shtate' after DB deposit.",
+    "completed_at": "2026-03-25T20:45:26.045546+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1cf31518-ad6a-4acd-94dd-f959576755c4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

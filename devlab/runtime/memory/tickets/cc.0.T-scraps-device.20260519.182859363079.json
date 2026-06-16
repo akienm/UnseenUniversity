@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-scraps-device.20260519.182859363079",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scraps-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-19T18:28:59.363079",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-ticket-signing-2026-05-19"
+    ],
+    "tickets": [
+      "T-cc-queue-scraps-gate",
+      "T-claude-1",
+      "T-nw-1",
+      "T-scraps-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scraps-device",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Quality",
+      "Gatekeeper"
+    ],
+    "title": "Scraps: rack gatekeeper device with ticket validation + sign-off",
+    "result": "Scraps rack device shipped: rule-based validation + optional Qwen 8 fuzzy pass; scraps_validate_ticket MCP tool wired into librarian; 132 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-19T18:28:59.363079+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-ticket-signing-2026-05-19",
+    "description": "Igor files placeholder tickets with no body (T-claude-1: 'HIGH work', T-nw-1: 'legacy ticket') that waste sprint cycles and are unattributable. No structural gate exists to block them.\n\nBuild `devices/scraps/` in agent_datacenter — a BaseDevice rack device named after one of the Igors' dogs. Role: queue gatekeeper that validates ticket content before state transitions are allowed.\n\nTiered validation logic:\n  1. Rule-based first (no LLM): non-empty description, non-generic title, at least one structured section present. Clear pass/fail.\n  2. Low-confidence escalation: if rules pass but content is vague/minimal, call Qwen 8 via InferenceDevice (local Ollama) for a fuzzy 'does this look useful?' check.\n  3. Cloud inference (Haiku/OR) is NOT used here — reserved for urgent human-requested work, not background gating.\n\nWhen ticket passes: stamps `scraps_validated: <iso-ts>` into ticket metadata. When ticket fails: returns issue list with specific gaps.\n\n**Affected files:** devices/scraps/__init__.py, devices/scraps/scraps_device.py, devices/scraps/validation_rules.py, skeleton/registry/ (registration entry)\n**Design rules:** BaseDevice OOP first; no TheIgors imports; no SQLite; Qwen 8 inference goes through InferenceDevice (not direct Ollama call); graceful degradation when InferenceDevice offline (return valid=True with warning, never hard-block on device offline)\n**Scope boundary:** In scope: device skeleton, tiered rule+Qwen8 validation, MCP tool `scraps_validate_ticket(ticket_json) -> {valid, issues, validated_at}`, sign-off stamp write. Out of scope: cc_queue.py wiring (T-cc-queue-scraps-gate), UI display of scraps_validated, retroactive scan of existing tickets.\n**Test plan:** unit tests for each rule (empty desc fails, generic title 'HIGH work' fails, structured section passes); test Qwen 8 called only on low-confidence rule result; test sign-off stamp written to metadata on pass; test graceful degradation when InferenceDevice offline returns valid=True + warning",
+    "completed_at": "2026-05-19T18:42:26.629038+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cd32e1e4-0f82-4d97-b49a-f55a9842fedb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-qwen-only-pe-chain-cloud.20260423.001224587782",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-qwen-only-pe-chain-cloud"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T00:12:24.587782",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cloud-fallback-alert",
+      "T-pe-chain-via-uc-proxy",
+      "T-qwen-only-pe-chain-cloud"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-qwen-only-pe-chain-cloud",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Budget",
+      "ModelRouting"
+    ],
+    "title": "pe_chain cloud default: deepseek-r1 → qwen-2.5-coder-32b-instruct (qwen-family consolidation)",
+    "result": "default swap deepseek-r1 → qwen/qwen-2.5-coder-32b-instruct; docstrings + <think>-strip comment updated. 2 gated follow-ups filed (T-pe-chain-via-uc-proxy for UC routing, T-cloud-fallback-alert for budget-surprise prevention). 2abbf3e3.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-23T00:09:17.772121+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "pe_chain._CLOUD_PROGRAMMING_MODEL defaulted to deepseek/deepseek-r1 (reasoning model, ~25-50x more expensive per call than qwen-coder due to reasoning-token output volume). Local path uses qwen2.5:7b via Ollama exclusively — cloud should stay in the same family. Observed 2026-04-22 18:00:38: pe_chain called deepseek via the silent ollama-unhealthy fallback.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (default value + docstring anchors 'OR DeepSeek' → 'OR cloud Qwen').\n**Design rules:** docs-in-code (docstring + comments must match the code's actual target).\n**Scope boundary:** IN — default model value, docstring/comment anchors, <think>...</think> strip comment made model-agnostic. OUT — routing through UC inference proxy (separate ticket T-pe-chain-via-uc-proxy). OUT — making the ollama→cloud fallback noisier (separate ticket T-cloud-fallback-alert).\n**Test plan:** no new tests — pure default-value + docstring change. Existing test_pe_chain_qwen_tier enforces qwen-family for local; cloud path isn't covered by an integration test today (would require live OR call).",
+    "completed_at": "2026-04-23T00:12:24.587782+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e384d201-d2ea-4c4c-bd13-e66ba99a00be",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

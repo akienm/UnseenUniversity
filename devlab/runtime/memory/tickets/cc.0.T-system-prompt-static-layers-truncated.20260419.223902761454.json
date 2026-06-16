@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-system-prompt-static-layers-truncated.20260419.223902761454",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-system-prompt-static-layers-truncated"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T22:39:02.761454",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-system-prompt-static-layers-truncated"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-system-prompt-static-layers-truncated",
+    "size": "M",
+    "notes": "Discovered 2026-04-19 while investigating T-llm-tool-dispatch-as-codeblock. _MAX_CHARS=4800 in wild_igor/igor/cognition/system_prompt.py:35 truncates the interactive-role prompt right after the DB-loaded CORE_PATTERN + IDENTITY + PROCEDURAL dump. ALL of the static layers — TOOL DISPATCH (D222), RESPONSE FORMAT, CLOUD ROLE, TREE-BUILDING DIRECTIVE, ORIENTATION, CRITICAL OPERATIONAL NOTES — live at lines 166-273 and get chopped before reaching the LLM. Verified by dumping build_system_prompt(cortex, role='interactive') and searching: 'TOOL DISPATCH' not in output, 'ANTI-PATTERN' not in output, 'RUNS NOTHING' not in output. Last 1200 chars end at '[... additional memories trimmed ...]' with CP1-CP6 as the tail.\n\n## Why this matters\nEvery 'Igor doesn't follow a directive we wrote in the system prompt' bug may root here. The operational rules we think are live aren't. Examples:\n- T-llm-tool-dispatch-as-codeblock (Igor emits store_memory in code fences)\n- Bare acknowledgment filter (REPLY DISCIPLINE only lives in _fallback_prompt, not the interactive one)\n- Arbiter-queue discipline (\"Irreversible actions go to arbiter queue\") — in the truncated section\n\n## Fix options (pick one)\n1. **Reorder layers**: put static directives FIRST, DB dump LAST. Truncation then hits the DB content, which is already paginated via _IDENTITY_LIMIT / _PROCEDURAL_LIMIT. Cleanest.\n2. **Budget enforcement**: compute how much static takes, subtract from 4800, pass remainder as the DB caps. Same spirit as G57 was meant to do.\n3. **Bump _MAX_CHARS**: only if the downstream LLM context window has room. Check openrouter_reasoner + ollama_reasoner callers.\n\n## Scope\nTouches wild_igor/igor/cognition/system_prompt.py (MEDIUM inertia). Needs Akien review before edit. Follow-up on T-llm-tool-dispatch-as-codeblock is blocked until this lands — no point strengthening prompt directives that never reach the model.\n\n## Provenance\nAkien-Claude 2026-04-19 autonomous sprint. Attempted to strengthen tool-dispatch directive, observed the addition didn't reach output, traced to _MAX_CHARS truncation.",
+    "title": "Interactive system prompt truncation eats all static layers (tool dispatch, safety notes, orientation)",
+    "result": "Mis-scoped. The truncation is a symptom of the legacy direct-reasoner inference path (big system_prompt + one-shot call), not the architecture Akien designed. Real fix lives in T-retire-legacy-direct-reasoner-path: migrate remaining interactive turns through the new turn_pipeline + reasoning_workflow + voice_ab path, which already implements peer-conversation to upstream (the biomimetic model Akien described 2026-04-19: trees reason, escalate to LLM conversationally when reasoning fails, return to trees for output phrasing). Closing as superseded.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "completed_at": "2026-04-19T22:39:02.761454+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

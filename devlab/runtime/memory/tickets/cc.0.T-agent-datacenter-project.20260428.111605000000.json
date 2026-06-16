@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-agent-datacenter-project.20260428.111605000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-agent-datacenter-project"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T11:16:05",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agent-datacenter-spec-2026-04-27"
+    ],
+    "tickets": [
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-agent-datacenter-project",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Infrastructure",
+      "Architecture",
+      "AgentDatacenter"
+    ],
+    "title": "agent_datacenter — runtime substrate for Igor and future agent deployments",
+    "result": "All 4 phases shipped: Phase 1 (foundations + registry + IMAP bus + skeleton + access control + router + health rollup, commits 4159133/82fbbda/6ddb3bf/a2989ef), Phase 2-3 (igor + inference + claude devices + YGM nudge pipeline, commit 0669cb5), Phase 4 (DiscordBot + SWADL devices + shims, commit 3850610). Project lives at /home/akien/dev/src/agent_datacenter (editable-install in TheIgors venv, runtime at ~/.agent_datacenter/). Spec path in ticket was outdated. Closed 2026-05-01 per Akien audit review.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-04-28T11:16:05Z",
+    "related_to": null,
+    "decision_id": "D-agent-datacenter-spec-2026-04-27",
+    "description": "Build agent_datacenter: a runtime substrate that provides uniform device lifecycle management, a real IMAP-backed communications bus, and a self-describing device model. Every component (Postgres, Igor, Claude, inference, web server, Discord) is a device with the same interface and is operable the same way.\n\n**Spec:** /home/akien/TheIgorsProject/akien/ideas/agent_datacenter.txt — includes directory tree, design notes (founding decisions), and 4-phase build order.\n\n**Affected files:**\n- /home/akien/TheIgorsProject/agent_datacenter/ (new package, per directory tree in spec)\n- /home/akien/TheIgorsProject/akien/ideas/agent_datacenter.txt (spec — updated with tree + design notes)\n\n**Design rules:**\n- oop-first: device base class + shim base class are the foundation; everything inherits.\n- docs-in-code: each device ticket must include a shim spec alongside the device spec (per spec §The Shim).\n- no-sqlite: IMAP server (Dovecot or embedded Python) + Postgres only; no SQLite anywhere.\n- test-plan-or-why-not: contract tests verify every registered device implements the full interface.\n\n**Scope boundary:**\n- IN: 4-phase build — (1) skeleton + IMAP bus + Postgres device, (2) Igor base class refactor + web server, (3) Claude device + YGM/Nudge, (4) Discord + SWADL + deferred devices.\n- OUT: swarm-level computer topology (one level up), OpenClaw skills layer (above this), multi-datacenter federation, C&A workflow logic.\n\n**Test plan:**\n- tests/test_device_contract.py — verify every registered device implements who_am_i, health, ops, comms.\n- tests/test_skeleton.py — registration, health rollup, namespace collision hard-fail.\n- tests/test_bus.py — IMAP mailbox creation, routing, IDLE, 24hr retention policy.\n- Per-phase child tickets each carry their own test plan at filing time.\n\n**Filing note:** This is a tracking ticket. Phase-level child tickets are filed at implementation time, one phase at a time. Sprint this ticket only when starting Phase 1.",
+    "completed_at": "2026-05-01T16:13:28.574238+00:00",
+    "github_issue": 540,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a7a06474-6cc0-4be4-82e8-519dbaec4460",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

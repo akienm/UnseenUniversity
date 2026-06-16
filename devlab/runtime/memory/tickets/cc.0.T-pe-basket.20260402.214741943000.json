@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-basket.20260402.214741943000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-basket"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T21:47:41.943000",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-basket",
+      "T-programming-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-basket",
+    "epic": "Training",
+    "size": "S",
+    "title": "pe: Define PROC_CODE_A_TICKET basket contract",
+    "result": "Seeded tpl-layer4-code-a-ticket-basket to DB — basket contract, node sequence, llm_calls/pure_tool_nodes, basket sharing semantics (T-basket-fork-sharing). All pe-* nodes reference this.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": "T-programming-engrams",
+    "description": "Formal basket contract for the coding sprint engram: ticket_id, ticket_description, plan_files, line_range, actual, hypothesis (structured edit), test_result, attempt_count. Seed as a schema node / docstring. All subsequent pe-* nodes reference this contract.",
+    "completed_at": "2026-04-02T21:47:41.943000+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ad76ac00-0364-479b-bfef-3ff517184bf7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

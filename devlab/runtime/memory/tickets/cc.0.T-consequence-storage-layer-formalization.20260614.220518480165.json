@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-storage-layer-formalization.20260614.220518480165",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-storage-layer-formalization"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:05:18.480165",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-storage-layer-formalization-2026-06-14"
+    ],
+    "tickets": [
+      "T-ccqueue-devlab-writer",
+      "T-consequence-storage-layer-formalization"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-storage-layer-formalization",
+    "gate": "2026-06-28",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: storage layer formalization",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that storage split consequences are observed and silent regressions caught before they compound.",
+    "created_at": "2026-06-14T22:05:18.480165+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-storage-layer-formalization-2026-06-14",
+    "description": "**What changed:** Storage formalized into clan (bootstrap only), devlab (operational), library (curated), instance.igor, employer.akien; cc_queue.py writes to devlab instead of clan.\n\n**Predicted unintended effects:**\n- context-load reads clan.memories for session/decision context — if records moved to devlab, briefing goes silent\n- day-close-audit schema check hardcodes clan table names — will fail if expected tables move\n- Any tool querying clan.memories by kind=ticket will miss new tickets written to devlab\n- Granny dispatch reads ticket queue — must still see all records after writer switch\n- palace.days/sessions in adc.palace may reference clan record IDs that no longer resolve\n\n**Signals to watch:** context-load briefing completeness (does it surface recent tickets after T-ccqueue-devlab-writer ships?); Granny dispatch succeeding; day-close-audit schema check exit code 0; cc_queue.py list showing correct total count.\n\n**Gate condition:** Check by 2026-06-28 or when T-ccqueue-devlab-writer closes, whichever comes first.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate as occurred / clear / partial and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

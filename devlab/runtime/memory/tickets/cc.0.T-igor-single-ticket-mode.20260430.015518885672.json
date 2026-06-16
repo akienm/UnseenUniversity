@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-igor-single-ticket-mode.20260430.015518885672",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-single-ticket-mode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T01:55:18.885672",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-single-ticket-cert-mode-2026-04-29"
+    ],
+    "tickets": [
+      "T-cc-walk-01",
+      "T-igor-programs-himself",
+      "T-igor-single-ticket-mode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-single-ticket-mode",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "pe_chain",
+      "Cert",
+      "Switch",
+      "Temporary"
+    ],
+    "title": "IGOR_SINGLE_TICKET env var — restrict pe_chain to one named ticket during cert",
+    "result": "_enforce_single_ticket_mode in pe_entry_init reads IGOR_SINGLE_TICKET env var. Set → only that ticket passes ENTRY; unset/empty → normal autonomous pickup. 10 tests, 4203 regression pass. TODO comment marks for removal after cc-walk-10 cert complete.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.95,
+    "claimed_at": "2026-04-30T01:51:42.098037+00:00",
+    "related_to": "T-igor-programs-himself",
+    "decision_id": "D-igor-single-ticket-cert-mode-2026-04-29",
+    "description": "Add IGOR_SINGLE_TICKET env var checked in pe_chain. When set to a ticket id, pe_chain only claims that ticket; all others are skipped with a log line ('[pe_chain] single-ticket mode: only T-x may be claimed; skipping T-y'). Unset/empty → normal autonomous pickup (current behavior, zero overhead).\n\n**Context:** the cert protocol for T-cc-walk-01..10 requires CC to single-step Igor through one ticket at a time, validate the end product, and mark complete only when Igor produces real work autonomously. Without this switch, Igor's pe_chain greedily picks any worker=igor ticket from the queue — which has been undermining the protocol for 5 days.\n\n**HIGH-inertia note:** pe_chain.py is load-bearing. Akien pre-approved this design inline in conversation (2026-04-29). Switch is intentionally temporary.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (check in pe_entry_init or pe_claim) + tests/test_pe_chain_single_ticket_mode.py.\n**Design rules:** approach-frame (positive: 'pe_chain only claims the named ticket'). No-sqlite. Test-plan present.\n**Scope boundary:** in scope: env var read + filter logic + log line + tests. Out of scope: a sentinel-file alternative, multi-ticket allowlist, queue.json mutation.\n**Test plan:** unset → ticket selection unchanged (regression); set to claimable id → only that one claims, others skipped + logged; set to nonexistent id → all skipped (no claim possible); set + ticket appears later → claimable when it does. Add # TODO: remove after cc-walk-10 cert complete comment in source.\n**Pre-approval (HIGH-inertia):** Akien stamped 2026-04-29 — pe_chain change for cert protocol scaffolding.",
+    "completed_at": "2026-04-30T01:55:18.885672+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cc8a277e-596b-49f3-8a9d-b0257f258593",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

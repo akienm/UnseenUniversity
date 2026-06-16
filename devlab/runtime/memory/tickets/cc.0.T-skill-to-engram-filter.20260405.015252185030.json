@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-skill-to-engram-filter.20260405.015252185030",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-to-engram-filter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T01:52:52.185030",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skill-to-engram-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-to-engram-filter",
+    "epic": "Cognition",
+    "size": "M",
+    "probe": "Igor runs filter engram on a sample plan and emits PASS or FAIL with findings",
+    "title": "Prove skill→engram: parse /filter into runnable engram nodes",
+    "result": "skill_filter.py: 5 checks + run_filter() registered tool. SKILL_FILTER_ENTRY engram node seeded to DB (MCPCALL→run_filter, EMITIF→twm). PROC_INVOKE_FILTER habit trigger. node_executor probe confirmed: cursor traversal executes filter from DB node and returns FILTER RESULT PASS/FAIL. 30 tests, 1749 total green. Next: T-skill-to-engram-generalise (parser across all skills).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-05T01:47:20.818470+00:00",
+    "related_to": null,
+    "description": "Parse ~/.claude/skills/filter/SKILL.md into engram nodes and seed to DB. Steps: (1) read skill markdown, (2) split on Step N / bash blocks / hard rules into cursor-sequenced nodes, (3) bash blocks → EMITIF with code_ref=run_bash, (4) hard rules → BRANCHIF guards, (5) skill references (/commit etc.) → FORKIF. Igor runs the resulting engram via existing execution stack. Probe: Igor executes /filter on a sample plan and produces a PASS/FAIL result using only his own engram — no Claude Code involved.",
+    "completed_at": "2026-04-05T01:52:52.185030+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "63d49f09-2ebf-43f9-8bbf-edec2de28483",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

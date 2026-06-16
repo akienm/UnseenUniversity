@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-web-palace-read.20260518.224735180944",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-palace-read"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:47:35.180944",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-web-control-station-2026-05-18",
+      "D-xxx"
+    ],
+    "tickets": [
+      "T-web-palace-edit",
+      "T-web-palace-read"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-palace-read",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "WebUI",
+      "Palace"
+    ],
+    "title": "CLOSED: Add read-only palace browser pages to web server",
+    "result": "8 palace browser routes added: /rack /palace /palace/{path} /decisions /goals /questions /hypotheses /outcomes — commit 441969c, 825 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:47:35.180944+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-web-control-station-2026-05-18",
+    "description": "Akien needs to browse project state (goals, decisions, questions, hypotheses, outcomes, device health) from any browser — including from St. Louis on a Windows box — without terminal access. Add server-side HTML routes to the existing web_server/server.py. No JS build step; plain HTML tables + inline CSS.\n\nRoutes to add:\n  GET /goals          — list palace.goals.* nodes (G-xxx, status, KRs)\n  GET /decisions      — list palace.decisions.* (D-xxx, date, status, spawned tickets)\n  GET /questions      — list palace.questions.* (Q-xxx, open/dismissed)\n  GET /hypotheses     — list hypotheses from /decided step 2.6 metadata\n  GET /outcomes       — list palace.outcomes.* (verdict, decision link)\n  GET /health         — all rack devices: last heartbeat, status, OR budget, IMAP bus\n  GET /palace         — full adc.palace tree listing with titles\n  GET /palace/{path}  — render individual node content\n\n**Affected files:** devices/web_server/server.py\n**Design rules:** no-sqlite; reads adc.palace and infra.* via IGOR_HOME_DB_URL; no auth required for read-only\n**Scope boundary:** read-only. No edit forms (T-web-palace-edit). No new JS. Server-side HTML only.\n**Test plan:** GET /health returns 200 with at least one device row. GET /goals returns 200. GET /palace returns tree listing. Test with IGOR_HOME_DB_URL set and unset (graceful 'DB unavailable' message when absent).",
+    "completed_at": "2026-05-19T00:33:46.575719+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "40c89db8-9671-4315-bba0-13dba1707a7f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-audit-role-fit.20260603.142435336654",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-role-fit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T14:24:35.336654",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-role-ladder-2026-06-03"
+    ],
+    "tickets": [
+      "T-audit-role-fit",
+      "T-vetinari-device-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-role-fit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Workflow",
+      "Audit"
+    ],
+    "title": "Ticket audit: flag scope mismatch against assigned role ceiling",
+    "result": "AuditResult.warnings field; size-ceiling + architectural-tag advisory checks; role inferred from ticket.role or worker; 13 new tests, 83 pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-06-03T14:24:35.336654+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-role-ladder-2026-06-03",
+    "description": "Extend the ticket intake audit (Granny's audit_ticket logic) to check role-fit: L/XL tickets assigned role=apprentice or role=builder are flagged with 'scope likely exceeds role ceiling — consider master or guru'. Architectural tags (Architecture, Memory, Clan, Platform) on builder/apprentice role also warn. Warning does not block filing — it's advisory, recorded in audit result.\n\n**Affected files:** devices/granny/device.py (intake_ticket audit), CC_WORKFLOW_TOOLS/audit_ticket.py if it exists\n**Design rules:** none beyond standard audit extension pattern\n**Scope boundary:** advisory warning only — does not block; does not auto-reassign; the human or Granny decides. Size/role ceiling table: apprentice=S only, builder=S/M, creator=M/L, master=any, guru=any.\n**Completion criteria:** Granny audit result includes role-fit warning for L/XL builder tickets; test with T-vetinari-device-class ticket (L + builder) shows warning in audit result; existing S/M builder tickets pass clean",
+    "completed_at": "2026-06-03T19:42:30.912628+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b49f7850-4d9f-4832-910f-d6a7e58577f9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

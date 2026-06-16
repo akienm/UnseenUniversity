@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-agent-template-device.20260427.214818335961",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-agent-template-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:48:18.335961",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-agent-template-device",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-agent-template-device",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Architecture"
+    ],
+    "title": "agent_datacenter: agent template — hello-world device for non-Igor users",
+    "result": "TemplateDevice + TemplateShim + README in devices/template/. Every method stubbed with inline comments. copy-paste starter — no Igor dep. Registered in contract test suite parametrize list.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T21:43:11.344638+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "Ship a hello-world agent template so anyone can build on agent_datacenter without touching Igor. This is the 'take it to work' deliverable — proof that the platform is not Igor-specific.\n\nProblem: Without a concrete non-Igor example, agent_datacenter looks like 'Igor's infrastructure.' The template demonstrates that any agent can register on the rack.\n\nProposed shape:\n- agent_datacenter/devices/template/ (a copyable starter)\n  device.py: class TemplateDevice(BaseDevice) — implements all 16 methods with sensible stubs and inline comments explaining what each should return\n  shim.py: class TemplateShim(BaseShim) — implements start/stop/restart/self_test/rollback with subprocess pattern comments\n  README.md: 'Copy this folder. Rename TemplateDevice to YourAgentDevice. Fill in the stubs. Register with the rack.'\n- The template device must actually register on the rack without errors\n- Include a minimal test: test_template_device.py — TemplateDevice registers, health() returns expected stub shape\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/template/device.py\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/template/shim.py\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/template/README.md\n- ~/dev/src/agent_datacenter/agent_datacenter/tests/test_template_device.py\n\nDesign rules:\n- oop-first: TemplateDevice fully implements BaseDevice ABC (no abstract method stubs left)\n- docs-in-code: every method has a comment: '# Replace this with your actual X'\n\nScope boundary:\nIN: template device + shim + README + one integration test showing it registers on the rack\nOUT: Igor-specific behavior (none; that's IgorDevice)\n\nTest plan:\n- TemplateDevice instantiates with no errors\n- TemplateDevice registers on Skeleton; appears in rack.devices()\n- rack.health()['template'] returns {healthy: True}\n- pytest tests/test_template_device.py passes",
+    "completed_at": "2026-04-27T21:48:18.335961+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "06564cde-802f-438d-8844-527eb0834864",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

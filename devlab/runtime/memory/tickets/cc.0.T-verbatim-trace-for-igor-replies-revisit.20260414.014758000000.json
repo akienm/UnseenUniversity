@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-verbatim-trace-for-igor-replies-revisit.20260414.014758000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-verbatim-trace-for-igor-replies-revisit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:47:58",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tool-call-and-verbatim-fidelity",
+      "T-verbatim-trace-for-igor-replies-revisit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-verbatim-trace-for-igor-replies-revisit",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Revisit: extend verbatim TWM trace to Igor's own replies",
+    "result": "Full untruncated reply → TWM at category=reply_verbatim. Same gist+verbatim split as user input. TTL 1800s. Forensic logging.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:24:20.206667+00:00",
+    "created_at": "2026-04-14T01:47:58Z",
+    "related_to": null,
+    "description": "DO NOT CLAIM BEFORE 2026-04-19.\n\nFollow-up to T-tool-call-and-verbatim-fidelity. That ticket added a verbatim TWM trace for user input only. This ticket revisits whether to also seed verbatim traces for Igor's own outgoing replies, so Igor can quote himself verbatim from prior turns when the LLM's reasoning needs fidelity on its own past words.\n\nAkien's instinct (2026-04-12): user turns only for now, Igor's replies are narrative-native and don't carry the same fidelity-critical content. Revisit after observing whether the user-only trace is sufficient in practice.\n\nBEFORE TAKING THIS UP: review logs/verbatim_trace.log and the recent conversation history for cases where Igor needed to quote or dereference his own prior reply precisely and couldn't because only the gist survived. If there are no such cases in practice, close this as not-needed. If there are, the implementation mirrors the user-input side: push a verbatim_source entry for Igor's reply at emission time.\n\nGate: do not claim before 2026-04-19 regardless of queue priority.",
+    "completed_at": "2026-04-16T19:25:22.447058+00:00",
+    "github_issue": 415,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "341df577-0e99-469d-af74-1d1d37dcea16",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

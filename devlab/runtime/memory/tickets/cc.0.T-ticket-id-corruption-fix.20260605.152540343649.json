@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ticket-id-corruption-fix.20260605.152540343649",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-id-corruption-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T15:25:40.343649",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-google-secretary-device",
+      "T-google-secretary-dispatcher-refactor",
+      "T-ticket-id-corruption-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-id-corruption-fix",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "cc_queue"
+    ],
+    "title": "Fix: ticket IDs corrupted to [REDACTED-CREDENTIAL] by CC privacy filter",
+    "result": "Added [REDACTED guard in cmd_add; recreated T-google-secretary-dispatcher with clean ID; cancelled corrupted rows",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that ticket IDs are never silently corrupted by CC's privacy filter.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T15:25:40.343649+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two tickets had their IDs corrupted to the literal string '[REDACTED-CREDENTIAL]' in clan.memories. Root cause: CC's privacy filter intercepted the cc_queue.py output during ticket creation and replaced values it classified as credentials. The corrupted rows were deleted 2026-06-05; one GoogleSecretary Dispatcher ticket needs to be recreated with ID T-google-secretary-dispatcher-refactor.\n\nFix: either (1) make cc_queue.py write the DB directly without going through CC Bash output, OR (2) add a validation step that rejects IDs matching [REDACTED*]. The corrupted rows were both gated on T-google-secretary-device anyway so no work was lost.\n\n**Affected files:** lab/claudecode/cc_queue.py\n**Design rules:** queue is black box; all writes via cc_queue.py\n**Scope boundary:** In scope: guard against corrupted IDs at write time; recreate the one deleted ticket. Out of scope: retroactive history fix.\n**Completion criteria:** cc_queue.py add raises a clear error when id field matches '[REDACTED' pattern; GoogleSecretary Dispatcher ticket recreated with proper ID.",
+    "completed_at": "2026-06-05T15:32:24.959409+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

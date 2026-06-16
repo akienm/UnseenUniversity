@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-pe-chain-inertia-gate-hallucinated-target.20260424.022120132429",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-inertia-gate-hallucinated-target"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:21:20.132429",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-findings-to-tickets",
+      "T-igor-self-audit-approach-frame",
+      "T-list-primitive",
+      "T-no-sqlite-enforcement",
+      "T-pe-chain-inertia-gate-hallucinated-target",
+      "T-pe-chain-via-uc-proxy",
+      "T-post-inventory"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-inertia-gate-hallucinated-target",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "pe_chain",
+      "Inertia",
+      "Bug",
+      "Igor-completes-one"
+    ],
+    "title": "pe_chain HIGH-inertia gate fires on tier2-hallucinated brainstem/core_patterns.py target",
+    "result": "Shipped in 6f6a49fc. At _pe_escalate's HIGH-inertia branch, added a scope cross-check against _filter_high_inertia_not_in_description using basket.ticket_description (same filter SITUATE already uses). If hypothesized HIGH-inertia target isn't named in description body or Affected files field, rewrite reason + drop is_high_inertia so the hallucinated proposal never posts. Fail-safe on empty description: fall through to original propose-for-approval path. 11 new tests + 186-test pe_chain regression green.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-04-24T02:14:59.612312+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Every Igor-worker ticket proposed through the HIGH-inertia gate in pe_chain.py gets stamped with 'Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: .' — even when the ticket's description explicitly declares a completely different affected file (e.g. T-no-sqlite-enforcement declares 'new lab/claudecode/check_no_sqlite.py', not brainstem).\n\nRoot cause: pe_chain.py:2200-2219 reads `hypothesis.get('file')` from basket. When SITUATE returns 0 files (dominant failure mode — see consult_tuning_2026-04-23.md), tier2's hypothesizer emits a HIGH-inertia-sounding default guess (brainstem/core_patterns.py), which the gate then treats as the target. Plan text is empty because basket has no plan_summary yet.\n\nEffect: six Igor tickets stuck in awaiting_approval for days (T-list-primitive, T-no-sqlite-enforcement, T-audit-findings-to-tickets, T-igor-self-audit-approach-frame, T-pe-chain-via-uc-proxy, T-post-inventory), none of which actually touch brainstem. Resolved today 2026-04-23 by manual approve-through after diagnosis; this ticket fixes the root cause so it doesn't recur.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (lines 2200-2219 area — hypothesis target derivation + gate trigger)\n\n**Design rules:** docs-in-code, test-plan-or-why-not\n\n**Scope boundary:** IN — cross-check tier2 hypothesized file against ticket description's 'Affected files:' section before firing the HIGH-inertia gate; if the hypothesized file doesn't appear in the ticket's declared scope, treat it as hallucinated (same path as the `hallucinated file` branch at line 2201). OUT — redesigning SITUATE's file-discovery or tier2's hypothesizer (those are other tickets).\n\n**Test plan:** unit test feeds pe_chain a synthetic ticket with 'Affected files: lab/foo.py' and a tier2 hypothesis of 'brainstem/core_patterns.py' — expect gate to NOT fire; feed same hypothesis with a ticket whose declared scope actually includes brainstem — expect gate to fire as before.",
+    "completed_at": "2026-04-24T02:21:20.132429+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ef096bc5-3e7a-45eb-beb2-12a6c76fd436",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

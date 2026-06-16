@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-audit-findings-to-tickets.20260424.160203000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-findings-to-tickets"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:03",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-removal-2026-04-22"
+    ],
+    "tickets": [
+      "T-audit-findings-to-tickets"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-findings-to-tickets",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Workflow",
+      "Tickets"
+    ],
+    "title": "CLOSED: Auto-file or surface audit pass-2 severity-high findings as tickets",
+    "result": "Built audit_findings_to_tickets.py with AuditFinding dataclass + FindingMatcher deduplication, integrated into day-close-audit skill at Step 19.5. Parses Pass 2 audit output for severity-high findings and surfaces new ones not yet ticketed. 18 tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": "2026-04-29T02:40:44.187710+00:00",
+    "claimed_at": "2026-04-29T02:27:55.312603+00:00",
+    "created_at": "2026-04-24T16:02:03Z",
+    "related_to": null,
+    "approved_at": "2026-04-24T02:02:55.820432+00:00",
+    "decision_id": "D-sqlite-removal-2026-04-22",
+    "description": "Build a mechanism so audit findings don't sit dead in markdown. Parse lab/design_docs/audit_2026/pass2_output/*.md for severity-high gaps; diff against existing tickets; file the missing ones OR surface them on the next slate for decision. Motivated by: pass-2 Gap 1 (SQLite fallback, severity high) sat unaddressed for weeks until Akien noticed SQLite live in the slow-query log today.\n\n**Affected files:** new `lab/claudecode/audit_findings_to_tickets.py`. Wire into /day-close skill step (runs the scan, surfaces deltas). Possibly add palace rule `theigors/rules/audit-findings-auto-file`.\n**Design rules:** no-sqlite: scans markdown + uses cc_queue (Postgres-backed). No persistence, no SQLite. oop-first: AuditFinding dataclass + FindingMatcher function is likely right — growing state suggests class. Justify shape at sprint time. docs-in-code: script top-of-file docstring names the audit paths scanned + match strategy + output format. test-plan-or-why-not: applies.\n**Scope boundary:** IN — parse pass-2 findings, match against queue, file OR surface missing severity-high. OUT — parsing all severities (stay narrow), restructuring audit markdown format, retroactive file-all-historical-findings sweep.\n**Test plan:** Unit test — fixture audit markdown with 3 findings (2 HIGH, 1 MEDIUM), assert only 2 HIGH become tickets. Integration — run against real pass2_output/ and assert the matcher would have filed Gap 1 (SQLite fallback) if the mechanism existed before today.",
+    "proposed_at": "2026-04-28T17:43:58.107720+00:00",
+    "completed_at": "2026-05-04T17:23:12.594666+00:00",
+    "github_issue": 514,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "false-positive brainstem/core_patterns.py gate — ticket does not touch HIGH-inertia files; cleared 2026-04-23",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f437454-8811-4516-a365-8b0ffcf2edda",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

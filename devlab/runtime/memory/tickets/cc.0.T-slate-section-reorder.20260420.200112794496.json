@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-slate-section-reorder.20260420.200112794496",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slate-section-reorder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T20:01:12.794496",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-slate-salience-order-2026-04-20"
+    ],
+    "tickets": [
+      "T-slate-section-reorder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slate-section-reorder",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Slate",
+      "WorkflowOverhaul"
+    ],
+    "title": "Slate sections: salience-ordered (Next up → Blocked → After that → Decided → Done)",
+    "result": "Reorganized daily slate to salience-first sections (Next up → Blocked → After that → Decided → Done → Ad hoc → Slate summary). Updated context-load template, cc_queue.py append target, wrote one-shot reorder_slate_sections.py, migrated 17/18 existing slate files, re-ingested all 18 into clan.memories. Tests pass. D-slate-salience-order-2026-04-20 complete.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-20T19:59:05.865057+00:00",
+    "related_to": null,
+    "decision_id": "D-slate-salience-order-2026-04-20",
+    "description": "Current slate has Planned/Ad hoc/Done today ordering — most recent work is at the bottom and next work is buried. Reorganize to salience-first so session-start readers can stop reading once they have enough context.\n\n## New section order\n1. ## Next up — 1-3 tickets to work on right now\n2. ## Blocked — stuck items (an unblock event promotes to Next up)\n3. ## After that — rest of the queue\n4. ## Decided — decisions filed this session\n5. ## Done — shipped today\n\n## Changes\n1. context-load skill SKILL.md step 1 heredoc: update template to new section order\n2. cc_queue.py _append_to_todays_slate: target '## Done' instead of '## Done today'\n3. One-time migration script: reformat existing 18 slate files (Done today → Done, Planned — next up → Next up, Planned — remaining → After that, Planned → After that, Slate summary appended to Done)\n\n## Not in scope\n- Changing how the palace slate rows store sections (migrate_slates_to_palace.py parses any ## header, no change needed)",
+    "completed_at": "2026-04-20T20:01:12.794496+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "23900bc1-0454-40d4-a08a-e5d626194a46",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-logging-migrate-utility-closet.20260429.223845215546",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-logging-migrate-utility-closet"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T22:38:45.215546",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-detailed-logging-audit",
+      "T-logging-migrate-cognition",
+      "T-logging-migrate-utility-closet"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-logging-migrate-utility-closet",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Logging",
+      "Migration",
+      "UtilityCloset"
+    ],
+    "title": "Migrate utility_closet/* logging to self.log + get_logger pattern",
+    "result": "16 files migrated. utility_closet/* now routes through AgentBase factory (get_logger). Bypass: 51→1 (agent_base bootstrap exempt), Legacy: 42→0. Audit refined with assignment-aware classification. 5 new tests + 4119 regression pass. Commit ac85d393. Unblocks T-logging-migrate-cognition and T-logging-migrate-lab-claudecode.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-04-29T22:28:53.646984+00:00",
+    "related_to": "T-detailed-logging-audit",
+    "decision_id": null,
+    "description": "Replace logging.getLogger bypass + _log/logger legacy pattern with self.log (when in inheriting class) or get_logger(__name__) (module-level) across lab/utility_closet/. Establishes the migration pattern that T-logging-migrate-cognition will follow.\n\nCounts from 2026-04-29 audit (lab/claudecode/reports/logging_audit_20260429-211639.md):\n- db_proxy.py: 34 logging.getLogger sites\n- utility_closet_server.py: 36 _log sites (lab/claudecode but pulled here for shape)\n- machine_manager.py: 14 _log + 1 logging.getLogger\n- comms.py: 9 _log + 1 logging.getLogger\n- transports/*.py: ~12 sites across 4 files\n- agent_base.py: 3 logging.getLogger (likely keep — this IS the base)\n\n**Affected files:** lab/utility_closet/{db_proxy,comms,machine_manager,db_shelf,failover,matter_shelf,metrics_store,rack,registry,system_proxy}.py + lab/utility_closet/transports/*.py.\n**Design rules:** inherit-base-class palace rule + the AgentBase.log property contract.\n**Scope boundary:** in scope: callsite mechanical migration. Out of scope: refactoring what's logged.\n**Test plan:** existing tests must pass after migration. Re-run audit_logging.py to confirm bypass/legacy counts dropped. Spot-check log emission via brief Igor smoke run.",
+    "completed_at": "2026-04-29T22:38:45.215546+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f1586c2e-80a3-4fca-b562-1a6cdce9d388",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

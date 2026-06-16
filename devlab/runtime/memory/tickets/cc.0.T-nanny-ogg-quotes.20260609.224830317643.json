@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-nanny-ogg-quotes.20260609.224830317643",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nanny-ogg-quotes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:30.317643",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-nanny-ogg-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-nanny-ogg-quotes"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nanny-ogg-quotes",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Device",
+      "NannyOgg",
+      "UX"
+    ],
+    "title": "Nanny Ogg quotes table — responses to nonsense prompts",
+    "result": "40 Nanny Ogg quotes in devices/nanny/quotes.py; handle_unknown_prompt() returns random quote; Librarian MCP unavailable — noted in module",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that Nanny Ogg responds to prompts that make no sense to her with a Nanny Ogg quote rather than an error, staying in character.",
+    "claimed_at": "2026-06-09T23:03:29.613029+00:00",
+    "created_at": "2026-06-09T22:48:30.317643+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-nanny-ogg-device-2026-06-09",
+    "description": "Add a quotes module with >= 10 (target 100) Nanny Ogg quotes from the Discworld canon. When Nanny Ogg receives a prompt she can't interpret as a scheduling command, she returns a random quote. Test the Librarian research feature as a source for additional quotes.\n\n**Affected files:** devices/nanny_ogg/quotes.py (new), devices/nanny_ogg/device.py (handle_unknown_prompt method)\n**Design rules:** none apply\n**Scope boundary:** Quote table + random selection + unknown-prompt handler in device.py. Out of scope: NLP to classify what counts as nonsense (simple: anything not matching a cron command pattern).\n**Completion criteria:** devices/nanny_ogg/quotes.py contains >= 10 quotes; calling handle_unknown_prompt() returns a string from the table; module has a comment noting the Librarian research pass was attempted.",
+    "completed_at": "2026-06-09T23:04:41.488591+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-09T23:03:29.613029+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

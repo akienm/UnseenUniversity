@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-provider-priority.20260603.215840374085",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-provider-priority"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.374085",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-registered-dispatcher"
+    ],
+    "tickets": [
+      "T-akien-ollama-setup",
+      "T-inference-provider-priority"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-provider-priority",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "CostOptimization",
+      "WorkerProtocol"
+    ],
+    "title": "Inference: route local Ollama → cloud Ollama → Google free → OR",
+    "result": "batch task class added; night-mode local Ollama (00:00-06:00); worker already preferred ollama_cloud; 3 new tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "created_at": "2026-06-03T21:58:40.374085+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The inference rules engine currently treats OR as the primary provider. We have cheaper tiers available: local Ollama ($0, daytime tasks we don't mind being slower), Ollama cloud (cheaper than OR), and Google free tier (Gemini via AI Studio). The rules engine should prefer cheaper sources for appropriate task classes and shift to local Ollama at night for knowledge integration / batch work. T-akien-ollama-setup (hold) is a prerequisite for local tier; this ticket assumes sources are registered and focuses on priority ordering in the rules engine and time-of-day routing.\n\n**Affected files:** devices/inference/rules_engine.py, devices/inference/sources.py, config/profiles/cc.yaml or equivalent inference config\n**Design rules:** no-sqlite; rules engine pattern (C-registered-dispatcher); no hardcoded provider names — config-driven\n**Scope boundary:** In scope: priority ordering in RulesEngine.route(), time-of-day rule (night = local Ollama for batch tasks), source registration for Ollama cloud + Google free tier stubs. Out of scope: actually provisioning the Ollama cloud account (T-akien-ollama-setup), model capability mapping for new sources.\n**Completion criteria:** (1) rules engine routes worker-class tasks to Ollama cloud when available, falling back to OR; (2) night-mode rule (00:00–06:00 local) routes batch tasks to local Ollama when healthy; (3) Google free tier registered as a source stub even if not yet wired; (4) existing inference tests pass; (5) new tests: route() returns Ollama-cloud source when registered+healthy; route() returns local Ollama for task_class=batch at 02:00",
+    "completed_at": "2026-06-05T04:05:08.442222+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a9fb3bb8-9c6b-4288-8059-c06aca2b5a85",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-sudo-relay-rack-device.20260605.183745171913",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sudo-relay-rack-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T18:37:45.171913",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sudo-relay-rack-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sudo-relay-rack-device",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Device",
+      "Security",
+      "Operations"
+    ],
+    "title": "sudo relay: formalize as rack device, default-off, guru-start",
+    "result": "SudoRelayDevice + SudoRelayShim + web server chat/feed endpoints; 14 tests; password never logged",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "intention": "I intend that sudo relay is a first-class rack device with guru-only start and observable call output.",
+    "created_at": "2026-06-05T18:37:45.171913+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "sudo relay formalized as a rack device with defined lifecycle and constrained chat interface.\n\nStates:\n- OFF: session does not exist\n- NEEDPW: session running, waiting for operator to enter sudo password (chat window prompts for it)\n- WAITING: password accepted, daemon loop running, watching for pending.sh\n- PROCESSING: pending.sh present, currently executing a privileged command\n\nChat interface (slash-commands only, like Bark!):\n- Accepts slash commands: /start, /stop, /status, /pw (to enter password in NEEDPW state)\n- Free-text input: responds with 'Sorry nice person, no replies available for that.'\n- No LLM, no cognition — purely mechanical command dispatch\n\nSpec:\n- Default state: OFF (does not start on rack boot)\n- Start: guru-only (Akien manually starts it)\n- Feed: public feed showing all call results (daemon.log contents)\n- Must register with skeleton on start, appears in web device list with current state\n\nAffected files: devices/sudo_relay/ (create shim.py + device.py), skeleton/registry.py, devices/web_server/server.py\nDesign rules: BaseDevice/BaseShim pattern; skeleton.registry.register() in shim.start(); no sqlite\nScope boundary: IN lifecycle + 4-state machine + registration + feed + slash-command chat. OUT: changing what the daemon executes\nCompletion criteria: (1) web device list shows sudo relay with correct state; (2) not started on rack boot; (3) slash commands work in chat; (4) free text gets canned response; (5) /pw command triggers password prompt in NEEDPW state; (6) feed shows daemon.log output\n\n**HIGH-INERTIA APPROVAL (2026-06-05):** Akien approved via re-issuing /sprint-ticket twice. Security design decisions: (1) /pw command uses tmux send-keys directly, password never logged; (2) guru-only is convention-based, no hard enforcement at this stage.",
+    "completed_at": "2026-06-05T21:33:22.368489+00:00",
+    "deposited_at": "2026-06-05T12:38:10.535889",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "observation",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

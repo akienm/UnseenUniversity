@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-uushowticket-cmd.20260608.161240825553",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uushowticket-cmd"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T16:12:40.825553",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uurecall-fulltext",
+      "T-uushowticket-cmd"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uushowticket-cmd",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "CLI",
+      "Workflow",
+      "Triage"
+    ],
+    "title": "uushowticket + uuticketadd: terminal ticket inspection and annotation",
+    "result": "uushowticket.py (human-readable ticket display) + uuticketadd.py (timestamped note append). ~/bin/ wrappers for both.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": "I intend that Akien can read and annotate any ticket from the terminal without a CC session — uushowticket pretty-prints the full ticket, uuticketadd appends a timestamped note.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T16:12:40.825553+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two complementary commands for terminal-based ticket triage without chat overhead.\n\n`uushowticket <id>` — pretty-prints a ticket for human reading:\n  Title, status, size, tags, priority, worker, intention, description (full, not JSON).\n  Cleaner than cc_queue.py show which dumps raw JSON.\n\n`uuticketadd <id> <note>` — appends a timestamped note to the ticket's description:\n  Appends `\\n\\n**Note [YYYY-MM-DD HH:MM]:** <note>` to the description in Postgres.\n  Returns confirmation. Use for: recording a failed approach, a discovered dependency, a scope change.\n\nBash functions in ~/.bashrc pointing to lab/claudecode/uushowticket.py and lab/claudecode/uuticketadd.py.\n\n**Affected files:** lab/claudecode/uushowticket.py, lab/claudecode/uuticketadd.py, ~/.bashrc\n**Design rules:** no-sqlite; Postgres via cc_queue.py or direct psql\n**Scope boundary:** IN: read + append-note. OUT: status changes (cc_queue.py setstatus), full edit (that's a sprint).\n**Completion criteria:** `uushowticket T-uurecall-fulltext` prints human-readable ticket without JSON noise. `uuticketadd T-uurecall-fulltext 'tested, also misses palace nodes'` appends note and confirms. Both exit 1 with message on unknown ticket ID.\n\n**Note [2026-06-08 11:00]:** smoke test note — testing uuticketadd works",
+    "completed_at": "2026-06-08T17:00:24.756982+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

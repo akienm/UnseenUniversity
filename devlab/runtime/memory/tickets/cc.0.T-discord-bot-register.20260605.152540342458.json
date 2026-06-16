@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-discord-bot-register.20260605.152540342458",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-discord-bot-register"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T15:25:40.342458",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-discord-bot-register"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-discord-bot-register",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Platform",
+      "DeviceRegistry"
+    ],
+    "title": "Register discord_bot device in skeleton registry + web UI",
+    "result": "DiscordBotShim.start() now calls registry.register(); device-id='discord-bot' appears in /api/device/list when shim starts",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that the discord_bot device becomes a visible, registered bus participant in the web UI.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T15:25:40.342458+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "devices/discord_bot/ exists in UnseenUniversity with device.py, shim.py, bot.py but the skeleton DeviceRegistry only shows ['skeleton']. The device needs to be registered so it appears in the web UI bus devices list.\n\n**Affected files:** skeleton/registry.py, devices/discord_bot/__init__.py, devices/web_server/server.py\n**Design rules:** skeleton/ owns the flat-file registry; no Postgres dependency; BaseDevice/BaseShim contract\n**Scope boundary:** In scope: register discord_bot device so it appears in web UI. Out of scope: Discord API functionality changes.\n**Completion criteria:** discord_bot appears in the registered device list from DeviceRegistry.list_devices(); web UI /devices shows it; existing tests pass.",
+    "completed_at": "2026-06-05T15:30:56.258772+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

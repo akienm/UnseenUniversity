@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-habit-quality-gating.20260521.175415340717",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-quality-gating"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340717",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-habit-quality-gating"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-quality-gating",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "MemorySystem",
+      "Habits"
+    ],
+    "title": "Gate habit updates on feedback source confidence to prevent low-quality signal corruption",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-23T21:29:20.116268+00:00",
+    "created_at": "2026-05-21T17:54:15.340717+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "Igor's habit refinement absorbs all observations without weighting source quality. A habit updated from a failed pe_chain run is not equivalent to one updated from a successful run with explicit Akien approval. Add source_quality field to habit update events: approved > successful_run > observed > inferred. Weight update magnitude by quality; prevent low-confidence observations from overwriting high-confidence habits. Mirrors SDAR paper's sigmoid gate pattern (strengthen positive-gap, attenuate imperfect-source).\n\n**Affected files:** wild_igor/igor/tools/habit_update.py (or equivalent habit refinement code), wild_igor/igor/tools/pe_chain.py (habit update calls)\n**Design rules:** theigors/rules/memory (source_quality as metadata tag, not new memory type), theigors/rules/coding\n**Scope boundary:** In scope: source_quality tagging on habit update events; quality-weighted update magnitude; logging. Out of scope: retroactive reweighting of existing habits.\n**Test plan:** Emit habit update from failed pe_chain run (source_quality=inferred); verify it does not overwrite an existing approved-quality habit. Emit approved-quality update; verify it wins.",
+    "completed_at": "2026-05-23T22:09:05.074334+00:00",
+    "github_issue": 777,
+    "dispatched_at": "2026-05-23T21:29:20.116268+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340733+00:00",
+    "target_difficulty": 2,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3fcffe42-90a5-4556-bd07-137965a4f5c4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

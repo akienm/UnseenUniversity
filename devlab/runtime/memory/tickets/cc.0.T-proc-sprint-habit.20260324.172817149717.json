@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-proc-sprint-habit.20260324.172817149717",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proc-sprint-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T17:28:17.149717",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-proc-sprint-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proc-sprint-habit",
+    "size": "S",
+    "title": "Seed PROC_SPRINT_CONTEXT — Igor understands sprint/ticket workflow vocabulary",
+    "result": "seeded via claudecode/seed_process_habits.py — PROC_SPRINT_CONTEXT context_inject habit, full ticket/worker/sprint vocabulary",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "description": "Seed a cognitive/context_inject habit PROC_SPRINT_CONTEXT triggered by sprint/ticket/queue discussion. Igor knows: queue lives at ~/.TheIgors/cc_channel/queue.json, ticket lifecycle (pending/in_progress/done/blocked), worker daemon polls queue and spawns claude /sprint per ticket, /sprint skill = claim+work+post result+write done flag. Igor can discuss ticket status, suggest sizing, and understand when work is autonomous vs needs human touchpoint.",
+    "completed_at": "2026-03-24T17:28:17.149717+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c17c4eb6-af68-424b-a56f-c846f61a1dbb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

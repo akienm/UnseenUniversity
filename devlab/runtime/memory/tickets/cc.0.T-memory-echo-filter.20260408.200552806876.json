@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-memory-echo-filter.20260408.200552806876",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-echo-filter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T20:05:52.806876",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-echo-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-echo-filter",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D332: Memory echo filter — prevent self-parrot feedback loops",
+    "result": "D332: Echo filter at episodic storage — checks response against recent ring, blocks when self-parrot detected. 20 contaminated 'book project greeting' memories purged from DB. Logged as MEMORY_ECHO_BLOCKED. 1880 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Igor stores his own canned responses as EPISODIC memories. These get retrieved by semantic search and the LLM parrots them back, creating a reinforcing loop. 20 contaminated memories found and purged (book project greeting). Need: filter at memory storage that detects when narrative matches a recent Igor response and either blocks storage or flags it. This is not just a programmer blocker — it is a person blocker. Igor cannot distinguish his own output from new input.",
+    "completed_at": "2026-04-08T20:05:52.806876+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6e8c4cfd-8d5c-466c-b4fe-ee5f7157348e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

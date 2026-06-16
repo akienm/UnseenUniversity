@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-inbox-producer.20260423.173448601202",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-inbox-producer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T17:34:48.601202",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-inbox-2026-04-23"
+    ],
+    "tickets": [
+      "T-cc-inbox-producer",
+      "T-cc-inbox-storage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-inbox-producer",
+    "gate": "T-cc-inbox-storage",
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "CCInbox",
+      "Igor"
+    ],
+    "title": "CC inbox producer: Igor posts ticket-trip + escalation events",
+    "result": "cc_inbox_bridge + 2 pe_chain hooks (DESIGN_PROPOSAL high/response-expected, block normal/response-expected). scope_guard covered transitively. 6 tests. 940439db.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-23T17:32:46.592252+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-inbox-2026-04-23",
+    "description": "Add producer hooks so Igor can post to the CC inbox. Three initial producers: (1) cc_queue ticket-trip handler when a go-live-when condition fires, (2) pe_chain ESCALATE when consult-exhausted, (3) scope_guard block on HIGH-inertia file. Each producer imports cc_inbox.append() and posts with appropriate kind + urgency. Non-fatal — producer failures logged but don't break the triggering path.\n\n**Affected files:** wild_igor/igor/cognition/cc_inbox_bridge.py (new — wraps lab.claudecode.cc_inbox for igor.cognition.* callers), wild_igor/igor/tools/pe_chain.py (ESCALATE-consult-exhausted hook), wild_igor/igor/tools/scope_guard.py (HIGH-inertia block hook), lab/claudecode/cc_queue.py (trip-condition-fire hook)\n**Design rules:** docs-live-in-code, test-plan-or-why-not\n**Scope boundary:** IN — three producer hook sites + bridge module. OUT — other subsystems (they can hook in as follow-ons), changing trigger semantics.\n**Test plan:** unit tests verify each producer-site calls cc_inbox.append() with correct kind/ticket_id/summary; producer-failure is non-fatal (mock append() raising; verify caller path continues).",
+    "completed_at": "2026-04-23T17:34:48.601202+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "25e5531c-b47d-4516-9c1e-63814a4c1690",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

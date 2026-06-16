@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-swarm-notification-rule.20260505.185606546790",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-notification-rule"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T18:56:06.546790",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-channel-mechanism",
+      "T-swarm-notification-rule",
+      "T-swarm-via-home-web-server"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-notification-rule",
+    "gate": null,
+    "title": "CLOSED: swarm notification rule — intent-only gate, ygm_check wired",
+    "result": "has_intent predicate + ygm_check integration; 16 tests; commit 11782bf",
+    "status": "done",
+    "worker": "claude",
+    "priority": "S",
+    "claimed_at": null,
+    "related_to": "T-swarm-via-home-web-server",
+    "decision_id": null,
+    "description": "Implement the notification rule: notify only when an envelope is addressed with clear intent to the recipient (direct address or @-mention in channel). No ambient stream notifications — observability channels are silent unless the recipient is specifically targeted.\n\n**Affected files:** agent_datacenter/agent_datacenter/announce/listener.py, agent_datacenter/agent_datacenter/announce/broker.py, agent_datacenter/devices/claude/ygm_check.py\n**Design rules:** none apply\n**Scope boundary:** IN — intent detection on envelope (direct address vs. channel broadcast), notification gate that fires only on intent. OUT — notification transport (YGM/discord/tmux — those devices already exist); channel subscription mechanics (T-swarm-channel-mechanism).\n**Test plan:** unit tests — direct-addressed envelope triggers notification; broadcast envelope without @-mention does not; @-mention in channel body triggers notification for mentioned participant only.\n**Pass condition:** An envelope broadcast to `shared` with no @-mention produces zero YGM notifications; the same envelope with `@cc.0` in the body produces exactly one notification to the CC.0 participant.",
+    "completed_at": "2026-05-05T18:56:06.546790+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "69758eac-f10e-4343-9af1-96013202282f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

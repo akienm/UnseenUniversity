@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-provenance-coverage-enforcement.20260414.232253000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-provenance-coverage-enforcement"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:53",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-provenance-coverage-enforcement"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-provenance-coverage-enforcement",
+    "body": "From D030 close (Akien 2026-04-14): 'I like b. it's safer. and yeah, we have to backfill what we have as part of this process.'\n\n## Current state (live DB 2026-04-14)\n\n- **80,841** total memories\n- **1,152 (1.4%)** have `metadata.provenance` field\n- **326 (0.4%)** have `metadata.why` field\n- **419** PROCEDURAL habits\n- **116 (28%)** of habits have `metadata.code_ref` (D030 substrate)\n- **42 (10%)** of habits have `metadata.provenance`\n\nProvenance infrastructure exists (T-memory-provenance, T-urgency-provenance, T-facia-template-provenance all shipped) but coverage is sparse. New memories created via the tools that stamp provenance get it; everything else doesn't.\n\n## Why this matters\n\nWithout uniform provenance, Igor cannot answer 'where did this come from?' or 'how confident should I be in this?' for the bulk of his memory store. Future trust tiers, validation flows, and the action-claim verifier all depend on provenance being a baseline expectation, not a sometimes-property. Coverage drift is the failure mode where this rule erodes one missing field at a time.\n\nAkien framing: 'safer' — the cost of enforcement is small; the cost of trusting unverifiable memories at scale is large.\n\n## Three sub-steps\n\n### Step 1 — Audit & catalog (Igor task)\n\n**Per the 'delegate research to Igor' rule:** Igor walks the memories table and produces a structured report:\n\n- Per memory_type: count with provenance, count without, count with `why`, count with `code_ref` where applicable\n- Per source field: which sources are stamping provenance vs which aren't\n- Sample 20-50 missing-provenance memories per type and infer the most likely source (timestamps, narrative shape, parent_id, neighborhood)\n- Recommend a backfill strategy per source\n\nIgor reports findings. CC + Akien review and approve the backfill plan.\n\n### Step 2 — Backfill pass (CC sprint)\n\nBased on Igor's findings, write idempotent backfill scripts per source. Likely categories:\n\n- **Genesis seeds (CP/ID/RM/PROC genesis)** → provenance='seed:genesis' if missing\n- **Tool-created PROC habits** → provenance='seed:<tool_name>' inferred from code_ref or narrative pattern\n- **NE-synthesized memories** → already have `provenance_source=ne_synthesis` per T-memory-provenance; verify and normalize\n- **EPISODIC turns** → provenance='turn_capture' or similar; backfill from timestamp + thread_id\n- **PRA_ accretion memories** → provenance='pr_accretion' inferred from id prefix\n- **Reading extraction memories** → provenance='reading_extract:<run_id>' if reading_run_items can be joined\n- **Genuinely unknown** → provenance='backfill_unknown:<date>' so they're flagged as best-effort\n\nEach backfill script runs once, tagged in `_migrations` table to prevent re-run. Idempotent — re-running on already-stamped rows is a no-op.\n\n### Step 3 — Enforcement (CC sprint, depends on T-audit-add-checks)\n\nOnce backfill is complete:\n\n1. **Forever audit check** registered via T-audit-add-checks: `every memory must have metadata.provenance`. Reports any new memory without provenance. The check runs every audit sweep and prevents reintroduction of missing-provenance memories.\n\n2. **cortex.store() invariant** (optional, after audit check stabilizes): require `provenance` in metadata before insert. Reject (or auto-stamp with caller introspection) if missing. This is the strongest enforcement but might break callers — gate behind a feature flag for a transition period.\n\n3. **PR habit health step**: extend the existing audit Step 12 (habit health, code_ref check) to also report provenance coverage on PROCEDURAL memories.\n\n## Existing work to check\n\n- T-memory-provenance (done) — validate_memory + provenance_source=ne_synthesis pattern\n- T-urgency-provenance (done) — trace_urgency_provenance + PROC_WHY_IMPORTANT\n- T-facia-template-provenance (done) — factual_compression provenance stamps\n- D030 (closed) — code_ref + provenance=builtin POC\n- wild_igor/igor/memory/cortex.py:store() — the enforcement point\n- wild_igor/igor/tools/memory_provenance.py — current provenance tools\n- wild_igor/igor/cognition/forensic_logger.py — for audit logging on backfill\n- T-audit-add-checks — Step 3 dependency for the forever check\n\n## Risks\n\n- **Backfill misclassification**: provenance stamps inferred from heuristics will be wrong sometimes. Use 'backfill_unknown' for low-confidence cases instead of guessing. Igor's audit report should include confidence per inferred source.\n- **Performance**: 80K rows × UPDATE per backfill source is a few minutes of write load. Run during low-activity window. Schedule per-source rather than one big transaction.\n- **Caller break on enforcement**: if cortex.store() starts rejecting missing-provenance memories, every untouched caller breaks. Roll out as warning-only first, then opt-in strict, then default strict.\n\n## Out of scope\n\n- Validating provenance correctness (this ticket only ensures the FIELD is present; semantic correctness is T-memory-provenance's domain)\n- Trust tiers based on provenance (D030 mentioned this; it's a future epic on top of having coverage)\n- Removing existing memories without provenance (backfill, don't delete)\n\n## Provenance\n\nD030 close 2026-04-14. Akien chose option B (file follow-up + backfill) over option A (drift-tolerant) explicitly: 'I like b. it's safer.'",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "memory",
+      "provenance",
+      "backfill",
+      "enforcement",
+      "audit",
+      "biomimicry"
+    ],
+    "title": "Provenance coverage — backfill existing memories + enforce on new",
+    "result": "Provenance enforcement at cortex.store(): deposited_by + deposited_at stamped on every memory. provenance.py contract + ensure_provenance(). Backfilled 86,281 existing memories to 0 gaps. 13 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T22:56:06.429593+00:00",
+    "created_at": "2026-04-14T23:22:53Z",
+    "related_to": null,
+    "completed_at": "2026-04-17T23:04:52.551348+00:00",
+    "github_issue": 453,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

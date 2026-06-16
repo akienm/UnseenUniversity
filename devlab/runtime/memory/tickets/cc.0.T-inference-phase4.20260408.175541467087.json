@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-inference-phase4.20260408.175541467087",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-phase4"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T17:55:41.467087",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-phase4"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-phase4",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D327 Phase 4: sweep model name references from codebase",
+    "result": "Swept model names from 16 files. OR_CHEAP_MODEL + OR_INTERACTIVE_MODEL constants in inference_openrouter.py. OLLAMA_HOST/OLLAMA_LOCAL_MODEL via inference_ollama.py. 32 remaining refs are comments, DB defaults, .env templates. 1875 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Audit and remove 100+ hardcoded model names from main.py, server.py, seeds, etc. Replace with tier references through inference_gateway. Model IDs in cfg only.",
+    "completed_at": "2026-04-08T17:55:41.467087+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "93ba59bf-4d1d-4b52-b466-7be0d41a2c24",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

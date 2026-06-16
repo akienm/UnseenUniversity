@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-sqlite-out-claude-budget-db.20260502.204941850585",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-out-claude-budget-db"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T20:49:41.850585",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reorg-execute-2026-05-01"
+    ],
+    "tickets": [
+      "T-capability-extraction-from-igor",
+      "T-sqlite-out-claude-budget-db"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-out-claude-budget-db",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "SQLite-Removal",
+      "Budget",
+      "Reorg"
+    ],
+    "title": "Migrate claude_budget.db SQLite → Postgres + delete file",
+    "result": "Budget tracking migrated SQLite → Postgres (commit c246bdfa). Migration m053 creates infra.spend / infra.budget_config / infra.balance_history (BIGSERIAL ids, TIMESTAMPTZ, indexed). budget.py uses make_home_proxy + bare table names (infra in search_path). One-shot migration script moved real data: 722 spend / 2 config / 2178 balance_history rows. SQLite file + hardlink twin deleted. Two latent timestamp-subscript bugs fixed (get_balance_trajectory + _tool_spend_history). 6 regression tests pass; full TheIgors suite 4187/0 (32 skip).",
+    "status": "done",
+    "worker": "claude",
+    "priority": "P1",
+    "claimed_at": null,
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-reorg-execute-2026-05-01",
+    "description": "lab/utility_closet/budget.py:59 still writes SQLite to ~/.agent_datacenter/Igor-wild-0001/claude_budget.db. Unlike the other two .db files, this one likely lacks a Postgres mirror — actual migration needed (not just finish removal). Per Akien 2026-05-01: remove; migrate if necessary.\n\n**Affected files:** lab/utility_closet/budget.py:59 (writer), ~/.agent_datacenter/Igor-wild-0001/claude_budget.db (282KB; migrate then delete)\n**Design rules:** no-sqlite (CLAUDE.md)\n**Scope boundary:** in — design budget Postgres schema; one-shot migration script; switch budget.py writer to Postgres; verify CC sessions still record budget; delete .db; out — utility_closet → agent_datacenter migration (separate ticket T-capability-extraction-from-igor)\n**Test plan:** new test_budget_postgres covers record/read/aggregate; budget round-trip after migration matches pre-migration counts; existing CC budget reads still work",
+    "completed_at": "2026-05-02T20:49:41.850585+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7f5c48d8-df1c-4838-afba-cbcb415055a2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

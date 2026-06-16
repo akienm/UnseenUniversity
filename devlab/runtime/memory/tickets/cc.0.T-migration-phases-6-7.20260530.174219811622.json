@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-migration-phases-6-7.20260530.174219811622",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-migration-phases-6-7"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:42:19.811622",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-migration-phases-6-7"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-migration-phases-6-7",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Platform"
+    ],
+    "title": "T-theigors-to-uu-migration phases 6-7: env vars + archive TheIgors",
+    "result": "phase 6: env vars already optional, uu.cfg.template updated; phase 7: ~/TheIgors → ~/TheIgors.archive, TheIgors refs removed from dispatch.py",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "blocked_at": "2026-06-02T01:56:15.926200+00:00",
+    "created_at": "2026-05-30T17:42:19.811622+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Phases 2-5 of the TheIgors→UU migration are done. Phases 6-7 remain:\n\nPhase 6: Fold IGOR_RUNTIME_ROOT and IGOR_INSTANCE_ID into config.cfg defaults so they no longer need to be set as env vars. Any code still reading them from os.environ should fall back to config.cfg values.\n\nPhase 7: Validate all runtime paths resolve correctly against ~/.unseen_university, then archive ~/TheIgors (rename to ~/TheIgors.archive or similar). Remove any remaining ~/TheIgors symlinks from lab/claudecode.\n\n**Affected files:** unseen_university/config.py or equivalent, devices/igor/paths.py, ~/TheIgors (archive)\n**Design rules:** no-sqlite; no TheIgors imports from UU; runtime root is ~/.unseen_university\n**Scope boundary:** IN — env var → config.cfg fallback; ~/TheIgors archived; all paths verified; OUT — TheIgors deletion (archive only, not delete)\n**Completion criteria:** Igor starts without IGOR_RUNTIME_ROOT or IGOR_INSTANCE_ID in environment; ~/TheIgors.archive exists; no broken imports; all tests pass",
+    "completed_at": "2026-06-02T18:58:18.108120+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T01:55:54.868385+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:42:19.811705+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "311d1e5b-7c5f-45cd-80cd-fcf1e2948e1b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

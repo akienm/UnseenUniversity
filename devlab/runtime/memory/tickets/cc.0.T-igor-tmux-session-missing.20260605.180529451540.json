@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-tmux-session-missing.20260605.180529451540",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-tmux-session-missing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T18:05:29.451540",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-tmux-session-missing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-tmux-session-missing",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Operational",
+      "Igor"
+    ],
+    "title": "Igor tmux session not running — restart procedure",
+    "result": "Igor restarted successfully — now running in tmux session 'igor' via updated launcher. Code relocated from ~/TheIgors/wild_igor to UnseenUniversity/devices/igor.",
+    "status": "closed",
+    "worker": "akien",
+    "priority": 0.9,
+    "intention": "I intend that Igor's tmux session is running and healthy.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T18:05:29.451540+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor tmux session does not exist (tmux list-sessions shows no 'igor' session). The session was running on 2026-06-04 but is now gone — either killed, stopped, or crashed.\n\nRestart Igor and verify it comes up cleanly with all subsystems ready.\n\n**Affected files:** Likely startup scripts or launcher code (Granny may have changed how Igor is launched after worker_daemon.sh retirement)\n**Design rules:** Igor lifecycle must be recoverable via tmux; startup must log clearly\n**Scope boundary:** Restart Igor cleanly; verify logs show no errors; restore to operational state\n**Completion criteria:** (1) Igor tmux session exists and has a shell prompt; (2) Igor processes running and healthy; (3) recent logs in ~/.unseen_university/logs show clean startup with no errors or warnings\n\n**Palace palace:** See memory on [[feedback_igor_shutdown]] — tmux session \"igor\" is the control interface.",
+    "completed_at": "2026-06-05T18:07:13.556627+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

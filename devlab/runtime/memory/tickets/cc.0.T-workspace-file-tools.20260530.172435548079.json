@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-workspace-file-tools.20260530.172435548079",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-workspace-file-tools"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:24:35.548079",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-workspace-file-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-workspace-file-tools",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "workspace device: expose read/write/bash as rack MCP tools for all agents",
+    "result": "WorkspaceDevice + WorkspaceShim + mcp_server.py: three sandboxed MCP tools (read/write/bash), igor.yaml + cc.yaml profiles updated, 18 tests covering tools + sandboxing + announce→manifest round-trip — all pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-31T21:18:05.675128+00:00",
+    "created_at": "2026-05-30T17:24:35.548079+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "CC has read/write/bash as native tools. Other agents (Igor, Librarian, future agents) currently call file system operations directly. Expose these as rack MCP tools via the workspace device so any agent that announces gets them in its manifest. This is the 'cockpit for non-CC agents' — each tool is a lever the agent can invoke through the standard tool-calling path.\n\nTools to expose: workspace_read_file(path), workspace_write_file(path, content), workspace_run_bash(command, timeout_sec). Sandbox: workspace_root must be within allowed paths (configurable per agent profile).\n\n**Affected files:** devices/workspace/device.py, devices/workspace/shim.py, config/profiles/ (add workspace to agent profiles that need it)\n**Design rules:** no-sqlite; every device inherits BaseDevice/BaseShim; no standalone functions doing device work\n**Scope boundary:** IN — three tools (read, write, bash) exposed via workspace device shim; OUT — filesystem ACL enforcement beyond path sandboxing, streaming output\n**Completion criteria:** a test agent can announce, receive workspace tools in manifest, call workspace_read_file on a known file, and get correct content back",
+    "completed_at": "2026-06-01T21:35:45.460941+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T21:18:05.675128+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:24:35.548104+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c62b634c-3258-41c2-8003-131298252c8c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

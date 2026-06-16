@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-mcp-channel-logging.20260411.005010000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-channel-logging"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-11T00:50:10",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-mcp-channel-logging"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-channel-logging",
+    "tags": [
+      "Operations",
+      "Claude"
+    ],
+    "title": "MCP matrix logging — channel as log target",
+    "result": "Done: comms module routes all messages through channels with JSON-per-line conversation file logging.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "created_at": "2026-04-11T00:50:10Z",
+    "related_to": null,
+    "description": "MCP server (igor_mcp.py) has no logging of its own tool loading/registration. Add logging that writes to cc_channel so MCP tool lifecycle events (registered, failed, disappeared) are visible. Makes the utility closet self-diagnosing. — deferred: scope/priority TBD",
+    "completed_at": "2026-04-17T22:15:23.380946+00:00",
+    "github_issue": 400,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "66177402-8151-4658-8697-b9e3fae5a100",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-walk-11.20260507.215508072127",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-11"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:08.072127",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-11"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-11",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Habits",
+      "walk"
+    ],
+    "title": "CLOSED: Fix ENGRAM_CODE_* triggers to match payload key",
+    "result": "Already done: seed script writes triggers={'__entry__':'cells'}, DB rows have correct key, test_node_executor.py:1118 covers the regression. No code change needed.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-07T21:55:08.072127+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 area_2 finding: ENGRAM_CODE_* seed writes triggers that don't match the payload key the node_executor reads. Fix the seed script to write triggers={\"__entry__\": \"cells\"} and re-seed the ENGRAM_CODE_* rows.\n\n**Affected files:** lab/claudecode/seed_coding_engrams.py, wild_igor/igor/cognition/node_executor.py, DB rows (ENGRAM_CODE_*)\n**Design rules:** no-sqlite\n**Scope boundary:** IN — fix trigger key mismatch in seed + re-seed rows. OUT — redesigning the engram execution model.\n**Test plan:** After re-seed, verify ENGRAM_CODE_* rows have correct trigger key via psql; unit test in test_node_executor.py asserts payload[\"__entry__\"] == \"cells\" fires the engram.\n**Pass condition:** `psql -c \"SELECT metadata->>'triggers' FROM clan.memories WHERE id LIKE 'ENGRAM_CODE_%' LIMIT 1\"` returns a JSON object with key `__entry__`.",
+    "completed_at": "2026-05-08T02:36:44.488705+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "35f8658c-63ed-42d1-9b5f-86c04d763fad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

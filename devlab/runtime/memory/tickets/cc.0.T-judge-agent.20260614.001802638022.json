@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-judge-agent.20260614.001802638022",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-judge-agent"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T00:18:02.638022",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-judge-agent"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-judge-agent",
+    "gate": null,
+    "role": "master",
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "CompiledInference",
+      "Factory"
+    ],
+    "title": "Judge agent: inference-based output evaluator (upgrade path from Auditor/Critic)",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that we have an inference-based judge that evaluates whether an output satisfies an intent, complementing the rules-based Auditor.",
+    "created_at": "2026-06-14T00:18:02.638022+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Hubert (Auditor) and the web Critic are rules-based — they check structural properties against fixed rules. A Judge agent is inference-based: given (intent, normalized constraints, output), it returns a verdict on whether the output satisfies the intent.\n\nThis is the LLM-as-judge pattern applied to our sprint outputs. Potential uses:\n- Post-sprint: did the shipped code realize the ticket's intention?\n- Consequence check: did the predicted outcomes occur?\n- Test generation: would a scenario exercise this intent in a failing case?\n\nObserved in working form at a parallel project (test automation; judges generated test cases against intent + constraints).\n\n**Affected files:** TBD — new device or capability in devices/hubert/ or devices/classifier/\n**Design rules:** no-autonomous-action (judge advises, does not close tickets or modify code)\n**Scope boundary:** IN — verdict (pass/fail/partial) + rationale on (intent, constraints, artifact). OUT — acting on the verdict.\n**Completion criteria:** Judge produces pass/fail/partial verdicts with rationale on 5 sprint diffs; Akien spot-checks 3 and agrees with the verdict.",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

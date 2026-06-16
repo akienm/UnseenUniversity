@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-palace-seed-decisions.20260508.023425542708",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-palace-seed-decisions"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T02:34:25.542708",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-palace-session-memory-2026-05-07"
+    ],
+    "tickets": [
+      "T-adc-palace-seed-decisions"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-palace-seed-decisions",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "agent_datacenter",
+      "palace",
+      "infrastructure"
+    ],
+    "title": "Seed palace.decisions.* from existing D-*.md stubs",
+    "result": "61 D-*.md files seeded into palace.decisions.*; seeder script + 13 tests; idempotent upsert",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-08T21:14:46.783065+00:00",
+    "created_at": "2026-05-08T02:34:25.542708+00:00",
+    "related_to": null,
+    "decision_id": "D-palace-session-memory-2026-05-07",
+    "description": "Read all existing lab/design_docs/decisions/D-*.md files and insert enriched nodes into palace.decisions.* with appropriate metadata (tags, status, spawned_tickets, date).\n\n**Affected files:** new seeder script (reads D-*.md, writes to palace DB)\n**Design rules:** palace DB always, files are echo only\n**Scope boundary:** IN: read existing D-*.md stubs, insert palace.decisions.* nodes, set metadata.tags from filename/content inference. OUT: retroactive enrichment of decision narratives (that's manual/future work), context-load changes.\n**Test plan:** all D-*.md files produce a palace.decisions.* node; queryable by tag and full-text.",
+    "completed_at": "2026-05-08T21:16:55.424410+00:00",
+    "github_issue": 642,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "55dd3779-a717-499f-a9f9-d5de29638e9f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

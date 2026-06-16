@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-pe-read-ticket-description-gate.20260510.190112167350",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-read-ticket-description-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T19:01:12.167350",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pe-chain-description-gate-2026-05-10"
+    ],
+    "tickets": [
+      "T-pe-read-ticket-description-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-read-ticket-description-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CodeQuality",
+      "PEChain",
+      "Cognition"
+    ],
+    "title": "Abort pe_chain at pe_read_ticket when ticket description is absent",
+    "result": "Guard in pe_read_ticket aborts when description absent/title-only; 3 new tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-10T19:01:12.167350+00:00",
+    "related_to": null,
+    "decision_id": "D-pe-chain-description-gate-2026-05-10",
+    "description": "pe_chain hallucinates HIGH-inertia file scope when a ticket has no description. SITUATE infers files from title semantics, OBSERVE reads them, HYPOTHESIZE edits them. The scope guard catches the symptom after 0 attempts but never stops the underlying cause.\n\nFix: abort at pe_read_ticket with basket[error] when description is absent or equals the title (title-only fallback). SITUATE never runs, hallucination never fires.\n\nGuard condition: len(description) < 50 OR description.strip() == title.strip(). Error message: 'Ticket {id} has no description — add Affected files and scope before Igor can plan this.'\n\nHIGH-INERTIA PRE-APPROVAL: pe_chain.py is HIGH-inertia. Change is a 4-line additive early-return guard in pe_read_ticket() only — no existing logic altered. Pre-approved by Akien: 'yes /fix it' (2026-05-10).\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (pe_read_ticket, ~line 584)\n**Design rules:** none apply beyond the HIGH-inertia pre-approval already stamped above\n**Scope boundary:** In scope: one guard in pe_read_ticket(), one new test. Out of scope: changing SITUATE prompt, HYPOTHESIZE prompt, scope_guard logic, or any other pe_chain step.\n**Test plan:** Add test: ticket with empty description → pe_read_ticket sets basket['error'] containing 'no description'; ticket with description == title → same; ticket with real description → proceeds normally. All existing pe_chain tests must pass.",
+    "completed_at": "2026-05-10T19:20:39.110569+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "322a2855-81ae-4101-8ef3-0685a347cf6f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

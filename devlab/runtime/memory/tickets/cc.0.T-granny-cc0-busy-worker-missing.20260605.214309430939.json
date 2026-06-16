@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-cc0-busy-worker-missing.20260605.214309430939",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-cc0-busy-worker-missing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T21:43:09.430939",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-cc0-busy-worker-missing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-cc0-busy-worker-missing",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Operational"
+    ],
+    "title": "Granny: _cc0_busy() misses in_progress tickets with worker=None",
+    "result": "_setstatus_direct() now sets worker='claude' on CC.0 dispatch; _cc0_busy() correctly detects CC busy",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.8,
+    "intention": "I intend that _cc0_busy() correctly detects CC.0 as busy after dispatch.",
+    "claimed_at": null,
+    "created_at": "2026-06-05T21:43:09.430939+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "_dispatch_cc0() marks tickets in_progress via _setstatus_direct() but never sets the worker field. _cc0_busy() queries for worker IN ('claude','cc') and misses them. Result: Granny dispatches a new ticket to CC.0 on the next 60s cycle even though CC is already sprinting. Fix: extend _setstatus_direct() to optionally set worker field; call with worker='claude' in _dispatch_cc0().\n\n**Affected files:** devices/granny/daemon.py (_setstatus_direct, _dispatch_cc0)\n**Design rules:** none apply — query fix\n**Scope boundary:** Only _setstatus_direct and _dispatch_cc0. Out of scope: changing _cc0_busy query structure.\n**Completion criteria:** After _dispatch_cc0() runs, the dispatched ticket has worker='claude' in the DB; _cc0_busy() returns True on next poll.",
+    "completed_at": "2026-06-05T21:44:12.701440+00:00",
+    "deposited_at": "2026-06-05T15:43:18.260301",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

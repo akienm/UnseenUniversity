@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ollama-oom-recovery.20260429.161111000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ollama-oom-recovery"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:11",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ollama-input-cap",
+      "T-ollama-oom-recovery"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ollama-oom-recovery",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Cognition"
+    ],
+    "title": "Detect and recover orphaned ollama runner processes after OOM cascade",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T23:13:06.949759+00:00",
+    "created_at": "2026-04-29T16:11:11Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "On 2026-04-27 the OOM killer fired twice in 8 seconds, killing both llama runners. Ollama's restart logic spawned PID 237776 (qwen2.5:7b) but lost the handle to it — the process ran at 392% CPU for 24+ hours until manually killed. ollama ps never listed it. This is an ollama bug we can't fix, but we can detect and recover from it.\n\nFix: add a periodic Igor habit (PROC_OLLAMA_ORPHAN_CHECK, schedule ~300s) that: (1) queries ollama /api/ps for tracked runners, (2) counts actual ollama runner processes via pgrep, (3) if count(pgrep) > count(/api/ps) + 1, log a WARNING and trigger an ollama service restart via the sudo relay (sudo systemctl restart ollama). The restart is the safe recovery — ollama reloads cleanly, tracked runners resume, orphans die.\n\nAlso: when any ollama call returns a 500, log the full response body at WARNING level so the oversized input that triggered it is visible in the logs.\n\n**Affected files:** wild_igor/igor/cognition/embedder.py or a new wild_igor/igor/habits/ollama_watchdog.py (PROC_OLLAMA_ORPHAN_CHECK habit), wild_igor/igor/cognition/reasoners/ollama_reasoner.py (log 500 response body)\n**Design rules:** docs-in-code. No new memory schemas. Sudo relay already exists at ~/.TheIgors/sudo_relay/ — use it.\n**Scope boundary:** IN: orphan detection habit + 500 logging. OUT: fixing the OOM root cause (that's T-ollama-input-cap), GPU procurement, kernel OOM tuning.\n**Test plan:** Unit test: mock pgrep returning count > api/ps count, assert restart is triggered via sudo relay. Run: python -m pytest tests/ -x -q -k 'ollama_watch or orphan'",
+    "proposed_at": "2026-04-28T23:18:13.508115+00:00",
+    "completed_at": "2026-04-29T23:24:58.660240+00:00",
+    "github_issue": 554,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f5d6778a-24a2-4c30-9bc8-11567b1c7826",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

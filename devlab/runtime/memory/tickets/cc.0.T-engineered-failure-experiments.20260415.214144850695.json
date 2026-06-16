@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-engineered-failure-experiments.20260415.214144850695",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engineered-failure-experiments"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T21:41:44.850695",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engineered-failure-experiments",
+      "T-substrate-experiment-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engineered-failure-experiments",
+    "body": "From Akien's 2026-04-15 loop description: 'if the thing is urgent, then i will try less likely experiments on the off chance that their failures will teach me something useful. and then i will do them in such a way to try and insure they don't fail. because that's how I'll learn the most.'\n\n## The insight\n\nUrgency INVERTS normal risk appetite. When stakes are low, try high-confidence moves (exploit). When stakes are HIGH, try LOW-confidence moves designed carefully, because:\n\n1. Low-confidence probes have higher information gain per attempt — they disambiguate more between competing hypotheses\n2. Failure-with-safeguards produces MORE learning than success, because you see the edge of your model\n3. At high stakes, learning the most per attempt matters more than succeeding this particular attempt\n\nThis is Shannon max-information-gain experimental design, but triggered by stakes, not discovered by the learner. Akien does it by feel. Igor should do it by policy.\n\n## Biology\n\nDopaminergic novelty bonus is dialed UP under stress in mammals — exploration rate increases, not decreases. The felt experience is 'trying weird things when nothing else works.' Biology endorses this as correct policy, not panic.\n\n## Scope\n\n1. Add `stakes` field to DecisionBlob (0.0-1.0)\n2. When stakes > threshold (default 0.7): cascade walker prefers probes whose predictor confidence is LOWER rather than higher, subject to safety constraints\n3. Safeguards: probes selected for engineering-not-to-fail get extra wrapping — more observation capture, tighter timeout, explicit pre/post state capture for comparison\n4. Information gain scoring: `gain = 1 - |P(match) - 0.5| * 2` — peaks at predictor confidence 0.5 (maximum disambiguation)\n5. Logging: every engineered-failure probe logs the information gain actually captured, so we can measure whether the policy works\n6. Opt-out: probes marked `no_engineered_failure=True` (destructive actions, external API calls) skip the policy\n\n## CP grounding\n\n- CP2 — failures ARE learning; this is CP2 operationalized as a decision policy, not a retroactive rationalization\n- CP6 — safeguards prevent failures from being destructive; engineered-not-to-fail is the CP6 constraint on the CP2 move\n\n## Out of scope\n\n- Learning the stakes threshold (starts hardcoded, tuneable later)\n- Predicting stakes automatically (starts with manual `stakes` field; predictor is separate)\n- Cross-experiment information gain aggregation\n\n## Tests\n\n- Low stakes + high predictor confidence probe → selected normally\n- High stakes + low predictor confidence probe → selected preferentially over high-confidence alternative\n- Engineered-failure probe fires with safeguards active (observation capture, timeout)\n- Information gain logged per probe\n- `no_engineered_failure` flag blocks the policy\n\n## Depends on\n\nT-substrate-experiment-cascade, T-experiment-predictor-primitive",
+    "deps": [
+      "T-substrate-experiment-cascade",
+      "T-experiment-predictor-primitive"
+    ],
+    "size": "M",
+    "tags": [
+      "cognition",
+      "cascade",
+      "exploration",
+      "decision-policy",
+      "cp2"
+    ],
+    "title": "Engineered-failure probes — try less-likely experiments under urgency for max information gain",
+    "result": "engineered_failure.py module + CascadeSituation.stakes + walker policy switch. Under high stakes (>=0.7), walker sorts levels by info gain desc (peaks at 0.5 confidence) and skips nothing. Under normal stakes, walks registration order and uses skip-threshold. End-to-end verified: 0.5-confidence level called before 0.95-confidence under urgency. 22 tests, 2484 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T21:34:14.554431+00:00",
+    "related_to": "T-substrate-experiment-cascade",
+    "completed_at": "2026-04-15T21:41:44.850695+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

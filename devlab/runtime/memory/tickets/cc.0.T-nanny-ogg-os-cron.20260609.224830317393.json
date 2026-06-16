@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-nanny-ogg-os-cron.20260609.224830317393",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nanny-ogg-os-cron"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:30.317393",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-nanny-ogg-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-nanny-ogg-os-cron"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nanny-ogg-os-cron",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Device",
+      "NannyOgg",
+      "Cron"
+    ],
+    "title": "Nanny Ogg: wire OS cron backend + fascia slash commands",
+    "result": "cron_backend.py (abstract+Linux+Windows stub), /api/nanny/cron REST API, fascia cron panel with add/disable/enable/run — 16 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that Nanny Ogg manages OS-level cron jobs, exposing them in her fascia with slash commands for list/add/disable/enable/run-now — no inference involved.",
+    "claimed_at": "2026-06-10T00:11:05.210533+00:00",
+    "created_at": "2026-06-09T22:48:30.317393+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-nanny-ogg-device-2026-06-09",
+    "description": "Wire Nanny Ogg to the OS cron backend (crontab on Linux; Task Scheduler abstraction on Windows). Expose job management via fascia Settings box slash commands. Use an abstraction layer so the backend is swappable.\n\n**Affected files:** devices/nanny_ogg/cron_backend.py (new), devices/nanny_ogg/device.py (update health/status), devices/web_server/server.py (Nanny Ogg fascia Settings box)\n**Design rules:** no-sqlite; no inference in scheduling path; Windows compatibility via abstraction layer\n**Scope boundary:** OS cron read/write only. No rules engine (separate ticket if needed). Slash commands: /cron list, /cron add <expr> <cmd>, /cron disable <id>, /cron enable <id>, /cron run-now <id>. Out of scope: complex graph-tree rules engine.\n**Completion criteria:** /cron list in the fascia returns current crontab entries; /cron add '* * * * * echo test' writes a crontab entry; /cron disable <id> comments it out; /cron enable <id> restores it; cron_backend.py has an abstract base class with Linux + stub-Windows implementations.",
+    "completed_at": "2026-06-10T00:15:17.845473+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-reader-node-mode.20260528.215058707933",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reader-node-mode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T21:50:58.707933",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reader-device-unified-uri-2026-05-28"
+    ],
+    "tickets": [
+      "T-reader-node-mode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reader-node-mode",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Reader",
+      "Cognition"
+    ],
+    "title": "ReaderDevice: node extraction output mode",
+    "result": "node_extractor.py: LLM extraction → {narrative,memory_type,metadata} node dicts; ReaderDevice.read(format=nodes) wired; 20 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "created_at": "2026-05-28T21:50:58.707933+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-reader-device-unified-uri-2026-05-28",
+    "description": "Add format=nodes output mode to ReaderDevice. Generalizes book_learner.py's LLM extraction logic into an extract-only path — caller is responsible for deposit into their learning tree (clan.memories, Scraps embeddings, etc.).\n\nReaderDevice.read(uri, format='nodes') → list[dict] where each dict matches clan.memories insert shape: {narrative: str, memory_type: str, metadata: {source_uri, chunk_position, book_title?, source_author?, model_used, extracted_at}}. No deposit happens inside the ReaderDevice — the device returns nodes, nothing more.\n\nExtraction prompt generalizes book_learner.py's _extract_nodes: given a chunk, extract 0-N memory nodes (FACTUAL, INTERPRETIVE, PROCEDURAL as appropriate). Keep the qwen-first routing (local LLM, cloud escalation on low confidence).\n\n**Affected files:** devices/reader/node_extractor.py (new — LLM extraction, no deposit), devices/reader/device.py (add format=nodes routing)\n**Design rules:** no-sqlite; node shape must be insertable into clan.memories without transformation; no direct Cortex/psycopg2 calls — extraction only; inference via InferenceDevice\n**Scope boundary:** extraction only; book_learner.py not retired yet; reading_tool.py not modified; Igor's deposit path (Cortex.store) stays in Igor\n**Test plan:** synthetic chunk text → node_extractor → nodes have required fields (narrative non-empty, memory_type in {FACTUAL,INTERPRETIVE,PROCEDURAL}, metadata has source_uri + chunk_position); LLM mocked with fixture response; empty chunk → zero nodes returned",
+    "completed_at": "2026-05-28T23:05:22.716923+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T21:50:58.707967+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fe8b18ae-5735-439c-9625-6bb04faca998",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

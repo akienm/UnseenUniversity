@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-igor-subtree-import.20260525.150615384604",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-subtree-import"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-25T15:06:15.384604",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-into-adc-2026-05-25"
+    ],
+    "tickets": [
+      "T-igor-import-rewrite",
+      "T-igor-subtree-import",
+      "T-igor-theigers-archive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-subtree-import",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Architecture",
+      "Igor"
+    ],
+    "title": "Git subtree: merge wild_igor/igor/ history into devices/igor/",
+    "result": "devices/igor/ merged with 1188 history commits; tests/igor/ in place; 937 UU tests pass; conftest autouse fixtures updated to devices.igor.*",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-05-25T15:07:51.677386+00:00",
+    "created_at": "2026-05-25T15:06:15.384604+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-into-adc-2026-05-25",
+    "description": "Use git filter-repo on a clone of TheIgors to extract wild_igor/igor/ with its full commit history, remapping to the devices/igor/ prefix, then add the filtered history as a remote in UnseenUniversity and merge it in. Also move TheIgors/tests/ → UnseenUniversity/tests/igor/. Igor must be stopped (tmux send-keys to session 'igor') before this step begins. Do NOT delete wild_igor/ from TheIgors yet — that is T-igor-theigers-archive.\n\n**Affected files:** devices/igor/ (all new files from wild_igor/igor/), tests/igor/ (new, from TheIgors/tests/), .git history in UnseenUniversity\n**Design rules:** git history preserved via filter-repo + merge, not squash; no new cross-device imports; devices.igor.* is the canonical package prefix going forward\n**Scope boundary:** In scope: physical file move with history into devices/igor/, test directory move. Out of scope: updating any import statements (that is T-igor-import-rewrite). Do not touch TheIgors/wild_igor/ source files.\n**Test plan:** After merge: `python -c \"import devices.igor\"` succeeds from UnseenUniversity root. `ls devices/igor/cognition/ devices/igor/brainstem/ devices/igor/tools/` all exist. `git log --oneline devices/igor/ | wc -l` shows more than 1 commit (history preserved). Existing UU test suite (`pytest tests/ -x -q`) still passes.",
+    "completed_at": "2026-05-25T19:38:55.999436+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-25T15:07:51.677386+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-25T15:06:15.453439+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d3aa4e80-fa0f-4bf1-b129-883502b11ada",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

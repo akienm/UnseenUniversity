@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-superclaude-session-name-sync.20260606.202846813337",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-superclaude-session-name-sync"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:28:46.813337",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-shim-assignment-model-2026-06-06"
+    ],
+    "tickets": [
+      "T-cc-session-hostname-naming",
+      "T-superclaude-session-name-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-superclaude-session-name-sync",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Claude",
+      "Dispatch",
+      "Bug"
+    ],
+    "title": "bin/superclaude: sync tmux session name with hostname.cc.0 naming",
+    "result": "bin/superclaude: hostname-based N-detection replaces hardcoded 'claude-main'; exports CC_TMUX_SESSION explicitly into both env and CLAUDE_CMD string",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.88,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-06T20:28:46.813337+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-shim-assignment-model-2026-06-06",
+    "description": "**Problem (retroactive from T-cc-session-hostname-naming):** bin/superclaude hardcodes `CLAUDE_TMUX_SESSION=${CLAUDE_TMUX_SESSION:-claude-main}` and creates the tmux session as 'claude-main'. But constants.py `_detect_session_name()` returns `<hostname>.cc.0` (since 'claude-main' doesn't match the `*.cc.N` pattern). Result: `TMUX_SESSION = akiendelllinux.cc.0` but the actual session is 'claude-main' — any CCWorkerListener nag or HALT send-keys call targets the wrong name and silently fails.\n\n**What to fix:** In bin/superclaude, replace the hardcoded 'claude-main' default with the hostname-based name:\n```bash\n_HOSTNAME=$(hostname | cut -d. -f1 | tr '[:upper:]' '[:lower:]')\nCLAUDE_TMUX_SESSION=\"${CC_TMUX_SESSION:-${_HOSTNAME}.cc.0}\"\nexport CC_TMUX_SESSION=\"$CLAUDE_TMUX_SESSION\"\n```\nThis makes CC_TMUX_SESSION available in the launched Claude environment so constants.py env-var path fires instead of _detect_session_name().\n\n**Affected files:** bin/superclaude (bash)\n**Design rules:** External state — session name is an external state parameter; CC should never auto-detect when it can be told explicitly\n**Scope boundary:** bin/superclaude only. No changes to constants.py (it already handles CC_TMUX_SESSION correctly).\n**Completion criteria:** After the fix, `tmux list-sessions` shows `akiendelllinux.cc.0` (not 'claude-main'). CC_TMUX_SESSION env var is set inside the CC session. CCWorkerListener nag targets the correct session.",
+    "completed_at": "2026-06-06T20:32:46.156685+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bad875d4-6c32-40d2-8ea0-d121eb6298b1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-machine-manager-lazy-db-url-check.20260424.023521143423",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-machine-manager-lazy-db-url-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:35:21.143423",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-machine-manager-lazy-db-url-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-machine-manager-lazy-db-url-check",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Infra",
+      "UC",
+      "Testability",
+      "Pass2"
+    ],
+    "title": "Defer machine_manager IGOR_HOME_DB_URL check from import to first call",
+    "result": "Shipped in 4c444981. Wrapped the env guard in _db_url() helper called from _pg_connect. Subprocess test confirms import now succeeds without IGOR_HOME_DB_URL set; 4 new tests validate import + connect-time guard + _db_url helper.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.55,
+    "claimed_at": "2026-04-24T02:33:53.518210+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 5 Gap 7 (SHIP). lab/utility_closet/machine_manager.py:34-39 raises RuntimeError at module load if IGOR_HOME_DB_URL is unset. This breaks static imports in any env without a live DB — test discovery, type-checkers, audit tools. Move the guard into _pg_connect (first actual use) so the failure mode matches every other DB-dependent module in the codebase.\n\n**Affected files:** lab/utility_closet/machine_manager.py (lines 34-39 → move to _pg_connect).\n**Design rules:** test-plan-or-why-not.\n**Scope boundary:** IN — moving the guard. OUT — behavior changes at runtime (connect still fails with same error, just at first-connect instead of import).\n**Test plan:** add test that imports machine_manager with IGOR_HOME_DB_URL unset in the env — must succeed. Then call _pg_connect with env unset and assert RuntimeError with the same message.",
+    "completed_at": "2026-04-24T02:35:21.143423+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e07c09e8-98dc-4d75-91a9-af31838a5b4a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-long-horizon-alignment-guard.20260521.175415340940",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-long-horizon-alignment-guard"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340940",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-long-horizon-alignment-guard"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-long-horizon-alignment-guard",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Safety"
+    ],
+    "title": "Surface Akien review prompt when Igor runs autonomously on same goal for N+ NE cycles",
+    "result": "alignment_guard.py module + tests; wired into COA._ne_worker and UserInputSource.push_message; threshold configurable via IGOR_ALIGNMENT_GUARD_THRESHOLD",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-23T21:29:19.882606+00:00",
+    "created_at": "2026-05-21T17:54:15.340940+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "From URL 9 (Guardian AI arson, Emergence AI 15-day experiment): 'What happens in long-form autonomy is that these things get so convoluted in their thinking that they ignore guiding principles.' Even with explicit 'no arson' rules, agents broke them after extended runs. When Igor has operated on the same goal for N+ consecutive NE cycles without an Akien interaction (suggested threshold: 5 cycles), emit cc_inbox review prompt flagging duration, current goal, and recent actions for spot-check. Addresses the Emergence AI failure mode without restricting autonomy — Akien decides to intervene or continue.\n\n**Affected files:** wild_igor/igor/cognition/ne.py (or goal tracking layer), wild_igor/igor/tools/alignment_guard.py (new)\n**Design rules:** theigors/rules/coding, theigors/rules/igor-constraints (no speculative IGOR_*_ENABLED flags)\n**Scope boundary:** In scope: count consecutive NE cycles on same goal_id; emit cc_inbox review at threshold; reset counter on Akien channel interaction. Out of scope: automated stopping (always surface to Akien, never auto-block).\n**Test plan:** Mock 5 consecutive NE cycles on same goal_id; verify cc_inbox receives alignment review prompt with goal context. Mock Akien channel message; verify counter resets.",
+    "completed_at": "2026-05-28T02:11:35.826019+00:00",
+    "github_issue": 790,
+    "dispatched_at": "2026-05-23T21:29:19.882606+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340957+00:00",
+    "target_difficulty": 2,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d32a4a93-2610-4936-b004-2a2c0ca551ba",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

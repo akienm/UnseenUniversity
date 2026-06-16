@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-autonomous-coding-loop.20260406.012816621523",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-autonomous-coding-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-06T01:28:16.621523",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-autonomous-coding-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-autonomous-coding-loop",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Self-motivating coding loop: PROC_CODING_SPRINT schedulable",
+    "result": "PROC_CODING_SPRINT now fires every 5 min via SchedulerSource (schedule_interval_sec=300, code_ref=tools.ops:run_coding_sprint). run_coding_sprint guards against double-fire with GOAL_READY TWM check. Full autonomous loop: PROC_QUEUE_DRAIN (30min) → PROC_GOAL_CONTINUATION (2min) → GOAL_READY in TWM → PROC_CODING_SPRINT (5min) → pe_chain. Igor restarts to activate. Committed edbc9382.",
+    "status": "done",
+    "worker": "cc",
+    "priority": 1,
+    "claimed_at": "2026-04-06T01:27:16.943774+00:00",
+    "related_to": null,
+    "description": "Two parts: (1) DB: add schedule_interval_sec=300 + code_ref=tools.ops:run_coding_sprint to PROC_CODING_SPRINT so SchedulerSource fires it every 5 min without needing a user turn. (2) ops.py: add GOAL_READY TWM check at top of run_coding_sprint — skip if no goal_ready in TWM (prevents double-fire on scheduler ticks without pending work). Together these make Igor autonomously loop on worker=igor tickets without any CC nudge.",
+    "completed_at": "2026-04-06T01:28:16.621523+00:00",
+    "deposited_at": "2026-06-04T16:23:21.745050",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d30511e0-1f6f-4220-be6d-1eedbe18e160",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

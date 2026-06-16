@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-postgres-shim.20260427.215823804319",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-postgres-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:58:23.804319",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-postgres-block-clear-error",
+      "T-adc-postgres-device",
+      "T-adc-postgres-shim",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-postgres-shim",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: Postgres shim — pg_ctl lifecycle, write/read/rollback self-test",
+    "result": "PostgresShim in devices/postgres/shim.py. pg_ctl start/stop/restart (Docker fallback). self_test write/read/rollback in _rack_self_test table (rolled back, no permanent state). rollback() kills pg + removes pid file.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T21:50:53.991508+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "First concrete shim implementation. Owns Postgres lifecycle and provides write/read/rollback self-test.\n\nProposed shape:\n- agent_datacenter/devices/postgres/shim.py:\n  class PostgresShim(BaseShim):\n    device_id = 'postgres'\n    start() → subprocess.run(['pg_ctl', 'start', '-D', data_dir]); wait for ready; return bool\n    stop() → subprocess.run(['pg_ctl', 'stop', '-m', 'fast', '-D', data_dir]); return bool\n    restart() → stop() then start()\n    self_test() → connect; INSERT INTO _rack_self_test (ts) VALUES (now()); SELECT; DELETE; COMMIT\n      returns {passed: True, details: 'write/read/rollback OK, latency: Xms'}\n    rollback() → kill pg process; remove pid file if startup fails mid-way\n  Docker fallback: if pg_ctl not found, use docker exec pg_container pg_ctl ... pattern\n  self_test creates _rack_self_test table if not exists; uses its own isolated schema\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/postgres/shim.py\n\nDesign rules:\n- no-sqlite: shim manages Postgres; no sqlite3 anywhere\n- docs-in-code: comment on Docker fallback decision path\n\nScope boundary:\nIN: start/stop/restart via pg_ctl (Docker fallback), self_test write/read/rollback, rollback() for failed starts\nOUT: Postgres device self-description (T-adc-postgres-device), block behavior propagation (T-adc-postgres-block-clear-error)\n\nTest plan:\n- PostgresShim().self_test() against live Postgres returns {passed: True}\n- self_test() creates no permanent state (table cleaned up after test)\n- stop() → start() round-trip succeeds\n- rollback() called when start() raises: pg process terminated, pid file removed",
+    "completed_at": "2026-04-27T21:58:23.804319+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0b49aeec-fc2e-4381-9469-00f9cf00c0ec",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

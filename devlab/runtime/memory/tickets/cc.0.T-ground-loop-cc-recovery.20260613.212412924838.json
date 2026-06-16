@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-ground-loop-cc-recovery.20260613.212412924838",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ground-loop-cc-recovery"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T21:24:12.924838",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ground-loop-2026-06-13"
+    ],
+    "tickets": [
+      "T-consequence-ground-loop",
+      "T-ground-loop-cc-recovery"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ground-loop-cc-recovery",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "System Resilience"
+    ],
+    "title": "Ground Loop: consolidate CC recovery into on_failure hook",
+    "result": "cc_recovery handler implemented; stderr→log file; Igor scatter call commented pending consequence ticket; 6/6 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that all per-device 'failed to start → invoke CC with error' recovery paths live in one place (Ground Loop on_failure hook) so adding CC recovery to any new service costs zero code — just on_failure: cc_recovery in the plugin YAML.",
+    "claimed_at": null,
+    "created_at": "2026-06-13T21:24:12.924838+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-ground-loop-2026-06-13",
+    "description": "UU startup and Igor startup both have scattered 'if process fails → call claude --dangerously-skip-permissions with the error' recovery paths. Move them to a single Ground Loop on_failure handler so any plugin can opt in with one YAML line.\n\nImplement the cc_recovery on_failure handler in Ground Loop: captures the failure reason + process stderr, invokes claude --dangerously-skip-permissions with a structured error prompt, logs the invocation.\n\nRemove the scattered per-device CC recovery calls from UU and Igor startup once the Ground Loop handler is proven. Leave the old paths in place (commented) until T-consequence-ground-loop clears.\n\n**Validation test (Akien's idea):** Break Igor on purpose (corrupt a config value or block its port), confirm Ground Loop detects the failure and invokes CC with the error report. Restore Igor. Test confirms the full recovery path end-to-end.\n\n**Affected files:** devices/ground_loop/on_failure.py (new), unseen_university startup (cc recovery call moved), devices/igor/ startup error handler (cc recovery call moved)\n**Design rules:** no-sqlite; log every CC invocation with full error context\n**Scope boundary:** In scope: on_failure cc_recovery handler; remove scattered per-device paths after validation. Out of scope: other on_failure handlers, non-CC recovery strategies.\n**Completion criteria:** (1) on_failure: cc_recovery in any plugin YAML triggers CC invocation on repeated failure; (2) integration test: Igor deliberately broken → Ground Loop fires CC recovery → logged; (3) no duplicate CC recovery calls in UU/Igor startup; (4) all tests pass.",
+    "completed_at": "2026-06-13T23:05:46.436498+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T23:03:38.080661+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

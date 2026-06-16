@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-dsimnel-cc-parity.20260604.161930398885",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dsimnel-cc-parity"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T16:19:30.398885",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dsimnel-cc-parity-2026-06-04"
+    ],
+    "tickets": [
+      "T-dsimnel-cc-parity",
+      "T-web-ui-circuit-breakers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dsimnel-cc-parity",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "DickSimnel",
+      "Architecture"
+    ],
+    "title": "DickSimnel: true CC parity — sprint-ticket protocol, DONE: gate, turn-1 tool enforcement",
+    "result": "stripped bespoke Analysis/Confidence format; DONE: gate + turn-1 correction in ToolLoop; sprint-ticket skill is now sole procedural guide",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-06-04T16:19:30.398885+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dsimnel-cc-parity-2026-06-04",
+    "description": "DickSimnel must be a CC mirror — the only difference is cost/provider (inference proxy handles that). A Claude Code expert should find zero behavioral differences.\n\n1. Strip the bespoke `## Analysis / ## Implementation / ## Tests / ## Confidence` format block from `SYSTEM_PROMPT` in device.py — it instructs the OR model to plan and stop, which is exactly the fake-DONE pattern. The sprint-ticket skill (already loaded via `_build_system_prompt`) is the sole procedural guide.\n2. `ToolLoop.run()`: if turn 1 returns no tool_calls, inject an assistant-correction message ('You must call a tool first — Read the affected files now') and continue. Never return turn-1 planning text.\n3. `_post_result()`: only close when result starts with `DONE:` AND `git log --oneline -1` shows a commit for the ticket ID since work started. Anything else → escalate to CC with full result as context.\n\n**Affected files:** devices/dicksimnel/device.py, devices/dicksimnel/toolloop.py\n**Design rules:** no-sqlite; OOP-first; log every state change\n**Scope boundary:** DickSimnel sprint protocol only; inference proxy routing and caching are separate tickets\n**Completion criteria:** Re-run T-web-ui-circuit-breakers through DickSimnel; it must produce a git commit with real code changes and passing tests before closing. Planning-text result → escalate, not close.",
+    "completed_at": "2026-06-04T19:03:55.677898+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e118b39a-0541-421f-a40b-326c2cd131f3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-shim-foreground-spawn.20260605.184203105940",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-foreground-spawn"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T18:42:03.105940",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-shim-foreground-spawn"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-foreground-spawn",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Device",
+      "BaseShim",
+      "UX"
+    ],
+    "title": "BaseShim: foreground-attach helper for visible terminal sessions",
+    "result": "BaseShim.spawn_foreground_session static helper; sudo_relay refactored to use it; 5 tests",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.4,
+    "intention": "I intend that any device needing a visible terminal uses a single well-tested shim helper.",
+    "created_at": "2026-06-05T18:42:03.105940+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Devices that need a visible terminal (sudo_relay, any future interactive device) currently have to re-implement the attach-or-create tmux pattern themselves. This should live in BaseShim as a shared utility.\n\nPattern: if caller has a tty, exec into the tmux session (takes over current terminal, password prompt visible). If no tty (automation/shim call), create detached with --no-attach semantics. sudo_relay already implements this inline as of 2026-06-05 fix.\n\n**Affected files:** unseen_university/shim.py (add spawn_foreground_session helper), sudo_relay (refactor to use it once shim provides it)\n**Design rules:** BaseDevice/BaseShim pattern\n**Scope boundary:** IN — shared tmux attach-or-create utility in BaseShim. OUT — changing any device's behavior beyond using the new helper\n**Completion criteria:** BaseShim has spawn_foreground_session(session, cmd, no_attach=False); sudo_relay uses it; existing behavior unchanged",
+    "completed_at": "2026-06-06T18:13:36.417437+00:00",
+    "deposited_at": "2026-06-05T12:42:27.352259",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

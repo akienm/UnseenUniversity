@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-base-device-contract.20260427.214112033720",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-base-device-contract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:41:12.033720",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-base-device-contract",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-base-device-contract",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Architecture"
+    ],
+    "title": "agent_datacenter: abstract BaseDevice class — full device contract",
+    "result": "BaseDevice ABC in agent_datacenter/device.py: 15 abstract methods (who_am_i, requirements, capabilities, comms, interface_version, health, uptime, startup_errors, logs, update_info, where_and_how, restart, block, halt, recovery). INTERFACE_VERSION='1.0'. TypeError on missing method. All tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-27T21:39:17.959128+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Define the abstract BaseDevice class that every rack component must implement. This is the foundation — everything else inherits from it.\n\nProblem: The rack's uniform interface requires every device to implement the same contract. Without a concrete abstract base, nothing enforces it at import time.\n\nProposed shape:\n- agent_datacenter/device.py:\n  from abc import ABC, abstractmethod\n  class BaseDevice(ABC):\n    @abstractmethod\n    def who_am_i(self) -> dict: ...\n    @abstractmethod\n    def requirements(self) -> dict: ...\n    @abstractmethod\n    def capabilities(self) -> dict: ...\n    @abstractmethod\n    def comms(self) -> dict: ...  # read_only/write_only/read_write; Push/Pull/Nudge flags\n    @abstractmethod\n    def interface_version(self) -> str: ...\n    @abstractmethod\n    def health(self) -> dict: ...\n    @abstractmethod\n    def uptime(self) -> float: ...\n    @abstractmethod\n    def startup_errors(self) -> list: ...\n    @abstractmethod\n    def logs(self) -> dict: ...\n    @abstractmethod\n    def update_info(self) -> dict: ...\n    @abstractmethod\n    def where_and_how(self) -> dict: ...\n    @abstractmethod\n    def restart(self) -> None: ...\n    @abstractmethod\n    def block(self, reason: str) -> None: ...\n    @abstractmethod\n    def halt(self) -> None: ...\n    @abstractmethod\n    def recovery(self) -> None: ...\n  INTERFACE_VERSION = '1.0'\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/device.py\n\nDesign rules:\n- oop-first: ABC with abstractmethod decorators — subclasses that miss any method raise TypeError at import time, not at runtime\n- docs-in-code: module docstring describes the rack contract model; each method has a one-line docstring stating its return shape\n\nScope boundary:\nIN: abstract base class only, INTERFACE_VERSION constant\nOUT: any concrete device implementations (those are Phase 1 Postgres + Phase 2 Igor tickets)\n\nTest plan:\n- Class that inherits BaseDevice but doesn't implement health() raises TypeError when instantiated\n- INTERFACE_VERSION is importable as agent_datacenter.device.INTERFACE_VERSION\n- All 16 abstract methods present and named per spec",
+    "completed_at": "2026-04-27T21:41:12.033720+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9bbbdd97-6cac-494c-9731-e16d81f85707",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

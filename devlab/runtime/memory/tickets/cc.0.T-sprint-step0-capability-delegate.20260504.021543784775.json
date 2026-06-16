@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-sprint-step0-capability-delegate.20260504.021543784775",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-step0-capability-delegate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T02:15:43.784775",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-capability-protocol-2026-05-03"
+    ],
+    "tickets": [
+      "T-announce-slice4-system-prompt-capability-layer",
+      "T-sprint-step0-capability-delegate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-step0-capability-delegate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Capability",
+      "Workflow"
+    ],
+    "title": "CLOSED: Sprint Step 0 — capability-aware delegate prompt before claim",
+    "result": "Added /sprint Step 1.5 + /sprint-batch per-ticket Step 0.5: capability check (mcp__* tools, datacenter_manifest) before claim, surface delegate option as one-liner when minion/device matches ticket tags or affected files. Match heuristics for Database/Cognition/Debug tags + wild_igor/igor/ work. Silent on no match. Synced to agent_datacenter master + pushed (cbc6ac3).",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": "2026-05-04T02:14:53.908879+00:00",
+    "related_to": null,
+    "decision_id": "D-capability-protocol-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — 'all is approved! go!').** Workflow consumer ticket: closes the lapsed practice 'all external minions for work other than design chat'. Gap diagnosis: skills don't enforce delegation, so CC defaults to writing code itself.\n\nAdd Step 0 to /sprint and /sprint-batch: read CAPABILITIES section from system prompt (already populated by T-announce-slice4-system-prompt-capability-layer manifest sync) → match ticket tags/affected-files against capability domains → if a minion or device matches, surface delegate option as one-line command before claiming.\n\nNo handler change — the manifest + CAPABILITIES injection is already shipped; this is pure skill-consumer-side work. Therefore exempt from theigors/rules/capability-protocol/two-sided-build (consumes existing capability surface, doesn't create one).\n\n**Affected files:** /home/akien/.claude/skills/sprint/SKILL.md (insert Step 0), /home/akien/.claude/skills/sprint-batch/SKILL.md (insert Step 0)\n**Design rules:** theigors/rules/capability-protocol (parent — workflow consumer of the protocol), theigors/rules/collaboration (proactive best-practice — surfacing delegation is collaborative).\n**Scope boundary:** IN: Step 0 docs in both sprint skills, decision rule for when to surface delegate option (ticket tag or affected-file pattern matches a known capability domain). OUT: enforcing delegation (CC still decides). OUT: full delegate-and-wait orchestration (CC.1 + future minion fleet ticket).\n**Test plan:** CC.1 integration test loading /sprint with a ticket whose tag matches a known capability — assert the Step 0 delegate prompt appears in the executor's plan-state output. Manual: claim a ticket whose tag includes 'Database' and verify Step 0 surfaces 'mcp__igor__db_query' as an option.",
+    "completed_at": "2026-05-04T02:15:43.784775+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ee85f19c-8392-487b-9b34-a7945da84ea2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

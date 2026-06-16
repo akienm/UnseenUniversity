@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-reading-audit-qwen-complete.20260420.184452000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-audit-qwen-complete"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:52",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-foreground-reading-emotional-read",
+      "T-neuroscience-engrams",
+      "T-reading-audit-qwen-complete"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-audit-qwen-complete",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Reading",
+      "Visibility"
+    ],
+    "title": "Audit reading pipeline + unblock qwen-only completion of the reading list",
+    "result": "Done per Akien 2026-05-03: qwen-2.5:7b confirmed as the winner. No further audit needed.",
+    "status": "done",
+    "worker": "claude",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-04-20T18:44:52Z",
+    "related_to": null,
+    "description": "Review Igor's reading/book-learner pipeline end-to-end. Fix whatever is in the way of finishing the entire reading list with local qwen (no cloud OR for extraction). Also make sure every memory deposited from reading carries a well-documented source path (book, chapter, section/page, offset) so we can trace any learned concept back to its origin.\n\n## Why now\n- Akien wants to see Igor thoroughly understand his own code. Reading is the main intake for that understanding.\n- Cost discipline: extraction should run on local qwen, not OR. D359 (reading-extract-via-gateway) + D360 (7-pass benchmark) are the architectural prerequisites.\n- Visibility: when we look at a learned concept and ask 'where did this come from?', the answer should be a crisp path, not 'somewhere in the reading traces'.\n- Source-path rigor is also cheap groundwork for later provenance features (citation, contradiction detection, etc.).\n\n## Scope\n### Part 1 — Pipeline audit\n- Walk the reading code: book_learner, reading_tool, _deposit_nodes, whatever posts to cortex\n- Check what's hardcoded to OR vs gateway-routable (D359 not yet done — this ticket may need to do it)\n- Identify any choke points: rate limits, prompt sizes, timeout windows, model-specific quirks\n- Confirm the reading list and its current progress state\n\n### Part 2 — Qwen readiness\n- Run a small chapter through qwen2.5:7b end-to-end and compare output to existing OR-extracted nodes\n- Validate: does qwen hit minimum quality bar for concept extraction + relationship inference?\n- If not, file a follow-up ticket with specific quality gaps — do NOT hack prompts silently\n- If yes, flip the relevant switches (env vars / config) to route reading through local\n\n### Part 3 — Source-path documentation\n- Every memory deposited from reading should carry:\n  - book_id (canonical name or path on disk)\n  - chapter or section identifier\n  - page or chunk offset (however the chunker tracks position)\n  - extraction_timestamp + extractor_model (so we know WHO said this WHEN)\n- Stored in the memory's metadata JSON, not folded into narrative text\n- Verify via a spot query: pick 5 random recently-read nodes, walk the source path back to the actual paragraph in the book\n\n## Out of scope\n- Adding new books to the list (separate concern)\n- Training a custom reading model (D360 tracks benchmark)\n- UI for browsing reading traces (visibility separate)\n\n## Success criteria\n- Pick a book currently in the list, run it through the pipeline with local qwen as the extractor, watch it complete without failures\n- Spot-check 5 resulting memories — each has full source path in metadata\n- Reading progress indicator moves forward (no stall)\n- No OR calls for extraction during the run (verify via forensic_logger or gateway trace)\n\n## Related\n- D359 (reading-extract-via-gateway, planned) — gateway swap for reading\n- D360 (reading-model-benchmark, planned) — 7-pass quality benchmark\n- D356 (reading-lever-detection, done) — attractor-guided chunk scoring\n- GH-252 Research corpus (broader, parent)\n- T-neuroscience-engrams (downstream — self-model engrams from AI/ML+neuro books)\n- T-foreground-reading-emotional-read (orthogonal — emotional mode)\n\n**Affected files:** wild_igor/igor/reading/book_learner.py (audit + qwen routing); wild_igor/igor/tools/reading_tool.py (deposit path + source-path metadata); wild_igor/igor/cognition/_deposit_nodes (or wherever cortex-deposit lives — discovery step); wild_igor/igor/inference/gateway.py (D359 — gateway routing for extraction); reading list config (path TBD).\n\n**Design rules:** docs-in-code (reading pipeline is load-bearing); test-plan-or-why-not; budget-respect (qwen-only path = no OR cost).\n\n**Scope boundary:** IN — pipeline audit, qwen-only readiness, source-path metadata on every deposited node, finish reading list. OUT — concept-quality benchmarking beyond minimum bar (Part 2 below); citation/contradiction detection (later provenance work).\n\n**Test plan:** tests/test_reading_pipeline_qwen.py — small chapter end-to-end on qwen2.5:7b, assert non-empty deposit, source-path present (book, chapter, section/page, offset). Comparison test against one OR-extracted reference chunk for sanity (skip in CI without OR cred).",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": 479,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "50c2820e-e912-4d38-8dcd-ad22f2b27262",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

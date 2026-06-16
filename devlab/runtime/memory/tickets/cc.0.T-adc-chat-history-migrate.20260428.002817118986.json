@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-chat-history-migrate.20260428.002817118986",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-chat-history-migrate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T00:28:17.118986",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-ops-log-tree-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-chat-history-migrate",
+      "T-adc-ops-log-tree",
+      "T-chat-history-igor-backfill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-chat-history-migrate",
+    "gate": "T-adc-ops-log-tree",
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "agent_datacenter",
+      "Observability"
+    ],
+    "title": "agent_datacenter: move CC chat history to ~/.agent_datacenter/logs/CC.0/",
+    "result": "export_chat.py default → ~/.agent_datacenter/logs/CC.0/; files moved; symlink from old path; verified writing to new location",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-28T00:27:17.709013+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-ops-log-tree-2026-04-27",
+    "description": "CC chat history (JSON + text exports) lives in ~/TheIgors/claude_chat_logs/ but belongs in the central log tree under the CC.0 comms channel. Move existing files to ~/.agent_datacenter/logs/CC.0/, update export_chat.py output path, update the T-chat-history-igor-backfill gate reference.\n\n**Affected files:** lab/claudecode/export_chat.py (output path constant), ~/.agent_datacenter/logs/CC.0/ (new dir — created by T-adc-ops-log-tree), ~/TheIgors/claude_chat_logs/ (source — mv + optional symlink for old references)\n**Design rules:** none apply directly\n**Scope boundary:** IN: update export_chat.py path, move existing files, optional symlink from old location. OUT: changing log format, Igor's backfill job (it will pick up new path automatically once export_chat.py is updated)\n**Test plan:** Run export_chat.py after change, verify output lands in ~/.agent_datacenter/logs/CC.0/YYYY-MM-DD.md. Old symlink resolves if present.",
+    "completed_at": "2026-04-28T00:28:17.118986+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "72724b9b-5372-49d6-bfd8-bd5a909c56cc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

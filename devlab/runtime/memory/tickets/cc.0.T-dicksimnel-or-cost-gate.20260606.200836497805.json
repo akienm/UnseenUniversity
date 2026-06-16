@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-dicksimnel-or-cost-gate.20260606.200836497805",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-or-cost-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:08:36.497805",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-or-cost-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-or-cost-gate",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Budget",
+      "OR"
+    ],
+    "title": "DickSimnel: gate on OR balance — prefer free-tier Gemini/Ollama models for worker-class work",
+    "result": "google-free worker routing rule added; OR balance floor () in _poll_and_work(); 5 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-06T20:08:36.497805+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** OR balance is declining despite free Google Gemini and Ollama being available. DickSimnel and Igor both route through OR for inference, but worker-tier work (S/M tickets, analysis) doesn't need paid Sonnet — free Gemini Flash or cheap Ollama models are adequate.\n\n**What to build:** In InferenceGateway or DickSimnelDevice, route worker-class tasks to Gemini-free or Ollama-via-OR when OR balance is below a threshold. Only use paid Sonnet for HIGH-inertia or escalation-path tickets.\n\n**Affected files:** devices/dicksimnel/device.py or devices/inference/device.py (model routing), possibly devices/igor/cognition/cloud_mode.py\n**Design rules:** Budget gate is external state — readable without Postgres\n**Scope boundary:** Model routing for worker-class tasks. Leave CC's model routing alone.\n**Completion criteria:** DickSimnel uses free-tier model by default; falls back to paid Sonnet only when free tier fails or ticket has HIGH-inertia tag. OR balance stops declining during idle DickSimnel operation.",
+    "completed_at": "2026-06-06T22:50:07.159968+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "21924238-0518-490f-a4c5-09560ebbebf1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

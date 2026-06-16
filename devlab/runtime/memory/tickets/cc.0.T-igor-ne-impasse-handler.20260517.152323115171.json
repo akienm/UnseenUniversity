@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-ne-impasse-handler.20260517.152323115171",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-ne-impasse-handler"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.115171",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17"
+    ],
+    "tickets": [
+      "T-igor-ne-impasse-handler"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-ne-impasse-handler",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "NarrativeEngine",
+      "StuckState"
+    ],
+    "title": "CLOSED: SOAR-style impasse handler in coa.py",
+    "result": "SOAR impasse handler in coa.py: _ne_stuck_count tracks consecutive no-result cycles; at count==3 pushes IMPASSE subgoal to TWM salience=0.9",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-05-17T15:26:50.479926+00:00",
+    "created_at": "2026-05-17T15:23:23.115171+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "description": "Igor's NE has been producing 'no result — nothing actionable in TWM' for 12+ consecutive hours (2026-05-17). There is no impasse detection — the system loops identically. SOAR-style architectures detect this state and create a subgoal to resolve it.\n\nAdd a consecutive-no-result counter to coa.py _ne_worker(). When NE produces no result for 3+ consecutive cycles, write a TWM entry: 'IMPASSE: NE produced no result {N} consecutive cycles — self-diagnostic subgoal' at salience=0.9 category='impasse'. This gives the next NE cycle actionable content: diagnose what's blocking cognition. Reset counter when NE produces a result.\n\n**Affected files:** wild_igor/igor/cognition/coa.py\n**Design rules:** theigors/rules/coding (MEDIUM inertia — Igor authors with discussion); theigors/rules/database (Postgres only, no sqlite)\n**Scope boundary:** In scope: counter tracking + twm_push() call in _ne_worker(). Out of scope: NE response to the subgoal content (emergent behavior).\n**Test plan:** After restart with Ollama mocked to return empty result, channel shows '[IMPASSE] self-diagnostic subgoal posted' after 3 no-result cycles. Subsequent cycles have actionable TWM content. No more infinite identical '[NE] cycle produced no result' loop without diagnostic content.",
+    "completed_at": "2026-05-17T15:34:29.633658+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d59af5fc-cec8-42cf-9218-6fafc129fc91",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

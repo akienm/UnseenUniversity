@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-uc-machine-manager-shelf.20260417.200000442778",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-machine-manager-shelf"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T20:00:00.442778",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-machine-manager-shelf"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-machine-manager-shelf",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Operations"
+    ],
+    "title": "Move machine_manager to utility closet as rack shelf",
+    "result": "machine_manager.py moved to UC, re-export shim. 625 lines out of Igor's cognition.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T19:57:08.071128+00:00",
+    "related_to": null,
+    "description": "Move wild_igor/igor/cognition/machine_manager.py to lab/utility_closet/machine_manager.py. Same pattern: real move, re-export shim. MachineShelf rack module.",
+    "completed_at": "2026-04-17T20:00:00.442778+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "894a4b1a-8692-441b-919d-6ea783695f8c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

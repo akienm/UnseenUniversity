@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-worker-foreman-save-tasks-race-stale-bul.20260524.185934688678",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-foreman-save-tasks-race-stale-bul"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-24T18:59:34.688678",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-claude-1",
+      "T-worker-foreman-save-tasks-race-stale-bul"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-foreman-save-tasks-race-stale-bul",
+    "size": "S",
+    "tags": [
+      "Operations",
+      "BugFix"
+    ],
+    "title": "worker_foreman save_tasks race: stale bulk save overwrites concurrent status changes",
+    "result": "Race-safe reset: targeted reset_stale_in_progress() with WHERE status='in_progress' guard; prevents zombie loop when concurrent setstatus/close races the daemon-dead reset. 2 tests added.",
+    "status": "closed",
+    "priority": 0.6,
+    "decision_id": null,
+    "description": "**Problem:** worker_foreman.py's daemon-dead branch calls `_cc_queue.save_tasks(tasks)` with a stale full-task load. Race: (1) worker_foreman loads all tasks (ticket=in_progress), (2) setstatus/close cancels the ticket in DB, (3) worker_foreman saves its stale list → overwrites the terminal status with \"sprint\". Then cmd_next claims it → in_progress. reset_stale resets to sprint again. Loop repeats indefinitely.\n\n**Evidence from T-claude-1 zombie history:** setstatus→cancelled at 23:17, reset_stale finds in_progress at 23:24 (7-min gap). No log entry between those events — worker_foreman save_tasks does not call _log for each ticket it resets. T-claude-1 was cancelled/closed 5+ times since May 4 and kept resurrecting.\n\n**Root files:** wild_igor/igor/tools/worker_foreman.py (~line 131 daemon-dead branch); lab/claudecode/cc_queue.py save_tasks/_save.\n\n**Fix:** Replace the bulk save_tasks call in worker_foreman's daemon-dead branch with individual row-level UPDATEs for only the in_progress tickets being reset (status=sprint, claimed_at=null). This prevents stale reads from overwriting concurrent terminal-status changes (setstatus, close, done).\n\n**Test plan:** Test that (1) ticket is in_progress at load time, (2) setstatus cancels it concurrently before worker_foreman saves, (3) worker_foreman reset logic runs, (4) ticket stays cancelled/closed, not sprint. All existing tests pass.",
+    "completed_at": "2026-05-24T18:59:34.688678+00:00",
+    "github_issue": 769,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d82685ef-5e4d-41b4-b03d-138ceb95400a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

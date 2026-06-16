@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-theory-doc-memory-types.20260530.175530672678",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theory-doc-memory-types"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:55:30.672678",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-theory-doc-memory-types"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theory-doc-memory-types",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Docs"
+    ],
+    "title": "Update §3.4 with 6 undocumented memory types",
+    "result": "added 6 missing types (EXPERIENTIAL, CREDENTIAL_REF, IDENTITY, CORE_PATTERN, ROLE_MODEL, ROOT) to §3.4 table in TheoryOfOperation.md; marked alignment-check GAP as RESOLVED",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-05-30T21:40:45.606647+00:00",
+    "created_at": "2026-05-30T17:55:30.672678+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "TheoryOfOperation §3.4 lists 6 memory types but clan.memories has 12 (2026-05-30 alignment check).\n\nMissing from doc:\n- EXPERIENTIAL: 2560 nodes\n- CREDENTIAL_REF: 167 nodes\n- IDENTITY: 30 nodes\n- CORE_PATTERN: 13 nodes\n- ROLE_MODEL: 9 nodes\n- ROOT: 5 nodes\n\n**Affected files:** docs/TheoryOfOperation.md §3.4\n**Scope:** IN — add the 6 missing types to the table with descriptions; OUT — do not change Igor's memory schema\n**Completion criteria:** §3.4 table has all 12 types with a description row for each",
+    "completed_at": "2026-05-30T21:45:26.825697+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T21:40:45.606647+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:55:30.726427+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "83e317c1-5db9-4cc4-ab3c-9c147134bd67",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

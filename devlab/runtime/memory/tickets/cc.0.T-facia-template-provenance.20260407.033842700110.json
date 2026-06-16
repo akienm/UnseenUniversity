@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-facia-template-provenance.20260407.033842700110",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-facia-template-provenance"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:38:42.700110",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-facia-template-provenance"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-facia-template-provenance",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Stamp template provenance on expanded facia nodes",
+    "result": "instantiate_template() now stamps template_source=<id> (canonical) and carries standards_ref from schema to expanded nodes; template_origin kept for compat",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "blocked_at": "2026-04-07T00:52:30.541085+00:00",
+    "claimed_at": "2026-04-07T03:33:31.659708+00:00",
+    "related_to": null,
+    "description": "When a facia template node is instantiated/expanded, resulting nodes carry metadata.template_source=<template_id>. Enables HYPOTHESIZE to see which template spawned a task and pull its standards_ref for injection.",
+    "completed_at": "2026-04-07T03:38:42.700110+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3780e15a-bf01-4c0d-9871-ace953df763e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

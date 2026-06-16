@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-pursuit-naming-decision.20260422.172949335743",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pursuit-naming-decision"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T17:29:49.335743",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pursuit-layer-2026-04-22"
+    ],
+    "tickets": [
+      "T-pursuit-engram-programming-docs",
+      "T-pursuit-layer-design-doc",
+      "T-pursuit-naming-decision",
+      "T-single-pursuit-test-case"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pursuit-naming-decision",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Engrams",
+      "Pursuits"
+    ],
+    "title": "Pursuit — canonical term for goal-bound behavioral units (naming decision)",
+    "result": "Name 'Pursuit' decided by Akien 2026-04-22 ('i like persuit. that's perfect'). Canonical term for goal-bound behavioral units above engrams. Closes on filing per decision design; unblocks design-doc and test-case.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-22T17:29:32.799233+00:00",
+    "related_to": null,
+    "decision_id": "D-pursuit-layer-2026-04-22",
+    "description": "Formally records 'Pursuit' as the canonical term for the goal-bound behavioral layer above engrams in Igor's cognitive architecture.\n\nDefinition settled in 2026-04-22 design conversation:\n- A Pursuit is a goal-bound unit of execution that combines: (1) commitment event with anticipatory dopamine trace, (2) engram-substrate action(s), (3) recursive sub-Pursuit spawning, (4) completion test, (5) dopamine ding on success.\n- Goals are not just big ambitions — every act of commitment, however small, IS a Pursuit. 'Reply to Akien.' 'Scan for work.' 'Claim T-x.'\n- Pursuits ORCHESTRATE engrams; they are not an engram template. Different kind of object: engrams execute, Pursuits pursue.\n\nLayer stack:\n- Cells (engram primitives / 'assembly')\n- Engrams (behavior chains / 'high-level code')\n- Pursuits (goal-bound orchestration of engrams)\n\nBiology root:\n- Dopamine fires at commitment (anticipation burst), sub-goal completion, and final completion — not just at the end.\n- Cortico-basal-ganglia loops recruit cortical microcircuits (same relationship Pursuits have to engrams).\n- Closest formal terms: TOTE units (Miller-Galanter-Pribram), Options (Sutton-Precup RL). 'Pursuit' is our term.\n\nScope: this ticket is the naming record. Closes on filing — name is settled. It gates T-single-pursuit-test-case, T-pursuit-layer-design-doc, and T-pursuit-engram-programming-docs.\n\nTest plan: verify 'Pursuit' propagates correctly into palace, design docs, and engram programming docs. No code changes in this ticket.",
+    "completed_at": "2026-04-22T17:29:49.335743+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2f04a888-0a9f-4b03-b58f-a547b923cf1d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

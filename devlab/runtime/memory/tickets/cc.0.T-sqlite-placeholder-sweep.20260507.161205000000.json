@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-sqlite-placeholder-sweep.20260507.161205000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-placeholder-sweep"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:12:05",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-sqlite-placeholder-sweep"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-placeholder-sweep",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Bugfix",
+      "Database",
+      "Hygiene"
+    ],
+    "title": "Replace SQLite ? params with %s across 11 igor files",
+    "result": "51 ? → %s replacements across 11 files — 0236d93a",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-05-07T16:12:05Z",
+    "related_to": null,
+    "decision_id": null,
+    "completed_at": "2026-05-06T17:27:31.966340+00:00",
+    "github_issue": 619,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

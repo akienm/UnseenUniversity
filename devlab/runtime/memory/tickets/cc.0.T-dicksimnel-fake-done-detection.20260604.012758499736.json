@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-dicksimnel-fake-done-detection.20260604.012758499736",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-fake-done-detection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T01:27:58.499736",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-fake-done-detection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-fake-done-detection",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "DickSimnel",
+      "Reliability",
+      "QualityGate"
+    ],
+    "title": "DickSimnel: detect and block fake DONE posts (planning text != completion)",
+    "result": "_is_planning_text() + escalate guard in _post_result; 5 tests; 61235a31",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-06-04T01:27:58.499736+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "DickSimnel has posted DICKSIMNEL_DONE twice with planning/analysis text as the summary (e.g. 'I'll implement the versioned inference models registry...'). This happens when ToolLoop returns the OR model's first message rather than actual completion output. Root cause: _post_result() accepts any non-None result_text as completion.\n\nFix: validate result_text before calling _post_result. A result is not a completion unless it contains evidence of actual work: a DONE indicator, commit hash pattern, test results, or explicit 'Completion:' section. When the validation fails, call _escalate_ticket() instead so CC can fix what DickSimnel left undone.\n\n**Affected files:** devices/dicksimnel/device.py, devices/dicksimnel/toolloop.py\n**Design rules:** no-sqlite; OOP-first; log validation failures at WARNING\n**Scope boundary:** In scope: validate result before posting DONE; escalate on planning-text detection. Out of scope: fixing ToolLoop iteration limit, redesigning the inference loop.\n**Completion criteria:** (1) _post_result validates result_text with a heuristic (no DONE keyword + short + starts with plan phrase → escalate); (2) test: planning text → escalate; genuine completion → done; (3) DickSimnel.DONE channel posts contain actual results not planning text",
+    "completed_at": "2026-06-04T01:29:29.361029+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bb94d2d3-cc6c-474b-ae86-7876b26ea4a8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

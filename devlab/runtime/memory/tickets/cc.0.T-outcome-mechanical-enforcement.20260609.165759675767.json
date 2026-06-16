@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-outcome-mechanical-enforcement.20260609.165759675767",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-outcome-mechanical-enforcement"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.675767",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-xxx"
+    ],
+    "tickets": [
+      "T-outcome-mechanical-enforcement"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-outcome-mechanical-enforcement",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Process"
+    ],
+    "title": "Sprint-ticket: surface /outcome prompt when last ticket of a decision closes",
+    "result": "outcome_check.py reads decision_id→palace spawned_tickets→checks all closed→prints /outcome prompt; wired into sprint-ticket Step 11",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that the /outcome prompt surfaces automatically whenever a decision's last ticket closes.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.675767+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (Process/Meta): /outcome loop has zero outcomes in 7 days despite 5+ decisions shipped. The sprint-ticket SKILL.md surfaces /outcome as a voluntary suggestion, not a mechanical prompt. Fix: add a step after ticket close that queries adc.palace for any decision linked to the ticket (via decision_id) and checks if all spawned_tickets are now closed — if so, print the /outcome prompt with the decision's hypothesis text.\n\n**Affected files:** skills/sprint-ticket/SKILL.md (or lab/claudecode/ helper script)\n**Design rules:** no new palace writes — read-only palace query; output only\n**Scope boundary:** IN — post-close query + prompt display when decision is fully shipped; OUT — automatic /outcome execution, palace writes\n**Completion criteria:** closing the last ticket in a decision's spawned_tickets list prints 'Decision D-xxx is fully shipped — run /outcome D-xxx: <hypothesis>'; closing a non-last ticket prints nothing",
+    "completed_at": "2026-06-09T17:40:59.560976+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

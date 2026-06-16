@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ground-loop-proxy-passthrough-status.20260616.160937721150",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ground-loop-proxy-passthrough-status"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T16:09:37.721150",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ground-loop-proxy-passthrough-status"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ground-loop-proxy-passthrough-status",
+    "title": "[sprint] Ground Loop proxy masks backend 4xx/5xx as 502",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "ground_loop",
+      "web_server"
+    ],
+    "description": "devices/ground_loop/plugin_proxy.py forwards with urllib.request.urlopen, which raises HTTPError on any 4xx/5xx. The except clause turns ALL of them into send_error(502), so a legitimate backend 404/401/500 reaches the client as 502. Observed: /api/status, /healthz, /api/feed return 502 through :8078 (some are genuinely absent/disabled routes, but the client can't tell 404 from a real proxy failure). Fix: catch urllib.error.HTTPError separately and pass its real status + body through; reserve 502 for actual connection/transport failures (URLError).\n\n**Affected files:** devices/ground_loop/plugin_proxy.py\n**Design rules:** none apply\n**Scope boundary:** IN: status-code fidelity in _forward. OUT: CONNECT tunnel, backend spawn logic.\n**Test plan:** add a test hitting a known-404 backend route through the proxy and asserting 404 (not 502); add one asserting a real connection-refused yields 502.",
+    "decision_id": null,
+    "created_at": "2026-06-16T16:09:37.721150+00:00",
+    "updated_at": "2026-06-16T10:09:37.732798-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

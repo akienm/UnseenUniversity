@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-librarian-db-proxy.20260508.173947109089",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-db-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:39:47.109089",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-rack-agent-2026-05-08"
+    ],
+    "tickets": [
+      "T-librarian-db-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-db-proxy",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Database"
+    ],
+    "title": "CLOSED: Librarian as DB proxy — direct Postgres for sync MCP, bus for async",
+    "result": "psycopg2 pool min=2 max=10, get_conn() ctx mgr, 7 tests; 147a7e4",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T20:00:29.057325+00:00",
+    "created_at": "2026-05-08T17:39:47.109089+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "description": "Wire the Librarian's DB access path.\n\nTransport clarification: the IMAP server IS the bus — all rack comms go through it, including DB requests. CC sends an MCP call via comms://, which lands in the Librarian's IMAP mailbox. Librarian picks it up (IMAP IDLE or fast poll — 'high priority' means short round-trip feels synchronous to the caller), executes the query directly against Postgres, and posts the reply back to CC's mailbox. No extra async layer — IMAP is already the transport.\n\nDB execution: Librarian hits Postgres directly with a connection pool. No additional hop to a DB worker for the sync MCP path — direct is fast and the Librarian is the appropriate owner of DB access.\n\nASYNC path (research, audit logging): Librarian posts to the bus for non-blocking work that shouldn't hold up the reply.\n\nConnection pool: psycopg2 or asyncpg, min=2 max=10, checkout timeout=5s.\n\n**Affected files:** agent_datacenter/devices/librarian/db.py, agent_datacenter/devices/librarian/tools/db_query.py\n**Design rules:** no-sqlite; Postgres only; IMAP is the bus transport, not an extra layer\n**Scope boundary:** DB connectivity only; does not change the tool API surface\n**Test plan:** db_query executes and returns rows; connection pool reuses connections; timeout on bad connection raises cleanly",
+    "completed_at": "2026-05-08T20:03:58.535390+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9a7c30b7-f0ca-4d79-a77b-caafeaae9cc7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

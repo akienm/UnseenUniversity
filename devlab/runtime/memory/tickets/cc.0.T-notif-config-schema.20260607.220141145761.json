@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-notif-config-schema.20260607.220141145761",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-notif-config-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T22:01:41.145761",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agent-notification-system-2026-06-07"
+    ],
+    "tickets": [
+      "T-notif-config-schema",
+      "T-notify-skill",
+      "T-shim-notif-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-notif-config-schema",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Shim",
+      "Notifications"
+    ],
+    "title": "Notification config schema + reader",
+    "result": "DeliveryMode enum (SILENT/QUIET/LOUD) + NotificationConfig with load/get_level/write_default/save; atomic write; 16 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that every UU device has a persistent, human-editable notifications.cfg that defines its default delivery level and per-sender overrides, readable by the shim without in-memory state.",
+    "claimed_at": null,
+    "created_at": "2026-06-07T22:01:41.145761+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agent-notification-system-2026-06-07",
+    "description": "Define the notifications.cfg schema, DeliveryMode enum, and config reader/writer utility that all device shims will use. The config lives at ~/.unseen_university/<device>/notifications.cfg (external, persists across restarts). Schema: [defaults] level=QUIET and [overrides] section with sender=LEVEL pairs. DeliveryMode enum: SILENT (mailbox only, pull on demand), QUIET (queue + surface at next natural break), LOUD (immediate tmux send-keys to own session). Also generates a default config file for a device if none exists.\n\n**Affected files:** unseen_university/notify.py (new), tests/test_notif_config.py (new)\n**Design rules:** no-sqlite — flat .cfg file only; external-state principle — config must survive shim restart\n**Scope boundary:** In scope: schema, enum, reader, writer, default-config generator. Out of scope: shim wiring (T-shim-notif-filter), skill (T-notify-skill), tmux delivery logic.\n**Completion criteria:** DeliveryMode enum has SILENT/QUIET/LOUD. NotificationConfig.load(device_home) reads a .cfg file and returns config object. NotificationConfig.get_level(sender) returns correct level (override wins over default). NotificationConfig.write_default(device_home) creates a sensible default. 4+ unit tests covering: load, per-sender override, default fallback, missing-file default generation.",
+    "completed_at": "2026-06-07T22:12:37.215426+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

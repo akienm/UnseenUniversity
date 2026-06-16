@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-recursive-edge-traversal.20260510.222212252858",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-recursive-edge-traversal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:12.252858",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-memory-depth-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-activate-primitive",
+      "T-igor-recursive-edge-traversal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-recursive-edge-traversal",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Memory"
+    ],
+    "title": "CLOSED: activate() CTE propagation via interpretive_edges",
+    "result": "activate() propagation replaced with CTE on interpretive_edges; 7 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T23:00:33.345260+00:00",
+    "created_at": "2026-05-10T22:22:12.252858+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-memory-depth-2026-05-10",
+    "description": "Replace the bespoke Python recursion in activate() with a `WITH RECURSIVE` CTE against clan.interpretive_edges. CTE traverses edges up to max_depth=3, accumulating propagation weights. Postgres UNION ALL semantics handle cycle detection naturally (visited-set logic moves to DB). Bulk UPDATE after traversal.\n\nCTE shape:\n```sql\nWITH RECURSIVE prop(memory_id, depth, score) AS (\n  SELECT :root_id, 0, :initial_score\n  UNION ALL\n  SELECT e.target_id, p.depth+1, p.score * :decay * e.weight\n  FROM prop p JOIN clan.interpretive_edges e ON e.source_id=p.memory_id\n  WHERE p.depth < 3 AND p.score * :decay * e.weight >= 0.05\n)\nSELECT memory_id, MAX(score) FROM prop GROUP BY memory_id\n```\nThen bulk UPDATE. Same external interface — activate() signature unchanged.\n\n**Affected files:** `wild_igor/igor/cognition/activate.py` (replace Python propagation with CTE)\n**Design rules:** no-sqlite; psycopg2 direct; max_depth + min_score remain kwargs (passed as params); no schema changes (interpretive_edges already exists)\n**Scope boundary:** IN — propagation implementation only; same activate() interface. OUT — no new columns, no new tables.\n**Test plan:** same test coverage as T-igor-activate-primitive; verify CTE stops at depth 3; verify min_score cutoff; verify cycle in edge graph doesn't loop infinitely",
+    "completed_at": "2026-05-10T23:06:07.557972+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d2aeedb5-4b40-4d66-9f4d-adc7d3131bd8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

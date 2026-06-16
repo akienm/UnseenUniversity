@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-no-row-scans.20260325.172048006598",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-no-row-scans"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:20:48.006598",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-no-row-scans"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-no-row-scans",
+    "size": "M",
+    "title": "Eliminate row scans: push_sources + narrative_engine should read from hot attractor state",
+    "result": "T-no-row-scans complete: added SQL-based filtering methods (get_by_type_and_source, get_procedural_by_metadata_key) and updated narrative_engine, push_sources, system_prompt to use SQL filtering instead of fetch-then-filter patterns. All 354 tests passing. Commit: cfdedda",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-25T17:17:29.633911+00:00",
+    "description": "push_sources fetches all memories of all types then filters by activation_count in Python (17K+ rows per cycle). narrative_engine fetches 500 EPISODICs and filters in Python for source=narrative_engine. Both are reconstructing state the runtime already maintains. Short-term fix: replace with SQL queries scoped to activation threshold using existing idx_mem_activation index. Real fix: read from hot_attractors/TWM — nodes with high activation are already warm, no scan needed. Architectural principle: no row searches. Every query starts from a hot node and traverses edges. Trees all the way down.",
+    "completed_at": "2026-03-25T17:20:48.006598+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7bf0dc20-d377-40bc-95f7-c051ede36f92",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-granny-setstatus-timeout.20260605.204100944524",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-setstatus-timeout"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T20:41:00.944524",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-setstatus-timeout",
+      "T-igor-ne-standing-goal-stall",
+      "T-igor-web-responsiveness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-setstatus-timeout",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Operational"
+    ],
+    "title": "Granny: setstatus subprocess times out, causing re-dispatch loop",
+    "result": "Replaced cc_queue.py setstatus subprocess calls with direct psycopg2 UPDATE in _dispatch_cc0, _dispatch_bus, and _process_handshake_replies — eliminates 10s timeout, stops re-dispatch loop",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.8,
+    "intention": "I intend that Granny's dispatch-side setstatus call never times out, so dispatched tickets are marked in_progress and the re-dispatch loop stops.",
+    "created_at": "2026-06-05T20:41:00.944524+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Granny dispatches a ticket via tmux send-keys then calls `cc_queue.py setstatus in_progress` as a subprocess with a 10s timeout. Under load, the subprocess startup + Postgres connection exceeds 10s, so it times out. The ticket stays in sprint state. On the next poll, Granny sees it still sprint and dispatches again — causing a re-dispatch loop. Seen 2026-06-05: T-igor-web-responsiveness dispatched 3x, T-igor-ne-standing-goal-stall dispatched 2x.\n\n**Affected files:** devices/granny/daemon.py (_dispatch_cc0 — the setstatus subprocess call)\n\n**Design rules:** none apply\n\n**Scope boundary:** Increase timeout or use direct DB write instead of subprocess for the in_progress mark. Out of scope: changing dispatch logic.\n\n**Completion criteria:** Dispatching a ticket marks it in_progress in the same poll cycle; re-dispatch loop does not recur in Granny log.",
+    "completed_at": "2026-06-05T20:59:31.778209+00:00",
+    "deposited_at": "2026-06-05T14:41:18.797152",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

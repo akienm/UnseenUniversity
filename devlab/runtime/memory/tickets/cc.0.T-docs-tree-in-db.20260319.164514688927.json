@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-docs-tree-in-db.20260319.164514688927",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-docs-tree-in-db"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-19T16:45:14.688927",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-docs-tree-in-db"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-docs-tree-in-db",
+    "body": "Parse DSB/CSB design doc files (decisions_log.dsb, capabilities_index.dsb, gap_analysis.md, etc.) and mirror their content as FACTUAL/INTERPRETIVE nodes in Postgres. File remains canonical for editing. DB copy enables graph traversal and token-efficient context load (read top N newest entries rather than whole file). Sync on boot or on-demand via habit. Ref: D130, D131.",
+    "size": "M",
+    "title": "Mirror DSB/CSB docs as nodes in Postgres",
+    "closed": "2026-03-19T10:40",
+    "result": "docs_entries table. 18 DSB files → 1450 entries.",
+    "status": "done",
+    "created": "2026-03-19T10:08",
+    "priority": 3,
+    "completed_at": "2026-03-19T16:45:14.688927+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

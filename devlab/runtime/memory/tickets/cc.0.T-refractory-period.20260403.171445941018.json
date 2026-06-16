@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-refractory-period.20260403.171445941018",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-refractory-period"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:14:45.941018",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-refractory-period"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-refractory-period",
+    "title": "Refractory period — habits suppress themselves for N cycles after firing",
+    "result": "Already fully implemented. _refractory_map in basal_ganglia.py with IGOR_REFRACTORY_TTL_SEC (600s default) + IGOR_REFRACTORY_FACTOR (0.1). Winner marked refractory after select_habit(); score multiplied by 0.1 while in map. test_refractory.py has 8 tests. Directly addresses Igor's TWM noise observation.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-03T17:14:22.665980+00:00",
+    "related_to": null,
+    "description": "D277 gap. Biological pattern: after a neuron fires, it enters a refractory period and cannot fire again immediately. Igor implementation: in basal_ganglia.py, maintain a _refractory_map = {habit_id: expiry_ts}. After a habit dispatches: add habit_id with TTL=10min. In _score_habit(): if habit_id in _refractory_map and not expired: multiply score by REFRACTORY_FACTOR (default 0.1). Effect: prevents channel flooding (PROC_FLAG_ANOMALY cannot spam every 30s), prevents PROC_BOREDOM_TRIGGER repeating the same wonder 3 turns in a row. Config: IGOR_REFRACTORY_TTL_SEC (default 600), IGOR_REFRACTORY_FACTOR (default 0.1). Files: cognition/basal_ganglia.py. Inertia: MEDIUM. Tests: verify score dampened within TTL, full score returned after TTL.",
+    "completed_at": "2026-04-03T17:14:45.941018+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "12230b07-ec48-4b55-bb89-ba09bba117d1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-map-igor-skill.20260429.182218556456",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-map-igor-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:22:18.556456",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-map-igor-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-map-igor-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Skills",
+      "Inspection",
+      "Visualization"
+    ],
+    "title": "Build /map-igor skill — Haiku, on-demand JSON snapshot of Igor",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T18:11:33.681168+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "Haiku-level skill that produces an on-demand inspection snapshot of Igor's full state. Output: ~/.TheIgors/maps/igor-map-<YYYY-MM-DD-HHMMSS>.json (greppable, parseable, diffable) plus a one-screen stdout summary.\n\nSections: palace tree (paths, titles, types, child counts); rules (full content); subsystem index (load-bearing area → primary file); tickets (open by status with size + inertia tags); slates (today + last 3 days); decisions (last 30 days, one-line each); gates (IGOR_TIER5_ENABLED, IGOR_ARBITER_ENABLED, others, current state); MCP servers + tools; IMAP buses + mailboxes + retention; channels (config + last 24h activity); inbox (unread by kind/urgency); logs (paths, sizes, rotation, last-modified); startup reads (every file Igor reads at boot — .env, configs, with paths and last-modified); DB schema (tables, row counts, recent write activity); runtime (~/.TheIgors/ tree sizes); code map (wild_igor/ top-level dirs + primary file per area); processes (Igor running where, tmux sessions, Ollama instances per machine).\n\nDiff mode: /map-igor --since=yesterday produces only the delta against the prior map. End-of-day-friendly.\n\nStand-alone (not in audit family) but readable by audit-day and audit-audits as one of their inputs.\n\n**Affected files:** new ~/.claude/skills/map-igor/SKILL.md; new lab/claudecode/map_igor.py with the snapshot logic.\n**Design rules:** no persistence (snapshots in runtime dir, not DB). oop-first: IgorMap class with section_collectors dict. docs-in-code: top-of-file docstring on map_igor.py listing every section and where its data comes from.\n**Test plan:** /map-igor produces a non-empty JSON file with all sections. Each section has a known data source verified end-to-end. /map-igor --since=yesterday computes a structural diff. Snapshot file size is reasonable (<1MB typical, <10MB worst-case).",
+    "completed_at": "2026-04-29T18:22:18.556456+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7cb75f97-fe5a-4410-b73b-bfed3a24b861",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

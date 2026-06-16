@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-comms-public-landing.20260609.214359803024",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-comms-public-landing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T21:43:59.803024",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-comms-fascia-ux-2026-06-09"
+    ],
+    "tickets": [
+      "T-comms-public-landing",
+      "T-device-fascia-page"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-comms-public-landing",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "WebUI",
+      "UX"
+    ],
+    "title": "Comms: Public as landing tab, device names as nav tabs",
+    "result": "checkboxes removed; device tabs show fascia stub; Public default; input/name rows hidden on device tabs (62625d46)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that opening the web UI lands on the Public channel feed with device names as clickable navigation tabs, not checkboxes.",
+    "claimed_at": "2026-06-09T21:50:23.671555+00:00",
+    "created_at": "2026-06-09T21:43:59.803024+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-comms-fascia-ux-2026-06-09",
+    "description": "Currently device names (igor, librarian, granny-weatherwax) appear as checkboxes — a filter affordance. Replace with tab navigation: clicking a device name switches to that device's fascia page. Public is the default tab on page load (the town square).\n\n**Affected files:** devices/web_server/server.py (JS tab switching, initial active tab, channel-bar HTML)\n**Design rules:** none apply\n**Scope boundary:** Navigation affordance change only. Fascia page content is T-device-fascia-page. Device tabs can show a blank/stub panel for now.\n**Completion criteria:** Page loads with Public feed visible; clicking igor/librarian/granny switches view (stub panel acceptable); no checkboxes in the channel row.\n**Validation:** Open web UI cold — Public feed is visible without any clicks.\n**Observable via:** Browser tab shows correct panel on click; no checkbox elements in channel-bar.",
+    "completed_at": "2026-06-09T21:52:57.175729+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-09T21:43:59.858106+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

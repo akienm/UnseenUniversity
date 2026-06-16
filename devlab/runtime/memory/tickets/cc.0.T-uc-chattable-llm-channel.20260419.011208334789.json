@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-uc-chattable-llm-channel.20260419.011208334789",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-chattable-llm-channel"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T01:12:08.334789",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-chattable-llm-channel",
+      "T-uc-comms-module",
+      "T-uc-inference-channel"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-chattable-llm-channel",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "UX"
+    ],
+    "title": "comms://or-chat/* — stateful multi-turn LLM channels with UC-managed scrollback",
+    "result": "OrChatTransport at lab/utility_closet/transports/or_chat.py. Layers on InferenceTransport — chat/user msg → assemble scrollback prompt → gateway → chat/assistant emit. System prompt pinned; oldest-first char-budget trimming. URI: comms://or-chat/<purpose>/<session-id>. 11 tests pass. Follow-ups in commit msg: token-aware trim, structured chat API to gateway, session lifecycle verbs, multi-participant. Commit 98ca45ca.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T01:09:19.711147+00:00",
+    "related_to": null,
+    "description": "Make it possible to say 'open a channel to <OR model>' and carry on a multi-turn conversation without managing context. The transcript lives in the UC comm unit; each turn appends to it; UC trims to the model's context window when assembling the next prompt. Uhura-at-comms framing — one verb (open channel), the plumbing is hidden. Each channel is its own comm unit with its own short-term memory — separate from Igor's TWM.\n\n## Motivation\nAkien: 'open a channel to cc and ask him that question / open a channel with <model on OR> / open a channel to leah via google talk.' CC and Leah manage their own context; a raw OR model doesn't, so the channel itself has to carry the scrollback. Same user-facing verb across transports is the whole point.\n\n## Design\n- comms://or-chat/<model>/<session-id>\n- Each session has a conversation store inside the comm unit (likely channel_messages keyed by channel name).\n- On user turn: append message → pull recent scrollback trimmed to model window → send via inference transport → append response.\n- System prompt lives in session metadata (settable at open-channel time).\n- Session eviction: idle timeout + explicit close; persistence across UC restart expected.\n\n## Differentiated from T-uc-inference-channel\n- That one is stateless request/response RPC — one call, one answer, no memory.\n- This one is stateful multi-turn — the channel remembers prior turns and carries them forward.\n- This layers on top of that: each turn of a chat channel is an inference-channel RPC.\n\n## Scope\n- New transport: lab/utility_closet/transports/or_chat.py\n- Scrollback store in UC (reuse channel_messages or new chat_sessions table — design call during sprint)\n- API shape: open(model, system_prompt?) → session_id; send(session_id, text) → reply; close(session_id)\n- Context-window trim policy: token-count-aware, drop-oldest-first, keep system prompt pinned\n\n## Depends on\n- T-uc-comms-module (done)\n- T-uc-inference-channel (pending — this layers on top, or can ship in parallel using a stub inference call)\n\n## Biomimetic note\nThe channel has its own short-term memory of the chat — separate from Igor's TWM. Each Uhura channel is a thin cortex of its own.",
+    "completed_at": "2026-04-19T01:12:08.334789+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "12a2fbb6-259a-4d1d-a543-24f2d8a6073b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

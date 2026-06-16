@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-retire-worker-foreman.20260420.184459000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retire-worker-foreman"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:59",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-retire-worker-foreman"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retire-worker-foreman",
+    "size": "M",
+    "notes": "Per Akien 2026-04-19 (during GH-285 close): the worker_foreman + worker_daemon.sh pattern is non-biomimetic scaffolding. Biology has no foreman — it has conditional synaptic propagation. Equivalent pattern in Igor: BOREDOM engram activates on idle → BRANCHIF guards on queue-has-pending → claim_next_ticket engram fires → BRANCHIF into pe_chain. Replace the polling daemon + Python foreman logic with engram chains using existing primitives (BRANCHIF, FORKIF, cursor_runtime). Scope: move foreman_scan/launch_next_worker/check_worker_queue logic into seeded habit chains; delete wild_igor/igor/tools/worker_foreman.py; delete lab/claudecode/worker_daemon.sh; update PROC_BOREDOM_FOREMAN / PROC_WORKER_FOREMAN to pure engrams. Requires HIGH-inertia confirmation before execution — touches habit machinery and the ticket pickup pipeline.",
+    "title": "Retire worker_foreman + worker_daemon — express ticket pickup as a BOREDOM engram chain",
+    "result": "Closed per Akien 2026-05-01: decision reversed — worker_foreman + worker_daemon are still load-bearing for CC dispatch (engram-chain replacement was scaffolded in Phase A/B back in April but not adopted; we kept the polling foreman for actual use cases). worker_foreman.py + worker_daemon.sh remain in tree.",
+    "status": "done",
+    "worker": "claude",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-04-20T18:44:59Z",
+    "related_to": null,
+    "completed_at": "2026-05-01T16:12:25.620513+00:00",
+    "github_issue": 486,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

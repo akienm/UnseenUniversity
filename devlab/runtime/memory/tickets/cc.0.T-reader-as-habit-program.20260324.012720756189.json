@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-reader-as-habit-program.20260324.012720756189",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reader-as-habit-program"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T01:27:20.756189",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reader-as-habit-program"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reader-as-habit-program",
+    "body": "The ebook reader (ebook_reader.py + reading_integrator.py) is currently Python. Re-express it entirely as instantiated templates: FILE_ITERATOR over the reading queue, READER_LOOP per book, MEMORY_DEPOSIT per extracted concept, SEARCH_AND_RESPOND for dedup check. Output: a seed script that produces all the habits needed to run the reader without touching the Python reader code. Validation: habit-program reader produces equivalent nodes to Python reader on same input. This is the proof of concept that the matrix language is complete enough for real programs. Prereq: T-template-seed-patterns.",
+    "size": "L",
+    "title": "Re-express Python reader as a habit program — first complete matrix-language program",
+    "result": "seed_reader_habits.py: 4 Engram template habits instantiated from tpl-file-iterator/reader-loop/search-and-respond/memory-deposit. Nodes in Postgres: proc_file_iter_reader_queue (FILE_ITERATOR → open_book), proc_reader_ebook (READER_LOOP → read_chunk), proc_sar_reading_concept_extracted (SEARCH_AND_RESPOND → cortex.search), proc_deposit_reading_concept (MEMORY_DEPOSIT → _reading_extract_worker). Python code untouched. Inter-habit chaining deferred to T-trails-infra. First complete matrix-language program proven. Tests 110/110.",
+    "status": "done",
+    "created": "2026-03-23T00:14:44.332776",
+    "priority": 3,
+    "claimed_at": "2026-03-24T01:24:46.970706+00:00",
+    "completed_at": "2026-03-24T01:27:20.756189+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

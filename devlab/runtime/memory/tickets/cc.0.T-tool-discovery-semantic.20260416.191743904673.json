@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-tool-discovery-semantic.20260416.191743904673",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tool-discovery-semantic"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T19:17:43.904673",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-any-thoughts-habit-failure",
+      "T-tool-discovery-semantic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tool-discovery-semantic",
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "Tool discovery needs semantic matching — keyword overlap fails for conversational queries",
+    "result": "Synonym expansion in find_tool via _SYNONYM_MAP (20+ groups). 'reading progress' → list_reading_sessions at 0.50 (was 0.15). Root cause fix for Igor's silent tool-discovery failures. 11 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:15:59.514575+00:00",
+    "related_to": null,
+    "description": "find_tool() uses keyword overlap against tool names+descriptions. Scores are very low (0.07-0.29) for natural queries like 'how far with reading?' → needs list_reading_sessions. Root cause of Igor's inability to find his own tools, which causes silent stalls. Fix options: (1) embed tool descriptions and use cosine similarity, (2) add synonym/alias tags to tool registrations, (3) use cortex.search to find tools since they're registered as memories too. This directly feeds T-any-thoughts-habit-failure — most 'any thoughts?' gaps are tool-discovery failures.",
+    "completed_at": "2026-04-16T19:17:43.904673+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bbf7b16d-d438-4d42-a62b-4758a7d7e6cd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

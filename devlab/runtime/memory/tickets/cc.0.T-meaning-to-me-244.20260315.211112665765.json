@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-meaning-to-me-244.20260315.211112665765",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-meaning-to-me-244"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T21:11:12.665765",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-meaning-to-me-244"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-meaning-to-me-244",
+    "body": "Implement #244. Tag existing interpretive edges pointing to CP/ID nodes with metadata.layer=meaning_to_me. Add cortex.get_meaning_to_me(). Update interpretive_traverse() to flag when traversal passes through meaning_to_me nodes. BG and NE check that flag: personally significant threads get salience boost. Read every file before editing. MEDIUM inertia: cortex.py, basal_ganglia.py. Post plan before implementing.",
+    "size": "M",
+    "title": "Meaning-to-me cluster (#244)",
+    "result": "Implemented meaning_to_me cluster (#244): (1) interpretive_edges.layer column + migration tags CP/ID-origin edges as meaning_to_me; (2) add_interpretive_edge() auto-tags CP/ID roots; (3) get_meaning_to_me() returns personally-significant memories; (4) interpretive_traverse() flags returned Memory.metadata['meaning_to_me']=True + _last_traverse_meaning_to_me side-effect; (5) main.py: TWM push on meaning_to_me traversal (prev session) + meaning_to_me memories bubble up in relevant list; (6) basal_ganglia.py: +0.08 score bonus for meaning_to_me-tagged habits. Live DB migrated, 5 CP-origin memories confirmed, syntax OK.",
+    "status": "done",
+    "claimed_at": "2026-03-15T21:02:34.481124+00:00",
+    "depends_on": "T-watchlist-240",
+    "completed_at": "2026-03-15T21:11:12.665765+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

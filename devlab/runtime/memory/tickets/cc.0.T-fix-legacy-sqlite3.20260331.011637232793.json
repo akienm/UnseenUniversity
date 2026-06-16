@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-fix-legacy-sqlite3.20260331.011637232793",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-legacy-sqlite3"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T01:16:37.232793",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-legacy-sqlite3"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-legacy-sqlite3",
+    "title": "fix-legacy-sqlite3-claudecode",
+    "result": "replaced sqlite3 with psycopg2 in drain_learn_queue/book_learner/claude_bridge; removed dead import from cortex.py; 555 tests pass",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "drain_learn_queue/book_learner/claude_bridge use sqlite3 to connect to Igor's Postgres DB silently failing; dead import in cortex.py",
+    "completed_at": "2026-03-31T01:16:37.232793+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "42e3c64a-0c04-4c95-b134-94e3497ea40b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

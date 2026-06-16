@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-lever-memory-type.20260610.215216395414",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-lever-memory-type"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T21:52:16.395414",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-lever-memory-confidence-2026-06-10"
+    ],
+    "tickets": [
+      "T-lever-memory-type",
+      "T-memory-source-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-lever-memory-type",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Memory",
+      "Cognition"
+    ],
+    "title": "Add LEVER memory type with high base confidence",
+    "result": "MemoryType.LEVER added with BASE_CONFIDENCE=0.85, CLASS scope. 4 unit tests pass. Commit 40a0f070.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that a LEVER memory type exists for cross-domain causal/systemic patterns — 'why does this work?' knowledge — with high base confidence so it resists drift and surfaces reliably in pre-inference assembly.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T21:52:16.395414+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-lever-memory-confidence-2026-06-10",
+    "description": "Add `LEVER = 'lever'` to the `MemoryType` enum and `BASE_CONFIDENCE[MemoryType.LEVER] = 0.85` (same tier as IDENTITY — cross-domain causal patterns are identity-level durable). LEVER is the memory type for knowledge that answers 'why does this work?' and transfers across domains (e.g. physics intuition that applies to software architecture, systems-thinking patterns that apply across Akien's domains).\n\nUpdate `_INSTANCE_SCOPE_TYPES` to include LEVER in class scope (lever memories are cross-instance knowledge, not per-session).\n\n**Affected files:** devices/igor/memory/models.py\n**Design rules:** none apply\n**Scope boundary:** IN — enum entry + BASE_CONFIDENCE entry + scope classification. OUT — categorizer wiring (separate ticket), source seeding (T-memory-source-seed).\n**Completion criteria:** `from devices.igor.memory.models import MemoryType; MemoryType.LEVER` imports without error; `BASE_CONFIDENCE[MemoryType.LEVER] == 0.85`; `Memory(narrative='test', memory_type=MemoryType.LEVER).confidence` returns >= 0.85; at least 2 unit tests cover the new type.",
+    "completed_at": "2026-06-11T22:12:56.314900+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

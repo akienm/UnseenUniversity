@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-tool-loop-advisor.20260601.145339015941",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tool-loop-advisor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T14:53:39.015941",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tool-loop-advisor-2026-06-01"
+    ],
+    "tickets": [
+      "T-burn-rate-monitor",
+      "T-constraint-availability-root",
+      "T-tool-loop-advisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tool-loop-advisor",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Inference",
+      "Minion"
+    ],
+    "title": "Redesign ToolLoop: round-based iterations + advisor meta-layer",
+    "result": "VALIDATED: 49 minion tests pass; round-based ToolLoop with advisor signals CONTINUE/REPROMPT/UPGRADE/BLOCKED/CONFUSED/ESCALATE",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1.7,
+    "claimed_at": "2026-06-01T15:03:44.412819+00:00",
+    "created_at": "2026-06-01T14:53:39.015941+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-tool-loop-advisor-2026-06-01",
+    "description": "Current ToolLoop runs up to 20 sequential iterations; context grows unbounded (73k tokens on an S ticket); model has no way to course-correct. Two failures on first live run (T-burn-rate-monitor, T-constraint-availability-root) both hit max iterations without producing a terminal signal.\n\nRedesign:\n1. Round-based structure: max 5 work iterations per round, max 2 rounds before hard ESCALATE\n2. Between rounds: single ADVISOR CALL with a separate reviewer system prompt — not a worker, a meta-reviewer\n3. Advisor returns exactly one of 6 signals:\n   - CONTINUE — progressing, same model/prompt, start round 2\n   - REPROMPT <rewrite> — ticket underspecified; advisor provides improved description; retry round 2 with rewrite\n   - UPGRADE — task exceeds this tier; promote worker→analyst→designer\n   - BLOCKED <reason> — external dependency missing (no DB, missing env var, file absent); not a model problem\n   - CONFUSED — advisor cannot interpret what happened; ESCALATE with extra flag\n   - ESCALATE — beyond capability path; hold for CC review\n4. Context reset between rounds: advisor summary replaces full tool history, preventing token explosion\n5. WorkerResult gains: round_count (int), advisor_calls (int), advisor_signal (str | None)\n\n**Affected files:** devices/minion/tool_loop.py, devices/minion/shim.py, tests/minion/test_minion_device.py\n**Design rules:** no-sqlite; log every state change and interface crossing per AR-009; test-plan required\n**Scope boundary:** Redesign ToolLoop internals only. WorkerEnvelope interface unchanged. InferenceDevice interface unchanged. DONE/ESCALATE signal values in WorkerResult.signal unchanged (Granny dispatch depends on them). Out of scope: changing GrannyDaemon, changing InferenceDevice routing.\n**Completion criteria:** `.venv/bin/pytest tests/minion/ -q` passes with ≥5 new tests covering: round transition on no-signal, REPROMPT rewrite carried into round 2 context, UPGRADE signal returned in WorkerResult, context reset between rounds (token count drops), BLOCKED short-circuits without attempting round 2; MINION_RESULT channel post includes round_count and advisor_signal fields",
+    "completed_at": "2026-06-02T21:46:52.717912+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T15:03:44.412819+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2d507dc0-0847-4bdb-b3e2-9a60bdb63e91",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

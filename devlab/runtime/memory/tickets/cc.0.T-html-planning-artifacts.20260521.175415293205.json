@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-html-planning-artifacts.20260521.175415293205",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-html-planning-artifacts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.293205",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-html-planning-artifacts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-html-planning-artifacts",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Documentation",
+      "Planning"
+    ],
+    "title": "Use HTML as default output format for planning artifacts and specs",
+    "result": "HTML levers doc + generic spec template; /decided and /day-close skill guidance updated for HTML artifacts (ADC 29cc1df)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-05-21T17:54:15.293205+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "Markdown past ~100 lines becomes unnavigable and prevents genuine human engagement. HTML enables tabs, SVG diagrams, side-by-side comparisons, mobile-responsive layout, and richer information density without AI resorting to ASCII workarounds. Prompt is trivial: 'make an HTML file.' Apply to: levers doc conversion, spec templates in /decided, day-close Discussion posts, exploration docs comparing design alternatives.\n\n**Affected files:** ~/.claude/skills/decided/SKILL.md (spec output guidance), ~/.claude/skills/day-close/SKILL.md (Discussion post format), lab/docs/Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.md (convert to HTML)\n**Design rules:** none — pure output format choice\n**Scope boundary:** In scope: update skill guidance to default HTML for planning artifacts, convert levers doc to HTML. Out of scope: retroactive conversion of all existing docs, runtime rendering infrastructure.\n**Test plan:** Verify levers doc renders correctly in browser; verify /decided produces HTML spec for a test decision; verify day-close Discussion post is valid HTML.",
+    "completed_at": "2026-05-21T19:37:00.692084+00:00",
+    "github_issue": null,
+    "timeout_count": 3,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340047+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e6b75dd5-44b8-46e6-bace-cb18a2ec0518",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-reading-deposit-batched.20260504.222210004702",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-deposit-batched"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T22:22:10.004702",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-deposit-batched"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-deposit-batched",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "reading",
+      "performance",
+      "db"
+    ],
+    "title": "CLOSED: batch cortex writes in _deposit_nodes",
+    "result": "batch cortex API (store_batch/add_children_batch/add_interpretive_edges_batch) — _deposit_nodes O(N)→O(1) DB round-trips",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-05-04T22:05:19.549231+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "_deposit_nodes in book_learner.py issues up to 7 DB round-trips per node (store, embed, add_child x2, add_interpretive_edge, attractor query, habit query). For a 200-chunk book at 3 nodes/chunk that is 4000+ round-trips per book. Wrap each chunk's deposits in a single transaction; batch the cortex.store calls using execute_values or equivalent; batch add_child/add_interpretive_edge similarly. Cortex may need new store_batch() / add_children_batch() methods. Rollback story: batching improves atomicity — a failed chunk does not commit at all (strictly better than current per-node partial writes).\n\n**Affected files:** lab/claudecode/book_learner.py, wild_igor/igor/memory/cortex.py (new batch methods, existing untouched)\n**Design rules:** no-sqlite, test-plan-or-why-not\n**Scope boundary:** IN: batch the DB writes per chunk; add cortex batch API. OUT: do not change per-node extraction logic, node schema, or arousal assignment.\n**Test plan:** existing book_learner tests must still pass; add a test that a 10-node batch write is one transaction (use a mock or count query calls).\n**Pass condition:** A 200-chunk book processes in materially fewer DB round-trips; pytest passes; no partial-chunk writes on simulated failure.",
+    "completed_at": "2026-05-04T22:22:10.004702+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "98b2a2eb-44a5-4cc8-8481-a962d593ffdb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

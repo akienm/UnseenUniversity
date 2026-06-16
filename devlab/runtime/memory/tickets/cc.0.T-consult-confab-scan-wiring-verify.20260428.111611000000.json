@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-consult-confab-scan-wiring-verify.20260428.111611000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-confab-scan-wiring-verify"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T11:16:11",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-consult-confab-scan",
+      "T-consult-confab-scan-wiring-verify"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-confab-scan-wiring-verify",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Engrams",
+      "Consult",
+      "Tests"
+    ],
+    "title": "Verify confab_scanner wiring in ConsultSession — 0/104 flags is suspicious",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T06:29:05.354950+00:00",
+    "created_at": "2026-04-28T11:16:11Z",
+    "related_to": null,
+    "approved_at": "2026-04-28T01:40:33.474892+00:00",
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "Consult observe-and-tune memo (lab/design_docs/consult_tuning_2026-04-23.md Finding 5): 0/104 confab_flag events across 104 sessions. Possibilities: (a) scanner too conservative, (b) model outputs don't confabulate enough, (c) scanner not actually wired to the raw_text path. (c) is the scariest — wiring broken means we're flying blind on confab in consults.\n\nFix: use the engram-engineering toolkit I just built to validate itself. deposit_engram a known-confabulation REFERENCE (temporal drift or capability confab), run a synthetic consult whose raw_text contains a tell-phrase, verify confab_flag fires. If it doesn't fire, trace why — ConsultSession.ask() was supposed to scan raw_text pre-TWM-integration (T-consult-confab-scan done 2026-04-23).\n\n**Affected files:** wild_igor/igor/cognition/consult.py (ConsultSession.ask), lab/claudecode/engram_tools/confab_scanner.py, lab/claudecode/engram_tools/deposit_engram.py, lab/claudecode/engram_tools/verify_retrieval.py, tests/test_consult_confab_scan.py (add wiring-verify test).\n**Design rules:** docs-in-code, test-plan-or-why-not.\n**Scope boundary:** IN — prove or disprove wiring via test + fix if broken. OUT — re-tuning confab_scanner thresholds (separate finding).\n**Test plan:** new test deposits known confab probe, runs consult with tell-phrase raw_text, asserts confab_flags non-empty. Existing 8 test_consult_confab_scan tests still pass.",
+    "proposed_at": "2026-04-28T03:37:29.938118+00:00",
+    "completed_at": "2026-04-29T06:47:41.495762+00:00",
+    "github_issue": 541,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Approved by Akien 2026-04-27",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "beb07b15-720a-44bc-a716-f6de307ba7ab",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

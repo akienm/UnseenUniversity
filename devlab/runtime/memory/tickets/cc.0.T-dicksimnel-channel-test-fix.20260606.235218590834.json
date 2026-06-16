@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-dicksimnel-channel-test-fix.20260606.235218590834",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-channel-test-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T23:52:18.590834",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dicksimnel-idle-dispatch-redesign-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-channel-test-fix",
+      "T-dicksimnel-worker-listener"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-channel-test-fix",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Testing",
+      "DickSimnel"
+    ],
+    "title": "Fix dicksimnel channel tests: _claim_next_ticket removed in T-dicksimnel-worker-listener",
+    "result": "4 _claim_next_ticket tests removed; replaced by TestDickSimnelWorkerListenerChannelEvent with 2 dispatch channel event tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that the 4 tests in test_dicksimnel_channel.py are updated or removed to reflect that _claim_next_ticket no longer exists on DickSimnelDevice.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T23:52:18.590834+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dicksimnel-idle-dispatch-redesign-2026-06-06",
+    "description": "4 tests in tests/inference/test_dicksimnel_channel.py reference DickSimnelDevice._claim_next_ticket which was removed in T-dicksimnel-worker-listener (dispatch is now bus-push, not self-polling). Pre-existing (introduced by T-dicksimnel-worker-listener when _claim_next_ticket was deleted).\n\nFailing tests: test_claim_posts_working, test_claim_working_includes_title, test_claim_channel_failure_still_returns_ticket, test_claim_no_ticket_no_channel_post.\n\n**Affected files:** tests/inference/test_dicksimnel_channel.py\n**Design rules:** none apply\n**Scope boundary:** IN: remove or rewrite the 4 claim tests. Channel events are now posted by DickSimnelWorkerListener._handle_dispatch(), so equivalent coverage should move to TestDickSimnelWorkerListener. OUT: changing device.py or worker_listener.py.\n**Completion criteria:** The 4 failing tests no longer fail. Channel event coverage for dispatch exists in TestDickSimnelWorkerListener.",
+    "completed_at": "2026-06-07T00:57:55.420682+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

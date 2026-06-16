@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-slate-schema.20260101.192050410915",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slate-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T19:20:50.410915",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-slate-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slate-schema",
+    "body": "Slate = named themed bundle of work (~1 day). DB node schema: name (str), theme (str), done_when (str), tickets[] (strong-edge children), adopted_bugs[] (weak-edge children), next_slate (sibling pointer with decay weight). Horizon cascade: slate 0 fully defined, slate 1 shape known, slate 2+ vague. Implement as PROCEDURAL node type with typed edges. slate.md becomes the rendered view of this node. Ref: D130.",
+    "size": "S",
+    "title": "Define slate as DB node: name/theme/tickets/done_when/horizon",
+    "closed": "2026-03-19T10:33",
+    "result": "slates table in Postgres (D132). slate_manager.py: seed/show/render/close-ticket/add-ticket/advance. Seeded slates 0-3. slate.md now rendered from DB.",
+    "status": "done",
+    "created": "2026-03-19T10:17",
+    "priority": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

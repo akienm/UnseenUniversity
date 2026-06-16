@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-rack-health-rollup.20260427.221253415220",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-rack-health-rollup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:12:53.415220",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-rack-health-rollup",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-rack-health-rollup",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: rack.health on-demand fan-out across all registered devices",
+    "result": "health.py rack_health_async(): asyncio.gather + to_thread per device, timeout=5s default. rack_health_sync() for non-async callers. Timeout → {healthy:False, error:'timeout'}.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T22:07:40.121576+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Implement rack.health as an on-demand polling call — not a heartbeat loop. When queried, the rack goes and checks each registered device in parallel.\n\nDesign decision: no background heartbeat. Health is a question, not a process. Poll when you need the answer; callers decide how often.\n\nProposed shape:\n- In health.py: async def rack_health() using asyncio.gather()\n  For each registered (non-offline) device: call device.health() with timeout=5s (configurable)\n  Aggregate: {device_id: {healthy: bool, details: dict, error: str|None, block_type: 'auto'|'manual'|None}}\n  Devices that time out: {healthy: False, error: 'timeout', ...}\n  Devices that raise: {healthy: False, error: str(exception), ...}\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/health.py (rack_health implementation)\n\nDesign rules:\n- No background threads — asyncio.gather with timeout, not a daemon\n- docs-in-code: comment explaining why no heartbeat (poll-on-demand rationale from spec §Health)\n\nScope boundary:\nIN: parallel health fan-out, timeout handling, error capture per device\nOUT: per-device health implementations (those live in each device's device.py)\n\nTest plan:\n- rack.health() with 3 stub devices: 1 healthy, 1 timeout, 1 error → correct result shape\n- Healthy device: {healthy: True, details: {...}, error: None}\n- Timeout device: {healthy: False, error: 'timeout'}\n- Error device: {healthy: False, error: 'ConnectionRefused...'}",
+    "completed_at": "2026-04-27T22:12:53.415220+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2528c01f-51bd-496e-bbfa-ef5974d5dfe6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

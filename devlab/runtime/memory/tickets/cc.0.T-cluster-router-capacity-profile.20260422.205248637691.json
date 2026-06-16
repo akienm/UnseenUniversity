@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cluster-router-capacity-profile.20260422.205248637691",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cluster-router-capacity-profile"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T20:52:48.637691",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-distribution-2026-04-22"
+    ],
+    "tickets": [
+      "T-cluster-router-capacity-profile",
+      "T-input-chunker",
+      "T-preparse-router"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cluster-router-capacity-profile",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Routing",
+      "Telemetry"
+    ],
+    "title": "Extend cluster_router with size-bucketed latency profile + safe_ceiling()",
+    "result": "record_dispatch + safe_ceiling + p50_latency + is_overloaded + is_cold_start + capacity_observations/clear on cluster_router. Per-machine sliding window (50 obs). 5 size buckets. Success threshold 0.95. Overload mult 1.5x. Cold-start silence 5min. 15 tests. Commit 3452207d.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-22T20:50:20.059498+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-distribution-2026-04-22",
+    "description": "cluster_router.py already tracks machine health, in-use detection, and ranked scoring. It does NOT track per-machine historical latency-by-input-size or learn a 'safe input ceiling' for each machine. Without that, distributed preparse can't route atomic chunks intelligently ('yogai7 handles ≤3 sentences, yoga9i handles ≤7' — currently unknown). Extend cluster_router with a sliding-window stats layer: per-machine, per-size-bucket, rolling N=50 observations of (input_tokens, latency_ms, outcome). Add query API: safe_ceiling(machine), p50_latency(machine, bucket), is_overloaded(machine). Per-caller view (each machine tracks its own dispatch history); gossip sync is a later follow-on.\n\n**Affected files:** extend `wild_igor/igor/cognition/cluster_router.py` (add sliding-window state + query API); new `tests/test_cluster_router_capacity.py`. NO new DB schema — in-memory sliding window is sufficient for this ticket; persistence is a follow-on decision.\n**Design rules:** no-sqlite (no storage change); no-new-memory-schemas (telemetry not memory); docs-in-code (extend existing cluster_router docstring); test-plan-or-why-not (covered); oop-first (sliding-window as a small class, or module-level dict keyed by machine — reviewer's call during build).\n**Scope boundary:** IN: record(machine, input_tokens, latency_ms, outcome); safe_ceiling(machine) → int tokens; p50_latency(machine, bucket) → ms; is_overloaded(machine) → bool (load trend over last 5 obs); exponential decay on window; cold-start flag when a machine reappears after silence. OUT: routing decisions (T-preparse-router); cross-machine gossip (follow-on ticket); persistence to DB (not needed yet); chunking (T-input-chunker).\n**Test plan:** record 50 runs at varying sizes; safe_ceiling reflects bucket with success_rate ≥ 0.95 in last 10 runs; p50 by bucket computed correctly; cold-start flag set when first obs after silence window; exponential decay (older obs weight less); per-machine isolation (machine A's stats don't pollute machine B's ceiling); is_overloaded triggers when last 5 p50s trend up by ≥50%.",
+    "completed_at": "2026-04-22T20:52:48.637691+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ae83ce7f-78c2-4398-9c72-be528d7a8aab",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

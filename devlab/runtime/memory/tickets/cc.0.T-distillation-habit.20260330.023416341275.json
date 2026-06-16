@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-distillation-habit.20260330.023416341275",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-distillation-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T02:34:16.341275",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-distillation-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-distillation-habit",
+    "epic": "Cognition",
+    "size": "L",
+    "title": "Implement DISTILLATION Engram pattern",
+    "result": "Phase 1 complete: EPISODIC->EXPERIENTIAL->PROCEDURAL pipeline live in distillation.py, wired in main.py, 1747 EXPERIENTIAL nodes in DB. Phase 2 (FACTUAL->INTERPRETIVE compression) split to T-factual-compression per Igor's recommendation.",
+    "status": "done",
+    "priority": 5,
+    "claimed_at": null,
+    "description": "Periodic pass that groups thin FACTUAL deposits on the same concept and collapses them into a single richer INTERPRETIVE node. Compresses growing matrix into actual inference capability rather than storage growth. The missing flywheel closer (Engram language crystallization, 2026-03-22).",
+    "completed_at": "2026-03-30T02:34:16.341275+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "77e6fbf8-2c91-44c8-bc5c-1cb74581a8ce",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

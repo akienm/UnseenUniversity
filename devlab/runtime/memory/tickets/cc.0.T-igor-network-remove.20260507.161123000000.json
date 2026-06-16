@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-network-remove.20260507.161123000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-network-remove"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:11:23",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-migration-2026-05-06"
+    ],
+    "tickets": [
+      "T-adc-discord-phase5",
+      "T-igor-network-remove"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-network-remove",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Migration",
+      "Igor",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Remove wild_igor/igor/network/ from Igor",
+    "result": "network/ deleted (1856 lines); main.py stubs _drain_network(); 3 test files skipped for proxy/channels/system_proxy relocation",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-07T16:11:23Z",
+    "related_to": null,
+    "decision_id": "D-adc-migration-2026-05-06",
+    "description": "wild_igor/igor/network/ (discord_bot, listener, proxy, system_proxy, 8 channel files) is transport infrastructure that belongs in agent_datacenter devices. After Discord is relocated (T-adc-discord-phase5), remove the network/ directory from Igor. The listener thread (net_listener at main.py:746) and all channel files go with it.\n\n**Affected files:** wild_igor/igor/network/ (delete), wild_igor/igor/main.py (remove net_listener.start(), listener import, web_server.broadcast_activity calls)\n**Design rules:** no-sqlite; safeguards (main.py HIGH inertia — pre-approved for this migration)\n**Scope boundary:** In scope: delete network/ after Discord relocated; remove listener/channel wiring from main.py. Out of scope: migrating listener functionality (separate device ticket if needed).\n**Test plan:** Igor boots without network/ directory. Inbound channel messages (Gmail, Discord DM) need alternative path — document what's lost until listener device is built.",
+    "completed_at": "2026-05-07T03:25:54.414712+00:00",
+    "github_issue": 613,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0e6e3da3-7e19-4323-9fe7-2934a02fe602",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-close-loop.20260402.232136035938",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-close-loop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T23:21:36.035938",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-close-loop",
+      "T-programming-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-close-loop",
+    "epic": "Training",
+    "size": "M",
+    "title": "pe: Seed COMMIT + CLOSE + REPLAN + BRANCHIF routing",
+    "result": "pe_close_loop() + helpers (_pe_commit, _pe_close, _pe_escalate, _pe_replan, _post_to_channel) implemented; 6 tests passing; chain wired ENTRY→CLAIM→READ_TICKET→SITUATE→OBSERVE→HYPOTHESIZE→IMPLEMENT→TEST→CLOSE_LOOP",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": "T-programming-engrams",
+    "description": "BRANCHIF(test_result=pass) → COMMIT (git commit) → CLOSE (goal_close + cc_queue done). BRANCHIF(fail, attempt<3) → REPLAN (tier.2: revised hypothesis) → back to IMPLEMENT. BRANCHIF(attempt>=3) → ESCALATE (post blocked to channel). Tests: pass path commits + closes; fail path increments attempt_count and loops.",
+    "completed_at": "2026-04-02T23:21:36.035938+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "892dd3d8-ecec-4446-a5cf-6a7f5100469c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

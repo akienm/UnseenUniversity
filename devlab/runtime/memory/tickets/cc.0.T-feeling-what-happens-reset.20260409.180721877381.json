@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-feeling-what-happens-reset.20260409.180721877381",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-feeling-what-happens-reset"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T18:07:21.877381",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-feeling-what-happens-reset"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-feeling-what-happens-reset",
+    "size": "S",
+    "title": "Reset Feeling of What Happens from stuck in_progress",
+    "result": "Reset from stuck in_progress to pending, reclaimed by drain runner",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Stuck with started_at=NULL, 30/4116 sentences. Never actually launched. Reset to pending so it gets properly claimed by next drain cycle.",
+    "completed_at": "2026-04-09T18:07:21.877381+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "125599fb-1f71-4a9b-a3cb-e665812a21bb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

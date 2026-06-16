@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-datacenter-capability-announce-protocol.20260501.183000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-datacenter-capability-announce-protocol"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T18:30:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-capability-extraction-from-igor",
+      "T-datacenter-capability-announce-protocol",
+      "T-inference-migrate-igor-to-datacenter-device",
+      "T-swarm-via-home-web-server"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-datacenter-capability-announce-protocol",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "AgentDatacenter",
+      "CapabilityExtraction",
+      "MetaProtocol",
+      "Foundational"
+    ],
+    "title": "Datacenter announces capabilities to plugged-in agents (foundational meta-protocol)",
+    "result": "Foundational meta-protocol shipped via slices 1-5 (18 commits across TheIgors + agent_datacenter, 2026-05-01). Covers stated IN scope: identity envelope, profile resolution + inheritance, manifest assembly, broker, dynamic re-announce via INVALIDATE_MAILBOX + Invalidator + IDLE loop, Igor-side DatacenterClient + IgorShim + system_prompt CAPABILITIES layer, CC-side .mcp.json datacenter entry + AnnounceMcpServer. agent_datacenter test count 114→176 (+62); TheIgors +9 tests in 2 new files. Slice 4b (Igor cortex tool dispatch via manifest, HIGH-inertia, requires Igor bounce) Akien-deferred per option-A 2026-05-01 decision; will be filed as a separate follow-up ticket when the cognition-bypass-advisor regression work settles.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": null,
+    "created_at": "2026-05-01T18:30:00Z",
+    "related_to": "T-capability-extraction-from-igor",
+    "decision_id": null,
+    "description": "Per Akien architectural North Star (2026-05-01) and the design conversation captured in lab/design_docs/datacenter-swarm-bus-design-2026-05-01.md: the datacenter is the source of truth about what capabilities exist, and it must announce them to whichever agent plugs in. Without this primitive, every capability extraction has to reinvent 'how does the agent learn about this capability?' This ticket builds the meta-protocol that gates everything else.\n\n**Critical framing (Akien 2026-05-01):** the announce protocol serves *multiple agent types*, not just Igor. CC is also a capability consumer; future agents are too. Right now CC's MCP tools are loaded statically from Claude Code config; Igor's tools are loaded statically from his code. Neither is announced by the substrate. The fix: datacenter as the broker, agents as consumers — same protocol for all.\n\n## The protocol shape\n\n1. **Agent plugs in.** Identity envelope: 'I'm <agent-id> on <box>.<n>.'\n2. **Datacenter resolves the agent's profile.** Profile lives in datacenter config / DB — different profiles for different agent types (Igor: full cognition + inference + memory + channels; CC: inference + channels + memory-read + workshop tooling; future agents: their own slice).\n3. **Datacenter responds with capability manifest:**\n   - Tools: addresses (`comms://inference`, `comms://memory`, `comms://web`, ...), interfaces, schemas\n   - Subscriptions: channels the agent is in\n   - State references: `your TWM is at <ref>`, `your NE is at <ref>` (for cognition-bearing agents)\n   - Permissions: who you can speak to, who can speak to you\n4. **Agent assembles its LLM system prompt FROM the manifest** — generated per-session from current bindings, not hand-written-once-and-stale.\n5. **Manifest is dynamic.** New device joins → re-announce. Device offline → re-announce. ACL change → re-announce.\n\n## Concrete CC implication\n\nCurrently CC's MCP tool surface is static (mcp.json config). The cleanest integration: agent_datacenter exposes an MCP server that IS the announce-broker. CC's MCP config points to it. On connect, datacenter responds with the appropriate tool set for 'CC plugged in.' My MCP tools (memory_get, channel_read, etc.) become datacenter-announced rather than Claude-Code-baked.\n\nThis also means CC should default to using these capabilities more naturally — palace tools instead of raw psql, channels instead of ad-hoc files, etc. The substrate becomes mine too, not just Igor's.\n\n**Affected files:** `/home/akien/dev/src/agent_datacenter/agent_datacenter/announce/` (new — manifest assembly, profile resolution); `/home/akien/dev/src/agent_datacenter/devices/` (each device exposes a capability descriptor); the agent-side consumer (`wild_igor/igor/datacenter_client.py` new; CC-side via an MCP server in agent_datacenter/devices/claude/); profile config (probably YAML or DB rows).\n\n**Design rules:** docs-in-code (announce/manifest is foundational — top-of-file docstrings); test-plan-or-why-not; OOP-first (BaseAnnouncer / BaseConsumer with per-agent specializations).\n\n**Scope boundary:** IN — announce protocol, manifest schema, profile resolution, dynamic re-announce on device join/leave, both Igor-side and CC-side consumers. OUT — actual migration of individual capabilities (those are children of T-capability-extraction-from-igor); ACL/permission policy beyond basic role-based (later); cross-datacenter announcement / federation.\n\n**Test plan:** `tests/test_announce_protocol.py` in agent_datacenter — assert agent identity envelope produces valid manifest; assert profile resolution returns different manifests for Igor-profile vs CC-profile vs research-profile; assert dynamic re-announce fires when a new device registers. Igor-side: `tests/test_igor_datacenter_client.py` — assert manifest consumption, system-prompt assembly from manifest, re-announce handling. CC-side: smoke test the announce-MCP-server returns the right tool set for CC plugged in.\n\n**Why this is foundational (gates other tickets):**\n- T-inference-migrate-igor-to-datacenter-device assumes Igor knows the inference device exists → needs announce.\n- T-capability-extraction-from-igor children all need this same primitive.\n- T-swarm-via-home-web-server identity model (`<box>.<n>` + surfaces) is the addressing layer; announce is what gets agents onto that addressing.",
+    "completed_at": "2026-05-02T03:45:41.450552+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "81da0764-5840-4dca-a4f3-22c6a52e29ec",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

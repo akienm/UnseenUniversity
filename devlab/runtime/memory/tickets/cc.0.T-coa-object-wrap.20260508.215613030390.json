@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-coa-object-wrap.20260508.215613030390",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-coa-object-wrap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T21:56:13.030390",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-concurrent-ne-spawn"
+    ],
+    "tickets": [
+      "T-coa-object-wrap",
+      "T-concurrent-ne-spawn"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-coa-object-wrap",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "cognition",
+      "narrative-engine",
+      "concurrency"
+    ],
+    "title": "CLOSED: COA object wrap — extract NE+TWM state from main.py into coa.py",
+    "result": "Created cognition/coa.py with COA class. Extracted NE state + _run_ne_background() → COA.tick(). Property shims on Igor preserve all call sites. 4508/4509 tests pass (1 excluded: pre-existing port-conflict flake). Commit 7557a93b.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-08T21:58:40.880161+00:00",
+    "created_at": "2026-05-08T21:56:13.030390+00:00",
+    "related_to": null,
+    "decision_id": "T-concurrent-ne-spawn",
+    "description": "Create cognition/coa.py with a COA class that holds NE instance state extracted from main.py. Use @property shims on Igor so existing call sites are untouched (single-COA behavior unchanged).\n\nState to move from Igor.__init__ to COA.__init__:\n- self.ne (NarrativeEngine)\n- self._ne_thread\n- self._ne_spawn_lock\n- self._ne_last_twm_fingerprint\n- self._ne_last_run_time\n- self._last_ne_valence\n\nMove _run_ne_background() → COA.tick(). _experiment_scheduler stays on Igor; COA.tick() calls back via Igor reference. _run_ne_deep_consolidation stays on Igor.\n\nmain.py: self._coa = COA(self.cortex, instance_id, igor=self); Igor exposes property shims for backwards-compat (self.ne → self._coa.ne, etc.). Call site in main loop becomes self._coa.tick().\n\nNo changes to narrative_engine.py, twm.py, or milieu.py in this step — wrap only.\n\nHIGH-inertia pre-approval: Akien stamped 2026-05-07 for main.py, narrative_engine.py, twm.py, milieu.py — covers this child.\n\n**Affected files:** wild_igor/igor/cognition/coa.py (new), wild_igor/igor/main.py (extract state + add shims + call COA.tick())\n**Design rules:** docs-in-code (coa.py docstring required), no-sqlite\n**Scope boundary:** IN — COA class, state move, property shims, main loop delegation. OUT — spawn primitive, CPU gate, milieu intra-box, multi-COA tests. narrative_engine.py and twm.py must be UNTOUCHED.\n**Test plan:** existing pytest tests/ -x -q pass unchanged after refactor. No new tests needed — behavioral no-op is the proof.",
+    "completed_at": "2026-05-08T22:12:18.572087+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8ae87aba-720d-4d76-8f60-e312afda782c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

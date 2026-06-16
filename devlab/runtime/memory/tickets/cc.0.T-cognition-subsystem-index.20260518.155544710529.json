@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cognition-subsystem-index.20260518.155544710529",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cognition-subsystem-index"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T15:55:44.710529",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cognition-subsystem-index"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cognition-subsystem-index",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Architecture",
+      "Docs"
+    ],
+    "title": "Add SUBSYSTEMS.md index to cognition/ mapping 90+ files to named subsystems",
+    "result": "SUBSYSTEMS.md: 102 files mapped to 6 subsystems; 3-test completeness enforcer",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-05-18T17:37:37.568976+00:00",
+    "created_at": "2026-05-18T15:55:44.710529+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "90+ files in wild_igor/igor/cognition/ with no subsystem map makes blast-radius assessment impossible. Add cognition/SUBSYSTEMS.md mapping every file to one of 4-6 named subsystems (narrative, dreaming, twm, salience, gating, calibration), plus a one-line test that fails if a new file is added without an entry.\n\n**Affected files:** wild_igor/igor/cognition/SUBSYSTEMS.md (new), tests/test_cognition_subsystem_index.py (new)\n**Design rules:** docs-live-in-code; index maintained alongside file additions\n**Scope boundary:** in scope: SUBSYSTEMS.md with all current cognition/ files mapped; test asserting set(cognition/*.py) == set(keys in SUBSYSTEMS.md). Out of scope: moving files, creating subdirectories, changing imports — index first, restructure under a separate ticket.\n**Test plan:** test_cognition_subsystem_index.py asserts every .py in cognition/ appears in the index; fails if a new file is added without an entry.",
+    "completed_at": "2026-05-18T17:39:37.117657+00:00",
+    "github_issue": 735,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7c1414db-b472-44f6-ae7c-f7afc89d610a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

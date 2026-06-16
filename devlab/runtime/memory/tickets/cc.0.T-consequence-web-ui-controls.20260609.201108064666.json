@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-web-ui-controls.20260609.201108064666",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-web-ui-controls"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:11:08.064666",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-ui-controls",
+      "D-web-ui-controls-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-web-ui-controls",
+      "T-web-ui-circuit-breakers",
+      "T-web-ui-three-pane"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-web-ui-controls",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Consequence",
+      "WebUI",
+      "Observability"
+    ],
+    "title": "Consequence check: Web UI four-pane device tabs",
+    "result": "Device-tab layout shipped but section order wrong (Announce/Health/Controls/Chat vs. Status/Chat/Feed/Settings); TTL aging not visible; startup health poll not confirmed. File T-web-ui-section-reorder as follow-on.",
+    "status": "closed",
+    "worker": "igor",
+    "intention": "I intend that the four-section device-tab layout (Announce/Health/Controls/Chat) renders and functions per the D-web-ui-controls design spec.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:11:08.064666+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-web-ui-controls-2026-06-01",
+    "description": "**What changed:** D-web-ui-controls (2026-06-01) specified per-device tabs with four sections each: Announce (channel feed), Health/Status (key=value pairs from /health endpoint with TTL aging), Controls (circuit breakers), Chat. T-web-ui-three-pane and T-web-ui-circuit-breakers were marked closed 2026-06-04, but live UI shows only a flat Public feed.\n\n**Predicted unintended effects:** device tabs don't render (JS logic missing or not wired), health surface polling not connected, TTL aging not implemented, /health endpoint exists but not called by web server.\n\n**Signals to watch:**\n- Opening http://localhost:8080 or equivalent: does the UI show device tabs (Igor/Librarian/Granny) or just a Public feed?\n- Does opening an Igor tab show four sub-sections visually distinct?\n- Do posted key=value status messages appear in the Health section and age out after TTL?\n- Does CC.0 circuit breaker toggle kill cc-T-* tmux sessions within 5s?\n\n**Affected files:** devices/web_server/server.py (device-tab JS rendering, /api/device/list, /api/device/{id}/events); no new files\n**Design rules:** none apply\n**Scope boundary:** IN: verify four-section layout renders, health surface populates and ages, circuit breakers gate dispatch. OUT: custom styling, performance optimization.\n**Completion criteria:** Open web UI, verify device tabs are clickable and show four sections. Post a test key=value status message to Igor's status channel, verify it appears in Health section. Open Igor's circuit breaker, verify cc-T-* session is killed and Granny posts GRANNY_THROTTLED on next dispatch.\n**Test plan:** No new tests — this is live UI verification. Record behavior in ticket result field.",
+    "completed_at": "2026-06-09T20:29:45.605427+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

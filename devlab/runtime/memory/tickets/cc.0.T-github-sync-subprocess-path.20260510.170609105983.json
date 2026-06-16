@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-github-sync-subprocess-path.20260510.170609105983",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-github-sync-subprocess-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T17:06:09.105983",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-github-sync-subprocess-path",
+      "T-lab-migration-to-agent-datacenter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-github-sync-subprocess-path",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Operations",
+      "Migration"
+    ],
+    "title": "Fix github_sync.py set-github-issue subprocess hardcoded TheIgors path",
+    "result": "Fixed hardcoded cc_queue path — now imports directly from ADC",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-10T17:06:09.105983+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "github_sync.py line 293 calls subprocess with hardcoded `~/TheIgors/lab/claudecode/cc_queue.py`. Since T-lab-migration-to-agent-datacenter, cc_queue.py now lives at ADC's lab/claudecode/cc_queue.py. The push-queue command creates GH Issues correctly but silently fails to write back the issue numbers via set-github-issue, so tickets accumulate no github_issue field.\n\nFix: replace the hardcoded path with a path relative to ADC repo, or import cc_queue directly and call cmd_set_github_issue() instead of spawning a subprocess.\n\n**Affected files:** ~/TheIgors/lab/claudecode/github_sync.py (line 290-304)\n**Design rules:** none apply\n**Scope boundary:** In scope: fix the subprocess path so set-github-issue writes back correctly. Out of scope: migrating all of github_sync.py to ADC (separate ticket), any other github_sync commands.\n**Test plan:** Run push-queue on a test ticket, verify issue number written back to queue; no tests to add (integration-only path).",
+    "completed_at": "2026-05-10T17:08:39.868757+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "79d995b3-d121-4f71-a205-d01a3e972f22",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-twm-boot-singletons-replace-not-append.20260424.172053903093",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-boot-singletons-replace-not-append"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T17:20:53.903093",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-twm-boot-singletons-replace-not-append"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-boot-singletons-replace-not-append",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "TWM",
+      "Hygiene"
+    ],
+    "title": "Boot-singleton TWM observations (MACHINES_JSON, STATE_INVENTORY, BOOT_SEQUENCE) stack across restarts",
+    "result": "New cortex.twm_evict_source(source) method added. Evict-before-push at three sites: machines_watcher in push_sources.py, boot_sequence + boot_state_inventory inline in main.py. 5 new tests (behavioral + regression guard). 3944 pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-24T17:15:47.024942+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Boot-event sources push single-instance observations at salience=1.0: machines_watcher deposits MACHINES_JSON|initial_load, boot_state_inventory deposits STATE_INVENTORY, boot_sequence deposits the boot-guidance banner. These are semantic singletons — one per instance — but the current push_source pattern appends on every boot. Observed 2026-04-24: two MACHINES_JSON rows (10:09, 10:45) from two boots within an hour, each at salience=1.0. Two STATE_INVENTORY rows ditto. These floor TWM with near-max salience content that can never be displaced by new cognitive observations. Fix: boot-singleton sources should check for an existing integrated=0 row with the same source+category and UPDATE rather than INSERT (or delete prior and insert fresh, whichever is simpler in the push pipeline).\n\n**Affected files:** wild_igor/igor/cognition/push_sources/machines_watcher_source.py, wild_igor/igor/cognition/push_sources/boot_state_inventory_source.py, wild_igor/igor/cognition/push_sources/boot_sequence_source.py (or wherever these three deposit), possibly wild_igor/igor/memory/cortex.py (if a new twm_push_or_replace helper is the cleanest shape), tests/test_boot_singleton_replace.py (new). **Design rules:** oop-first (likely adds a helper method on the source base class), test-plan-or-why-not. **Scope boundary:** IN — replace-on-push for boot-singleton sources (explicit list: machines, boot_state_inventory, boot_sequence). OUT — changing salience values, extending this pattern to non-boot sources (that's a different design decision per source). **Test plan:** unit test: push MACHINES_JSON twice → only one row exists, content is the second payload. Push MACHINES_JSON, integrate=1, push again → new row present (integrated rows don't block replace). Push non-singleton source twice → both rows present (regression guard).",
+    "completed_at": "2026-04-24T17:20:53.903093+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "692d1a8d-802e-4b0b-bf44-07719b6ab09c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

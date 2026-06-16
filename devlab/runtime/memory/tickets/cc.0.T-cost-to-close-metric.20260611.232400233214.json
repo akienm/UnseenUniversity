@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cost-to-close-metric.20260611.232400233214",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cost-to-close-metric"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T23:24:00.233214",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cost-to-close-metric",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cost-to-close-metric",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Observability",
+      "metrics",
+      "queue"
+    ],
+    "title": "Add cost-to-close metric to every ticket",
+    "result": "cost_usd stored on ticket at close; shown in list/show output; 15 tests green",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.3,
+    "intention": "I intend that every closed ticket carries a dollar cost so Akien can see inference spend per ticket at a glance.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T23:24:00.233214+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Track and display the total inference cost (in USD) incurred to close each ticket. The value comes from sprint_tokens.log (which already records model/tokens per turn) — we compute cost at close time and store it on the ticket row. Surface it in cc_queue.py list output alongside size/priority.\n\n**Affected files:** lab/claudecode/cc_queue.py, possibly sprint_tokens.log schema or a new costs-per-ticket index\n**Design rules:** no-sqlite; observability-first\n**Scope boundary:** IN: store cost_usd on ticket at close; show in list/show output. OUT: retroactive cost computation for already-closed tickets, budget gating, alerting.\n**Completion criteria:** `cc_queue.py list` shows cost_usd on closed tickets (e.g. '$0.83'); `cc_queue.py show T-xxx` includes cost_usd field; column is NULL for tickets closed before this ships (not backfilled).",
+    "completed_at": "2026-06-12T02:06:35.104436+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

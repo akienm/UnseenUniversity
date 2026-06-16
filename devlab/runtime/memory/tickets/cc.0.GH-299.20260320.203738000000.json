@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-299.20260320.203738000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-299"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T20:37:38",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-299"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-299",
+    "title": "T-watchlist-habits: seed watch nodes for Akien topics + executive function questions",
+    "result": "Confirmed done 2026-04-19 audit. 18 PROCEDURAL watch habits live in cortex (memory_type=PROCEDURAL, metadata.habit_type='watch'): 9 questions (WATCH_Q_00..08) and 9 topics (WATCH_T_00..08). Seeder lives at lab/claudecode/seed_watchlist.py, source-of-truth YAML at lab/seed/watchlist.yaml.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-20T20:37:38Z",
+    "description": "GitHub issue #299. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-19T21:25:12.784544+00:00",
+    "github_issue": 299,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c57c725a-775e-4df8-9feb-be979d226a31",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-ccqueue-devlab-writer.20260614.220518479936",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ccqueue-devlab-writer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:05:18.479936",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-storage-layer-formalization-2026-06-14"
+    ],
+    "tickets": [
+      "T-ccqueue-devlab-writer",
+      "T-clan-data-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ccqueue-devlab-writer",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Database",
+      "Devlab",
+      "Workflow"
+    ],
+    "title": "Update cc_queue.py — write new tickets to devlab",
+    "result": "cc_queue.py now routes new tickets to devlab.tickets instead of clan.memories; existing clan tickets remain updatable in-place; merged _load() reads both tables; status updates work for both; extended devlab.tickets schema with ALTER TABLE; tested with 3 integration tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that cc_queue.py writes new ticket and decision records to devlab instead of clan.memories so the junk-drawer problem stops growing even before old data is migrated.",
+    "created_at": "2026-06-14T22:05:18.479936+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-storage-layer-formalization-2026-06-14",
+    "description": "cc_queue.py currently writes tickets and decisions to clan.memories. Clan is for Igor bootstrap memory only. New writes should go to devlab.\n\nUpdate cc_queue.py add/close/setstatus/flush_decision paths to write to devlab.tickets (full schema: id, title, status, worker, size, tags jsonb, description, decision_id, metadata jsonb, created_at, updated_at, completed_at). Reads check both clan and devlab during transition window.\n\nHIGH INERTIA: cc_queue.py is the canonical ticket writer — every sprint, Granny dispatch, and context-load depends on it.\n**Akien pre-approval required before sprinting this ticket. Stamp approval here.**\n\n**Affected files:** lab/claudecode/cc_queue.py; SQL migration for devlab.tickets full schema\n**Design rules:** no SQLite; external state; backwards-compatible reads during clan transition window\n**Scope boundary:** IN — new writes go to devlab.tickets; reads check both during transition. OUT — migrating existing clan ticket records (T-clan-data-audit first); changing any CLI interface.\n**Completion criteria:** cc_queue.py add ticket.json writes to devlab.tickets not clan.memories; cc_queue.py list returns merged view from both; existing tests pass; new test verifies devlab.tickets insert path.",
+    "completed_at": "2026-06-15T21:21:34.165294+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

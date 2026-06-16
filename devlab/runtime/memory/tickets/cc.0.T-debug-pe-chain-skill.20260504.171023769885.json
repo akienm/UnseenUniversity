@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-debug-pe-chain-skill.20260504.171023769885",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-debug-pe-chain-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T17:10:23.769885",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-debug-pe-chain-skill",
+      "T-engram-logging-primitive",
+      "T-mcp-igor-cognition-debug-capability",
+      "T-some-ticket",
+      "T-wire-bliss-experiment-sensor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-debug-pe-chain-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Skills",
+      "Debug",
+      "PeChain"
+    ],
+    "title": "CLOSED: /debug-pe-chain skill — realtime single-step of Igor's programming pipeline",
+    "result": "Skill file written: /debug-pe-chain — full phase stepping (ORIENT→HYPOTHESIZE→IMPLEMENT→VERIFY→CLOSE) with pause gates and escalation table.",
+    "status": "done",
+    "worker": "igor",
+    "akien_tier": "P2",
+    "claimed_at": null,
+    "related_to": "T-mcp-igor-cognition-debug-capability",
+    "decision_id": null,
+    "description": "CC skill that single-steps Igor's pe_chain programming pipeline (ORIENT → HYPOTHESIZE → IMPLEMENT → VERIFY → CLOSE) in realtime, pausing between phases so CC/Akien can inspect actual state before proceeding. Motivation: Igor's pe_chain regularly produces bad old_strings, hallucinated HIGH-inertia targets, and scope drift — post-analysis of these failures requires assumptions about what happened between phases that are frequently wrong. Realtime stepping exposes the actual HYPOTHESIZE output before IMPLEMENT runs, so bad proposals are caught before they block the ticket.\n\nInterface sketch:\n```\n/debug-pe-chain T-some-ticket\n  → ORIENT phase: show parsed ticket + affected files found\n  → pause: [proceed | edit-plan | abort]\n  → HYPOTHESIZE phase: show proposed edit (old_string + new_string)\n  → pause: [apply | re-hypothesize | skip-edit | abort]\n  → IMPLEMENT phase: apply edit, show diff\n  → pause: [verify | rollback | abort]\n  → VERIFY phase: run tests, show result\n  → pause: [commit | fix | abort]\n```\n\nAlso surfaces any missing log sites found during stepping (companion to T-engram-logging-primitive).\n\n**Affected files:** lab/claudecode/skills/ (new skill file: debug_pe_chain.md), lab/claudecode/pe_chain.py (phase-boundary hooks or step mode flag)\n**Design rules:** SWADL — adapt to tool capabilities; step mode is better than retry loops for HYPOTHESIZE failures.\n**Scope boundary:** IN: skill file + phase-boundary pause points in pe_chain. OUT: modifying HYPOTHESIZE LLM prompt, changing pe_chain flow for non-debug runs.\n**Test plan:** manual test stepping T-wire-bliss-experiment-sensor (currently blocked by bad HYPOTHESIZE); verify the step pause fires after HYPOTHESIZE shows the bad old_string.",
+    "completed_at": "2026-05-04T17:10:23.769885+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a5c72a22-1d53-4a42-98ad-10568b128929",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

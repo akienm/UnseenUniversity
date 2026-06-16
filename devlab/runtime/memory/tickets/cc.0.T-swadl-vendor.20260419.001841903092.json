@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-swadl-vendor.20260419.001841903092",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-vendor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T00:18:41.903092",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-as-user-epic",
+      "T-swadl-concepts-in-graph",
+      "T-swadl-vendor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-vendor",
+    "size": "S",
+    "tags": [
+      "Operations",
+      "Bootstrap"
+    ],
+    "title": "Vendor SWADL into repo + smoke run",
+    "result": "Integrated via editable install rather than vendoring (Akien is swadl author; vendoring would fork upstream). pip install -e /home/akien/dev/src/swadl into Igor's venv — swadl-0.2.0. SWADL.engine modules import cleanly. Overview doc at lab/design_docs/swadl_overview.md. Commit 8ded14c7.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Pure housekeeping — CC does this alone. Prerequisite for everything else in T-igor-as-user-epic.\n\n## Scope\n- Pull github.com/akienm/swadl into wild_igor/tools/swadl/ (vendored, not pip — so Igor can introspect source)\n- Resolve deps (pywinauto, selenium) into requirements.txt\n- Smoke test: open a blank browser, close it, confirm no errors\n- Write a one-page 'what SWADL is' note at lab/design_docs/swadl_overview.md for future CC sessions\n\n## Related\n- Parent: T-igor-as-user-epic\n- Unblocks: T-swadl-concepts-in-graph",
+    "completed_at": "2026-04-19T00:18:41.903092+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "00f81de1-e690-4511-b7e2-5ca08ebbe67c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-fix-ygm-check-hook.20260529.213802937867",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-ygm-check-hook"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T21:38:02.937867",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-ygm-check-hook"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-ygm-check-hook",
+    "gate": null,
+    "size": "XS",
+    "tags": [
+      "hooks",
+      "ygm"
+    ],
+    "title": "Fix broken ygm_check UserPromptSubmit hook path",
+    "result": "Verified: hook runs via devices.claude.ygm_check, exits 0 (IMAP refused is expected when bus not running)",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-29T21:38:02.937867+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The UserPromptSubmit hook in ~/.claude/settings.json references `agent_datacenter` which no longer exists — the directory was renamed to `UnseenUniversity`. The hook silently fails on every query due to `|| true`.\n\n**Affected files:** /home/akien/.claude/settings.json\n**Design rules:** none apply (settings-file fix, not code)\n**Scope boundary:** Change the cd path in the ygm_check hook command; no other hooks touched. Note: user asked if this was a usage-display hook — it is not; ygm_check injects IMAP mailbox nudges into query context, not usage stats.\n**Completion criteria:** Run `cd /home/akien/dev/src/UnseenUniversity && python3 -m devices.claude.ygm_check 2>/dev/null` manually and confirm it exits 0; `settings.json` hook no longer references `agent_datacenter`.",
+    "completed_at": "2026-05-30T17:41:49.640242+00:00",
+    "deposited_at": "2026-05-29T15:38:57.821354",
+    "deposited_by": "cc_queue",
+    "github_issue": 820,
+    "required_files": [],
+    "no_commit_reason": "settings.json is not in the repo",
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-29T21:38:02.997060+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "324087b8-371d-4f99-acdf-6f0313b8a924",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

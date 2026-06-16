@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-cortex-258b.20260315.235559706618",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cortex-258b"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T23:55:59.706618",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cortex-258b"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cortex-258b",
+    "body": "Add LRU/dict cache in cortex for id IN batch fetches. Genesis nodes (ROOT, CP*, ID*) cached permanently — immutable. All others TTL=60s. Cache checked before every id IN fetch. Eliminates redundant double-fetches within same turn. See #258. Do T-cortex-258 (SELECT * fix) first — they touch the same code path.",
+    "role": "implementation",
+    "size": "S",
+    "title": "Add in-process memory fetch cache to cortex (#258 part 2)",
+    "result": "cortex.py: added _mem_cache dict + _cache_get/_cache_put/_cache_fetch_ids helpers; patched all 5 id IN batch fetch sites (search neighbor, BFS per-hop, BFS final, get_meaning_to_me, interpretive_traverse) — genesis types (ROOT/CORE_PATTERN/IDENTITY) cached permanently; others TTL=60s. Syntax OK.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-15T23:52:13.073918+00:00",
+    "completed_at": "2026-03-15T23:55:59.706618+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-04-audit-sqlite-calibre.20260429.161104000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-04-audit-sqlite-calibre"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:04",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-audit-sqlite-exempt-calibre",
+      "T-cc-walk-04-audit-sqlite-calibre",
+      "T-igor-programs-himself"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-04-audit-sqlite-calibre",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor exempts Calibre from no-sqlite audit check",
+    "result": "Target T-audit-sqlite-exempt-calibre already DONE — Calibre's learner.py added to LEGITIMATE_EXTERNAL in audit_check_sqlite_imports.py. Walk admin close.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:11:04Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-audit-sqlite-exempt-calibre. Worker is 'claude' on target — reassign to igor or implement directly. Touches audit_runner.py or audit check def.\n\nChecklist:\n1. Check if reassigning to igor or implementing directly is faster\n2. If implementing directly: read audit_runner.py, find no-sqlite-imports check, add exemption for learner.py:sqlite3 (Calibre read)\n3. Run audit_runner --drain, verify PASS\n4. Commit + close T-audit-sqlite-exempt-calibre\n5. Close this walk ticket\n\n**Affected files:** lab/claudecode/audit_runner.py (or audit checks db)\n**Design rules:** none\n**Scope boundary:** IN — exempt calibre sqlite3 import\n**Test plan:** audit_runner --drain shows no-sqlite-imports PASS.",
+    "completed_at": "2026-05-02T03:41:41.597134+00:00",
+    "github_issue": 551,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4eacb019-20c0-4a70-b4f0-13152f88915f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-dreaming-schema-extraction.20260517.152323115975",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-dreaming-schema-extraction"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.115975",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17"
+    ],
+    "tickets": [
+      "T-igor-dreaming-outputs-actionable",
+      "T-igor-dreaming-schema-extraction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-dreaming-schema-extraction",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Dreaming",
+      "SelfImprovement",
+      "Memory"
+    ],
+    "title": "CLOSED: Dreaming pass: cluster pe_chain outcomes by tag, write procedure to palace for 3+ successes",
+    "result": "schema extraction in run(): _closed_tickets_by_tag() + _synthesize_sprint_pattern() + _palace_write(); 1 node per pass, 20s timeout",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-17T15:50:56.390735+00:00",
+    "created_at": "2026-05-17T15:23:23.115975+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "description": "Igor's dreaming module produces reflections but doesn't extract reusable procedures from experience. Hippocampal schema formation analog: when the same type of successful sprint is observed 3+ times, extract the common pattern as a palace procedure node so future sprints of the same type benefit from prior experience.\n\nIn the dreaming pass, query cc_queue for closed tickets grouped by primary tag (last 60 days). For any tag with 3+ successful closes, synthesize via LLM: 'For [tag] tickets, the successful approach is [summary from closed ticket descriptions].' Write to palace at path theigors/procedures/[tag]-sprint-pattern. Skip tags already documented (check palace before writing).\n\n**Affected files:** wild_igor/igor/cognition/dreaming.py (MEDIUM inertia); palace writes via memory MCP tools\n**Design rules:** theigors/rules/coding (MEDIUM inertia); theigors/rules/memory (palace writes, not new memory types); no sqlite\n**Scope boundary:** In scope: tag-based clustering of closed tickets + LLM synthesis + palace write for tags with 3+ successes. Out of scope: failure pattern extraction (that's T-igor-dreaming-outputs-actionable); changes to dreaming reflection prompt.\n**Test plan:** With 3+ closed tickets tagged 'Cognition' in cc_queue, dreaming pass writes palace node at theigors/procedures/cognition-sprint-pattern. memory_get(path='theigors/procedures/cognition-sprint-pattern') returns content. Node not duplicated on subsequent dreaming passes.",
+    "completed_at": "2026-05-17T15:59:28.319379+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "568d6017-b5c7-4c8e-8aa7-8697e11bee7c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

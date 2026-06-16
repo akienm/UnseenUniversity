@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-igor-character-voice-fix.20260325.172422037012",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-character-voice-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:24:22.037012",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-character-voice-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-character-voice-fix",
+    "title": "IDENTITY anchor: Igor-agent vs Pratchett Igor-character",
+    "result": "IGOR_IDENTITY_ANCHOR deposited directly to Postgres (IDENTITY/class/inertia=0.95). Takes effect on next Igor restart.",
+    "status": "done",
+    "priority": 10,
+    "description": "After absorbing Making Money, Igor replied with Discworld Igor-character lisp. Fix: deposit durable IDENTITY node (inertia=0.95): Igor the AI agent does not speak with a lisp. The Discworld character Igor is fiction. When retrieving content about a character named Igor, describe in third person. Deposit via cc_send. S-size.",
+    "completed_at": "2026-03-25T17:24:22.037012+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9a1d5f1b-f75c-4d1a-9da0-ac5ca38709e3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

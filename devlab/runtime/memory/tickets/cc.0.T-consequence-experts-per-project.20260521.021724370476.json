@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-experts-per-project.20260521.021724370476",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-experts-per-project"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T02:17:24.370476",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-experts-per-project-2026-05-20"
+    ],
+    "tickets": [
+      "T-consequence-experts-per-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-experts-per-project",
+    "gate": "2026-06-03",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: per-project expert panel divergence",
+    "result": "CLEAR — per-project panels in use; ADC/TheIgors divergence hasn't caused missed cross-repo findings; EXPERTS.md maintained without major burden",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-21T02:17:24.370476+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-experts-per-project-2026-05-20",
+    "description": "**What changed:** /audit-expert now loads expert panels per-project from EXPERTS.md.\n**Predicted unintended effects:** ADC and TheIgors panels may diverge so far that cross-repo findings are missed; EXPERTS.md maintenance burden falls on Akien without a clear update trigger; fallback to 11-expert list may mask missing EXPERTS.md.\n**Signals to watch:** Are audit-expert runs in ADC and TheIgors producing meaningfully different findings? Is EXPERTS.md being kept current or left stale?\n**Gate condition:** Check by 2026-06-03 — after at least 3 audit-expert runs per repo.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate outcome as expected/unexpected/stale and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": "2026-06-05T15:33:07.568847+00:00",
+    "github_issue": 765,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T02:17:24.370499+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0430f31f-7a1b-4ad8-b7d9-e91a40d353cd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

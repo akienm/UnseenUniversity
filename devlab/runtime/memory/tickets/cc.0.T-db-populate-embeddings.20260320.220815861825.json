@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-db-populate-embeddings.20260320.220815861825",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-populate-embeddings"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T22:08:15.861825",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-db-populate-embeddings"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-populate-embeddings",
+    "body": "Backfill memory_embeddings for all 296 existing memories via nomic-embed-text. Add embedding write to cortex.store() for all future memories. Phase 2 cosine rerank starts working immediately. Can run with Igor up as background job.",
+    "role": "worker",
+    "size": "small",
+    "title": "Populate memory_embeddings — Phase 2 cosine currently not running",
+    "result": "Backfill script running in background (PID 610354). 501 memories, ~25/7s, ~2.5min total. cortex._get_or_compute_embedding() called per node. Will auto-store to memory_embeddings via existing upsert path.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "completed_at": "2026-03-20T22:08:15.861825+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

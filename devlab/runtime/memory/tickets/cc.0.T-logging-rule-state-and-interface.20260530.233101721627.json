@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-logging-rule-state-and-interface.20260530.233101721627",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-logging-rule-state-and-interface"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T23:31:01.721627",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-logging-rule-state-and-interface"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-logging-rule-state-and-interface",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Enforce logging rule: every state change + every interface crossing",
+    "result": "logging rule documented in CLAUDE.md; AR-009 (audit_check_interface_logging.py) already committed; granny already retrofitted; workspace_run_bash violation handed off to T-workspace-file-tools",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": "2026-05-31T21:17:05.352621+00:00",
+    "created_at": "2026-05-30T23:31:01.721627+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Current logging in devices is ad-hoc — some log state changes, most don't log interface crossings. The canonical rule is: log every major state change AND every interface crossing. Interface crossings are: method calls that cross device/shim boundaries, MCP tool dispatch, channel post/read, DB write/read, subprocess spawn. State changes are: ticket status transitions, device lifecycle (start/stop/restart/halt), routing decisions, auth/trust events.\n\nThis rule should be: (1) written into CLAUDE.md and TheoryOfOperation §logging, (2) added as a forever audit check via audit_add.py that scans device classes for interface-crossing methods without a log call, (3) retrofitted into GrannyWeatherwaxDevice as the first example.\n\nGrannyWeatherwaxDevice already logs routing decisions but does NOT log: _dispatch_to_cc subprocess spawn result (success/failure/pid), _post_to_channel call, register_worker calls, strengthen/weaken_edge calls.\n\n**Affected files:** CLAUDE.md (add logging rule), lab/claudecode/audit_add.py (register check), devices/granny/device.py (retrofit as first example)\n**Design rules:** observability > new capabilities (per project memory); logs must be structured enough to be greppable by device and event type\n**Scope boundary:** IN — document the rule, register the audit check, retrofit granny; OUT — retrofitting all other devices (follow-on)\n**Completion criteria:** CLAUDE.md has the logging rule stated; audit_runner flags device methods that cross interfaces without logging; granny/device.py logs every dispatch, channel post, subprocess spawn, and worker registration",
+    "completed_at": "2026-05-31T21:25:21.950888+00:00",
+    "deposited_at": "2026-05-30T17:32:09.468706",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T21:17:05.352621+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T23:31:01.816603+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "09f475a1-d211-4f10-9e56-b0f55db47e0c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

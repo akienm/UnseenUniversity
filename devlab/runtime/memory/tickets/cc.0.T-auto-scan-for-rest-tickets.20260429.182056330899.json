@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-auto-scan-for-rest-tickets.20260429.182056330899",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-auto-scan-for-rest-tickets"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:20:56.330899",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-day-skill",
+      "T-auto-scan-for-rest-tickets",
+      "T-scan-for-remaining-call-sites-"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-auto-scan-for-rest-tickets",
+    "gate": "T-audit-day-skill",
+    "size": "S",
+    "tags": [
+      "Audit",
+      "DayClose",
+      "Sonnet-Constraints"
+    ],
+    "title": "audit-day fix-one-leave-many → auto-draft scan-for-rest tickets",
+    "result": "Created lab/claudecode/scan_for_rest_drafter.py: ScanForRestDrafter class drafts fix-one-leave-many scan tickets to /tmp/ with area detection, caller lists, scope boundary. audit-day SKILL.md step 8 calls it. Never auto-files.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.45,
+    "claimed_at": "2026-04-29T18:20:45.549056+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "When audit-day's fix-one-leave-many sweep finds a partial signature change (changed in N callers, not in M others), auto-draft a 'T-scan-for-remaining-call-sites-<area>' ticket containing the call graph delta. Ticket is drafted to /tmp and surfaced for /decided gating — never auto-files.\n\nThis turns the bug pattern into a self-healing loop. The proxy patterns came from Akien noticing weeks late; this catches it within 24h.\n\n**Affected files:** audit-day skill (extension to fix-one-leave-many sweep handler); helper at lab/claudecode/scan_for_rest_drafter.py.\n**Design rules:** no persistence beyond palace telemetry. oop-first: ScanForRestDrafter class.\n**Test plan:** seed a day's commits with a partial signature change → audit-day's sweep finds it AND drafts a scan-for-rest ticket to /tmp → ticket appears in next /decided session for review.",
+    "completed_at": "2026-04-29T18:20:56.330899+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3fcfe99c-079d-41d0-8a9f-32ecdb766eef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

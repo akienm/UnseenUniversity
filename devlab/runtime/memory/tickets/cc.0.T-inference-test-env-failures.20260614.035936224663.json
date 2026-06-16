@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-inference-test-env-failures.20260614.035936224663",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-test-env-failures"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T03:59:36.224663",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-test-env-failures"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-test-env-failures",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Inference"
+    ],
+    "title": "Fix inference tests requiring real API keys or live network",
+    "result": "dispatch() returns error InferenceResponse on no-source (no live call); google paid test skips when disabled",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.2,
+    "intention": "I intend that inference tests pass without real API keys or live network calls.",
+    "created_at": "2026-06-14T03:59:36.224663+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two tests fail in CI environments without keys:\n1. test_google_paid_registered — asserts google paid source is registered, but GOOGLE_API_KEY is not set in this env. Should skip or mock the key check.\n2. test_dispatch_returns_error_response_on_no_source — makes a live OR HTTP call and gets 401. Should mock urllib.request.urlopen.\n\n**Affected files:** tests/inference/test_google_source.py, tests/inference/test_inference_device.py\n**Design rules:** none apply\n**Scope boundary:** Mock/skip the two env-dependent tests only. Do not change device code.\n**Completion criteria:** Both tests pass (or skip cleanly) without GOOGLE_API_KEY or OPENROUTER_API_KEY set.",
+    "completed_at": "2026-06-14T04:03:18.419089+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

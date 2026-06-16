@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-cc-walk-19.20260507.215508073005",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-19"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:08.073005",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-19"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-19",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Reading",
+      "walk"
+    ],
+    "title": "CLOSED: DRM-failed books sentinel + BOOK_DRM_BLOCKED memory",
+    "result": "DRM_FAILED sentinel in ebook_reader; _handle_drm_blocked in book_learner marks failed + files BOOK_DRM_BLOCKED memory",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-08T19:16:14.295327+00:00",
+    "created_at": "2026-05-07T21:55:08.073005+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 area_6 finding: DRM-failure paths silently produce completion records. Return a DRM_FAILED sentinel from ebook_reader on decrypt failure; book_learner recognizes the sentinel and marks the item 'failed' in reading_list, skips memory deposit, files BOOK_DRM_BLOCKED_* FACTUAL memory instead.\n\n**Affected files:** wild_igor/igor/tools/ebook_reader.py, lab/claudecode/book_learner.py, wild_igor/igor/tools/reading_engine.py\n**Design rules:** no-sqlite\n**Scope boundary:** IN — sentinel return value, failed status write, BOOK_DRM_BLOCKED memory. OUT — implementing DRM removal.\n**Test plan:** test_book_learner.py: inject DRM_FAILED sentinel; assert reading_list item status='failed', no deposit call, one BOOK_DRM_BLOCKED memory written.\n**Pass condition:** DRM failure path writes exactly one BOOK_DRM_BLOCKED memory and zero cortex deposits in the test.",
+    "completed_at": "2026-05-08T19:19:33.367235+00:00",
+    "github_issue": 632,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4f6eaf66-6d9c-4ccf-9807-abdc7b3fc361",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

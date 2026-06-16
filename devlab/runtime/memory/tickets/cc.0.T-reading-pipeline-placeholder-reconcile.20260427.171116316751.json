@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-reading-pipeline-placeholder-reconcile.20260427.171116316751",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-pipeline-placeholder-reconcile"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T17:11:16.316751",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cap-map-followups-2026-04-27"
+    ],
+    "tickets": [
+      "T-reading-pipeline-placeholder-reconcile"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-pipeline-placeholder-reconcile",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DocsHygiene",
+      "Palace",
+      "Reading"
+    ],
+    "title": "Reconcile reading_worker_pool [PLACEHOLDER] vs IGOR_READING_EXTRACT=true",
+    "result": "Updated theigors/subsystem_index/reading_worker_pool with 'DISTINCT FROM' note pointing at the live reading subsystem; [PLACEHOLDER] tag preserved (worker pool not built).",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-27T17:10:45.335311+00:00",
+    "related_to": null,
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "description": "Palace node theigors/subsystem_index/reading_worker_pool was tagged [PLACEHOLDER] but IGOR_READING_EXTRACT=true is on, creating reader confusion: 'is reading shipping or not?' Both are true — the live reading subsystem (reading_engine.py + chunker.py + reading_indexer.py + ebook_reader.py) IS shipping; the worker_pool is a future parallelization layer that does NOT exist.\n\nDONE 2026-04-27: Updated theigors/subsystem_index/reading_worker_pool content with explicit 'DISTINCT FROM theigors/subsystem_index/reading' note + when-confused decision tree. [PLACEHOLDER] tag preserved (correct — pool not built).\n\nAffected files:\n- clan.memory_palace path='theigors/subsystem_index/reading_worker_pool' (UPDATE).\n\nDesign rules:\n- docs-in-code: the live reading node already points at reading_engine.py docstring; the placeholder node points at it via 'distinct from' link.\n- postgres-only: ✓.\n- test-plan-or-why-not: verification IS reading the SELECT output to confirm cross-link.\n\nScope boundary:\nIN: reading_worker_pool node content.\nOUT: building the actual worker pool (separate L/XL ticket when sprint starts), refactoring reading_engine.py.\n\nTest plan:\n- SELECT content FROM clan.memory_palace WHERE path='theigors/subsystem_index/reading_worker_pool' contains 'DISTINCT FROM' and points to theigors/subsystem_index/reading.\n- Verified 2026-04-27.",
+    "completed_at": "2026-04-27T17:11:16.316751+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5bbf5c4d-feaa-4071-9f67-220beb1c5a3c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

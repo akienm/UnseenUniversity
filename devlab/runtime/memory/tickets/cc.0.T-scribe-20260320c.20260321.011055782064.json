@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320c.20260321.011055782064",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320c"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:55.782064",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320c"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320c",
+    "body": "Decisions: D156-D164. Gaps closed: #248 response routing, T-trails-infra, T-db-spreading-activation, Chrome headless, Chrome employer profile, watch habits context_inject, proactive scheduler confirmed live. New gaps: T-memory-sync (#293 L-size needs plan), T-test-debt-tooling, #248 needs live verification. Session theme: DB + cognition + Chrome fixes + distributed memory design. Subsystems touched: cortex.py, basal_ganglia.py, thalamus.py, browser.py, push_sources.py (confirmed), 5 PROC_WATCH habits in Postgres.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-20b (extended)",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:55.782064+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

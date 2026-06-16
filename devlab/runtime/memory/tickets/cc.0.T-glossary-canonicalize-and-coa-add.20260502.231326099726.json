@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-glossary-canonicalize-and-coa-add.20260502.231326099726",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-glossary-canonicalize-and-coa-add"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T23:13:26.099726",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-glossary-canonicalize-and-coa-add"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-glossary-canonicalize-and-coa-add",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "glossary",
+      "docs",
+      "debris-cleanup"
+    ],
+    "title": "Glossary canonicalize + add COA, home_db, local_db, swarm-box",
+    "result": "Glossary canonicalized (commit 364b0c77). Picked lab/docs/glossary.md (github-renderable, next to code) as canonical. DSB + TheIgorsProject CSB rewritten as pointer stubs. Added Hierarchy section: clan / Igor / COA / home_db / local_db / swarm-box. Updated stale Paths (word graph now Postgres clan.wg_*). Palace pointer at theigors/glossary. Cert-walk W1 frozen copies left alone.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Three live glossaries exist in three formats (CSB at TheIgorsProject/akien/Readings/glossary.csb.txt 2026-03-02; DSB at TheIgors/lab/design_docs_for_igor/glossary.dsb 2026-03-13; MD at TheIgors/lab/docs/glossary.md no date). All stale (newest is 7 weeks old). None defines COA — surfaced today (2026-05-02) when Akien clarified clan/Igor/COA hierarchy during the SQLite-budget design call.\n\n**Affected files:** pick one canonical home (likely TheIgors/lab/docs/glossary.md — closest to code, github-renderable). Kill or alias the others. Add palace pointer at theigors/glossary so memory_get works.\n\n**Design rules:** ship-clean (no aliasing shims unless they buy something concrete); docs-live-in-code (glossary near the code that uses the terms).\n\n**Scope boundary:** IN — pick canonical home (Akien-call), migrate all unique entries into it, kill or replace-with-pointer the other two, add COA + home_db + local_db + swarm-box, add palace pointer node, update Last-updated. OUT — auditing every entry for currency (separate ticket if needed); cert-walk W1 frozen copies stay frozen.\n\n**Test plan:** (1) grep ~/ for 'glossary' returns one canonical file (plus palace pointer + maybe trash); (2) palace memory_get(path='theigors/glossary') returns pointer to the canonical file; (3) COA / home_db / local_db / swarm-box appear in the canonical glossary.",
+    "completed_at": "2026-05-02T23:13:26.099726+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fc6d7aa4-683e-436c-a250-8d03acce6969",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

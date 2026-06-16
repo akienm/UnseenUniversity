@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-acurite-web-ui.20260615.023147501786",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-acurite-web-ui"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T02:31:47.501786",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-free-2026-06-14"
+    ],
+    "tickets": [
+      "T-acurite-web-ui"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-acurite-web-ui",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "AcuRite",
+      "WebUI"
+    ],
+    "title": "Build weather.html — dark kiosk dashboard, CSV parsing, PWA, music intents",
+    "result": "weather.html built — dark theme, outdoor big card + indoor 2-col grid, auto-refresh 60s, PWA, music links; hub listener live on port 80; DNS ready; hub needs router DNS → 10.0.0.229 to connect",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that weather.html is a self-contained dashboard that fetches its sibling weather.csv, displays current conditions per sensor in large readable text, and is installable as an Android PWA.",
+    "created_at": "2026-06-15T02:31:47.501786+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-acurite-free-2026-06-14",
+    "description": "Single HTML file. Derives CSV URL from window.location (same base, .html→.csv). Fetches and parses CSV via JS fetch + manual parse (no library). Shows latest reading per sensor_id.\n\nUI: design TBD with Akien — ticket is ready to sprint once UI design is confirmed in conversation. Known constraints: dark background (#000), monospace, large text for wall-mounted phones, graceful -- for missing values, auto-refresh every 60s.\n\nAndroid music app intent anchors at bottom: Pandora, YouTube Music, Amazon Music (Android intent:// URLs).\n\nPWA: inline manifest via <link rel=manifest href=data:...> so no separate file needed; service worker via Blob URL for offline support.\n\n**Affected files:** acurite-free/weather.html\n**Design rules:** vanilla JS only; no frameworks; no external CDN dependencies (must work offline); single file\n**Scope boundary:** IN — dashboard, CSV parsing, PWA, music intents. OUT — history charts (future), multi-station aggregation (future).\n**Completion criteria:** weather.html opens from a file:// URL and displays data from a local weather.csv; Add to Home Screen works on Android; music intent links are present.",
+    "completed_at": "2026-06-15T16:31:52.270788+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-15T02:31:47.501816+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

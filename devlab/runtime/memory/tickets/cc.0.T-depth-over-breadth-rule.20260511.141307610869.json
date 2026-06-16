@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-depth-over-breadth-rule.20260511.141307610869",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-depth-over-breadth-rule"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T14:13:07.610869",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hermes-patterns-2026-05-11"
+    ],
+    "tickets": [
+      "T-depth-over-breadth-rule"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-depth-over-breadth-rule",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Docs",
+      "Design",
+      "Rules"
+    ],
+    "title": "Write theigors/rules/design-principles palace node",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 7,
+    "claimed_at": "2026-05-23T21:29:27.490933+00:00",
+    "created_at": "2026-05-11T14:13:07.610869+00:00",
+    "related_to": null,
+    "decision_id": "D-hermes-patterns-2026-05-11",
+    "description": "No design-principles node exists in theigors/rules/. The Hermes vs. OpenClaw ranking data (2026-05-10: Hermes overtook OpenClaw by optimizing for depth of self-improvement rather than breadth of platform coverage) is strong evidence for a principle worth formalizing: prefer deepening existing capabilities over adding new ones. Without a palace node, this principle gets relitigated at each design session.\n\nWrite palace node at path=theigors/rules/design-principles containing: (1) depth-over-breadth principle with Hermes citation, (2) definition and when to apply, (3) example: Hermes skill compounding vs. OpenClaw 50-channel breadth.\n\n**Affected files:** palace DB (insert via memory_store); lab/design_docs/decisions/ echo file\n**Design rules:** palace-first (palace is canonical for rules, not CLAUDE.md)\n**Scope boundary:** In: single principle node. Out: other design principles (add as separate nodes when they emerge).\n**Test plan:** memory_get(path='theigors/rules/design-principles') returns non-empty content. Node appears in theigors/rules/ listing.",
+    "completed_at": "2026-05-23T22:09:13.119435+00:00",
+    "github_issue": 730,
+    "dispatched_at": "2026-05-23T21:29:27.490933+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d07ee41f-d8ac-46aa-af0b-85f358a50a59",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

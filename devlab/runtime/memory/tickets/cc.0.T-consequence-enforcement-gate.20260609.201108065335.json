@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-consequence-enforcement-gate.20260609.201108065335",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-enforcement-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:11:08.065335",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ticket-quality-verification-loop-2026-06-06",
+      "D-xxx"
+    ],
+    "tickets": [
+      "T-consequence-",
+      "T-consequence-enforcement-gate",
+      "T-consequence-test-gate-check",
+      "T-gap-scan-consequence-debt",
+      "T-test-gate-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-enforcement-gate",
+    "gate": null,
+    "role": "apprentice",
+    "size": "L",
+    "tags": [
+      "Workflow",
+      "Process",
+      "Architecture"
+    ],
+    "title": "Workflow: add consequence-check gating to design closure",
+    "result": "skills/sorted/SKILL.md Step 5.5 MANDATORY for M/L/XL; design closure gate added to invariants + hard rules; skills/audit-ticket/SKILL.md Check 19 fires AMEND when M/L/XL decision has no consequence ticket; synced to ~/.claude/skills/",
+    "status": "closed",
+    "worker": "igor",
+    "intention": "I intend that design status cannot move to 'closed' until a consequence-check ticket is filed and closed, enforced by a ticket-audit check.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:11:08.065335+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-ticket-quality-verification-loop-2026-06-06",
+    "description": "**Root cause:** When implementation tickets close, there is no gate requiring verification of intended behavior. Designs can accumulate with status=open indefinitely while all impl work is done.\n\n**Design:** Add a /audit-ticket check (or @audit-design logic) that flags design-spawning decisions:\n- If decision_id is set on a ticket AND that decision exists in palace\n- AND the decision status is 'open'\n- AND all sibling tickets (same decision_id) show status=closed\n- THEN: decision cannot move to 'closed' until a consequence-check ticket (T-consequence-{slug}) is filed AND that consequence ticket is also closed\n\nAlternatively: /sorted step 5.5 (consequence-check ticket drafting) should be MANDATORY for M+/XL designs, not optional.\n\nBehavior: When a developer tries to close a design without a filed+closed consequence ticket, the audit returns AMEND with message 'Decision D-xxx has all impl closed but no verified consequences — file T-consequence-{slug} and close it before closing the design.'\n\n**Affected files:** lab/claudecode/audit_ticket.py (add check); lab/skills/sorted/SKILL.md (make Step 5.5 mandatory for M+ designs)\n**Design rules:** none apply\n**Scope boundary:** IN: gate logic, audit check, /sorted guidance update. OUT: backfill audit of existing open designs (see T-gap-scan-consequence-debt).\n**Completion criteria:** Attempting to close a design D-xxx via `/sorted close D-xxx` fails with AMEND if consequence ticket is not filed+closed. /audit-ticket flags unverified designs at filing time. /sorted Step 5.5 is marked MANDATORY (not optional) for M/L/XL decisions.\n**Test plan:** File a test design T-test-gate-check with one S impl ticket. Close impl ticket. Try to close the design — should be blocked. File T-consequence-test-gate-check, close it. Try to close design again — should succeed. Delete test design and consequence ticket after verification.",
+    "completed_at": "2026-06-09T20:34:57.199456+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

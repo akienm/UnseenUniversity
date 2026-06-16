@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-pr-load-as-primary-attractor.20260413.192753973712",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-load-as-primary-attractor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T19:27:53.973712",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-accretion",
+      "T-pr-consolidation",
+      "T-pr-investment-weight-propagation",
+      "T-pr-load-as-primary-attractor",
+      "T-pr-schema-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-load-as-primary-attractor",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Load matching persistent-relationship facia as primary TWM attractor on turn entry",
+    "result": "72978a10 — Frame marker, not content flood. Refined pre-sprint after Akien flagged flooding concern: relationship is attention-routing CONDITIONED BY the person, not attention ON the person. One singleton TWM observation at category='relationship_frame', salience 0.75 (below foreground), TTL 3600s, throttled 300s refresh. _resolve_relationship_frame maps _HUMAN_AUTHORS → PR_AKIEN (single-user for now). _push_relationship_frame uses twm_evict_category for singleton semantics; touches pr_facia last_activity_ts as side effect. _process_inner integration before user_input push. Non-human-author turns do not set a frame. Retrieval bias (cortex.search scoring hook) DEFERRED — needs its own sprint. goal_adopt pr_facia_id capture DEFERRED to T-pr-secondary-attractor-nesting. 9 new tests including the critical non-flood assertion. 1992 total pass, zero regressions.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T19:20:31.744907+00:00",
+    "related_to": null,
+    "description": "REFINED 2026-04-13 after Akien flagged flooding concern. A persistent relationship is a FRAME for attention-routing, not content-in-working-memory. When Leah walks in while Akien is coding, Leah doesn't flood working memory — she becomes the ambient context the coding is happening inside of. Attention stays on the code; Leah is felt through framing and routing bias, not content volume.\n\nARCHITECTURE — frame marker, not content flood:\n\n1. At _process_inner entry, identify the interlocutor from author/thread. For now (single-user) any _HUMAN_AUTHORS turn on a human-facing channel maps to PR_AKIEN. Later tickets add per-thread resolution as Igor talks to more people.\n\n2. Push ONE TWM observation at category='relationship_frame': 'FRAME|pr=PR_AKIEN|weight=1.00|display=Akien'. Salience ~0.75 — comfortably above background noise but BELOW foreground tasks so it does not compete with them. Singleton — call twm_evict_category('relationship_frame') first so only one frame is active. Longer TTL (~3600s+) so the frame persists across turns without being re-pushed every turn unless the interlocutor changes.\n\n3. Retrieval bias, NOT pre-load. Add a hook in cortex.search() that applies a small salience bonus (~+0.1) to memories whose metadata links to the current frame's pr_facia_id. Relationship-colored retrieval without relationship-flooded working memory. Igor pulls Akien context when he reaches for something that matches; he is not crushed by it when he does not.\n\n4. Foreground slots are for active topics, not for the relationship itself. The current task (goal_adopt), open reply-obligation, specific topic thread — those get pushed at 0.85-0.95 as foreground slots WITHIN the frame. Multiple can coexist. The frame is the backdrop; the slots are what Igor is attending to moment to moment. Matches the 'attention shifts across subtopics while Leah remains the primary one' intuition.\n\n5. Nesting via metadata, not flooding. Goal_adopt during an active frame records pr_facia_id in the goal's metadata. Prompt builder can mention 'this is part of your work with Akien' as a single line, not by dumping 30 memories.\n\nTHE PRINCIPLE: a relationship is attention-routing conditioned by the person, not attention-on-the-person. The person is the frame attention happens inside of. Content volume is not how presence is felt — routing bias is. (Promote this to CLAUDE.md biomimicry section after shipping.)\n\nDEPENDS ON: T-pr-schema-seed (shipped 53740afc).\n\nDOES NOT: write to the facia subtree (T-pr-accretion), propagate weight (T-pr-investment-weight-propagation), consolidate during sleep (T-pr-consolidation), provide on-demand subtree scan tools (future pr_recent_threads etc).\n\nTESTS:\n- _process_inner on an Akien turn pushes exactly ONE relationship_frame observation at salience ~0.75\n- Singleton behavior: second consecutive Akien turn does not stack — either re-push replaces via evict-category OR skip if frame already fresh\n- Non-human-author turns (cron, consolidation, impulse) do NOT push a frame\n- cortex.search() bias: a memory linked to PR_AKIEN subtree scores slightly higher than an identical non-linked memory when frame is active\n- Background sources (heartbeats, reminders) at their usual salience still pass through — frame does not gate them out\n- Goals adopted during an active frame carry pr_facia_id in metadata\n\nINERTIA: MEDIUM. main.py _process_inner (MEDIUM) + cortex.search() scoring hook (MEDIUM). No models.py, no reasoners/base.py.",
+    "completed_at": "2026-04-13T19:27:53.973712+00:00",
+    "deposited_at": "2026-06-01T16:02:01.479399",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1cf2924f-00d2-4f3f-9b4c-eba85b9d49f6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

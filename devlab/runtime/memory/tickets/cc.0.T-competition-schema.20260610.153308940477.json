@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-competition-schema.20260610.153308940477",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-competition-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:33:08.940477",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "[REDACTED-CREDENTIAL]"
+    ],
+    "tickets": [
+      "T-competition-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-competition-schema",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Competition",
+      "Database"
+    ],
+    "title": "Create competition schema for classifier training",
+    "result": "competition.memories + competition.memory_embeddings created in Postgres; holdout column included; 4 tests pass (a45300c3)",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that a clean, isolated competition schema exists in Postgres that mirrors clan but has zero production data.",
+    "claimed_at": "2026-06-10T15:49:35.278077+00:00",
+    "created_at": "2026-06-10T15:33:08.940477+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "[REDACTED-CREDENTIAL]",
+    "description": "Create a `competition` Postgres schema with `competition.memories` and `competition.memory_embeddings` tables mirroring the clan schema. This is the clean isolated environment for the inference competition — no production noise.\n\n**Affected files:** New script `lab/competition/setup_competition_schema.py`\n**Design rules:** no-sqlite; Postgres only\n**Scope boundary:** Schema + tables only. No data. No application wiring changes.\n**Completion criteria:** `psql \\dt competition.*` shows `competition.memories` and `competition.memory_embeddings`; tables accept inserts matching clan schema shape.",
+    "completed_at": "2026-06-10T15:51:11.625605+00:00",
+    "deposited_at": "2026-06-10T09:33:37.165595",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

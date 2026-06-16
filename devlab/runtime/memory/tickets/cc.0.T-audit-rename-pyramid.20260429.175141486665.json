@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-audit-rename-pyramid.20260429.175141486665",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-rename-pyramid"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T17:51:41.486665",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-rename-pyramid"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-rename-pyramid",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Skills",
+      "Rename"
+    ],
+    "title": "Rename all audit skills to audit-<scope> shape",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-29T17:40:19.140107+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "Rename existing audit-shaped skills to a unified audit-<scope> family. /day-close-audit → audit-day. /deep-audit → audit-expert. /validate-files folds into audit-debris (created in companion ticket). /review splits into audit-ticket (filing-time mode) and audit-precode (sprint plan-time mode); /review retires.\n\nThis ticket only does the rename + redirect skeletons (skill files + skill index entries). Each renamed skill keeps current behavior; new layers/checks land in their own tickets.\n\n**Affected files:** ~/.claude/skills/day-close-audit/ → audit-day/, ~/.claude/skills/deep-audit/ → audit-expert/, ~/.claude/skills/review/ → audit-ticket/ + new audit-precode/, ~/.claude/skills/validate-files/ → folded ticket.\n**Design rules:** no persistence (skill files only). docs-in-code: N/A (markdown skill files). no-new-memory-schemas: N/A.\n**Test plan:** invoke each renamed skill via Skill tool; confirm same behavior as before. Old skill names redirect or 404 cleanly.",
+    "completed_at": "2026-04-29T17:51:41.486665+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ca391f4e-2954-4427-a3e2-119bcfb02ae8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

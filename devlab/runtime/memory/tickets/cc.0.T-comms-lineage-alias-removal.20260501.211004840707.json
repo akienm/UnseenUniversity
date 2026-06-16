@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-comms-lineage-alias-removal.20260501.211004840707",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-comms-lineage-alias-removal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T21:10:04.840707",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-comms-lineage-alias-removal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-comms-lineage-alias-removal",
+    "gate": "blocks-on-announce-protocol-v1-sprint",
+    "size": "S",
+    "notes": "E-decision rationale: accelerate vs. deprecate-later. Ship clean. Single user (Igor). Mirrors D-protocol-clean-2026-04-15.",
+    "title": "Remove lineage alias from announce-protocol v1 ship",
+    "result": "Closed as side effect of profile.py slice 1. Profile shipped with zero lineage alias per E-decision. Design doc § 8.A updated to reflect this (TheIgors 32eccac7). No aliases.json, no router patch — lineage form raises AddressError.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "P1",
+    "claimed_at": null,
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Deprecate lineage alias on announce-protocol v1 ship (not later). Per § 14 E-decision: 'if it breaks we fix it; it's a research project with one user'. Removes backwards-compat shim; simplifies profile schema.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/profile.py (NEW — created in sprint), ~/.agent_datacenter/aliases.json (NEW — referenced in design § 8.A but per E-decision NOT shipped), /home/akien/TheIgors/lab/design_docs/announce-protocol-design-2026-05-01-opus-pass.md (update §8.A to mark alias as not-shipped)\n**Design rules:** ship-clean-no-aliasing-shims (§14 E-decision)\n**Scope boundary:** in — exclude lineage alias from v1 announce code, update design doc to reflect E-decision; out — migration of any test fixtures still using lineage form (separate ticket if needed)\n**Test plan:** verify announce parse/emit works without alias path; lineage-form input fails with clear AddressError; design doc § 8.A reflects E-decision (not 'alias don't replace')",
+    "completed_at": "2026-05-01T21:10:04.840707+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "efa62caa-fd55-49ab-97c3-5ce1606bd246",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

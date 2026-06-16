@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-inhibition-habit-seeder.20260403.192554000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inhibition-habit-seeder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:54",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inhibition-habit-seeder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inhibition-habit-seeder",
+    "epic": "Cognition",
+    "title": "Inhibition-aware habit seeder",
+    "result": "run_inhibition_seed_pass() seeded 10 habits with twm_ttl_seconds (300-3600s). All probes passed. Registered as Igor tool. Enables BG refractory suppression.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-05T00:20:51.653986+00:00",
+    "created_at": "2026-04-03T19:25:54Z",
+    "description": "Build schema habit that iterates a seed spec (habit_id, ttl_seconds, result_format, code_ref, status) and auto-wires inhibition chain + TWM push for each. Probe loop: call twice within TTL, assert second call is cache hit. Mark status=live on pass, status=failed|reason on fail. Covers existing habits needing inhibition retrofitted.",
+    "completed_at": "2026-04-05T00:23:33.001043+00:00",
+    "github_issue": 355,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "036f9024-a306-4178-8ba0-1f3af5c8d120",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

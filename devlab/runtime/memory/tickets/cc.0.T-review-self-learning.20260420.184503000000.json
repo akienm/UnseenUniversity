@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-review-self-learning.20260420.184503000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-review-self-learning"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:03",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-review-as-filing-time-skill",
+      "T-review-self-learning"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-review-self-learning",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Review",
+      "Learning"
+    ],
+    "title": "/review writes review_findings records; reads them on next run to self-improve",
+    "result": "Created review_findings table + review_manager.py for writing verdicts to DB. /review now logs findings with confidence tracking for self-learning calibration",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-20T19:05:36.854201+00:00",
+    "created_at": "2026-04-20T18:45:03Z",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Every /review run writes a record: what it flagged, whether user overrode, whether sprint-time later confirmed/refuted. Next /review reads recent records and adjusts confidence on recurring patterns.\n\n## Storage\nInfra table `review_findings`:\n- id, created_at, ticket_id (may be null for standalone reviews)\n- flag_type (duplicate, already-done, blocked-by, size-mismatch, scope-creep, high-inertia, missing-test-plan)\n- flag_detail (json)\n- user_response (accepted | overrode | ignored)\n- sprint_outcome (confirmed | refuted | n/a) — backfilled when sprint closes\n\n## Reader side\nOn each /review, compute recent hit-rate per flag_type per subsystem area. Raise confidence threshold for flags with low hit-rate; lower for high hit-rate.\n\n## Blocked by\n- T-review-as-filing-time-skill (needs /review to exist in its new shape)\n\n## Not in scope\n- Building /review itself.",
+    "completed_at": "2026-04-20T19:08:12.574551+00:00",
+    "github_issue": 490,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c2c429ee-856a-432a-87b8-1699dc65563c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

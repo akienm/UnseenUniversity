@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-web-channel-identify-not-interaction.20260427.033915000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-channel-identify-not-interaction"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:15",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-channel-identify-not-interaction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-channel-identify-not-interaction",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Web",
+      "Observability",
+      "Hygiene"
+    ],
+    "title": "Web channel __identify__ auto-ping at boot counts as interaction #1",
+    "result": "Fix was already in place (early return before _process() in _process_network_msg). Added missing test: 3 cases covering no interaction_count bump, preseed() called, source-text regression guard.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T14:08:06.649709+00:00",
+    "created_at": "2026-04-27T03:39:15Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "When Igor boots, the web channel (via utility_closet_client or web/server) emits an `__identify__:Akien` frame as handshake/auth. That frame is processed by the main loop as a turn — visible in the boot log as 'Interaction #1' with 'from=Akien; initial_load', triggering narrative_engine.run, tier2/tier3 reasoning, and a full turn counter increment. It is NOT a user message. It pollutes interaction counts, turn trace history, and (worst) makes the last-user-message window non-deterministic when an auditor is trying to check 'what did Akien actually say'. Fix: recognize `__identify__:` prefix in the web-channel inbound path and route it to an auth-handshake handler, not the interaction loop.\n\n**Affected files:** wild_igor/igor/web/server.py (or wherever web inbound hits main.py._process_network_msg), wild_igor/igor/main.py (inbound message router), tests/test_web_identify_handshake.py (new). **Design rules:** test-plan-or-why-not. **Scope boundary:** IN — detect `__identify__:<name>` prefix, route to auth, do not count as interaction, do not trigger NE/reasoning/turn-trace. OUT — redesigning web auth flow or the handshake protocol itself (just sort the router). **Test plan:** unit test inbound router with `__identify__:Akien` → assert no interaction counter bump, no turn-trace entry, auth side-effect recorded. Same router with regular message → assert full interaction path.",
+    "proposed_at": "2026-04-25T01:14:29.425544+00:00",
+    "completed_at": "2026-04-29T16:42:35.650073+00:00",
+    "github_issue": 530,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f972baf0-d87d-49c7-99b0-a9b7b9bd5fcd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

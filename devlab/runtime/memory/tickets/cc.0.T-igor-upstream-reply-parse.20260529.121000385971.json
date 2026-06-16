@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-igor-upstream-reply-parse.20260529.121000385971",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-upstream-reply-parse"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T12:10:00.385971",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-day-close-log-error-audit",
+      "T-igor-upstream-reply-parse"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-upstream-reply-parse",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Database"
+    ],
+    "title": "Investigate Igor upstream LLM reply parsing failures",
+    "result": "INVESTIGATION COMPLETE: Found JSON parse failure at narrative_engine.py:1082. When LLM response fails to parse (malformed JSON/wrong format), NE prints error, logs anomaly (NE_FAIL), and returns None. NE cycle is skipped with no recovery. Created T-igor-json-parse-recovery follow-on ticket for defensive parser improvements. Key code: _parse_ne_json() at line 1402-1411, _call_inference() handler at 1089-1091.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-29T12:10:00.385971+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor sometimes fails to understand replies from his upstream LLM. Errors appear in the console/logs but are not surfaced as tickets. Likely manifests as malformed response handling, unexpected response format, or silent parse failures that leave Igor with no actionable result.\n\nInvestigation: grep Igor logs for LLM response parsing errors, categorise failure modes, determine if the issue is in the response parser, the prompt format, or the model's output format.\n\nThis will also be caught by T-day-close-log-error-audit once that ships, but the upstream communication failures are significant enough to investigate directly.\n\n**Affected files:** devices/igor/cognition/ (response parsing), devices/igor/brainstem/ (LLM call sites), Igor logs (~/.TheIgors/logs/)\n**Design rules:** none — investigation first, fix after diagnosis\n**Scope boundary:** identify the failure mode and root cause. Fix in a follow-on ticket if the root cause is non-trivial.\n**Test plan:** reproduce the parse failure from log examples; confirm fix eliminates the error pattern",
+    "completed_at": "2026-05-29T12:15:06.987130+00:00",
+    "deposited_at": "2026-05-29T06:15:01.013728",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-29T12:10:00.576649+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "01a0599e-48a3-4c87-bf09-f2820fb896ab",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

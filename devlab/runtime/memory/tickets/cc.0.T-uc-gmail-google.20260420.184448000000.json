@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-uc-gmail-google.20260420.184448000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-gmail-google"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:48",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gmail-flow-layer",
+      "T-uc-channel-migration",
+      "T-uc-gmail-google"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-gmail-google",
+    "size": "L",
+    "tags": [
+      "Productization",
+      "Operations"
+    ],
+    "title": "Gmail/Google as UC rack shelf — web + API dual interface",
+    "result": "superseded by T-google-secretary-device",
+    "status": "closed",
+    "worker": "claude",
+    "blocked_at": "2026-06-01T15:55:54.867952+00:00",
+    "claimed_at": null,
+    "created_at": "2026-04-20T18:44:48Z",
+    "related_to": null,
+    "description": "Move Gmail/Google integration to utility closet as its own rack shelf. Igor needs both web-based and API-based interactions with Google services.\n\nSplit from T-uc-channel-migration — Gmail is special because:\n- Web-based OAuth flow for user-facing interactions\n- API-based programmatic access (send, read, search)\n- Google Calendar, Drive also in scope eventually\n- Needs its own auth/token management shelf\n\nDiscord migration handled separately in T-uc-channel-migration.\n\n**Affected files:** lab/utility_closet/shelves/google/ (new rack shelf — auth, gmail, calendar, drive subdirs); lab/utility_closet/uc_registry.py (register the shelf); tests/test_uc_google_shelf.py.\n\n**Design rules:** no-sqlite (token store via Postgres or filesystem); docs-in-code (shelf manifest + each device docstring); test-plan-or-why-not.\n\n**Scope boundary:** IN — Google shelf scaffold + Gmail web/API dual interface + token management. OUT — Discord (separate T-uc-channel-migration); Calendar/Drive (deferred, mention in docs); production credentials.\n\n**Test plan:** tests/test_uc_google_shelf.py — registry registration, shelf manifest schema, mocked OAuth flow. E2E with throwaway account deferred to T-gmail-flow-layer.",
+    "completed_at": "2026-06-01T19:28:24.189126+00:00",
+    "github_issue": 475,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "30d2ad5f-b68a-413b-ae0b-73b3e174c515",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

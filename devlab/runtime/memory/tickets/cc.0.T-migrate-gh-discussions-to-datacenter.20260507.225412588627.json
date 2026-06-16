@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-migrate-gh-discussions-to-datacenter.20260507.225412588627",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-migrate-gh-discussions-to-datacenter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T22:54:12.588627",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-migrate-gh-discussions-to-datacenter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-migrate-gh-discussions-to-datacenter",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Workflow"
+    ],
+    "title": "CLOSED: day-close Discussions → agent_datacenter repo",
+    "result": "Discussions enabled on agent_datacenter repo; day-close skill updated with new repositoryId=R_kgDOSOSpkA, categoryId=DIC_kwDOSOSpkM4C8i8p (General)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-07T22:54:12.588627+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "CC is now based in agent_datacenter. Day-close GitHub Discussions (the daily work log) belong in the agent_datacenter repo, not TheIgors.\n\nTwo changes:\n1. Update the day-close skill to create Discussions in agent_datacenter repo (get the repo/category IDs via `gh api graphql`).\n2. Update cc_queue.py GitHub issue creation to default to agent_datacenter for non-Igor tickets (worker=claude tickets tagged AgentDatacenter/Infrastructure/Workflow/Swarm); Igor-specific tickets (worker=igor, tagged Cognition/Memory/etc.) stay in TheIgors.\n\nExisting discussions in TheIgors stay — not worth migrating history.\n\n**Affected files:** ~/.claude/skills/day-close/SKILL.md (repo/category IDs), TheIgors/lab/claudecode/cc_queue.py (gh issue routing)\n**Design rules:** none apply\n**Scope boundary:** IN — future day-close Discussions go to agent_datacenter; new ADC-tagged tickets file GH issues in agent_datacenter; existing history untouched. OUT — migrating past discussions.\n**Test plan:** Run a day-close dry-run; verify Discussion creation targets agent_datacenter; file a test ticket and confirm GH issue lands in correct repo.\n**Pass condition:** `gh api repos/akienm/agent_datacenter/discussions` shows a new day-close Discussion after next /day-close run.",
+    "completed_at": "2026-05-07T23:05:23.558746+00:00",
+    "github_issue": 650,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9fd7e7ae-aca1-4530-aadc-6bc200175d31",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-shim-output-validation.20260530.194920465998",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-output-validation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T19:49:20.465998",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-shim-output-validation",
+      "T-shim-policy-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-output-validation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Post-result output validation hook in BaseShim",
+    "result": "validate_output() on BaseShim: PII/blocklist redaction with WARNING log; devices/policy/ OutputPolicy+OutputValidator; TYPE_CHECKING import keeps substrate portable",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": "2026-05-30T21:51:50.717430+00:00",
+    "created_at": "2026-05-30T19:49:20.465998+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Complement to T-shim-policy-gate. After a tool call returns but before the result is delivered to the calling agent, run the result through a validation hook. V1 checks: PII pattern detection (email, phone, SSN patterns); content policy (configurable blocklist per agent profile). Failed validation redacts the sensitive content and logs the incident — does not block delivery by default (configurable per policy).\n\nScraps already validates ticket content. Same pattern generalized to any agent output passing through any shim.\n\n**Affected files:** unseen_university/skeleton/base_shim.py (post-result hook), devices/policy/ (validation rules), devices/scraps/validators.py (reuse PII patterns)\n**Design rules:** BaseDevice/BaseShim; reuse scraps validators rather than duplicating\n**Scope boundary:** IN — PII detection, content blocklist, redaction + incident log; OUT — semantic content evaluation (that is the evaluator device), blocking delivery by default\n**Completion criteria:** a tool result containing an email address is redacted before delivery to the caller; incident logged; existing tool calls with clean output unaffected",
+    "completed_at": "2026-05-31T06:13:00.870362+00:00",
+    "deposited_at": "2026-05-30T13:50:32.034008",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T21:51:50.717430+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T19:49:20.466062+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "530fe364-b376-4d5c-850e-e0864ba6a676",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

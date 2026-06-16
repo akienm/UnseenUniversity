@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-web-ui-queue-view.20260603.215840375454",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-ui-queue-view"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.375454",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-ui-queue-view"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-ui-queue-view",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "WebServer",
+      "UX",
+      "Queue"
+    ],
+    "title": "Web UI: show open ticket queue",
+    "result": "/queue page + /api/queue: open tickets grouped by status, 30s auto-refresh, nav link, 11 tests",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.7,
+    "claimed_at": "2026-06-03T21:59:31.018616+00:00",
+    "created_at": "2026-06-03T21:58:40.375454+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The web interface has no view of the open ticket queue. Akien can't see what's planned, in-progress, or blocked without running cc_queue.py from the terminal. Add a Queue tab (or section on the main dashboard) that shows the open tickets grouped by status (in_progress, sprint, pending, hold) with id, title, size, worker, and gate fields. Read-only for now — actions (close, block, requeue) are a follow-on.\n\n**Affected files:** devices/web_server/server.py (new /api/queue route + UI section)\n**Design rules:** no-sqlite; log at INFO when queue route is accessed; OOP-first (route handler as method)\n**Scope boundary:** In scope: GET /api/queue returns open tickets as JSON; web UI renders them in a Queue tab grouped by status; auto-refreshes every 30s. Out of scope: ticket actions from UI (close/block/claim), filtering/sorting beyond status grouping.\n**Completion criteria:** (1) GET /api/queue returns all non-closed tickets; (2) web UI Queue tab displays them grouped by status; (3) auto-refresh every 30s; (4) tests: route returns correct ticket list; closed tickets excluded",
+    "completed_at": "2026-06-03T22:04:55.904494+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:59:31.018616+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dabbe514-bd23-46c5-af95-9f4ab23872cb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

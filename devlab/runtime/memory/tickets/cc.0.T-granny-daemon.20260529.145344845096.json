@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-daemon.20260529.145344845096",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-daemon"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T14:53:44.845096",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-daemon"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-daemon",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Granny daemon: polling loop — sprint-ready tickets → route → dispatch",
+    "result": "GrannyDaemon polling loop: _load_sprint_tickets, _ticket_needs_cc, run_once with dedup, daemon thread + singleton; 15 tests",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.85,
+    "created_at": "2026-05-29T14:53:44.845096+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "GrannyWeatherwaxDevice is currently a library with no run loop. For factory mode, Granny needs a daemon that: (1) polls cc_queue every 60s for tickets with status=sprint and worker=claude (or unassigned Platform/Infrastructure/etc tags), (2) calls device.intake_ticket() then device.route_ticket() on each, (3) skips tickets already in_progress or gated, (4) deduplicates to avoid double-dispatch on repeat polls.\n\nThe daemon lives in devices/granny/daemon.py and is started by the ./granny launcher. Runs until SIGTERM. Logs routing decisions at INFO. Posts startup/heartbeat to shared channel.\n\n**Affected files:** devices/granny/daemon.py (new), devices/granny/shim.py (start() calls daemon in background thread)\n**Design rules:** no SQLite; daemon uses cc_queue.py via subprocess or cc_queue module directly\n**Scope boundary:** polling + routing only. Does not do the actual CC work — that's the CC task listener. No ticket modification except dispatch call.\n**Test plan:** mock cc_queue returning 2 sprint-ready tickets; assert route_ticket called twice; assert GRANNY_DISPATCH channel messages emitted; assert dedup (same ticket not dispatched twice in one poll cycle)",
+    "completed_at": "2026-05-29T15:02:08.483436+00:00",
+    "deposited_at": "2026-05-29T08:55:14.412215",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-29T14:53:44.845146+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a16bec4a-d610-4e98-8564-14721fe2bc34",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

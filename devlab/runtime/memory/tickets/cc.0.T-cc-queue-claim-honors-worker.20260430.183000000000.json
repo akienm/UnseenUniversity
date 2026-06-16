@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-cc-queue-claim-honors-worker.20260430.183000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-claim-honors-worker"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T18:30:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-claim-honors-worker",
+      "T-consult-confidence-threshold-raise"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-queue-claim-honors-worker",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "cc_queue",
+      "cert",
+      "kill-switch"
+    ],
+    "title": "cc_queue.py cmd_claim must check worker — placebo freeze allowed Igor to grab claude-worker tickets",
+    "result": "pe_chain HYPOTHESIZE produced verbatim-valid source edit (cmd_claim now checks worker — placebo freeze becomes real). Test added by CC to fulfill multi-edit gap. Cert walk-02 substitute: PARTIAL (engram-level success on source edit, CC added test = doesn't count toward 10-without-help). Commit b092865d.",
+    "status": "done",
+    "worker": "igor",
+    "metadata": {
+      "cert_walk_n": 2,
+      "cert_substitute_for": "T-consult-confidence-threshold-raise",
+      "cert_substitute_reason": "original walk-02 underlying had no real work left (already shipped via T-consult-confidence-gate)"
+    },
+    "priority": 0.9,
+    "proposal": null,
+    "claimed_at": "2026-04-30T22:19:50.158770+00:00",
+    "created_at": "2026-04-30T18:30:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "cmd_claim() in lab/claudecode/cc_queue.py only checks `status == 'pending'`. It does not honor the `worker` field, so cert_worker_freeze.py (which flips worker=igor → worker=claude as a kill-switch) is a placebo: pe_chain still successfully claims any pending ticket regardless of worker. Cert walk-02 caught this — Igor empty-closed T-consult-confidence-threshold-raise overnight despite being 'frozen' as worker=claude.\n\nFix: cmd_claim should reject the claim when worker is set and not 'igor'. The pe_chain caller is Igor; tickets explicitly tagged for claude (or other workers) should not be auto-claimable by Igor.\n\n**Affected files:** lab/claudecode/cc_queue.py (cmd_claim function around line 270), tests/test_cc_queue.py or new tests/test_cc_queue_claim.py\n**Design rules:** test-plan-or-why-not\n**Scope boundary:** IN — cmd_claim worker check + matching test. OUT — cmd_done/cmd_block worker checks (separate ticket if needed); changing the worker semantics elsewhere.\n**Test plan:** new test asserts cmd_claim rejects worker=claude tickets and accepts worker=igor or worker=None. Existing 4217 tests still pass.\n",
+    "completed_at": "2026-04-30T22:22:42.371836+00:00",
+    "deposited_at": "2026-05-20T18:04:19.617453",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bb0ea549-01d5-4e29-9ec4-38420308825c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

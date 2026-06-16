@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-os-primitives.20260320.122425951995",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-os-primitives"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T12:24:25.951995",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-os-primitives",
+      "T-traversal-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-os-primitives",
+    "size": "M",
+    "files": [
+      "wild_igor/igor/tools/os_primitives.py",
+      "claudecode/seed_os_primitives.py"
+    ],
+    "title": "OS primitives — PRIM_LIST_DIR, PRIM_FILE_META, PRIM_READ_HEAD, PRIM_TYPE_DETECT, PRIM_ITER_NEXT, PRIM_ITER_DONE",
+    "result": "6 OS primitives (LIST_DIR/FILE_META/READ_HEAD/TYPE_DETECT/ITER_NEXT/ITER_DONE). Committed. Layer 1.5 complete.",
+    "status": "done",
+    "claimed_at": "2026-03-20T02:03:52.861033+00:00",
+    "description": "6 reusable habits using traversal_context as shared scratchpad. Each reads/writes context keys. PRIM_LIST_DIR: lists files in a dir, writes result to ctx[files]. PRIM_FILE_META: gets mtime/size for ctx[current_file]. PRIM_READ_HEAD: reads first N lines of ctx[current_file], writes to ctx[content]. PRIM_TYPE_DETECT: detects file type from ctx[current_file], writes to ctx[file_type]. PRIM_ITER_NEXT: pops next item from ctx[files] into ctx[current_file]. PRIM_ITER_DONE: checks if ctx[files] is empty, writes ctx[done]=true/false. All implemented as action habits with code_ref pointing to tools/os_primitives.py. Seed via claudecode/seed_os_primitives.py. Prereq: T-traversal-context (done).",
+    "completed_at": "2026-03-20T12:24:25.951995+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3643eec8-5703-4939-bd12-26cd208d69ee",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

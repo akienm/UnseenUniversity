@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-granny-worker-registry.20260602.175241107808",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-granny-worker-registry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T17:52:41.107808",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-worker-registry-2026-06-02"
+    ],
+    "tickets": [
+      "T-consequence-granny-worker-registry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-granny-worker-registry",
+    "gate": "2026-06-16",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: Granny worker registry + CC.0 dispatch",
+    "result": "GRANNY_THROTTLED gone from channel (correct); GRANNY_CC0_OFFER: 0 (CC.0.available.true not set yet — expected; semaphore protocol working). No spurious offers. Effect: clear.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-02T17:52:41.107808+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-worker-registry-2026-06-02",
+    "description": "**What changed:** Granny gained a config-driven worker registry with availability semaphores; CC.0 receives tickets via tmux send-keys; DickSimnel.0 added as an OR-powered rack device.\n\n**Predicted unintended effects:**\n- CC.0 receives send-keys while mid-conversation (Akien forgot to remove CC.0.available.true) — unintended sprint starts\n- DickSimnel.0 orphaned: started but DickSimnel.0.available.true never dropped, Granny dispatches to a dead channel receiver\n- granny.queue.available.false left present after manual pause, silently blocking all dispatch indefinitely\n- Config reader fails on malformed granny.yaml — Granny falls back to no workers, tickets queue indefinitely with no alert\n- in_progress query slow on large queue — poll cycle timeout under load\n\n**Signals to watch:** GRANNY_CC0_OFFER in channel when it should not appear; GRANNY_THROTTLED disappears (expected); dispatch cycle time in _push_stats; channel silence when queue is non-empty\n\n**Gate condition:** Check by 2026-06-16 or when first CC.0 offer is received in production.\n\n**Worst-case token spend:**\n  - Per-failure cost: one unintended CC sprint ~100k-200k tokens ($0.30-0.60 at Sonnet 4.6); one DickSimnel OR iteration ~10k-50k tokens (negligible)\n  - Hard cap: max_concurrent=1 in config; semaphore interlock requires CC.0.available.true (Akien-controlled); no hard token cap in code for OR workers\n  - Blast radius: one ticket at a time; Granny checks in_progress before re-offering; no loop; worst case is one unintended sprint\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": "2026-06-02T19:39:04.504780+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2acc4b11-65f9-4665-a22e-0bf70150c2b5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

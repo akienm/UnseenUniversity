@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-fix-after-action-registry-test.20260528.194332262272",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-after-action-registry-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:43:32.262272",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-after-action-registry-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-after-action-registry-test",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Maintenance"
+    ],
+    "title": "Fix test_after_action_reviewer: registry empty because tools not imported",
+    "result": "Import devices.igor.tools.after_action_reviewer before registry check; use devices.igor.tools.registry (correct singleton). 9/9 tests green.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-05-28T20:03:07.925847+00:00",
+    "created_at": "2026-05-28T19:43:32.262272+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "test_run_after_action_review_is_registered imports lab.utility_closet.registry but never imports devices.igor.tools.after_action_reviewer to populate it. The test was probably working when the tools imported via a side effect that no longer fires after the wild_igor→devices migration. Fix: add the tools import to the test or change what it checks.\n\n**Affected files:** tests/test_after_action_reviewer.py\n**Design rules:** none apply\n**Scope boundary:** fix the test only — not the tool registration logic\n**Test plan:** test passes in isolation after fix",
+    "completed_at": "2026-05-28T20:03:40.405038+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:03:07.925847+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:43:32.391396+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "00a7e8c7-b3b8-42f2-ae28-ea5b3b09430a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

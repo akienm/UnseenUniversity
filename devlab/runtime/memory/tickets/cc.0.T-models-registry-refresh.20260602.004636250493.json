@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-models-registry-refresh.20260602.004636250493",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-models-registry-refresh"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T00:46:36.250493",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-or-tiered-cascade-2026-06-02"
+    ],
+    "tickets": [
+      "T-models-registry-refresh"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-models-registry-refresh",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Infrastructure"
+    ],
+    "title": "Models registry: add Llama-3.1-70B + Gemini Flash 1.5",
+    "result": "added llama-3.1-70b (worker) + gemini-flash-1.5 (analyst, 1M ctx); pricing note added",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": null,
+    "created_at": "2026-06-02T00:46:36.250493+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-or-tiered-cascade-2026-06-02",
+    "description": "Add two missing models to the OR registry: meta-llama/llama-3.1-70b-instruct (worker tier, ~$0.59/$0.79 per 1M, all-rounder fallback) and google/gemini-flash-1.5 (analyst tier, $0.075/$0.30, 1M context). Pricing note comment added — OR pricing changes frequently, verify at openrouter.ai/models before production.\n\n**Affected files:** devices/inference/models_registry.py\n**Design rules:** no-sqlite\n**Scope boundary:** IN: two new ModelSpec entries; pricing note. OUT: pricing verification (manual step at production time), removing old models.\n**Completion criteria:** `default_registry().by_tier('worker')` returns ≥2 models; `default_registry().by_tier('analyst')` returns ≥2 models; existing tests pass.",
+    "completed_at": "2026-06-02T00:46:42.492191+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b4fcd67c-706a-46ec-b30e-5578bced71f9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

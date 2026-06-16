@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-memory-confidence-rename.20260610.215216394419",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-confidence-rename"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T21:52:16.394419",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-lever-memory-confidence-2026-06-10"
+    ],
+    "tickets": [
+      "T-lever-memory-type",
+      "T-memory-confidence-rename",
+      "T-memory-source-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-confidence-rename",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Memory",
+      "Refactor"
+    ],
+    "title": "Rename inertia → confidence throughout memory layer",
+    "result": "Validated by CC: Phase 1+2 complete. confidence→certainty DB column, inertia→confidence computed property, FACTUAL base 0.25→0.65. 115 targeted tests pass. No stale .inertia refs in source.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the memory layer uses 'confidence' everywhere instead of 'inertia' so that the concept is self-documenting for anyone reading code or querying the DB.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T21:52:16.394419+00:00",
+    "created_by": null,
+    "related_to": null,
+    "commit_hash": "114b3a39",
+    "decision_id": "D-lever-memory-confidence-2026-06-10",
+    "description": "Rename `inertia` → `confidence` throughout the Igor memory layer. `BASE_INERTIA` dict → `BASE_CONFIDENCE`; `Memory.inertia` property → `Memory.confidence`; all callsites in cortex.py, main.py, push_sources.py, system_prompt.py; rename `tools/table_inertia.py` → `tools/table_confidence.py`. Also bump `FACTUAL` base confidence from 0.25 → 0.65 (currently underweighted — factual memories should resist drift more than procedural ones).\n\nNote: `confidence` is a computed `@property`, not stored in the DB — no migration needed.\n\n**HIGH-inertia pre-approval:** Akien approved this rename explicitly in conversation 2026-06-10 ('confidence makes complete sense').\n\n**Affected files:** devices/igor/memory/models.py, devices/igor/memory/cortex.py, devices/igor/main.py, devices/igor/cognition/push_sources.py, devices/igor/cognition/system_prompt.py, devices/igor/tools/table_inertia.py → table_confidence.py\n**Design rules:** none apply — pure rename, no logic change\n**Scope boundary:** IN — rename + FACTUAL baseline bump. OUT — adding LEVER type (T-lever-memory-type), source seeding (T-memory-source-seed).\n**Completion criteria:** `grep -r '\\.inertia\\b\\|BASE_INERTIA' devices/igor/ --include='*.py'` returns zero hits; all tests pass; `Memory.__repr__` shows `confidence=` not `inertia=`.\n\n## Escalation summary\n**What was tried:** Confirmed: the rename **breaks instantiation**. The dataclass auto-generated `__init__` tries to set `self.confidence = 1.0` (the G46 stored field default), but `confidence` is now a read-only property → `AttributeError`. Every `Memory(...)` construction fails.\n\nThis is a genuine collision the ticket did not anticipate: there is a pre-existing distinct G46 stored `confidence` field (epistemic certainty, 0–1, settable) that is semantically different from the renamed `inertia` property (network-po...\n**Where it broke:** result missing DONE: prefix — not a completion\n**What now?**\n\n## CC Resolution Plan (2026-06-11)\n\nDick/opus correctly identified the blocker: stored field `confidence: float = 1.0` (G46 epistemic certainty) already exists, so renaming the `@property inertia` → `confidence` causes a Python dataclass collision.\n\n**Two-phase approach:**\nPhase 1 — rename stored field `confidence → certainty` everywhere + DB migration `ALTER TABLE memories RENAME COLUMN confidence TO certainty` (REAL DEFAULT 1.0, no data transform). Affects: cortex.py SQL blocks (1806, 1835, 1877, 1950, 1986), engram_export.py, versioning.py, coactivation_counter.py, turn_pipeline.py, consult.py.\nPhase 2 — rename computed `@property inertia → @property confidence`, `BASE_INERTIA → BASE_CONFIDENCE`, all callsites: cortex.py (3659, 4305), main.py (8212, 8276, 8349), push_sources.py (250, 998), system_prompt.py (114), table_inertia.py → table_confidence.py, tests.",
+    "completed_at": "2026-06-11T22:11:26.223803+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

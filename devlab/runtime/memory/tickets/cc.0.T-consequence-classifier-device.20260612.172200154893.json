@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-classifier-device.20260612.172200154893",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-classifier-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T17:22:00.154893",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-classifier-device-architecture-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-classifier-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-classifier-device",
+    "gate": "2026-06-26",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Classifier"
+    ],
+    "title": "[sprint] Consequence check: Classifier device architecture",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to verify the Classifier device reduces orientation token burn and that palace.codebase nodes stay accurate without noise.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T17:22:00.154893+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-classifier-device-architecture-2026-06-12",
+    "description": "**What changed:** Classifier rack device owns all classification; BuilderReport filed at ticket creation; palace.codebase.* nodes annotated nightly + delta on close; in_flight flags surface contention.\n**Predicted unintended effects:** (1) palace.codebase nodes accumulate stale annotations for deleted/moved files — check annotator handles missing files. (2) classify() called at filing may slow down /ticket for small S tickets where the cost is not worth it — check if a size gate makes sense. (3) Builder report wrong-file suggestions actively mislead DS — precision/recall scores should be visible early. (4) LLM annotation pass costs money on first full build — confirm flat-rate inference is used.\n**Signals to watch:** precision/recall scores in palace node metadata after first 10 tickets; cost_usd per ticket before/after; annotator error logs; Nanny nightly log for annotator step.\n**Gate condition:** Check by 2026-06-26 or after 10 tickets have builder_report sections.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate as occurred/clear/partial and close\n**Completion criteria:** Annotated with outcome and closed.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

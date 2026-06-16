@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-imap-impl-decision.20260427.213850088699",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-imap-impl-decision"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:38:50.088699",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-0-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-imap-impl-decision",
+      "T-adc-imap-server-embedded",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-imap-impl-decision",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: spike Dovecot vs embedded Python IMAP, document decision",
+    "result": "Spike complete: Python asyncio stub works at ~80 lines (APPEND+IDLE verified). Decision: Dovecot for production, Python stub for tests. docs/decisions/imap-impl.md written. Spike at lab/spikes/imap_stub_spike.py.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-27T21:34:42.599111+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-0-2026-04-27",
+    "description": "The IMAP bus is core infrastructure. Evaluate Dovecot vs embedded Python before any IMAP code is written — the decision affects deployment, testing, and the portable-bootstrap story.\n\nProblem: Two viable approaches with different tradeoffs. Must commit before writing T-adc-imap-server-embedded.\n\nProposed shape:\n- Dovecot: system dep (apt install dovecot-imapd), text-file config, mature IDLE support, Expire plugin for 24hr retention, requires system privileges at install time\n- Python embedded: options are imaplib-based (low-level) or pure-Python IMAP server libs; no system dep, controllable from inside the package, testable in-process, less mature\n- Recommended approach: Dovecot for production deploys; thin Python stub for test fixtures (enough IMAP for tests to run without system Dovecot)\n- Spike: attempt `import imaplib; start minimal Python IMAP server` — verify feasibility in 1hr; if not feasible, Dovecot is the only choice\n- Write docs/decisions/imap-impl.md with: options, tradeoffs, chosen impl, test-stub plan\n\nAffected files:\n- ~/dev/src/agent_datacenter/docs/decisions/imap-impl.md (new)\n\nDesign rules:\n- no-sqlite: chosen implementation must not introduce SQLite (Dovecot uses its own storage; Python impl must not use sqlite3 for message storage)\n\nScope boundary:\nIN: evaluation, spike attempt, decision doc\nOUT: any production IMAP server code (that is T-adc-imap-server-embedded, Phase 1)\n\nTest plan:\n- docs/decisions/imap-impl.md exists with decision clearly stated\n- If Python stub is viable: a 50-line proof-of-concept that accepts IMAP APPEND and IDLE exists in lab/spikes/",
+    "completed_at": "2026-04-27T21:38:50.088699+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "76136733-48a4-4d95-ac86-7a433ec978d9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

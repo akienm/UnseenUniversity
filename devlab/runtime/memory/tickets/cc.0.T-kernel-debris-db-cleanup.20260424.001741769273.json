@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-kernel-debris-db-cleanup.20260424.001741769273",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-kernel-debris-db-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T00:17:41.769273",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-kernel-debris-db-cleanup",
+      "T-scope-guard-echo-dedup",
+      "T-scope-guard-reattempt-loop",
+      "T-situate-kernel-hallucination-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-kernel-debris-db-cleanup",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "HallucinationDefense",
+      "Cleanup"
+    ],
+    "title": "Cleanup kernel.py debris in DB — remove tier2 attractor signal",
+    "result": "Shipped in 3227df8f. One-shot cleanup: deleted 3 stale kernel.py-referencing memories (FACTUAL 20260405215531513683/481693 + EPISODIC 20260405213427317066), flagged T-scope-guard-reattempt-loop + T-scope-guard-echo-dedup with metadata['superseded_by']='T-situate-kernel-hallucination-fix'. Count dropped 9→6. Script idempotent (id-existence + superseded_by guard); FK children (memory_embeddings, memory_blobs, interpretive_edges) cleaned before delete.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-24T00:16:32.146963+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "8 memory rows in wild-0001 reference brainstem/kernel.py; three of them are stale CC-to-Igor corrections from 2026-04-05 (shape: 'SPAWNIF belongs in cognition/node_executor.py — NOT brainstem/kernel.py or memory/models.py'). The negation doesn't survive retrieval — tier2 Qwen just sees 'brainstem/kernel.py' co-located with SITUATE/HIGH-inertia language and reaches for it as a canonical target.\n\nAction:\n1. Delete the 3 stale messages (two are duplicate ingests of the same CC message — from ch=repl and ch=web:? — plus one EPISODIC copy):\n   - id 20260405215531513683 (FACTUAL, ch=repl)\n   - id 20260405215531481693 (FACTUAL, ch=web:?)\n   - id 20260405213427317066 (EPISODIC)\n2. Add metadata flag 'superseded_by=T-situate-kernel-hallucination-fix' to the two old ticket narratives (T-scope-guard-reattempt-loop, T-scope-guard-echo-dedup) so they deprioritize in retrieval but remain readable.\n3. Note: SLATE-20260414 (REFERENCE) is a generated slate snapshot — leave alone (regenerated from slate file).\n\n**Affected files:** one-shot script under lab/claudecode/ (e.g. cleanup_kernel_debris.py) — no persistent code.\n**Design rules:** none apply — one-shot DB maintenance.\n**Scope boundary:** IN — delete 3 specific memory ids, flag 2 ticket memories. OUT — touching memory_palace, word_graph, or any other kernel-referencing rows beyond the named 5.\n**Test plan:** no tests because: one-shot cleanup. Verify success by re-running SELECT COUNT(*) FROM memories WHERE narrative ILIKE '%brainstem/kernel%' — expect drop from 8 to 5 (3 new memories from T-situate-kernel-hallucination-fix activity + 2 old tickets + this ticket's own narrative). Script runs under IGOR_HOME_DB_URL, idempotent (guarded by id existence).",
+    "completed_at": "2026-04-24T00:17:41.769273+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "48bf8bc1-43c5-431a-9ee9-bc40bca7b895",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

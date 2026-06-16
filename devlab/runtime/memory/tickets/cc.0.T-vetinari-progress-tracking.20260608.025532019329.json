@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-vetinari-progress-tracking.20260608.025532019329",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-progress-tracking"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T02:55:32.019329",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-vetinari-gap-map-2026-06-08"
+    ],
+    "tickets": [
+      "T-vetinari-progress-tracking"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-progress-tracking",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Vetinari",
+      "Orchestration"
+    ],
+    "title": "Vetinari: directive lifecycle tracking via cc_queue polling",
+    "result": "check_directive_progress() + get_directive_status() + _query_ticket_status(); shim 5-min poll loop; 9 tests covering all-open/partial/all-closed/missing/snapshot",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that Vetinari polls cc_queue for child ticket status and updates directive flat-file state so the directive lifecycle is always queryable.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T02:55:32.019329+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-vetinari-gap-map-2026-06-08",
+    "description": "Vetinari's receive_health_rollup() tracks factory health, not ticket completion. There is no connection between a directive's child tickets and whether the directive is 'done'.\n\nAdd check_directive_progress(directive_id) to VetinariDevice: load child_ticket_ids from directive state, call cc_queue.py show for each, aggregate into {open: N, in_progress: N, closed: N}, update directive state with progress snapshot. Add get_directive_status(directive_id) -> str: 'active'|'completed'|'blocked'|'awaiting_clarification'. Add a periodic poll hook (call from VetinariShim's idle loop every 5 min).\n\n**Affected files:** devices/vetinari/device.py (add check_directive_progress(), get_directive_status()), devices/vetinari/shim.py (add poll loop), tests/test_vetinari_progress.py (NEW)\n**Design rules:** cc_queue poll via subprocess (same as other integrations); directive state flat-file JSON; 'completed' only when all child tickets are closed\n**Scope boundary:** IN — progress poll, directive state update, get_directive_status(); OUT — deployment signal (separate ticket), UI/reporting\n**Completion criteria:** check_directive_progress() with all-closed children → status='completed'; with some open → status='active'; directive state file updated with progress snapshot; 5+ tests covering: all-open, partial-closed, all-closed, missing ticket (graceful)",
+    "completed_at": "2026-06-08T03:40:45.332091+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

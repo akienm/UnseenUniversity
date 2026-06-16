@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-dicksimnel-toolloop-docstrings.20260607.003158105557",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-toolloop-docstrings"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T00:31:58.105557",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-toolloop-docstrings"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-toolloop-docstrings",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Docs"
+    ],
+    "title": "DickSimnel toolloop.py: add method docstrings",
+    "result": "docstrings on ToolLoop.__init__ + all _tool_* handlers",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.45,
+    "intention": "I intend that every public and private method in toolloop.py has a one-line docstring so readers understand each tool's contract without reading the implementation.",
+    "claimed_at": null,
+    "created_at": "2026-06-07T00:31:58.105557+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "devices/dicksimnel/toolloop.py implements the four inference tool stubs (_tool_bash, _tool_read, _tool_edit, _tool_write) plus __init__. All five methods have no docstring — the what-and-why is invisible to a reader. This is a pure docstring pass.\n\n**Affected files:** devices/dicksimnel/toolloop.py\n**Design rules:** docs-live-in-code; one short line per method (no multi-paragraph blocks)\n**Scope boundary:** In scope: add one-line docstrings to __init__, _tool_bash, _tool_read, _tool_edit, _tool_write. Out of scope: changing method signatures, adding type hints, touching other files.\n**Completion criteria:** All 5 methods have a docstring. `python3 -c \"import ast; t=ast.parse(open('devices/dicksimnel/toolloop.py').read()); funcs=[n for n in ast.walk(t) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef))]; assert all(n.body and isinstance(n.body[0],ast.Expr) for n in funcs), 'missing docstring'\"` passes.",
+    "completed_at": "2026-06-08T00:23:27.140972+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

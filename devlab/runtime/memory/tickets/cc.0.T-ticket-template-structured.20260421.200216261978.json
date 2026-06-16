@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ticket-template-structured.20260421.200216261978",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-template-structured"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T20:02:16.261978",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-scaffold-not-correct-2026-04-21"
+    ],
+    "tickets": [
+      "T-palace-ticket-design-rules",
+      "T-ticket-template-structured"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-template-structured",
+    "gate": "T-palace-ticket-design-rules",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Ticket",
+      "Scaffold"
+    ],
+    "title": "Structure /ticket template: test plan, affected files, design rules, scope",
+    "result": "/ticket SKILL.md new Description template section + Step 2 prompts for Affected files, Design rules, Scope boundary, Test plan. Labeled-text sections in description; no DB schema change. Commit 0a38873c. Dispatch: Haiku subagent executed the SKILL.md rewrite.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-21T20:00:52.374625+00:00",
+    "related_to": null,
+    "decision_id": "D-scaffold-not-correct-2026-04-21",
+    "description": "Rework the /ticket skill and the draft JSON schema so filing prompts for structured fields instead of a free-form description. New fields: test_plan, affected_files, applicable_design_rules, scope_boundary.\n\nScope boundary: do NOT modify the cc_queue.py DB row schema. Structure lives inside description-as-structured-text (or a parallel JSON payload in the description). This is a skill + filing-flow change, not a schema migration.\n\nWhy: design rules do not scaffold unless the drafter is prompted to address them at the moment of filing. Free-form description lets the drafter skip the check.\n\nGated on T-palace-ticket-design-rules: applicable_design_rules field needs check-shaped palace entries to point at.\n\ntest_plan: file a ticket via /ticket, confirm new fields present; file one leaving fields empty, confirm flow prompts or warns.",
+    "completed_at": "2026-04-21T20:02:16.261978+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6fef6f02-f678-45ca-89d7-dcf4af1306e3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

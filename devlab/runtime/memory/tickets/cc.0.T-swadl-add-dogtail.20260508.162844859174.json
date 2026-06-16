@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-swadl-add-dogtail.20260508.162844859174",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-add-dogtail"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T16:28:44.859174",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-swadl-add-dogtail"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-add-dogtail",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "SWADL",
+      "Automation"
+    ],
+    "title": "CLOSED: Add dogtail (AT-SPI2) driver to SWADL",
+    "result": "driver adapter added to swadl_driver.py with tests, 756f742",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:33:24.563919+00:00",
+    "created_at": "2026-05-08T16:28:44.859174+00:00",
+    "related_to": null,
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Add dogtail as a supported interface library in SWADL. dogtail walks the AT-SPI2 accessibility tree — the Linux equivalent of Windows UIA that pywinauto uses. Best for native KDE/GTK apps that expose AT-SPI. Requires the at-spi2-core service running.\n\n**Affected files:** swadl/SWADL/engine/swadl_driver.py, swadl/SWADL/engine/swadl_base_automation.py, requirements.txt\n**Design rules:** no-sqlite; new driver follows existing driver pattern\n**Scope boundary:** driver wrapper + config key; does NOT add KDE-specific widget helpers\n**Test plan:** unit test that dogtail driver initialises; integration test skipped if at-spi2 not available (mark xfail with reason)",
+    "completed_at": "2026-05-08T18:38:00.106329+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "692e9265-a268-4f06-ab2f-c24daf8c9aac",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

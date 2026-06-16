@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-entry-nodes.20260402.225314447276",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-entry-nodes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T22:53:14.447276",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-entry-nodes",
+      "T-programming-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-entry-nodes",
+    "epic": "Training",
+    "size": "S",
+    "title": "pe: Seed ENTRY + CLAIM + READ_TICKET nodes",
+    "result": "Seeded pe_chain.py with pe_entry_init/pe_claim/pe_read_ticket step functions + run_pe_entry_chain(). PROC_PE_CHAIN habit seeded. 22 tests passing. Basket pattern: each step takes/returns dict. No copy-on-fork.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": "T-programming-engrams",
+    "description": "Pure tool-call nodes: extract ticket_id from basket/TWM, claim_ticket(), read_ticket() → basket[ticket_description]. FORKIF chain, no LLM. Tests: basket has ticket_description after READ_TICKET fires.",
+    "completed_at": "2026-04-02T22:53:14.447276+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7077d452-484f-4eb3-b623-b504b6a81157",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-gh-auth-check.20260404.193150353866",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gh-auth-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T19:31:50.353866",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gh-auth-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gh-auth-check",
+    "tags": [
+      "Operations"
+    ],
+    "title": "gh auth token expiry detection — CC commit skill + Igor habit",
+    "result": "Added gh auth check to commit skill Step 0a (halts with clear message if token expired). Created tools/git_auth_check.py with check_gh_auth() tool. Seeded PROC_GIT_AUTH_CHECK habit (trigger: git push|push origin|commit and push) via seed_git_auth_check_habit.py. All 1684 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T19:30:23.547348+00:00",
+    "related_to": null,
+    "description": "Detect gh auth token expiry before git push fails. (1) CC commit skill Step 0: run 'gh auth status' and halt with clear message if token invalid. (2) Igor habit PROC_GIT_AUTH_CHECK: fire on git_push intent, run gh auth status, warn if invalid. Background: gh token expired silently mid-session 2026-04-04 — push prompted for password which fails with 2FA.",
+    "completed_at": "2026-04-04T19:31:50.353866+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f2a65016-7c2f-4751-aa47-0ec7fc9be02d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

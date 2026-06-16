@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-granny-cc-dispatch-fn.20260529.145344766529",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-cc-dispatch-fn"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T14:53:44.766529",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-cc-dispatch-fn",
+      "T-test",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-cc-dispatch-fn",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Granny: CC dispatch_fn — GRANNY_DISPATCH channel post on route",
+    "result": "cc_dispatch_fn: cc_queue dispatch + GRANNY_DISPATCH channel post; wired in GrannyShim.start(); 4 tests green",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.85,
+    "claimed_at": null,
+    "created_at": "2026-05-29T14:53:44.766529+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "GrannyWeatherwaxDevice._DEFAULT_ROUTING maps Platform/Infrastructure → cc, but routing edges have dispatch_fn=None. When dispatch_fn is None, route_ticket() falls back to a plain channel post (no actual dispatch). For the factory loop to work, the CC routing edges need a real dispatch_fn that: (1) calls cc_queue.py dispatch <ticket_id> to set ticket in_progress, (2) posts GRANNY_DISPATCH|ticket=T-xxx|worker=claude|title=... to the shared channel so the CC task listener can pick it up.\n\nWire the dispatch_fn at GrannyShim startup (or in a GrannyDaemon.__init__) by calling device.register_worker('cc', ['Platform','Infrastructure','Cognition','Database','Training'], dispatch_fn=_cc_dispatch_fn). The _cc_dispatch_fn should call cc_queue.py dispatch + post to channel.\n\n**Affected files:** devices/granny/shim.py (add dispatch_fn registration in start()), devices/granny/device.py (dispatch_fn receives ticket dict)\n**Design rules:** no SQLite; channel post via unseen_university.channel\n**Scope boundary:** only the dispatch_fn for cc worker. Do not change routing logic or edge weights.\n**Test plan:** mock cc_queue dispatch; call route_ticket({'id':'T-test','tags':['Platform'],...}); assert channel received GRANNY_DISPATCH message with ticket id",
+    "completed_at": "2026-05-29T14:57:50.013729+00:00",
+    "deposited_at": "2026-05-29T08:54:17.006719",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-29T14:53:44.844322+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fdc8cd87-613a-45b4-a7af-57a7a42791f8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

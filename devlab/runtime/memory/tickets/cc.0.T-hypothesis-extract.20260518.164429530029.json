@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-hypothesis-extract.20260518.164429530029",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-hypothesis-extract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530029",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-hypothesis-extract"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-hypothesis-extract",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Hypothesis",
+      "Skills"
+    ],
+    "title": "Add mandatory hypothesis extraction to /decided (3 questions)",
+    "result": "Added Step 2.6 to /decided — 3 mandatory hypothesis questions + audit-hypothesis gate",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530029+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "Akien naturally forms hypotheses but doesn't voice them, so they're lost across compactions. /decided must extract and store the hypothesis before filing tickets. Three mandatory questions, not optional.\n\n**Affected files:** agent_datacenter/skills/decided/SKILL.md (modify Step 2 — add hypothesis extraction block after decision summary, before audit-design)\n**Design rules:** questions are mandatory gates — /decided does not proceed to audit-design until all three are answered (or explicitly marked 'none' with reason)\n**Scope boundary:** in scope: add after Step 2 — (1) 'Which goal does this serve?' (G-xxx or explicit none), (2) 'What should be observably different after these tickets ship?', (3) 'How will we know? (metric, behavior, eval question)'. Store all three on the decision record (decision file + palace node metadata). Out of scope: auto-running /audit-hypothesis (that's a separate skill gate to add later).\n**Test plan:** skill file change; verify questions appear in a /decided run and output is stored in decision .md file.",
+    "completed_at": "2026-05-18T16:58:47.709749+00:00",
+    "github_issue": 741,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8dc979ef-d56e-46f9-a1de-db853dbfc9e7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

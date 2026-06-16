@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-article-skills-full-coverage.20260529.183255554311",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-article-skills-full-coverage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T18:32:55.554311",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-article-skills-full-coverage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-article-skills-full-coverage",
+    "gate": null,
+    "size": "L",
+    "title": "4.Skills.md: document all 49 skills with what+why",
+    "result": "validated: 49/49 skills covered, glossary added, committed dc99a38d",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "claimed_at": null,
+    "created_at": "2026-05-29T18:32:55.554311+00:00",
+    "created_by": null,
+    "related_to": null,
+    "commit_hash": "dc99a38d",
+    "decision_id": null,
+    "description": "4.Skills.md currently documents 8 of 49 installed skills. The remaining ~41 are invisible to a new reader. This article is being distributed to Delta Dental colleagues starting Monday 2026-06-01 — missing skills will generate support questions. Expand the chapter to cover every skill in ~/.claude/skills/ with (a) what the skill does and (b) why that design was chosen.\n\n**Affected files:** lab/docs/the_ownership_gap/4.Skills.md\n**Design rules:** none apply (documentation work only)\n**Scope boundary:** IN: add every skill not yet documented, with name/what/why. Keep the existing 8 entries and only improve them if there's a clear gap. Group skills logically (workflow core, audit suite, daily rituals, utility/one-offs). OUT: levers page (Akien editing separately), other chapters, new skill implementations.\n**Completion criteria:** Every skill listed in ~/.claude/skills/ appears in 4.Skills.md with a description and a why-it-exists statement. decided (deprecated) is noted as deprecated. No skill from the installed list is absent from the article.",
+    "completed_at": "2026-05-29T18:41:47.001687+00:00",
+    "deposited_at": "2026-05-29T12:33:34.114587",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "decision",
+    "scraps_validated": "2026-05-29T18:32:55.674497+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2e437e83-c60a-4a87-a116-f4c499b90af9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

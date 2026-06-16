@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-gate-date-parsing.20260521.163328563144",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gate-date-parsing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T16:33:28.563144",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-queue-encapsulation-2026-05-21"
+    ],
+    "tickets": [
+      "T-consequence-skill-telemetry",
+      "T-gate-date-parsing",
+      "T-skill-telemetry-rollup",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gate-date-parsing",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Bugfix"
+    ],
+    "title": "Fix _gate_clear to parse YYYY-MM-DD date gates",
+    "result": "fixed _gate_clear: date-first-token YYYY-MM-DD compared to today; fail-closed on unknown; 7 new tests green — ADC 85bb967, TheIgors 08688948",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-05-21T16:33:28.563144+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-queue-encapsulation-2026-05-21",
+    "description": "cc_queue.py _gate_clear() only understands ticket-ID gates. When a gate string starts with a date (e.g. '2026-06-19 — 30 days after T-skill-telemetry-rollup...'), the function finds the ticket ID in the string, sees it is closed, and wrongly returns True — allowing the ticket to be picked up before its gate date. Fix: parse the first token; if it matches YYYY-MM-DD, compare to today and return False until that date passes. If neither a date nor a ticket ID is found, fail closed (return False). Add logging: '[gate-date] {id} blocked until {date}' when a date gate holds.\n\n**Affected files:** ~/TheIgors/lab/claudecode/cc_queue.py\n**Design rules:** none apply\n**Scope boundary:** _gate_clear only; no changes to any other gate logic or to the queue list display\n**Test plan:** 3 new tests — future date blocks, past date clears, unknown-format fails closed; run existing cc_queue test suite green\n**Validation:** cc_queue.py list --gated shows T-consequence-skill-telemetry hidden until 2026-06-19; log line '[gate-date]' appears when blocked\n**Cleanup:** tests use tmp queue JSON fixture, no DB rows\n**Logging:** log.debug('[gate-date] {ticket_id} blocked until {gate_date}') in _gate_clear when date gate holds\n**Observable via:** log.debug('[gate-date] T-xxx blocked until 2026-06-19') in cc_queue.py:_gate_clear",
+    "completed_at": "2026-05-21T16:58:13.473751+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T16:33:28.606841+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "344e5fad-4f36-4c3c-9873-8ab53ca8634f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

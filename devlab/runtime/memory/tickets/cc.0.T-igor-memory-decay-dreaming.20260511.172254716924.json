@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-memory-decay-dreaming.20260511.172254716924",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-memory-decay-dreaming"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T17:22:54.716924",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-xmemory-patterns-2026-05-11"
+    ],
+    "tickets": [
+      "T-dreaming-wg-hebbian",
+      "T-igor-memory-decay-dreaming"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-memory-decay-dreaming",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Cognition",
+      "Dreaming"
+    ],
+    "title": "Memory lifecycle decay pass in dreaming.py — archive stale low-activation memories",
+    "result": "_archive_stale_memories() added to dreaming.py; metadata.archived=true for age>90d + score<0.1 memories; PROCEDURAL exempt; called from run()",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 5,
+    "claimed_at": "2026-05-23T21:29:27.279646+00:00",
+    "created_at": "2026-05-11T17:22:54.716924+00:00",
+    "related_to": null,
+    "decision_id": "D-xmemory-patterns-2026-05-11",
+    "description": "clan.memories grows unbounded. activate.py has last_activated_at and activation_score columns but nothing ever prunes. xMemory paper names memory lifecycle management as 'the next wave of work' — validating it as a real bottleneck. Without decay, semantic search noise accumulates over time.\n\nAdd _archive_stale_memories() helper to dreaming.py, called from run() after synthesis step (alongside T-dreaming-wg-hebbian's _strengthen_coactivated_edges). Implementation:\n1. Query clan.memories WHERE last_activated_at < NOW() - INTERVAL '%s days' AND activation_score < %s AND memory_type NOT IN ('PROCEDURAL') — PROCEDURAL memories (habits) are exempt.\n2. UPDATE clan.memories SET metadata = jsonb_set(metadata, '{archived}', 'true') WHERE id = ANY(%s).\n3. Log count of archived memories.\nConfigurable: IGOR_MEMORY_DECAY_DAYS (default 90), IGOR_MEMORY_DECAY_SCORE_THRESHOLD (default 0.1).\nNon-blocking: wrap in try/except, log error, continue dreaming if step fails.\nNote: this is a parallel addition to T-dreaming-wg-hebbian (different function, different call in run()) — no conflict; sprint sequentially after T-dreaming-wg-hebbian to avoid merge confusion.\n\n**Affected files:** wild_igor/igor/cognition/dreaming.py (add helper + call in run())\n**Design rules:** non-blocking on failure; PROCEDURAL memories exempt; configurable threshold + interval via env; archived flag in metadata (not hard delete — Discworld principle: repair, don't discard)\n**Scope boundary:** In: stale-memory archive query, metadata flag set, log. Out: hard deletion, pruning PROCEDURAL memories, changing consolidation, changing activation scoring.\n**Test plan:** Mock clan.memories with one node last_activated > 90d ago and activation_score < 0.1 → after run(), metadata.archived = true. PROCEDURAL node with same age → NOT archived. Node last_activated 30d ago → NOT archived. Exception in _archive_stale_memories does not abort dreaming run().",
+    "completed_at": "2026-05-28T01:57:02.184533+00:00",
+    "github_issue": 725,
+    "dispatched_at": "2026-05-23T21:29:27.279646+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "50d39757-cb3b-425f-acdc-730c7a6afb99",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

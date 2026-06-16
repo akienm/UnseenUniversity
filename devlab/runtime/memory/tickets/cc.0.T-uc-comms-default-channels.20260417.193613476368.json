@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-uc-comms-default-channels.20260417.193613476368",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-comms-default-channels"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T19:36:13.476368",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-channel-tabs-redesign",
+      "T-uc-comms-default-channels",
+      "T-uc-comms-module"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-comms-default-channels",
+    "size": "M",
+    "tags": [
+      "Operations"
+    ],
+    "title": "Wire default channels: Shared, per-agent auto-create, web UI integration",
+    "result": "CommsModule wired into UC server. comms://shared on startup, auto-create comms://<agent_id> on register. /api/comms/channels + /api/comms/health endpoints. Postgres transport with memory fallback. 12 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-17T19:31:19.905742+00:00",
+    "related_to": null,
+    "description": "After T-uc-comms-module is built, wire up the default channel set.\n\n## Default channels\n- comms://shared — always-on broadcast channel, all agents see it, notify off by default\n- comms://ccmain — auto-created on CC connect, notify on, private to CC + Akien\n- comms://igor-wild-0001 — auto-created on Igor connect, notify on, private to Igor + Akien\n- comms://log/main — write-only operational log channel\n\n## Web UI integration\n- Tab bar reads channel list from CommsModule\n- Tab per channel with notification checkbox bound to channel.notify\n- Shared tab always visible\n- Agent tabs appear/disappear on connect/disconnect\n- Color change blue→green on new messages for Akien\n\n## Hook integration\n- CC UserPromptSubmit hook checks comms://ccmain (and comms://shared if notify checked)\n- Igor polls comms://igor-wild-0001 via MCP channel_read\n\n## Depends on\n- T-uc-comms-module\n- T-uc-channel-tabs-redesign (web UI side)",
+    "completed_at": "2026-04-17T19:36:13.476368+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e453fdba-4430-4cd7-ba41-ab316945863b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

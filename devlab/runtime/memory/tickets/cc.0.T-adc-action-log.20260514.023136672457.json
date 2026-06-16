@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-action-log.20260514.023136672457",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-action-log"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-14T02:31:36.672457",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-action-agency-tools-2026-05-13"
+    ],
+    "tickets": [
+      "T-adc-action-log"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-action-log",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Observability",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: ADC action log — adc.action_log table + shared logger module",
+    "result": "adc.action_log table + append_action() fire-and-forget logger; 4 integration tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-05-14T02:32:30.681725+00:00",
+    "created_at": "2026-05-14T02:31:36.672457+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-action-agency-tools-2026-05-13",
+    "description": "All action tools (shell_exec, file_rw, file_ticket, propose_change) need a shared audit trail so the nighttime auditor has something to review. No action_log table or module exists in ADC yet.\n\nProposed shape: Create `adc.action_log` Postgres table (id SERIAL PK, device_id TEXT, tool_name TEXT, args_json JSONB, result_summary TEXT, ts TIMESTAMPTZ DEFAULT now(), duration_ms INT, exit_code INT NULL). Add `agent_datacenter/action_log.py` with `append_action(device_id, tool_name, args_dict, result_summary, duration_ms, exit_code=None)` — fire-and-forget, never raises. Migration in `agent_datacenter/db/migrations/`.\n\n**Affected files:** new `agent_datacenter/action_log.py`, new migration file in `agent_datacenter/db/migrations/`\n**Design rules:** no-sqlite; postgres-only; append_action is fire-and-forget (never blocks callers)\n**Scope boundary:** Schema + logger module only. No tools yet, no auditor. Other tools depend on this — sprint first.\n**Test plan:** test that append_action inserts a row with correct fields; test graceful no-op when DB unavailable (exception caught internally).",
+    "completed_at": "2026-05-14T02:36:59.425079+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d10fdfec-7c21-42fd-b74e-ab701740ef10",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

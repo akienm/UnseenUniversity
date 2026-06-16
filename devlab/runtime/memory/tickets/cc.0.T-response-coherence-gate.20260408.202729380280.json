@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-response-coherence-gate.20260408.202729380280",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-response-coherence-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T20:27:29.380280",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-response-coherence-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-response-coherence-gate",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Response coherence gate — detect template/parrot before sending",
+    "result": "Coherence gate in main.py: greeting-pattern responses suppressed after turn 1. Falls through to LLM instead. Habit logging wrapped in if-guard to prevent NoneType crash on suppression. 1880 tests pass. Note: deeper issue (LLM projecting stale context onto input) is addressed by D330 TWM context builder.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Igor generates canned greeting responses mid-conversation (turn 3 parrot). D332 blocks storage but user still sees the bad response. Need: pre-send check that detects template collapse (repeated greeting, topic discontinuity, loss of conversational thread). Could be rule-based (greeting keywords after turn 1) or lightweight LLM check. The echo filter catches storage; this catches generation.",
+    "completed_at": "2026-04-08T20:27:29.380280+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "72a2eda7-d1e3-4a57-9256-9caffab6d5df",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

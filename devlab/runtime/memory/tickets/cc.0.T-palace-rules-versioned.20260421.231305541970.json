@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-palace-rules-versioned.20260421.231305541970",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-rules-versioned"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T23:13:05.541970",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-approach-frame-principle-2026-04-21"
+    ],
+    "tickets": [
+      "T-palace-rules-versioned"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-rules-versioned",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Palace",
+      "Rules",
+      "VersionedMemory",
+      "ApproachFrame"
+    ],
+    "title": "Add revision/updated affordance to palace rules (versioned memory)",
+    "result": "Every theigors/rules/* palace node carries 'revision: 2026-04-21 — initial versioned tag' line. Pattern established: future rule edits append new revision lines. 16 nodes updated (rules + ticket_design_checks children). Commit 706f3143.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.65,
+    "claimed_at": "2026-04-21T23:11:45.518981+00:00",
+    "related_to": null,
+    "decision_id": "D-approach-frame-principle-2026-04-21",
+    "description": "Rules look immutable but aren't. Need an evolvability affordance so rules are visibly 'current best version, improvable' — not proclamations. Akien 2026-04-21: 'a versioned memory is the answer there too.'\n\n**Shape:** each palace rule row gets a `revision:` line in its content (e.g. 'revision: 2026-04-21 — initial'). Updated each time the rule changes. Use versioned memory pattern: content stores mini-changelog inline. If memory_palace schema already supports a version_history field, use it; otherwise inline YAML block is sufficient for now.\n\n**Affected files:** palace rows under `theigors/rules/*` (content edits for revision: affordance). `lab/claudecode/palace_sync.py` — if touched to support versioned sync, update its docstring to reflect versioned content handling. clan.memory_palace table (Postgres, existing — no schema migration needed unless version_history column is added, in which case note migration here).\n\n**Design rules:** no-sqlite (Postgres only, clan.memory_palace existing); no-new-memory-schemas (versioning goes into content YAML, not a new table); docs-in-code: if palace_sync.py is touched, update its docstring; test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: add revision: line to each existing theigors/rules/* node. Establish the pattern.\n- Out: versioning non-rule palace nodes. Out: automated version-history rollup UI.\n\n**Test plan:** no new tests. Verification: `SELECT content FROM memory_palace WHERE path LIKE 'theigors/rules/%'` — every row contains 'revision:' line. If schema migration: INSERT + SELECT round-trip confirms column.",
+    "completed_at": "2026-04-21T23:13:05.541970+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2b0e03c2-98cd-4f3c-bb47-78647f00973e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

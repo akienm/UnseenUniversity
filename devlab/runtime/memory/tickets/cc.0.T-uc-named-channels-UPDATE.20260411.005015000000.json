@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-uc-named-channels-UPDATE.20260411.005015000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-named-channels-UPDATE"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-11T00:50:15",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-named-channels",
+      "T-uc-named-channels-UPDATE"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-named-channels-UPDATE",
+    "size": "S",
+    "title": "UPDATE T-uc-named-channels: add unified markup layer",
+    "result": "Superseded by T-uc-comms-module. Comms channels with full routing, envelopes, transports, and notifications.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "created_at": "2026-04-11T00:50:15Z",
+    "related_to": "T-uc-named-channels",
+    "description": "MERGE INTO T-uc-named-channels: Messages carry semantic markup tags. Each channel consumer (terminal→ANSI, web→HTML, logfile→strip, pipe→strip) translates at the endpoint. One rendering decision point replaces per-Console force_terminal hacks. Rich tags or HTML-like tags as the canonical format.",
+    "completed_at": "2026-04-17T20:20:00.779008+00:00",
+    "github_issue": 404,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "96ea839f-5d1c-4d6c-9bbc-48d3d8fdf2c8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

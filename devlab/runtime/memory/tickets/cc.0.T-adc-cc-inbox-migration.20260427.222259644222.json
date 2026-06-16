@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-cc-inbox-migration.20260427.222259644222",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-cc-inbox-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:22:59.644222",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-cc-inbox-migration",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-cc-inbox-migration",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure",
+      "Migration"
+    ],
+    "title": "agent_datacenter: migrate lab/claudecode/cc_inbox.py to comms://CC.0 IMAP mailbox",
+    "result": "cc_inbox.py: dual-write shim added. append() mirrors to comms://CC.0 via IMAP Router with InboxEntry as Envelope payload. JSONL remains authoritative for read_unread/mark_read. Lazy IMAP init; silent fallback.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-27T22:17:59.846044+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "Migrate cc_inbox.py (Igor→CC push messages, JSONL-backed) to the IMAP-backed CC.0 mailbox. One-release deprecation shim.\n\nCurrent state: cc_inbox.py reads ~/.TheIgors/cc_channel/cc_inbox.json. 297 lines. Used for Igor subsystem push to CC (pe_chain escalations, scope_guard blocks).\n\nProposed shape:\n- Deprecation shim: cc_inbox.py's read_unread() → imap_server.fetch_unseen('CC.0'); push() → Router.send('comms://CC.0', envelope)\n- YGM compatibility: cc_inbox.read_unread() now returns Envelopes; callers that expected old format need adaptation check\n- Old JSONL cc_inbox.json: kept for one release; removed after verification\n- /readinbox skill update: note that inbox is now CC.0 IMAP mailbox (update if necessary)\n\nAffected files:\n- ~/TheIgors/lab/claudecode/cc_inbox.py (rewrite to IMAP backend)\n- ~/TheIgors/lab/claudecode/cc_mcp_server.py (verify uses cc_inbox; may need update)\n\nDesign rules:\n- docs-in-code: deprecation comment at top of cc_inbox.py\n\nScope boundary:\nIN: cc_inbox.py shim rewrite, YGM compatibility check, old JSONL backup\nOUT: /readinbox skill update (if needed, it's a separate small ticket); cc_inbox.py removal (Phase 5)\n\nTest plan:\n- Igor sends to CC.0 via cc_inbox.push() → imap_server.unseen_count('CC.0') == 1\n- cc_inbox.read_unread() returns the envelope; unseen count → 0\n- context-load's Step 5.6 inbox check works via new IMAP backend",
+    "completed_at": "2026-04-27T22:22:59.644222+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6536e05b-efcf-4370-bde8-568a16a3d752",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

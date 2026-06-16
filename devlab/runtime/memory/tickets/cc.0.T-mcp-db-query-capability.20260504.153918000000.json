@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-mcp-db-query-capability.20260504.153918000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-db-query-capability"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:39:18",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-capability-protocol-2026-05-03"
+    ],
+    "tickets": [
+      "T-mcp-db-query-capability"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-db-query-capability",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Capability",
+      "MCP",
+      "Database"
+    ],
+    "title": "CLOSED: DB query as MCP capability — query/dispatch verbs + skill consumer migration",
+    "result": "db_query+db_dispatch in igor_mcp.py; 12 tests; context-load Steps 2a/2b + day-close-audit Steps 9/12 migrated from psql; commit f7e35cd0",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-05T00:25:16.980853+00:00",
+    "created_at": "2026-05-04T15:39:18Z",
+    "related_to": null,
+    "decision_id": "D-capability-protocol-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — 'all is approved! go!').** First concrete capability migration under theigors/rules/capability-protocol. Replaces ad-hoc `psql -tAc` shell-outs with an MCP query/dispatch capability that uses the shared verb set.\n\n**Two-sided per the rule:** ships handler (MCP capability) AND skill consumer (skill files updated to call it).\n\n**Capability surface (matches theigors/rules/capability-protocol/vocabulary):**\n- `query(sql, params)` — read-only SELECT, returns rows. No state change.\n- `dispatch(sql, params)` — write op (INSERT/UPDATE/DELETE), returns request id.\n- `status(id)` / `result(id)` — for async dispatch (initially synchronous, async-shaped for future).\n\n**Affected files:** \n- HANDLER: lab/claudecode/mcp_server.py or agent_datacenter/devices/db/db_capability.py (NEW MCP tool registration), wild_igor/igor/memory/db_proxy.py (delegate path).\n- SKILL CONSUMER: /home/akien/.claude/skills/context-load/SKILL.md (replace `psql -tAc` blocks with mcp__igor__db_query calls), /home/akien/.claude/skills/day-close-audit/SKILL.md (same), /home/akien/.claude/skills/day-close/SKILL.md (same).\n**Design rules:** theigors/rules/capability-protocol (parent), theigors/rules/capability-protocol/vocabulary (uses `query`/`dispatch`), theigors/rules/capability-protocol/two-sided-build (handler + skill ship together), theigors/rules/database (Postgres + db_proxy invariants preserved).\n**Scope boundary:** IN: query + dispatch MCP tools, migrate the highest-traffic skill psql call sites (context-load, day-close, day-close-audit). OUT: migrate every psql in the lab/ scripts (those stay bash for now). OUT: full async dispatch (sync now, async-shape preserved for later).\n**Test plan:** pytest for the MCP handler (read + write paths against test DB); CC.1 integration test that loads /context-load skill and asserts mcp__igor__db_query is called instead of bash psql; manual: run /context-load and verify behavior unchanged.",
+    "completed_at": "2026-05-05T00:27:39.920848+00:00",
+    "github_issue": 582,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e5655b7f-d913-403c-8f24-ac22978a1adc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

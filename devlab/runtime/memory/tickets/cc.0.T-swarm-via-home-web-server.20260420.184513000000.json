@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-swarm-via-home-web-server.20260420.184513000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-via-home-web-server"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:45:13",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-capability-extraction-from-igor",
+      "T-claudeandakien-workshop-evolution",
+      "T-inference-migrate-igor-to-datacenter-device",
+      "T-swarm-manager",
+      "T-swarm-via-home-web-server"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-via-home-web-server",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Swarm",
+      "WebServer",
+      "Infra",
+      "Ports",
+      "epic"
+    ],
+    "title": "CLOSED: swarm web server — all 7 areas complete",
+    "result": "all 7 areas complete: identity-layer, channel-mechanism, visibility-rules, notification-rule, tmux-face, web-tab-ui, port-audit",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-04-20T18:45:13Z",
+    "related_to": "T-swarm-manager",
+    "decision_id": null,
+    "description": "Captured design exists at lab/design_docs/datacenter-swarm-bus-design-2026-05-01.md (Akien + CC, 2026-05-01). The 7-area \"sprint-ready outline\" at the bottom of that doc IS the work decomposition — no further design call needed. File children for each area as they become work-ready.\n\n## Sprint approach (CC reminder 2026-05-03)\n\nDO NOT re-flag this as design-blocked. The design conversation happened, the doc captured it, the 7 areas are the spawn map. When sprinting:\n1. Pick a child area to ship (port-use audit is the most concrete starting point).\n2. File a child ticket for that area citing the design doc § as the spec.\n3. Sprint the child.\n4. Repeat with the next area when ready.\n\nThe seven areas (per design doc § What this becomes):\n1. Identity layer — `<box>.<n>` addressing with surfaces (/console, /mcp, /inference, ...). Backward-compat alias for existing comms://<lineage>.\n2. Channel mechanism — multi-party-rooms-as-mirrored-inboxes; send-to-channel splits + delivers; per-participant transport adapter forwards.\n3. Visibility rules — primary-everywhere, secondary-opt-in. `shared` always present. Web UI = horizontal tabs.\n4. Notification rule — intent-to-address-only, not ambient-stream.\n5. Tmux face — capture-pane (preferring JSONL transcripts) → shim parse → bus envelopes; bus envelopes → shim → send-keys with attribution.\n6. Web server tab UI — rendering channel streams; bidirectional input from the web.\n7. Port-use audit — enumerate current bindings (UC web server, Discord bridge, Matter shelf, SensorTree, tailnet bindings, CC dashboard) and rationalize them under the unified bus.\n\n## Companion tickets filed earlier (2026-05-01)\n\n- T-inference-migrate-igor-to-datacenter-device (M, claude) — first concrete capability extraction\n- T-capability-extraction-from-igor (XL, epic, claude) — umbrella for the broader extraction\n- T-claudeandakien-workshop-evolution updated with cross-project-lab framing\n\n## Provenance\n\nAkien 2026-04-20 side-note during workflow-overhaul sprint. Deferred until current batch wraps. Design captured 2026-05-01. Akien call 2026-05-03 to remove the \"open a /design block\" framing that tripped CC twice into surfacing this as a design block.",
+    "completed_at": "2026-05-07T23:01:23.645123+00:00",
+    "github_issue": 500,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ae2b18eb-f166-4eae-92a3-83590eaa9d10",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

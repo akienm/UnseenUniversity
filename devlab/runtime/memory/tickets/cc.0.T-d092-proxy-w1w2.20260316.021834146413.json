@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-d092-proxy-w1w2.20260316.021834146413",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-d092-proxy-w1w2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T02:18:34.146413",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-d092-proxy-w1w2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-d092-proxy-w1w2",
+    "body": "W1: Route ALL SQLite access through DatabaseProxy — no raw sqlite3.connect anywhere.\n\nFiles to change:\n1. wild_igor/igor/tools/notebook.py — replace sqlite3.connect() calls with DatabaseProxy(path)() context manager. Keep same schema/SQL, just wrap the connection.\n2. wild_igor/igor/tools/budget.py — same: replace sqlite3.connect with DatabaseProxy.\n3. wild_igor/igor/cognition/word_graph.py — has persistent conn (check_same_thread=False) at line 293; replace with DatabaseProxy. word_graph is long-lived so hold a DatabaseProxy instance, call it per-operation.\n\nW2: Add to wild_igor/igor/memory/db_proxy.py (MEDIUM inertia — read carefully first):\n- ensure_index(table: str, columns: tuple, unique: bool = False) -> None: idempotent CREATE INDEX IF NOT EXISTS idx_{table}_{col1}_{col2}; records in _cc_index_registry table in that DB; thread-safe\n- _explain_cache: dict[str, bool] — sha256(sql)[:12] -> uses_index; populated lazily\n- _index_hits: dict[str, int] — index_name -> hit count\n- _track_index_usage(sql): run EXPLAIN QUERY PLAN, check for USING INDEX in output, find index name, increment _index_hits[name]; only runs once per unique sql hash\n- Call _track_index_usage in _DBContext._on_sql()\n- get_index_report() -> dict: {index_name: {hits, table, columns, created_at}}\n- _cc_index_registry table: (index_name TEXT PK, table_name TEXT, columns TEXT, created_at TEXT)\n\nForensic logging: log to db_queries.log when ensure_index creates a new index.\nSyntax check all files after editing.\nDo NOT change cortex.py — it already uses db_proxy correctly.",
+    "role": "implementation",
+    "size": "M",
+    "title": "D092: db_proxy universal gateway + index lifecycle (W1+W2)",
+    "result": "W1: notebook.py — _get_db→DatabaseProxy per user_slug (_PROXIES dict, schema init on first use), 4 functions converted to with _proxy(slug)() as con:; budget.py — _conn()→DatabaseProxy singleton (_BUDGET_PROXY), 5 with _db_proxy()() as c: replacements; word_graph.py — self._conn→self._db DatabaseProxy, _WordDocProxy takes DatabaseProxy, _inc_doc_count(conn) param, all methods use with self._db() as conn:, PRAGMA journal_mode=WAL set at init (persistent), explicit commits removed. W2: db_proxy.py — added hashlib/re/threading imports, _in_explain thread-local, _track_index_usage() (EXPLAIN QUERY PLAN once per sql hash, accumulate _index_hits), ensure_index() (idempotent CREATE INDEX + _cc_index_registry table + db_log), get_index_report(); _on_sql() calls _track_index_usage. All 4 files syntax OK.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-16T02:08:10.617005+00:00",
+    "completed_at": "2026-03-16T02:18:34.146413+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

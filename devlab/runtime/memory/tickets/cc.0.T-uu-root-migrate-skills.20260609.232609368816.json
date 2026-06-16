@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-uu-root-migrate-skills.20260609.232609368816",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-root-migrate-skills"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T23:26:09.368816",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-root-env-var-2026-06-09"
+    ],
+    "tickets": [
+      "T-uu-root-migrate-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-root-migrate-skills",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "DX"
+    ],
+    "title": "Migrate skill run scripts from CC_WORKFLOW_TOOLS to UU_ROOT",
+    "result": "savestate/run now derives CC_TOOLS from uu_root() with CC_WORKFLOW_TOOLS as deprecated fallback; grep confirms no hardcoded paths remain",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that no skill run script contains a hardcoded path or depends on CC_WORKFLOW_TOOLS, making skills portable across machines.",
+    "claimed_at": "2026-06-09T23:27:59.003655+00:00",
+    "created_at": "2026-06-09T23:26:09.368816+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-uu-root-env-var-2026-06-09",
+    "description": "Update all skills/*/run scripts to use uu_root() from unseen_university._uu_root (or ${UU_ROOT} shell var) instead of CC_WORKFLOW_TOOLS or hardcoded paths. Keep CC_WORKFLOW_TOOLS as a shell alias (export CC_WORKFLOW_TOOLS=${UU_ROOT}/lab/claudecode) in shell setup docs for one deprecation cycle — existing scripts that reference it continue to work.\n\n**Affected files:** skills/savestate/run, skills/context-load/run, skills/sprint-ticket/run, skills/factory-create/run, skills/audit-feedback/run, skills/skills-sync/run (check each for CC_WORKFLOW_TOOLS or hardcoded paths)\n**Design rules:** none apply\n**Scope boundary:** skill run scripts only. Out of scope: lab/claudecode/*.py Python files (those already use os.environ); SKILL.md documentation files.\n**Completion criteria:** grep -r CC_WORKFLOW_TOOLS skills/*/run returns nothing; grep -r '/home/akien' skills/ returns nothing; python3 skills/savestate/run close 'test' works from any directory without CC_WORKFLOW_TOOLS set.",
+    "completed_at": "2026-06-09T23:28:29.202872+00:00",
+    "deposited_at": "2026-06-09T17:27:01.650902",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-09T23:27:59.003655+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

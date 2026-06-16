@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-282.20260318.013849000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-282"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-18T01:38:49",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-282"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-282",
+    "title": "Post-Windows: deep DB best practices review — split ephemeral/persistent storage",
+    "result": "Done: three-schema architecture (instance/clan/infra) with search_path per proxy type = ephemeral/persistent split.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-18T01:38:49Z",
+    "description": "GitHub issue #282. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-17T22:15:23.481146+00:00",
+    "github_issue": 282,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4a5bdd49-14db-4fe6-b9e5-5a615daccd60",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

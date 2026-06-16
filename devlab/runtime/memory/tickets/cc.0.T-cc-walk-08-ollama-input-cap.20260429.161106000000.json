@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-08-ollama-input-cap.20260429.161106000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-08-ollama-input-cap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:06",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-cc-walk-08-ollama-input-cap",
+      "T-igor-programs-himself",
+      "T-ollama-input-cap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-08-ollama-input-cap",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor caps ollama input at model context length",
+    "result": "Target ticket already done. Walk admin close.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.77,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:11:06Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-ollama-input-cap. Stale proposal cleared. Touches embedder.py + ollama_reasoner.py — neither is HIGH-inertia.\n\nChecklist:\n1. Set priority=0.95 on target; watch Igor claim\n2. PLAN: embedder.py + ollama_reasoner.py — confirm no brainstem files\n3. If false proposal: reset+inject specific file names\n4. Verify truncation logic + tests + commit + done\n\n**Affected files:** wild_igor/igor/cognition/embedder.py, wild_igor/igor/cognition/reasoners/ollama_reasoner.py\n**Design rules:** none\n**Scope boundary:** IN — scaffold T-ollama-input-cap\n**Test plan:** target done.",
+    "completed_at": "2026-05-02T03:44:13.395612+00:00",
+    "github_issue": 552,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "47fc5103-84fc-4ace-8ee5-ea31d6065a8a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-facia-twm-flood.20260511.213534270269",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-facia-twm-flood"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T21:35:34.270269",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-facia-twm-flood"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-facia-twm-flood",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "CLOSED: FACIA tool descriptions flood TWM — reduce TTL and salience to unclog NE",
+    "result": "ProprioceptionSource: interval 60→300s, salience 0.35→0.08, TTL 120→600s, skip-if-unchanged. body.motor slots drop from ~27 continuous to ≤31 per 5-min; arousal freed to drop below NE suppression gate.",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 1,
+    "claimed_at": "2026-05-11T21:45:32.343252+00:00",
+    "created_at": "2026-05-11T21:35:34.270269+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "27 of 50 TWM slots are FACIA tool descriptions (body.motor category), pushed every cycle. This crowds out goal-relevant and ticket-relevant content. High arousal (0.97) from the noise suppresses LTM surfacing (arousal > 0.3 gate). The NE cycles on tool descriptions, produces nothing, watch_problems fires. Fix: lower FACIA push frequency (gate: only push if FACIA content has changed since last push), reduce TTL, or reduce salience to < 0.1 so they don't compete.\n\n**Affected files:** wild_igor/igor/cognition/push_sources.py (FaciaSource or equivalent), or the FACIA push call in main.py\n**Design rules:** no-sqlite\n**Scope boundary:** Only FACIA push frequency/salience/TTL. No FACIA content changes.\n**Test plan:** After fix, body.motor TWM entries < 5 during idle; arousal drops below 0.5 within 10 min; NE produces results again.",
+    "completed_at": "2026-05-11T21:58:06.931505+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "214dd3e3-6a0d-475d-be6e-2a44b04cbcd5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-announce-slice2-broker-as-skeleton-subdevice.20260501.220832108142",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice2-broker-as-skeleton-subdevice"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:08:32.108142",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice2-broker-as-skeleton-subdevice",
+      "T-announce-slice2-suffix-comms-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice2-broker-as-skeleton-subdevice",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice2",
+      "Datacenter",
+      "Skeleton"
+    ],
+    "title": "Register AnnounceBroker as Skeleton sub-device + bootstrap announce/announce-events mailboxes + IMAP listener",
+    "result": "Skeleton bootstraps announce + announce-events mailboxes, registers AnnounceBroker, runs AnnounceListener.pump() to dispatch envelopes→manifests over IMAP. Errors publish structured kind=error. listener.py NEW. 10 new tests; 144 passed. agent_datacenter commit 27f5e5b.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T22:04:26.129285+00:00",
+    "related_to": "T-announce-slice2-suffix-comms-routing",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "Slice 1 shipped AnnounceBroker as standalone in-process. Slice 2 wires it into Skeleton: register as a sub-device, create comms://announce + comms://announce-events IMAP mailboxes at skeleton init, run an IDLE listener that pulls envelopes from comms://announce, calls broker.resolve_announce(), and publishes Manifest to comms://announce-events. Broker still pure (resolve_announce unchanged from slice 1) — this ticket adds the AnnounceListener wrapper that loops on the bus.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py (init wires AnnounceBroker + AnnounceListener), /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/listener.py (NEW — IMAP IDLE loop, envelope→manifest dispatch), /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/__init__.py (export AnnounceListener), /home/akien/dev/src/agent_datacenter/bus/imap_server.py (bootstrap announce + announce-events mailboxes if missing — extend create_default_mailboxes or equivalent)\n**Design rules:** broker stays pure (no IO inside resolve_announce); listener owns the IDLE loop; envelope deserialization errors publish a structured error to announce-events, not silent drop\n**Scope boundary:** in — broker registered as Skeleton sub-device, mailboxes bootstrapped at skeleton init, listener loop dispatches envelopes to manifests over IMAP. Out — inotify-based invalidation (slice 3), CC-side announce_mcp.py adapter (slice 3), profile inheritance (slice 5), authentication/proof verification.\n**Test plan:** Extend test_skeleton.py — boot Skeleton with broker, verify comms://announce + comms://announce-events mailboxes exist on the IMAP stub after init. New test_announce_listener.py — listener consumes a posted envelope, calls broker.resolve_announce, publishes manifest to announce-events; malformed-envelope branch publishes error message rather than crashing the listener.",
+    "completed_at": "2026-05-01T22:08:32.108142+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "78e17417-62cc-41ef-8ad1-9f77c4bbe085",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

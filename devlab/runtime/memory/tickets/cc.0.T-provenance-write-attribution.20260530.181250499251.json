@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-provenance-write-attribution.20260530.181250499251",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-provenance-write-attribution"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T18:12:50.499251",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-provenance-identity",
+      "T-provenance-write-attribution"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-provenance-write-attribution",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Memory"
+    ],
+    "title": "Provenance service: stamp every memory write with verified source token",
+    "result": "test fixes (db_url isolation, patch target for lazy import) + uu channel.py source_agent stamp; all provenance writes wired",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "claimed_at": "2026-06-01T23:59:26.882265+00:00",
+    "created_at": "2026-05-30T18:12:50.499251+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Every write to clan.memories, channel_messages, and adc.palace should carry the verified provenance token of the writing agent — not self-reported agent_id, but the rack-issued token from T-provenance-identity. Also track derivation chains: if memory B was summarized from memory A, store derived_from=[A.id].\n\nSchema additions to clan.memories: source_token (varchar, FK-soft to registry), source_agent (varchar, denormalized for query speed), derived_from (text[], array of source memory ids). All three nullable for migration safety — existing rows get NULL, new writes must supply source_token.\n\n**Affected files:** clan.memories schema (migration), devices/librarian/memory_writer.py, devices/igor/memory/cortex.py (store() method)\n**Design rules:** no-sqlite; Postgres schema changes via migration file; derived_from enables chain-of-custody queries\n**Scope boundary:** IN — source_token + source_agent + derived_from on clan.memories and channel_messages; OUT — adc.palace attribution (follow-on), retroactive backfill of existing rows\n**Completion criteria:** new memory writes include source_token; SELECT source_agent, count(*) FROM clan.memories GROUP BY source_agent returns meaningful breakdown; derived_from populated when Librarian summarizes or Igor derives a memory from another",
+    "completed_at": "2026-06-02T00:06:13.163768+00:00",
+    "deposited_at": "2026-05-30T12:15:59.441387",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T23:59:26.882265+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T18:12:50.499397+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "748f437d-0a53-4cf9-ae16-d1500ce16c26",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

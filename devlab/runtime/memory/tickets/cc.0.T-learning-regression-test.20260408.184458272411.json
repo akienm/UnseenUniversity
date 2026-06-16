@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-learning-regression-test.20260408.184458272411",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-learning-regression-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T18:44:58.272411",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-learning-regression-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-learning-regression-test",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "D330: Learning circuit regression — replay cloud escalations",
+    "result": "cloud_escalations table + record_cloud_escalation() in forensic_logger. Wired into main.py tier selection. Synthetic tests: greetings stay local, simple questions stay local, complex tasks escalate. Live replay mode (--live) with channel + file alerts on regression. 1880 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Replay historical inputs that previously escalated to cloud. If same input on same topic escalates again, learning circuit has a gap. Direct measure of D316 cloud escape rate. MUST raise visible alert on failure — not a silent metric.",
+    "completed_at": "2026-04-08T18:44:58.272411+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7ac9c1d9-e2a1-419a-979b-e786dc9bac31",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

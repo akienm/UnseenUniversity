@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-day-close-audit-skill-drift-20260430.20260430.163000000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-day-close-audit-skill-drift-20260430"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T16:30:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-removal-2026-04-22"
+    ],
+    "tickets": [
+      "T-day-close-audit-skill-drift-20260430"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-day-close-audit-skill-drift-20260430",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "skill",
+      "day-close-audit",
+      "drift"
+    ],
+    "title": "/day-close-audit skill drift — Step 8 fn name + Step 9 schema + Step 12 table qualification",
+    "result": "All 3 drift fixes shipped to ~/.claude/skills/day-close-audit/SKILL.md: (1) Step 8 _tool_balance_trajectory→get_balance_trajectory (renamed import); (2) Step 9 schema query now covers clan/instance/public schemas with required={clan.memories, clan.interpretive_edges, instance.ring_memory, instance.twm_observations}; (3) Step 12 FROM memories→FROM clan.memories. Smoke-tested all 3 against live DB: Step 8 returns dict, Step 9 missing=set(), Step 12 returns 132 PROCEDURAL habits. Skills are user-local, not git-tracked.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": null,
+    "created_at": "2026-04-30T16:30:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "/day-close-audit skill has three drift findings caught during 2026-04-30 day-close run:\n\n1. Step 8 (OR burn rate) — calls `_tool_balance_trajectory` which was renamed to `get_balance_trajectory` in budget.py. Currently throws ImportError.\n2. Step 9 (DB schema spot-check) — looks for tables in `public` schema, but post-D-sqlite-removal-2026-04-22 the canonical home is `clan.*` (memories, interpretive_edges) and `instance.*` (ring_memory, twm_observations). Currently reports MISSING tables.\n3. Step 12 (Habit health) — references unqualified `memories` table; should be `clan.memories` for Postgres canonical schema. (Already fixed inline during this run; needs to land in the skill.)\n\n**Affected files:** ~/.claude/skills/day-close-audit/SKILL.md\n**Design rules:** none apply (skill update, not code)\n**Scope boundary:** in scope = three labeled fixes above; out of scope = broader skill rewrite\n**Test plan:** no tests because: skill markdown — verified by next /day-close-audit run executing cleanly\n",
+    "completed_at": "2026-05-02T03:18:42.906950+00:00",
+    "deposited_at": "2026-05-20T04:00:45.360106",
+    "deposited_by": "cc_queue",
+    "github_issue": 566,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "353d5e8a-b59d-4bd0-ae42-24f6293c7c81",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

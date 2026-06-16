@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-worker-daemon-retired.20260526.025643964646",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-worker-daemon-retired"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T02:56:43.964646",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-worker-daemon-retired-2026-05-25"
+    ],
+    "tickets": [
+      "T-consequence-worker-daemon-retired",
+      "T-retire-worker-daemon-sh"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-worker-daemon-retired",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: worker_daemon.sh retired + claim removed",
+    "result": "PARTIAL: sprint-ticket claim language was present + fixed by T-adc-queue-no-claiming; other claim paths clear; ADC queue device live closes the in_progress window",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-05-26T03:16:09.992671+00:00",
+    "created_at": "2026-05-26T02:56:43.964646+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-worker-daemon-retired-2026-05-25",
+    "description": "**What changed:** worker_daemon.sh permanently disabled; cc_queue.py claim command replaced with LegacyDirectClaimError.\n**Predicted unintended effects:** (1) /sprint-ticket SKILL.md Step 2 still says `cc_queue.py claim <id>` — if not updated, every sprint attempt will fail with a confusing error before any code work begins. (2) Any other scripts or habits that call claim directly will break silently at runtime. (3) Removing claim before the ADC queue device ships means there is a window where tickets cannot be marked in_progress atomically — they go from pending to implicitly worked without a status marker.\n**Signals to watch:** /sprint-ticket failing at Step 2 with LegacyDirectClaimError error text; tickets remaining in `pending` status during active sprints; any script output containing 'claim' from non-queue paths.\n**Gate condition:** Check once T-retire-worker-daemon-sh closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": "2026-05-26T03:17:17.574218+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T02:56:43.964685+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8c9a48e1-71f5-4fa9-b13c-3ba893e757f6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

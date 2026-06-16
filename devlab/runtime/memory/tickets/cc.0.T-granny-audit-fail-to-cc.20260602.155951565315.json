@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-granny-audit-fail-to-cc.20260602.155951565315",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-audit-fail-to-cc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T15:59:51.565315",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-granny-audit-fail-to-cc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-audit-fail-to-cc",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Observability",
+      "Infrastructure"
+    ],
+    "title": "Granny: route audit-fail tickets to CC inbox, not silent skip",
+    "result": "_hold_for_audit_fail already implemented in daemon.py (blocks ticket + alerts CC.0 + posts GRANNY_HOLD_AUDIT_FAIL); test coverage exists at test_run_once_alerts_on_audit_fail; no code changes needed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "blocked_at": "2026-06-02T16:03:02.405041+00:00",
+    "claimed_at": "2026-06-02T16:00:08.114638+00:00",
+    "created_at": "2026-06-02T15:59:51.565315+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "When a ticket fails Granny's audit (missing description sections, invalid size, etc.), Granny currently logs a warning and posts to channel, but the ticket stays in sprint and will fail audit again on every poll cycle. CC never sees it to fix it.\n\nProposed shape: on audit fail, put the ticket on hold with the audit reasons as the hold message (same pattern as HIGH-inertia hold), and alert CC.0 via IMAP with kind='audit_fail' and the reasons list. CC reviews, fixes the ticket description via cc_queue.py update, then sets back to sprint. Channel post: GRANNY_HOLD_AUDIT_FAIL|ticket=<id>|reasons=<...>.\n\n**Affected files:** devices/granny/daemon.py (run_once audit-fail branch), tests/test_granny_daemon.py\n**Design rules:** no-sqlite; log every state change; alert deduplication (existing _alert_cc dedup key)\n**Scope boundary:** IN: audit-fail → hold + CC.0 alert + GRANNY_HOLD_AUDIT_FAIL channel post. OUT: auto-fixing ticket descriptions (CC does that manually), retry logic after fix.\n**Completion criteria:** A ticket with missing Completion criteria gets blocked (not left in sprint), GRANNY_HOLD_AUDIT_FAIL appears in channel, CC.0 IMAP has the alert. Test covering the new path.",
+    "completed_at": "2026-06-02T19:18:55.346173+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T16:00:08.114638+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1d3e18a9-2bb9-4d8a-80b1-34c23c5bb18f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

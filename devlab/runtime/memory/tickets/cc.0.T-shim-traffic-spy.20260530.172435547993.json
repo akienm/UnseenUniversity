@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-shim-traffic-spy.20260530.172435547993",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-traffic-spy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:24:35.547993",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-shim-traffic-spy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-traffic-spy",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Platform"
+    ],
+    "title": "Add structured call-log to BaseShim for inter-agent observability",
+    "result": "18 tests proving dispatch() JSONL trace mechanism (success/raises/unknown-tool paths); record uses device_id; call-path migration to dispatch() is future work",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-31T14:26:03.454724+00:00",
+    "created_at": "2026-05-30T17:24:35.547993+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Inter-agent tool calls currently go through the shim but are not logged in a structured way. Add a call-log to BaseShim.dispatch() (or equivalent dispatch entry point): device_id, tool_name, latency_ms, success, error_type. Written to datacenter_logs/shim/trace/<date>.jsonl. This gives inspectability of all inter-agent traffic without requiring agents to change — the shim is the natural interception point.\n\n**Affected files:** unseen_university/skeleton/base_shim.py (or equivalent), datacenter_logs/shim/trace/ (created at runtime)\n**Design rules:** log hierarchy is datacenter_logs/<device>/<subsystem>/; no new DB tables\n**Scope boundary:** IN — structured JSONL log per tool dispatch through any BaseShim subclass; OUT — real-time stream, alerting, metrics aggregation\n**Completion criteria:** after any MCP tool call through a shim subclass, a JSONL record appears in datacenter_logs/shim/trace/ with device, tool_name, latency_ms, success fields",
+    "completed_at": "2026-05-31T14:36:22.421376+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T14:26:03.454724+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:24:35.548017+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "96aa075d-f1fd-4ce6-8566-92167436d0e3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

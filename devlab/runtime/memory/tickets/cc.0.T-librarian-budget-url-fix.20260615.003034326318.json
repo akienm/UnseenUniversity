@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-librarian-budget-url-fix.20260615.003034326318",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-budget-url-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T00:30:34.326318",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-devlab-schema-create",
+      "T-librarian-budget-url-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-budget-url-fix",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "Infrastructure"
+    ],
+    "title": "Retroactive: librarian budget_tools.py UU_HOME_DB_URL fallback",
+    "result": "committed pre-existing budget_tools.py UU_HOME_DB_URL fallback fix",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that the pre-existing budget_tools.py UU_HOME_DB_URL→IGOR_HOME_DB_URL fallback fix and dispatch handler refactor is committed under a named ticket.",
+    "created_at": "2026-06-15T00:30:34.326318+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pre-existing uncommitted work: unseen_university/devices/librarian/tools/budget_tools.py has two changes — (1) UU_HOME_DB_URL → IGOR_HOME_DB_URL fallback fix, (2) dispatch handler refactored from lambda dict to if/elif pattern. Found during T-devlab-schema-create sprint.\n\n**Affected files:** unseen_university/devices/librarian/tools/budget_tools.py\n**Design rules:** external-state; no SQLite\n**Scope boundary:** IN — commit the existing work as-is. OUT — no new functionality.\n**Completion criteria:** git log shows budget_tools.py committed; tests pass.",
+    "completed_at": "2026-06-15T00:33:17.512217+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-15T00:30:34.326451+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

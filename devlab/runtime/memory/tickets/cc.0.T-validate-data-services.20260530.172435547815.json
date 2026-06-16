@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-validate-data-services.20260530.172435547815",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-validate-data-services"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:24:35.547815",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-validate-data-services"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-validate-data-services",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "tests"
+    ],
+    "title": "Smoke tests: Librarian recall + scraps embedding engine",
+    "result": "smoke tests in tests/librarian/ and tests/scraps/ — 6/6 green; fixed write_memory id=NULL bug",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "claimed_at": "2026-05-30T21:51:48.246888+00:00",
+    "created_at": "2026-05-30T17:24:35.547815+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Pre-Monday validation: verify the two semantic data services work. Librarian recall: seed a memory, call recall(topic='...'), verify it surfaces. Scraps embedding: call embed('test string'), verify result is a 1536-dim (or 384-dim hash fallback) vector with correct shape.\n\n**Affected files:** tests/librarian/, tests/scraps/ (create if missing), devices/librarian/recall.py, devices/scraps/embedding_engine.py\n**Design rules:** no-sqlite; real Postgres for Librarian; embedding test may use hash fallback if no OPENAI_API_KEY in .env\n**Scope boundary:** IN — smoke test happy path for recall and embed(); OUT — full retrieval ranking, batch embedding performance\n**Completion criteria:** pytest tests/librarian/ tests/scraps/ all green; embed() returns correct-dimension numpy array or list; recall() returns at least one result for a seeded query",
+    "completed_at": "2026-05-31T02:18:42.346923+00:00",
+    "deposited_at": "2026-05-30T11:25:08.355765",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T21:51:48.246888+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T17:24:35.547841+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d88e7158-948f-4c40-a646-73532684d7b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-pe-chain-executor-evaluator-split.20260521.175415340857",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-executor-evaluator-split"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340857",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-pe-chain-executor-evaluator-split"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-executor-evaluator-split",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "PeChain",
+      "Cognition"
+    ],
+    "title": "Add formal evaluator pass to pe_chain separate from the executor model",
+    "result": "Added pe_evaluate phase + pe_evaluator.py; wired into pe_close_loop pass path for two-model executor/evaluator split",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-21T17:54:15.340857+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "Current pe_chain uses the same model for both implementation and self-evaluation. From URL 8 (VentureBeat /goals): 'You can't trust a model to judge its own homework — the model doing the work is the worst judge of whether it's done.' Add a lightweight pe_evaluate phase after pe_test: checks original test plan goal conditions against what was built, using a cheaper model (Haiku-class). The evaluator makes exactly two decisions: done or not-done. If not done, return to implementation with failure context.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (add pe_evaluate phase between pe_test and _pe_close), wild_igor/igor/tools/pe_evaluator.py (new)\n**Design rules:** theigors/rules/coding, theigors/rules/budget (haiku-class model for binary decisions)\n**Scope boundary:** In scope: pe_evaluate phase; haiku-class model; checking original test plan conditions. Out of scope: changing the test framework, adding new termination conditions beyond the ticket's test plan.\n**Test plan:** Run pe_chain on ticket where tests pass but test plan has an additional behavioral check; verify evaluator catches gap. Run on fully-passing ticket; verify evaluator confirms done without looping.",
+    "completed_at": "2026-05-21T18:30:33.880647+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340873+00:00",
+    "target_difficulty": 2,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "81069a05-81e4-4665-982c-0ad277f422d8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

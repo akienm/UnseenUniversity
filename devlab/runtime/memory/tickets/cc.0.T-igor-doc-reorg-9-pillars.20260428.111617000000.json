@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.T-igor-doc-reorg-9-pillars.20260428.111617000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-doc-reorg-9-pillars"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T11:16:17",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cap-map-followups-2026-04-27"
+    ],
+    "tickets": [
+      "T-case-study-lessons-learned",
+      "T-context-load-review",
+      "T-docs-live-code-rollout",
+      "T-igor-doc-reorg-9-pillars"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-doc-reorg-9-pillars",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "DocsHygiene",
+      "Architecture",
+      "Claude"
+    ],
+    "title": "Doc reorg — 9-pillar structure (premise, glossary, architecture, capability map, workflow, rules, tools, navigation, lessons, decisions)",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T09:31:40.538217+00:00",
+    "created_at": "2026-04-28T11:16:17Z",
+    "related_to": [
+      "T-context-load-review",
+      "T-docs-live-code-rollout",
+      "T-case-study-lessons-learned"
+    ],
+    "approved_at": "2026-04-28T01:40:38.293527+00:00",
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "description": "Sonnet drowned repeatedly last week — too much information in too many places (code + .md + .txt + DB + slate + decisions log + skills) with no clear load-order. Akien proposed a 9-pillar reorganization on 2026-04-27 (this conversation) that would:\n\n  00_premise.md           — what is this and why (Igor as GPU-free mind-mimic agent)\n  01_glossary.md          — vocabulary (EXISTS at lab/docs/glossary.md — keep)\n  02_architecture.md      — high-level + load-bearing subsystems (lives in palace already; assemble human-readable echo)\n  03_capability_map.md    — current vs planned (EXISTS at lab/docs/capability_map.md as of 2026-04-27 — keep)\n  04_workflow.md          — how Akien + Claude collaborate (folds in skills as 'automated workflow steps')\n  05_programming_rules.md — coding/commit/db rules (lives in palace 'theigors/rules/*'; assemble human-readable echo)\n  06_tools.md             — what Claude can call (Igor + datacenter)\n  07_navigation.md        — where to find code, db, runtime\n  08_lessons.md           — anti-patterns + why (NEW — partially overlaps T-case-study-lessons-learned)\n  09_active_decisions.md  — currently-in-force D### (small set; archive the rest)\n  archive/                — old session history, dated, NOT auto-loaded\n\nReading budget on session start: ~3000 tokens (down from current ~8000). Anything past that loads on demand via memory_get(...).\n\nThe reorg also includes load-order hierarchy — currently /context-load reads palace + rules + slate + decisions + channel + inbox in a flat list; new shape loads 00–04 always, 05–09 lazily.\n\nReferences:\n- T-context-load-review (M, pending) — narrower-scope precursor focused on context-load directory tree + drift prevention.\n- T-docs-live-code-rollout (L, pending) — adjacent: load-bearing subsystems get top-of-file docstrings as canonical doc.\n- T-case-study-lessons-learned (L, pending) — covers the 'lessons' pillar.\n\nAffected files:\n- ~/TheIgors/lab/docs/00_premise.md (new)\n- ~/TheIgors/lab/docs/02_architecture.md (new — palace echo)\n- ~/TheIgors/lab/docs/04_workflow.md (new)\n- ~/TheIgors/lab/docs/05_programming_rules.md (new — palace echo)\n- ~/TheIgors/lab/docs/06_tools.md (new)\n- ~/TheIgors/lab/docs/07_navigation.md (new)\n- ~/TheIgors/lab/docs/09_active_decisions.md (new)\n- ~/TheIgors/lab/docs/archive/ (move stale slates + old session records here)\n- ~/.claude/skills/context-load/SKILL.md (rewrite load order)\n- ~/TheIgors/CLAUDE.md (slim further — point at 00_premise.md as the real entry)\n- ~/TheIgors/lab/docs/glossary.md, capability_map.md (keep — already in shape)\n\nDesign rules:\n- docs-in-code: rules + subsystem docs are palace-canonical; .md files are echoes assembled by a script (consider lab/claudecode/docs_assemble.py).\n- postgres-only: palace stays the source of truth.\n- oop-first: not applicable — doc work.\n- no-new-memory-schemas: ✓ — palace already has the data.\n- test-plan-or-why-not: needs a test that the loaded reading-budget on /context-load is <= 3000 tokens.\n\nScope boundary:\nIN: write the 7 new pillar docs, move stale history to archive/, rewrite /context-load to the new load order, slim CLAUDE.md.\nOUT: rewriting palace rules content (palace-side work — separate ticket if needed), changing skills other than /context-load, retiring T-context-load-review (this ticket SUPERSEDES that scope; close it on completion).\n\nTest plan:\n- Token budget: simulate /context-load with new order; verify total token count <= 3000.\n- Drift: stale-doc Step 18.6 (added in this batch) catches drift on capability_map; equivalent step needed for the others.\n- Smoke: spawn a fresh Sonnet session with new docs, ask 'is X built?' for 5 random subsystems; correctness >= 4/5.\n\nWhy this is L: 7 new docs + 2 deletions + skill rewrite + smoke harness. Should be split into ~5 child tickets at sprint time, but file as L umbrella for now.\n\nReferences this conversation: 2026-04-27 design discussion (Akien + CC). The 9-pillar list and rationale came from that discussion.",
+    "proposed_at": "2026-04-28T20:11:37.868914+00:00",
+    "completed_at": "2026-04-29T09:46:21.638317+00:00",
+    "github_issue": 542,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Approved by Akien 2026-04-27",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d939369b-9ad2-4fec-aa4c-ca7e038e8cb9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

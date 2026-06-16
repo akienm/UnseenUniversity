@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-granny-orphan-watchdog.20260601.213223425793",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-granny-orphan-watchdog"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T21:32:23.425793",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-orphan-watchdog-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-granny-orphan-watchdog"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-granny-orphan-watchdog",
+    "gate": "2026-06-15",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: orphan watchdog + build-time calibration",
+    "result": "GRANNY_ORPHAN_RESET: 0 in recent channel; p90_minutes wired in but needs 10+ DONE outcomes to calibrate (insufficient data yet — expected, not a regression). Effect: clear, monitoring continues.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-06-01T21:32:23.425793+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-orphan-watchdog-2026-06-01",
+    "description": "**What changed:** Granny auto-resets orphaned in_progress tickets and calibrates her watchdog timeout from build-time data.\n**Predicted unintended effects:**\n- False-positive reset: a slow but live CC session (e.g. L ticket running a long test suite) gets reset mid-work if it exceeds the timeout. CC then sees a 'sprint' ticket it already claimed and may conflict with Granny re-dispatching it to a second CC session.\n- Calibration overfitting: if the corpus is dominated by fast S tickets, p90 underestimates real L ticket time and the calibrated timeout is too aggressive.\n- ps-check miss: claude session launched via tmux with a wrapper script may not show the ticket ID in its cmdline — watchdog incorrectly sees no live session.\n- Double-dispatch: watchdog resets + Granny immediately re-dispatches before the old session detects the status change; two CC sessions work the same ticket simultaneously.\n**Signals to watch:** GRANNY_ORPHAN_RESET log events — frequency should be low (1-2/day max in steady state, not dozens). Any ticket appearing in done twice (two GRANNY_ACK entries) in channel log. PatternTracker calibration log line; p90 values should grow as L/XL tickets complete.\n**Gate condition:** Check by 2026-06-15.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": "2026-06-02T19:39:01.518825+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6058029e-b437-4ef2-b013-2da05e2d3bd0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

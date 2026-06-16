@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-swarm-channel-mechanism.20260505.185909510348",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-channel-mechanism"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T18:59:09.510348",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-channel-mechanism",
+      "T-swarm-tmux-face",
+      "T-swarm-via-home-web-server",
+      "T-swarm-web-tab-ui"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-channel-mechanism",
+    "gate": null,
+    "title": "CLOSED: swarm channel mechanism — mirrored inboxes, fan-out, shared seeded",
+    "result": "ChannelRegistry + fan_out + Skeleton wiring; 17 tests; commit b9a783c",
+    "status": "done",
+    "worker": "claude",
+    "priority": "M",
+    "claimed_at": null,
+    "related_to": "T-swarm-via-home-web-server",
+    "decision_id": null,
+    "description": "Implement multi-party channel rooms backed by mirrored per-participant inboxes. Send-to-channel splits the envelope and delivers to each participant's inbox; each participant's inbox forwards via their preferred transport. The `shared` channel is always present; other channels are created on-demand.\n\n**Affected files:** agent_datacenter/bus/router.py, agent_datacenter/agent_datacenter/announce/broker.py, agent_datacenter/agent_datacenter/announce/envelope.py, possibly a new channels.py module\n**Design rules:** no-sqlite\n**Scope boundary:** IN — channel creation, membership, send-to-channel fan-out, per-participant delivery. OUT — ACL/mute (default permissive per design doc); web UI rendering (T-swarm-web-tab-ui); tmux transport face (T-swarm-tmux-face).\n**Test plan:** integration tests — create channel, add two participants, send envelope to channel, assert both participant inboxes receive a copy; assert non-member inbox is untouched; assert `shared` channel exists on init.\n**Pass condition:** Two mock agents subscribed to a channel both receive a copy of a sent envelope within one bus dispatch cycle, verified by integration test against real Postgres.",
+    "completed_at": "2026-05-05T18:59:09.510348+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5d4c010b-7086-440a-a16d-596a65f6e2a2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

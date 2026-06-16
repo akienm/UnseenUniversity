@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-codebase-tree-annotator.20260612.172200154112",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-codebase-tree-annotator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T17:22:00.154112",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-classifier-device-architecture-2026-06-12"
+    ],
+    "tickets": [
+      "T-annotator-delta-update",
+      "T-code-index-schema",
+      "T-codebase-tree-annotator"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-codebase-tree-annotator",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Classifier",
+      "Palace",
+      "Nanny"
+    ],
+    "title": "Codebase tree annotator: palace.codebase.* nodes with problem signatures",
+    "result": "annotator.py created; 474 palace.codebase.* nodes in clan.memories; Nanny nightly 04:30 entry added; 12 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that palace.codebase.unseen_university.* nodes exist with problem_signature fields so classify() can query them for builder reports.",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-06-12T17:22:00.154112+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-classifier-device-architecture-2026-06-12",
+    "description": "Annotation pipeline that builds palace.codebase.unseen_university.* nodes. Uses clan.code_index (T-code-index-schema, already closed) as scaffold — symbol index provides file/class/function structure; LLM annotation pass adds problem_signature per module (e.g. 'handles: multi-turn agent loops, cost caps, tier escalation'). Initial full build runs once; nightly Nanny sweep re-annotates files changed in last 24h. Delta-on-ticket-close descoped to T-annotator-delta-update.\n\nNodes land in clan.memories as rows with path = 'palace.codebase.unseen_university.<module>' and metadata->>'problem_signature' set.\n\n**Affected files:** new devices/classifier/annotator.py; Nanny schedule (devices/nanny/ schedule config — add annotator step alongside existing code_sweep entry)\n**Design rules:** no-sqlite; log every interface crossing; Postgres for state\n**Scope boundary:** In scope: annotator + Nanny nightly sweep + initial full build script. Out of scope: delta-on-ticket-close (T-annotator-delta-update), multi-project (UU codebase only first), domain trees (separate).\n**Completion criteria:** T-codebase-tree-annotator is CLOSED; `SELECT COUNT(*) FROM clan.memories WHERE path LIKE 'palace.codebase.unseen_university.%' AND metadata->>''problem_signature'' IS NOT NULL` returns > 0 after annotator runs; Nanny nightly log shows annotator step.",
+    "completed_at": "2026-06-13T23:03:29.485295+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T22:58:57.218626+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

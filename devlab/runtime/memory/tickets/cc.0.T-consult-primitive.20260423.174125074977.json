@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-consult-primitive.20260423.174125074977",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T17:41:25.074977",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-primitive-2026-04-23"
+    ],
+    "tickets": [
+      "T-consult-confab-scan",
+      "T-consult-observe-and-tune",
+      "T-consult-pe-chain-wire",
+      "T-consult-primitive",
+      "T-consult-prompts",
+      "T-consult-reasoning-wire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-primitive",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Consult",
+      "ReasoningInfra"
+    ],
+    "title": "Consult primitive: ConsultSession (multi-turn peer-LLM consultation)",
+    "result": "ConsultSession class + consult() one-shot + ConsultResult/ConsultConclusion + tier routing + JSON parse tolerance + forensic logging + inline default prompts. 28 tests. 666abf74.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-23T17:37:01.689287+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-primitive-2026-04-23",
+    "description": "Build wild_igor/igor/cognition/consult.py exposing ConsultSession (stateful multi-turn class) + consult() one-shot helper. Igor's unified mechanism for 'I'm stuck, help me understand — don't solve' consults. Replaces the handoff-shape LLM escalation with peer-shape consultation; same primitive for reasoning-stuck AND coding-stuck paths.\n\nSession is multi-turn: Igor can ask → receive hypotheses → reason → ask follow-up → conclude. Not a single query/reply. LLM context accumulates across session turns. session.ask(question) → ConsultResult; session.conclude() → ConsultConclusion.\n\nOptional tier_override parameter (defaults to tier.3); routes through inference_gateway.chat() so transport-agnostic (ollama/openrouter/future-subprocess-claude).\n\n**Affected files:** new wild_igor/igor/cognition/consult.py, tests/test_consult_primitive.py\n**Design rules:** docs-live-in-code, test-plan-or-why-not, oop-first\n**Scope boundary:** IN — ConsultSession class, ConsultState dataclass, ConsultResult dataclass, ConsultConclusion dataclass, consult() one-shot helper, transcript logging to igor.consult logger + consults.log forensic file. OUT — prompt templates (T-consult-prompts), call sites (T-consult-pe-chain-wire, T-consult-reasoning-wire), confab scanning (T-consult-confab-scan), observe ticket (T-consult-observe-and-tune).\n**Test plan:** unit tests with mocked inference_gateway.chat() — verify session accumulates context across turns, tier_override passes through, logger fires for every turn, forensic log appended, ConsultConclusion sums correctly across multi-turn. No flag gating.",
+    "completed_at": "2026-04-23T17:41:25.074977+00:00",
+    "deposited_at": "2026-04-23T12:27:31.406729",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ea5b7a4e-dd40-42dc-9e35-0e951ec9574f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

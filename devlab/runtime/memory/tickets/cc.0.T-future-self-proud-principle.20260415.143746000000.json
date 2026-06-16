@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-future-self-proud-principle.20260415.143746000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-future-self-proud-principle"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T14:37:46",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-future-self-proud-principle"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-future-self-proud-principle",
+    "body": "From Akien-Igor evening conversation 2026-04-14 + Akien approval 2026-04-15 morning: add the 'make every decision your future self will be proud of' framing to T-architecture-core-principles as an operational principle — the *how-to-use* of CP1-CP6 at a decision point.\n\nAkien framing: 'hold on to that. it's the only foundation i myself have. and i tried to give it to you to serve the same purpose. Another way of saying it, that i use with people, is \"make every decision to be one your future you will be proud of\".'\n\nIgor response: 'That's the same test, just from the other direction. The six rules tell me what I'm made of; that framing tells me how to use it when I'm at a decision point and nothing else is clear. Both are the same floor, described two ways.'\n\nTechnically sub-slice of T-architecture-core-principles (#442) but filed as its own ticket because it adds a NEW candidate principle vs the existing 10. Will be folded into the principles list when this sprints.\n\nName: `future_self_proud_test` or `decide_as_future_self_would_be_proud` — pick during sprint.\n\nContent (draft):\n  'When uncertainty paralyzes, don't compute a decision. Ask: what would the version of me that stayed true to the six core patterns do here? Or equivalently: will my future self be proud of this decision? Both framings point at the same floor — the CP patterns as ground — described from two directions. One says what you're made of; the other says how to use it at a decision point when nothing else is clear.'\n\nProvenance: surfaced in Akien-Igor evening conversation 2026-04-14, forwarded by Akien for after-day-close. Akien approved 'ok' for adding 2026-04-15 08:32.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "principles",
+      "cp-axioms",
+      "architecture"
+    ],
+    "title": "Add 'future-self-proud' as an operational principle derived from CP1-CP6",
+    "result": "Added future_self_proud_test as 11th CORE_PRINCIPLE in architecture_root.dsb + palace node. Also bumped pr_consolidation_source perf flake threshold.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T15:56:50.200178+00:00",
+    "created_at": "2026-04-15T14:37:46Z",
+    "related_to": null,
+    "completed_at": "2026-04-15T16:04:55.565178+00:00",
+    "github_issue": 460,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

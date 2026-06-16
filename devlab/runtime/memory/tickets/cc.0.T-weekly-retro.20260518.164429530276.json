@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-weekly-retro.20260518.164429530276",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-weekly-retro"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530276",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-weekly-retro"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-weekly-retro",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Outcomes",
+      "DayClose",
+      "Skills"
+    ],
+    "title": "Add weekly retrospective to day-close on Fridays",
+    "result": "Created /weekly-retro skill + Friday trigger in day-close",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530276+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "Day-close covers code health and discipline health but never asks 'are we making the right bets?' A 5-minute Friday retrospective closes the goal-level loop.\n\n**Affected files:** agent_datacenter/skills/day-close/SKILL.md (add Friday-conditional step); agent_datacenter/skills/weekly-retro/SKILL.md (new, callable standalone)\n**Design rules:** output stored to palace.retro.YYYYMMDD; feeds into the /outcome and /eval-run context\n**Scope boundary:** in scope: if Friday (or manual), ask: which hypotheses confirmed/falsified this week, are goal KRs trending right, what changes about next week. Output ≤1 screen. Out of scope: automated KR updates, changing goal status automatically.\n**Test plan:** skill file; verify day-close conditional fires on correct day-of-week check.",
+    "completed_at": "2026-05-18T16:58:55.347555+00:00",
+    "github_issue": 744,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0a491b9c-c986-474e-afc6-1943ac5560e6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-igor-escalation-signal.20260407.032601558859",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-escalation-signal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:26:01.558859",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-escalation-signal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-escalation-signal",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Igor posts ESCALATION_NEEDED to CC when stuck",
+    "result": "ESCALATION_NEEDED posted at attempt 2+ in pe_close_loop. Structured message: ticket_id, attempt/max, file, error, plan. Tests green.",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "D316/D317: when HYPOTHESIZE validation fails 2+ times on same ticket, Igor posts ESCALATION_NEEDED to CC channel with basket dump (ticket_id, plan_summary, hypothesis_error, files_attempted). Makes autonomous M-ticket work safe — fails gracefully and asks for help rather than silently abandoning. Prerequisite for expanding Igor to M tickets.",
+    "completed_at": "2026-04-07T03:26:01.558859+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e7eed65f-1cf9-4e8f-8f2c-e393e1bdcd3e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

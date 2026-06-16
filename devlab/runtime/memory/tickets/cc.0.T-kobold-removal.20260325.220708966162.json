@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-kobold-removal.20260325.220708966162",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-kobold-removal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T22:07:08.966162",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-kobold-removal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-kobold-removal",
+    "title": "Remove KoboldCpp dead code + references",
+    "result": "Removed all KoboldCpp dead references from docs/config. Updated CLAUDE.md (env vars, tier ladder, Known Broken), STARTUP_SHIM.md (example env block → Ollama), boot_notes.md (fact-finding hierarchy + cluster notes), gap_analysis.md (boot check row). Python code was already clean — tier.2 had been Ollama since 2026-03-09c. Commit 8199e712.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-25T22:03:22.718402+00:00",
+    "description": "KoboldCpp is gone entirely. Clean up: (1) tier.2 KoboldCpp branch in inference_gateway.py — remove or replace with Ollama; (2) KOBOLDCPP_HOST / KOBOLDCPP_PORT env vars from .env and CLAUDE.md; (3) any tier ladder comments/docs that reference KoboldCpp; (4) update CLAUDE.md 'Known Broken' section. New tier ladder: 1=habit/graph, 2=Ollama, 3=OR, 4=arbiter. Ref: D234.",
+    "completed_at": "2026-03-25T22:07:08.966162+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "27955160-43d3-444f-99c2-08d9a7826572",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

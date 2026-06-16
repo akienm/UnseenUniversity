@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-capability-map-refresh.20260507.161058000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-capability-map-refresh"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:10:58",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-capability-map-refresh"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-capability-map-refresh",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Docs",
+      "Audit",
+      "Hygiene"
+    ],
+    "title": "Re-verify and update capability_map.md — stale 8+ days",
+    "result": "§1/§2/§3/§4 re-verified; P1 fixed, distillation fixed, all prior in_progress items closed, sprint-ready list updated",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": "2026-05-06T17:11:49.377361+00:00",
+    "created_at": "2026-05-07T16:10:58Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Day-close audit (2026-05-05) flagged capability_map.md as 8 days stale. Need to re-verify §1 (live subsystems), §2 (gated off), and §4 (known broken) against current state: palace subsystem_index, igor.switches.cfg, cc_queue status, latest pytest summary. Update Last-updated date.\n\n**Affected files:** ~/TheIgors/lab/docs/capability_map.md\n**Design rules:** none\n**Scope boundary:** Verify and update the three sections only; no code changes.\n**Test plan:** No tests — doc-only. Verify by reading updated doc against live state.",
+    "completed_at": "2026-05-06T17:14:57.919753+00:00",
+    "github_issue": 610,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "af9847c2-5b8c-4fdf-aaee-be35d16e899c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-nasa-combinatorics-testing.20260528.235056786481",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nasa-combinatorics-testing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T23:50:56.786481",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "none"
+    ],
+    "tickets": [
+      "T-nasa-combinatorics-testing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nasa-combinatorics-testing",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Testing",
+      "Research"
+    ],
+    "title": "Investigate NASA ACTS tool for combinatorial test generation",
+    "result": "lab/docs/nasa_acts_research.md: ACTS 3.3 NIST tool, GO verdict, pe_chain validation is prime target, M effort (~3-4h), next ticket T-acts-pe-chain-integration",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "created_at": "2026-05-28T23:50:56.786481+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "none",
+    "description": "NASA has an open-source tool for calculating combinatorics for testing (ACTS — Automated Combinatorial Testing for Software). When we have bandwidth, investigate integrating it as a test generation aid — particularly useful for multi-parameter decision points in the pe_chain and ticket validation logic where exhaustive testing is infeasible but combinatorial coverage would catch edge cases cheaply.\n\n**Affected files:** TBD — discovery step; likely lab/docs/ for research notes + tests/ if we integrate\n**Design rules:** none apply at research stage\n**Scope boundary:** research + feasibility assessment only; no integration code in this ticket\n**Test plan:** no tests because: research ticket; done when a one-pager in lab/docs/ exists with ACTS capabilities, integration approach, and go/no-go recommendation",
+    "completed_at": "2026-05-29T15:14:53.504963+00:00",
+    "github_issue": 808,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T23:50:56.846054+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6a995d44-5f4b-4b66-bf62-3ed58119d284",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-goal-as-thread.20260401.163936013208",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-as-thread"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T16:39:36.013208",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-as-thread"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-as-thread",
+    "size": "L",
+    "tags": [
+      "goals",
+      "cognition",
+      "D275"
+    ],
+    "title": "D275 impl: GOAL_TACTICAL + GOAL_STRATEGIC as TWM nodes",
+    "result": "D275 implemented: added MemoryType.GOAL (instance-scoped, BASE_INERTIA=0.15) to models.py. Added goal_adopt (GOAL type + TWM push salience=0.85 ttl=7200s), goal_scan (list active goals), goal_close (mark done) to ops.py. All registered. Goals now persist across turns via TWM. 567 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-01T16:36:50.922350+00:00",
+    "description": "Implement goal-as-thread (D275). GOAL_TACTICAL: success_condition (checkable), current_strategy (engram pointer), failure_count, deadline TTL, why (motivation chain), spawned_by (parent goal). Preempts action nodes when active. Dies on success_condition met. GOAL_STRATEGIC: domain, activation_weight, no success_condition, near-infinite TTL, tilts BG scoring field continuously. Both stored in memories table (new GOAL type) + live in TWM.",
+    "completed_at": "2026-04-01T16:39:36.013208+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "56b5746d-8779-472f-b2ff-9199c592c07b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

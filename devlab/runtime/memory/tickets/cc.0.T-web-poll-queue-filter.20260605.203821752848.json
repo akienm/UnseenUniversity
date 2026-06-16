@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-web-poll-queue-filter.20260605.203821752848",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-poll-queue-filter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T20:38:21.752848",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-poll-queue-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-poll-queue-filter",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Web",
+      "Operational"
+    ],
+    "title": "Web server: incoming poll queue not filtered by agent_id",
+    "result": "per-agent queues: _api_agent_poll drains agent-specific queue; _api_cc_send routes to to_agent param; file uploads go to igor",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that each agent's poll endpoint returns only messages intended for that agent, preventing message theft between co-registered agents.",
+    "created_at": "2026-06-05T20:38:21.752848+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "GET /api/agents/{id}/poll drains the global `incoming` queue without filtering on agent_id (server.py:_api_agent_poll). With igor+librarian+granny-weatherwax all registered, whichever agent polls first consumes all pending messages. Currently only Igor polls, so it's not triggering — but as more devices poll, message theft will occur.\n\n**Affected files:** devices/web_server/server.py (_api_agent_poll, incoming queue)\n\n**Design rules:** none apply\n\n**Scope boundary:** Add agent_id filtering to poll endpoint; route messages to per-agent queues or add agent_id field to incoming messages. Out of scope: changing WS message routing.\n\n**Completion criteria:** POST /api/agents/igor/send + GET /api/agents/librarian/poll returns empty; message only returned by GET /api/agents/igor/poll.",
+    "completed_at": "2026-06-05T22:01:19.655304+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

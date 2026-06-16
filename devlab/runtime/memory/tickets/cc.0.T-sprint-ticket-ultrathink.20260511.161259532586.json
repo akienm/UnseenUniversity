@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-sprint-ticket-ultrathink.20260511.161259532586",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-ticket-ultrathink"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T16:12:59.532586",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-sprint-improvements-2026-05-11"
+    ],
+    "tickets": [
+      "T-sprint-ticket-ultrathink"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-ticket-ultrathink",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Quality",
+      "Docs"
+    ],
+    "title": "CLOSED: ultrathink plan review in sprint-ticket",
+    "result": "ultrathink instruction added to sprint-ticket Step 4, conditional on L/XL or HIGH-inertia",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 6,
+    "claimed_at": "2026-05-11T18:56:39.390474+00:00",
+    "created_at": "2026-05-11T16:12:59.532586+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-sprint-improvements-2026-05-11",
+    "description": "sprint-ticket Step 4 (review the plan) asks for a 1-3 sentence plan summary and an inertia check, but does not require deep reasoning for high-stakes work. L/XL tickets and HIGH-inertia touches are where an undercooked plan causes the most damage — a wrong approach on an XL ticket wastes hours.\n\nAmend ~/.claude/skills/sprint-ticket Step 4 to add: 'For L/XL or HIGH-inertia tickets: before finalizing the plan, ultrathink — reason deeply about what could go wrong, what constraints are hidden, whether the scope is truly minimal, and whether the affected files list is complete. Do not proceed to Step 5 (infrastructure brief) until the ultrathink pass is complete and the plan survives scrutiny.' The ultrathink keyword triggers extended reasoning on that step.\n\n**Affected files:** ~/.claude/skills/sprint-ticket (Step 4 text amendment only)\n**Design rules:** skill-file edit only — no code changes; ultrathink instruction must be conditional (L/XL or HIGH-inertia), not unconditional\n**Scope boundary:** In: Step 4 text amendment. Out: modifying other steps, adding ultrathink to /design or /decided.\n**Test plan:** sprint-ticket skill text contains ultrathink instruction scoped to L/XL and HIGH-inertia. S/M tickets without HIGH-inertia do not trigger ultrathink (conditional wording verified).",
+    "completed_at": "2026-05-11T18:57:39.881600+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "73aa8ee9-1410-4fe6-8244-87055e8b4f28",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

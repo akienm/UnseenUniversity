@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-inference-colocation-signal.20260101.113953568781",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-colocation-signal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T11:39:53.568781",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-colocation-signal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-colocation-signal",
+    "size": "S",
+    "notes": "Add co-location awareness to inference routing. When local Ollama and the DB share the same machine, local inference competes with DB I/O. Routing should detect this (compare OLLAMA_HOST vs IGOR_HOME_DB_URL host) and prefer remote (OR cluster or cloud) when both are hammering same box. Lives in inference_gateway.py or cloud_mode.py as a new gate condition. Akien: this should be a node in the inference selector decision tree.",
+    "title": "Inference selector: deprioritize local when DB is on same box",
+    "result": "db_colocated field added to InferenceContext. Detected from IGOR_HOME_DB_URL (localhost/127.0.0.1 = colocated). _local_preferred() returns False when colocated — avoids RAM contention between Ollama and Postgres.",
+    "status": "done",
+    "priority": 8,
+    "claimed_at": null,
+    "completed_at": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

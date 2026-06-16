@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-judge-wire-post-sprint.20260615.001345591181",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-judge-wire-post-sprint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T00:13:45.591181",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-evaluator-consolidation-2026-06-14"
+    ],
+    "tickets": [
+      "T-judge-agent",
+      "T-judge-wire-post-sprint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-judge-wire-post-sprint",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "CompiledInference",
+      "Factory"
+    ],
+    "title": "Wire EvaluatorDevice into sprint-ticket step 8.5 post-sprint grader",
+    "result": "sprint_grader.py built: EvaluatorDevice-backed post-sprint grader with pass/partial/fail verdict; stamp-verdict added to cc_queue.py; SKILL.md step 8.5 updated; stale cc_worker_listener test fixed",
+    "status": "closed",
+    "worker": "claude",
+    "verdict": "pass",
+    "priority": 0.4,
+    "intention": "I intend that post-sprint evaluation uses EvaluatorDevice instead of an ad-hoc Haiku subagent, so verdicts are stamped to ticket metadata and queryable via eval_history.",
+    "created_at": "2026-06-15T00:13:45.591181+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-evaluator-consolidation-2026-06-14",
+    "description": "The /sprint-ticket skill step 8.5 spawns an ad-hoc Haiku subagent to grade the diff against the test plan. This verdict is ephemeral — it exists only in the conversation and is not stored anywhere. EvaluatorDevice already provides evaluate() with persistent history via eval_history().\n\nReplace the ad-hoc subagent in step 8.5 with: EvaluatorDevice.evaluate(output=git_diff, rubric_id=post-sprint-verdict, agent_id=ticket_id). Create the post-sprint-verdict rubric in palace: criteria are test plan coverage, scope boundary adherence, completion criteria met.\n\nStamp the verdict into ticket metadata so cc_queue.py show surfaces it. Close T-judge-agent (design status, superseded).\n\n**Affected files:** ~/.claude/skills/sprint-ticket/SKILL.md (step 8.5 rewrite); devices/evaluator/ (rubric creation at setup time); lab/claudecode/cc_queue.py (stamp verdict to ticket metadata)\n**Design rules:** no-autonomous-action (verdict is advisory, never closes ticket automatically); no SQLite\n**Scope boundary:** IN: step 8.5 uses EvaluatorDevice; post-sprint rubric created; verdict stamped to ticket. OUT: verdict affecting sprint flow; automatic ticket closure; changing when step 8.5 fires.\n**Completion criteria:**\n  1. After a sprint, cc_queue.py show <id> includes a verdict field with pass/fail/partial\n  2. EvaluatorDevice.eval_history(agent_id=ticket_id) returns the verdict\n  3. T-judge-agent closed as superseded\n  4. Existing sprint-ticket tests pass",
+    "completed_at": "2026-06-15T20:53:30.828912+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "verdict_reasoning": "Testing stamp-verdict command",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

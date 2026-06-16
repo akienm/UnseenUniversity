@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-active-suppression-coherence.20260414.014806000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-active-suppression-coherence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:06",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-active-suppression-coherence",
+      "T-inhibitory-pattern-primitive",
+      "T-response-coherence-inhibitor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-active-suppression-coherence",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Active inline suppression of incoherent habit emissions (graduate inhibitor from detection-only)",
+    "result": "Graduated to active suppression: incoherent habit emissions replaced with empty string. suppress_incoherent() + main.py wiring. 4 new tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T01:23:06.908183+00:00",
+    "created_at": "2026-04-14T01:48:06Z",
+    "related_to": null,
+    "description": "Follow-up to T-response-coherence-inhibitor (bc63e493). The inhibitor shipped today is detection-only: it logs COHERENCE_FAILURE and pushes a high-salience TWM marker for the next turn, but does NOT modify response_text. The user still sees the off-topic habit response once.\n\nThis ticket graduates to active inline suppression. When a low-coherence habit response is detected at the reply emit gate, the response is suppressed and the dispatch falls through to LLM (which then composes a coherent answer to the actual prompt).\n\nDESIGN: this is exactly what PROC_SUPPRESS_MID_CONV_GREETING already does for greeting habits — passive_capture at high score that wins over the misfiring greeting habits and falls through to LLM. The pattern works. Coherence-based suppression is the same shape with a different gate (semantic overlap instead of intent classification).\n\nWHEN THE INHIBITORY PATTERN PRIMITIVE LANDS (T-inhibitory-pattern-primitive), this becomes a config change on the INHIBITOR_RESPONSE_COHERENCE instance — flip inhibition_action from MARK to REPLACE.\n\nDESIGN GATE: observe coherence_inhibitor.log for 1-2 weeks post-ship to see threshold tuning data — 0.10 was the conservative initial pick; we want to see how often it false-positives on legitimate replies before inverting to active suppression.\n\nINERTIA: MEDIUM. Touches reply emit gate.\n\nDEPENDS ON: empirical observation period.",
+    "completed_at": "2026-04-18T01:25:37.864412+00:00",
+    "github_issue": 421,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d47479c5-6662-4faa-86ea-895a962e0987",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

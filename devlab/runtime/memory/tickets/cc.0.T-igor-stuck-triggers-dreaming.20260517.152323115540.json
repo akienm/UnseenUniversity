@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-stuck-triggers-dreaming.20260517.152323115540",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-stuck-triggers-dreaming"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.115540",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "[REDACTED-CREDENTIAL]"
+    ],
+    "tickets": [
+      "T-igor-ne-impasse-handler",
+      "T-igor-stuck-triggers-dreaming"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-stuck-triggers-dreaming",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Dreaming",
+      "StuckState"
+    ],
+    "title": "CLOSED: NE stuck 5+ consecutive cycles → trigger dreaming pass directly (LIDA DMN analog)",
+    "result": "dreaming.run() triggered at _ne_stuck_count==5, counter reset; LIDA DMN analog in _ne_worker()",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-05-17T15:43:16.441365+00:00",
+    "created_at": "2026-05-17T15:23:23.115540+00:00",
+    "related_to": null,
+    "decision_id": "[REDACTED-CREDENTIAL]",
+    "description": "LIDA's Default Mode Network analog: when no immediate task is actionable, switch to synthesis mode rather than continuing to idle. Igor's dreaming module exists but fires only on IGOR_DREAMING_INTERVAL cycle counter. A stuck NE is idle compute; dreaming can surface new content and synthesis.\n\nIn coa.py _ne_worker(), reuse the consecutive-no-result counter added by T-igor-ne-impasse-handler. When counter reaches 5, call dreaming.run() directly. Reset counter after dreaming fires. This ensures stuck Igor shifts to synthesis mode rather than waiting for the counter-based interval.\n\n**Affected files:** wild_igor/igor/cognition/coa.py\n**Design rules:** theigors/rules/coding (MEDIUM inertia)\n**Scope boundary:** In scope: conditional dreaming.run() call at counter==5 in _ne_worker(). Out of scope: changes to dreaming module internals.\n**Test plan:** With NE stuck for 5 cycles, dreaming.log shows a dreaming pass triggered at that cycle rather than waiting for IGOR_DREAMING_INTERVAL. Counter resets after dreaming fires.",
+    "completed_at": "2026-05-17T15:44:17.745503+00:00",
+    "deposited_at": "2026-05-28T11:17:28.656153",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5cdd92a8-76d3-4dcb-b89a-3a4cb3b5b28b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

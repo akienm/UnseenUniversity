@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-six-patterns-base-class.20260611.233605473580",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-six-patterns-base-class"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T23:36:05.473580",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-six-patterns-base-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-six-patterns-base-class",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "design",
+      "inference",
+      "headology",
+      "architecture"
+    ],
+    "title": "Explore: six core prompt patterns in BaseDevice/BaseShim + surface in system behavior",
+    "result": "prompt_builder.py with EXIT_PROTOCOL, FailureClass, tool_choice_for_turn, build_inference_request; BaseDevice helper; palace node written; design doc filed",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.4,
+    "intention": "I intend that the six core prompt-engineering patterns (exit protocol, temperature discipline, consequence framing, imperative register, tool-first enforcement, failure-mode naming) become reusable artifacts in BaseDevice so every device inherits correct inference behavior without reimplementing it.",
+    "blocked_at": "2026-06-12T21:00:09.813689+00:00",
+    "claimed_at": null,
+    "created_at": "2026-06-11T23:36:05.473580+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "DickSimnel's prompt fix revealed six patterns that govern whether OR/Anthropic models follow instructions reliably: (1) exit protocol at top, (2) temperature=0 declared explicitly, (3) consequence framing ('triggers re-dispatch'), (4) imperative register ('output X and stop' not 'you may output X'), (5) tool-first enforcement ('your first action must be a tool call'), (6) failure-mode naming ('any other text is an error'). Explore where these live today (scattered across DS toolloop.py + device.py), whether BaseDevice/BaseShim is the right abstraction layer to carry them, and how surfacing them in system behavior (logs, audit, palace nodes) would close the reinforcement loop.\n\n**Affected files:** unseen_university/device.py (BaseDevice), devices/dicksimnel/device.py, devices/dicksimnel/toolloop.py — discovery step will identify others\n**Design rules:** no-sqlite; theory-of-operation (every rule carries its why)\n**Scope boundary:** IN: design exploration, palace node draft, possibly a base-class prompt-builder mixin. OUT: retrofitting all existing devices in this ticket — that's follow-on work.\n**Completion criteria:** Design doc or palace node captures the six patterns with rationale; at minimum a concrete proposal for where in the class hierarchy they live and how a new device would inherit them; CC signs off that the proposal is implementable without breaking existing devices.",
+    "completed_at": "2026-06-13T18:24:04.150595+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

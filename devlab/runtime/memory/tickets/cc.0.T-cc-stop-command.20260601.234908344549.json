@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-cc-stop-command.20260601.234908344549",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-stop-command"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T23:49:08.344549",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-runaway-prevention-2026-06-01"
+    ],
+    "tickets": [
+      "T-cc-stop-command"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-stop-command",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Safety",
+      "Infrastructure"
+    ],
+    "title": "CC stop command: kill all cc-T-* minions, not claude-main",
+    "result": "stop_cc_minions.py: kills cc-T-* sessions + SIGTERM/SIGKILL stragglers, posts CC_MINIONS_STOPPED, verifies clear within 5s",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-06-01T23:49:08.344549+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-runaway-prevention-2026-06-01",
+    "description": "Need a reliable 'kill all CC minions' command usable by CC itself and wired as CC.0 circuit breaker. Currently killing by PID is unreliable (child processes survive). Pattern: kill all tmux sessions matching 'cc-T-*', then SIGTERM any remaining 'claude.*sprint-ticket' processes, then verify ps returns empty.\n\n**Affected files:** new script lab/claudecode/stop_cc_minions.py (or shell script); devices/web_server/server.py (circuit breaker endpoint)\n**Design rules:** no-sqlite; log every kill action to channel (CC_MINIONS_STOPPED event)\n**Scope boundary:** IN: kill cc-T-* tmux sessions; SIGTERM/SIGKILL child claude processes; verify empty; post CC_MINIONS_STOPPED to channel. OUT: killing claude-main, granny, web-server, igor sessions.\n**Completion criteria:** Running the script with 3 active cc-T-* sessions results in all three dead within 5s, claude-main and granny sessions intact, CC_MINIONS_STOPPED appears in channel log.",
+    "completed_at": "2026-06-01T23:54:38.427924+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "da8fdb82-a2c3-40da-b183-160643997a35",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

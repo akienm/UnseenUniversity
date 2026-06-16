@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-twm-goal-ready-listener.20260423.000723329605",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-goal-ready-listener"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T00:07:23.329605",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-findings-to-tickets",
+      "T-twm-goal-ready-listener"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-goal-ready-listener",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "GoalPipeline",
+      "WantPrimitive"
+    ],
+    "title": "Wire reactive listener: TWM goal_ready → PROC_CODING_SPRINT",
+    "result": "step=4 re-emits GOAL_READY when TWM empty (post-restart recovery). Listener+habit were already correctly wired; real gap was TWM cleared on restart with no re-push. 37-line fix in goal_continuation.py + 3 new tests. e67e9d8a, 15/15 tests pass. Scaffold for future T-anticipation-primitive.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-22T23:08:09.106732+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "goal_continuation posts [GOAL READY] and pushes a TWM entry with category='goal_ready' (10-min TTL), expecting PROC_CODING_SPRINT to fire reactively. But PROC_CODING_SPRINT is only bound to explicit phrases in basal_ganglia's phrase->procedure map — no listener turns fresh goal_ready signals into automatic sprints. Observed 2026-04-22: T-audit-findings-to-tickets stuck at step 4 for 60+ minutes with no progress, TWM entry expired silently.\n\nFirst scaffold for the 'want = anticipation' design direction (see memory/project_missing_want_primitive.md). For now, deterministic: fresh goal_ready in TWM -> fire PROC_CODING_SPRINT with the ticket id. Future refinement: anticipatory selection among multiple ready goals based on predicted valence-delta.\n\n**Affected files:** TBD — discovery step in sprint. Likely a new module cognition/goal_ready_listener.py + a wire-point in an existing periodic loop (daemon_supervisor, basal_ganglia tick, or equivalent). TWM writer (cortex.twm_push) stays untouched.\n**Design rules:** oop-first (Listener class), docs-in-code (operating contract in module docstring), test-plan-or-why-not (see below).\n**Scope boundary:** IN — reactive listener scanning TWM for category='goal_ready' entries, dedup of already-handled entries, fire PROC_CODING_SPRINT with ticket id. OUT — fixing PROC_CODING_SPRINT itself, widening TTL, goal_continuation mechanical step improvements, anticipation-as-primary-driver work.\n**Test plan:** (a) unit: Listener.scan_twm() returns fresh goal_ready entries; dedup by id/timestamp. (b) integration: push a goal_ready TWM entry -> PROC_CODING_SPRINT invoked within 30s. (c) regression: existing goal_continuation tests still pass.\n**Inertia check:** new module LOW. Wire-point likely MEDIUM (daemon_supervisor or basal_ganglia). Will surface the specific file before edit if it lands in MEDIUM+ territory.",
+    "completed_at": "2026-04-23T00:07:23.329605+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3e5d1fe8-5cbd-4167-a0dd-11e1a72582b8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

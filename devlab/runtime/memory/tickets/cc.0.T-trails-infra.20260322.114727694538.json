@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-trails-infra.20260322.114727694538",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-trails-infra"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T11:47:27.694538",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-trails-infra"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-trails-infra",
+    "body": "Design and implement trail as first-class DB object. A trail = temporal sequence of node activations with timestamps and decay. Required: (1) trails table: trail_id, started_at, context (user turn / NE run / habit eval); (2) trail_steps table: trail_id, seq, node_id, activation_weight, timestamp; (3) write trail on every cortex search/traversal; (4) trail inspection API: recent trails through node X, hot paths, gradient (rising vs fading); (5) trail-based edge strengthening: frequently walked paths get stronger edges; (6) trail renderer for matrix debugger + Igor self-inspection. Unlocks: wg_cooccur replacement (edges from trail proximity not corpus stats), free cosine compare via graph topology, Igor explaining own reasoning, matrix debugger. See memory: project_trails_and_gradients.md. Design conversation required before implementation — L-size.",
+    "size": "L",
+    "notes": "Three-part fix: (1) Named migration tails_v2_trail_id_sequence_pos — stops silent data loss from missing columns in live DB. (2) trail_metadata table: trail_id, started_at, purpose, trigger_description, turn_id, session_id, parent_trail_id, outcome_type, node_count. (3) tails.twm_obs_id nullable FK to twm_observations — makes TWM influence on memory graph observable. Trail = trace of a TWM slot propagating through the graph. Igor design doc: design_docs/trails_gap_analysis_2026-03-21.md. Needs Akien approval before worker.",
+    "title": "Trail infrastructure — first-class activation trail primitive",
+    "result": "Completed by CC session 2026-03-22",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "completed_at": "2026-03-22T11:47:27.694538",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

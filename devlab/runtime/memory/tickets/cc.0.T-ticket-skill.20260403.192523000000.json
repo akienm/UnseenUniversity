@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-ticket-skill.20260403.192523000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:23",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ticket-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-skill",
+    "tags": [
+      "Claude"
+    ],
+    "title": "ticket skill — /ticket quick-capture",
+    "result": "/ticket skill written at ~/.claude/skills/ticket/SKILL.md — parses description from args, infers title/size/priority/tags, generates kebab ID, adds to queue via cc_queue.py add, posts to channel. Quick-capture only — no sprint expansion.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-04-04T19:37:15.445403+00:00",
+    "created_at": "2026-04-03T19:25:23Z",
+    "description": "New /ticket skill: user types a description, it goes to cc_queue as a pending ticket with a deferred-discussion note. Quick capture without context switch. Chat about scope/priority next time we look at tickets.",
+    "completed_at": "2026-04-04T22:22:54.463689+00:00",
+    "github_issue": 344,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2712587b-ae0f-4b37-9539-63161915f1d1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

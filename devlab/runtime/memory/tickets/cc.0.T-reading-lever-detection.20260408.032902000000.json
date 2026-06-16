@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-reading-lever-detection.20260408.032902000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-lever-detection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T03:29:02",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-lever-detection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-lever-detection",
+    "epic": "Training",
+    "size": "M",
+    "title": "Attractor-guided chunk scoring in reading pipeline",
+    "result": "D356: attractor-guided chunk scoring. Scores chunks against hot_attractors keywords. High overlap → identity_weight=0.8, low overlap → skip. 7 new tests.",
+    "status": "done",
+    "worker": "igor",
+    "blocked_at": "2026-04-07T05:48:44.878414+00:00",
+    "claimed_at": null,
+    "created_at": "2026-04-08T03:29:02Z",
+    "related_to": null,
+    "description": "Before depositing a chunk, score it against hot_attractors centroid. High-overlap chunks get deep deposit + elevated identity_weight (lever nodes). Low-overlap chunks get shallow pass or skip. Makes Igor read like Akien — scan for levers, not cover-to-cover.",
+    "completed_at": "2026-04-10T17:51:30.753835+00:00",
+    "github_issue": 393,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "aa3800fb-76fb-4743-b102-3fe74f517327",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

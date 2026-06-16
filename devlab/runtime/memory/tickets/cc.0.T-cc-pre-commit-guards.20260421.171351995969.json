@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-pre-commit-guards.20260421.171351995969",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-pre-commit-guards"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T17:13:51.995969",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-workflow-optimizations-2026-04-21"
+    ],
+    "tickets": [
+      "T-cc-hook-autonomics",
+      "T-cc-pre-commit-guards"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-pre-commit-guards",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CCWorkflow",
+      "Safety",
+      "Hooks"
+    ],
+    "title": "Install pre-commit git hook rejecting .env/*.db/runtime paths/--amend (T-cc-hook-autonomics follow-up)",
+    "result": "Pre-commit guards (.env/*.db/runtime/dsb) + prepare-commit-msg amend-reject + committed session-start hook script. Tests: 5/5 pass. Commit 7f27583d.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-21T17:10:15.875497+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-workflow-optimizations-2026-04-21",
+    "description": "T-cc-hook-autonomics closed but only shipped half of its scope: the session-start hook was installed, but the pre-commit git hook was not. Also the session-start hook script (lab/claudecode/hooks/session-start/igor-env-check.sh) was created but not committed to the repo.\n\nFinish the work:\n\n1. Install a pre-commit guard (separate from the pre-existing `lab/claudecode/hooks/pre-commit` skills-sync hook). Options: (a) append to the existing pre-commit script, or (b) rename existing to `pre-commit-skills-sync.sh` and create a new top-level pre-commit that invokes both. Prefer option (a) — single file, chained checks.\n\n2. The guard rejects: staged `.env` / `.env.*` files; staged `*.db` files; staged files under `~/.TheIgors/` runtime paths (unlikely to be staged but guard anyway); direct edits to `lab/design_docs_for_igor/decisions_log.dsb` (must go through /decided); `git commit --amend` (check for it via the commit message or rely on git's own amend behavior — harder to detect, may need a commit-msg hook instead).\n\n3. Commit the session-start hook script `lab/claudecode/hooks/session-start/igor-env-check.sh` (currently untracked, created by T-cc-hook-autonomics but not staged).\n\n4. Add a test at tests/hooks/test_pre_commit_guard.sh that: creates a temp git repo, stages a `.env` file, invokes the hook, asserts nonzero exit + stderr mentions `.env`. Repeat per rejection rule.\n\nScope: pre-commit guard + commit the session-start script + minimal test. Files: lab/claudecode/hooks/pre-commit (extend), lab/claudecode/hooks/session-start/igor-env-check.sh (commit), tests/hooks/test_pre_commit_guard.sh (new).\n\ntest_plan: (1) Stage .env — hook rejects. (2) Stage a normal .py file — hook accepts. (3) Stage .db file — rejects. (4) Normal commit flow unaffected.",
+    "completed_at": "2026-04-21T17:13:51.995969+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "20ebd173-691c-4144-b77d-fb0d025c6b22",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

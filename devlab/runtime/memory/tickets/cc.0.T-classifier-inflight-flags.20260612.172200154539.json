@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-classifier-inflight-flags.20260612.172200154539",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-classifier-inflight-flags"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T17:22:00.154539",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-classifier-device-architecture-2026-06-12"
+    ],
+    "tickets": [
+      "T-classifier-inflight-flags",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-classifier-inflight-flags",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Classifier",
+      "Bus"
+    ],
+    "title": "Classifier: in_flight palace node flags via bus listener",
+    "result": "stamp_in_flight/clear_in_flight on ClassifierDevice; BuilderReport.warnings field; wired into cmd_dispatch + cmd_next + cmd_close",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that palace.codebase nodes are flagged in_flight when a ticket moves to in_progress so builder reports surface contention warnings.",
+    "claimed_at": "2026-06-13T18:12:39.636254+00:00",
+    "created_at": "2026-06-12T17:22:00.154539+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-classifier-device-architecture-2026-06-12",
+    "description": "Classifier device listens on bus for ticket state transitions (claimed → in_progress, in_progress → closed). On in_progress: stamp palace.codebase nodes for affected_files with metadata in_flight=true, ticket=T-xxx. On close: clear flags. BuilderReport freshness_check() includes warning when relevant_files overlap with in_flight nodes.\n\n**Affected files:** devices/classifier/device.py (bus listener), devices/classifier/report.py (warning field)\n**Design rules:** log every interface crossing; bus envelope pattern\n**Scope boundary:** In scope: bus listener + in_flight stamps + BuilderReport warnings. Out of scope: contention resolution, blocking dispatch.\n**Completion criteria:** T-classifier-inflight-flags is CLOSED; `SELECT metadata->>'in_flight' FROM clan.memories WHERE path LIKE 'palace.codebase.%' AND metadata->>'in_flight' = 'true'` returns rows after test ticket transitions to in_progress; rows cleared on ticket close; BuilderReport includes warnings field when overlap detected.",
+    "completed_at": "2026-06-13T18:29:33.570453+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

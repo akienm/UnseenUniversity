@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-summarizer-device.20260508.000654575581",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-summarizer-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T00:06:54.575581",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-shared-palace-schema-2026-05-07"
+    ],
+    "tickets": [
+      "T-adc-summarizer-device",
+      "T-cc-palace-schema-design"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-summarizer-device",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Infrastructure",
+      "Swarm"
+    ],
+    "title": "CLOSED: SummarizerDevice: URL/doc → tiered output (exec/detail/chunks)",
+    "result": "SummarizerDevice: exec/detail/chunks tiers, URL fetch, HTML strip, Starlette HTTP endpoint, SummarizerShim. 21 tests. Commit 57d7f01.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-08T00:06:54.575581+00:00",
+    "related_to": null,
+    "decision_id": "D-shared-palace-schema-2026-05-07",
+    "description": "Build a SummarizerDevice in agent_datacenter that takes a URL or document and produces tiered output at three depths: exec-summary (1-3 sentences, quick-scan), detail (paragraph, key points), full-chunks (original text segmented for downstream processing). All three tiers are always produced; consumers select the depth they need.\n\nIgor is a depth consumer — he reads for nuance and will typically request detail or full-chunks, not just exec-summary. Igor composes downstream by consuming the bus envelope and depositing to his knowledge graph (that composition step is NOT in this ticket — this ticket is ADC-only pure device). The tiered output model naturally handles both quick-scan (CC/Rack-Minion) and nuanced reading (Igor) via a depth selector on the response.\n\nAPI: `POST /api/summarize {url: str | content: str, format: 'exec'|'detail'|'chunks'|'all'}` → `{exec: str, detail: str, chunks: list[str]}`.\n\nGated on T-cc-palace-schema-design — schema needed to know where in palace the device registers its capability.\n\n**Affected files:** devices/summarizer/ (new), devices/summarizer/device.py, devices/summarizer/shim.py, tests/test_summarizer_device.py\n**Design rules:** Inherits BaseDevice; no TheIgors imports; pure device — no palace writes (schema not yet set).\n**Scope boundary:** ADC device only. Igor composition downstream (graph deposit) is a separate Igor-side ticket. No palace writes in this ticket — just device + API.\n**Test plan:** Unit tests for each tier output shape; integration test for URL fetch → tiered output.",
+    "completed_at": "2026-05-08T00:25:45.702558+00:00",
+    "github_issue": 629,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eb9abbbe-45b0-4827-87ea-bc8a3715f6be",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

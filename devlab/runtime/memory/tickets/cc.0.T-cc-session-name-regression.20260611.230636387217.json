@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-cc-session-name-regression.20260611.230636387217",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-session-name-regression"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T23:06:36.387217",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-session-hostname-naming",
+      "T-cc-session-name-regression",
+      "T-superclaude-session-name-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-session-name-regression",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "cc",
+      "session",
+      "naming"
+    ],
+    "title": "CC session name regression: launches as hostname-YYMMDD.HHMMSS not hostname.cc.0",
+    "result": "devstral fixed superclaude + constants.py; CC fixed 2 test stubs that leaked real cc_session.txt — 9 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that CC always launches with a stable hostname.cc.0 tmux session name.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T23:06:36.387217+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "On 2026-06-11 CC launched as 'akiendelllinux-260611.095720' instead of 'akiendelllinux.cc.0'. T-cc-session-hostname-naming was closed but the fix did not make it into the running binary/launch path.\n\nNeed to find where the session name is set (bin/superclaude or equivalent launcher) and verify hostname.cc.0 format is enforced. T-superclaude-session-name-sync was also closed — check if the bin/superclaude script is actually what gets invoked on this machine.\n\n**Affected files:** bin/superclaude (or equivalent CC launcher), devices/claude/constants.py (_detect_session_name)\n**Design rules:** none apply\n**Scope boundary:** In: trace launch path, fix session name to hostname.cc.0. Out: multi-instance .cc.1 support.\n**Completion criteria:** Start a new CC session; tmux shows it as akiendelllinux.cc.0 (or equivalent hostname.cc.0).",
+    "completed_at": "2026-06-12T00:23:34.284825+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

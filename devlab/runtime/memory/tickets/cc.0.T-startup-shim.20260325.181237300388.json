@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-startup-shim.20260325.181237300388",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-startup-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T18:12:37.300388",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-startup-shim"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-startup-shim",
+    "title": "Cross-platform startup shim: superclaude + igor launchers",
+    "result": "Built D232 startup shim: Linux/Mac (bash) + Windows (PowerShell) launchers with shared common functions, restart loop (exit 42), pause.wait semaphore, crash logging to alerts.txt, config validation, fresh-install wizard. All syntax validated. STARTUP_SHIM.md documentation created. Ready for integration.",
+    "status": "done",
+    "priority": 15,
+    "description": "D232 finalized. Build cross-platform startup shim.\nLinux/Mac: ~/bin/igor + ~/bin/superclaude (bash). Shared: ~/bin/_igor_common.sh.\nWindows: %LOCALAPPDATA%\\Microsoft\\WindowsApps\\igor.ps1 + superclaude.ps1. Shared: _igor_common.ps1.\nAlerts file only (no Discord) — shown before dashboard, snooze deferred.\nResponsibilities: restart loop (exit 42), pause.wait semaphore, pull-and-restart, force-savestate flag, crash logging.\nThree required config values: ANTHROPIC_API_KEY, IGOR_SWARM_DB_URL, IGOR_INSTANCE_ID.\nsuperclaude: fresh-install wizard, requirements, CC version update — pauses Igor during setup.\nWindows: elevated PS1 for Ollama/service management.",
+    "completed_at": "2026-03-25T18:12:37.300388+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a33e5380-1987-45f0-8d54-0259b1ce1d43",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

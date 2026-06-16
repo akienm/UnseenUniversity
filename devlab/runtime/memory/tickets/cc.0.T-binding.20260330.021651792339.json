@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-binding.20260330.021651792339",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-binding"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T02:16:51.792339",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-binding",
+      "T-graph-integrator",
+      "T-inhibition-propagation",
+      "T-spreading-activation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-binding",
+    "epic": "Cognition",
+    "title": "Binding — coalition detection on hot node set",
+    "result": "Phase 1 binding implemented: coalition.py with detect_coalitions() — BFS clustering of hot nodes connected via interpretive_edges; NE calls it after each cycle using TWM obs memory_ids as spreading activation seeds; logs COALITION|size=N|weight=X|centroid=Y to ring(ne_diagnostic). Syntax OK, guards tested.",
+    "status": "done",
+    "priority": 5,
+    "claimed_at": null,
+    "description": "After spreading activation + inhibition run, detect which hot nodes are co-activating coherently. A coalition = cluster of mutually reinforcing nodes whose combined activation exceeds a threshold. That coalition IS the percept — what Igor is 'about' right now. Implementation: post-spreading-activation clustering pass on heat field; output = list of coalitions with aggregate weight; top coalition feeds into NE frame selection and habit scoring. Deferred until graph is dense enough for meaningful coalitions. Prereqs: T-spreading-activation, T-inhibition-propagation, T-graph-integrator.",
+    "completed_at": "2026-03-30T02:16:51.792339+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "931c5181-9184-4a98-b96d-1eb2cb90b6e0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

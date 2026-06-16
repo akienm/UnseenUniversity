@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-slow-query-narrative-tsvector.20260405.121615996260",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slow-query-narrative-tsvector"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T12:16:15.996260",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-slow-query-narrative-tsvector"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slow-query-narrative-tsvector",
+    "epic": "Database",
+    "title": "Fix slow tsvector query on memories.narrative",
+    "result": "Added m037_memories_narrative_tsvector_gin migration to cortex.py — CREATE INDEX ON memories USING GIN (to_tsvector('english', narrative)). Applied immediately to live DB. tsvector query: 204ms → 0.16ms. ILIKE fallback now only fires for proper nouns/short tokens.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "cortex.search factual-kw-supplement computed to_tsvector on every FACTUAL row (174ms); GIN index was on payload not narrative — added m037 migration, 204ms→0.16ms",
+    "completed_at": "2026-04-05T12:16:15.996260+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fd15101e-c99a-45ba-a1da-06366c4d34a6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

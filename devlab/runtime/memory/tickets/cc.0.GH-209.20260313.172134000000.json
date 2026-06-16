@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.GH-209.20260313.172134000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-209"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-13T17:21:34",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-209"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-209",
+    "title": "feat: test generation — Igor writes tests for his own subsystems",
+    "result": "cancelled — Igor coding retired (D-worker-daemon-retired-2026-05-25); Igor test generation shelved",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 3,
+    "created_at": "2026-03-13T17:21:34Z",
+    "description": "## Imported from GH#209 (created 2026-03-13, open) — depends on #207 (hot-reload) + #208 (introspection)\n\nIgor can write and run tests for his own subsystems — not because we asked, but because he noticed something worth verifying.\n\nPattern: Igor observes an anomaly via introspection (e.g. tier.3.5 latency spiked at 14:00 three days running) → he writes a targeted test, isolating that path with known input → tests land in `tests/` as real Python files, auto-committed via self_edit pipeline → he can also generate regression tests after fixing a bug.\n\nRequires: hot module reload (#207), full introspection (#208), fixture DB support (from live testing infrastructure #206 Track 1), `run_test(test_path)` tool.\n\nKey principle: no mocks. Tests run against real systems with fixture data in the DB.\n\n**Affected files:** wild_igor/igor/tools/run_test.py (new — execute a test file, return stdout/stderr); wild_igor/igor/tools/self_edit.py (test-write integration via existing patch primitives); tests/fixtures/ (fixture DB support); cross-cuts hot-reload (#207) + introspection (#208) when those land.\n\n**Design rules:** docs-in-code; test-plan-or-why-not; no-mocks-policy (Igor's tests run against real systems with fixture data).\n\n**Scope boundary:** IN — run_test tool + Igor habit that authors targeted tests via self_edit. OUT — Igor mocking; coverage targeting (Igor decides what to test, not \"achieve N%\"); test-runner refactor.\n\n**Test plan:** tests/test_run_test_tool.py — execute a fixture test file, assert stdout/stderr captured. Integration test gated on hot-reload + introspection landing.\n\n**Status:** blocked on #207 + #208 — re-evaluate when those ship.",
+    "completed_at": "2026-05-29T03:18:38.730103+00:00",
+    "github_issue": 209,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "caaedb58-d7df-4335-8f37-adcab456676e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-single-pursuit-test-case.20260422.174513770788",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-single-pursuit-test-case"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T17:45:13.770788",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pursuit-layer-2026-04-22"
+    ],
+    "tickets": [
+      "T-igor-self-audit-approach-frame",
+      "T-pursuit-engram-programming-docs",
+      "T-pursuit-naming-decision",
+      "T-reply-forms-pursuit",
+      "T-single-pursuit-test-case"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-single-pursuit-test-case",
+    "gate": "T-pursuit-naming-decision",
+    "size": "M",
+    "tags": [
+      "Engrams",
+      "Pursuits",
+      "WorkerForeman",
+      "Test"
+    ],
+    "title": "Attach Pursuit structure to BOREDOM→scan-for-work→do-ticket chain — prove binding",
+    "result": "Pursuit MVP (cognition/pursuits.py) + BOREDOM chain wrap (boredom_idle.py) + 14 unit tests + observation protocol doc. Gated on IGOR_PURSUITS_ENABLED (default false). Runtime observation deferred to gate-flip session (minute-cadence protocol documented). Unblocks T-reply-forms-pursuit. Commit 69c92478.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-22T17:38:51.217826+00:00",
+    "related_to": null,
+    "decision_id": "D-pursuit-layer-2026-04-22",
+    "description": "First concrete implementation of the Pursuit layer. Attach Pursuit structure to ONE end-to-end path:\n  BOREDOM_DETECTED → 'scan-for-work' Pursuit → foreman_scan → found-work → 'do-ticket' Pursuit\n\nPursuit structure to add at each step:\n1. Commitment event: goal-facia formation at the moment BOREDOM decides to scan (not just a tool call)\n2. Anticipation dopamine trace: TWM push or goal-facia record that says 'I am pursuing scan-for-work'\n3. Sub-Pursuit spawn: finding work → spawn 'do-ticket' Pursuit (not just claim the ticket)\n4. Completion test: did scan-for-work succeed? Did do-ticket complete?\n5. Dopamine ding: on scan finding work, on ticket completion\n\nAffected files (check inertia before sprinting):\n- wild_igor/igor/tools/worker_foreman.py — foreman_scan() wrapping\n- wild_igor/igor/cognition/goal_formation.py — goal-facia creation (VERIFY HIGH-INERTIA STATUS; pre-approve with Akien if HIGH before touching)\n- wild_igor/igor/cognition/push_sources.py — BoredomSource Pursuit emission\n\nDebug protocol (per feedback memory feedback_handhold_igor_debug_minute_cadence.md):\n- Fire the stimulus, check at minute 1, 2, 3, 4. Backtrack at minute 5 if no advance.\n- At each checkpoint: is goal-facia present in DB? Did TWM show commitment event? Did foreman_scan run? Did ticket get claimed?\n\nAlso watch for suspected sibling bug: 'replies eat further progress by not forming a Pursuit' — if handling BOREDOM_DETECTED produces a reply-type action that consumes the attention slot rather than spawning foreman_scan as a Pursuit, that's shared mechanism with T-reply-forms-pursuit.\n\nScope: ONE concrete path only. No generalizing to other chains in this ticket — T-pursuit-engram-programming-docs captures the pattern, generalization is a follow-on.\n\nTest plan:\n- Check queue.json: claimed_at set on T-igor-self-audit-approach-frame at minute 1?\n- Check cognition.log: goal-facia formation event logged at commitment?\n- Check TWM: BOREDOM_DETECTED → 'scan-for-work' pursuit event visible?\n- Dopamine ding logged at found-work + at ticket claim?\n- Run minute-cadence protocol: advance observed at each minute?",
+    "completed_at": "2026-04-22T17:45:13.770788+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7a2df884-6b05-44b0-957e-4e9b83b148fb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

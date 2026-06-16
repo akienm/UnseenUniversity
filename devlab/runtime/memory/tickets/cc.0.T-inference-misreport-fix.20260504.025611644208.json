@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-misreport-fix.20260504.025611644208",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-misreport-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T02:56:11.644208",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-routing-fix-2026-05-03"
+    ],
+    "tickets": [
+      "T-inference-misreport-fix",
+      "T-no-local-inference-timeouts",
+      "T-sqlite-config-hunt",
+      "T-user-turn-cloud-first-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-misreport-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Bug",
+      "Observability"
+    ],
+    "title": "CLOSED: Fix inference 'both unavailable' misreport + TIER6 diagnostic format bugs",
+    "result": "Fixed 3 layered bugs in tier-6 fall-through: (1) user-facing message now distinguishes cloud-only/local-only/both-different/both-same-error/nothing-attempted; (2) diagnostic wraps cloud_attempted in bool() (was printing reasoner object repr); (3) per-attempt errors in named vars (_local_first_error, _cloud_error, _local_retry_error) — no more cross-contamination, fixed retry-skip-on-timeout to check first-local error not last-error. + incidental _get_logger→get_logger typo fix (T-incidental-get-logger-typo). 6 new tests pass; 17 existing pass. Commit ed3ae6bb.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-04T02:47:24.773555+00:00",
+    "related_to": null,
+    "decision_id": "D-inference-routing-fix-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — 'this is an invalid error that's masking a real error').** Three layered bugs in inference_gateway.py around the tier fall-through:\n\n1. **User-facing misreport** (line 782-787): `Both cloud and local inference are unavailable` fires for ANY fall-through, even when the actual failure was just a local timeout or a cloud-side SQL error. Replace with a message that names the actual failure mode: 'Cloud failed (X), local also failed (Y).' Distinct messages for: cloud-only-failed, local-only-failed (shouldn't happen post-T-no-local-inference-timeouts), both-failed-with-different-errors, both-failed-with-same-error (shared dependency — flag prominently).\n\n2. **Diagnostic format bug at line 745**: `cloud_attempted={_cloud_ok and self._t4}` — Python `and` short-circuits to the second operand when first is truthy, so this prints `<OpenRouterReasoner object at 0x...>` instead of `True`. Replace with `cloud_attempted={bool(_cloud_ok and self._t4)}` or split into separate flags.\n\n3. **last_error overwrite bug**: `last_error` is shared between local-first, cloud, and local-retry attempts. Cloud overwrites local's error. Local retry doesn't update last_error. Result: the diagnostic's `local_error=` field actually holds the CLOUD error after a cloud attempt happens. Fix: keep per-attempt errors in named variables (`_local_first_error`, `_cloud_error`, `_local_retry_error`) and the diagnostic prints them separately and accurately.\n\n**Affected files:** wild_igor/igor/cognition/inference_gateway.py (lines 736-787 — fall-through diagnostic + user-facing message build).\n**Design rules:** theigors/rules/logging (distinguish failure modes; preserve per-attempt errors), theigors/rules/local-inference-no-timeouts (the misreport hides this rule's violations — fixing the misreport makes future violations visible).\n**Scope boundary:** IN: rewrite the tier-6 fall-through diagnostic + user-facing message; preserve per-attempt errors in named variables. OUT: routing changes (T-user-turn-cloud-first-routing). OUT: timeout removal (T-no-local-inference-timeouts). OUT: tracing the actual SQLite `config` table caller (T-sqlite-config-hunt — needs its own ticket).\n**Test plan:** unit test the diagnostic builder with: cloud-only-failed, local-only-failed, both-failed-same-error, both-failed-different-errors → assert message text matches each. Assert per-attempt errors aren't cross-contaminated.\n**Validation:** next TIER6 anomaly in cc_alerts.log shows distinct local_error / cloud_error fields with different content (verifies the variables are no longer shared). **Cleanup:** none. **Logging:** existing `log_anomaly` call preserved; format improved per item 3.",
+    "completed_at": "2026-05-04T02:56:11.644208+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c52d973c-f3c4-494e-b4a9-59370c2a0b3c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

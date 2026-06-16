@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-worker-daemon-retire-cleanup.20260528.163451464593",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-daemon-retire-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:34:51.464593",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-worker-daemon-retire-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-daemon-retire-cleanup",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Infrastructure"
+    ],
+    "title": "Remove retired worker_daemon.sh launch call from Igor startup",
+    "result": "removed launch call site and dead DAEMON_PID_FILE/DAEMON_SCRIPT/worker-launch code from cc_queue.py",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-28T16:34:51.464593+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor startup opens a new terminal window printing 'worker_daemon.sh is RETIRED'. Find the call site (likely cc_queue.py worker-launch verb or an igor boot hook) and remove it. Also remove dead constants DAEMON_PID_FILE/DAEMON_SCRIPT and the worker-launch verb from lab/claudecode/cc_queue.py lines ~1246-1299.\n\n**Affected files:** lab/claudecode/cc_queue.py; discovery needed for call site (grep for worker.daemon and worker-launch across all startup paths in ~/TheIgors and devices/igor/)\n**Design rules:** none\n**Scope boundary:** IN — remove the launch call and dead cc_queue.py code; OUT — leave worker_daemon.sh file itself intact (it is a documented archive with retirement notice)\n**Test plan:** Start Igor via the igor launcher; verify no new terminal window appears with the RETIRED message; pytest passes",
+    "completed_at": "2026-05-28T16:49:39.306201+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T16:34:51.527062+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d598670-b00f-4a23-83be-55207ddb5661",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

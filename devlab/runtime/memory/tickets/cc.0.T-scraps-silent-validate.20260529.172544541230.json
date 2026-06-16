@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-scraps-silent-validate.20260529.172544541230",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scraps-silent-validate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T17:25:44.541230",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scraps-silent-validate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scraps-silent-validate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "ScrapsDevice.validate_ticket() spams shared channel on every diagnostic call",
+    "result": "Validated: 28/28 tests pass. Stash work was already committed in pre-reboot commits. No changes needed.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "created_at": "2026-05-29T17:25:44.541230+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Every web 'status update please' ping triggers a batch of 6 scraps channel messages: ScrapsShim.self_test() validates a short ticket (3 messages) and something downstream validates 3 placeholder tickets ('Add thing', 'TODO', 'A meaningful title here') producing 3 more failures — all posted to infra.channel_messages and visible in the shared channel every ~60s.\n\nRoot cause: ScrapsDevice.validate_ticket() always calls self._post() for both passes and failures, with no way to suppress channel noise for diagnostic/self-test callers.\n\nFix: add a `silent: bool = False` parameter to validate_ticket(). When silent=True, skip the self._post() calls entirely. Update ScrapsShim.self_test() to pass silent=True. Identify and fix the caller that validates the 3 placeholder tickets (likely a diagnostic pass in Igor's status-update handler or another shim.self_test()).\n\n**Affected files:** devices/scraps/scraps_device.py, devices/scraps/shim.py, plus whoever is calling validate_ticket with 'Add thing'/'TODO'/'A meaningful title here' (find via grep or channel tracing)\n**Design rules:** none apply\n**Scope boundary:** Make validate_ticket() silent by default for diagnostic callers. Do NOT remove channel posting entirely — user-initiated scraps calls should still post. Do not change validation logic.\n**Test plan:** Add test: ScrapsDevice().validate_ticket({'title': 'bad'}, silent=True) produces no channel messages. Existing test_scraps_device.py passes unchanged. After deploy: run web 'status update please' and confirm no scraps spam in channel.",
+    "completed_at": "2026-05-29T18:32:05.948320+00:00",
+    "deposited_at": "2026-05-29T11:27:03.141647",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-29T18:02:30.119322+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-29T17:25:44.654065+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f101e3fd-36b3-41ff-a06e-ece3edd4df57",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-postgres-home-db-failover.20260414.232254000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-postgres-home-db-failover"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:54",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-postgres-home-db-failover"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-postgres-home-db-failover",
+    "body": "From D122 (closed as ticketed). Per Akien 2026-04-14: 'so i think we now have the sync part. running igor on the other laptops solved that one. what we still lack is failover on the main db i expect.'\n\n## Current state\n\n- **akiendelllinux** is the sole home Postgres host (Igor-wild-0001 DB)\n- Other Igor instances on yoga9i, yogai7, akiendell connect back via IGOR_HOME_DB_URL\n- `PROC_MEMORY_SYNC` runs every 6h via memory_sync.py (D169) — sync is solved\n- **No standby Postgres** — if akiendelllinux goes down, every other Igor instance loses home DB connectivity until it comes back\n- No `IGOR_DB_FALLBACK_URL` plumbing in PGDatabaseProxy yet\n\n## What's missing (D122's failover half)\n\n1. **Standby Postgres** on a second machine (akienasus per D122 vision, or any other always-on box). Streaming replication from the akiendelllinux primary. Hot standby, ready to promote.\n2. **PGDatabaseProxy gains `IGOR_DB_FALLBACK_URL`**. On primary connection failure, attempts the fallback. Backs off and retries primary periodically.\n3. **Promotion procedure** when primary is down for more than X minutes — manual at first (Akien runs a script), eventually automatic.\n4. **Split-brain handling** — what happens when the old primary comes back while the standby is being used. Postgres has standard answers; we just need to pick one (probably 'old primary becomes new standby on rejoin').\n5. **Replication lag monitoring** — alert if standby falls behind by more than N seconds. Surface to Igor/Akien via the watchlist.\n\n## Why this matters\n\n- **Multi-instance Igor depends on the home DB.** A single-machine outage on akiendelllinux pauses all other instances.\n- **Akiendelllinux is Akien's daily driver** (per machines.json notes). Reboots, OS updates, hardware events take it down briefly. Each event is a stall for the swarm.\n- **The 'run anywhere' / Windows-port north star** depends on Igor being able to operate when its home DB is on a different machine entirely. Failover is the test case.\n- **Memory_sync handles cross-instance consistency but not write-availability.** Sync is the recovery; failover is the prevention.\n\n## Why this is M not S\n\nThe Postgres-side setup is well-trodden (streaming replication, pg_basebackup, primary_conninfo) — that part is mechanical. The Igor-side wiring is small (one new env var + connection retry logic in PGDatabaseProxy). The complexity is in the operational mode: when does failover happen, who triggers it, how does Igor know which DB it's currently talking to, what do tests look like for the failover path. That's the M sizing.\n\n## Sub-steps\n\n1. **Pick a standby host.** D122 named akienasus; verify it's still the right choice or pick another (yoga9i? cloud VPS? local raspberry pi?). Akien decision.\n2. **Set up streaming replication from akiendelllinux → standby.** Standard Postgres setup: pg_basebackup, recovery.conf / standby.signal, primary_conninfo. No Igor changes.\n3. **PGDatabaseProxy fallback URL.** Add `IGOR_DB_FALLBACK_URL` env var, modify connect() to try primary then fallback on failure, retry primary every N minutes once on fallback.\n4. **Failover trigger.** First version: manual (Akien runs `pg_ctl promote` on the standby). Second version: simple healthcheck (Igor pings primary every 30s; if fail count > threshold, log alert and switch to fallback). Third version (later): automatic promotion. Don't try to ship all three in one sprint.\n5. **Tests.** Integration test: bring down primary, verify Igor instances continue against fallback. Bring primary back, verify graceful return.\n\n## Existing infrastructure\n\n- wild_igor/igor/memory/db_proxy.py — connection layer that needs the fallback URL\n- D171 IGOR_HOME_DB_URL env var — the existing primary URL hook\n- memory_sync (D169) — handles cross-instance consistency, complementary to failover\n- T-system-gateway-services (D114 sub-slice) — eventually owns the 'manage Postgres lifecycle' piece including failover automation\n\n## Out of scope\n\n- Multi-master replication (Postgres doesn't support natively, BDR is enterprise)\n- Automatic failover with leader election (Patroni, etcd) — overkill for two nodes\n- Cross-region replication (single-machine local network is enough)\n- Backup automation (separate concern, T-backup-system if needed)\n- Replacing Postgres with a different DB engine (no, we're committed)\n\n## Provenance\n\nD122 (Akien 2026-04-11, surfaced + ticketed 2026-04-14). The sync half (D121 redis_word_graph + D169 memory_sync) is shipped; this is just the failover half remaining. Connects to T-system-gateway-services for the eventual lifecycle automation.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "infra",
+      "postgres",
+      "failover",
+      "ha",
+      "single-point-of-failure"
+    ],
+    "title": "Home Postgres failover — single point of failure on akiendelllinux",
+    "result": "appoint_home_db() + check_home_db_health(). Human-triggered failover: validates target, updates env, notifies swarm via comms channel. 5 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T02:55:30.043962+00:00",
+    "created_at": "2026-04-14T23:22:54Z",
+    "related_to": null,
+    "completed_at": "2026-04-18T03:09:30.177448+00:00",
+    "github_issue": 454,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

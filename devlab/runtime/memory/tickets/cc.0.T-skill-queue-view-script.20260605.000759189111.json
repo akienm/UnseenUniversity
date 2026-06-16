@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-skill-queue-view-script.20260605.000759189111",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-queue-view-script"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T00:07:59.189111",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skill-queue-view-python-2026-06-04"
+    ],
+    "tickets": [
+      "T-skill-queue-view-script"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-queue-view-script",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Workflow",
+      "CompiledInference"
+    ],
+    "title": "queue_view.py: compile /mytickets + /opentickets formatting",
+    "result": "queue_view.py compiled; mytickets + opentickets skills now one-liners",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that /mytickets and /opentickets call a compiled Python script so CC does not re-derive queue formatting logic on each invocation.",
+    "created_at": "2026-06-05T00:07:59.189111+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-skill-queue-view-python-2026-06-04",
+    "description": "Currently both skills pipe cc_queue.py output through bash grep filters and CC re-derives the grouping/formatting in prose instructions each time. Move the logic to a compiled script.\n\nCreate $CC_WORKFLOW_TOOLS/queue_view.py with:\n- `--view mytickets` — filter role=guru or worker=akien; group by status (sprint/in_progress/hold); output MY TICKETS shape\n- `--view opentickets` — all open tickets; group by status; output totals line\n\nUpdate ~/.claude/skills/mytickets/SKILL.md and ~/.claude/skills/opentickets/SKILL.md to replace the bash block with `python3 ${CC_WORKFLOW_TOOLS}/queue_view.py --view mytickets` (and opentickets respectively). Keep the Output shape description for CC context.\n\n**Affected files:** $CC_WORKFLOW_TOOLS/queue_view.py (new), ~/.claude/skills/mytickets/SKILL.md, ~/.claude/skills/opentickets/SKILL.md\n**Design rules:** none apply (workflow tooling)\n**Scope boundary:** Only mytickets and opentickets. No other skills changed. queue_view.py reads from cc_queue.py's list output or calls its API directly.\n**Completion criteria:** `python3 $CC_WORKFLOW_TOOLS/queue_view.py --view mytickets` and `--view opentickets` produce correctly grouped output. Skill files contain no inline bash grep pipes.",
+    "completed_at": "2026-06-05T03:42:28.944193+00:00",
+    "deposited_at": "2026-06-04T18:09:01.587837",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-skeleton-flat-file-registry.20260427.214803828937",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-skeleton-flat-file-registry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:48:03.828937",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-rack-health-rollup",
+      "T-adc-skeleton-flat-file-registry",
+      "T-adc-skeleton-mcp-aggregator",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-skeleton-flat-file-registry",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: skeleton flat-file device registry — atomic write, ping-on-restart",
+    "result": "DeviceRegistry in skeleton/registry.py: atomic write (tmp→rename), ping-on-restart, idempotent register, status tracking. No Postgres dep. All tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.85,
+    "claimed_at": "2026-04-27T21:43:01.863904+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "The skeleton's device registry must NOT depend on Postgres (skeleton manages Postgres). It uses a flat JSON file with atomic writes.\n\nProblem: If registry used Postgres, skeleton couldn't restart Postgres when Postgres goes down — circular dependency. Flat file breaks the cycle.\n\nProposed shape:\n- agent_datacenter/skeleton/registry.py:\n  class DeviceRegistry:\n    _path: Path  # ~/.agent_datacenter/devices.json\n    def register(self, device_id: str, config: DeviceConfig, mailbox: str) -> None\n    def deregister(self, device_id: str) -> None\n    def list_devices(self) -> list[dict]\n    def get_device(self, device_id: str) -> dict | None\n    def _atomic_write(self, data: dict) -> None:  # write to .tmp, rename\n    def _load(self) -> dict\n  On skeleton restart:\n    read file → for each device: ping health endpoint → mark online/offline\n  Device record: {id, name, status: 'online'|'offline'|'blocked', mailbox, config: DeviceConfig, registered_at: ISO8601}\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/registry.py\n\nDesign rules:\n- oop-first: DeviceRegistry class with clear methods — no module-level state\n- no-sqlite: JSON flat file only — no sqlite3 import allowed\n- docs-in-code: module docstring explains the circular-dep reason for flat-file choice\n\nScope boundary:\nIN: flat-file registry CRUD, atomic write, ping-on-restart reattach loop\nOUT: health rollup (T-adc-rack-health-rollup), MCP aggregator (T-adc-skeleton-mcp-aggregator)\n\nTest plan:\n- register() writes to file; list_devices() reads it back correctly\n- Atomic write: simulate crash mid-write (truncate .tmp) — no corruption to main file\n- Ping-on-restart: mock health endpoint returns 200 → device marked online; timeout → offline\n- Re-running register() with same device_id updates record (idempotent)",
+    "completed_at": "2026-04-27T21:48:03.828937+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "55d44e85-f53e-430f-8488-657cbbe3f365",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

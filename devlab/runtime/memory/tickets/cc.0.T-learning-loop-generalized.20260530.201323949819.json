@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-learning-loop-generalized.20260530.201323949819",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-learning-loop-generalized"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T20:13:23.949819",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-evaluator-device",
+      "T-learning-loop-generalized"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-learning-loop-generalized",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Research"
+    ],
+    "title": "Generalized observe→learn→improve loop for any factory including UU itself",
+    "result": "observe→learn→improve loop + UU self-enrollment via R-uu-core; 16 tests covering all 3 completion criteria",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.65,
+    "claimed_at": "2026-05-30T23:48:25.709458+00:00",
+    "created_at": "2026-05-30T20:13:23.949819+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Igor's observe→learn→improve loop is specific to his cognition stack. Generalize it as a standing rack pattern any factory (including UnseenUniversity itself) can opt into. The goal: every part of the system has a continuous path to suck less.\n\nThe loop:\n1. Observe — evaluator device scores outputs on a rubric; auditor device flags health issues; shim spy surfaces anomalies\n2. Learn — low scores and anomalies become FACTUAL memories in clan.memories (via Librarian write, with provenance token); patterns that recur get higher inertia\n3. Improve — recurring low-score patterns become tickets; Granny routes them as Platform tickets to CC; closed tickets update the rubric so the evaluator raises the bar\n\nUU itself is enrolled: the rack's own eval rubric (R-uu-core) scores each component on: does it implement the device contract? does it have a smoke test? does it pass the auditor's no-sqlite/no-bare-except checks? Failures become tickets automatically. The system files its own improvement work.\n\nOpt-in per factory: factory spec declares observe_rubric and improve_threshold (score below which a ticket is filed). UU's own enrollment is always-on.\n\n**Affected files:** devices/evaluator/ (T-evaluator-device, rubric R-uu-core), devices/granny/ (auto-file tickets from loop), devices/librarian/ (pattern memory writes), config/factories/ (observe_rubric field)\n**Design rules:** improvement tickets filed by the loop are worker=claude, tagged Platform; they go through normal Granny routing — the loop does not bypass the queue\n**Scope boundary:** IN — observe→learn→improve wiring, UU self-enrollment, per-factory opt-in, rubric improvement on ticket close; OUT — Igor's internal NE/TWM loop (that stays Igor-specific), autonomous code changes without CC approval\n**Completion criteria:** a deliberately bad output (fails R-uu-core rubric) automatically produces a filed ticket within one loop cycle; UU self-enrollment fires at least one improvement ticket on first run; closed improvement ticket updates the rubric score baseline",
+    "completed_at": "2026-05-31T06:28:35.078121+00:00",
+    "deposited_at": "2026-05-30T14:13:32.953737",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:48:25.709458+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T20:13:24.021982+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f5c4ff2b-9d0a-42e9-b4d7-913a72c01d5b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

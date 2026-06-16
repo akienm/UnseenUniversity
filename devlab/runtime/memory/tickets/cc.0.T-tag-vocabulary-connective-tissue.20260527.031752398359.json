@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-tag-vocabulary-connective-tissue.20260527.031752398359",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tag-vocabulary-connective-tissue"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-27T03:17:52.398359",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-tag-vocabulary",
+      "C-xxx",
+      "D-concept-layer-and-tags-2026-05-26"
+    ],
+    "tickets": [
+      "T-concept-skill",
+      "T-tag-vocabulary-connective-tissue"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tag-vocabulary-connective-tissue",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Palace",
+      "Workflow"
+    ],
+    "title": "Standardize tags across palace nodes and file headers",
+    "result": "Defined C-tag-vocabulary concept (palace.concepts.tag-vocabulary). Updated 14 palace.goals.* nodes and 5 palace.concepts.* nodes with tags. Made tags mandatory in /concept skill. Added # tags: to 12 top UU source files + cc_queue.py. Tags: Architecture, Cognition, Memory, Infrastructure, Workflow, Queue, SmallCompute, SelfImproving, MultiAgent, FactoryFactory, CompiledInference, Pipeline, Vision, Productivity, Platform.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-27T03:17:52.398359+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-concept-layer-and-tags-2026-05-26",
+    "description": "Establish a shared tag vocabulary that runs across the whole stack: palace.concepts.*, palace.goals.*, palace.decisions.*, and source file headers. Tags replace explicit cross-links — things that belong together share a tag; you discover related nodes by querying the tag rather than following maintained links. No links to break, no links to update when things move.\n\nTag format in palace node metadata: already has 'tags' array — standardize usage.\nTag format in file headers: add '# tags: <tag1>, <tag2>' as the last line of the module docstring.\n\nWork:\n1. Define the tag vocabulary (drawn from existing goal slugs G-xxx, concept slugs C-xxx, and topic tags like 'spreading-activation', 'cognition', 'memory', 'queue')\n2. Update /concept skill (T-concept-skill) spec to make tags mandatory on every concept record\n3. Add tags to existing palace.goals.* and palace.concepts.* nodes\n4. Add # tags: lines to high-traffic source files (devices/igor/*, unseen_university/db_proxy.py, etc.)\n5. Document the tag vocabulary in a palace.concepts.C-tag-vocabulary node\n\n**Affected files:** ~/.claude/skills/concept/SKILL.md (tags required), adc.palace (goal/concept metadata), high-traffic .py files (header tags)\n**Design rules:** none apply\n**Scope boundary:** Tag vocabulary + tooling. No link-removal from existing files — that's a separate cleanup pass once tags are established. File header tags: top 20 most-read files only, not whole codebase.\n**Test plan:** no automated tests — validate by querying SELECT path FROM adc.palace WHERE 'spreading-activation' = ANY(metadata->'tags') and confirming related nodes cluster correctly",
+    "completed_at": "2026-05-27T22:22:53.358211+00:00",
+    "github_issue": 800,
+    "required_files": [],
+    "scraps_validated": "2026-05-27T03:17:52.452544+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "62ca52ef-c9a2-4d61-bb7e-60ff05147a26",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

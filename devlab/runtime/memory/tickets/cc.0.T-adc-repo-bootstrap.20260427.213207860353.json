@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-repo-bootstrap.20260427.213207860353",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-repo-bootstrap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:32:07.860353",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-0-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-repo-bootstrap",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-repo-bootstrap",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: create github repo and scaffold full directory structure",
+    "result": "Repo created at https://github.com/akienm/agent_datacenter. Full scaffold committed and pushed: 39 files, all spec dirs, pyproject.toml, CLAUDE.md, README stub, .gitignore. pip install -e . passes. All Phase 1 gate deps now unblocked.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-27T21:29:48.835328+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-0-2026-04-27",
+    "description": "Create the standalone agent_datacenter repo (separate from TheIgors) and scaffold the full directory tree per spec.\n\nProblem: agent_datacenter is a portable package intended for work + every future project. It must not live inside TheIgors. The repo must exist before any code is written.\n\nProposed shape:\n- Create ~/dev/src/agent_datacenter/ locally (~/dev/src/ already exists)\n- git init; create github repo akienm/agent_datacenter; set remote\n- Scaffold dirs per spec: agent_datacenter/{__init__, rack, device, shim}, bus/, skeleton/, devices/{postgres,igor,claude,inference,web_server,discord_bot,swadl,installer}/, config/, logging/, tests/fixtures/\n- Create pyproject.toml (pip install -e . works, no deps yet)\n- CLAUDE.md bootstrapped for agent_datacenter (skills-aware)\n- .gitignore (*.db, .env, __pycache__, *.pyc, datacenter_logs/)\n- README.md stub: what this is, what it is NOT, link to spec\n- Push initial commit to github\n\nAffected files:\n- ~/dev/src/agent_datacenter/ (new repo, all scaffold files)\n\nDesign rules:\n- oop-first: device.py and shim.py (abstract base classes) are the design center — stub files note this\n- no-sqlite: .gitignore excludes *.db from day one\n- docs-in-code: README.md covers what-this-is and what-it-is-not per spec §What This Is\n\nScope boundary:\nIN: repo creation, directory scaffold, pyproject.toml, CLAUDE.md, README stub, .gitignore, initial push\nOUT: any working code — all __init__.py and device.py files are empty stubs\n\nTest plan:\n- pip install -e . succeeds with empty stubs (no import errors)\n- git clone from github works on a clean machine\n- All spec-required directories exist",
+    "completed_at": "2026-04-27T21:32:07.860353+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7620f192-8a7f-49f9-97ab-cd8d2bbea0b2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

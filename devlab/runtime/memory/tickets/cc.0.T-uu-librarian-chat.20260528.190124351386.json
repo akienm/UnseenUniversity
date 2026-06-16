@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-uu-librarian-chat.20260528.190124351386",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-librarian-chat"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:24.351386",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-launcher-config-2026-05-28"
+    ],
+    "tickets": [
+      "T-uu-librarian-chat",
+      "T-uu-root-launchers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-librarian-chat",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Librarian",
+      "UU",
+      "Chat"
+    ],
+    "title": "UU ./uu launcher: bootstrap + Librarian chat via configurable frontend shim",
+    "result": "./uu launcher: bootstrap (uv/pip), config-driven frontend selection (terminal REPL or web), Librarian channel routing with graceful degradation. Librarian device stub + config.cfg template.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-28T20:07:07.185095+00:00",
+    "created_at": "2026-05-28T19:01:24.351386+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-uu-launcher-config-2026-05-28",
+    "description": "Implement the ./uu entry point at repo root. Bootstrap (same as ./igor: venv, install, instance discovery from ~/.UnseenUniversity/). Then launch a chat interface connected to Librarian — the human-facing 'what do I know about X?' surface.\n\nFrontend: research and select an existing open-source terminal chat library (candidate: opencode from SST, or similar CC-style TUI) rather than building new UI. Frontend configured via uu.cfg default_frontend (terminal|web) with per-device override in Librarian/config.cfg and launch-flag override (./uu --frontend=web). Web option points to existing web server device.\n\nThe shim principle: any agent gets the same console option by changing shim config — not a bespoke UI per agent.\n\n**Affected files:** ./uu (new launcher at repo root), devices/librarian/config.cfg (frontend field), ~/.UnseenUniversity/uu.cfg (default_frontend field), possibly new devices/uu_chat/ shim\n**Design rules:** all internals hidden from user except elevation/install prompts; bootstrap identical to ./igor; frontend selection is config-driven not hardcoded\n**Scope boundary:** IN — ./uu bootstrap, frontend selection, Librarian chat connection; OUT — building a new chat UI from scratch (use existing library); OUT — igor or superclaude launchers (those are T-uu-root-launchers)\n**Test plan:** ./uu on clean clone runs bootstrap without error; launches chat interface connected to Librarian; ./uu --frontend=web opens browser to web server; uu.cfg default_frontend=terminal uses terminal UI",
+    "completed_at": "2026-05-28T20:08:05.993599+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:07:07.185095+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:24.351436+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "913de2c2-d35f-4a76-9fb5-85ae5a886754",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

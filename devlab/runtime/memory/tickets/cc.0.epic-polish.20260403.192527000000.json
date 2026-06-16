@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.epic-polish.20260403.192527000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "epic-polish"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:27",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "epic-polish"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "epic-polish",
+    "tags": [
+      "epic"
+    ],
+    "title": "Epic: Polish — Igor's communication quality with end users",
+    "result": "Bare-ack patterns extended (11 new). _is_raw_tool_leak() suppresses [tool result: JSON] and [check_process] CSB leaks from channel. test_goal_continuation: all 12 tests green with human-gate mock. 1687 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-05T00:25:33.509287+00:00",
+    "created_at": "2026-04-03T19:25:27Z",
+    "related_to": null,
+    "description": "Everything that makes Igor coherent and trustworthy from a human perspective, independent of whether the underlying cognition is correct. Separate from Cognition (which is about what Igor thinks) and Training (which is about what Igor learns). Polish is about what Igor says and how. Examples: (1) Response relevance — answer the question asked, not a nearby one the habit matched on. (2) Tool output formatting — [run_bash result: {raw JSON}] is internal machinery leaking into channel; should be summarized or suppressed. (3) Bare-ack suppression — 'Fair. On it.' violates reply discipline; now filtered in main.py but more patterns exist. (4) Conversational repair — when a habit misfires on intent, fall through to genuine reasoning rather than posting the misfire output. (5) Query acknowledgment — 'I looked for X, found Y' not just Y with no framing. (6) Tier-aware formatting — qwen2.5 and haiku outputs should not look identical to sonnet; confidence-gated verbosity. This epic grows incrementally as misfires surface in live use. Not a big upfront design — observe, name, fix, repeat.",
+    "completed_at": "2026-04-05T00:29:49.304010+00:00",
+    "github_issue": 349,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "11ee66d3-1099-42f7-8799-171de782ebcc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

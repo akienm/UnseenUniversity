@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-web-chat-reply-not-surfacing.20260419.231337573599",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-chat-reply-not-surfacing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T23:13:37.573599",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-chat-reply-not-surfacing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-chat-reply-not-surfacing",
+    "size": "M",
+    "tags": [
+      "Bug",
+      "Web-UI",
+      "Comms"
+    ],
+    "title": "Igor's channel reply lands in console/channel but doesn't render in the web chat pane",
+    "result": "Confirmed working by Akien 2026-04-19 post-restart: replies now surface in web chat pane. Fix shipped 2ae63269 (uc_client.send timeout 5s→30s, failure logs DEBUG→WARNING). Follow-up T-web-chat-swadl-regression filed to add a SWADL-based automated smoke test so a recurrence won't go unnoticed.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Akien 2026-04-19 12:02: sent 'how goes it in there?' via web; Igor produced a substantive reply ('Busy. The inference engine work has been sitting at the front of my attention...') visible in the console AND the igor.cognition log, but NOTHING rendered in the web chat pane. Previous turn ('hello' → 'Hey.') did land. So this is not a dead socket — it's intermittent, or specific to this reply shape (length? multi-paragraph? content with 'Sunday'?). \n\n## Scope\n- Trace: reply string → _channel_append / cc_send path → WebSocket broadcast → browser\n- Check: does channel_messages row exist for this reply? (Postgres has it visible, or not?) — compare timestamps with the console print\n- Check: is the WebSocket broadcast emitting the message payload on the /ws endpoint? utility_closet_server.py _broadcast\n- Check: the channel-tabs-redesign (02ce529d) — did the CC bridge pane removal accidentally drop the message routing for web?\n\n## Why now\nIf Igor's replies aren't visibly landing in web, Akien can't see half the conversation. Load-bearing for everything Igor-as-companion.\n\n## Provenance\n2026-04-19 session continuation; Akien paste showing console reply + no web render.",
+    "completed_at": "2026-04-19T23:13:37.573599+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ca67797b-cbb7-4d96-9dc6-1ad2f880d9d8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

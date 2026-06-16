@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-announce-slice1-round-trip-test.20260501.211422863492",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice1-round-trip-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T21:14:22.863492",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice1-round-trip-test",
+      "T-datacenter-capability-announce-protocol"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice1-round-trip-test",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice1",
+      "Datacenter",
+      "Test"
+    ],
+    "title": "tests/test_announce_round_trip.py — proves slice 1 ships",
+    "result": "15/15 green. Full suite 129 passed. envelope→broker→profile→manifest round-trip, online-device filtering, error paths. agent_datacenter commit ff711ba.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-01T21:13:24.340112+00:00",
+    "related_to": "T-datacenter-capability-announce-protocol",
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "The vertical-slice-shipping test: an agent sends an IdentityEnvelope to AnnounceBroker, the broker resolves the profile YAML, assembles the Manifest, and returns it. End-to-end, in-process, no IMAP yet (IMAP wiring is slice 2).\n\nThis test is the slice 1 boundary — when it's green, slice 1 is done.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/tests/test_announce_round_trip.py (NEW)\n**Design rules:** test-as-slice-boundary; happy-path-then-edge-cases\n**Scope boundary:** in — happy-path round-trip (Igor envelope → manifest with tool_bindings + state_refs); profile-not-found error path; mismatched agent_id error path; out — IMAP transport (slice 2), MCP wiring (slice 3), invalidation (slice 3)\n**Test plan:** N/A — this ticket IS the test plan for slice 1",
+    "completed_at": "2026-05-01T21:14:22.863492+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f4e2b4f3-41d1-421f-a4b9-a85cf4e3fd4c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

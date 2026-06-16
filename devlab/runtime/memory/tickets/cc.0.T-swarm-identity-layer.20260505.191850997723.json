@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-swarm-identity-layer.20260505.191850997723",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swarm-identity-layer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T19:18:50.997723",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swarm-identity-layer",
+      "T-swarm-via-home-web-server"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swarm-identity-layer",
+    "gate": null,
+    "title": "CLOSED: swarm identity layer — box.agent.n/surface resolve in DeviceRegistry",
+    "result": "resolve() on DeviceRegistry; box.agent.n/surface → comms:// mapping; 21 tests; commit 9a1825e",
+    "status": "done",
+    "worker": "claude",
+    "priority": "M",
+    "claimed_at": null,
+    "related_to": "T-swarm-via-home-web-server",
+    "decision_id": null,
+    "description": "Implement `<box>.<n>` addressing scheme as a backward-compatible alias for existing `comms://<lineage>` addresses. Each agent instance gets a human-readable address (e.g., `akiendell.igor.0`, `akiendell.cc.0`) with sub-surface suffixes (`/console`, `/mcp`, `/inference`). The registry resolves both forms.\n\n**Affected files:** agent_datacenter/agent_datacenter/announce/profile.py, agent_datacenter/agent_datacenter/announce/manifest.py, agent_datacenter/skeleton/registry.py, agent_datacenter/config/device_config.py\n**Design rules:** no-sqlite (Postgres or flat-file only per CLAUDE.md)\n**Scope boundary:** IN — define the address scheme, implement alias resolution in the registry/manifest, backward-compat alias map for existing comms:// addresses. OUT — changing the bus routing engine itself; web UI rendering; per-surface ACL (deferred per design doc).\n**Test plan:** unit tests — resolve box.n address → existing comms:// address; resolve comms:// address → box.n address; surface suffix routing (/console, /mcp); unknown address returns None not crash.\n**Pass condition:** `registry.resolve(\"akiendell.cc.0/console\")` returns the same device record as `registry.resolve(\"comms://CC.0\")` on a box where CC.0 is registered.",
+    "completed_at": "2026-05-05T19:18:50.997723+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a1edee21-e7fb-4228-96da-7720ccb3d402",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

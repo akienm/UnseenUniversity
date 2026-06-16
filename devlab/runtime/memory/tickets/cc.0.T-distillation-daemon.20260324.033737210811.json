@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-distillation-daemon.20260324.033737210811",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-distillation-daemon"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T03:37:37.210811",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-distillation-daemon"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-distillation-daemon",
+    "size": "M",
+    "tags": [
+      "graph",
+      "learning",
+      "distillation"
+    ],
+    "probe": "memory_search returns a synthesized EXPERIENTIAL node not hand-seeded, after running daemon on existing EPISODIC cluster",
+    "title": "DISTILLATION daemon — cluster EPISODICs, synthesize EXPERIENTIAL",
+    "result": "Distillation daemon shipped in main.py commit a0b6ce4: _run_distillation_background() + cognition/distillation.py + 13 tests.",
+    "status": "done",
+    "claimed_at": "2026-03-24T03:09:33.107277+00:00",
+    "description": "Build DISTILLATION daemon: runs periodically, clusters EPISODIC nodes by embedding similarity (threshold TBD), generates candidate EXPERIENTIAL synthesis, self-evaluates generality vs existing graph, inserts if novel. Second pass: EXPERIENTIAL with activation > threshold graduates to PROCEDURAL proposal. Fixes the consolidation gap in the EPISODIC→EXPERIENTIAL→PROCEDURAL lifecycle. Igor's argument: this fixes the metabolism — deposit works, consolidation doesn't. BG-compatible, daemon-level, no think-phase hookpoint needed.",
+    "completed_at": "2026-03-24T03:37:37.210811+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c3100e5a-f02a-485b-bf27-8b075699933f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

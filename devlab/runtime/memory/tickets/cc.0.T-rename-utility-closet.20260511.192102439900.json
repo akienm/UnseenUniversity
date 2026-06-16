@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-rename-utility-closet.20260511.192102439900",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rename-utility-closet"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T19:21:02.439900",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-rename-utility-closet"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rename-utility-closet",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "adc",
+      "cosmetic"
+    ],
+    "title": "CLOSED: rename utility closet → rack server",
+    "result": "superclaude echo strings + fn name → rack_server (b8e959b); utility_closet_server.py docstring + HTML + log msgs → Rack Server (f6c29336 TheIgors). Imports/file paths unchanged.",
+    "status": "closed",
+    "worker": "igor",
+    "assignee": "cc",
+    "priority": "low",
+    "claimed_at": null,
+    "created_at": "2026-05-11T19:21:02.439900+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "The name 'utility closet' (from D335) appears in superclaude startup messages and server script names, which is confusing at a glance. Replace with 'rack_server' (or 'adc_server') to match the rack/shelf vocabulary used everywhere else in ADC.\n\n**Affected files:** /home/akien/.local/bin/superclaude (start_utility_closet fn + echo strings), /home/akien/TheIgors/lab/claudecode/utility_closet_server.py (internal name/docstring), cc_log_stop_hook.py (any references), igor launcher scripts that echo the name\n**Design rules:** none apply — cosmetic rename, no logic change\n**Scope boundary:** In scope: user-facing echo strings in superclaude, server script internal name/docstring, any other startup-path echo strings. Out of scope: renaming the actual file (utility_closet_server.py → rack_server.py) — that's a separate migration risk; renaming Python module paths or import sites\n**Test plan:** no tests because: pure string rename in shell scripts and docstrings; manual smoke test: run superclaude and confirm new name appears in startup output",
+    "completed_at": "2026-05-11T20:04:18.523107+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8676f95f-37cd-4db7-a1f7-09d9e1f97869",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

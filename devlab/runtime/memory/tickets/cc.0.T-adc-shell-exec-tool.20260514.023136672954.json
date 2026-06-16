@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-shell-exec-tool.20260514.023136672954",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-shell-exec-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-14T02:31:36.672954",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-action-agency-tools-2026-05-13"
+    ],
+    "tickets": [
+      "T-adc-shell-exec-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-shell-exec-tool",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "ActionExecution"
+    ],
+    "title": "CLOSED: ADC MCP tool: shell_exec — run shell commands from any device",
+    "result": "shell_exec() MCP tool, machine-level protection, 5 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-05-14T02:38:50.229096+00:00",
+    "created_at": "2026-05-14T02:31:36.672954+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-action-agency-tools-2026-05-13",
+    "description": "No MCP tool exists for any ADC device to run shell commands. This blocks workspace manipulation, running tests, grepping code, checking logs, and all autonomous workflow execution.\n\nProposed shape: Add `shell_exec(cmd, cwd=None, timeout_s=30)` to Librarian tools. Uses subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd, timeout=timeout_s). Returns {stdout, stderr, exit_code, cmd, cwd, timed_out}. Logs to action_log (exit_code included). Protection model: machine-level — this machine is dedicated to the Igor project, no path whitelist needed. Cap timeout at 300s max.\n\n**Affected files:** new `agent_datacenter/devices/librarian/tools/exec_tools.py`, update `agent_datacenter/devices/librarian/tools/__init__.py`\n**Design rules:** no-TheIgors-imports; action-log-every-call; shell=True documented as intentional (machine-level protection, dedicated machine)\n**Scope boundary:** shell_exec only. Synchronous, no streaming, no background process management.\n**Test plan:** shell_exec('echo hello') → {stdout:'hello\\n', exit_code:0}; shell_exec('false') → {exit_code:1}; shell_exec('sleep 999', timeout_s=0.1) → {timed_out:True}; action_log entry present.",
+    "completed_at": "2026-05-14T02:39:40.579386+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "39c99e4b-29b0-4b61-a11b-5efbf344350d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

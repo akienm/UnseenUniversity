@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-rackmount-test-object.20260507.161211000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rackmount-test-object"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:12:11",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-rackmount-test-object"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rackmount-test-object",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Testing",
+      "agent_datacenter"
+    ],
+    "title": "CLOSED: rackmount test object (RackTestDevice/RackTestShim)",
+    "result": "RackTestDevice+RackTestShim: SIMULATED/REAL modes, call recording, failure injection, assertion helpers, 127 contract+unit tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-05-06T21:39:31.320721+00:00",
+    "created_at": "2026-05-07T16:12:11Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Create a test fixture device in agent_datacenter: a BaseDevice subclass that can either simulate the rack (for shim unit tests without real hardware) or wire into a real rack. Instrumented for all rackmount testing scenarios — records all calls, exposes assertion helpers, implements the full device protocol so shim tests can exercise tool-invocation paths without a live device.\n\nNeeds both a SimulatedRack mode (pure in-process, controllable from tests) and a RealRack adapter mode (thin wrapper that passes through to actual rack hardware). The shim and its tools should be testable against either mode via a single interface.\n\n**Affected files:** agent_datacenter/devices/ (new test device), agent_datacenter/shim.py (interface contract), agent_datacenter/device.py (BaseDevice)\n**Design rules:** OOP-first (BaseDevice subclass per CLAUDE.md); no SQLite; no TheIgors imports\n**Scope boundary:** test fixture only — no production device logic; SimulatedRack + RealRack adapter + assertion helpers. No new shim features.\n**Test plan:** unit tests for shim tool invocation against SimulatedRack; confirm same tests pass against RealRack adapter (integration)",
+    "completed_at": "2026-05-06T21:44:38.920932+00:00",
+    "github_issue": 620,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e5da4554-c38f-41c0-9669-ec37207951d8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

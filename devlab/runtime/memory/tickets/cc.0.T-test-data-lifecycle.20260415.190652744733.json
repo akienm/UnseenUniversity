@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-test-data-lifecycle.20260415.190652744733",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-data-lifecycle"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T19:06:52.744733",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-data-lifecycle"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-data-lifecycle",
+    "body": "From Akien 2026-04-15 morning, after 36 PR_GOAL_STRATEGIC_20260414* test-pollution facia were found in the live DB contributing to slow queries and Igor retrieval confusion.\n\n## Rule\n\nAll test data that should be thrown away gets four mechanisms:\n\n1. **Tag** — metadata.test_data=True. The hook for cleanup queries.\n2. **Tree path** — nodes appear under PR_IGORS_PROJECT.development.test_data subtree for human browsing; also reachable via a flat TEST_DATA_INDEX tree for single-query cleanup. (A node can be in multiple trees — D257.)\n3. **TTL** — short half-life (default 1 hour, tunable). Orphans from crashed test runs self-degrade even if cleanup misses them. Biomimetic: biology gets self-degradation for free via protein half-life + autophagy; the test_data tag is the ubiquitin marker.\n4. **pytest session fixture** — active enzyme. Autouse fixture in conftest.py sets IGOR_TEST_MODE=1, then deletes matching rows at session end.\n\nAudit check = orphan detector for any test_data=True older than its TTL.\n\n## Mechanism sketch\n\n- Env var `IGOR_TEST_MODE=1` set by conftest autouse fixture before any test imports cortex\n- cortex.store() / pr_create() / goal_adopt() / other creators check env var; when set, they stamp `test_data=True` + reparent to `TEST_DATA_ROOT` (or PR_IGORS_PROJECT.development.test_data subtree) automatically — so test authors don't need to remember\n- Session-end fixture runs: `DELETE FROM memories WHERE metadata @> '{\"test_data\": true}'` (via jsonb_exists + boolean check per the db_proxy convention)\n- TTL reaper: verify whether memories already have a TTL mechanism (twm_observations do via ttl_seconds; memories proper may not — check and decide: extend existing OR add minimal `expires_at` column + reaper pass that runs in sleep consolidation)\n- Audit check: flag any test_data=True memory older than TTL as 'orphan test data — fixture or crash left this behind'\n- Opt-out: tests that deliberately want persistent cross-session state set metadata.test_data=False explicitly\n\n## Scope\n\n1. conftest.py — add autouse session fixture that sets IGOR_TEST_MODE env var and runs cleanup at teardown\n2. Seed TEST_DATA_ROOT facia node (or equivalent under PR_IGORS_PROJECT.development.test_data)\n3. Wrap creator functions to auto-tag under IGOR_TEST_MODE (probably at cortex.store level — single choke point)\n4. Add TTL support to memories if missing — or document that the session fixture is sufficient and TTL is a follow-up\n5. Audit check for orphan test data\n6. Migrate existing test suites that create facia (pr_consolidation_source, goal_formation, etc.) to use the new pattern — most should get it for free via the cortex.store wrapper\n\n## Out of scope\n\n- Retroactive conversion of existing permanent test fixtures that deliberately want persistence\n- A full TTL/reaper infrastructure if the simplest version (session fixture) is sufficient\n\n## Tests\n\n- Session fixture sets env var and cleans up at end\n- cortex.store stamps test_data=True when env var set\n- cortex.store does NOT stamp when env var unset (no regression to prod path)\n- DELETE query removes tagged rows, leaves untagged alone\n- Audit check flags orphan test_data rows past TTL\n- Opt-out path: explicit test_data=False survives cleanup\n\n## Provenance\n\nAkien proposed after 36 pr_consolidation_source test leftovers surfaced in pollution cleanup 2026-04-15. Biomimetic framing: tag = ubiquitin, tree = lysosome, TTL = protein half-life, fixture = active autophagy.",
+    "size": "S",
+    "tags": [
+      "testing",
+      "hygiene",
+      "biomimicry",
+      "infrastructure"
+    ],
+    "title": "Test-data tag + TTL + auto-cleanup so throwaway fixtures self-degrade",
+    "result": "test_data_lifecycle.py + conftest autouse session fixture + cortex.store auto-tag hook + goal_graph workaround. End-to-end verified: full suite 2371 pass, 0 tagged rows after run, 6 facia baseline preserved. FK-aware cleanup (memory_embeddings + trees) in dependent order. Follow-up T-goal-graph-use-cortex-store filed.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T18:42:05.129711+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-15T19:06:52.744733+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

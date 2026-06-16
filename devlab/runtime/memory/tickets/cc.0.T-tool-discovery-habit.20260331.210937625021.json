@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-tool-discovery-habit.20260331.210937625021",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tool-discovery-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T21:09:37.625021",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tool-discovery-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tool-discovery-habit",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Tool discovery habit — Igor can enumerate available tools",
+    "result": "Seeded INTERP_FACIA_TOOL_DISCOVERY facia memory (entry point to tool discovery capability) and PROC_TOOL_DISCOVERY habit (fires on 'what tools do i have?' intent). Habit calls get_tool_registry_report and routes response through normal synthesis. 567 tests pass. Commit: 4b2bbe6a.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-31T21:07:48.447519+00:00",
+    "description": "Igor has 191 registered tools including get_tool_registry_report but no habit that fires when he asks 'what tools do I have?' / 'what can I do?' / 'what's the tool name?'. Fix: (1) seed INTERPRETIVE memory explaining get_tool_registry_report exists and how to use it for self-inventory, (2) seed habit PROC_TOOL_DISCOVERY that fires on tool-discovery intent (triggers: 'what tool', 'list my tools', 'what can i do') → calls get_tool_registry_report.",
+    "completed_at": "2026-03-31T21:09:37.625021+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b93a0b4d-b86c-41ac-ac8a-96a5b1e70711",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

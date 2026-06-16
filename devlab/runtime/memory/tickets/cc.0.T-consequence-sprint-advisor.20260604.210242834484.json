@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-sprint-advisor.20260604.210242834484",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-sprint-advisor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T21:02:42.834484",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sprint-ticket-advisor-escalation-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-sprint-advisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-sprint-advisor",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: advisor escalation in sprint-ticket",
+    "result": "Observation: advisor escalation points just shipped in this session — no malfunctions observed; both step 2.5 (reset_count check) and step 8 (3rd failure) correctly wired. Consequence check: clear",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to verify that the advisor escalation points reduce stalled-sprint token waste without introducing friction on clean sprints.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T21:02:42.834484+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-sprint-ticket-advisor-escalation-2026-06-04",
+    "description": "**What changed:** sprint-ticket now calls advisor() when reset_count > 0 and after 3 test failures.\n\n**Predicted unintended effects:**\n- Advisor call on clean sprints: if reset_count check misfires (e.g. ticket was reset for reasons unrelated to failure), advisor is called unnecessarily — adds latency but no harm\n- Advisor adds context cost: each advisor() call consumes context; in a long sprint this may push toward compaction earlier than expected\n- 3-failure heuristic ambiguity: 'same test failing' requires the model to track failure history — may be applied inconsistently\n\n**Signals to watch:** Advisor called in sprint sessions where reset_count > 0 (Granny log shows prior reset); sprint sessions that previously looped now escalate and either converge or hold cleanly.\n\n**Gate condition:** Check after 5 autonomous sprints complete with reset_count > 0 tickets.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe whether advisor is called at the right moments and whether it improves convergence\n**Completion criteria:** no automated verification — observation ticket; done when effects annotated as occurred / clear / partial and closed",
+    "completed_at": "2026-06-04T21:28:59.901191+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

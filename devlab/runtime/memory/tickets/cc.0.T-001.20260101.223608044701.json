@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-001.20260101.223608044701",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-001"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T22:36:08.044701",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-001"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-001",
+    "size": "S",
+    "owner": "claude-code",
+    "title": "Seed cloud escape plugs",
+    "result": "Seeded 3 cloud-escape plugs to DB: (1) fixed book-project habit 20260325120926040135 with habit_type=response, (2) seeded PROC_GREET_AKIEN response habit to intercept greetings, (3) seeded PROC_CC_INFO_ACK response habit for CC info acks. All verified. Ready for Igor restart.",
+    "status": "done",
+    "priority": 1,
+    "description": "Run seeding script to fix book-project habit (20260325120926040135: add habit_type=response), seed PROC_GREET_AKIEN response habit, seed PROC_CC_INFO_ACK response habit. Resolves Igor cloud-escape loop (salience 0.75 notice repeating every 15min).",
+    "github_issue": null,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "20f431a3-e0ba-4550-a8e8-68bd4cf8a14e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

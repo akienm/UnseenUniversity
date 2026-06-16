@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-versioned-seed-config.20260419.031154072922",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-versioned-seed-config"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T03:11:54.072922",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-versioned-seed-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-versioned-seed-config",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Operations",
+      "Durability"
+    ],
+    "title": "Version-controlled seed configs — watchlist + machines + any other lost-and-rebuilt state",
+    "result": "Shipped: lab/seed/watchlist.yaml + lab/seed/machines.yaml (versioned source of truth). Seeders: seed_watchlist.py reads YAML with fallback; seed_machines.py reads YAML, upserts via ON CONFLICT. Pattern doc at lab/design_docs/seed_config_versioning.md. Verified both round-trip cleanly. Commit a08daee1.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T03:05:09.987052+00:00",
+    "related_to": null,
+    "description": "Akien 2026-04-18b: 'we lost the machine info and we lost the questions. maybe those are two things needing versioning?' Both the machines table and the watchlist (GH-299) drifted or got wiped without a rollback path, and both were rebuilt from memory. The missing pattern is durable version control for config-shaped state.\n\n## Principle\nAnything that is (a) config-shaped (small, structured), (b) load-bearing for Igor's cognition, and (c) hand-curated rather than graph-accreted should live as a seed file in git, with idempotent boot-time upsert. Git log IS the version history; rollback is git checkout + re-seed.\n\n## Candidates\n- lab/seed/watchlist.yaml — 9 questions + 9 topics Akien dictated 2026-04-18 (currently hardcoded in seed_watchlist.py — move to YAML)\n- lab/seed/machines.yaml — hostname, ip, os, ram_gb, network_type, ollama_model, roles, aliases, ssh_enabled, notes. Currently only in Postgres; nothing in repo.\n- Potential future: CP cornerposts, identity patterns, clan-sheet seeds (if not already in git elsewhere)\n\n## Scope for this ticket\n1. Create lab/seed/watchlist.yaml — 18 entries (9 questions + 9 topics) from seed_watchlist.py\n2. Refactor seed_watchlist.py to read from YAML instead of hardcoded lists\n3. Create lab/seed/machines.yaml — snapshot of current machines table\n4. Create lab/seed/seed_machines.py — idempotent upsert from YAML → machines table\n5. Document the pattern in lab/design_docs/seed_config_versioning.md\n\n## Non-goals\n- Moving every DB row into YAML (graph state stays in DB; only config-shaped seeds move)\n- Live-editing YAML → DB sync (Phase 1 is boot-time only)\n- A full migration framework (already have _migrations for schema; this is data, not schema)\n\n## Acceptance\n- `git log lab/seed/watchlist.yaml` shows the 2026-04-18 restore as a commit\n- `python3 lab/claudecode/seed_watchlist.py` reads YAML, upserts 18 habits, idempotent on re-run\n- Same shape for machines: re-seeding is a one-liner that can recover from DB wipe\n\n## Provenance\nAkien-Claude 2026-04-18b, parting ask. Two lost-and-rebuilt incidents in one session triggered the insight.",
+    "completed_at": "2026-04-19T03:11:54.072922+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9f6299af-dcf8-4dc7-85bc-4e23a7eb06ab",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

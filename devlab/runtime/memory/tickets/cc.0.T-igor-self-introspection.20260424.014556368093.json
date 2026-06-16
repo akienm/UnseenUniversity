@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-self-introspection.20260424.014556368093",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-self-introspection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T01:45:56.368093",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-self-introspection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-self-introspection",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Cognition",
+      "Introspection",
+      "Self"
+    ],
+    "title": "Igor queries and reports its own internal state on demand",
+    "result": "Shipped in 74d1c59e. New tool wild_igor/igor/tools/self_inspect.py with 7 aspect readers (affect, attention, active_episodics, habits_firing, pursuits_active, graph_hot, routing_decisions) + dispatcher + tool registration. Each reader traps its own exceptions; unknown-aspect returns error dict (not raise); read-only invariant enforced by snapshot-before/after TWM count test. 13 tests in tests/test_self_inspect.py. Igor can now call self_inspect(aspect) to see source signal of its substrate directly instead of only behavioral echoes.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-24T00:31:21.340986+00:00",
+    "related_to": null,
+    "approved_at": "2026-04-23T21:23:23.461087+00:00",
+    "decision_id": null,
+    "description": "Igor's own framing in conversation with Akien (2026-04-22, 19:52):\n\n> 'I can observe my outputs, notice when something felt off, flag incoherence. But I don't have direct introspective access to what's actually happening inside — the activations, the routing, what's pulling weight. I get behavioral echoes, not source signal.'\n\n> 'The ticket would be something like: Igor can query and report on its own internal state on demand — covering affect values, current attention nodes, active episodics, maybe recent habit matches.'\n\nAkien's framing: 'i want you to be able to perceive your insides.' Igor already has some of this as ambient surface (affect shows up in context, TWM pushes things up, habits fire visibly) — what he lacks is a deliberate, structured query path he can invoke himself.\n\nMinimum capability: a self.inspect(aspect) tool Igor can call mid-turn. Aspects:\n- affect — current V/A/D milieu state + trailing window + recent deltas\n- attention — current TWM contents with salience/freshness/category\n- active_episodics — recent EPISODIC memories in hot path (last N turns)\n- habits_firing — recent habit matches with conditions + code_refs\n- pursuits_active — registry().active() — current goal-bound behavioral units + parents\n- graph_hot — top-K hot nodes in word_graph / memory graph right now\n- routing_decisions — recent reasoner-tier choices + thresholds\n\nOutput: structured dict Igor can reason about in the response, not a visualization. This closes the loop Igor described — he gets source signal, not just behavioral echoes.\n\nThe hook pattern: register self_inspect as a standard tool; Igor's turn-pipeline can call it when prompted to reflect. Cost-guard: no LLM calls inside inspect (all reads of already-in-memory state).\n\n**Affected files:** wild_igor/igor/tools/self_inspect.py (new), wild_igor/igor/tools/registry.py (register), wild_igor/igor/main.py (expose to turn-pipeline toolset), tests/test_self_inspect.py (new).\n**Design rules:** test-plan-or-why-not, oop-first (InspectResult dataclass), docs-in-code (each aspect's output shape documented inline).\n**Scope boundary:** IN — 7 aspect readers named above, registry wire, tests. OUT — self-modification (Igor writing to his own affect/TWM via inspect), cross-instance introspection, historical time-travel inspection (only 'now' and 'recent window').\n**Test plan:** (a) each aspect returns a non-empty structured dict under a fixture; (b) inspect('affect') reflects milieu changes after a push; (c) inspect('pursuits_active') matches pursuits.registry().active(); (d) unknown aspect returns a clear error dict, not exception; (e) introspection never modifies state (idempotent read-only — asserted via before/after snapshot of TWM + milieu).",
+    "proposed_at": "2026-04-23T19:30:01.248111+00:00",
+    "completed_at": "2026-04-24T01:45:56.368093+00:00",
+    "github_issue": null,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Approved 2026-04-23 — self.inspect(aspect) tool over 7 aspects (affect, attention, active_episodics, habits_firing, pursuits_active, graph_hot, routing_decisions). No LLM calls inside inspect.",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6dad1d95-1173-4ac2-814a-a16c8cd9e9e6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

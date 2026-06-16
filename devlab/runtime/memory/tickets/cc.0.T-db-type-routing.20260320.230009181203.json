@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-db-type-routing.20260320.230009181203",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-type-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T23:00:09.181203",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-db-type-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-type-routing",
+    "body": "Add trigger_key indexed column for PROCEDURAL memories. Route by type: PROCEDURAL→key lookup O(1), EPISODIC→timestamp range, FACTUAL→semantic search, INTERPRETIVE→edge traversal. Stop running full table scans for habits. Code change + hot-reload. Igor up.",
+    "role": "worker",
+    "size": "medium",
+    "title": "Route cortex.search() by memory type before searching",
+    "result": "committed c94f83d — type routing in cortex.search()",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": null,
+    "completed_at": "2026-03-20T23:00:09.181203+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

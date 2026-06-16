@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-cognition-bypassing-advisor.20260502.030442190707",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-cognition-bypassing-advisor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T03:04:42.190707",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-cognition-bypassing-advisor",
+      "T-igor-log-strip-ansi"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-cognition-bypassing-advisor",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Cognition",
+      "Regression",
+      "P1"
+    ],
+    "title": "REGRESSION: Igor chats go straight to LLM, bypassing reasoning-with-advisor path",
+    "result": "Pre-implement HIGH-inertia scope filter (commit f8dd2999). Drops out-of-scope brainstem hallucinations between pe_hypothesize and scope_guard so pe_implement never runs on them; empty-after-filter blocks with clean 'all proposals out of scope' reason instead of empty-close cascade. 8 regression tests, full suite green.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": null,
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": null,
+    "description": "Akien observes: every chat with Igor seems to hit the LLM directly instead of running through the planned reasoning-with-an-advisor path. Suspected cause: a recent coding change broke the routing. Needs investigation. **Run AFTER current debris wave** (announce slice 5 + slice 4b + T-igor-log-strip-ansi).\n\n**Symptoms:** Replies feel like raw LLM output rather than Igor reasoning through an advisor. The advisor turn (or whatever wraps the LLM in a deliberation step) appears to be skipped or short-circuited.\n\n**Affected files:** TBD discovery. Likely candidates to bisect:\n  - wild_igor/igor/main.py (Igor._process_inner, thalamus routing, tier selection)\n  - wild_igor/igor/cognition/prefrontal_cortex.py\n  - wild_igor/igor/cognition/inference_gateway.py (how LLM calls are wrapped)\n  - wild_igor/igor/arbiter/* (deliberation/advisor stage)\n  - Recent /sprint commits that touched cognition routing\n\n**Investigation approach:**\n  1. git log --since='2 weeks ago' on cognition/ + main.py\n  2. Identify the advisor-wrapping function and verify it's still invoked for normal turns\n  3. Compare against last-known-good behavior (decision log around the last working state)\n  4. Bisect if the suspect set is too large\n\n**Design rules:** restore the advisor-in-loop pattern; do NOT add new abstractions; no behavior changes beyond the regression fix.\n\n**Scope boundary:** in — diagnose, identify the regression point, restore advisor-routing behavior, add a regression test that exercises the advisor path. Out — broader cognition refactor, advisor capability changes, new tier selection logic.\n\n**Test plan:** test_chat_invokes_advisor_before_llm_emit — exercise the chat entry point with a sample input, assert that the advisor stage is reached (mock or spy on the advisor call). Plus a manual smoke test confirming Akien-observed behavior is restored.",
+    "completed_at": "2026-05-02T03:04:42.190707+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eaf048e8-b585-4514-a18a-74e0a07f6e7e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

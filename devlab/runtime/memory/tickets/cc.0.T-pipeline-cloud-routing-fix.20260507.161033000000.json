@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-pipeline-cloud-routing-fix.20260507.161033000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pipeline-cloud-routing-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:10:33",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pipeline-cloud-routing-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pipeline-cloud-routing-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "BugFix"
+    ],
+    "title": "CLOSED: pipeline LLM calls missing is_user_turn — Ollama stall on web turns",
+    "result": "Fixed: is_user_turn=True in LLMPeerAdvisor (interactive level) and LLMVoiceActor; MSG|ch= CSB filter added. Commit b0404ad4.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": "P1",
+    "claimed_at": null,
+    "created_at": "2026-05-07T16:10:33Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "LLMPeerAdvisor and LLMVoiceActor in the TurnPipeline called gateway.reason() without is_user_turn, defaulting to False. For interactive-level turns this sent the call to Ollama (local/interactive, 9-minute stall) instead of cloud. Web human messages going through the pipeline were silent for up to 9 minutes and then returned CSB garbage.\n\n**Affected files:** wild_igor/igor/cognition/llm_peer_advisor.py, wild_igor/igor/cognition/voice_ab.py, wild_igor/igor/main.py\n**Design rules:** D259 (is_user_turn gate), D254 (human turns → cloud direct)\n**Scope boundary:** Fix is_user_turn in both pipeline LLM callers; add MSG|ch= CSB echo filter\n**Test plan:** Manual: web message routes to cloud after fix (verified by last_tier=cloud/interactive in logs). Suite: 1363 passing.",
+    "completed_at": "2026-05-06T18:06:48.174592+00:00",
+    "github_issue": 607,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3a91ffbe-5b3e-4e8d-a9a5-eea8314473d7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

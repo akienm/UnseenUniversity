@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-fill-missing-subsystem-palace-entries.20260427.171112483158",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fill-missing-subsystem-palace-entries"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T17:11:12.483158",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cap-map-followups-2026-04-27"
+    ],
+    "tickets": [
+      "T-fill-missing-subsystem-palace-entries"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fill-missing-subsystem-palace-entries",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DocsHygiene",
+      "Palace",
+      "Cognition"
+    ],
+    "title": "Fill missing palace subsystem entries: pursuits, voice_ab, graph_calving",
+    "result": "Added 3 palace nodes (pursuits, voice_ab, graph_calving) under theigors/subsystem_index/. Verified via SELECT updated_by='cap-map-followups'.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-27T17:10:41.276039+00:00",
+    "related_to": null,
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "description": "Three subsystems are LIVE on this host (gates: IGOR_PURSUITS_ENABLED=true, IGOR_CALVING_ENABLED=true; voice_ab is unconditionally part of output pipeline) but had no palace subsystem_index node. A fresh session asking 'is X built?' had to grep code instead of reading the palace.\n\nDONE 2026-04-27: Added palace nodes:\n- theigors/subsystem_index/pursuits — Pursuit layer, primary cognition/pursuits.py\n- theigors/subsystem_index/voice_ab — A/B voice production framework, primary cognition/voice_ab.py\n- theigors/subsystem_index/graph_calving — memory-tree splitting, primary memory/cortex.py + tools/graph_ops.py\n\nAffected files:\n- clan.memory_palace (3 INSERT rows, updated_by='cap-map-followups')\n\nDesign rules:\n- docs-in-code: each node points at primary file's top-of-file docstring as canonical.\n- postgres-only: palace lives in Postgres ✓.\n- no-new-memory-schemas: uses existing memory_palace table ✓.\n- test-plan-or-why-not: verification IS the SQL SELECT showing new rows.\n\nScope boundary:\nIN: 3 subsystem_index nodes + their content.\nOUT: refactoring the subsystems themselves, moving code, updating top-of-file docstrings (separate ticket if needed).\n\nTest plan:\n- SELECT path FROM clan.memory_palace WHERE updated_by='cap-map-followups' returns the 3 expected paths plus narrative_engine + reading_worker_pool + turn_pipeline (covered by sibling tickets in this batch).\n- Verified 2026-04-27: 6 rows returned, all 3 of this ticket's targets present.",
+    "completed_at": "2026-04-27T17:11:12.483158+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "585f72da-bf41-4804-81d0-845ef32dc635",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

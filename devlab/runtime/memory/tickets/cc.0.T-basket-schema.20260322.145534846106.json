@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-basket-schema.20260322.145534846106",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-basket-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-22T14:55:34.846106",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-basket-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-basket-schema",
+    "size": "M",
+    "title": "Basket schema: formalize basket_schema field, __status__ contract, write-back mechanism",
+    "result": "Settled: dict in metadata, basket_schema=defaults, 3 reserved keys (__status__/__updated__/__error__), all others program-defined. Akien LGTM.",
+    "status": "done",
+    "priority": 8,
+    "claimed_at": null,
+    "description": "Habit nodes with run_context:true get basket_schema dict (defaults). batch write-back at end of step chain. __status__ reserved key. stale detection. Depends on #335 design.",
+    "completed_at": "2026-03-22T14:55:34.846106+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "91d7b405-7d79-49db-a37d-8538a17d0f8d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-questions-skill.20260518.164429530400",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-questions-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T16:44:29.530400",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-tracking-system-redesign-2026-05-18"
+    ],
+    "tickets": [
+      "T-questions-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-questions-skill",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Questions",
+      "Skills"
+    ],
+    "title": "Create /question skill — parking lot for not-yet-decisions",
+    "result": "Created /question skill — Q-xxx parking lot, palace storage, promote/dismiss",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": null,
+    "created_at": "2026-05-18T16:44:29.530400+00:00",
+    "related_to": null,
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "description": "Conversations surface observations that aren't ready to decide yet. They currently fall into the void between sessions. /question creates a lightweight Q-xxx record that survives compaction and can be promoted to a hypothesis or decision when ready.\n\n**Affected files:** agent_datacenter/skills/question/SKILL.md (new)\n**Design rules:** palace-first; Q-xxx nodes in adc.palace as palace.questions.*\n**Scope boundary:** in scope: /question 'text of question' (creates Q-xxx with: question text, what surfaced it, what would answer it); /questions list (shows open questions); /question promote Q-xxx (converts to hypothesis or flags for /decided). Out of scope: auto-promoting questions, linking questions to tickets.\n**Test plan:** skill file; manual smoke: file a question, list it, verify palace node written.",
+    "completed_at": "2026-05-18T16:59:00.262038+00:00",
+    "github_issue": 746,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "297efcdd-513d-44a2-8580-e34151c8bfa5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

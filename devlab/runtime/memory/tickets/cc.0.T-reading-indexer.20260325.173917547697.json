@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-reading-indexer.20260325.173917547697",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-indexer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:39:17.547697",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-blob-store",
+      "T-graph-integrator",
+      "T-reading-indexer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-indexer",
+    "title": "Reading indexer — chunk → G54 extract → FACT_CLOUD nodes",
+    "result": "Reading indexer complete. Implements chunk→G54 extract→FACT_CLOUD deposition with chapter-aware metadata. 10 tests ✓, all 391 suite tests ✓, commit e011bfc0 pushed.",
+    "status": "done",
+    "priority": 5,
+    "claimed_at": "2026-03-25T17:36:13.740623+00:00",
+    "description": "D230. Processes blob chunks into FACT_CLOUD graph nodes.\n\nThis is a refactor + formalization of the current making_money_reader.py approach.\n\nSteps per chunk:\n1. Read chunk from blob_store (chapter_idx, chunk_idx, text)\n2. G54 extract: cloud LLM extracts factual nodes from chunk\n3. Deposit each node as FACT_CLOUD_{hash} with metadata: {content_id, chapter, chunk_idx, source=reading}\n4. On completion: queue T-graph-integrator with content_id\n\nKey constraint: chunk size is chapter-aware. Do not split across chapter boundaries.\nRate: configurable, default 30s between chunks (was 50s, can be faster now that it is queued not cc_send)\n\nFile: wild_igor/igor/cognition/reading_indexer.py (new, replaces making_money_reader.py)\nInertia: LOW\nSize: M\nDepends on: T-blob-store",
+    "completed_at": "2026-03-25T17:39:17.547697+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "181abfe9-e9eb-4c87-9cbd-bc30395a2fcc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

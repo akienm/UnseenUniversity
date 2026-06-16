@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-self-obs-243-impl.20260315.214609887385",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-obs-243-impl"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T21:46:09.887385",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-self-obs-243-impl"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-obs-243-impl",
+    "body": "Plan approved. Implement as specified in T-self-observation-243 result: (1) SelfObservationSource in push_sources.py — runs every 30s, reads IGOR_SAID from ring, scores inward-watch habits, pushes SELF_OBS_HIT to TWM; (2) seed_self_observation_habits.py — seeds PROC_WATCH_INWARD_UNCERTAIN, PROC_WATCH_INWARD_CLAIM, PROC_WATCH_INWARD_FACTUAL. Wire into run_background_sources(). See T-self-observation-243 for full spec.",
+    "role": "implementation",
+    "size": "M",
+    "title": "Implement self-observation: SelfObservationSource + inward watch habits (#243)",
+    "result": "SelfObservationSource added to push_sources.py (30s interval, TWM cursor-based, dedup 5min); wire into run_background_sources(); seed_self_observation_habits.py created + run — PROC_WATCH_INWARD_UNCERTAIN/CLAIM/FACTUAL seeded to live DB as CP1 children. Syntax OK.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-15T21:43:33.243127+00:00",
+    "completed_at": "2026-03-15T21:46:09.887385+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

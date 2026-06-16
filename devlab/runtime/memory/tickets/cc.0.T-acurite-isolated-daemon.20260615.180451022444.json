@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-acurite-isolated-daemon.20260615.180451022444",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-acurite-isolated-daemon"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T18:04:51.022444",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-acurite-isolated-network-2026-06-15"
+    ],
+    "tickets": [
+      "T-acurite-isolated-daemon"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-acurite-isolated-daemon",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "AcuRite",
+      "Daemon"
+    ],
+    "title": "[pending] Daemon on isolated network — capture WU format, write CSV",
+    "result": null,
+    "status": "pending",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the daemon captures WU format weather data from the isolated device and persists it to CSV for dashboard consumption.",
+    "created_at": "2026-06-15T18:04:51.022444+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-acurite-isolated-network-2026-06-15",
+    "description": "Daemon listens on 10.0.0.230:80 for HTTP requests from AcuRite device. Parse WU (Weather Underground) format: /weatherstation/updateweatherstation?ID=...&tempf=...&humidity=...&windspeedmph=...&rainin=...&baromin=...&dewptf=...&uv_index=... (hub sends two messages per cycle ~20s apart — one temp/humidity, one wind/rain; merge into single CSV row per sensor_id). Write rows to /home/akien/AcuRite/weather.csv with headers: timestamp, sensor_id, sensor_name, temp_f, humidity_pct, wind_mph, wind_gust_mph, wind_dir_deg, rain_in, pressure_inhg, dew_point_f, uv_index. Log all requests to datacenter_logs/acurite_device/daemon.log. Handle device disconnection gracefully (don't crash).\n\n**Affected files:** new file devices/acurite_device/isolated_daemon.py or lab/claudecode/acurite_isolated_daemon.py (TBD per discussion)\n**Design rules:** log-state-changes (log every HTTP request + parse), log-interface-crossings (HTTP ↔ CSV), datacenter_logs hierarchy\n**Scope boundary:** Daemon only; network config is separate; weather.html integration is separate\n**Completion criteria:** (1) Daemon listens on 10.0.0.230:80; (2) Parses WU format requests; (3) Merges two-message-per-cycle pattern correctly (same sensor_id, different fields); (4) Writes to weather.csv with all fields; (5) Logs requests + merges to datacenter_logs/acurite_device/daemon.log; (6) Handles device disconnection without crashing; (7) CSV is readable by weather.html\n**Test plan:** (1) Connect device to isolated segment, power on; (2) Monitor daemon logs, verify requests arrive; (3) Check weather.csv for new rows appearing; (4) Verify two messages per cycle merge into one row; (5) Disconnect device, verify daemon stays running; (6) Reconnect, verify data flows again",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

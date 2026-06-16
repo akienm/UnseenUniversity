@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-memory-palace-populate.20260412.155728281406",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-palace-populate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-12T15:57:28.281406",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-palace-populate",
+      "T-memory-palace-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-palace-populate",
+    "epic": "Claude",
+    "size": "L",
+    "title": "Memory palace: build initial tree + migrate from .claude/memory files",
+    "result": "32 palace nodes seeded across theigors/{rules,history,slates,notes,igor,claude,akien} via seed_memory_palace.py. Signpost pattern (pointers not copies). 10KB vs 268KB old memory files — 96% reduction. Script is idempotent.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-12T15:53:32.788381+00:00",
+    "related_to": null,
+    "description": "Build the theigors/ tree structure with signpost nodes. Migrate useful content from 97 .claude/memory files into palace nodes (pointers, not copies). Delete dead weight (stale architecture notes, sessions.md, milestones.md). Tree structure: theigors/{rules,history,slates,notes,igor/{cognition,memory,training,operations},claude/{tools,references},akien/{preferences}}. Blocked by T-memory-palace-schema.",
+    "completed_at": "2026-04-12T15:57:28.281406+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "47da1231-350f-42cc-9eee-dbcab5a48120",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-gh-issue-routing-by-repo.20260507.225412588898",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gh-issue-routing-by-repo"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T22:54:12.588898",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gh-issue-routing-by-repo",
+      "T-migrate-gh-discussions-to-datacenter",
+      "T-swarm-web-tab-ui"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gh-issue-routing-by-repo",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Workflow"
+    ],
+    "title": "CLOSED: cc_queue GH issue routing by repo",
+    "result": "_gh_repo_for() routes by worker/tags; set-github-issue --repo flag; 14 routing tests; commit 4b5a09c5",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-07T22:54:12.588898+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Follow-on to T-migrate-gh-discussions-to-datacenter. cc_queue.py set-github-issue and any auto-creation logic should default to agent_datacenter repo for ADC/CC-workflow tickets and TheIgors for Igor-domain tickets.\n\nRouting rule: if worker=igor OR tags intersect {Cognition, Memory, Habits, Engrams, NarrativeEngine, TWM} → TheIgors repo. Otherwise → agent_datacenter repo.\n\n**Affected files:** TheIgors/lab/claudecode/cc_queue.py\n**Design rules:** none apply\n**Scope boundary:** IN — routing logic in cc_queue; update set-github-issue to accept optional --repo flag. OUT — bulk-migrating existing GH issues.\n**Test plan:** Unit test: ticket with tags=[Cognition] routes to TheIgors; ticket with tags=[Infrastructure] routes to agent_datacenter.\n**Pass condition:** `cc_queue.py set-github-issue --repo agent_datacenter T-swarm-web-tab-ui 596` works; auto-routing test passes.",
+    "completed_at": "2026-05-07T23:08:32.690224+00:00",
+    "github_issue": 635,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8dd04258-7f27-4fef-878a-7477315bc0d4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-ne-focus-variable.20260510.212120341870",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-ne-focus-variable"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T21:21:20.341870",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-activate-primitive-2026-05-10",
+      "D-dreaming-patterns-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-activate-primitive",
+      "T-igor-ne-focus-variable",
+      "T-igor-playbook-memory-type"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-ne-focus-variable",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "CLOSED: NE WATCH_Q→WATCH_T context injection",
+    "result": "WATCH_Q then WATCH_T context injected into NE _build_prompt via new _watch_context() method",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-10T22:29:55.364974+00:00",
+    "created_at": "2026-05-10T21:21:20.341870+00:00",
+    "related_to": null,
+    "decision_id": "D-activate-primitive-2026-05-10",
+    "description": "In narrative_engine.py context assembly, ensure WATCH_Q_* nodes (what does this mean) are loaded and injected before WATCH_T_* nodes (what does this mean to me). This implements two-step latent variable compression: broad semantic matching collapses to personal relevance in order — matching the neuroscience paper's 'ramping to threshold' pattern and the existing WATCH_Q/WATCH_T tree structure in clan.memories.\n\nThe change is ordering only — no new queries, no new memory types. Add an explicit comment at the join point naming the WATCH_Q → WATCH_T sequence so future readers understand the ordering is intentional.\n\nNote: narrative_engine.py is touched by the already-filed T-igor-playbook-memory-type (same decision batch D-dreaming-patterns-2026-05-10); this is consistent with that precedent.\n\n**Affected files:** `wild_igor/igor/cognition/narrative_engine.py` (context block ordering — no new queries, no new memory types)\n**Design rules:** no cortex.py changes; WATCH_Q → WATCH_T ordering explicit with comment at join point; budget-aware — same token caps as existing context blocks apply; HIGH-inertia narrative_engine.py touch is ordering-only (consistent with T-igor-playbook-memory-type precedent)\n**Scope boundary:** IN — context assembly order change, WATCH_Q before WATCH_T, explicit ordering comment. OUT — no new DB queries, no new memory types, no activate() calls (T-igor-activate-primitive), no scoring changes.\n**Test plan:** NE prompt construction test: given fixture with both WATCH_Q_test and WATCH_T_test nodes, WATCH_Q block appears before WATCH_T block in assembled prompt string; existing NE context assembly tests still pass",
+    "completed_at": "2026-05-10T22:49:25.384755+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2f2e172e-653b-4469-a42a-c2138463f497",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

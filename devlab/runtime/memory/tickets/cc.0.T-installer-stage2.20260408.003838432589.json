@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-installer-stage2.20260408.003838432589",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-installer-stage2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T00:38:38.432589",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-installer-stage2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-installer-stage2",
+    "epic": "Operations",
+    "size": "M",
+    "title": "Installer stage 2: installer.py + migration 001 + lean launchers",
+    "result": "installer.py full: migration_001 + load_cfg + restart_loop. igor bash + igor.ps1 replaced with lean wrappers. Key classification tested. 1868 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-08T00:33:27.871850+00:00",
+    "related_to": null,
+    "description": "Implement installer.py: migration 001 (.env → split cfg files, writes 001.done sentinel), restart loop in Python (replaces bash restart logic). Replace igor bash with minimal venv-bootstrap+exec wrapper. Update igor.ps1 similarly. D321.",
+    "completed_at": "2026-04-08T00:38:38.432589+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "48a937cd-4a98-463e-ad46-8688bdd03633",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

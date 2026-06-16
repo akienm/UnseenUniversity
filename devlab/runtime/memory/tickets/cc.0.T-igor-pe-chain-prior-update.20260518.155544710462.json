@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-igor-pe-chain-prior-update.20260518.155544710462",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-pe-chain-prior-update"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T15:55:44.710462",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-pe-chain-prior-update"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-pe-chain-prior-update",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "PeChain",
+      "LLM"
+    ],
+    "title": "HYPOTHESIZE prior repair from observed SCOPE_GUARD and old_string errors",
+    "result": "added pe_chain_priors table + scope_guard/hypothesize hooks + top-5 prior injection into HYPOTHESIZE prompt; 10 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-05-18T17:51:29.492754+00:00",
+    "created_at": "2026-05-18T15:55:44.710462+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "pe_chain HYPOTHESIZE has been hallucinating thalamus.py as an edit target for 7+ weeks with no mechanism to update its priors. Add a pe_chain_priors table keyed on (target_path, symbol), append on every SCOPE_GUARD trip and every old_string mismatch, and inject top-N recent priors into HYPOTHESIZE's prompt context so the model stops regenerating known-bad targets.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py, wild_igor/igor/tools/scope_guard.py (write hook), instance schema (new table pe_chain_priors)\n**Design rules:** no-sqlite; Postgres only; upsert semantics on (target_path, symbol); prior injection is prompt-side only, no model weights\n**Scope boundary:** in scope: pe_chain_priors table + migration, append on SCOPE_GUARD trip and old_string mismatch, inject top-5 negative priors into HYPOTHESIZE prompt. Out of scope: retraining any model, RL, changing SCOPE_GUARD allowlist logic, tools other than pe_chain.\n**Test plan:** test SCOPE_GUARD trip writes to pe_chain_priors; test HYPOTHESIZE prompt includes prior entries when they exist; integration test that thalamus.py as target is suppressed when it appears in priors.",
+    "completed_at": "2026-05-18T18:01:25.559122+00:00",
+    "github_issue": 734,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e40f9e02-b9a5-4e38-9ac7-d852c7d2d41a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

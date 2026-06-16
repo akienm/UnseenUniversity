@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-dicksimnel-e2e-smoke.20260606.224527340079",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-e2e-smoke"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T22:45:27.340079",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-e2e-smoke",
+      "T-smoke-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-e2e-smoke",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "DickSimnel",
+      "Testing",
+      "Reliability"
+    ],
+    "title": "DickSimnel: e2e smoke test — real OR call + tool_calls + DONE: verified",
+    "result": "_turn_log added to ToolLoop; TestToolLoopLiveOR class with skip-unless-env; 2 unit tests; integration mark registered",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": "I intend that we have a live integration test confirming qwen3-coder-30b returns tool_calls on OR and the ToolLoop→DONE:→close cycle completes end-to-end.",
+    "claimed_at": "2026-06-06T23:33:25.577392+00:00",
+    "created_at": "2026-06-06T22:45:27.340079+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** All 85 DickSimnel tests mock InferenceDevice. Whether qwen3-coder-30b on OpenRouter actually returns OpenAI-format tool_calls is unverified. The DONE:→close cycle has never completed in production.\n\n**What to build:** An integration test (skip-by-default unless env var DICKSIMNEL_LIVE_OR=1 is set) that:\n1. Constructs a minimal dummy ticket {id: T-smoke-test, title: 'echo hello', description: 'Run: echo hello via Bash tool and return DONE: hello echoed'}\n2. Calls ToolLoop.run() with real InferenceDevice (no mock)\n3. Asserts response is not None AND starts with 'DONE:'\n4. Asserts at least one tool_calls entry appeared in the transcript (via a ToolLoop trace)\n\nThis confirms OR returns tool_calls for this model and the loop terminates correctly.\n\n**Affected files:** tests/inference/test_dicksimnel_toolloop.py (new @pytest.mark.integration class), devices/dicksimnel/toolloop.py (add turn_log to ToolLoop.run() return path for test inspection)\n**Design rules:** none apply (test-only, no prod code changes except optional turn_log)\n**Scope boundary:** Integration smoke test only; does not fix any production bugs\n**Completion criteria:** pytest -m integration tests/inference/test_dicksimnel_toolloop.py::TestToolLoopLiveOR passes when DICKSIMNEL_LIVE_OR=1; asserts DONE: prefix and tool_calls presence",
+    "completed_at": "2026-06-07T01:33:09.335247+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

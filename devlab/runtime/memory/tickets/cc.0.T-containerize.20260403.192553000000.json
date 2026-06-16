@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-containerize.20260403.192553000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-containerize"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:53",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-containerize"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-containerize",
+    "epic": "Swarm",
+    "title": "Containerize Igor — Docker compose (Linux/Mac)",
+    "result": "Dockerfile + docker-compose.yml + deploy/igor-docker.sh. Python 3.12-slim base, playwright Chromium, NLTK. Compose: igor + postgres:16-alpine + ollama/ollama. igor waits for postgres healthy, shm_size=2g for browser_use, runtime volume at /data. igor-docker.sh: up/down/logs/rebuild/pull-model/status. Native ~/bin/igor launcher unchanged.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-04-04T22:41:58.428336+00:00",
+    "created_at": "2026-04-03T19:25:53Z",
+    "description": "D235. Build Docker compose stack: Igor service (Python 3.12, wild_igor/, pip install requirements) + Postgres service + Ollama sibling. Volume: ~/.TheIgors → /data inside container. Entrypoint: python -m igor.main. Env: IGOR_RUNTIME_ROOT=/data. Chrome browser_use: --shm-size=2g in compose. D232 startup scripts become thin docker run wrappers. Windows path (native ps1) is separate ticket. Output: Dockerfile + docker-compose.yml + updated igor launcher script.",
+    "completed_at": "2026-04-04T22:43:27.953546+00:00",
+    "github_issue": 354,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e15830cd-dff6-4503-8e25-278022b11106",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

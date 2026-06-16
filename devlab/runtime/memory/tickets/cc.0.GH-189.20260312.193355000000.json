@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-189.20260312.193355000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-189"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-12T19:33:55",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-189"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-189",
+    "title": "feat: Windows-compatible Igor attentional node (satellite instance)",
+    "result": "Per Akien 2026-04-19: done. Windows-compatible Igor attentional node (satellite instance) — landed.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-12T19:33:55Z",
+    "description": "GitHub issue #189. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-19T21:17:54.393218+00:00",
+    "github_issue": 189,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2f54e12f-63bd-4988-b051-54024d765abe",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

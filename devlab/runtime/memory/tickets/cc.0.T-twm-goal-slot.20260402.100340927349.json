@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-twm-goal-slot.20260402.100340927349",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-goal-slot"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T10:03:40.927349",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-twm-goal-slot",
+      "T-twm-relevance-decay"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-goal-slot",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "TWM: ACTIVE_GOAL entry type — parsed_goal lands in working memory",
+    "result": "ACTIVE_GOAL singleton in TWM via CognitiveMilieuChannel + cortex.twm_get_active_goal() + twm_evict_category(). Session 2026-04-02a.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": "T-twm-relevance-decay",
+    "description": "Currently parsed_goal only lives in the basket — it evaporates after the turn. TWM has no concept of 'what Igor is currently trying to accomplish.' This means TWM decay, cortex search, and habit scoring are all goal-blind.\n\nFix: when PARSE_GOAL fires and emits parsed_goal to basket, also emit it to TWM as an ACTIVE_GOAL entry. This is an EMITIF to the 'cognitive_milieu' or TWM channel in the PARSE_GOAL brick's code_ref tool.\n\nImplementation:\n1. Add ACTIVE_GOAL as a recognized TWM observation type (or reuse existing type with tag active_goal=True)\n2. Extend PARSE_GOAL's code_ref tool (when seeded to live DB) to push parsed_goal → TWM as ACTIVE_GOAL, TTL=300s (5 min — goal context window)\n3. ACTIVE_GOAL entries are singleton: seeding a new one replaces the old one (goal shift)\n4. Expose via twm.get_active_goal() helper for use by decay scorer and SITUATE\n\nPrerequisite for: T-twm-relevance-decay, SITUATE real implementation.\nDesign refs: Gemini threading analysis (RL_gemini_threading_20260401), D297 PARSE_GOAL basket contract.",
+    "completed_at": "2026-04-02T10:03:40.927349",
+    "required_files": [
+      "wild_igor/igor/cognition/twm_observations.py",
+      "claudecode/seed_layer3_parse_goal.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8ab10a9f-a0e1-4f74-bb35-e610e876ad9a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

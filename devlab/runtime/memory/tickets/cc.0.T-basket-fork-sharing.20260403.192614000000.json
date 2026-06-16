@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-basket-fork-sharing.20260403.192614000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-basket-fork-sharing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:14",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-basket-fork-sharing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-basket-fork-sharing",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Basket fork semantics: shared parent read + emit-back, not copy-on-fork",
+    "result": "Already implemented in session a. node_executor.py documents and implements T-basket-fork-sharing semantics: FORKIF spawns cursors that share parent basket by reference (_shared_basket=_eng_basket in main.py:4393). No copy-on-fork. Test coverage in test_node_executor.py:test_emitif_to_basket_visible_to_subsequent_fork_reads verifies shared basket visibility. Ticket was just not marked done.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-04T22:36:53.081031+00:00",
+    "created_at": "2026-04-03T19:26:14Z",
+    "related_to": null,
+    "description": "Forks share the parent basket (concurrent read). Child processes emit results back into shared basket. Isolation only when explicitly scoped via new basket + keyed EMIT projection. No copy-on-fork, no serialization at fork boundary. Design the basket access model to match biological shared working memory.",
+    "completed_at": "2026-04-04T22:37:43.346925+00:00",
+    "github_issue": 376,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "178769c5-ced5-4634-bcce-c64c2f8ee49c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

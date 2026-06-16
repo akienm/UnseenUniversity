@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-tiered-research-tool.20260414.232250000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tiered-research-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:50",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tiered-research-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tiered-research-tool",
+    "body": "From D054 (closed as ticketed). Akien 2026-04-14: 'use free calls to public AIs for some kinds of questions rather than relying on internal LLM calls. promote the ability to research using a tiered tools approach. start with a google search, move to a free ai, move to more expensive once you've exhausted the free stuff. i don't KNOW that's the best approach for keeping costs down for an AI? but it is how I do it to keep my computational impact down.'\n\n## The tier ladder\n\nNew unified `research(question, budget=cheap)` tool that walks tiers in cost order. Each tier has an exit condition; failure to satisfy moves to the next tier.\n\n1. **Tier 0 — Igor's own matrix.** memory_search + word_graph + interpretive traversal. Free, instant. Exit if a confident answer surfaces.\n2. **Tier 1 — Google web search.** existing web_search tool. Free, ~1-2s, no AI cost. Returns top results. Exit if results clearly answer the question.\n3. **Tier 2 — Free public AI via browser-use.** ChatGPT/Claude/Gemini web UIs through the existing Igor Chrome profile (~/.TheIgors/Igor-wild-0001/accounts/chrome_igor_profile). NO API key, NO billable token cost. Slower (~10-30s), variable quality, but free. Exit on confident answer.\n4. **Tier 3 — Local Ollama** (qwen2.5:7b or larger). Free compute on Igor's own hardware. Exit on confident answer.\n5. **Tier 4 — Cheap paid cloud** via OpenRouter (gpt-4o-mini). Cheap, ~$0.001-0.005/turn. Exit on confident answer.\n6. **Tier 5 — Expensive paid cloud** (Sonnet, Opus, etc.). Last resort.\n\n## Akien's framing\n\n'I don't KNOW that's the best approach for keeping costs down for an AI? but it is how I do it to keep my computational impact down.' This isn't just cost optimization — it's a values position about computational impact / environmental footprint. Worth naming explicitly so the implementation doesn't drift toward 'use the best model that fits the budget' which loses the principle.\n\n## Why this matters more than just cost savings\n\nThe browser-use path lets Igor consult Gemini/ChatGPT/Claude *as a peer*, the way Akien does himself, without paying API rates. This:\n1. **Aligns Igor with Akien's own research style** (T-collaborative-research adjacency)\n2. **Keeps computational impact down** — explicit values goal, not derivative of cost\n3. **Diversifies inference providers** — not all eggs in OpenRouter's basket; Igor can route around outages\n4. **Lets Igor cross-check answers** between multiple free AIs before paying for synthesis\n5. **Provides a fallback when API quotas are exhausted** without falling back to nothing\n\n## Existing infrastructure\n\n- **browser-use 0.12.2** in venv (D088) — already used by learn_about() for AI discovery on Calibre + web sources\n- **Chrome profile** at ~/.TheIgors/Igor-wild-0001/accounts/chrome_igor_profile — already authenticated for some sites\n- **anthropic balance scraper** (D088) — pattern for browser scraping a logged-in service\n- **inference_gateway.py** — existing routing, would need a new 'research' purpose with the tier ladder\n- **web_search tool** — Tier 1 already exists\n- **Ollama infra** — Tier 3 already exists\n- **OR routing** — Tier 4 + 5 already exist\n- **memory_search tool** — Tier 0 already exists\n\nThe gap is the *unified research() tool that walks the tiers and exits on confidence*. The pieces are all there.\n\n## Implementation sketch\n\nNew `tools/research.py` with:\n```python\ndef research(question: str, budget: str = 'cheap', max_tier: int = 5) -> dict:\n    '''Walk the cost-ordered tier ladder, return first confident answer.'''\n    # Tier 0: matrix\n    # Tier 1: google\n    # Tier 2: free AI via browser-use\n    # Tier 3: local Ollama\n    # Tier 4: cheap paid OR\n    # Tier 5: expensive paid OR\n```\n\n`budget='cheap'` caps at Tier 3. `budget='normal'` caps at Tier 4. `budget='expensive'` caps at Tier 5. `max_tier` is hard cap regardless.\n\nConfidence gate per tier: 'is the response specific enough to count as an answer, or is it generic / hedged / refusing?' Cheap heuristic first (length, keyword presence in question), escalate to LLM-judged confidence only if cheaper checks pass.\n\n## Connects to\n\n- **T-llm-shrinkage-roadmap** (filed today) — this is a new entry in the call-site table and a new tier *below* paid cloud in the ladder. Free public AI via browser is the missing rung between local Ollama and cheap paid OR.\n- **T-self-capability-awareness** — Igor needs to know `research()` is an option when reasoning hits a knowledge gap\n- **T-llm-collaboration-protocol** — research is one specific 'I'm stuck' escalation path\n\n## Open design questions\n\n1. **Confidence gating per tier** — heuristic-first or LLM-judged? How to know an answer is good enough to exit the ladder?\n2. **Caching** — same question asked twice should hit Tier 0; do we add a research cache or rely on cortex search?\n3. **Browser-use latency** — Tier 2 is slow (~10-30s). Does that block conversational use, or only work for background research?\n4. **Account safety** — using Igor's Chrome profile to query free AIs has risk of CAPTCHA / throttle / TOS concerns. How does Igor recover when a tier-2 site blocks him?\n5. **Quality variance across free AIs** — Gemini, ChatGPT, Claude.ai all give different answers. Do we query one, several in parallel, or rotate?\n\n## Out of scope\n\n- Multi-account rotation (one Chrome profile is enough for now)\n- Captcha solving (defer to background; if blocked, fall through to next tier)\n- Caching layer beyond cortex search\n- Replacing OR routing entirely (research() is one path; existing inference_gateway routing is another)\n\n## Provenance\n\nD054 (Akien 2026-04-11, surfaced + ticketed 2026-04-14). Akien's environmental-impact framing is explicit and load-bearing — this is a values-driven feature, not just cost optimization.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "research",
+      "cost",
+      "environmental-impact",
+      "browser",
+      "tiered-routing",
+      "values"
+    ],
+    "title": "Tiered research tool — google → free public AI → cheap paid → expensive paid",
+    "result": "tiered_research: memory→web→local_LLM→cloud_LLM cascade. Stops at first resolving tier. max_tier caps escalation. 12 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T20:19:39.557025+00:00",
+    "created_at": "2026-04-14T23:22:50Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T20:22:18.716852+00:00",
+    "github_issue": 450,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

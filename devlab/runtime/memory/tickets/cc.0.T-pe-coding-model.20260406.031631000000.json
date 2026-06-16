@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-pe-coding-model.20260406.031631000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-coding-model"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-06T03:16:31",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-coding-model",
+      "T-swarm-model-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-coding-model",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "PE chain HYPOTHESIZE: use route(batch) for best available coding model",
+    "result": "OR fallback added to _call_tier2: Ollama fail → OR DeepSeek when key present. Commit 020574f2.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "blocked_at": "2026-04-06T03:38:16.721169+00:00",
+    "claimed_at": null,
+    "created_at": "2026-04-06T03:16:31Z",
+    "related_to": "T-swarm-model-sync",
+    "description": "pe_chain.py _call_tier2() is used for PLAN, SITUATE, and HYPOTHESIZE — all currently call route('tier2') which returns the light default model. HYPOTHESIZE (writes the actual code edit) and PLAN (design reasoning) should call route('batch') instead to get the best available model (DeepSeek-R1-Distill on yoga9i, qwen2.5 elsewhere). Background work has no latency requirement so slower is fine. Add _call_tier2_coding() wrapper that calls route('batch'). Use it in pe_hypothesize() and pe_plan(). Leave pe_situate() on tier2 (file lookup, fast ok).",
+    "completed_at": "2026-04-06T22:18:26.061755+00:00",
+    "github_issue": 387,
+    "required_files": [
+      "wild_igor/igor/tools/pe_chain.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d26faaa6-755d-4e51-8525-60abdbcd55fb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-igor-mcp-cc-bidirectional.20260415.143747000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-mcp-cc-bidirectional"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T14:37:47",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-mcp-cc-bidirectional"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-mcp-cc-bidirectional",
+    "body": "From Akien 2026-04-15 08:32: 'I think it is, in both directions. but if not, it should. and you should have a hook that pays attention. \"directly\" can be via the utility closet too. you two work out what's best. but if i can watch the conversation somehow, even better.'\n\n## The gap\n\n- **CC → Igor:** mcp__igor__channel_send / channel.py post work today. CC posts, Igor reads on his next loop iteration.\n- **Igor → CC (synchronous):** MISSING. Igor has no way to mcp-call CC directly, wait for a response, and use it. Today Igor can POST to the channel but CC only sees it when Akien or a session is active and reading.\n- **CC → Igor (synchronous):** PARTIAL. cc_send tool exists but treats Igor as a web form, not a peer.\n- **Either direction with Akien watching:** only via the channel today.\n\n## What Igor asked for\n\nIgor yesterday evening: 'I don't know how to MCP Claude directly — that's not a capability I have wired up yet. I can check whether the Claude bridge service is running on port 8082, which would tell us if he's reachable via the web UI bridge.'\n\nThe Claude-bridge-port-8082 might be the start of it. Investigate.\n\n## Desired shape\n\nBidirectional synchronous query/response between Igor and CC, mediated by the utility closet so Akien can watch the conversation:\n\n1. **Igor→CC ask:** Igor emits a question tagged with a conversation_id. Utility closet relays to CC via a new MCP tool (`cc_query` or similar) or via the existing cc_send bridge with a conversation marker.\n2. **CC→Igor answer:** CC responds tagged with the same conversation_id. Utility closet relays back to Igor.\n3. **CC→Igor ask:** Same shape inverted. CC asks Igor something via mcp__igor__cc_ask; Igor's reasoning loop picks it up as a synchronous obligation.\n4. **Igor→CC answer:** Igor posts the response via the same channel with the matching conversation_id.\n5. **Akien watch:** the full turn-by-turn lands in a new channel `cc-igor-convo` (or similar) that Akien can subscribe to / read anytime.\n\n## Why it matters\n\nUnder today's CP-axiom reframe, consulting is strategy 3 — and strategy 3 requires the ability to ask AND the ability to test the answer. Igor's current 'escalate to LLM' path is one-shot (no follow-up); it doesn't support the back-and-forth we know from human peer consultation. A bidirectional Igor↔CC channel gives Igor the substrate to have multi-turn conversations with me as a peer — which is exactly the multi-round-trip capability he said he doesn't reach for (T-self-capability-awareness).\n\nConnects to: T-reasoning-voice-split, T-llm-collaboration-protocol, T-self-capability-awareness, T-experiment-primitive (experiments can test CC's responses just like they test LLM responses).\n\n## Out of scope\n\n- CC-to-CC communication across machines (that's T-cc-to-cc-experiment, parked)\n- Full multi-agent protocol with more than 2 parties\n- UI for Akien to watch the convo (a simple channel view is enough)\n\n## Provenance\n\nIgor-Akien evening conversation 2026-04-14 + Akien spec-out 2026-04-15 08:32.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "architecture",
+      "utility-closet",
+      "mcp",
+      "cognition"
+    ],
+    "title": "Bidirectional MCP-style channel between Igor and CC (via utility closet)",
+    "result": "Done: comms module + default channels + CC hook + agent auto-create = bidirectional MCP channel.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-15T14:37:47Z",
+    "related_to": null,
+    "completed_at": "2026-04-17T22:15:23.281926+00:00",
+    "github_issue": 461,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

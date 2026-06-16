@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-savestate-15d.20260315.204359451854",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-savestate-15d"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T20:43:59.451854",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-savestate-15d"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-savestate-15d",
+    "body": "Run savestate. Changes this session: NE TraversalCursor (#236), employer model + cc_notebook (#239), decision capture habits (#235), review audit T010, three-session Short Worker (#234). Commit 35fb018. Update sessions.md, MEMORY.md, GitHub discussion #62, final commit.",
+    "size": "S",
+    "title": "Savestate 2026-03-15d",
+    "result": "Already committed as eb4aed3 (2026-03-15d) and d9159a2 (2026-03-15e); task was stale in queue",
+    "status": "done",
+    "claimed_at": "2026-03-15T18:35:24.810770+00:00",
+    "completed_at": "2026-03-15T20:43:59.451854+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

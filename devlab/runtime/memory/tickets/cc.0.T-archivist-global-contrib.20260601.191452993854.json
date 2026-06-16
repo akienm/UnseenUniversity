@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-archivist-global-contrib.20260601.191452993854",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-archivist-global-contrib"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T19:14:52.993854",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-archivist-global-contrib"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-archivist-global-contrib",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Archivist",
+      "CompiledInference",
+      "Clan"
+    ],
+    "title": "Archivist: propose proven local patterns to global KB",
+    "result": "devices/archivist/contrib.py: scan/list/submit CLI; CONTRIB_CANDIDATE channel post; context stripping; 44 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.45,
+    "blocked_at": "2026-06-02T22:05:39.560105+00:00",
+    "claimed_at": "2026-06-02T22:04:29.948498+00:00",
+    "created_at": "2026-06-01T19:14:52.993854+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The Archivist's contribution loop: locally-discovered patterns that have proven themselves (hit rate above threshold, N uses, generality score) get staged as proposed contributions to the global KB git repo. Human reviews and submits the PR — the Archivist proposes, humans gate community contributions.\n\nFlow: Archivist identifies candidate pattern → strips instance-specific context → writes to contribution staging area → posts CONTRIB_CANDIDATE to shared channel with summary → human runs `uu contrib submit` to open the PR.\n\n**Affected files:** devices/archivist/contrib.py (new); `uu` CLI (contrib subcommand); contrib staging area (local path gitignored from UU repo)\n\n**Design rules:** human-in-loop for all global KB contributions; no auto-PR; strip PII and instance context before staging\n\n**Scope boundary:** IN — candidate detection (threshold-based); context stripping; staging area; channel notification; `uu contrib submit` CLI. OUT — auto-merge; governance tooling; pattern quality scoring (uses simple hit-count threshold)\n\n**Completion criteria:** (1) Archivist posts CONTRIB_CANDIDATE to channel when a pattern crosses threshold; (2) `uu contrib list` shows staged candidates; (3) `uu contrib submit <id>` opens a PR draft (or prints the diff for manual PR); (4) staged files contain no instance paths, ticket IDs, or credentials",
+    "completed_at": "2026-06-03T01:06:22.629983+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T22:04:29.948498+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "43e16eb0-b209-4dc1-b158-7879640e81d4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-calibre-shim.20260603.171227081617",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-calibre-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T17:12:27.081617",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-sqlite-exempt-calibre",
+      "T-calibre-shim",
+      "T-librarian-index-paths"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-calibre-shim",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Calibre",
+      "Device"
+    ],
+    "title": "Calibre device shim: MCP bus interface to Calibre content server",
+    "result": "CalibreDevice + CalibreShim via calibredb; no SQLite; 11 tests; Igor migration deferred (TheIgors)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": null,
+    "claimed_at": "2026-06-04T19:40:54.375687+00:00",
+    "created_at": "2026-06-03T17:12:27.081617+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Add a rack device for Calibre so Igor and other devices can query the book library via MCP tools instead of bypassing the rack with direct file/SQLite reads. The shim uses the Linux calibredb CLI (subprocess with --with-library) to interact with the library at /media/akien/onedrive/AkiensMedia/Ebooks/Calibre Library. No SQLite import in shim code; calibredb is an external binary like rg or git.\n\n**Prerequisite:** Linux calibre must be installed (sudo apt install calibre or https://calibre-ebook.com/download_linux). calibredb must be in PATH. Shim config sets library_path; calibredb handles all DB access internally.\n\nMCP tools to expose:\n- search_books(query, limit=20) — calibredb search, returns ranked list of {id, title, authors, formats, tags}\n- get_book_metadata(book_id) — full metadata for one book (title, authors, publisher, date, tags, comments, formats available)\n- list_books(author=None, tag=None, limit=50) — browse by author or tag filter via calibredb list\n- get_book_content(book_id, format='epub') — returns file path for the requested format if available\n\nConfig template includes library_path (default: /media/akien/onedrive/AkiensMedia/Ebooks/Calibre Library) and calibredb_path (default: calibredb, override if not in PATH). Shim falls back gracefully when calibredb is not found or library is unreachable — all tools return structured error.\n\n**Migration:** Igor's existing direct Calibre access (learner.py direct calibredb/SQLite reads, scan_ebooks, calibre_catalog.py) is removed in this same sprint — replaced by calls to mcp__calibre__* tools. Igor loses his bypass path; the shim becomes the only interface. The calibre-sqlite-exempt audit allowlist entry (T-audit-sqlite-exempt-calibre) is also removed.\n\n**Note:** Not all books in /media/akien/onedrive/AkiensMedia/Ebooks are in Calibre — only those imported into the Calibre Library. The shim exposes only what Calibre knows about.\n\n**Affected files:** devices/calibre/ (new — device.py, shim.py, config.cfg), skeleton/registry.py (register new device), TheIgors/wild_igor/igor/tools/learner.py (remove direct calibre access), TheIgors/wild_igor/igor/tools/scan_ebooks.py (remove), TheIgors/wild_igor/igor/tools/calibre_catalog.py (remove or gut), audit_check_sqlite_imports.py (remove calibre exemption)\n**Design rules:** no-sqlite (calibredb is a subprocess binary, not a sqlite3 import); device.py and shim.py inherit BaseDevice/BaseShim; config-driven library_path (not hardcoded); subprocess calls follow existing rg/git patterns\n**Scope boundary:** IN: calibredb subprocess wrapper, 4 MCP tools above, config for library_path, graceful unavailable handling, Igor migration. OUT: replacing or managing calibre application itself, DRM stripping, format conversion, writing back to Calibre library, full-text content indexing (T-librarian-index-paths), books not in Calibre library.\n**Completion criteria:** mcp__calibre__search_books(query='Pratchett') returns books from the library; get_book_metadata returns correct title/authors for a known book_id; shim returns structured error when calibredb not found; device registers in skeleton registry; Igor no longer has direct Calibre file access; 5+ tests covering search, metadata, unavailable-calibredb path",
+    "completed_at": "2026-06-04T21:28:46.800807+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:08:04.405225+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0220a741-4fa6-439f-83c1-5e25bd8e0ab8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

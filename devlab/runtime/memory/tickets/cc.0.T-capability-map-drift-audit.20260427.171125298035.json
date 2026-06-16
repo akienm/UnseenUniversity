@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-capability-map-drift-audit.20260427.171125298035",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-capability-map-drift-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T17:11:25.298035",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cap-map-followups-2026-04-27"
+    ],
+    "tickets": [
+      "T-capability-map-drift-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-capability-map-drift-audit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "DocsHygiene",
+      "Audit",
+      "Skills"
+    ],
+    "title": "Add /day-close-audit Step for capability_map.md staleness",
+    "result": "Added Step 18.6 (Capability map drift check) to ~/.claude/skills/day-close-audit/SKILL.md + Cap-map drift line in findings format. >7 day staleness triggers re-verify prompt.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-27T17:10:58.322727+00:00",
+    "related_to": null,
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "description": "lab/docs/capability_map.md is the 'what's built today vs planned vs broken' doc. It rots fast (claims about gates, in_progress tickets, and known bugs are time-sensitive). Without a drift check it becomes wrong quietly.\n\nDONE 2026-04-27: Added Step 18.6 (Capability map drift check) to ~/.claude/skills/day-close-audit/SKILL.md. The step computes file age in days; warns and prompts re-verification if >7 days. Updated 'Steps 1-18' wording to 'Steps 1-18.6' and added 'Cap-map drift' line to the findings report format.\n\nAffected files:\n- ~/.claude/skills/day-close-audit/SKILL.md (Step 18.6 inserted, two minor wording fixes).\n\nDesign rules:\n- docs-in-code: Step 18.6 doc lives in the SKILL.md alongside other steps — canonical for the audit procedure.\n- postgres-only: not applicable — skill markdown.\n- oop-first: not applicable.\n- test-plan-or-why-not: manual — the step is a 5-line shell snippet computing file age; no automated test needed (the audit IS the test of the audit).\n\nScope boundary:\nIN: Step 18.6 + report-line + Steps-1-18 wording fix.\nOUT: capability_map.md content rewrites, drift detection of palace subsystem_index, automated cap-map regeneration.\n\nTest plan:\n- Manual: stat ~/TheIgors/lab/docs/capability_map.md, age <= 0 days now, Step 18.6 says fresh.\n- Manual on next /day-close: Step 18.6 fires, prints age, fresh|stale verdict.\n- Verified 2026-04-27.",
+    "completed_at": "2026-04-27T17:11:25.298035+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8440fff0-8d99-47f7-939d-3850787e0223",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-per-ticket-checkpoint.20260616.171113163252",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-per-ticket-checkpoint"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T17:11:13.163252",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-architecture-as-code-cognition-pipeline-2026-06-16"
+    ],
+    "tickets": [
+      "T-per-ticket-checkpoint"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-per-ticket-checkpoint",
+    "title": "[sprint] Clear-to-base context between tickets via native /rewind (keep base + commits, excise ticket delta)",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "L",
+    "tags": [
+      "ExternalState",
+      "Workflow"
+    ],
+    "description": "**Problem:** A builder working ticket-after-ticket accumulates each ticket's context delta on top of a large static base (everything /context-load brings — rules, palace, slate, substrate). Treating context as all-or-nothing forces a bad choice: re-run /context-load every ticket (re-paying tokens for the static base) or let the window grow unbounded. Mid-ticket compaction also strands uncommitted work because state lives in context, not durably. Root: External State Principle + no \"bookmark base / clear to base\" primitive in the builder loop. NOTE: ticket id is legacy (\"per-ticket-checkpoint\"); the mechanism is now clear-to-base via native rewind, not a checkpoint file.\n\n**Proposed shape:** A `clear_to_base` step the builder runs BETWEEN tickets, built on Claude Code's NATIVE conversation-only rewind:\n1. Run /context-load ONCE; the prompt right after it is the BASE restore-point (the bookmark).\n2. Build the ticket (edits + git commit).\n3. clear_to_base: drive `/rewind` -> \"Restore conversation\" back to base via the existing tmux send-keys machinery (same pattern as uucompactclaude drives /compact). This excises ONLY the ticket's conversation delta; the base stays in the window (NEVER re-tokenized, NEVER re-loaded) and code + git commits are untouched.\n4. Next ticket starts from the clean base.\n\nWHY this works (claude-code-guide research, 2026-06-16): CC's `/rewind` -> \"Restore conversation\" rewinds the conversation while keeping current code; checkpointing tracks only Edit/Write tool edits, NEVER bash `git commit`, so commits are automatically safe. This REPLACES the wrong primitive (the original plan's lossy /compact summarize + selective preserve string + rehydrate -- `/compact` is a lossy AI summary, confirmed, not clean truncation). Programmatic transcript (JSONL) truncation is UNSUPPORTED -- do NOT hand-edit it. Hooks CANNOT trigger /rewind, so send-keys is the driver, not a hook.\n\nFork-per-ticket (`claude --resume <base> --fork-session`) was evaluated as a second selectable backend and DELIBERATELY DEFERRED (Akien, 2026-06-16): higher risk -- it spawns a CC process per ticket, colliding with the never-spawn-a-CC + one-CC-at-a-time guardrails (the 2026-06-01 runaway shape) -- for a benefit we cannot yet articulate. Recorded in D-architecture-as-code-cognition-pipeline-2026-06-16 so the rationale survives to the next look at this code. No mode selector is built (single mechanism for now).\n\n**Affected files:**\n- NEW: lab/claudecode/uurewindtobase (or similar) -- tmux send-keys driver, sibling to uucompactclaude, but navigates the /rewind MENU (select base entry + \"Restore conversation\") instead of sending one command.\n- NEW or skills/clear-to-base -- the builder's between-ticket step that invokes the driver. (skills/autocompact's block-end summarize stays as-is for CC.0/day-close; clear-to-base is the per-ticket BUILDER step, a different thing.)\n- skills/sprint-ticket entry -- invoke clear_to_base after a ticket closes (the between-ticket boundary).\n- base-bookmark recorder -- capture/identify the base restore-point (prompt right after /context-load) and store the marker durably (External State) so the menu drive selects it deterministically across the session.\n- (reference only, NO change) devices/granny/* dispatch -- the builder stays ONE session; Granny still send-keys \"ticket waiting\". No new process. This is exactly why rewind fits and fork did not.\n- lab/claudecode/uucompactclaude -- reference template for the send-keys driver.\n\n**Design rules:** External State Principle (the base bookmark marker held durably, not only in context); CC concurrency hard limit (rewind keeps it ONE session, no spawn -- the reason fork was rejected); do-not hand-edit the session JSONL (unsupported -- use the native menu).\n\n**Scope boundary:**\nIN -- (1) bookmark the base (post-/context-load point); (2) a clear_to_base step driven by tmux send-keys running `/rewind` -> \"Restore conversation\" to base between tickets; (3) deterministic menu navigation to the base entry; (4) verify code + git commits survive the rewind.\nOUT -- fork backend (deferred, higher risk -- rationale in the decision doc); any mode selector (single mechanism); the CC.0/CC.1 role split itself (Granny dispatch / availability / daemon arch -- still narrative, needs Akien); the durable per-ticket work-state FILE (native rewind keeps code+commits, so the original checkpoint-file is unnecessary in v1 -- add later ONLY if a real interrupted-mid-ticket case demands it); programmatic transcript truncation (unsupported).\n\n**Test plan:**\n- Bookmark + clear: run /context-load (base), build a ticket (edits + a git commit), run clear_to_base -> conversation rewinds to the base prompt; the ticket's chat delta is gone; the git commit and working files REMAIN (verify `git log` + file presence).\n- Token check (the whole point): after clear_to_base the base is NOT re-loaded/re-executed and NOT re-tokenized -- /context-load did not re-run; the base content was not re-sent (the native menu rewind keeps the existing base in-window).\n- Determinism: across N consecutive tickets, clear_to_base reliably selects the SAME base entry (menu navigation stable as history grows).\n- Regression: a normal block-end /autocompact (CC.0/day-close) still works unchanged.\n\n**Completion criteria:**\n- A base restore-point is bookmarked at/after /context-load and identified deterministically.\n- clear_to_base drives `/rewind` -> \"Restore conversation\" to base via tmux send-keys (no hook, no JSONL surgery, no CC spawn).\n- After clear_to_base: ticket conversation delta excised; base intact in-window (not re-tokenized); code + git commits preserved (verified via `git log` + working tree).\n- Menu navigation selects the base entry deterministically across consecutive tickets.\n- Fork backend NOT implemented (deliberately deferred -- rationale in D-architecture-as-code-cognition-pipeline-2026-06-16).\n- Block-end /autocompact still fires cleanly (regression).",
+    "decision_id": "D-architecture-as-code-cognition-pipeline-2026-06-16",
+    "created_at": "2026-06-16T17:11:13.163252+00:00",
+    "updated_at": "2026-06-16T11:11:13.174848-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that a builder working ticket-after-ticket pays for the static base context once, bookmarks it, and clears back to that base between tickets via native conversation-only /rewind -- excising only the ticket's delta while keeping code and git commits -- so context neither re-loads/re-tokenizes the base nor grows unbounded. Fork backend deferred (spawn-CC risk).",
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

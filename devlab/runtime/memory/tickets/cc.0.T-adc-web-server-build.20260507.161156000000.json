@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-web-server-build.20260507.161156000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-web-server-build"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:11:56",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-migration-2026-05-06"
+    ],
+    "tickets": [
+      "T-adc-web-server-build"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-web-server-build",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Migration",
+      "Infrastructure",
+      "WebServer"
+    ],
+    "title": "CLOSED: WebServerDevice in agent_datacenter",
+    "result": "WebServerDevice built in agent_datacenter; server.py copied+adapted; device/shim/tests; old server stopped; new running on 8080; Igor confirmed connected",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-05-07T02:41:49.462232+00:00",
+    "created_at": "2026-05-07T16:11:56Z",
+    "related_to": null,
+    "decision_id": "D-adc-migration-2026-05-06",
+    "description": "The utility_closet_server.py (1627 lines, Starlette/uvicorn) needs to live in agent_datacenter as a proper BaseDevice, not launched by Igor. Copy server code to devices/web_server/server.py, update paths from ~/.TheIgors to ~/.agent_datacenter, replace lab.utility_closet.agent_base import with agent_datacenter equivalent, create WebServerDevice(BaseDevice) managing server lifecycle (start thread, /health check). Kill old server (PID on port 8080), start new one, verify Igor still connects.\n\n**Affected files:** devices/web_server/device.py, devices/web_server/server.py (new), devices/web_server/shim.py\n**Design rules:** no-sqlite; no-TheIgors-imports\n**Scope boundary:** In scope: copy+adapt server code, BaseDevice wrapper, path migration, PID file move. Out of scope: refactoring server internals, changing API endpoints.\n**Test plan:** Start WebServerDevice, hit /health, verify 200. Verify port 8080 serves the web UI. Verify Igor's uc_client.is_available() returns True against new server.",
+    "completed_at": "2026-05-07T02:49:04.929849+00:00",
+    "github_issue": 618,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "973c15bb-842e-40b7-9b22-1ab61657c23d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

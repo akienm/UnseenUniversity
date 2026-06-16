@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-csb-format-review.20260408.193353746815",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-csb-format-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T19:33:53.746815",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-csb-format-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-csb-format-review",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Review CSB/DSB format — D330 data shows prose wins",
+    "result": "Review complete. CSB has 3 distinct roles: (1) content_csb DB column — leave name, render to prose for LLM; (2) preparse output — already prose-like, leave as-is; (3) .csb.txt archives — human storage, not LLM input. DSB: pipe-delimited storage stays, but context-load now renders to prose via sed. TWM content_csb will render to prose when D330 TWM-view is implemented.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "D330 context format test shows CSB pipe-delimited format costs +7% tokens vs prose AND produces lower quality responses. Questions: (1) Should we remove or limit CSB as LLM context format? (2) Does the same apply to DSB (design doc format)? CSB/DSB may still have value for human-readable structured storage and grep-ability, but for LLM ingestion prose is better. Evaluate both formats for all their use cases. — deferred: scope/priority TBD",
+    "completed_at": "2026-04-08T19:33:53.746815+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b8d69e82-968c-49d9-90f7-9801e1884157",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

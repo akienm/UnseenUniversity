@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.GH-241.20260315.182546000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-241"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T18:25:46",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-241"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-241",
+    "title": "BG meta-habits: basal ganglia rules should be the habit graph tree, not Python",
+    "result": "design-pointer-not-build-now: ticket body explicitly says NOT NOW. Closing to prevent repeated spurious adoption. Re-open as a real implementation ticket when BG rules are crystallized enough to extract into graph nodes.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 3,
+    "claimed_at": "2026-05-22T19:01:27.480891+00:00",
+    "created_at": "2026-03-15T18:25:46Z",
+    "description": "## Imported from GH#241 (created 2026-03-15, open) — **DESIGN-POINTER, NOT BUILD-NOW**\n\n\"Less code, more data.\" — Akien.\n\nThe Python logic in `basal_ganglia.py` — milieu threshold modulation, intent gate (D074), inhibition rules, scoring weights, concurrency caps — is scaffolding. The mature state: these rules are nodes in the same habit tree as everything else. The BG governs habits; the BG's own rules are habits, one level up.\n\nWhat this means: self-modifying (Igor adjusts his own scoring rules without touching Python); inspectable (why did that habit fire? traces up through the graph, not into code); learnable (LLMs deposit new BG rules the same way as any other habit); unified (watchlist, decision capture, BG meta-rules — all nodes, same substrate all the way up).\n\nCurrent scaffolding (to eventually become graph nodes): milieu-modulated threshold [0.30, 0.70]; D074 intent gate; inhibitory pass logic (at-least-two-pass settling); PROC_HABIT_COMPILER@0.95 promotion threshold; concurrency / cooldown rules.\n\n**Body says: NOT NOW. When the Python rules are dense enough and well-understood enough that they can be expressed as graph nodes. Design should point here from the start so new BG rules are written in a way that could eventually be lifted out of Python into the graph.**\n\nRelated: #237 (Traversal DSL), #240 (Watchlist).\n\n**Affected files:** wild_igor/igor/cognition/basal_ganglia.py (the eventual extraction target); cross-cuts every habit-rule deposit path. No build-files yet — this is a design-shape constraint on future BG rule additions.\n\n**Design rules:** docs-in-code (when implemented, basal_ganglia.py top-of-file docstring records the extraction migration); pointer-not-action (this ticket's job is to remind future work to write BG rules in a graph-extractable shape).\n\n**Scope boundary:** IN — design-pointer status; track the extraction-readiness state as BG rules evolve. OUT — actual extraction of any current Python rule into graph nodes (filed separately when conditions met); refactor of existing BG code.\n\n**Test plan:** N/A while design-pointer. When extraction starts, per-rule extraction tickets each carry their own test plan.\n\n**Status:** Pointer-only. Re-evaluate when Python BG rules feel rigid enough to crystallize into graph nodes.",
+    "completed_at": "2026-05-22T19:04:55.363679+00:00",
+    "github_issue": 241,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f4253bad-9787-4562-b664-00c984fea737",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

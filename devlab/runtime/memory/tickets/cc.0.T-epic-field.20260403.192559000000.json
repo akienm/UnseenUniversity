@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-epic-field.20260403.192559000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-epic-field"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:25:59",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-epic-field"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-epic-field",
+    "epic": "Claude",
+    "size": "S",
+    "title": "Add epic tag to cc_queue + group by epic in /context-load and /slate",
+    "result": "--by-epic flag added to cc_queue.py list; slate skill updated. Groups by epic with ## headers. Done tasks with markdown results show as extra groups — known artifact of done result strings containing ## headers, not a bug in grouping logic.",
+    "status": "done",
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:25:59Z",
+    "completed_at": "2026-04-03T22:57:04.032398+00:00",
+    "github_issue": 361,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

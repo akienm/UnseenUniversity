@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-reader-uri-resolver.20260528.215058634957",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reader-uri-resolver"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T21:50:58.634957",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reader-device-unified-uri-2026-05-28"
+    ],
+    "tickets": [
+      "T-reader-uri-resolver"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reader-uri-resolver",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Reader",
+      "Infrastructure"
+    ],
+    "title": "ReaderDevice: URI scheme handlers + content-addressed blob cache",
+    "result": "fetch_uri() + BlobCache: https/file/calibre/blob handlers, content-addressed cache, 29 tests green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "created_at": "2026-05-28T21:50:58.634957+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-reader-device-unified-uri-2026-05-28",
+    "description": "No unified fetch layer exists; https, calibre, and file sources are handled separately in three different places. Build the shared fetch/cache pipeline that all ReaderDevice output modes sit on top of.\n\nScheme handlers: https:// (urllib, HTML strip, 4000-char trim), calibre://ID (Calibre library lookup via metadata.db → epub/mobi/pdf file path), file:///path (direct read), blob://sha256:hex (cache hit — skip fetch). comms:// deferred to v2.\n\nBlob cache: content-addressed store at ~/.unseen_university/blobs/<sha256[:2]>/<sha256>.blob.json (metadata) + .blob.bin (raw bytes). Cache hit on sha256 match — idempotent, safe for multi-instance concurrency. No DB required.\n\n**Affected files:** devices/reader/__init__.py (new), devices/reader/uri.py (new — scheme dispatch + handlers), devices/reader/blob_cache.py (new — content-addressed cache)\n**Design rules:** no-sqlite; no Postgres needed (pure filesystem + hash); follow BaseDevice pattern for future shell integration\n**Scope boundary:** fetch + cache only; no chunking, no output modes; SummarizerDevice and Igor's reading_tool.py untouched\n**Test plan:** pytest — mocked https fetch → blob created with expected sha256; local file:// → correct content cached; cache hit (second call same URI) → no re-fetch; calibre:// mocked via synthetic metadata.db fixture",
+    "completed_at": "2026-05-28T22:54:46.689727+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T21:50:58.707266+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0698f677-59d6-496d-8327-6013bfd51857",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

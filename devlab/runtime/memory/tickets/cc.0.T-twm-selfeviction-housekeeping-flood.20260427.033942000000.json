@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-twm-selfeviction-housekeeping-flood.20260427.033942000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-selfeviction-housekeeping-flood"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:42",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-twm-selfeviction-housekeeping-flood"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-selfeviction-housekeeping-flood",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Logging",
+      "Hygiene"
+    ],
+    "title": "TWM SELF_EVICTED flood from low-priority housekeeping sources at boot",
+    "result": "Already DISCARDed per existing blocked reason: wrong altitude. Real root causes split into T-goal-adopt-evict-on-close + T-twm-boot-singletons. Closing administrative leftover.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "blocked_at": "2026-04-24T17:01:51.920308+00:00",
+    "claimed_at": null,
+    "created_at": "2026-04-27T03:39:42Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor boot sequence on 2026-04-24 10:09 produced 30+ twm_push SELF_EVICTED warnings in the first ~10 seconds, all from low-priority housekeeping (proprioception body.motor salience=0.35, scheduler salience=0.30, habit_candidate 0.28-0.35, sleep_consolidation 0.20, heartbeat 0.41). TWM cap = 50, was sitting at 51 with everything at >= the eff_salience_min of the incoming observation, so every new low-salience push self-evicted. Not fatal, but: (a) floods cognitively-interesting warnings off the screen, (b) implies these sources should either back off when TWM is saturated or not push at all during the first N seconds of boot when TWM is getting rehydrated from warm_context. Proposal: gate push_sources emit on a boot-quiet-period (e.g. first 30s, skip non-urgent category=body.motor + category=observation pushes), OR demote the log to DEBUG for salience <= 0.35 (normal low-noise), OR promote the warning only when eviction rate exceeds N/sec.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (twm_push eviction-log threshold), likely wild_igor/igor/cognition/push_sources/*.py (boot-quiet gate), tests/test_cortex_twm_eviction.py (new). **Design rules:** logging-as-debug-base (the warning is the right shape; the noise level is the question), test-plan-or-why-not. **Scope boundary:** IN — threshold/gate on self-evict log emission, optional boot-quiet period on low-salience sources. OUT — redesigning TWM capacity or eviction policy (the eviction itself is correct). **Test plan:** unit tests: simulate push at salience=0.20 during boot window, assert log skipped; same push after boot window, assert logged; same push at salience=0.90, assert always logged.",
+    "completed_at": "2026-05-02T03:15:22.763550+00:00",
+    "deposited_at": "2026-05-13T21:06:27.176580",
+    "deposited_by": "cc_queue",
+    "github_issue": 535,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9f9f9739-40ba-4eca-b069-60249ae0c1da",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

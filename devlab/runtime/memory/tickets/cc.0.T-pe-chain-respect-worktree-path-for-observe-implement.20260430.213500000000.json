@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-pe-chain-respect-worktree-path-for-observe-implement.20260430.213500000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-respect-worktree-path-for-observe-implement"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T21:35:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cert-debugger-env-mirror",
+      "T-pe-chain-respect-worktree-path-for-observe-implement"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-respect-worktree-path-for-observe-implement",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "cert",
+      "pe_chain",
+      "test-rig",
+      "diagnostic",
+      "blocks-cert"
+    ],
+    "title": "pe_chain hardcodes _REPO_ROOT to ~/TheIgors — blocks worktree-based replay-old cert protocol",
+    "result": "Shipped via commit 59909f81. _REPO_ROOT becomes _get_repo_root() function honoring IGOR_PE_CHAIN_REPO_ROOT env var, default ~/TheIgors preserved. pe_chain_debugger.start() accepts repo_root kwarg. OBSERVE logs the active root (per debugging-discipline). 6 new tests + all 159 existing pe_chain tests pass. Cert chain W-1 through W-10 unblocked.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": null,
+    "created_at": "2026-04-30T21:35:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Cert walk W-1 (2026-04-30 21:29) discovered: pe_chain reads source files from `Path.home() / 'TheIgors'` (pe_chain.py line 638) instead of from the cwd or a configurable repo root. This means a debugger script run from a worktree at a different path silently reads the MAIN checkout's files in OBSERVE — which makes replay-old cert walks impossible.\n\n**Walk W-1 trace:**\n- Worktree at /home/akien/TheIgors-cert-walks/W1, HEAD=92749474~1 (parent of the fix)\n- Ticket asked pe_chain to add 'tests/test_twm_context.py' to _PREFLIGHT_IGNORE in ops.py\n- Worktree's ops.py: 0 occurrences of 'test_twm_context'\n- Main's ops.py: 1 occurrence (the fix already shipped)\n- pe_chain OBSERVE returned MAIN's file content (showed lines 1241-1244 with the fix present)\n- HYPOTHESIZE generated an edit trying to insert the line under a comment-without-entry pattern that doesn't exist anywhere in main (it's the future-state-without-the-line, which doesn't exist now)\n- IMPLEMENT correctly rejected: 'old_string not found verbatim'\n- Net: cert walk failed for harness reasons, not pe_chain capability reasons (analogous to yesterday's 7B routing detour)\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (line 638 _REPO_ROOT, plus probably _validate_hypothesis at line 1860 and any other path resolutions); possibly wild_igor/igor/tools/pe_chain_debugger.py (debugger entry point may need a repo_root parameter to forward).\n**Design rules:** test-plan-or-why-not. Add unit test that pe_chain.OBSERVE respects an injected repo_root parameter (passed via debugger.start kwarg or env var IGOR_PE_CHAIN_REPO_ROOT).\n**Scope boundary:** IN — make pe_chain path-aware via constructor/start arg, default to current ~/TheIgors when unset (preserves Igor autonomous behavior); thread it through OBSERVE, validate_hypothesis, and IMPLEMENT. OUT — refactoring all `Path.home() / 'TheIgors'` occurrences in the broader codebase; changing Igor's autonomous repo root.\n**Test plan:** (1) Unit test: pe_chain_debugger.start(ticket_id=..., repo_root=Path('/tmp/fake_repo_with_test_file')) — assert OBSERVE reads from /tmp/fake_repo_with_test_file. (2) Integration test: re-run cert walk W-1 with fixed harness, assert HYPOTHESIZE old_string is found verbatim in worktree's ops.py.\n\n**Companion to:** T-cert-debugger-env-mirror — both are silent test-rig bugs that distort cert results. Yesterday's was wrong model routing; today's is wrong file path. Pattern: cert harness must mirror Igor's runtime AND respect explicit overrides.\n",
+    "completed_at": "2026-05-01T18:59:07.505278+00:00",
+    "github_issue": 572,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8b79ef3c-8592-4eb1-a25b-30546a2c841f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

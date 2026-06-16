@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-queue-gate.20260519.170727076574",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-queue-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-19T17:07:27.076574",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-queue-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-queue-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Safety",
+      "WorkerDaemon"
+    ],
+    "title": "Red/green queue gate — circuit breaker for worker-daemon",
+    "result": "cmd_next + gate file + auto-trip at 3 timeouts + worker_daemon self-restart via exec; 9 tests all pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.95,
+    "claimed_at": "2026-05-19T20:04:07.435854+00:00",
+    "created_at": "2026-05-19T17:07:27.076574+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Queue has no circuit breaker — timed-out sprints reset and immediately get reclaimed, causing daemon spin loops. Also: daemon uses old claim process (list|grep) and won't self-regulate even when a gate is tripped.\n\nThree-piece implementation:\n1. `cc_queue.py next` command — returns highest-priority unclaimed sprint ticket respecting a gate file (~/.TheIgors/cc_channel/queue_gate.json). When gate is tripped, returns nothing. Auto-trips after 3 consecutive timeouts on the same ticket.\n2. `worker_daemon.sh` updated to call `cc_queue.py next` instead of manually filtering list output. When `next` returns nothing (gate tripped or queue empty), daemon sleeps and retries.\n3. Daemon self-restart on script update — at top of main loop, check if worker_daemon.sh has been modified since last iteration; if so, `exec bash \"$0\"` to reload. This lets T-queue-gate take effect without manual daemon restart.\n\n**Affected files:** lab/claudecode/cc_queue.py (next command + gate logic + timeout counter), lab/claudecode/worker_daemon.sh (call next, self-restart check)\n**Design rules:** no-sqlite; gate file is JSON flat-file in cc_channel/; timeout counter in ticket metadata; self-restart uses exec not subshell\n**Scope boundary:** In scope: next command, gate file, auto-trip at 3 timeouts, daemon uses next, daemon self-restart. Out of scope: UI for gate state, manual pause/resume CLI commands (V2), per-worker routing in next.\n**Test plan:** test next returns highest-priority sprint ticket; test next returns nothing when gate file present; test auto-trip writes gate file after 3 timeouts on same id; test daemon self-restart: modify script mtime → next loop iteration calls exec",
+    "completed_at": "2026-05-19T20:16:44.970220+00:00",
+    "github_issue": 752,
+    "required_files": [],
+    "scraps_validated": "2026-05-19T20:04:07.435537+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7484e31b-8bb0-49bd-9d12-88572da47cd3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

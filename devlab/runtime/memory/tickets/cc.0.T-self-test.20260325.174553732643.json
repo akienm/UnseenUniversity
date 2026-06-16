@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-self-test.20260325.174553732643",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:45:53.732643",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-graph-integrator",
+      "T-self-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-test",
+    "title": "Self-test — directed consolidation via Q&A after reading",
+    "result": "Self-test consolidation via Q&A for reading pipeline. consolidate_content() function + 15 unit tests, all pass. Edge strengthening based on Gemini grading. Weaning signal: <20% miss rate. Commit 81edc572.",
+    "status": "done",
+    "priority": 7,
+    "claimed_at": "2026-03-25T17:42:50.105734+00:00",
+    "description": "D230 + G-BIO-PRED1. Directed consolidation via Q&A after reading.\n\nQuestion generation: send blob text to Gemini via Igor browser profile (free).\nAsk Gemini to generate as many questions as appropriate for the material — no fixed count.\nGemini also grades Igor's answers (same session, same channel).\n\nProtocol:\n1. Send chapter summaries to Gemini (browser profile): \"generate comprehension questions for this material\"\n2. For each question: Igor attempts answer via graph traversal only (no LLM, pure node activation)\n3. Send (question, igor_answer, source_text) to Gemini: \"grade this answer correct/partial/miss\"\n4. For each miss: strengthen edges along correct traversal path (+0.02 per edge)\n5. For each partial: smaller strengthening (+0.01)\n6. Log: {content_id, questions, igor_answers, grades, edges_updated}\n7. Update blob_index.json status to \"tested\"; log to watchlist if >50% miss rate\n\nWeaning signal: when Igor can self-generate questions that produce <20% miss rate, content is internalized.\n\nFile: wild_igor/igor/cognition/self_test.py (new)\nInertia: LOW\nSize: M\nDepends on: T-graph-integrator, GeminiSearchChannel (for Q generation + grading)",
+    "completed_at": "2026-03-25T17:45:53.732643+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "605b4022-a8de-4be1-a24f-b2c7bc82d66f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

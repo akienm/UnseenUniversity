@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-programs-himself.20260429.161129000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-programs-himself"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:29",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-",
+      "T-igor-programs-himself"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-programs-himself",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Autonomy",
+      "Meta",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: Igor completes 10 tickets autonomously — CC-guided first pass",
+    "result": "All 10 T-cc-walk-{01..10} children completed by Igor. Walk 1–10 verified closed.",
+    "status": "closed",
+    "worker": "claude",
+    "akien_tier": "P2",
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:11:29Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Strategic: get Igor completing his own queue tickets without Akien intervention. First batch = 10 S-size tickets hand-picked for low HIGH-inertia risk. CC monitors each run, intercepts bad proposals, resets pre-flight stalls, and verifies commits. Success = all 10 closed with Igor as author. Children: T-cc-walk-{1..10}.\n\n**Affected files:** queue.json (ticket state), various Igor subsystem files per child tickets.\n**Design rules:** none apply — this is coordination overhead, not code.\n**Scope boundary:** IN — 10 specific tickets listed in children. OUT — redesigning pe_chain, Igor's full queue autonomy beyond these 10.\n**Test plan:** all 10 child walk tickets reach done; each target ticket closed by Igor.",
+    "completed_at": "2026-05-07T20:19:22.690777+00:00",
+    "github_issue": 558,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a9995eba-25a5-4a99-b4f1-b2bc75b84b2d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

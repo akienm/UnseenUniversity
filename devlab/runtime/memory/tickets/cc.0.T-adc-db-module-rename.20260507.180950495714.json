@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-adc-db-module-rename.20260507.180950495714",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-db-module-rename"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T18:09:50.495714",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-db-module-rename-2026-05-07"
+    ],
+    "tickets": [
+      "T-adc-db-module-rename"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-db-module-rename",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Observability"
+    ],
+    "title": "CLOSED: rename agent_datacenter/db.py → db_proxy.py",
+    "result": "renamed db.py→db_proxy.py; both shims point to agent_datacenter.db_proxy; pre-import fix for module cache poisoning in tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": "D-adc-db-module-rename-2026-05-07",
+    "description": "agent_datacenter/db.py produces logger name agent_datacenter.db, which looks like a SQLite file reference. Rename to db_proxy.py so logger reads agent_datacenter.db_proxy.\n\n**Affected files:** agent_datacenter/agent_datacenter/db.py (rename), agent_datacenter/tests/test_dc_db.py (5 import refs), agent_datacenter/examples/chat_agent/agent.py (1 import + 1 comment), TheIgors/tests/test_d126_postgres.py (4 patch refs), TheIgors/wild_igor/igor/memory/db_proxy.py (import + docstring), TheIgors/lab/utility_closet/db_proxy.py (import + docstring)\n**Design rules:** none apply — pure rename, no logic changes\n**Scope boundary:** rename + import updates only; zero logic changes; public API identical\n**Test plan:** all existing TheIgors + ADC tests pass; logger name in slow-query output changes to agent_datacenter.db_proxy",
+    "completed_at": "2026-05-07T18:09:50.495714+00:00",
+    "github_issue": 664,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8631cc53-55cf-42c7-be37-e95f7760510d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

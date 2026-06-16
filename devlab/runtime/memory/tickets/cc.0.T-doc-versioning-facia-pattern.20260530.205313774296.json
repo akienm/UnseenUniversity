@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-doc-versioning-facia-pattern.20260530.205313774296",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-doc-versioning-facia-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T20:53:13.774296",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-doc-versioning-facia-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-doc-versioning-facia-pattern",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform"
+    ],
+    "title": "Document facia versioning pattern in TheoryOfOperation",
+    "result": "added §3.8 facia versioning pattern to TheoryOfOperation; cross-reference in §3.4; append-only chain with facia/tail distinction documented",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.8,
+    "claimed_at": "2026-05-30T23:47:20.385707+00:00",
+    "created_at": "2026-05-30T20:53:13.774296+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "The versioning model for memories, manifests, rubrics, policies, and agent profiles is already designed but not documented. It needs to be stated clearly in TheoryOfOperation so builders understand the pattern.\n\nThe pattern:\n- Every versioned artifact has a facia node — the current interface\n- When a new version is created, it becomes the new facia\n- The previous facia moves to the tail of the version chain\n- Older versions hang off one edge (supersedes/version_of)\n- No shuffling, no rewriting — only appending\n- The rack resolves to the facia by default; older versions are accessible via traversal\n\nThis is the same trail/append pattern used everywhere in the system. Version history is just another traversal in the memory graph.\n\nApplies to: clan.memories nodes, agent manifests, eval rubrics, policy rules, factory specs, agent profiles.\n\nAdd as §3.8 Versioning in TheoryOfOperation. Also cross-reference from §3.4 (memory node types) since INTERP_FACIA nodes are the mechanism.\n\n**Affected files:** docs/TheoryOfOperation.md (new §3.8)\n**Design rules:** none — doc only\n**Scope boundary:** IN — facia pattern explained with example, cross-reference to §3.4, note that it applies to all versioned artifacts; OUT — implementation details of facia traversal (those live in code)\n**Completion criteria:** TheoryOfOperation §3.8 exists; a builder reading it understands they never rewrite versions, only append; the facia/tail distinction is clear",
+    "completed_at": "2026-05-31T02:10:45.718922+00:00",
+    "deposited_at": "2026-05-30T14:54:06.396438",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:47:20.385707+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T20:53:13.825424+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d2da8dd9-fc7a-41c4-b582-fcc2b6373f29",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

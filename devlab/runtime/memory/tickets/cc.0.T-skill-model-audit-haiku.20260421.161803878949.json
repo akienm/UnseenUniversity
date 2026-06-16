@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-skill-model-audit-haiku.20260421.161803878949",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-model-audit-haiku"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T16:18:03.878949",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-workflow-optimizations-2026-04-21"
+    ],
+    "tickets": [
+      "T-skill-model-audit-haiku"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-model-audit-haiku",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CCWorkflow",
+      "Cost"
+    ],
+    "title": "Annotate all skill frontmatter with explicit model choice (Haiku default, Sonnet where design-reasoning required)",
+    "result": "Added model: haiku to commit/note/savestate/savestateauto/ticket/validate-files/context-load/day-close; model: sonnet to sprint/test-fix",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-04-21T16:16:59.172593+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-workflow-optimizations-2026-04-21",
+    "description": "Declare explicit `model:` in SKILL.md frontmatter for every skill under ~/.claude/skills/. Rule: pure checklist+shell+DB work → model: haiku; needs design judgment mid-flight → model: sonnet. Expected Haiku set: commit, context-load, note, ticket, validate-files, day-close (with exception annotation). Expected Sonnet: sprint, sprint-batch, decided, fixit, test-fix. Estimated 60-70% cost reduction on 7 mechanical skills invocations. Scope: model annotations only — no skill body changes. Files: all 10 undeclared skills' frontmatter.\n\ntest_plan: Invoke each changed skill with a test input, grep invocation log for model ID. Confirm Haiku fires on commit, note, ticket, validate-files; Sonnet fires on sprint, decided.",
+    "completed_at": "2026-04-21T16:18:03.878949+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2dd73bdb-85e2-4c45-ad40-ae8b41e72311",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

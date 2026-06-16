@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-igor-clan-template.20260601.185857872657",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-clan-template"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T18:58:57.872657",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-clan-template"
+    ],
+    "tickets": [
+      "T-igor-clan-template"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-clan-template",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Igor",
+      "Clan",
+      "Memory",
+      "Device"
+    ],
+    "title": "Igor as clan-template instance; memory ownership by device",
+    "result": "C-clan-template concept node; igor.yaml template_id+memory_domain; granny.yaml+vetinari.yaml memory_domain; rack namespace documented",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "blocked_at": "2026-06-02T02:08:44.721453+00:00",
+    "created_at": "2026-06-01T18:58:57.872657+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two related architectural moves: (1) Igor becomes an instance of a clan template — the template carries clan-shared memories and patterns, individual Igor instances layer their own memories on top. A network of agents (per Scott McGregor's vision) share patterns via the clan layer. (2) Memory ownership is sharded by domain: Granny owns all build-related memories, Vetinari owns all task-management and project-status memories. Igor owns cognition/personal memories. This prevents memory sprawl and makes ownership explicit.\n\nSeparate from this: the rack gets its own segment of the bus/IMAP infrastructure — no longer co-opting TheIgors' shared namespace. Public feed layer on the bus (MurderBot-style 'feeds' on top of MCP/Hidden IMAP) with no intelligence in the bus itself.\n\n**Affected files:** TBD — discovery step; palace.concepts.* (clan concept node); devices/igor/config or profile (template shape); skeleton/registry.py (memory ownership field?)\n\n**Design rules:** palace-first for concept definitions; bus+shim model for rack segment; no-sqlite\n\n**Scope boundary:** IN — clan template concept + palace node; Igor instance shape; memory ownership declaration (Granny, Vetinari, Igor domains); rack segment namespace. OUT — full multi-Igor deployment; security layer on bus; clan pattern replication protocol\n\n**Completion criteria:** (1) palace concept node C-clan-template exists; (2) Igor's profile declares template_id; (3) Granny and Vetinari profiles declare memory_domain; (4) rack has its own IMAP namespace segment distinct from TheIgors",
+    "completed_at": "2026-06-05T04:13:24.088399+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T02:07:16.685806+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2d920639-012e-4b55-a11f-688ce3b2ce14",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-igor-watch-confidence-accumulator.20260510.212120342082",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-watch-confidence-accumulator"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T21:21:20.342082",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-activate-primitive-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-activate-primitive",
+      "T-igor-watch-confidence-accumulator"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-watch-confidence-accumulator",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "CLOSED: watch_problems confidence accumulator",
+    "result": "confidence_score column + decay in lever_watcher; threshold-gated escalation; 12 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T22:50:56.745726+00:00",
+    "created_at": "2026-05-10T21:21:20.342082+00:00",
+    "related_to": null,
+    "decision_id": "D-activate-primitive-2026-05-10",
+    "description": "Implements 'ramping to threshold' from the neuroscience decision paper: each watch_problem accumulates cross-cycle evidence until a decision bound is crossed. Adds two columns to instance.watch_problems: confidence_score float DEFAULT 0.0, last_evidenced_at timestamptz.\n\nBehavior changes in lever_watcher():\n- On TWM keyword match: confidence_score = min(confidence_score + 0.1, 1.0); last_evidenced_at = now().\n- On no-match cycle (called from coa.py): confidence_score *= IGOR_WATCH_CONFIDENCE_DECAY (default 0.95); if score < 0.01, set to 0.0.\n- When confidence_score crosses IGOR_WATCH_CONFIDENCE_THRESHOLD (default 0.7): trigger escalation at elevated severity + mark surfaced.\n- Below threshold: accumulate silently — no surfacing, no escalation.\n\nrelevance_score is 1.0 for any keyword match (hook for future embedding-based scoring; no regression from current all-or-nothing behavior).\n\n**Affected files:** `wild_igor/igor/cognition/watch_problems.py`, DB migration (confidence_score + last_evidenced_at on instance.watch_problems)\n**Design rules:** no-sqlite; direct psycopg2; threshold configurable via IGOR_WATCH_CONFIDENCE_THRESHOLD (default 0.7); decay configurable via IGOR_WATCH_CONFIDENCE_DECAY (default 0.95); no change to add_watch_problem() or resolve_problem() signatures\n**Scope boundary:** IN — confidence accumulation in lever_watcher(), threshold-triggered escalation, decay on no-match cycles, two new columns. OUT — no UI, no embedding matching (keywords still used; embeddings are T-igor-activate-primitive's domain), no changes to add_watch_problem() or resolve_problem().\n**Test plan:** three successive lever_watcher() keyword matches accumulate confidence_score toward 0.3; crossing 0.7 threshold triggers escalation; no-match cycle applies 0.95 decay; confidence_score never exceeds 1.0; existing tests test_lever_watcher_finds_match, test_lever_watcher_no_match_on_unrelated, test_lever_watcher_dedup_24h all still pass",
+    "completed_at": "2026-05-10T22:57:02.707746+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b40ed49f-9710-4f0c-a116-5ea9091dd6b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

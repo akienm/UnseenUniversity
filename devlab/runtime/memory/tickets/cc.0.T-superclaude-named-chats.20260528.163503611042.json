@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-superclaude-named-chats.20260528.163503611042",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-superclaude-named-chats"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:35:03.611042",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-superclaude-named-chats"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-superclaude-named-chats",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "SuperClaude",
+      "Infrastructure"
+    ],
+    "title": "SuperClaude: name sessions hostname+yymmdd.hhmmss, enable remote control",
+    "result": "SESSION_NAME=hostname-yymmdd.HHMMSS; passed as -n (display name) and --remote-control handle. Both tmux and non-tmux paths updated.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-28T20:04:33.677805+00:00",
+    "created_at": "2026-05-28T16:35:03.611042+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "SuperClaude (UnseenUniversity/bin/superclaude) should name each Claude Code session using hostname+yymmdd.hhmmss at launch time, then enable remote control so Igor and other tools can reach the session by name. Currently uses a static or unset session name.\n\n**Affected files:** UnseenUniversity/bin/superclaude\n**Design rules:** none\n**Scope boundary:** IN — set session name on launch using $(hostname)-$(date +%y%m%d.%H%M%S) pattern; pass --session-name or equivalent Claude Code flag for remote control; OUT — do not change any other superclaude behavior or the setup wizard\n**Test plan:** Start superclaude; tmux session name matches hostname-yymmdd.hhmmss pattern; Claude Code session reachable by that name via remote control; existing superclaude flags still work",
+    "completed_at": "2026-05-28T20:05:01.771458+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:04:33.677805+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T16:35:03.660651+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "80208c54-3307-4a89-bd45-f4bd37dcd0c0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

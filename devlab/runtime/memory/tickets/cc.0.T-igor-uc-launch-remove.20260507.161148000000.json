@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-uc-launch-remove.20260507.161148000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-uc-launch-remove"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:11:48",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-migration-2026-05-06"
+    ],
+    "tickets": [
+      "T-igor-uc-launch-remove"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-uc-launch-remove",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Migration",
+      "Igor",
+      "Cleanup"
+    ],
+    "title": "CLOSED: Remove _ensure_utility_closet_running from Igor boot",
+    "result": "_ensure_utility_closet_running() removed from main.py; 54-line method + call site deleted; tests pass; commit 33712d3a",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-05-07T02:49:17.368242+00:00",
+    "created_at": "2026-05-07T16:11:48Z",
+    "related_to": null,
+    "decision_id": "D-adc-migration-2026-05-06",
+    "description": "Igor's boot sequence launches the UC server if it isn't running (_ensure_utility_closet_running at main.py:1312-1365, called at line 749). This belongs to agent_datacenter now. Remove the call at line 749 and the entire method. Igor should connect to whatever is on port 8080 but not be responsible for starting it.\n\n**Affected files:** wild_igor/igor/main.py (lines 748-749, 1312-1365)\n**Design rules:** no-sqlite; safeguards (main.py HIGH inertia — pre-approved for this migration)\n**Scope boundary:** In scope: remove _ensure_utility_closet_running() call and method body. Leave uc_client.register/stats/deregister for now (Igor still connects, just doesn't launch). Out of scope: removing all UC wiring from Igor (separate ticket).\n**Test plan:** Boot Igor with no UC server running — Igor should NOT try to launch utility_closet_server.py. Igor should log a warning if UC is unavailable but continue running.",
+    "completed_at": "2026-05-07T02:58:34.865140+00:00",
+    "github_issue": 617,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d43d6a6e-f7c2-4a58-a0d2-bbbe61b853d4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

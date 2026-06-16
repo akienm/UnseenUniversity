@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-tool-registry-facia.20260330.200416595151",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tool-registry-facia"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T20:04:16.595151",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tool-registry-facia"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tool-registry-facia",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Tool registry facia nodes",
+    "result": "Seeded 187 facia nodes: TOOL_REGISTRY_ROOT (parented CP1) + INTERP_FACIA_<name> for all 186 registered tools. Enhanced narratives for run_bash, store_memory, patch_source_file, read_source_file, and 20+ other key tools. facia:true in metadata. Fixes shell vs run_bash class of error via spreading activation.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "Seed facia INTERPRETIVE nodes for each registered tool — capability narrative + facia:true metadata. Tool registry IS the facia tree; spreading activation should surface run_bash when Igor thinks run-a-command. Fixes shell-vs-run_bash class of error.",
+    "completed_at": "2026-03-30T20:04:16.595151+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "82cdf4a7-fddb-463b-9692-f1cdd8745346",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

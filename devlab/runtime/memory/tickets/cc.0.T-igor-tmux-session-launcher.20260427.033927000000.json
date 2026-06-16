@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-igor-tmux-session-launcher.20260427.033927000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-tmux-session-launcher"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:27",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-tmux-session-launcher-2026-04-26"
+    ],
+    "tickets": [
+      "T-igor-tmux-session-launcher"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-tmux-session-launcher",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure"
+    ],
+    "title": "igor launcher — start in named tmux session",
+    "result": "Backfill only — impl shipped in ea0cba88. No code changes needed. Closed by CC.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-28T21:18:20.737082+00:00",
+    "created_at": "2026-04-27T03:39:27Z",
+    "related_to": null,
+    "approved_at": "2026-04-28T01:40:27.068479+00:00",
+    "decision_id": "D-igor-tmux-session-launcher-2026-04-26",
+    "description": "Running igor outside tmux starts the process detached from any session, so a terminal close or disconnect kills the restart loop mid-run. The fix steals the pattern from superclaude: if already inside tmux, exec directly; otherwise create/reuse a session named igor and attach. Controlled by IGOR_TMUX_SESSION env var (default igor).\n\nAlready implemented and committed in ea0cba88. This ticket is a traceability backfill.\n\nAffected files:\n- TheIgors/igor (15-line addition before the final exec)\n\nDesign rules:\n- postgres-only: not applicable — no data persistence changes introduced. Existing log writes (utility_closet.log) are pre-existing and unchanged.\n- oop-first: not applicable — pure shell script, no Python classes.\n- docs-in-code: not applicable — shell launcher, behavior is self-documenting.\n- no-new-memory-schemas: not applicable.\n- test-plan-or-why-not: manual only — pure shell launcher behavior, no Python logic changed. No automated test needed.\n\nScope boundary:\nIN: TheIgors/igor launcher script — tmux session wrapping.\nOUT: installer.py, worker_foreman, restart loop logic (all unchanged).\n\nTest plan:\n- Manual: tmux kill-session -t igor 2>/dev/null; igor — creates session and attaches.\n- Manual: start igor from inside tmux — does not create a nested session.\n- Exit-42 restart loop re-invokes igor from inside tmux, so the [[ -n TMUX ]] branch fires correctly — no double-wrap.",
+    "proposed_at": "2026-04-28T21:20:02.946620+00:00",
+    "completed_at": "2026-04-28T21:32:47.750621+00:00",
+    "github_issue": 532,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "Approved by Akien 2026-04-27",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4fa50f25-8f14-4678-b7fc-c3d821ff3f61",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

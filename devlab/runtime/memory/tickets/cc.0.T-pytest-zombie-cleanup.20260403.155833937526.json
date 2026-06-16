@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-pytest-zombie-cleanup.20260403.155833937526",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pytest-zombie-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T15:58:33.937526",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pytest-zombie-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pytest-zombie-cleanup",
+    "size": "S",
+    "title": "Add pytest zombie cleanup to sprint skill",
+    "result": "Added pkill -f 'python.*pytest' cleanup after /test-fix in sprint skill. Prevents zombie pytest processes accumulating across sprints.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "After test step in sprint skill, kill lingering pytest processes with pkill -f 'python.*pytest' to prevent process accumulation",
+    "completed_at": "2026-04-03T15:58:33.937526+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3806f3c6-c603-4933-9896-18dc8deba08c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

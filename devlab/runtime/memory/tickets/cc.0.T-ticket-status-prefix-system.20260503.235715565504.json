@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-ticket-status-prefix-system.20260503.235715565504",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-status-prefix-system"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T23:57:15.565504",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-docs-live-in-code",
+      "T-ticket-status-prefix-system"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-status-prefix-system",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Skills"
+    ],
+    "title": "CLOSED: Ticket status prefixes — CLOSED: / NEEDS DESIGN: / DESIGNED: / NEW: in skill workflows",
+    "result": "retitle cmd in cc_queue.py + ticket_prefix_refit.py one-shot script; 30 open tickets refitted; /ticket + /sprint-batch skills updated with prefix convention",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P3",
+    "claimed_at": "2026-05-03T23:54:11.344394+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Explore whether visible status prefixes in ticket titles/bodies help Claude track state during autonomous sprints. Current state tracking uses `status` (pending/in_progress/done) and `akien_tier` fields; question is whether a visible prefix in title (CLOSED:, NEEDS DESIGN:, DESIGNED:, NEW:) would reduce confusion about ticket readiness.\n\n**Affected files:** /home/akien/.claude/skills/ticket (skill definition), /home/akien/.claude/skills/sprint-batch (skill definition), /home/akien/.claude/skills/day-close (skill definition, if closing adds prefix)\n**Design rules:** T-docs-live-in-code: document prefix semantics in skill docstrings. Prefixes are decorative (don't affect DB state) — real source of truth is status + tier fields. Prefix state machine: NEW: → NEEDS DESIGN: (when /decided drafts) → DESIGNED: (when /audit-ticket passes) → cleared on `/sprint claim` → CLOSED: added on `/done`.\n**Scope boundary:** IN: document proposed prefix state machine. IN: modify /ticket, /sprint-batch, /done skills to emit/strip prefixes. IN: verify it actually helps (spot-check one sprint to see if prefix visibility reduced decision friction). OUT: full state-machine enforcement in DB. OUT: retroactive prefix-normalization on existing tickets.\n**Test plan:** spot-check during next /sprint-batch — confirm prefixes appear when expected; confirm they don't interfere with actual ticket operations (filtering, claiming, closing). No new unit tests (skill workflows are tested by exercise, not unit).",
+    "completed_at": "2026-05-03T23:57:15.565504+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "716148a4-7406-4feb-a16f-27563ba0444b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

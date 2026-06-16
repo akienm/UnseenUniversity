@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-theory-basedevice-contract-mismatch.20260530.175555346289",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theory-basedevice-contract-mismatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:55:55.346289",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-theory-basedevice-contract-mismatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theory-basedevice-contract-mismatch",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Docs"
+    ],
+    "title": "Correct §2.1 BaseDevice contract description in TheoryOfOperation",
+    "result": "§2.1 updated to show actual 15-method abstract interface; start/stop/self_test noted as non-existent in BaseDevice",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-30T18:06:29.557681+00:00",
+    "created_at": "2026-05-30T17:55:55.346289+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "TheoryOfOperation §2.1 shows a 4-method contract: start/stop/health/self_test. The actual unseen_university/device.py BaseDevice defines 15 abstract methods — health, restart, halt, recovery, who_am_i, requirements, capabilities, comms, interface_version, uptime, startup_errors, logs, update_info, where_and_how, block. start, stop, and self_test are NOT abstract methods.\n\nAcross sampled device classes: health is universal; start/stop appear only in discord_bot; self_test only in granny. Lifecycle uniformity is not enforced by the abstract base.\n\n**Affected files:** docs/TheoryOfOperation.md §2.1\n**Scope boundary:** IN — update the contract description to match the actual abstract interface; OUT — do not change BaseDevice code or add/remove abstract methods\n**Test plan:** After fix, the code snippet in §2.1 matches the abstract methods in unseen_university/device.py\n**Completion criteria:** §2.1 code snippet shows the real contract (or documents the gap between aspiration and enforcement)",
+    "completed_at": "2026-05-30T18:19:27.949763+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T18:06:29.557681+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-30T17:55:55.395381+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "81144a16-4172-4711-8924-12119a2a2a13",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

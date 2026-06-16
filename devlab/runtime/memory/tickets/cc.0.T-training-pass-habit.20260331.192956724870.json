@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-training-pass-habit.20260331.192956724870",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-training-pass-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T19:29:56.724870",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inner-cc-revamp",
+      "T-training-pass-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-training-pass-habit",
+    "tags": [
+      "Training"
+    ],
+    "title": "PROC_TRAINING_PASS — automated self-training via inner Claude",
+    "result": "D270: training_pass.py reads cloud escalations from reasoning_calls.log, calls call_inner_cc_long (Haiku+prompt caching) for gap analysis, deposits INTERPRETIVE memories. PROC_TRAINING_PASS habit seeded. 3 tests, 567 total passing.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-31T19:23:57.408865+00:00",
+    "description": "start_training_pass() tool + PROC_TRAINING_PASS habit (same shape as start_reading_bootstrap): reads last N turn traces where cloud was used, spawns inner Claude (Haiku by default) via revised inner_cc with long_running=True, deposits INTERPRETIVE/NARRATIVE_GAP memories from identified gaps. TTL-gated, schedulable. Depends on T-inner-cc-revamp.",
+    "completed_at": "2026-03-31T19:29:56.724870+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f4a41745-dcf2-406c-a365-9e9c9154db57",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-audit-add-checks.20260414.232246000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-add-checks"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:46",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-add-checks"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-add-checks",
+    "body": "From Akien 2026-04-14 during decisions walk: 'I want to be able to add a topic or question to be able to be added to the sweep [audit skill]. there are two add modes: next sweep and all future sweeps. Like an explicit no except/pass. or no classes of ours don't inherit from our base class. even small throw away things. classes that inherit from other libraries are fine, but not for any of the primary components.'\n\n## Goal\n\nMake the audit skill (`~/.claude/skills/audit/SKILL.md`) extensible — Akien (or CC) can register a new check at the moment of insight, without having to edit the SKILL.md by hand or wait for the next refactor pass. New checks join the next audit sweep (or all sweeps thereafter, depending on mode) and get reported alongside the existing static steps.\n\n## Two add modes\n\n1. **next-sweep** — one-shot. Check runs on the next audit invocation only, then gets cleaned up. Use case: 'I just noticed something weird, want to know if it's repeated elsewhere — check it once and move on.'\n2. **all-future-sweeps** — persistent. Check joins the standard audit battery from now on. Use case: 'this is a class of bug we want caught every time — keep watching for it.'\n\n## Minimal CLI surface\n\n- `audit-add next \"<name>\" <kind> <pattern>` — register one-shot check\n- `audit-add forever \"<name>\" <kind> <pattern>` — register persistent check\n- `audit-list` — show all registered checks (one-shot + persistent)\n- `audit-rm <name>` — remove a registered check\n- `audit-ack <name> <reason>` — silence a check's findings as expected (false positive harness)\n\n`<kind>` is one of: `grep` (regex/literal across source), `sql` (psql query against the home DB), `python` (small inline script), `shell` (bash one-liner). The audit runner dispatches based on kind.\n\n## Storage\n\nFirst cut: JSON file at `~/TheIgors/lab/claudecode/audit_checks.json`. Two arrays — `next_sweep` (drained after each audit run) and `forever` (persistent). Each entry: `{name, kind, pattern, description, severity, added_by, added_at, ack_until?}`.\n\nLater: could move to DB (memory_palace node or new table) if cross-machine sharing matters. Don't pre-decide.\n\n## audit skill integration\n\n`~/.claude/skills/audit/SKILL.md` gets a new step at the end (probably between current Step 17 simplification-review and Step 18 evaluate-fixings):\n\n**Step 18 — Registered checks**\nRead audit_checks.json. For each entry in `next_sweep` + `forever`: dispatch by kind, capture output, format as a finding. After the sweep, clear `next_sweep` (move processed entries to a 'history' list for traceability or just drop them).\n\nFindings from registered checks roll into the same evaluate-and-fix step (current Step 18 → renumbers to 19) as everything else.\n\n## Seed checks (added at first install)\n\nTwo Akien-mentioned examples that should ship with the feature:\n\n1. **no-silent-except-pass** (forever) — already partially in current audit Step 3 via AST walk, but make it a first-class registered check so it can be tweaked / extended without editing the skill.\n2. **primary-classes-must-inherit-igorbase** (forever) — grep for `class \\w+\\(?` in `wild_igor/igor/cognition/`, `wild_igor/igor/memory/`, `wild_igor/igor/tools/`, `wild_igor/igor/network/`, exclude tests, exclude classes whose only base is from a third-party library (Pydantic BaseModel, dataclass, etc.), flag any primary component class whose bases don't include IgorBase. (D125 semantic check made permanent.)\n\nThese seeds also serve as examples of how registered checks look.\n\n## Why this matters\n\nAkien framing: 'even small throw away things.' The current audit is a fixed battery; adding a new check requires editing SKILL.md, which discourages capturing small one-off concerns. Registered checks make audit a *living* surface — every 'huh, I wonder if this is repeated' becomes a one-line addition. The forever mode catches classes of bugs once they're recognized as classes; the next-sweep mode is the lightweight 'check this once' path.\n\n## Out of scope\n\n- Full check-language DSL (just kind + pattern is enough)\n- Auto-fix from registered checks (findings only)\n- Cross-machine sync of registered checks (single-machine for now)\n- Web UI for managing checks (CLI + JSON file is enough)\n\n## Provenance\n\nAkien 2026-04-14, during the decisions table walk. Filed for after the walk completes.",
+    "deps": [],
+    "size": "S",
+    "tags": [
+      "audit",
+      "skill",
+      "tooling",
+      "extensibility"
+    ],
+    "title": "Audit skill: add registered checks (next-sweep + all-future-sweeps modes)",
+    "result": "2d88ba09 — audit_add.py CLI + audit_runner.py + 2 helper checks (igorbase, bare_except) + audit_checks.json registry. 3 seed forever checks: no-sqlite-imports (high), no-bare-except-pass (med, excludes ebook_drm), primary-classes-must-inherit-igorbase (med). Audit skill SKILL.md updated with new Step 18 calling audit_runner.py --drain. End-to-end verified: drain moves next_sweep to history. First live run found 2 real findings (sqlite imports + 105 D125 drift); D125 drift filed as T-d125-igorbase-drift (M).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-14T23:29:32.298709+00:00",
+    "created_at": "2026-04-14T23:22:46Z",
+    "related_to": null,
+    "completed_at": "2026-04-14T23:36:36.701053+00:00",
+    "deposited_at": "2026-04-28T10:00:55.573822",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": 446,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

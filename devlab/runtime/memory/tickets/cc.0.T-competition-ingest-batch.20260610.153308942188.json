@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-competition-ingest-batch.20260610.153308942188",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-competition-ingest-batch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:33:08.942188",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-competition-bootstrap-2026-06-10"
+    ],
+    "tickets": [
+      "T-competition-ingest-batch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-competition-ingest-batch",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Competition",
+      "ReadingPipeline"
+    ],
+    "title": "Ingest 10 programming books into competition schema",
+    "result": "ingest_batch.py created; 80 blocks queued for 10 books; _deposit_to_schema verified (3 test nodes in competition.memories); worker running (93d4b569)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "intention": "I intend that competition.memories contains enough labeled programming-book chunks to train and eval both classifiers.",
+    "claimed_at": "2026-06-10T15:59:35.793608+00:00",
+    "created_at": "2026-06-10T15:33:08.942188+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-inference-competition-bootstrap-2026-06-10",
+    "description": "Select 10 programming books from clan.reading_list (book_type='programming', status='pending'), create a competition campaign with target_schema=competition, run them through the reading pipeline. Goal: 500+ labeled memories in competition.memories before holdout split.\n\n**Affected files:** New script `lab/competition/ingest_batch.py`\n**Design rules:** none — operational script\n**Scope boundary:** Book selection and campaign kick-off only. Reading pipeline does the extraction. Monitor for completion.\n**Completion criteria:** competition.memories has 500+ rows with memory_type labels from at least 5 distinct books; competition.memory_embeddings populated via drain loop.",
+    "completed_at": "2026-06-10T16:05:14.481044+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

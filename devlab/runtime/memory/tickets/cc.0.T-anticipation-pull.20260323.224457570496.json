@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-anticipation-pull.20260323.224457570496",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-anticipation-pull"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T22:44:57.570496",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-anticipation-pull"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-anticipation-pull",
+    "size": "M",
+    "tags": [
+      "motivation",
+      "self-drive",
+      "milieu",
+      "foreman"
+    ],
+    "title": "Anticipation pull — Igor selects work by predicted closure valence",
+    "result": "Added record_completion() action-completion hookpoint to anticipation.py. Hookpoint is the reply firing (not ticket close). NE surprise delta gates ORDINARY (ring ACK) vs NOTEWORTHY (ring flag for NE deeper look). Called from main.py post-reply. 7 new tests. record_closure() for foreman unchanged.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-23T22:38:50.838968+00:00",
+    "description": "The pull half of Igor self-driving. When boredom fires and the foreman scans, ticket selection weighted by predicted resolution valence — not just priority.\n\nREVISED DESIGN (2026-03-23, Igor+Akien+Claude design session):\n\nHOOKPOINT: Action-completion, not ticket-closure. \"Close\" is the wrong frame — there is no discrete close event. The chain fires, the reply happens, that IS the completion signal. After that, displacement handles salience decay naturally.\n\nTWO MECHANISMS:\n1. Immediate: reply fires → chain reaches natural endpoint → no residual impulse → salience drops as new content fills attentional space.\n2. Retrospective: remember replying → reply memory trace carries salience-dampening weight → suppresses re-activation when topic resurfaces later.\n\nORDINARY vs NOTEWORTHY (key design gate):\n- Measure NE surprise delta: expected response vs actual response from Akien\n- Low delta (ordinary) → increment counter in ring payload, release. No durable memory needed.\n- High delta (noteworthy, prediction violated) → flag for deeper look → EPISODIC store if warranted → salience rises on \"what just happened\" instead of falling\n- Akien deliberately uses prediction-defeating language for comedic/dramatic effect — this must not be treated as routine\n\nRING PAYLOAD: ordinary completions increment a counter on the existing ring entry. No new table. Noteworthy completions trigger NE re-engagement via existing surprise machinery.\n\nPRIORITY FLOOR GUARD (unchanged from original): valence weighting cannot indefinitely defer P0/P1 tickets. selection_score = priority_floor(ticket) + valence_weight * predicted_valence.\n\nPHASE 1: ring counter + surprise-gated deeper look\nPHASE 2: durable reply memory across sessions, train valence prediction weights from history (~50 closure records)\n\nNOTE: minion anticipation.py (f838af1) built against old ticket-closure design — needs redirecting to action-completion hookpoint.",
+    "completed_at": "2026-03-23T22:44:57.570496+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "593c7d78-7a3d-4727-96ab-d91533fd9189",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

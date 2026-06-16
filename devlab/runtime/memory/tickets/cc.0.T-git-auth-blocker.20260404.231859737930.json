@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-git-auth-blocker.20260404.231859737930",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-git-auth-blocker"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T23:18:59.737930",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-git-auth-blocker",
+      "T-situate-memory-lookup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-git-auth-blocker",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Diagnose and fix git exit 128 auth blocking",
+    "result": "Git auth diagnostic: gh token + remote valid, SSH configured. Original Apr 3 exit 128 was temporary auth hiccup; issue resolved. Code (pe_chain.py) committed in later session (3b85d2ef). Git operations fully functional. No code changes this session — diagnostic only.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T23:19:46.071097+00:00",
+    "created_at": "2026-04-04T23:18:59.737930+00:00",
+    "assigned_to": null,
+    "description": "Session 2026-04-03b: git exit 128 blocked all commits. Diagnose git auth state (gh token, remote, SSH key). T-situate-memory-lookup code is written/tested but uncommitted.",
+    "completed_at": "2026-04-04T23:20:31.386701+00:00",
+    "github_issue": null,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7e0d0e64-fd53-48c9-97b8-2e54a621bbdd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

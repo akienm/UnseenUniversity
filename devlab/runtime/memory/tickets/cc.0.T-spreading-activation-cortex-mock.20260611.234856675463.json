@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-spreading-activation-cortex-mock.20260611.234856675463",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-spreading-activation-cortex-mock"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T23:48:56.675463",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-spreading-activation-cortex-mock",
+      "T-spreading-activation-test-stale-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-spreading-activation-cortex-mock",
+    "gate": null,
+    "role": "builder",
+    "size": "S",
+    "tags": [
+      "Test",
+      "Igor"
+    ],
+    "title": "Fix pre-existing _cortex AttributeError in test_spreading_activation.py",
+    "result": "devstral fixed mock setup — 14 tests pass; MAX_TURNS hit before DONE: output",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.2,
+    "intention": "I intend that test_empty_seeds_return_empty passes by fixing the Mock setup to include _cortex attribute.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T23:48:56.675463+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "TestWordGraphSpreadFromWords::test_empty_seeds_return_empty fails with 'Mock object has no attribute _cortex' — the mock WordGraph instance doesn't have _cortex set. Pre-existing before T-spreading-activation-test-stale-path. The test at line 53 wraps spread_from_words via lambda but the underlying method accesses self._cortex on what is a Mock.\n\n**Affected files:** tests/igor/test_spreading_activation.py\n**Design rules:** none apply\n**Scope boundary:** IN — fix mock setup so _cortex attribute exists. OUT — no production code changes.\n**Completion criteria:** `python -m pytest tests/igor/test_spreading_activation.py -x -q` passes with 0 failures.\n\n## Escalation summary\n**What was tried:** MAX_TURNS: hit 30 turns without DONE: prefix\n**Where it broke:** max turns hit without completing\n**What now?**",
+    "completed_at": "2026-06-12T00:08:17.658832+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

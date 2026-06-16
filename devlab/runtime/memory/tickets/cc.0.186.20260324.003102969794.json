@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.186.20260324.003102969794",
+  "emitter": "cc.0",
+  "namespace": [
+    "186"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T00:31:02.969794",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "186"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "186",
+    "size": "S",
+    "title": "Install Google Calendar/Contacts API deps + one-time OAuth setup",
+    "result": "Deps already installed (google-api-python-client 2.188.0, google-auth-httplib2 0.3.0, google-auth-oauthlib 1.2.4). Tool files exist. Blocked on human step: Akien needs to (1) create Google Cloud project + enable Calendar/Tasks/People APIs, (2) download OAuth credentials.json to ~/.TheIgors/igor_wild_0001/google_credentials.json, (3) run one-time browser consent flow, (4) add IGOR_CALENDAR_ENABLED=true to .env.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-24T00:30:22.787218+00:00",
+    "description": "Install dependencies, run one-time OAuth flow for Google Calendar + Contacts. #186",
+    "completed_at": "2026-03-24T00:31:02.969794+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d5f636b6-ed27-4db2-ba21-a7d345594d2f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

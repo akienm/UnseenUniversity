@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-engram-wire-dispatch.20260330.211340167281",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-wire-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T21:13:40.167281",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engram-executor",
+      "T-engram-schema",
+      "T-engram-wire-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-wire-dispatch",
+    "epic": "Cognition",
+    "title": "Wire NodeExecutor into BG habit dispatch",
+    "result": "Engram habit_type dispatch added to main.py turn loop (after if_fork, before fallthrough gate). Finds fired_trigger by substring match against metadata.triggers keys. Builds basket with requester/node_id/user_input/_cortex/_salience. Calls execute_node(), logs result, writes ENGRAM_BRANCH/ENGRAM_FORK to ring_memory. Sets habit=None to fall through to LLM. Added 'engram' to fallthrough-gate exempt types. 555 tests passing.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "When a habit fires and its node has a payload, execute the matching trigger cell with current basket. Fallback to existing code_ref dispatch if no payload. Activation model: cognition cursor lands on node, basket carried in, cell executes. Depends on T-engram-executor + T-engram-schema.",
+    "completed_at": "2026-03-30T21:13:40.167281+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "99d04c90-9123-49b9-b452-67de3ae0b052",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

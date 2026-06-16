@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-audit-sqlite-exempt-calibre.20260424.160205000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-sqlite-exempt-calibre"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:05",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-sqlite-exempt-calibre"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-sqlite-exempt-calibre",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Audit",
+      "DayCloseAudit",
+      "Hygiene"
+    ],
+    "title": "audit: no-sqlite-imports — exempt Calibre external-DB read in learner.py",
+    "result": "Added tools/learner.py to LEGITIMATE_EXTERNAL in audit_check_sqlite_imports.py — reads Calibre's external metadata.db, not Igor's own data.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-04-29T03:56:35.872583+00:00",
+    "created_at": "2026-04-24T16:02:05Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Day-close audit 2026-04-23 found wild_igor/igor/tools/learner.py:1657 imports sqlite3 — but it's reading Calibre's metadata.db (Calibre is a third-party app that uses SQLite as its native format; we're consuming it, not adopting it). Update audit check pattern or exempt this single line. Acked until 2026-04-30 to avoid noise; resolve before then.\n\n**Affected files:** lab/claudecode/audit_runner.py or audit check definition.\n**Test plan:** after fix, audit_runner --drain shows no-sqlite-imports PASS without ack.",
+    "completed_at": "2026-04-29T16:32:46.101933+00:00",
+    "github_issue": 515,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b5081307-f3d0-49b1-80a3-f6af7667d8ef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

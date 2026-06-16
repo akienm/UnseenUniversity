@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-inference-old-proxy-delete.20260611.174900416628",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-old-proxy-delete"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-11T17:49:00.416628",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-old-proxy-delete"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-old-proxy-delete",
+    "gate": null,
+    "role": "master",
+    "title": "Delete old inference proxy stack (proxy.py, rules.py, model_option.py, provider.py)",
+    "result": "Dick deleted all 5 files (proxy.py, rules.py, model_option.py, provider.py, test_runtime_model_selection.py). Verified absent. 217 tests passed. Closed retroactively after double-dispatch artifact left ticket in acked state.",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.3,
+    "intention": "I intend that the dead three-stack proxy code is removed, leaving devices/inference/ with a single routing system (InferenceDevice + RulesEngine + sources) and no ambiguous human= parameter.",
+    "claimed_at": null,
+    "created_at": "2026-06-11T17:49:00.416628+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "devices/inference/ contains two inference routing systems: the live one (InferenceDevice + RulesEngine + sources.py) and a dead three-stack system (proxy.py, rules.py, model_option.py, provider.py). The old stack's public API (inference_call, get_proxy, ModelOption, BaseProvider, etc.) has zero callers outside inference/ itself. Its 'human=' routing parameter is superseded by InferenceRequest.foreground=True. Only test_runtime_model_selection.py exercises this stack.\n\nDelete the dead files and their test. Update devices/inference/__init__.py to export only the live stack.\n\n**Affected files:** devices/inference/proxy.py, devices/inference/rules.py, devices/inference/model_option.py, devices/inference/provider.py, devices/inference/__init__.py, tests/inference/test_runtime_model_selection.py\n**Design rules:** no-sqlite; no TheIgors imports\n**Scope boundary:** IN: delete the four dead modules + their test + clean up __init__.py exports. OUT: any changes to the live stack (device.py, rules_engine.py, sources.py, shim.py).\n**Completion criteria:** (1) The four files are deleted; (2) devices/inference/__init__.py no longer exports ModelOption/BaseProvider/InferenceProxy/get_proxy/inference_call; (3) test_runtime_model_selection.py is deleted; (4) all remaining inference tests pass; (5) pip install -e . succeeds.",
+    "completed_at": "2026-06-11T19:10:21.375455+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

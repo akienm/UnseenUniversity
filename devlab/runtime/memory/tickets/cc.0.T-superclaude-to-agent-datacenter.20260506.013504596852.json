@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-superclaude-to-agent-datacenter.20260506.013504596852",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-superclaude-to-agent-datacenter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T01:35:04.596852",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-portability-2026-05-05"
+    ],
+    "tickets": [
+      "T-superclaude-to-agent-datacenter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-superclaude-to-agent-datacenter",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Installer",
+      "Portability"
+    ],
+    "title": "CLOSED: Move superclaude launchers to agent_datacenter/bin/ + symlink",
+    "result": "launchers moved to agent_datacenter/bin/ (9a42d53), TheIgors stub preserved (37720827), ~/.local/bin/superclaude symlink live, agentctl init step 7 wired",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-06T01:32:59.242900+00:00",
+    "related_to": null,
+    "decision_id": "D-skills-portability-2026-05-05",
+    "description": "superclaude, superclaude.bat, superclaude.ps1 live in ~/TheIgors/ root. Move them to agent_datacenter/bin/ (the correct home for user-facing launchers), update internal paths to use CC_WORKFLOW_TOOLS instead of hardcoded REPO_DIR for the utility closet reference, create ~/.local/bin/superclaude symlink for system-wide access, add symlink creation to agentctl init for future installs, and leave thin stubs at the TheIgors/ locations so existing aliases don't break.\n\n**Affected files:** agent_datacenter/bin/superclaude (new), agent_datacenter/bin/superclaude.bat (new), agent_datacenter/bin/superclaude.ps1 (new), agent_datacenter/agent_datacenter/cli/agentctl.py (add symlink step to init), ~/TheIgors/superclaude (stub pointing to new location), ~/.local/bin/superclaude (new symlink).\n**Design rules:** No TheIgors imports in agent_datacenter side. Use CC_WORKFLOW_TOOLS for utility closet path.\n**Scope boundary:** IN: file move, CC_WORKFLOW_TOOLS path update, symlink creation. OUT: full de-TheIgors of venv path (future), Windows PATH update (future).\n**Test plan:** superclaude --version (or --help) from terminal; verify ~/.local/bin/superclaude resolves; verify old ~/TheIgors/superclaude stub still works.\n**Pass condition:** Running superclaude from a fresh terminal (via ~/.local/bin/) launches Claude Code correctly.",
+    "completed_at": "2026-05-06T01:35:04.596852+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "58dd5887-2947-4fd8-a7dc-aa08cc878247",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

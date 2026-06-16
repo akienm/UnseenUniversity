@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-tool-result-verbatim-trace.20260413.201147858346",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tool-result-verbatim-trace"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T20:11:47.858346",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tool-result-verbatim-trace"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tool-result-verbatim-trace",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Tool result gist+verbatim split — raise synth cap + tool_result_verbatim TWM category",
+    "result": "935f2d8b — Three-layer fix: (1) raise synth prompt cap from 2KB to 40KB at main.py:5762 — modern context windows handle this trivially; (2) push full untruncated tool result to TWM at category='tool_result_verbatim' on dispatch with salience 0.85, TTL 1800s — same biomimetic gist+verbatim pattern as f0ad6dab user_input_verbatim; (3) raise user-visible fallback wrapper from 800 to 4000 at BOTH except sites (initial replace_all only caught one due to indentation difference). Ring entries (300, 500) deliberately unchanged — they're for compaction. 5 new tests including 50KB live cortex round-trip (used sentence repetition to dodge credential scrubber). 2034 total pass, zero regressions. Closes the day's queue.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T20:01:25.560085+00:00",
+    "related_to": null,
+    "description": "Bug 3 from 2026-04-12/13 session. main.py:5579 caps tool results at 2000 chars before feeding them to synthesis LLM. main.py:5619 fallback is 800 chars. Igor CANNOT read any file >2KB through this path — LLM only ever sees the first 2KB. Akien's test case was a 51KB transcript file; Igor saw only the first 2KB and accurately reported 'only showed a few lines of a diff'.\n\nBIOMIMETIC FIX (same pattern as f0ad6dab): push full tool result to TWM at category='tool_result_verbatim' on dispatch. Keep synth prompt window bounded for cost but raise from 2KB to 40KB (modern context windows handle this trivially). Prompt builder includes recent tool_result_verbatim entries alongside the synth window so oversized results are still retrievable in subsequent turns via the same salience competition mechanism.\n\nTHREE SITES:\n1. main.py:5579 raise 2000→40000 in synth_prompt assembly\n2. main.py:5619 raise 800→4000 in fallback [tool result: ...] wrapper\n3. main.py:5556 after tool.execute() add twm_push(source='tool_result_verbatim', content_csb=str(_tool_result), category='tool_result_verbatim', thread_id=thread_id, salience=0.85, urgency=0.85, ttl=1800) with full untruncated content\n\nTESTS: nested test_tool_call_and_verbatim_fidelity.py additions — synth window cap, TWM verbatim push, retrieve-by-category round-trip.\n\nINERTIA: LOW-MED. main.py tool dispatch path. Orthogonal to persistent-relationships epic but unblocks iteration involving file reads.",
+    "completed_at": "2026-04-13T20:11:47.858346+00:00",
+    "deposited_at": "2026-05-23T00:13:05.254956",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ba743605-e4b7-4d92-83b0-ac3399f6e035",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

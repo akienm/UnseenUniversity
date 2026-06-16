@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-decided-skill.20260420.175600668281",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decided-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T17:56:00.668281",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-decided-skill",
+      "T-review-as-filing-time-skill",
+      "T-ticket-schema-decision-id-and-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decided-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Skills",
+      "Decisions"
+    ],
+    "title": "/decided skill — batch-ticketize design conclusions",
+    "result": "~/.claude/skills/decided/SKILL.md — scopes to last /design or prior /decided; summarizes, drafts tickets, runs /review per draft (HIGH-inertia asks inline), files batch w/ decision_id linkage, writes to palace + decisions log + slate + session. Two-way navigation via decision_id + spawned_tickets. 5dfd5c34.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-04-20T17:50:56.343738+00:00",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Closes the gap where decisions dictated in conversation get lost before being ticketed.\n\n## Flow\n1. Take last N conversation turns since (a) prior /decided, (b) /design marker, or (c) session start — whichever is most recent\n2. Summarize the decision (1-2 sentences) — assign D### id\n3. Draft tickets needed to implement it\n4. Call /review on each drafted ticket (see T-review-as-filing-time-skill)\n5. Amendment / split / discard based on /review findings\n6. Write outputs:\n   - queue.json: new tickets with decision_id=D### (see T-ticket-schema-decision-id-and-gate)\n   - Igor memory palace: new node at theigors/decisions/D### with spawned_tickets=[...]\n   - decisions log: simple chronological append (TBD which file — confirm with Akien, memory says don't write to decisions_log.dsb)\n   - today's slate ## Ad hoc: decision + ticket ids\n   - session record: session_manager.py append-decision D###\n\n## Invocable standalone\nNo /design prereq — /decided infers scope from recent conversation.\n\n## Not in scope\n- Decision rollup (separate ticket)\n- /design as explicit marker (separate ticket, optional)",
+    "completed_at": "2026-04-20T17:56:00.668281+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "27f0665a-c8b6-46f3-b314-268f14e66ca8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-bounded-inbound-queue.20260427.215814538196",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-bounded-inbound-queue"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:58:14.538196",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-bounded-inbound-queue",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-bounded-inbound-queue",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: bounded per-device inbound message queue with drop policy",
+    "result": "DeviceQueue in agent_datacenter/skeleton/device_queue.py. drop-oldest/newest per DeviceConfig. drain() returns in order + clears. Warning logged on drop. All tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T21:50:45.444117+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Messages sent to a device mid-restart must not vanish. Each device has a bounded inbound queue that drains in order on restart.\n\nProposed shape:\n- agent_datacenter/skeleton/device_queue.py:\n  class DeviceQueue:\n    def __init__(self, device_id: str, config: DeviceConfig)\n    def enqueue(self, envelope: Envelope) -> None:\n      if len(queue) >= max_queue_length:\n        if drop_newest: discard incoming; log 'Queue full; dropping newest'\n        else: queue.popleft(); log 'Queue full; dropping oldest'\n      queue.append(envelope)\n    def drain(self) -> list[Envelope]: return all queued messages in order; clear queue\n    def __len__(self) -> int\n  Queue stored in memory (not persisted — small loss window on crash is acceptable per spec)\n  Integrated into Skeleton: messages routed to a restarting device go to DeviceQueue; on restart complete, drain() before forwarding new messages\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/device_queue.py (new)\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py (enqueue integration)\n\nDesign rules:\n- oop-first: DeviceQueue class using collections.deque internally\n\nScope boundary:\nIN: bounded queue, drop-oldest/newest policy, drain on restart\nOUT: persistent queue across skeleton restarts (small window loss acceptable per spec)\n\nTest plan:\n- Enqueue 101 messages with max_queue_length=100, drop_newest=False → 100 messages; oldest dropped; log written\n- Enqueue 101 messages with drop_newest=True → 100 messages; 101st discarded; log written\n- drain() returns messages in order, queue empty after\n- DeviceQueue(config=DeviceConfig()) instantiates with defaults",
+    "completed_at": "2026-04-27T21:58:14.538196+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "74757607-ff0e-402a-aa9b-ec885ff4c919",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

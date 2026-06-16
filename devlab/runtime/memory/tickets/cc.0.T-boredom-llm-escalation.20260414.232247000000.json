@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-boredom-llm-escalation.20260414.232247000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-boredom-llm-escalation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:47",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-boredom-llm-escalation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-boredom-llm-escalation",
+    "body": "From Akien 2026-04-14: 'boredom can escalate to an LLM to figure out what to do to cure his boredom.'\n\n## The shape\n\nBoredom is the substrate's 'I should be doing something' pressure. T-boredom-goal-coupling (#426) wires that pressure to pull on active goal facia — when boredom fires, the pulled goals surface as candidate things to work on. But not every boredom fire ends in a clear action: maybe no goals are salient, maybe the salient goals don't suggest a concrete next step, maybe Igor genuinely doesn't know what to do.\n\nIn that case — when the substrate's own machinery has done its work and produced no clear path forward — boredom escalates to the LLM with 'I'm bored, here's what I have, what should I do?' Multi-turn collaborative reasoning ensues (per T-llm-collaboration-protocol). The LLM brings external perspective; Igor brings his own goal facia, current milieu, recent history. Together they identify something to do. The LLM is the sounding board for escapes from local-minima boredom states, not a default first-response.\n\nThis is one *specific instance* of the broader 'Igor reaches out when stuck' pattern from T-llm-collaboration-protocol — boredom is one identifiable 'stuck' trigger. Other stuck triggers (planning impasse, contradiction, low confidence on a decision) will follow the same protocol with different escalation conditions.\n\n## When to escalate (the gate)\n\nFollows the cockpit framing: substrate does its work first. Only escalate when the substrate has nothing.\n\n1. Boredom fires (BoredomSource detects sustained idle + low arousal)\n2. T-boredom-goal-coupling (#426) wires this to active goal pull → boredom triggers a goal facia scan\n3. **If goals surface and one has a clear next-step action** → fire that. No LLM call. (This is the cheap 'goals-driven boredom recovery' path.)\n4. **If goals surface but none has a clear action** → escalate. (Substrate had options but couldn't choose.)\n5. **If no goals surface at all** → escalate. (Substrate had nothing.)\n6. **If escalation has fired in the recent window** (refractory) → don't re-escalate; let interoception cool down or wait for boredom to fade naturally.\n\nNot every boredom fire triggers an LLM call. The cost gate matters — boredom is frequent and free LLM-storming would burn budget. The gate is 'substrate tried and failed,' not 'boredom fired.'\n\n## What the escalation conversation looks like\n\nUses the T-llm-collaboration-protocol shape:\n- Cockpit (small): Igor identity paragraph, milieu summary (current arousal/valence/dominance), recent ring entries, list of active goal facia + their progress + state, what Igor already tried (the substrate work that failed to produce a path), six rules\n- Question framing: 'I'm bored. Here's what I have. What should I do?'\n- Multi-turn — the LLM can ask clarifying questions ('do you have time for X or only Y?', 'is anything urgent?'), Igor responds from his current state\n- Output: a candidate action or a small set of candidates with reasons, captured as a deferred_self_task / new tactical goal / TWM marker\n- Lands in the Igor logging console for Akien visibility (per T-llm-collaboration-protocol)\n\n## Why this matters\n\n- It's the missing piece between 'I have boredom pressure' and 'I do something useful with it' for cases where the substrate alone can't decide\n- It's the canonical first instance of the LLM-as-escape-from-local-minima pattern, distinct from LLM-as-default-responder\n- It exercises the multi-turn collaborative reasoning protocol on a low-stakes case (boredom is forgiving — wrong answer just means we stay bored a bit longer) before applying it to higher-stakes decisions\n- It connects boredom (substrate) to goals (matrix) to LLM (escalation) in a clean three-stage fallback ladder\n\n## Existing work to check\n\n- wild_igor/igor/cognition/push_sources.py — BoredomSource\n- wild_igor/igor/tools/boredom_idle.py — run_boredom_check (current habit substrate)\n- wild_igor/igor/cognition/anticipation.py + replay.py — adjacent push sources that might already be reaching for similar territory\n- T-boredom-goal-coupling (#426) — prerequisite, must land first so goal-pull on boredom exists\n- T-llm-collaboration-protocol — the multi-turn escalation protocol this ticket consumes\n- T-goals-as-persistent-relationships (#422, done today) — the goal facia substrate boredom pulls on\n- T-self-capability-awareness — Igor needs to know 'reach for the LLM when stuck' is an option\n\n## Dependencies\n\n- **Hard:** T-boredom-goal-coupling (#426) — the goal-pull layer must exist\n- **Hard:** T-llm-collaboration-protocol — the escalation protocol must exist\n- **Soft:** T-reasoning-voice-split (parent epic) — the cockpit + small reasoning context is the surface this uses\n\n## Open design questions\n\n1. **Refractory period for boredom escalation** — how long after one escalation before another can fire? Probably hours, not minutes. Substrate has time to settle.\n2. **Cost ceiling** — daily budget for boredom-driven LLM calls? Or no ceiling and rely on the gate logic?\n3. **What does 'no clear action' mean operationally?** Confidence threshold on the pulled goals' next-step? Absence of any habit-eligible path? Both?\n4. **Captured outcome** — does the LLM-suggested action become a tactical GOAL via goal_adopt? Just a TWM marker? A new memory?\n\n## Out of scope\n\n- General LLM-on-tap as default cognition (this is escalation, not baseline)\n- Solving boredom itself (this is the escape-from-stuck-boredom path; non-stuck boredom fires already work via #426 once that lands)\n- Multi-instance coordination ('which COA should escalate?') — single COA scope for this ticket\n\n## Provenance\n\nAkien 2026-04-14 during decisions table walk.\n\n## Update 2026-04-14 evening — escalation-as-hypothesis-generation\n\nAkien conversation reframed: when boredom escalates to the LLM, the LLM isn't producing \"what you should do.\" It's producing **hypotheses** (\"maybe X is worth trying\"). Igor then runs strategy 2 (experiments) to test those hypotheses against his state, milieu, capabilities, goals.\n\n**Corrected flow:**\n1. Boredom fires, substrate pulls goals, no clear action\n2. Escalate to LLM → LLM proposes N candidate actions as **hypotheses**\n3. Igor experiments on each candidate: does this align with active goals? matches milieu state? is it a capability I actually have? has something similar worked before?\n4. Experiment outcomes rank the candidates; Igor picks the top-survivor (or none if all fail)\n\nCP-consistent at every step: CP1 (candidates are provisional), CP2 (failed candidates are learning), CP3 (failure has a why), CP6 (LLM output is tested, not trusted).\n\n**Depends on T-experiment-primitive** for the testing substrate. Without that, this ticket reduces to \"accept LLM answer\" which is the CP6 violation we're avoiding.",
+    "deps": [],
+    "size": "M",
+    "tags": [
+      "cognition",
+      "boredom",
+      "llm-escalation",
+      "biomimicry"
+    ],
+    "title": "Boredom can escalate to an LLM when goal-pull doesn't yield an action",
+    "result": "Boredom tries cascade ('what should I be working on?') before idle wonder. Cascade match → refocus on stale goal/task. Cascade exhaust → falls through to existing wonder path. 4 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T19:25:27.635743+00:00",
+    "created_at": "2026-04-14T23:22:47Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T19:27:31.509668+00:00",
+    "github_issue": 447,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

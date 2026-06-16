@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-slow-metrics-sensor-tree-pattern.20260422.021735880197",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-slow-metrics-sensor-tree-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T02:17:35.880197",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-approach-frame-principle-2026-04-21"
+    ],
+    "tickets": [
+      "T-approach-frame-sensor-node",
+      "T-slow-metrics-sensor-tree-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-slow-metrics-sensor-tree-pattern",
+    "gate": "T-approach-frame-sensor-node",
+    "size": "M",
+    "tags": [
+      "SensorTree",
+      "Metrics",
+      "Pattern"
+    ],
+    "title": "Establish slow-metrics-to-SensorTree pattern; migrate 2-3 examples",
+    "result": "Rule theigors/rules/metrics established: slow progress metrics live in palace subtrees under theigors/metrics/. Frequency heuristic documented. Two example subtrees created: pass2_findings (Pass-2 epic progress, seeded 6/6/148) and habit_health (day-close-audit placeholder). Backing helpers already in wild_igor/igor/tools/palace_metric.py from T-approach-frame-sensor-node.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.55,
+    "claimed_at": "2026-04-22T02:16:17.135415+00:00",
+    "related_to": null,
+    "decision_id": "D-approach-frame-principle-2026-04-21",
+    "description": "Akien 2026-04-21: 'would it make sense to do all our metric recording that way?' Yes for slow/progress-shaped metrics. Rule: if a human would care to read this number once a week, put it in SensorTree with versioned memory. High-frequency instrumentation stays in existing stores.\n\n**Task:**\n1. Write rule as palace node at `theigors/rules/metrics` (3-4 lines: the rule + the frequency heuristic + pointer to T-approach-frame-sensor-node as the reference implementation).\n2. Identify 2-3 existing slow metrics to migrate. Candidates: Pass-2 findings resolved count, OR burn-rate gauge, habit health score from day-close-audit.\n3. Migrate those 2-3 using T-approach-frame-sensor-node as the template.\n4. Document the pattern in the palace node.\n\n**Affected files:** palace node `theigors/rules/metrics` (new); 2-3 new `theigors/metrics/<name>/` subtrees (clan.memory_palace); possibly minor edits to the scripts that emit the chosen metrics, to also write to SensorTree — update those files' docstrings if touched.\n\n**Design rules:** no-sqlite (Postgres only, clan.memory_palace); no-new-memory-schemas (new paths not new tables); docs-in-code (if any script is touched, update docstring); test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: rule node + 2-3 example migrations.\n- Out: migrating ALL existing metrics (use the hook pattern going forward).\n\n**Gate:** T-approach-frame-sensor-node (pattern must exist before this extends it).\n\n**Test plan:** each migrated metric: confirm counter increments, history appends, sparkline renders. Rule node: readable via context-load.",
+    "completed_at": "2026-04-22T02:17:35.880197+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "99e6ec9c-d069-48d8-b583-1a528ad5be85",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

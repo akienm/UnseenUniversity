@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-test-postgres-schema.20260424.160156000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-postgres-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:01:56",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sqlite-removal-2026-04-22"
+    ],
+    "tickets": [
+      "T-remove-sqlite-fallback",
+      "T-test-postgres-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-postgres-schema",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Database",
+      "Testing",
+      "Infrastructure"
+    ],
+    "title": "Dedicated Postgres test schema with per-session drop — unblocks SQLite removal",
+    "result": "pg_test_schema session fixture creates isolated test_clan_<ts>/test_instance_<ts> schemas; make_home_proxy/make_local_proxy respect IGOR_HOME_SEARCH_PATH; all 11 affected test files updated to route direct psycopg2 connections through the test search_path; seeds also respect the override; 3986 tests pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.85,
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T13:05:18.884745+00:00",
+    "created_at": "2026-04-24T16:01:56Z",
+    "related_to": null,
+    "decision_id": "D-sqlite-removal-2026-04-22",
+    "description": "Create a dedicated Postgres test schema (e.g. `test_isolation`) with per-session auto-drop. Migrate tests/conftest.py + every `Cortex(db_path)` fixture site to use this schema via IGOR_HOME_DB_URL pointing at a Postgres test schema. Unblocks T-remove-sqlite-fallback by eliminating tests' last reliance on the SQLite fallback.\n\n**Affected files:** tests/conftest.py (add session-scoped CREATE SCHEMA / DROP SCHEMA fixture), plus grep-discovery for every test that calls Cortex(tmp_path / '*.db'). Update conftest docstring to document the schema lifecycle + how to opt-in.\n**Design rules:** no-sqlite: new schema lives in existing Postgres DB — no SQLite, no new DB instance. oop-first: session fixture is function-scoped with pytest — functional shape is pytest-idiomatic. docs-in-code: conftest.py docstring names the schema + lifecycle. test-plan-or-why-not: applies.\n**Scope boundary:** IN — test schema creation+drop + conftest migration + fixture callsite updates. OUT — refactoring individual test logic, changing what tests do, parallel-DB isolation (single schema, drop-per-session is the agreed shape).\n**Test plan:** Meta-test — assert the schema exists + is empty at session start. Grep-assert no remaining `Cortex(tmp_path` or `\\.db` fixture references in tests/ after migration. Full test suite passes against Postgres.",
+    "completed_at": "2026-04-29T17:07:21.492783+00:00",
+    "github_issue": 511,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "04d0053f-3036-4afa-af9b-dad6a65880da",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

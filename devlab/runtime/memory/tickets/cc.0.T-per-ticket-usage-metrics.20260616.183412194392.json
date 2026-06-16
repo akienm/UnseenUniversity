@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-per-ticket-usage-metrics.20260616.183412194392",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-per-ticket-usage-metrics"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T18:34:12.194392",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-architecture-as-code-cognition-pipeline-2026-06-16"
+    ],
+    "tickets": [
+      "T-per-ticket-usage-metrics"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-per-ticket-usage-metrics",
+    "title": "[sprint] Per-ticket token/usage attribution + store — metrics substrate for cost-aware builders",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Metrics",
+      "Budget",
+      "ArchitectureAsCode"
+    ],
+    "description": "**Problem:** Cost-aware builders need to know what a ticket will cost before starting (the 'don't start what you can't finish' intention) and the system needs a shared burn view ('inference is a shared resource'). Both bottom out in ONE missing primitive: per-ticket token/usage ACTUALS, attributed to a ticket id and stored. Today budget/burn tools exist (budget_remaining, openrouter_burn_rate, budget_summary) but usage is NOT attributed per ticket — so we can neither build an estimator (no history of actuals) nor a per-ticket circuit breaker. This is the critical-path unblocker for the whole builder-orchestration line (DS-as-primary, CC.1-as-overflow, cost-aware claim gates).\n\n**Proposed shape:** Capture per-ticket usage actuals (tokens in/out, provider, worker, wall-clock, $ where derivable) attributed to the ticket id, and store them durably in Postgres keyed by ticket id. EXTENDS the existing budget/burn infra; does NOT rebuild it. Measurement substrate ONLY — the estimator and the gates are downstream tickets.\n\n**Affected files:** TBD — discovery step in sprint. Likely: the sprint-ticket lifecycle (start/close) to bracket a ticket's usage window; the budget/burn tooling (openrouter_burn_rate / budget_summary) as the usage source; a new devlab table (e.g. devlab.ticket_usage) via the migration path.\n**Design rules:** NO SQLITE (Postgres or flat-file only); External State Principle (usage stored durably, queryable across sessions/builders); log the interface crossing when usage is attributed (AR-009).\n**Scope boundary:** IN — attribute + store per-ticket usage actuals keyed by ticket id; make them queryable by id and in aggregate. OUT — the cost ESTIMATOR (downstream); the pre-claim GATE + burn circuit breaker (downstream); DS promotion/trust-tracking (separate); cross-provider $ normalization beyond what budget tools already give.\n**Test plan:** Run a ticket start->close; assert a usage row is written keyed to its ticket id with non-zero tokens + provider + worker; re-query returns it by id and in aggregate; works for a CC ticket (and a DS ticket when DS is available).\n\n**Completion criteria:**\n- Per-ticket usage actuals (tokens, provider, worker, wall-clock) are captured and stored in Postgres keyed by ticket id at ticket close.\n- The stored actuals are queryable by ticket id AND in aggregate (so a future estimator has a history of actuals).\n- No SQLite anywhere; the usage store survives a session restart.\n- Estimator + claim-gate + burn-breaker explicitly NOT implemented (downstream tickets).",
+    "decision_id": "D-architecture-as-code-cognition-pipeline-2026-06-16",
+    "created_at": "2026-06-16T18:34:12.194392+00:00",
+    "updated_at": "2026-06-16T12:34:24.420764-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.6,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that every ticket's actual token/usage cost is measured and stored attributed to its ticket id, so the system can later estimate ticket cost up front and treat inference as a shared, monitored resource.",
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

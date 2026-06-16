@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-legacy-direct-claim-error.20260520.152356748397",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-legacy-direct-claim-error"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-20T15:23:56.748397",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-request-not-claim-2026-05-20"
+    ],
+    "tickets": [
+      "T-legacy-direct-claim-error"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-legacy-direct-claim-error",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Reliability",
+      "Observability"
+    ],
+    "title": "LegacyDirectClaimError: cmd_claim raises when called without cmd_next context",
+    "result": "LegacyDirectClaimError env-flag arm in adopt_next_ticket + 3 tests (strict-claim, channel-post, env-flag-before-chain); fixed TestLaunchNextWorkerDispatch Cortex isolation as incidental",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "blocked_at": null,
+    "claimed_at": "2026-05-20T16:24:45.873308+00:00",
+    "created_at": "2026-05-20T15:23:56.748397+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-request-not-claim-2026-05-20",
+    "description": "Old Igor habits describe the direct-claim model: 'claim a ticket, work it.' After adopt_next_ticket migrates to cmd_next, any remaining direct-claim code should surface immediately in logs rather than silently misfiring.\n\nAdd LegacyDirectClaimError to cc_queue.py cmd_claim: when the env var IGOR_STRICT_CLAIM_MODEL=1 is set (worker_foreman.py sets this before pe_chain runs), any cmd_claim call raises with: 'Direct ticket claiming is deprecated — use cmd_next --max-difficulty=N to request tickets.' Log the error to the channel so it surfaces in CC inbox. CC-side cmd_claim (no env var) is unaffected.\n\n**Affected files:** lab/claudecode/cc_queue.py (LegacyDirectClaimError class + check in cmd_claim), wild_igor/igor/tools/worker_foreman.py (set IGOR_STRICT_CLAIM_MODEL=1 env before pe_chain call)\n**Design rules:** no-sqlite; error must post to channel (cc_queue already has channel post patterns)\n**Scope boundary:** IN: LegacyDirectClaimError class; env-flag check in cmd_claim; env var set in adopt_next_ticket. OUT: pe_claim behavior when env flag not set; CC-side claiming\n**Test plan:** cmd_claim with IGOR_STRICT_CLAIM_MODEL=1 raises LegacyDirectClaimError; cmd_claim without the flag works normally; adopt_next_ticket integration: env var is set before pe_chain subprocess",
+    "completed_at": "2026-05-20T16:50:17.209432+00:00",
+    "deposited_at": "2026-05-20T18:04:19.686324",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-20T15:23:56.748421+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e01ba6ee-36b4-427b-94be-e7576535d939",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

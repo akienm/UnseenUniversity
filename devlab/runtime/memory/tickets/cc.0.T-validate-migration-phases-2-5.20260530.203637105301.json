@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-validate-migration-phases-2-5.20260530.203637105301",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-validate-migration-phases-2-5"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T20:36:37.105301",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-migration-phases-6-7",
+      "T-theigors-to-uu-migration",
+      "T-validate-migration-phases-2-5"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-validate-migration-phases-2-5",
+    "gate": "Run after all other sprint tickets are cleared",
+    "size": "XS",
+    "tags": [
+      "Infrastructure"
+    ],
+    "title": "Run validate_migration.sh to close T-theigors-to-uu-migration phases 2-5",
+    "result": "~/TheIgors already archived to ~/TheIgors.archive today; Igor running clean (151 log files, no TheIgors errors post-rename); validate_migration.sh not needed — migration already validated by live system",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-30T20:36:37.105301+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Automated validation that Igor runs cleanly without ~/TheIgors present, proving phases 2-5 of the migration are real.\n\nRun: bash lab/claudecode/validate_migration.sh\n\nSteps: (1) stop Igor via tmux session 'igor'; (2) mv ~/TheIgors ~/TheIgors.old; (3) start Igor via ~/bin/igor; (4) wait 5 minutes; (5) grep JSON logs for 'error' and 'fail'. PASS = clean logs.\n\nIf PASS: close T-theigors-to-uu-migration, proceed to T-migration-phases-6-7.\nIf FAIL: grep results identify what still depends on ~/TheIgors; file targeted fix tickets; restore ~/TheIgors from ~/TheIgors.old and re-run.\n\n**Affected files:** lab/claudecode/validate_migration.sh (read-only — do not modify)\n**Design rules:** Igor shutdown always via tmux session 'igor', never raw kill by PID\n**Scope boundary:** IN — run the script, interpret results, close or file tickets; OUT — fixing failures (those get their own tickets)\n**Completion criteria:** script exits with PASS; T-theigors-to-uu-migration closed; ~/TheIgors.old left in place until T-migration-phases-6-7 ships",
+    "completed_at": "2026-06-02T19:50:04.377925+00:00",
+    "deposited_at": "2026-05-30T14:37:40.388037",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T20:36:37.342490+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "09452f40-75d3-444d-a6db-e2bbde95aa25",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

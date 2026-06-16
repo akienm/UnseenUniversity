@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-pipeline-arch.20260321.192300708754",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pipeline-arch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T19:23:00.708754",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pipeline-arch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pipeline-arch",
+    "body": "Three problems identified 2026-03-18: (1) preparse() always routes to OLLAMA_REASONING_HOST with no timeout (now patched to 8s) — but during daytime cloud_mode is active and preparse should not hit Ollama at all. Gate preparse on cloud_mode or remove it entirely (thalamus rule-based is already doing the same job). (2) Cloud inference timing out during day — NE daemon + winnow + main inference all hitting OR simultaneously, competing for per-key rate limit. Need serialization or dedicated purpose keys. (3) Long-term: preparse is an LLM doing what thalamus already does. With trail infrastructure, thalamus + word graph should be sufficient for intent classification. Preparse may be deletable. Design conversation required — L-size.",
+    "size": "L",
+    "title": "Inference pipeline architecture review — preparse, cloud routing, OR contention",
+    "result": "Closed as superseded by D198 (3-profile binary routing, T-gateway-simplify #320). All three issues resolved: (1) preparse removed entirely, (2) inference engine proxy rebuilt with binary routing, (3) OR contention addressed by clean routing separation. No further implementation required.",
+    "status": "done",
+    "priority": 1,
+    "blocked_at": "2026-03-21T16:38:14.623956+00:00",
+    "claimed_at": null,
+    "completed_at": "2026-03-21T19:23:00.708754+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

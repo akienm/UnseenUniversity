@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-savestate-append-change-gap.20260420.004405851826",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-savestate-append-change-gap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T00:44:05.851826",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-savestate-append-change-gap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-savestate-append-change-gap",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Observability",
+      "Sessions"
+    ],
+    "title": "savestateauto skips key_changes — only /sprint step 9 fires append-change",
+    "result": "Patched ~/.claude/skills/savestateauto/SKILL.md to call session_manager.py append-change after flush_session. Verified: running append-change on 2026-04-19a went from 0 → 141 bytes. Backfill of 2026-04-18a not attempted (historical).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Symptom: 2026-04-18a sprint record has key_changes=0 despite 20+ ticket closures. Data: 13 of 14 recent sessions have key_changes=0 bytes; only 2026-04-18b has 1553 bytes.\n\n## Root cause\n\n/savestateauto calls cc_queue.py flush_session <id> <summary> which ONLY posts a channel message to Igor — it does NOT update infra.sessions.key_changes.\n\nOnly session_manager.py append-change writes that column, and the only skill calling it is /sprint step 9 (at the end of a full sprint). When autonomous mode runs many commits without full /sprint invocations (or when /fixit bundles multiple units), no per-commit append-change fires.\n\nSame gap for decisions — append-decision is only called by /decided, never by /savestateauto.\n\n## Fix options\n\n1. Add append-change step to /savestateauto with the hypothesis line as content. Cheap, unambiguous.\n2. Git post-commit hook calling append-change. Invasive, fires outside /savestateauto context.\n3. Reshape flush_session to update both channel + DB. Conflates transports.\n\nProposed: option 1 — modify /savestateauto to emit an append-change line alongside the flush_session call. Keeps Igor-flush and session-record concerns separate but both get updated on the same trigger.\n\n## Acceptance\n\n- /savestateauto ends with session_manager.py append-change writing the in-flight hypothesis\n- Backfill script (optional): reconstruct 2026-04-18a key_changes from git log on that day\n- Verify: query SELECT length(key_changes) FROM infra.sessions WHERE id = current — expect >0\n\n## Scope\n\n~/.claude/skills/savestateauto/SKILL.md — adds one step. No session_manager.py change needed.\n\n## Provenance\n\n2026-04-19 investigation during post-compact autonomous sprint. Found all 14 recent sessions have near-zero key_changes despite heavy work.",
+    "completed_at": "2026-04-20T00:44:05.851826+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "66076683-8165-4c5d-b37d-fd7c399c684f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

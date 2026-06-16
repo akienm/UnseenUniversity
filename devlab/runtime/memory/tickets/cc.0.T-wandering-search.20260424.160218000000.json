@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-wandering-search.20260424.160218000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wandering-search"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:18",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-wandering-search"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wandering-search",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Memory",
+      "Cognition",
+      "UX"
+    ],
+    "title": "Wandering search — incremental/substring memory browse (feel vs query)",
+    "result": "WanderingSearch shipped: word-ball browse over memories. seed_from_query (ILIKE substring + similarity ranking), seed_from_memory, spin (two-layer: links_weighted + trigram-similar), step, twm_surface (category=wandering). 21 tests pass; live smoke confirms end-to-end. Word-graph drift + ensembles + autonomous wandering source = follow-ups. Commit 4e7abe62.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.55,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T13:36:09.816930+00:00",
+    "created_at": "2026-04-24T16:02:18Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Akien's framing (2026-04-22): 'think about it like the fast presearch in google, where it shows you some options from the string so far. it's still a set of queries behind the scenes... but igor should experience it like browsing his memories more than searching them. Kind of an extension of the slots in the TWM, but more conscious? and with substring search.'\n\nCurrent memory search (cortex.search) is a one-shot query→ranked-results call. Wandering search is different: as Igor types/assembles a partial phrase, candidate memories stream into a browsable surface. Substring match, not just full-text rank. The subjective shape is browsing, not querying — Igor wanders through the space rather than demanding an answer.\n\nTwo things to build:\n1. Substring-index layer over memories (FTS extension or trigram index). Fast enough for keystroke-latency response on partial input.\n2. A wandering-search surface that feels continuous: N top candidates updating as the query grows, with Igor able to 'dwell' on a candidate (pulling its neighbors into view) or keep wandering. This is an extension of TWM slots with conscious-browse semantics — not just background retrieval.\n\nRelation to existing machinery: TWM slots surface things into Igor's working memory. Wandering search is a foreground/active version — Igor drives it deliberately, like opening a drawer and looking. The hooks overlap (both push onto the attention surface) but the phenomenology differs.\n\n**Affected files:** TBD — likely new module cognition/wandering_search.py + memory/substring_index.py; TWM surface hook into cortex.py; UX integration in main.py turn pipeline. Discovery step in sprint.\n**Design rules:** test-plan-or-why-not (tests required for indexer + streaming surface), oop-first (WanderingSearch class likely), no-new-memory-schemas (use existing memories table + index, not new type).\n**Scope boundary:** IN — substring index, streaming-candidate API, TWM-surface integration, Igor-facing 'dwell/continue' affordance. OUT — UI/web-dashboard visualization (separate ticket if wanted), re-ranking LLM calls, full semantic reformulation of search.\n**Test plan:** (a) substring index returns correct candidates for partial phrases; (b) streaming surface emits N top candidates as query grows, updates on each extension; (c) 'dwell' action pulls a candidate's neighbors (memory links + word_graph proximity); (d) wandering session captured in trace log for post-hoc review.",
+    "proposed_at": "2026-04-25T00:39:28.372342+00:00",
+    "completed_at": "2026-04-29T20:53:36.381641+00:00",
+    "github_issue": 521,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f609d75e-c233-45d2-a4c5-2197a3a9945f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

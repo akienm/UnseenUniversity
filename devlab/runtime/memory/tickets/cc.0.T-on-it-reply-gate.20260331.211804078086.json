@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-on-it-reply-gate.20260331.211804078086",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-on-it-reply-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T21:18:04.078086",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-on-it-reply-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-on-it-reply-gate",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Fix 'On it' eating replies — reply gate before acknowledgment",
+    "result": "Added REPLY DISCIPLINE block to both system prompt code paths (build_system_prompt and the cached string path). Hard rule: never emit bare acknowledgments like 'On it'/'Fair. On it.' as full response. If acting: act silently. If reply needed: substantive content only. 567 tests pass. Commit: 5e2d8650.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-31T21:17:03.729960+00:00",
+    "description": "Igor fires 'On it.' as a canned acknowledgment that replaces real replies. Fix: before generating any acknowledgment response, habit should first ask 'does this turn need a reply?' (intent gate). If yes, route through normal habit scoring to generate a relevant response. If no, suppress output entirely. 'On it' should never be a terminal response — it's a symptom of the response habit firing before the intent/reply-need gate. Related to HABIT_FALLTHROUGH and the reply-need check in the cognition pipeline.",
+    "completed_at": "2026-03-31T21:18:04.078086+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e28df768-3891-4d43-ba89-7dd37ad4db11",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

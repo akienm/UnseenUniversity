@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-channel-registry.20260325.171621362959",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-channel-registry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:16:21.362959",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-channel-registry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-channel-registry",
+    "title": "Acquisition channel registry — Channel abstraction with constraints",
+    "result": "Channel abstraction and registry implemented with 5 acquisition channels (FileInbox, DirectURL, Calibre, GeminiSearch, BrowserUse) in priority order per D230/D231. Registry pattern supports constraints, cost models, retry policies, short-circuits. All 17 tests passing.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-25T17:13:12.310598+00:00",
+    "description": "D230. Define Channel abstraction and registry.\n\nEach channel entry has:\n- name: str\n- acquire(query: AcquireRequest) -> AcquireResult | ChannelFailure\n- constraints: list[str]\n- cost_model: {per_call_usd, reliability: high/medium/low}\n- one_way: bool\n- retry_policy: {max_attempts, backoff_sec}\n- short_circuits: bool  # if True, a hit on this channel skips remaining channels\n\nInitial channels to register:\n1. CalibreChannel — local EPUB via open_book/read_chunk; free; high reliability; one_way=True\n2. FileInboxChannel — ~/.TheIgors/igor_wild_0001/inbox/ dropped files; free; high reliability; short_circuits=True\n3. DirectURLChannel — explicit URL or file path provided by caller; free; fetches directly; short_circuits=True (a direct URL/path prevents any further search)\n4. GeminiSearchChannel — uses Igor browser profile (free Gemini) for web search + synthesis; medium reliability; used when \"dig more\" research requested\n5. BrowserUseChannel — browser-use agent for structured acquisition (Kindle, paywalled); constraints: NO account creation, NO book switching, NO login prompts (fail cleanly); last resort\n\nFile: wild_igor/igor/network/channels/ (new directory)\nInertia: LOW\nSize: M",
+    "completed_at": "2026-03-25T17:16:21.362959+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ede6ee3f-a2ce-40c8-88aa-9fa6ae10062f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

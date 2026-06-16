@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-admin-consolidation.20260421.162222365120",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-admin-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T16:22:22.365120",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-workflow-optimizations-2026-04-21"
+    ],
+    "tickets": [
+      "T-cc-admin-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-admin-consolidation",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "CCWorkflow",
+      "Simplify",
+      "Keystone"
+    ],
+    "title": "Consolidate cc-admin scripts into lab.claudecode.api module + igor-admin CLI",
+    "result": "api.py module + igor-admin CLI created; decision_manager.py:75 path fixed",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": "2026-04-21T16:18:44.899099+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-workflow-optimizations-2026-04-21",
+    "description": "Collapse 9 scripts (cc_queue.py, decision_manager.py, session_manager.py, slate_manager.py, github_sync.py, docs_sync.py, palace_sync.py, review_manager.py, channel.py) into single lab/claudecode/api.py module exposing Python functions, plus igor-admin CLI (argparse) with subcommands: igor-admin ticket|session|decision|slate|palace|channel [verbs]. Each subcommand is one-line adapter calling api.<verb>() in-process. Benefits: (1) skills drop from 4-5 subprocess invocations/step to one, (2) shared DB connection eliminates per-invocation psycopg2 setup, (3) shared _db_url() eliminates 20 hardcoded DB URLs across SKILL.md files, (4) fixes broken subprocess path in decision_manager.py:75 — currently references 'claudecode/cc_queue.py' not 'lab/claudecode/cc_queue.py'; silent-except'd for weeks, breaking every /decided's Igor-flush. Scope: CLI consolidation, semantic parity with current behaviour (tests guard this), does NOT change what scripts do, does NOT touch cc_bridge.py or utility_closet_server.py (daemons), does NOT remove old .py entry points immediately — keep as 2-line shims for one release then delete. Files: all 9 scripts + every SKILL.md invoking them + decision_manager.py:75 broken path.\n\ntest_plan: Functional test per top-level subcommand round-tripping DB (igor-admin ticket list, session show, decision get). Integration test: old cc_queue.py still works as shim calling api. Regression: run full test suite confirming no behaviour change.",
+    "completed_at": "2026-04-21T16:22:22.365120+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9d6075bb-2d35-45f8-b25d-e297525c32f2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-web-thread-context-scope.20260607.003757447599",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-thread-context-scope"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T00:37:57.447599",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-web-response-quality",
+      "T-web-thread-context-scope"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-thread-context-scope",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Web",
+      "Bug"
+    ],
+    "title": "Web thread context injector: scope to current session only",
+    "result": "context_session field in queue message + _get_thread_id preference; 4 tests; comms://igor routing unchanged",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the web server's thread context injector only includes exchanges from the current session, preventing old channel history from contaminating Igor's NarrativeEngine context.",
+    "claimed_at": "2026-06-07T00:42:34.261361+00:00",
+    "created_at": "2026-06-07T00:37:57.447599+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "2026-06-06 investigation (T-igor-web-response-quality) confirmed: when Akien sent a message about The Librarian at 12:41:09, the web server at 12:41:44 prepended old channel history ([Thread context — recent exchanges in this channel:] User: I was once at...) from unrelated prior exchanges (Igor reading blog posts). Igor's NarrativeEngine responded to the injected history, not the actual message. The fix: thread context injector must scope to exchanges that share the current session start time, not all recent channel exchanges.\n\n**Affected files:** TBD — discovery step in sprint; likely the web server / uc_deliver handler that builds the [Thread context...] prefix\n**Design rules:** diagnose before fixing; web→Igor uses HTTP poll not IMAP\n**Scope boundary:** In scope: filter thread context to current-session exchanges only. Out of scope: NarrativeEngine changes, changing context format, web UI changes.\n**Completion criteria:** After fix, messages sent in a new web session do not include channel history from prior sessions or unrelated channel exchanges. Manual test: start fresh web session, send message, verify [Thread context] (if present) only contains current-session exchanges.",
+    "completed_at": "2026-06-07T01:23:45.218979+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

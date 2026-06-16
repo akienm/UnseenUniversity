@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-cluster-ssh-instance-refs.20260429.161143000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cluster-ssh-instance-refs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:43",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cluster-ssh-instance-refs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cluster-ssh-instance-refs",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Infrastructure"
+    ],
+    "title": "Replace hardcoded Igor-wild-0001 defaults in cluster_ssh.py",
+    "result": "Fixed remaining 4 hardcoded Igor-wild-0001 refs: stripped from word_graph.py + consolidation.py docstrings, replaced with dynamic path in worker_foreman.py user msg, exempted config.py (defining source). Audit check now clean.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-29T16:33:03.324221+00:00",
+    "created_at": "2026-04-29T16:11:43Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "audit_runner no-hardcoded-instance-refs flags 4 refs in cluster_ssh.py. Specifically _DEFAULT_USER = 'Igor-wild-0001' (line 31) and os.getenv('WINDOWS_USER_IGOR_USER', 'Igor-wild-0001') (line 330) should read from paths().instance_id rather than literal strings so they work correctly when the instance name changes.\n\n**Affected files:** wild_igor/igor/tools/cluster_ssh.py (lines 31, 330 and related docstrings)\n**Design rules:** no-hardcoded-instance-refs audit check; use paths() per palace rule\n**Scope boundary:** IN: replacing literal 'Igor-wild-0001' defaults with paths().instance_id. OUT: cluster SSH functionality changes.\n**Test plan:** Verify existing cluster_ssh tests pass. Spot-check that _DEFAULT_USER resolves correctly.",
+    "completed_at": "2026-04-29T16:36:08.666619+00:00",
+    "github_issue": 563,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3e2b55b2-5d03-400c-a17f-d845ae495860",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

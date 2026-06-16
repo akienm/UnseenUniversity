@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-audit-humility.20260606.172916657966",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-audit-humility"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T17:29:16.657966",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-domain-humility-2026-06-04"
+    ],
+    "tickets": [
+      "T-consequence-audit-humility"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-audit-humility",
+    "gate": "2026-06-20",
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Audit"
+    ],
+    "title": "[sprint] Consequence check: audit domain-humility (structural vs behavioral)",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that audits are more trusted after the structural/behavioral distinction ships.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T17:29:16.657966+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-audit-domain-humility-2026-06-04",
+    "description": "**What changed:** audit-design and audit-ticket now categorize findings as STRUCTURAL (directive) or BEHAVIORAL (question).\n\n**Predicted unintended effects:** (1) Behavioral findings phrased as questions may be easier to ignore — watch for real structural violations being mislabeled as behavioral; (2) The distinction may be ambiguous at edges (e.g., naming conventions — structural or behavioral?).\n\n**Signals to watch:** Audit output post-change: are directives actually structural (wrong file, missing field, wrong abstraction)? Are questions genuinely behavioral? Any false negatives (real structural violations asked as questions).\n\n**Gate condition:** Check by 2026-06-20 or after 3 audit-design runs with the new skill active.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Completion criteria:** observation ticket; done when predicted effects annotated and ticket closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

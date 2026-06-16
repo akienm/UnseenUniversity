@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-instance-home-migration.20260428.003820386738",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-instance-home-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T00:38:20.386738",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-ops-log-tree-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-instance-home-migration",
+      "T-adc-ops-log-tree",
+      "T-no-sqlite-enforcement"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-instance-home-migration",
+    "gate": "T-adc-ops-log-tree",
+    "size": "L",
+    "tags": [
+      "Infrastructure",
+      "agent_datacenter",
+      "Igor"
+    ],
+    "title": "agent_datacenter: migrate ~/.TheIgors/Igor-wild-0001/ to ~/.agent_datacenter/",
+    "result": "Moved ~/.TheIgors/Igor-wild-0001/ → ~/.agent_datacenter/Igor-wild-0001/; symlink from old → new; IgorDevice + IgorShim already default to new path; Igor verified healthy post-migration",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.9,
+    "claimed_at": "2026-04-28T00:28:26.772001+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-ops-log-tree-2026-04-27",
+    "description": "Igor's runtime flat files live in ~/.TheIgors/Igor-wild-0001/ but belong in ~/.agent_datacenter/Igor-wild-0001/ per the new substrate layout. This requires: (1) grep audit of all hardcoded ~/.TheIgors/Igor-wild-0001/ references in wild_igor/ and lab/, (2) mv flat files to new location, (3) place symlink ~/.TheIgors/Igor-wild-0001 -> ~/.agent_datacenter/Igor-wild-0001 as a safety net, (4) update IGOR_HOME default in IgorDevice + IgorShim to ~/.agent_datacenter/Igor-wild-0001, (5) update igor launcher IGOR_HOME_DIR if set. Postgres DB name (Igor-wild-0001) unchanged — only flat files move. word_graph.db (SQLite file) moves as a binary but code change awaits T-no-sqlite-enforcement.\n\n**Affected files:** devices/igor/device.py + shim.py (IGOR_HOME default), ~/TheIgors/igor (launcher env vars), any wild_igor/ file hardcoding ~/.TheIgors/Igor-wild-0001/ (audit step will enumerate), lab/claudecode/*.py (path constants)\n**Design rules:** no-sqlite: word_graph.db moves as file only, no code changes to SQLite access paths here\n**Scope boundary:** IN: flat file migration, symlink, IgorDevice/IgorShim default update, igor launcher update. OUT: Postgres data dir (external), code changes to SQLite db (separate ticket), books/library reorganization (separate)\n**Test plan:** After migration: igor start → healthy tmux session, IgorDevice.health() == healthy, agentctl status shows Igor registered. Symlink resolves for any code not yet updated. Grep audit finds zero remaining hardcoded old paths (excluding symlink itself and historical docs).",
+    "completed_at": "2026-04-28T00:38:20.386738+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c532ec3a-3e8f-428e-8875-1ce1c51ecc43",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

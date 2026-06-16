@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-dashboard-active-ticket.20260407.032929181924",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dashboard-active-ticket"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:29:29.181924",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dashboard-active-ticket",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dashboard-active-ticket",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Dashboard Section 3 shows cc_queue in_progress ticket",
+    "result": "CC implemented _get_active_cc_ticket() in terminal.py reading cc_channel/queue.json; shows in Section 3",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "blocked_at": "2026-04-07T01:23:31.737209+00:00",
+    "claimed_at": "2026-04-07T01:05:38.611102+00:00",
+    "related_to": null,
+    "description": "terminal.py render() currently shows job_manager job_list in Section 3. Add cc_queue in_progress ticket query and display it as 'active: T-xxx — title' above or replacing stale job entries. Query: cc_queue.py list filtered to in_progress. Pass result to render() alongside job_list. LOW inertia (dashboard/terminal.py only).",
+    "completed_at": "2026-04-07T03:29:29.181924+00:00",
+    "deposited_at": "2026-05-20T21:46:15.080583",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a60eb3d5-bfb8-4c45-8cdc-653756c18370",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

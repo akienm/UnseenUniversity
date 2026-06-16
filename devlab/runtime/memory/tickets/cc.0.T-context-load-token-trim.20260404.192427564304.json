@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-context-load-token-trim.20260404.192427564304",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-context-load-token-trim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T19:24:27.564304",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-context-load-token-trim"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-context-load-token-trim",
+    "size": "S",
+    "tags": [
+      "Claude",
+      "Operations"
+    ],
+    "title": "context-load: truncate decisions_log to hot window (top 5) to save ~2500 tokens/load",
+    "result": "Fixed context-load skill Step 2: switched from head-30 to tail-10 so we actually read RECENT decisions (recent decisions are appended at the bottom, not prepended at the top). Updated D305 in decisions_log.dsb and MEMORY.md to reflect correct file orientation. The old head-30 was reading D001-D020 (foundational/stable) every load instead of the hot decision window.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-04T18:23:22.970841+00:00",
+    "related_to": null,
+    "description": "context-load Step 2 reads top 30 decisions_log lines (~3175 tokens) even though only 5 are hot. At 30-40 context-loads/session × 2 sessions/month = ~$30/month wasted on cold decisions. Fix: read only top 5 lines in context-load SKILL.md Step 2 by default; add --full flag for deep dives. Process finding from deep-audit Panel 9.",
+    "completed_at": "2026-04-04T19:24:27.564304+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3f335854-de99-442c-b8e2-e7bbf6a41c3b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

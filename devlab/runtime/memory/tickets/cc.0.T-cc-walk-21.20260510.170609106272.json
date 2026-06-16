@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-cc-walk-21.20260510.170609106272",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-21"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T17:06:09.106272",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-21"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-21",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "CodeQuality",
+      "Maintenance"
+    ],
+    "title": "Igor walk batch 21: next code quality sweep",
+    "result": "2 fixes: stale cert TODO removed from pe_chain.py; hardcoded Igor-wild-0001 in response_habituation.py docstring fixed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T17:35:51.894780+00:00",
+    "created_at": "2026-05-10T17:06:09.106272+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Continuation of the cc-walk series (walks 14-20 done on 2026-05-08). Run day-close-audit code smell scan + dead code + orphan checks on wild_igor/igor/, triage findings, fix small issues inline. Each distinct fix gets its own sub-ticket or is committed with a clear scope note.\n\nPrevious walks: 14=refractory window, 15=dead webhook branch, 16=fcntl lock, 17=shim retirements (127 files), 18=scan_ebooks path, 19=DRM sentinel, 20=NE stew-salience guard.\n\n**Affected files:** TBD — discovery step in sprint. Scope: wild_igor/igor/ code smell and dead code findings.\n**Design rules:** none apply\n**Scope boundary:** In scope: scan + fix findings from audit steps 3, 10, 11 (smells, orphans, duplication). Out of scope: architecture changes, new features, HIGH-inertia file restructuring without pre-approval.\n**Test plan:** All TheIgors tests pass after each fix; no new tests unless a fix adds a behaviour worth testing.",
+    "completed_at": "2026-05-10T17:35:53.686584+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bc96b1a1-931a-4140-a7cf-78361974e914",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-replay-log-error-positional.20260423.165202231786",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-replay-log-error-positional"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T16:52:02.231786",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-reply-coherence-inhibitor-fix-2026-04-23"
+    ],
+    "tickets": [
+      "T-replay-log-error-positional"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-replay-log-error-positional",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "BugFix",
+      "Logging"
+    ],
+    "title": "Fix: replay.py calls log_error() with positional args (keyword-only function)",
+    "result": "5 positional log_error() → keyword form. b9688b6b.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-23T16:49:51.435164+00:00",
+    "related_to": null,
+    "decision_id": "D-web-reply-coherence-inhibitor-fix-2026-04-23",
+    "description": "replay.py (consolidation replay) calls log_error() with positional args at 5 call sites. log_error() takes keyword-only args (kind=, detail=). Results in TypeError caught by push_sources.py's bare except and re-logged as BARE_EXCEPT, generating noise in errors.log.\n\n**Affected files:** wild_igor/igor/cognition/replay.py (5 call sites)\n**Design rules:** docs-in-code\n**Scope boundary:** IN — convert 5 positional log_error() calls to keyword form. OUT — refactoring log_error signature.\n**Test plan:** AST check confirms no positional log_error() calls in replay.py; BARE_EXCEPT for 'log_error() takes 0 positional arguments' stops appearing.",
+    "completed_at": "2026-04-23T16:52:02.231786+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4e554384-9112-4eea-9586-1d64f122b100",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

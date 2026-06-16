@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-browser-use-device.20260427.223719600717",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-browser-use-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:37:19.600717",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-4-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-browser-use-device",
+      "T-adc-browser-use-eval-spike",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-browser-use-device",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: browser-use device (gated on eval spike go verdict)",
+    "result": "BrowserUseDevice + BrowserUseShim shipped; 69/69 tests pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-04-27T22:08:55.317691+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-4-2026-04-27",
+    "description": "BrowserUseDevice implementation. Spec TBD at implementation time based on T-adc-browser-use-eval-spike findings. Gated — do not sprint until spike returns a go verdict.\n\nProposed shape:\n- Determined by spike results. Likely:\n  agent_datacenter/devices/browser_use/device.py: BrowserUseDevice(BaseDevice)\n  capabilities() determined by spike question 1\n  restart() semantics determined by spike question 3\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/browser_use/ (new, post-spike)\n\nDesign rules:\n- oop-first: BrowserUseDevice class; full BaseDevice contract\n\nScope boundary:\nIN: BrowserUseDevice implementing full contract per spike findings\nOUT: any spec beyond what spike determines\n\nTest plan:\n- TBD per spike. At minimum: BrowserUseDevice() instantiates; passes contract test suite",
+    "completed_at": "2026-04-27T22:37:19.600717+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e9de5dff-6bd8-404e-8b2c-18695858401b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

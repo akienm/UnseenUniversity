@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-consequence-agent-taxonomy.20260601.170411297289",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-agent-taxonomy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T17:04:11.297289",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agent-taxonomy-2026-06-01"
+    ],
+    "tickets": [
+      "T-consequence-agent-taxonomy",
+      "T-device-registry-agent-class"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-agent-taxonomy",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: agent taxonomy + registry field",
+    "result": "All 4 predicted effects annotated: (1) class inflation — CLEAR, no new classes, concept node exists, latent risk from profile YAMLs lacking agent_class; (2) misclassification — CLEAR, all 7 device declarations correct; (3) Librarian confusion — CLEAR, platform-utility annotation explicit in code and palace; (4) Granny ignores agent_class — OCCURRED (by design), dispatch log and routing logic don't use agent_class, intentional deferral per decision doc",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-06-01T20:36:02.390056+00:00",
+    "created_at": "2026-06-01T17:04:11.297289+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agent-taxonomy-2026-06-01",
+    "description": "**What changed:** Three-class agent taxonomy (utility/specialized/general) added to vocabulary and registry. Every device now self-declares its class.\n\n**Predicted unintended effects:**\n- Class inflation: future developers add new classes without updating the concept node, causing vocabulary drift\n- Misclassification: a device claims 'general' to get broader routing even though it's utility-scoped\n- Librarian confusion: 'utility with platform annotation' is ambiguous; someone classifies it as 'specialized' and it diverges from intent\n- Granny routing assumption: Granny code somewhere assumes all non-CC workers are 'worker' tier and ignores agent_class — field exists but is never used\n\n**Signals to watch:**\n- New device PRs that don't include agent_class declaration\n- Registry listing where agent_class is missing or 'unknown'\n- Granny dispatch logs — does class appear in GRANNY_DISPATCH channel posts?\n\n**Gate condition:** Check when T-device-registry-agent-class closes.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Completion criteria:** Observation ticket — done when each predicted effect is annotated as occurred / clear / partial",
+    "completed_at": "2026-06-01T20:38:06.099164+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T20:36:02.390056+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a5871ac8-ac4c-485e-a79c-918e618c146e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

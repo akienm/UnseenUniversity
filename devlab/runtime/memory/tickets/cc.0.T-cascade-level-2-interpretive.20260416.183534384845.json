@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-cascade-level-2-interpretive.20260416.183534384845",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cascade-level-2-interpretive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T18:35:34.384845",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cascade-level-2-interpretive",
+      "T-substrate-experiment-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cascade-level-2-interpretive",
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "Cascade level 2: interpretive-edge BFS (replace stub with concrete impl)",
+    "result": "Level2InterpretiveTraversal concrete. Seeds from cortex.search, BFS via interpretive_traverse. Matches when traversal finds memories beyond seed set. 12 tests. Replaces stub in build_default_cascade.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T18:33:25.122510+00:00",
+    "related_to": null,
+    "description": "Replace _StubLevel for level_2_interpretive_traversal with a concrete implementation that uses cortex.interpretive_traverse() to BFS from query-relevant seed memories. Probes the interpretive edge graph for connections the exact-recall and widen-on-miss levels missed. Sub-ticket of T-substrate-experiment-cascade.",
+    "completed_at": "2026-04-16T18:35:34.384845+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "804ec951-db01-4965-a6e2-fe868a135b65",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-engram-memory-channel-and-trigger-target.20260401.231207495760",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-memory-channel-and-trigger-target"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T23:12:07.495760",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engram-memory-channel-and-trigger-target"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-memory-channel-and-trigger-target",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "MemoryChannel + BRANCHIF trigger-target syntax (D295, D296)",
+    "result": "MemoryChannel + BRANCHIF node_id#trigger syntax. 754 tests green.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Two small changes:\n\n1. Add MemoryChannel to emit_channels.py (D295): new EmitChannel named memory. key=memory_type (EPISODIC/PROCEDURAL/INTERPRETIVE/etc.), value=content string. Reads from basket: _mem_tags (list, default []), _mem_identity_weight (float, default 0.5), _mem_salience (float, default 0.5). Requires _cortex in basket — if absent log warning and return. Call cortex.store() or equivalent to deposit the memory. Register in get_registry().\n\n2. BRANCHIF node_id#trigger_name syntax in node_executor.py (D296): when BRANCHIF fires, check if target contains #. If so split on first #: node_id=left, trigger_name=right. Set result.next_node=node_id and result.next_trigger=trigger_name. If no #, existing behaviour (next_node=target, next_trigger=None). Add next_trigger: Optional[str] = None field to ExecutionResult.\n\n3. Update main.py traversal loop: when fetching next node, use _eng_result.next_trigger or __entry__ as the trigger passed to execute_node.\n\nFiles: wild_igor/igor/cognition/emit_channels.py, wild_igor/igor/cognition/node_executor.py, wild_igor/igor/main.py. Inertia: LOW/LOW/MEDIUM. Read each file before editing. Add tests for both features. Run full test suite after.",
+    "completed_at": "2026-04-01T23:12:07.495760+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "aab020ad-4c9a-4394-b8a1-0acf200c8b5e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

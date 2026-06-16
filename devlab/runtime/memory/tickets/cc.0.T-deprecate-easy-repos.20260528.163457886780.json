@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-deprecate-easy-repos.20260528.163457886780",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-deprecate-easy-repos"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:34:57.886780",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-deprecate-easy-repos",
+      "T-theigors-to-uu-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-deprecate-easy-repos",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Infrastructure"
+    ],
+    "title": "Archive python_diagnostic_base_class and ClaudeAndAkien GitHub repos",
+    "result": "archived python_diagnostic_base_class and ClaudeAndAkien on GitHub; removed local clones",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-28T16:34:57.886780+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Three repos are no longer the canonical home for their work and should be archived: python_diagnostic_base_class (micro-package superseded by UU), ClaudeAndAkien (agentic framework extracted into UU). agent_datacenter does not appear in the GitHub repo list — likely already renamed to UnseenUniversity. Validate no live imports before archiving.\n\n**Affected files:** None in UU codebase; local clones at ~/dev/src/ClaudeAndAkien and ~/dev/src/python_diagnostic_base_class\n**Design rules:** none\n**Scope boundary:** IN — validate no live imports from these repos; archive on GitHub (not delete — preserve history); remove or archive local dev clones; OUT — do NOT touch ~/TheIgors local install (separate T-theigors-to-uu-migration ticket handles that)\n**Test plan:** Igor and superclaude start cleanly after local clones removed; GitHub shows repos archived; grep -rn 'from ClaudeAndAkien\\|import ClaudeAndAkien\\|python_diagnostic_base_class' devices/ lab/ returns 0 hits",
+    "completed_at": "2026-05-28T16:37:09.668405+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T16:34:57.937755+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e093ffbe-9552-49ff-bf49-01d0dcecff00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

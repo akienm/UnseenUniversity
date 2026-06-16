@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-recall-in-skills.20260528.190126948155",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-recall-in-skills"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T19:01:26.948155",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-and-book-2026-05-28"
+    ],
+    "tickets": [
+      "T-librarian-retrieval-service",
+      "T-recall-in-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-recall-in-skills",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Memory",
+      "Workflow"
+    ],
+    "title": "Add recall(X) gate to sprint-ticket, context-load, sorted skills",
+    "result": "Added recall(X) step to sprint-ticket step 5, context-load step 2.5, sorted step 2.5 — recall-first before bash/inference",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "created_at": "2026-05-28T19:01:26.948155+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-and-book-2026-05-28",
+    "description": "Update three skill files to call recall(X) before reaching for bash/grep, making stored knowledge the first lookup. Changes: (1) sprint-ticket Step 5 (infrastructure brief): add recall(ticket title + key terms) before the bash infrastructure brief script — surface related prior work first; (2) context-load: add recall(today's focus area) as part of orient step — before reading slate; (3) sorted Step 2.5 (audit-design): add recall(decision topic) to surface related decisions before the audit runs.\n\nIn each case: if recall returns relevant results, surface them inline. If empty, proceed to bash. The pattern is recall-first, bash as fallback — not the reverse.\n\n**Affected files:** ~/.claude/skills/sprint-ticket/SKILL.md, ~/.claude/skills/context-load/SKILL.md, ~/.claude/skills/sorted/SKILL.md\n**Design rules:** recall call must be mandatory (a step, not a suggestion); empty recall result is fine — proceed without blocking; recall before bash, not after\n**Scope boundary:** IN — three skill files updated with recall step; OUT — implementing recall(X) itself (that's T-librarian-retrieval-service)\n**Test plan:** read each updated skill file and verify recall step appears before bash investigation in the specified locations; recall step includes the right query terms for each context",
+    "completed_at": "2026-05-28T19:36:27.083014+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T19:34:09.452252+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T19:01:27.003273+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "18ccfc68-d3ce-4ecf-8a55-c41f0f274b02",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

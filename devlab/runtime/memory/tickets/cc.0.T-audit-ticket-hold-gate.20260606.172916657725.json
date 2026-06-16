@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-audit-ticket-hold-gate.20260606.172916657725",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-ticket-hold-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T17:29:16.657725",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hold-gate-enforcement-2026-06-06"
+    ],
+    "tickets": [
+      "T-audit-ticket-hold-gate",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-ticket-hold-gate",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Quality"
+    ],
+    "title": "/audit-ticket: flag hold-status without named dependency",
+    "result": "Check 18 added to /audit-ticket: hold-status requires T-xxx dependency or Akien: action; AMEND if absent; output format + hard rules updated; synced to ~/.claude/skills/",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": "I intend that no hold-status ticket passes /audit-ticket without explicitly naming what it is blocked on.",
+    "claimed_at": "2026-06-06T17:39:37.638205+00:00",
+    "created_at": "2026-06-06T17:29:16.657725+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-hold-gate-enforcement-2026-06-06",
+    "description": "**Problem:** Tickets are occasionally filed with status=hold for vague reasons (imagined external impact, hypothetical future components) rather than real dependencies. These drift stale and confuse the queue.\n\n**Proposed shape:** Add a hold-validation check to /audit-ticket: if the drafted ticket has status=hold, the description must contain either a named ticket ID (T-xxx) being blocked on, or an explicit 'Akien:' action required. If neither present, return AMEND with the specific missing item.\n\n**Affected files:** skills/audit-ticket.md\n\n**Design rules:** Holds without named dependencies are not permitted (CC memory 2026-06-06; feedback: CC has history of spurious holds).\n\n**Scope boundary:** One check added to audit-ticket skill. No code changes.\n\n**Completion criteria:** skills/audit-ticket.md contains the hold-dependency check; a draft ticket with status=hold and no named dependency returns AMEND when /audit-ticket runs.",
+    "completed_at": "2026-06-06T17:41:06.366894+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-annotator-delta-update.20260612.172200154717",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-annotator-delta-update"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T17:22:00.154717",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-classifier-device-architecture-2026-06-12"
+    ],
+    "tickets": [
+      "T-annotator-delta-update"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-annotator-delta-update",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Classifier",
+      "Palace"
+    ],
+    "title": "Codebase annotator: delta update on ticket close via git diff",
+    "result": "file_paths delta mode in annotator; _annotator_delta_update in cc_queue.py close hook; timestamps advance for touched nodes; 6 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "intention": "I intend that codebase tree nodes are re-annotated on ticket close for only the files touched, keeping the tree fresh without nightly latency.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T17:22:00.154717+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-classifier-device-architecture-2026-06-12",
+    "description": "On ticket close, Classifier device receives score() call with files_actually_touched. Run git diff --name-only for the ticket's commits, re-annotate only those files, update palace.codebase nodes. This is the primary freshness mechanism; nightly sweep is catchall for out-of-band changes.\n\n**Affected files:** devices/classifier/annotator.py (delta method), cc_queue.py or ticket close hook (trigger point)\n**Design rules:** log every interface crossing; non-fatal — if annotator fails, ticket closes successfully regardless\n**Scope boundary:** In scope: delta re-annotation on close + score() precision/recall logging. Out of scope: contention detection, multi-project.\n**Completion criteria:** T-annotator-delta-update is CLOSED; ticket close triggers re-annotation of touched files; palace node updated_at timestamp advances for those files; annotator failure does not block ticket close.",
+    "completed_at": "2026-06-13T23:11:42.693427+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T23:09:43.399118+00:00",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

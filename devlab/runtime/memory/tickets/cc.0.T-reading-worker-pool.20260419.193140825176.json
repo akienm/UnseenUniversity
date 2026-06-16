@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-reading-worker-pool.20260419.193140825176",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-worker-pool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T19:31:40.825176",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-extract-prompt-zero-tolerance",
+      "T-reading-worker-pool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-worker-pool",
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "Reading",
+      "Infrastructure",
+      "Cost"
+    ],
+    "title": "Stream-of-blocks worker pool for reading-list re-run (local workers + capped cloud fallback)",
+    "result": "MVP shipped: reading_campaign.py with create/enqueue/claim/mark/status + worker_loop + master-list parser. Per-chunk extraction helper (process_one_chunk) added to reading_engine. 7 tests pass. Follow-ups noted in commit: multi-machine subprocess orchestration (not needed since cluster_router fans implicitly), visibility timeout + worker-death reclaim, actual-token-count Sonnet cost gauge. Commit abe23c52. Ready to drive the $40 re-run once master-list is expanded into blocks.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T19:26:05.973191+00:00",
+    "related_to": null,
+    "description": "Akien 2026-04-19: 'the entire reading list is a set of blocks... we allocate whatever block is next to whatever resource is next available.' Replaces the current serial-per-book pipeline with a work-queue that lets multiple workers (local + bounded cloud) drain the list in parallel.\n\n## Design\n\n### Block\nOne block = one chunk = 15 sentences (today's chunk_size). Not a whole book — finer granularity means a fast worker chews through many blocks while a slow one handles one. The master reading list expands into the queue: 46 calibre books × ~100 chunks + 323 URLs × ~5 chunks = roughly 5,000-6,000 blocks.\n\n### Priority\nStrict priority ordering per the master list (lab/TheIgorsProject/akien/Readings/20260411.MasterReadingList.txt). Igor-identity (Pratchett with Igors) first, Akien-identity/blog second, Brains&Programming third, and so on. Queue is priority-ordered at insert time; workers pull the highest-priority available block.\n\n### Workers\n- **Local workers**: one per online Ollama box (akienyoga9i rank 1, akiendell rank 2, akienyogai7 rank 3, akiendelllinux rank 4). Each worker is a subprocess with its own qwen2.5:7b session. in_use_hours from machines table respected — workers pause when the machine's 'human using it' window is active.\n- **Cloud fallback worker** (NOT a co-equal peer in the pool): activated only on local-retry. The pool's default spend discipline is 'training = local, cloud only on failure.'\n\n### Retry policy (per block)\n1. Local attempt. If succeeds, block done.\n2. On local failure (timeout, parse error, 0 nodes despite new prompt): ONE retry via Sonnet 4.6 (tier.4 OR). If succeeds, block done (but marked model_used=claude-sonnet, tier=cloud).\n3. If Sonnet also fails: mark block 'failed', flag for Akien+CC review. Do NOT infinite-retry.\n\n### Budget\n$40 hard cap for this re-run campaign. Tracked as a named budget envelope separate from Igor's general OR spend. When envelope hits $40, cloud fallback shuts off and remaining blocks either stay local-only or get marked 'awaiting_budget'. Akien decides at threshold.\n\n### Cost tracking per book AND per task\nNew dimension on the existing costs.log: campaign_id + item_id (book or URL). Rollup tool that answers 'how much did book X cost?' and 'how much has campaign Y spent?' Likely requires extending forensic_logger.log_reasoning_call() to accept campaign_id + item_id, plus a tool/SQL for aggregation. May need minor inference_gateway changes (per Akien note: 'may require more changes to the inference proxy').\n\n## Phases\n1. Block queue + priority insert from master list — read reading_list (clan.reading_list), expand each item into chunks at start time, insert with priority field. Worker pulls from priority-ordered queue.\n2. Local worker skeleton — subprocess pool, each pulls next block, processes, deposits, acks. Respect machines.in_use_hours.\n3. Retry path — wire Sonnet fallback via inference_gateway (tier.4), gated on retry_count == 1. Budget envelope check before cloud call.\n4. Cost tracking — campaign_id + item_id on log_reasoning_call; rollup tool.\n5. Re-run: actually kick the $40 campaign.\n\n## Out of scope\n- Rewriting reading_engine.process_blob — it stays as the unit of work (called per-block by each worker)\n- Changing the extraction prompt (already tweaked in T-extract-prompt-zero-tolerance)\n- Anything requiring the dual-path 'run both local AND cloud for every block' framing — we discarded that in favor of this\n\n## Acceptance\n- Master list items in priority order become queue blocks\n- Multiple local workers (or one local worker if other machines busy) drain the queue\n- A block that fails local ONCE retries via Sonnet exactly ONCE\n- Budget aware: cloud fallback halts when $40 envelope exhausted\n- Cost report: 'book X cost $N, campaign Y total $M'\n- $40 campaign runs; results visible as: how many blocks succeeded local / succeeded cloud-retry / failed; per-item costs\n\n## Provenance\nAkien 2026-04-18 initial framing ('next block to next available worker'); 2026-04-19 refinement (one chunk per block, priority-ordered, $40 budget, sonnet retry on local failure, per-book cost tracking, permit inference-proxy changes if needed).",
+    "completed_at": "2026-04-19T19:31:40.825176+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "590ebabc-f761-4ecf-85fe-ef38c19675bd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

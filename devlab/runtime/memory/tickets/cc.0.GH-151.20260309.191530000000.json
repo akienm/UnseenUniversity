@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-151.20260309.191530000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-151"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-09T19:15:30",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-151"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-151",
+    "title": "Epic: Productization — making Igor installable, configurable, and multi-user",
+    "result": "Superseded by slate-based tracking. Productization work tracked via daily slates, not a separate epic.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-09T19:15:30Z",
+    "description": "GitHub issue #151. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-18T02:48:23.302735+00:00",
+    "github_issue": 151,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dce9dc61-0da9-46b2-876e-5df80672d2d3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-predictive-coding.20260403.171537694425",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-predictive-coding"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:15:37.694425",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-predictive-coding",
+      "T-self-training-loop",
+      "T-trails-infra"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-predictive-coding",
+    "title": "Predictive coding signal — cloud escalations emit prediction errors",
+    "result": "Already fully implemented (D279). _deposit_prediction_error() in main.py — fires after cloud escalation, deposits NARRATIVE_GAP(type=prediction_error_gap) to cortex. milieu.ingest_surprise() updates arousal/dominance on tier mismatch. NE._train_prediction_error() reinforces/weakens graph links. test_prediction_error.py has 8 tests. test_predictive_coding.py tests refractory behavior.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": "T-self-training-loop",
+    "description": "D277 gap. Biological pattern: brain continuously predicts input tier; updates weights when wrong. Igor implementation: after each turn, compare BG complexity estimate vs actual tier used. error = actual_tier - predicted_tier. If error > 0: emit NARRATIVE_GAP(type=prediction_error, intent=inferred_intent, tension proportional to tier gap). This feeds the self-training loop — cloud escalations become training signals pointing to exactly which intent class needs a plug. Files: main.py (post-turn hook), basal_ganglia.py (log predicted_tier in scoring), narrative_engine.py (emit gap). Inertia: MEDIUM (cognition). Related: T-self-training-loop, T-trails-infra.",
+    "completed_at": "2026-04-03T17:15:37.694425+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0e3a32cb-edc3-4784-8b4a-e224bb0cfa42",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

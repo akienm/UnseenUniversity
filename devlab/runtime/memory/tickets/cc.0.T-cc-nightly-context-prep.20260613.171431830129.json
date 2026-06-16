@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-cc-nightly-context-prep.20260613.171431830129",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-nightly-context-prep"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T17:14:31.830129",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-nightly-learning-2026-06-13"
+    ],
+    "tickets": [
+      "T-cc-nightly-context-prep"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-nightly-context-prep",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "Learning",
+      "CC System"
+    ],
+    "title": "CC Nightly: prepare tomorrow's context briefing",
+    "result": "context prep script + 15 tests; Nanny schedule wired at 03:15/03:30",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.6,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-13T17:14:31.830129+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-nightly-learning-2026-06-13",
+    "description": "Generate tomorrow's context briefing from today's session.\n\n**Affected files:** palace.sessions.TOMORROW.brief (generated)\n**Design rules:** context-optimization\n**Scope boundary:** Generate briefing showing in-flight, high-priority tickets, key patterns, pending approvals\n**Completion criteria:**\n  1. Extract in-flight from slate and decision records\n  2. Show high-priority tickets (priority > 0.6)\n  3. Show pending decisions (status: design)\n  4. List patterns validated today\n  5. Generate palace.sessions.DATE+1.brief node\n  6. Test: /context-load tomorrow shows prepared briefing",
+    "completed_at": "2026-06-13T23:50:50.697179+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-13T17:14:31.830156+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "41b6b12e-06c1-4569-97a8-a4134e92db80",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

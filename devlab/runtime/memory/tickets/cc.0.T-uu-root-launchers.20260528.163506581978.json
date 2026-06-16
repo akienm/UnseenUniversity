@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-uu-root-launchers.20260528.163506581978",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-root-launchers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T16:35:06.581978",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-root-launchers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-root-launchers",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "UX"
+    ],
+    "title": "UU root launchers: ./superclaude, ./igor, ./uu — platform-smart install + launch",
+    "result": "igor + superclaude Python launchers at root; instance discovery (0→wizard,1→auto,>1→prompt,--id override); .ps1 Windows stubs",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "created_at": "2026-05-28T16:35:06.581978+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "A user should be able to clone UnseenUniversity, cd to the root, and run ./superclaude, ./igor, or ./uu and have everything work. Each launcher: detects OS platform, bootstraps venv if needed, reads ~/.UnseenUniversity/<device>/config.cfg, handles fresh-install prompts. Implementation hidden from user. Elevation via sudo if needed.\n\nInstance discovery logic (no env var required):\n  count(~/.UnseenUniversity/Igor-*) == 0 → run fresh-install wizard (ask for instance name, optionally DB URL)\n  count(~/.UnseenUniversity/Igor-*) == 1 → use it, no prompt\n  count(~/.UnseenUniversity/Igor-*) > 1 → list choices, prompt which to start\n  --id flag → override discovery\n\nThese are thin root launchers that delegate to bin/superclaude and devices/igor/setup_assets/installer.py. Windows gets .ps1 equivalents.\n\n**Affected files:** UnseenUniversity/superclaude (new), UnseenUniversity/igor (new), UnseenUniversity/uu (new), UnseenUniversity/superclaude.ps1 (new), UnseenUniversity/igor.ps1 (new), UnseenUniversity/uu.ps1 (new); devices/igor/setup_assets/installer.py (add discovery logic)\n**Design rules:** platform-smart (bash + .ps1 pair), discovery-first-then-prompt, no-required-env-vars\n**Scope boundary:** IN — thin launchers + discovery logic + fresh-install prompts; OUT — do not rewrite existing installer.py beyond adding discovery; Windows .ps1 files are stubs that call the bash equivalents via WSL if WSL available, else native\n**Test plan:** Fresh UU clone: ./igor → wizard runs, bootstraps, launches; existing single instance: ./igor → starts without prompts; two instances present: ./igor → lists both, asks; --id flag overrides; pytest passes",
+    "completed_at": "2026-05-28T23:30:10.863532+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T16:35:06.633428+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9175a48a-526f-4a56-8879-f2a873cf9834",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

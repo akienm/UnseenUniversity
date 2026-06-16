@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-walk-03-consult-log-gate.20260429.161114000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-03-consult-log-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T16:11:14",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-igor-programs-himself"
+    ],
+    "tickets": [
+      "T-cc-walk-03-consult-log-gate",
+      "T-consult-log-test-mode-gate",
+      "T-igor-programs-himself"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-03-consult-log-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Autonomy",
+      "CCWalk"
+    ],
+    "title": "CC walk: Igor gates consults.log behind IGOR_TEST_MODE",
+    "result": "Target T-consult-log-test-mode-gate already done (commit 13251e0c, Igor autonomous). Walk admin close.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.87,
+    "claimed_at": null,
+    "created_at": "2026-04-29T16:11:14Z",
+    "related_to": null,
+    "decision_id": "T-igor-programs-himself",
+    "description": "Target: T-consult-log-test-mode-gate. Stale proposal+approved_plan cleared. File: cognition/consult.py.\n\nChecklist:\n1. Set priority=0.95 on target\n2. Watch claim + PLAN — consult.py only\n3. Intercept if brainstem proposal appears\n4. Verify commit + done\n\n**Affected files:** wild_igor/igor/cognition/consult.py\n**Design rules:** none\n**Scope boundary:** IN — scaffold T-consult-log-test-mode-gate\n**Test plan:** target done.",
+    "completed_at": "2026-05-02T03:23:04.396956+00:00",
+    "github_issue": 555,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a82941aa-dab9-4844-98c1-f2ff64456453",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

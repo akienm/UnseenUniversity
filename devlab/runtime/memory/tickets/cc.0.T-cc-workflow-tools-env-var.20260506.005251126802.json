@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-workflow-tools-env-var.20260506.005251126802",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-workflow-tools-env-var"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T00:52:51.126802",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-portability-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-workflow-tools-env-var",
+      "T-lab-migration",
+      "T-lab-migration-to-agent-datacenter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-workflow-tools-env-var",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Skills",
+      "Portability"
+    ],
+    "title": "CLOSED: Replace hardcoded ~/TheIgors paths in skills with CC_WORKFLOW_TOOLS env var",
+    "result": "CC_WORKFLOW_TOOLS=/home/akien/TheIgors/lab/claudecode added to ~/.bashrc; all 29 skill files updated in both ~/.claude/skills/ and agent_datacenter/skills/ (commit 7bbcc26)",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-05-06T00:49:12.183141+00:00",
+    "related_to": null,
+    "decision_id": "D-skills-portability-2026-05-05",
+    "description": "29 skill files hardcode ~/TheIgors/lab/claudecode/ paths. This breaks on any machine where the repo lives elsewhere and blocks T-lab-migration-to-agent-datacenter. Define two env vars in shell profiles: AGENT_DATACENTER_HOME (repo root) and CC_WORKFLOW_TOOLS (derived tools dir, currently ~/TheIgors/lab/claudecode). Do a sed-replace pass over all 29 skill files to use ${CC_WORKFLOW_TOOLS} instead.\n\n**Affected files:** All 29 ~/.claude/skills/*/SKILL.md files; ~/.bashrc or ~/.zshrc for env var setup; optionally agent_datacenter/scripts/set-env.sh as installer helper. Also update repo copies under ${AGENT_DATACENTER_HOME}/skills/.\n**Design rules:** portability-first (from this decision). No TheIgors imports in agent_datacenter side.\n**Scope boundary:** IN: env var definition, skill file path replacement. OUT: moving tool files (T-lab-migration), Windows support (later).\n**Test plan:** After change, source ~/.bashrc && echo $CC_WORKFLOW_TOOLS returns current path; python3 \"${CC_WORKFLOW_TOOLS}/cc_queue.py\" list runs without error; grep -rl ~/TheIgors/lab/claudecode ~/.claude/skills/ returns empty.\n**Pass condition:** grep -rl '~/TheIgors/lab/claudecode' ~/.claude/skills/ returns empty and all skill invocations continue to work from a fresh shell.",
+    "completed_at": "2026-05-06T00:52:51.126802+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "348e62cc-20e0-4d50-8bc5-b4dfb6745625",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

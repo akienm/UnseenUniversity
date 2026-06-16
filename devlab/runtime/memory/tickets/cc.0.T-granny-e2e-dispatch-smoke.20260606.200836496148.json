@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-granny-e2e-dispatch-smoke.20260606.200836496148",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-e2e-dispatch-smoke"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:08:36.496148",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-granny-cc0-dispatch-decision",
+      "T-granny-e2e-dispatch-smoke"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-e2e-dispatch-smoke",
+    "gate": "T-granny-cc0-dispatch-decision",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Testing",
+      "Dispatch"
+    ],
+    "title": "Granny: end-to-end dispatch smoke test (dispatch → /sprint-ticket runs → ack recorded)",
+    "result": "8 smoke tests: dispatch→ack→started→timeout chain, availability gate, one-at-a-time gate",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.75,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-06T20:08:36.496148+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** No automated test verifies the full Granny→CC dispatch chain end-to-end. Individual pieces are tested but the integration is untested, which means breakage (like the 2026-06-05 barrage) isn't caught before it hits production.\n\n**What to build:** Integration test (can use mock tmux / stub send-keys) that: (1) puts a sprint ticket in the queue, (2) triggers Granny poll cycle, (3) verifies the correct send-keys command was issued with the right session name, (4) verifies dispatch state is recorded correctly.\n\n**Affected files:** tests/granny/, possibly devices/granny/daemon.py if testability improvements needed\n**Design rules:** Integration tests hit real Postgres; mock at the tmux/subprocess boundary only\n**Scope boundary:** The dispatch→CC side only. DickSimnel dispatch is a separate concern.\n**Completion criteria:** Test runs green in CI. Covers: ticket dispatched, correct tmux session targeted, dispatch state updated in DB/queue.",
+    "completed_at": "2026-06-06T21:41:23.922558+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "89d32b76-2867-4525-a421-d87db04003d1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

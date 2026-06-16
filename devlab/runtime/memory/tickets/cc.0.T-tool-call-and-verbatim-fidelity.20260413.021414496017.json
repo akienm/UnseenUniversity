@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-tool-call-and-verbatim-fidelity.20260413.021414496017",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tool-call-and-verbatim-fidelity"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T02:14:14.496017",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tool-call-and-verbatim-fidelity"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tool-call-and-verbatim-fidelity",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Tool-call parser flat-key fallback + verbatim TWM trace for cross-turn fidelity",
+    "result": "f0ad6dab — Bug 1: _extract_tool_call flat-key fallback (treats top-level JSON keys other than 'name' as kwargs when nested parameters/arguments/args absent). Bug 2: parallel verbatim TWM trace at ingestion (category='verbatim_source', full untruncated content, 1800s TTL, urgency 0.9) + _build_verbatim_block injected into thread context prefix as labeled section alongside truncated gist. Biomimetic framing per conversation: Fuzzy Trace Theory gist+verbatim as parallel tracks, attention routes to the category the operation needs. Infrastructure already supported this — twm_read(category=...) is first-class SQL filter. 5 new tests (4 parser shapes + 1 live cortex round-trip). 1971 tests pass, zero regressions. Scope: user input only. Igor's own reply verbatim deferred to T-verbatim-trace-for-igor-replies-revisit (not-before 2026-04-19).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T02:07:25.378747+00:00",
+    "related_to": null,
+    "description": "Two bugs surfaced from 2026-04-12 session when Akien asked Igor to read /home/akien/TheIgorsProject/akien/Readings/20260412.ClaudeBecameABiomimeticEngineer.txt.\n\nBUG 1: Tool-call parser in main.py:1616 _extract_tool_call too strict. LLM emitted flat JSON {\"name\": \"read_file\", \"path\": \"...\"} with path as top-level sibling of name. Parser tried parameters/arguments/args keys only, defaulted to {}, dispatched read_file() with zero args. Fix: when none of the nested-arg keys exist, treat every top-level JSON key other than name as the kwargs. ~5 lines.\n\nBUG 2: Cross-turn verbatim fidelity loss. On turn 1 Igor had the full user_input. On turn 2 Igor fetched prior exchanges via _thread_context_prefix (main.py:2042) which renders each user turn as user_turn[:200] — hard display truncation. Akien's message was ~270 chars; chop at 200 landed near '.../20', which was exactly what Igor reported seeing. Igor was NOT confabulating — he accurately reported the only version of the message his attention could access on turn 2.\n\nBIOMIMETIC FRAMING (from conversation with Akien):\n\nDon't raise the truncation limit and don't extract key-facts into a sidecar. Fuzzy Trace Theory: humans encode every perception as BOTH a gist trace (compressed, narrative-optimized) AND a verbatim trace (full fidelity, available for precise dereference). Separate parallel tracks, not one lossy version with a handle. Attention routes to verbatim when the operation needs fidelity.\n\nImplementation: seed a parallel verbatim TWM trace at user-input ingestion at category='verbatim_source', full untruncated content, TTL aligned to thread buffer lifetime. Gist stays in narrative-compression category unchanged. Prompt builder includes recent verbatim_source entries intact in a labeled section alongside truncated gist history. Attention learns which category fits which operation — no pointers, no extraction prepass, no structured sidecar.\n\nINFRASTRUCTURE CONFIRMED: cortex.py:3656 twm_read(category=...) already supports first-class category-biased scans via SQL filter (line 3687-3689). No architectural change needed.\n\nSCOPE (this ticket):\n1. Tool-call parser flat-key fallback in _extract_tool_call (main.py:1616)\n2. Verbatim TWM push at user-input ingestion — find the ingestion site, add twm_push(source='user_input_verbatim', content_csb=<full text>, salience=0.85, ttl_seconds=<thread_buffer_ttl>, category='verbatim_source', thread_id=...)\n3. Prompt builder extension — wherever _thread_context_prefix feeds prior-turn context, also query twm_read(category='verbatim_source', thread_id=...) and inject as labeled section '[Recent user input, full text]: ...'\n\nSCOPE BOUNDARY (will NOT do):\n- No verbatim trace for Igor's OWN replies — separate revisit ticket gated to not-before 2026-04-19\n- No fidelity-classifier, no key-fact extraction prepass, no blob pointers, no structured sidecar\n- Won't touch narrative-compression truncation (stays at 200 — it's fine for its role)\n\nTESTS:\n- Tool-call parser accepts flat {'name': 'read_file', 'path': '...'} AND nested {'name': 'read_file', 'arguments': {'path': '...'}}\n- User-input ingestion pushes a verbatim_source TWM observation with full untruncated content\n- Prompt builder includes verbatim_source entries when thread_id matches\n- End-to-end regression: simulate the exact failing turn 2 scenario, assert full path is in Igor's reasoning context\n\nINERTIA: MEDIUM across all three sites. main.py extractor + ingestion site + prompt builder. No brainstem/, no models.py, no reasoners/base.py.\n\nFORENSIC LOGGING: log every verbatim_source push (turn, thread, content length) and every verbatim_source retrieval for prompt building (thread, count retrieved) to logs/verbatim_trace.log.",
+    "completed_at": "2026-04-13T02:14:14.496017+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "21187122-f270-462e-8a7a-c2b387feed5e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

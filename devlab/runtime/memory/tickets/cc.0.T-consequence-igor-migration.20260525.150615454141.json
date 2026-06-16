@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-igor-migration.20260525.150615454141",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-igor-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-25T15:06:15.454141",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-into-adc-2026-05-25"
+    ],
+    "tickets": [
+      "T-consequence-igor-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-igor-migration",
+    "gate": "2026-06-08",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Architecture"
+    ],
+    "title": "Consequence check: Igor migration to devices/igor/",
+    "result": "Migration complete: 15 wild_igor refs all importorskip tests or doc comments, no live imports; Igor startup clean (checked tmux + logs); no 'wild_igor' import errors in channel. Effect: clear.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-25T15:06:15.454141+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-into-adc-2026-05-25",
+    "description": "**What changed:** Igor's 273-file cognition codebase moved from TheIgors/wild_igor/ into UnseenUniversity/devices/igor/ with imports rewritten from wild_igor.igor.* to devices.igor.*\n\n**Predicted unintended effects:**\n- Stale `wild_igor` references in CC skills, habits DB, or palace notes that weren't caught by the import rewrite\n- TheIgors lab/ scripts that assumed wild_igor/ exists and now fail silently\n- Any hardcoded paths in igor.switches.cfg or IGOR_HOME env setup that point to wild_igor/\n- MCP tool registrations that reference old module paths\n- Igor self-reports (habit fire logs, NE outputs) that reference old file paths becoming confusing in forensics\n\n**Signals to watch:** Igor startup failures (tmux session not alive); `grep -rn wild_igor` returning hits in unexpected places; test failures referencing wild_igor; channel messages from Igor containing import errors\n\n**Gate condition:** Check by 2026-06-08. All signal checks clean.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": "2026-06-02T19:51:27.791188+00:00",
+    "github_issue": 795,
+    "required_files": [],
+    "scraps_validated": "2026-05-25T15:06:15.454164+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c02db048-25b0-462a-839b-c9b84651123a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

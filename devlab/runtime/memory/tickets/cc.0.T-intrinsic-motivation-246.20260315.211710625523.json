@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-intrinsic-motivation-246.20260315.211710625523",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intrinsic-motivation-246"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T21:17:10.625523",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-intrinsic-motivation-246"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-intrinsic-motivation-246",
+    "body": "Implement #246. (1) Wire NE internal_state valence → milieu contribution as reward signal on resolution. (2) Seed curiosity habit: fires on idle state (low TWM urgency + no active attractor) → pushes observation to go explore something from watchlist/reading queue. Defer temporal credit assignment until Igor has enough episodic history. Prerequisite: T-self-observation-243 must be done first. Post plan before implementing.",
+    "size": "L",
+    "title": "Intrinsic motivation: curiosity + milieu-as-fuel (#246)",
+    "result": "PLAN (awaiting Designer approval):\n\n## Sub-task 1: NE resolution reward signal\n\nNE internal_state.valence → milieu is ALREADY wired via ingest_ne_state() called in background NE runs (~line 4389). Gap: this fires in background daemon, not on turn resolution. Task wants a per-turn reward hook.\n\n### File: wild_igor/igor/cognition/milieu.py (MEDIUM)\n- Add RESOLUTION_ALPHA_UP=0.15, RESOLUTION_ALPHA_DOWN=0.04 constants (between weak NE_ALPHA and strong direct-interaction ALPHA)\n- Add ingest_resolution_reward(valence: float): updates valence only with resolution alphas; contributes to global if delta >= SPIKE_THRESHOLD. Docstring: 'per-turn reward signal from NE on resolution of a turn'\n\n### File: wild_igor/igor/main.py (MEDIUM)\n- Add self._last_ne_valence: float = 0.0 to IgorProcess.__init__ (~line 416)\n- In NE background thread result handler (~line 4386-4389), also store: self._last_ne_valence = float(_ne_state.get('valence', 0.0))\n- Add _apply_resolution_reward() helper (~10 lines): if self._last_ne_valence != 0.0: calls milieu.get().ingest_resolution_reward(self._last_ne_valence); does nothing if milieu not init'd; never raises\n- Call self._apply_resolution_reward() at line 4336 just before 'return response_text' (only fires when turn actually produces a response, not on errors)\n\n## Sub-task 2: CuriositySource + idle curiosity habit\n\n### File: wild_igor/igor/cognition/push_sources.py (LOW)\nAdd CuriositySource(BasePushSource):\n- MIN_INTERVAL_SEC = 300; IDLE_URGENCY_MAX = 0.35; TOPIC_COOLDOWN_SEC = 600\n- push() logic:\n  1. Rate-limit check\n  2. Idle check: cortex.twm_get_attractor() returns None or weight < 0.1\n  3. Max urgency check: read TWM obs (limit=10), max urgency < IDLE_URGENCY_MAX\n  4. If idle: get watch habits → extract watch_label as topics; fallback 'reading queue' if empty\n  5. Pick topic not in recent cooldown (round-robin index stored on self)\n  6. Push ACTION_IMPULSE|CURIOSITY|topic={topic}|action=You have idle time. Explore or read about: {topic} to TWM with source='proactive_habit' (so _drain_action_impulses picks it up), salience=0.5, urgency=0.4, ttl=600\n  7. Track topic in self._topic_cooldowns = {topic: datetime}\n- Wire curiosity_source singleton into run_background_sources()\n\n### File: claudecode/seed_curiosity_habits.py (new, LOW)\nSeeds PROC_CURIOSITY_IDLE into live DB:\n- memory_type=PROCEDURAL, habit_type='context_inject' (falls through to LLM with context)\n- narrative: 'When the system has been idle with no active attractor, notice what is on the watchlist or reading queue and consider exploring one item proactively.'\n- metadata: {habit_type: 'context_inject', trigger: 'idle_time', curiosity_source: true}\n- No trigger matching needed (CuriositySource bypasses BG scoring)\n\n## Risk assessment\n- milieu.py changes: LOW — new method, new constants, no changes to existing code paths\n- main.py changes: LOW — storing one float, new helper method, one call at existing return site\n- push_sources.py: LOW — new class following established BasePushSource pattern; crashes silently\n- Seed script: LOW — standalone script, only adds one memory\n- Note: _drain_action_impulses already accepts source='proactive_habit' — CuriositySource reuses this path without main.py filter changes\n\n## What is NOT in scope (deferred per task body)\n- Temporal credit assignment (deferred until Igor has episodic history)\n- SelfObservationSource from T-243 (T-243 marked done; CuriositySource is independent)\n\nReady to implement on Designer approval.",
+    "status": "done",
+    "claimed_at": "2026-03-15T21:13:41.669217+00:00",
+    "depends_on": "T-self-observation-243",
+    "completed_at": "2026-03-15T21:17:10.625523+00:00",
+    "deposited_at": "2026-05-13T06:56:56.170524",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

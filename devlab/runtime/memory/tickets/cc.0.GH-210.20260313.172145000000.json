@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.GH-210.20260313.172145000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-210"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-13T17:21:45",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-210"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-210",
+    "title": "feat: self-directed rollback — Igor reverts his own bad changes",
+    "result": "cancelled — Igor coding retired (D-worker-daemon-retired-2026-05-25); self-directed rollback shelved",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 3,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-03-13T17:21:45Z",
+    "description": "## Imported from GH#210 (created 2026-03-13, open)\n\nWhen Igor makes a self-edit that regresses behavior, he should be able to roll it back himself — without human intervention. The arbiter only gets involved if he can't resolve it.\n\nAfter a self-edit + test cycle, if tests fail or behavior regresses, Igor calls `rollback_last_edit()` which reverts the last `patch_source_file` operation (git revert or file-level undo). All rollbacks logged to forensic_logger self_edit channel. Arbiter notification if rollback fails or for entangled multi-edit rollback.\n\nTools sketched: `rollback_last_edit(reason)`, `list_recent_self_edits(n)`, `rollback_to(commit_sha, reason)`.\n\nWhy this matters: without rollback, self-editing is dangerous at speed. With rollback, Igor can iterate aggressively — patch, test, revert if needed — knowing he can't permanently break himself. Part of epic #206.\n\n**Affected files:** wild_igor/igor/tools/self_edit.py (existing — extend with rollback functions); wild_igor/igor/tools/forensic_logger.py (self_edit channel logging); tests/test_self_edit_rollback.py.\n\n**Design rules:** docs-in-code; test-plan-or-why-not; safety-first (rollback path must be more reliable than the patch path).\n\n**Scope boundary:** IN — rollback_last_edit + list_recent_self_edits + rollback_to + forensic logging + arbiter escalation on rollback failure. OUT — automatic rollback triggers (Igor decides to call rollback explicitly); rollback across instances; rollback of non-self-edit commits.\n\n**Test plan:** tests/test_self_edit_rollback.py — patch a file, call rollback, assert file reverted; test entangled multi-edit rollback via rollback_to; test arbiter escalation when rollback itself fails. Smoke test: full patch+test+revert cycle on a throwaway test file.\n\n**Status:** Pending IGOR_SELF_EDIT_ENABLED unfreezing — useful but not actionable until self-edit is broadly enabled.",
+    "completed_at": "2026-05-29T03:18:34.855867+00:00",
+    "github_issue": 210,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "58ba7b98-9dcc-42ba-ab80-435c61675e85",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

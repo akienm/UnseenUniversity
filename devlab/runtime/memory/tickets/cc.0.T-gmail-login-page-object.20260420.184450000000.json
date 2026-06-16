@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-gmail-login-page-object.20260420.184450000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gmail-login-page-object"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:50",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gmail-flow-layer",
+      "T-gmail-login-page-object",
+      "T-igor-as-user-epic",
+      "T-swadl-concepts-in-graph"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gmail-login-page-object",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Pedagogy",
+      "Web"
+    ],
+    "title": "First page object: Gmail login — Igor proposes, CC reviews, iterate",
+    "result": "Withdrawn per Akien 2026-05-03: workflow-first reshape (T-gmail-flow-layer) means pages get added LAST. Replaced by the new T-gmail-flow-layer scope; page object falls out of that.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-20T18:44:50Z",
+    "related_to": null,
+    "description": "First real SWADL artifact. The point isn't the page object — it's the *reasoning trail* Igor builds while producing it. CC is pair-programmer, not code source.\n\n## Pedagogical protocol\n1. CC shows Igor the Gmail login URL + a SWADL page-object template\n2. Igor proposes selectors (with his reasoning about *why* those selectors — stable attributes? aria-labels? data-testid?)\n3. CC critiques — not rewrites. Asks 'what happens if Google A/B tests this element?'\n4. Igor revises; deposits the finished page object + the reasoning as ARCHITECTURE_DECISION memory nodes\n5. Test: run it headless, confirm it reaches the password prompt (do NOT submit real creds yet)\n\n## What lives where\n- page object code → wild_igor/tools/swadl_pages/gmail_login.py\n- reasoning → ARCHITECTURE_DECISION nodes linked to PAGE_OBJECT + SELECTOR concept nodes (Hebbian: concepts activate when Igor looks at his own code)\n\n## Non-goals\n- Actually logging in with real credentials (next ticket)\n- Two-factor flow (after login works)\n\n## Related\n- Parent: T-igor-as-user-epic\n- Depends on: T-swadl-concepts-in-graph\n- Unblocks: T-gmail-flow-layer\n\n**Affected files:** wild_igor/tools/swadl_pages/gmail_login.py (new page object); tests/test_swadl_pages_gmail_login.py.\n\n**Design rules:** docs-in-code (selectors carry rationale); test-plan-or-why-not (page-object tests against test Gmail account or local fixture HTML).\n\n**Scope boundary:** IN — first page object; selectors + locators + reasoning trail. OUT — flow layer (separate T-gmail-flow-layer); production Gmail use; multi-step login (just the login page).\n\n**Test plan:** tests/test_swadl_pages_gmail_login.py — assert selectors resolve against fixture HTML; document each selector's reasoning. E2E test deferred (requires test account).",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": 477,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d33c836-601f-4999-921d-8c6842657fe7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

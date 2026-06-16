@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-env-split-startup-check.20260421.161654756818",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-env-split-startup-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T16:16:54.756818",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-workflow-optimizations-2026-04-21"
+    ],
+    "tickets": [
+      "T-cc-env-split-startup-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-env-split-startup-check",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CCWorkflow",
+      "Safety"
+    ],
+    "title": "context-load step 0 — verify REAL_ANTHROPIC_API_KEY is set and != Igor's OR key",
+    "result": "Added env key safety check as Step 0 in context-load SKILL.md — verifies REAL_ANTHROPIC_API_KEY and warns if OPENROUTER_API_KEY leaks into CC env",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-04-21T16:16:14.990798+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-workflow-optimizations-2026-04-21",
+    "description": "Verify at session startup that REAL_ANTHROPIC_API_KEY is set and distinct from Igor's OpenRouter key. Add Step 0 to `/context-load`: read $REAL_ANTHROPIC_API_KEY (must be non-empty, must start with `sk-ant-`), read $OPENROUTER_API_KEY (must be empty or warn loudly), confirm key handoff from `superclaude` was clean. Output one-line 'env: CC key OK, Igor key absent' on success, surface failure to Akien inline. Scope: startup invariant only. Files: context-load/SKILL.md. Risk: none (pure safety check).\n\ntest_plan: (1) Run context-load with OPENROUTER_API_KEY set — assert loud warning printed. (2) Run with REAL_ANTHROPIC_API_KEY unset — assert error surface. (3) Normal context-load still completes.",
+    "completed_at": "2026-04-21T16:16:54.756818+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "36057916-0427-4efe-b0ee-20c93c740a07",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

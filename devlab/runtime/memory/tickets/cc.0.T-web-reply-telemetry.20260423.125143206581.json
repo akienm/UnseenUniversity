@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-web-reply-telemetry.20260423.125143206581",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-reply-telemetry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T12:51:43.206581",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-reply-telemetry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-reply-telemetry",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "WebReplyPath",
+      "Observability",
+      "UtilityCloset"
+    ],
+    "title": "Per-reply timing + drop telemetry on utility_closet_client — stop losing Igor's web replies silently",
+    "result": "Per-reply telemetry shipped. _post_with_telemetry + _classify_outcome + send_message wire. Drops now post '[web_reply] ✗ session=<id> drop=<outcome> elapsed=<N>ms: <preview>' to channel. 11 new tests, 29 total. Confirmed against live drop observed 064206 this morning. d5186515",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-23T02:32:45.934124+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Akien (2026-04-22): 'it's annoying to have to go find the replies in the noise.' Symptom: some Igor replies never appear in the web UI window. Working diagnosis (confirmed 2026-04-22): NOT related to the pe_chain pre-flight socket.recv timeout — pre-flight runs in a subprocess, doesn't share connection pool or event loop with the reply path. The web-reply path is its own thing: wild_igor/igor/web/utility_closet_client.py:send_message → urllib.urlopen POST to UC on port 8082, 30s timeout, WARN-on-fail (silent drop from Igor's perspective once logged).\n\nFix: add per-reply timing + drop telemetry so we can see WHICH replies are dropping and WHY.\n\n1. Wrap the POST in timing: log elapsed_ms per call (INFO on success, WARN on timeout/5xx, ERROR on connection refused).\n2. Include: session_id, reply-preview (first 80 chars), byte size, HTTP status (if any), elapsed_ms, outcome (delivered / timeout / 4xx / 5xx / connection_error).\n3. Feed a counter into the existing proprioception ring: 'web_reply_drop' category with reason tag. Lets us see drop-rate over time in the diagnostic surface.\n4. If the POST times out, DO NOT silently continue — post a channel diagnostic '[web_reply] ✗ session=<id> drop={reason}' so CC/Akien can spot the drop in real time.\n\nSeparate ticket covers the root cause of the drops (UC server load, downstream hand-off, etc.) — this one just makes drops VISIBLE so root-cause is diagnosable.\n\n**Affected files:** wild_igor/igor/web/utility_closet_client.py (add timing+drop telemetry around send_message), wild_igor/igor/memory/cortex.py (maybe: if proprioception write helper lives there), tests/test_utility_closet_client.py (new or existing).\n**Design rules:** docs-in-code (timing-log format documented in _post docstring), test-plan-or-why-not.\n**Scope boundary:** IN — timing+outcome logging, channel diagnostic on drop, proprioception counter. OUT — fixing WHY drops happen (separate follow-up ticket once we have telemetry data), UC server-side telemetry, retry logic.\n**Test plan:** (a) mock urlopen success → expect INFO log with elapsed_ms + outcome=delivered; (b) mock urlopen timeout → expect WARN log + channel diagnostic post + outcome=timeout; (c) mock connection refused → expect ERROR log + drop counter increment; (d) reply preview in log is capped at 80 chars (no PII/noise bloat).",
+    "completed_at": "2026-04-23T12:51:43.206581+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "383a1837-3188-4abe-8a99-32a1bc837e98",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

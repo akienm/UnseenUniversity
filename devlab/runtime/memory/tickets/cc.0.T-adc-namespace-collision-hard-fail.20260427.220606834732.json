@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-namespace-collision-hard-fail.20260427.220606834732",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-namespace-collision-hard-fail"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:06:06.834732",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-namespace-collision-hard-fail",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-namespace-collision-hard-fail",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: device registration hard-fails on namespace collision",
+    "result": "Skeleton.register_device() now checks registry status: raises RegistrationError if online/blocked, allows reattach if offline. RegistrationError.docstring updated.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-27T22:03:29.834122+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Namespace collision at registration is a hard fail — rejected immediately, before the device starts. Discovering a collision at call time means a live system is in an inconsistent state.\n\nProposed shape:\n- In Skeleton.register_device(): before registering, check if device_id already in registry\n  If exists and status != 'offline': raise RegistrationError(f'Device {device_id} already registered and online')\n  If exists and status == 'offline': allow re-registration (device reattach scenario)\n- RegistrationError logged with device_id, timestamp, and existing device's status\n- The calling device does not start; error surfaced to caller immediately\n- rack.devices() shows no entry for the failed device\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py (Skeleton.register_device)\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/exceptions.py (RegistrationError)\n\nDesign rules:\n- No design rules flag for this — pure infrastructure invariant\n- docs-in-code: RegistrationError docstring explains the rationale (fail at registration, not at call time)\n\nScope boundary:\nIN: hard-fail logic, RegistrationError exception class\nOUT: any retry or conflict-resolution logic — rejection is final\n\nTest plan:\n- Register device 'igor'; register 'igor' again → RegistrationError raised\n- Register device 'igor'; mark it offline; register 'igor' again → success (reattach)\n- After failed registration: rack.devices() does not contain a duplicate",
+    "completed_at": "2026-04-27T22:06:06.834732+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "64b68196-68cf-40c3-ad9e-3a8db279a49d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

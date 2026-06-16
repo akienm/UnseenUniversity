@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-pipeline-console-visibility.20260507.161141000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pipeline-console-visibility"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:11:41",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pipeline-console-visibility"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pipeline-console-visibility",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "DX"
+    ],
+    "title": "CLOSED: pipeline inference: cursor indicator + prompt/response on console",
+    "result": "on_tier threaded through pipeline to LLMPeerAdvisor and LLMVoiceActor; dim console prints show prompt+response head in tmux (5a8e195b)",
+    "status": "closed",
+    "worker": "igor",
+    "priority": "P2",
+    "claimed_at": "2026-05-06T18:09:46.715219+00:00",
+    "created_at": "2026-05-07T16:11:41Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two related gaps in the TurnPipeline path:\n1. The _on_tier cursor indicator ([→] reasoning (tier.X)) never fires for pipeline turns — it's defined in _process_inner but not threaded into TurnPipeline.run_turn(), LLMPeerAdvisor.respond(), or LLMVoiceActor.render().\n2. Akien wants console visibility into LLM prompt+response during inference (to see what's going to the model and what comes back, live in tmux).\n\n**Affected files:** wild_igor/igor/cognition/turn_pipeline.py, wild_igor/igor/cognition/llm_peer_advisor.py, wild_igor/igor/cognition/voice_ab.py, wild_igor/igor/main.py\n**Design rules:** none apply\n**Scope boundary:** Add on_tier param to run_turn(); thread to LLMPeerAdvisor and LLMVoiceActor; add optional console print of prompt head + response head in each LLM caller. Out of scope: streaming (Ollama is non-streaming).\n**Test plan:** Visual verification: web message shows [→] reasoning (cloud/interactive) in tmux during inference.",
+    "completed_at": "2026-05-06T18:32:13.751309+00:00",
+    "github_issue": 616,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b298ed2e-2c0e-4c79-84f1-d397fa85b301",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

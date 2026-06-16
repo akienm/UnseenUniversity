@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-inference-sources-key-aliases.20260606.204459670535",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-sources-key-aliases"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T20:44:59.670535",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-inference-sources-key-aliases"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-sources-key-aliases",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "OR",
+      "Budget",
+      "Bug"
+    ],
+    "title": "inference/sources.py: add GOOGLE_STUDIO_API_KEY and OLLAMA_API_KEY aliases",
+    "result": "GOOGLE_STUDIO_API_KEY + OLLAMA_API_KEY aliases added; both sources now activate from credentials.cfg",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.89,
+    "intention": null,
+    "claimed_at": "2026-06-06T20:55:22.949407+00:00",
+    "created_at": "2026-06-06T20:44:59.670535+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "devices/inference/sources.py checks GOOGLE_AI_STUDIO_API_KEY (GoogleSource) and OLLAMA_PRO_API_KEY (OllamaCloudSource) but igor.credentials.cfg has GOOGLE_STUDIO_API_KEY and OLLAMA_API_KEY. Both free sources are marked unavailable despite keys existing.\n\n**Affected files:** devices/inference/sources.py\n**Scope boundary:** Add aliases only — check GOOGLE_STUDIO_API_KEY as fallback in GoogleSource._api_key(); check OLLAMA_API_KEY as fallback in OllamaCloudSource.\n**Completion criteria:** With credentials.cfg loaded, GoogleSource.available=True and OllamaCloudSource.available=True. OR spend drops to near-zero for worker/designer tasks.",
+    "completed_at": "2026-06-06T21:19:38.683772+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ad347c55-1738-4a79-83cd-20e47ff72d4f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-uurecall-search-gaps.20260608.222620259383",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uurecall-search-gaps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T22:26:20.259383",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uurecall-search-gaps-2026-06-08"
+    ],
+    "tickets": [
+      "T-inference-proxy-mini-rack",
+      "T-uurecall-search-gaps"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uurecall-search-gaps",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Tooling",
+      "Search",
+      "Observability"
+    ],
+    "title": "uurecall: fix literal search gaps + add palace source",
+    "result": "Added palace search (memory_palace + adc.palace, token-AND ILIKE); suppressed semantic hits below 0.4 threshold; pre-existing ticket status bug was a non-issue (load_tasks returns all statuses)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that uurecall reliably surfaces everything we know about a search term — logs, tickets (all statuses), code, palace nodes — so it replaces ad-hoc grep rather than supplementing it.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T22:26:20.259383+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-uurecall-search-gaps-2026-06-08",
+    "description": "uurecall is supposed to be the single tool for 'everything you'd need to sort what we talked about for any search term' — code, past conversations, tickets, design decisions. Currently it fails at this: searching T-inference-proxy-mini-rack returned only 0.016-score semantic noise while grep found it instantly in CC.0 logs. Three concrete bugs identified:\n\n1. **Ticket search misses by status** — design/triage/closed tickets may not be returned by load_tasks(); T-inference-proxy-mini-rack (status=design) was absent\n2. **Semantic section shows garbage scores** — results at 0.016 are noise; they crowd out real hits and erode trust in the tool. Suppress results below a meaningful threshold (~0.4).\n3. **Palace nodes not searched** — design decisions, architecture notes, rules nodes are invisible to uurecall. Should be a fifth source.\n\n**Open design question (Q1):** Is the right fix a better single tool, or a template pattern — a uurecall dispatcher that routes to specialized flavors (uurecall-code, uurecall-design, uurecall-logs)? The argument for a single tool: user shouldn't have to know which flavor to call. The argument for templates: code search has different needs (git grep + symbol maps) than design search (palace + decisions log). This ticket takes the single-tool approach; if that proves wrong, the template refactor is a follow-on.\n\n**Affected files:** `lab/claudecode/uurecall.py`\n\n**Design rules:** no-sqlite (all DB reads via Postgres); palace search via memory_get/memory_search MCP tools or psql fallback\n\n**Scope boundary:** IN: fix status filter in ticket search; suppress semantic hits below 0.4; add palace node search as fifth source. OUT: template/multi-command refactor (open question above); changing the uurecall command interface; adding new search sources beyond palace.\n\n**Completion criteria:**\n- `uurecall T-inference-proxy-mini-rack` returns the ticket in the Tickets section regardless of its status\n- `uurecall T-inference-proxy-mini-rack` shows 0 semantic results with score < 0.4 (noise suppressed)\n- `uurecall spreading activation` returns at least one palace node hit when relevant nodes exist\n- `uurecall` on a literal string that grep finds in CC.0 logs also appears in the CC.0 logs section of uurecall output",
+    "completed_at": "2026-06-08T23:28:46.809503+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

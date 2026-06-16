@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-savestateauto-emit-compact-preserve.20260420.183934084222",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-savestateauto-emit-compact-preserve"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:39:34.084222",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-savestateauto-emit-compact-preserve",
+      "T-sync-on-close-not-dayend"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-savestateauto-emit-compact-preserve",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Savestate",
+      "Workflow"
+    ],
+    "title": "savestateauto always emits compact preserve string for Akien to optionally use",
+    "result": "Added Step 6 to /savestateauto SKILL.md emitting compact preserve block. Synced to all three echo locations (active, repo template, ClaudeAndAkien). First exercise of retroactive-ticket-on-close pattern.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-20T18:39:34.084222+00:00",
+    "related_to": "T-sync-on-close-not-dayend",
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Akien 2026-04-20: savestateauto should always show a compact preserve string at that point so Akien can choose to do one when he wants. Paired with /export-chat (recovery for anything that scrolled off), this means auto-compact should now rarely fire unexpectedly — Akien can trigger compact on demand at clean boundaries with known preservation.\n\n## Change\n\nAdded Step 6 to ~/.claude/skills/savestateauto/SKILL.md: emit a compact-ready preserve block labeled \"COMPACT PRESERVE STRING (copy if you want to /compact now)\". Block content: session id, theme, today's commits, done this session, filed this session, active decisions, in-flight hypothesis, next priorities, any load-bearing rules. Sourced from current_session.txt + infra.sessions + git log + queue.json grouping + slate top.\n\n## Not in scope\n\n- /savestateauto does NOT itself run /compact — Akien decides when to invoke compact by copying the block. This preserves the \"savestateauto is lightweight\" invariant.\n- Existing /savestate still runs /compact as end-of-session ritual (separate skill, unchanged).\n\n## Propagated to\n\n- ~/.claude/skills/savestateauto/SKILL.md (active)\n- lab/claudecode/cc_skills/savestateauto/SKILL.md (repo template)\n- dev/src/ClaudeAndAkien/skills/savestateauto.md (case-study)\n\n## Retroactive filing (T-sync-on-close-not-dayend pattern)\n\nFiled after the change was made, mid-sprint, rather than before. First real use of the \"oh, and I also fixed this\" retroactive pattern documented in T-sync-on-close-not-dayend.",
+    "completed_at": "2026-04-20T18:39:34.084222+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "47ac51e8-5ec5-4e65-b80d-b5f0c6d265fe",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

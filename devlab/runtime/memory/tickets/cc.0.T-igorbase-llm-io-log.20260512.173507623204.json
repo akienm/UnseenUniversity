@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-igorbase-llm-io-log.20260512.173507623204",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igorbase-llm-io-log"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T17:35:07.623204",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-pipeline-observability-2026-05-12"
+    ],
+    "tickets": [
+      "T-coa-flight-recorder",
+      "T-d125-igorbase-drift",
+      "T-goal-continuation-igorbase",
+      "T-igorbase-llm-io-log",
+      "T-logging-class-inheritance-fixups",
+      "T-pe-chain-flight-recorder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igorbase-llm-io-log",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Observability",
+      "IgorBase"
+    ],
+    "title": "CLOSED: Add log_llm_io() and log_state_snapshot() to IgorBase",
+    "result": "Added log_llm_io() and log_state_snapshot() methods to IgorBase with JSON logging to daily files, size caps, and exception handling",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-12T17:35:07.623204+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "description": "IgorBase has no method for logging LLM prompt+response pairs or arbitrary state snapshots. pe_chain and COA must reach outside the base class to forensic_logger for these, which breaks the IgorBase-consistent logging pattern established by T-d125-igorbase-drift and T-logging-class-inheritance-fixups.\n\nAdd two fire-and-forget methods to IgorBase (wild_igor/igor/igor_base.py):\n- log_llm_io(step: str, prompt: str, response: str, model: str, elapsed_ms: float): appends a JSON line to ~/.TheIgors/logs/llm_io/YYYYMMDD.log (daily rotation). Cap prompt at 16KB, response at 8KB.\n- log_state_snapshot(label: str, state: dict): appends a JSON line to ~/.TheIgors/logs/snapshots/YYYYMMDD.log (daily rotation). Useful for basket-at-escalation captures.\n\nBoth catch all exceptions internally and log failures to self.log.error — never raise from a logging call.\n\n**Affected files:** wild_igor/igor/igor_base.py\n**Design rules:** docs-live-in-code (update igor_base.py module docstring to name the two new methods), OOP-first (methods on IgorBase, not standalone functions)\n**Scope boundary:** Adds two methods to IgorBase only. No callers yet — callers added in T-pe-chain-flight-recorder, T-coa-flight-recorder, T-goal-continuation-igorbase.\n**Test plan:** Add unit tests verifying: (1) log_llm_io() writes a parseable JSON line with step/prompt/response/model/elapsed_ms fields to the expected daily path; (2) log_state_snapshot() writes a parseable JSON line with label/state fields; (3) an exception raised inside the method body does NOT propagate to the caller.",
+    "completed_at": "2026-05-12T18:02:20.501802+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0c97bceb-a7a4-4476-9f28-00c53e18063a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

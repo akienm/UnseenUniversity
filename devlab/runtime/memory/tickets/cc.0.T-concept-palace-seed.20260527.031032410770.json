@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-concept-palace-seed.20260527.031032410770",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-concept-palace-seed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-27T03:10:32.410770",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-compiled-inference",
+      "C-consult-session",
+      "C-goals-concepts-decisions-tickets",
+      "C-graph-trees-small-compute",
+      "D-concept-layer-and-tags-2026-05-26"
+    ],
+    "tickets": [
+      "T-concept-palace-seed",
+      "T-concept-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-concept-palace-seed",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Palace"
+    ],
+    "title": "Seed palace.concepts.* with foundational architecture concepts",
+    "result": "Seeded 4 foundational concepts to adc.palace via /concept flow: C-graph-trees-small-compute, C-consult-session, C-goals-concepts-decisions-tickets, C-compiled-inference. concept_index.md echo at lab/claudecode/palace_echo/.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-27T03:10:32.410770+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-concept-layer-and-tags-2026-05-26",
+    "description": "Run /concept new (once T-concept-skill ships) to record the foundational architectural concepts that have caused confusion in past sessions. Each concept is a palace.concepts.* node: present-tense, declarative, self-contained — understandable by a future CC session with no prior context.\n\nConcepts to seed (minimum):\n- C-graph-trees-small-compute: graph trees trace only live activation paths; neural nets compute all paths and discard most. This IS what small compute means in this project — not hardware choices.\n- C-consult-session: when Igor's graph is stuck, it opens a ConsultSession with an LLM peer ('help me understand this, do not solve'). Graph drives. LLM consults. Not a handoff.\n- C-goals-concepts-decisions-tickets: the four-tier reference structure. Goals and concepts are peers (same tier, both foundational reference). Decisions draw on both. Tickets implement decisions.\n- C-compiled-inference: any domain where knowledge crystallizes into repeatable output — software, cars, legal research, curriculum. The factory-factory goal applies across all of them.\n\nAdditional concepts to surface in /concept new conversations with Akien before seeding.\n\n**Affected files:** adc.palace (INSERT palace.concepts.* rows)\n**Design rules:** no-sqlite\n**Scope boundary:** DB writes only — no code changes. Gate on T-concept-skill being done so the /concept skill is used for authoring (not raw SQL).\n**Test plan:** no tests — verify by running SELECT path, title FROM adc.palace WHERE path LIKE 'palace.concepts.%' and confirming records exist with non-empty content",
+    "completed_at": "2026-05-27T22:18:30.426997+00:00",
+    "github_issue": 799,
+    "required_files": [],
+    "scraps_validated": "2026-05-27T03:10:32.410837+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d1f7b140-5987-4be7-8b3e-2248fa2d9d73",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

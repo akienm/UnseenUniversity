@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-audit-model-routing.20260429.180615720418",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-model-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:06:15.720418",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-model-routing",
+      "T-audit-rename-pyramid"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-model-routing",
+    "gate": "T-audit-rename-pyramid",
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Models",
+      "Routing"
+    ],
+    "title": "Codify per-audit model routing — Opus at design + expert tiers",
+    "result": "Seeded theigors/audits and theigors/audits/model_routing palace nodes with per-audit model table (opus: design+expert, haiku: ticket+debris+precode, sonnet: smell+day+audits). Existing skill frontmatter (audit-design=opus, audit-smell=sonnet) already correct.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.45,
+    "claimed_at": "2026-04-29T18:05:51.280347+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "Codify the per-audit model assignment in palace and in each skill's frontmatter. audit-design: Opus. audit-ticket: Haiku. audit-precode: Haiku → Sonnet on HIGH-inertia. audit-smell: Sonnet. audit-debris: Haiku. audit-day: Sonnet. audit-expert: Opus per expert. audit-audits: Sonnet weekly, Opus monthly.\n\nThe constraint is the rule, not who happens to be in the chair — when Sonnet is driving the session, design audit still escalates to Opus. Each skill's SKILL.md frontmatter declares its model; cost-budget tracking emits via audit_telemetry.\n\n**Affected files:** each ~/.claude/skills/audit-*/SKILL.md frontmatter; new palace node theigors/audits/model_routing with the table.\n**Design rules:** no persistence beyond palace + skill frontmatter.\n**Test plan:** invoking audit-design from a Sonnet session escalates to Opus per the frontmatter declaration. Audit telemetry records the model used per run.",
+    "completed_at": "2026-04-29T18:06:15.720418+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "abfecf2e-bcb6-4dab-bb8a-6393c1a7c288",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

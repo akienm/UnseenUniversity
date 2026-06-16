@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-template-extractor-habit.20260324.080709835596",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-template-extractor-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T08:07:09.835596",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-template-extractor-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-template-extractor-habit",
+    "body": "Map the template extraction process into the matrix as habits. Steps: (1) PROC_PATTERN_RECOGNIZE — given Python code or habit chain, identify which template pattern it matches. (2) PROC_TEMPLATE_PARAMETERIZE — extract the parameters from a concrete instance. (3) PROC_TEMPLATE_INSTANTIATE — given template id + params, seed the resulting habits. This closes the loop: Igor can look at new Python code, recognize the pattern, and seed habits without CC. Prereq: T-template-seed-patterns. This is the meta-level that makes the whole system self-extending.",
+    "size": "M",
+    "title": "Seed pattern-extraction habits — Igor recognizes and seeds templates himself",
+    "result": "recognize_pattern() + parameterize_template() tools added to template_tools.py (OpenRouter cheap model, forensic logging). Three delegation habits seeded: PROC_PATTERN_RECOGNIZE (trigger: 'recognize pattern'), PROC_TEMPLATE_PARAMETERIZE (trigger: 'parameterize template'), PROC_TEMPLATE_INSTANTIATE (trigger: 'instantiate template'). 21 tests; 182 pass total. Pushed a0ea45c.",
+    "status": "done",
+    "created": "2026-03-23T00:14:44.332776",
+    "priority": 4,
+    "claimed_at": "2026-03-24T08:00:54.009448+00:00",
+    "completed_at": "2026-03-24T08:07:09.835596+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

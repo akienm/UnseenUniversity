@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-fork-echo-suppress-on-bouquet.20260413.223201511515",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fork-echo-suppress-on-bouquet"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T22:32:01.511515",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fork-echo-suppress-on-bouquet",
+      "T-reply-obligation-fork"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fork-echo-suppress-on-bouquet",
+    "tag": "Cognition",
+    "size": "S",
+    "owner": "cc",
+    "title": "Suppress raw 'Background job complete' user-visible echo when a reply-obligation bouquet was pushed",
+    "result": "b638c6db — Suppression check before channel post block. When item.goal_id linked to awaiting_reply goal, sets _suppress_user_echo=True and skips cc/web/discord channel posts. Bouquet push and ring write still run. Errors bypass suppression. Legacy forks without goal_id keep existing echo. New stage echo_suppressed in reply_obligations.log. 6 new tests + 23 related tests pass. Closes the half-fix from 59a7184c.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T22:29:59.500823+00:00",
+    "related_to": null,
+    "description": "T-reply-obligation-fork (59a7184c) added the bouquet-to-TWM pattern at job_completions drain so the next turn's reasoning has the result + origin question + pending_reply marker. This works at the cognition layer.\n\nBUT: I never suppressed the existing user-visible 'Background job complete: **<title>**' channel post on main.py:6385-6399. So the user sees the raw fork echo PLUS gets a (better) reply on the next turn. The bouquet helps the next turn but doesn't replace the immediate noise. Akien observed this in 2026-04-13 transcript:\n\n  Igor: Thinking about that...\n  Igor: Background job complete: **[Web message from akien]: why would we write your basic six **\n\nThe second message is the raw echo we should have suppressed. The bouquet that fired on the same completion is what enables the next-turn reply, but the user never wanted to see the echo.\n\nFIX: when item.get('goal_id') is present AND the linked goal has awaiting_reply=true, SUPPRESS the channel post + web_server.send for the raw fork echo. The bouquet handles next-turn reasoning; the user's experience should be 'Igor said thinking about that → next reply addresses the question' with no debug noise in between.\n\nPreserve the existing behavior for fork completions WITHOUT a reply-obligation goal — those still emit the raw echo because there's no bouquet to take its place.\n\nINTERACTION WITH T-reply-obligation-fork: this is the missing half. T-reply-obligation-fork added the bouquet (next-turn cognition); this removes the user-visible noise (current-turn UX). Both halves are needed for the full fix.\n\nFORENSIC: extend reply_obligations.log with a new stage 'echo_suppressed' so we can see how often the suppression fires.\n\nINERTIA: LOW. Single conditional in main.py:6385 area.",
+    "completed_at": "2026-04-13T22:32:01.511515+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "71f5efec-5b81-4004-8457-ba7d314dea78",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

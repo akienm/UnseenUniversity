@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-web-dashboard-full-status.20260530.195118978601",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-dashboard-full-status"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T19:51:18.978601",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-inference-budget-ledger",
+      "T-web-dashboard-full-status"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-dashboard-full-status",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Web dashboard: show all devices, health details, OR spend, and uptime",
+    "result": "Added /api/rack/health JSON endpoint + JS-driven /rack page: device list from flat-file registry with expandable detail, OR budget, machines with device grouping, 10s auto-refresh",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.85,
+    "claimed_at": "2026-05-31T14:09:46.702824+00:00",
+    "created_at": "2026-05-30T19:51:18.978601+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "The rack dashboard at /rack currently shows machines (online/offline) but not rack devices or their health detail. For external users on Monday this is the first thing they see — it needs to show the full picture.\n\nRequired additions:\n1. Rack devices list — every registered device with: name, status (healthy/degraded/offline), last_seen, device_type\n2. Per-device health detail — expand each device to show its health() response (the structured DeviceHealth fields, not just online/offline)\n3. OpenRouter spend — already present, keep it; add day/week/month breakdown once T-inference-budget-ledger ships (gate on that ticket)\n4. Uptime — already present, keep it\n5. Machine → device grouping — show which devices are running on which machine\n\n**Affected files:** devices/web_server/routes.py (or equivalent), devices/web_server/templates/ or static/, skeleton/registry (health rollup reads from here)\n**Design rules:** /api/health already aggregates health — web dashboard should consume that endpoint, not re-query devices directly\n**Scope boundary:** IN — device list, per-device health detail, machine grouping, OR spend breakdown; OUT — real-time streaming updates (polling is fine), historical charts\n**Completion criteria:** /rack shows all registered devices with health status; clicking/expanding a device shows its full health() response; OR spend visible; a new developer loading /rack gets a complete picture of what's running and what's healthy",
+    "completed_at": "2026-05-31T14:40:35.320690+00:00",
+    "deposited_at": "2026-05-30T13:51:30.950022",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T14:09:46.702824+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T19:51:19.029429+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7c0d0b01-5806-4ac9-bbc1-ce03980ba02c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

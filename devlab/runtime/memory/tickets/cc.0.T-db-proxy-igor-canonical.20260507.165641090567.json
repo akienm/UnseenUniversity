@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-db-proxy-igor-canonical.20260507.165641090567",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-proxy-igor-canonical"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:56:41.090567",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-db-proxy-igor-canonical"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-proxy-igor-canonical",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Database",
+      "Architecture"
+    ],
+    "title": "CLOSED: Move db_proxy canonical impl to agent_datacenter; shim Igor + UC",
+    "result": "Full PGDatabaseProxy moved to agent_datacenter/db.py; both UC and Igor shims updated; test patch targets fixed; 4190 TheIgors + 4 ADC tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The shim direction is backwards. wild_igor/igor/memory/db_proxy.py re-exports from lab.utility_closet.db_proxy, which means all Igor DB calls (TWM, cortex, memories) route through lab.utility_closet and log as lab.utility_closet.db_proxy. Igor's memory/cognition DB access should be canonical inside Igor, not dependent on lab.utility_closet.\n\nFix: move the canonical implementation back to wild_igor/igor/memory/db_proxy.py. Have lab/utility_closet/db_proxy.py be the shim that re-exports from Igor (or, if agent_datacenter/db.py is the intended long-term home, route both through there). The docstring on the current shim incorrectly says 'all new code should import from lab.utility_closet directly' — this must be corrected.\n\n**Affected files:** wild_igor/igor/memory/db_proxy.py (becomes canonical again), lab/utility_closet/db_proxy.py (becomes shim or stays independent), any callers inside lab/utility_closet/ that need db access\n**Design rules:** architecture-separation — Igor = cognition+memory, utility_closet should not be Igor's dependency for Igor's own data stores\n**Scope boundary:** flip import direction for Igor callers; do NOT break lab/utility_closet callers that use make_infra_proxy() (those can keep importing from lab.utility_closet). Public API stays identical.\n**Test plan:** all 4187 TheIgors tests must pass; slow query log should now show logger=wild_igor.igor.memory.db_proxy for Igor's queries",
+    "completed_at": "2026-05-07T16:56:41.090567+00:00",
+    "github_issue": 638,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3dd69dc8-4b91-4b87-ab03-0472c3017808",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

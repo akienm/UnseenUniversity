@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-migrate-adopt-next-ticket.20260521.175415341146",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-migrate-adopt-next-ticket"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.341146",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-queue-encapsulation-2026-05-21"
+    ],
+    "tickets": [
+      "T-igor-migrate-adopt-next-ticket"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-migrate-adopt-next-ticket",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Habits",
+      "WorkflowOverhaul"
+    ],
+    "title": "Migrate Igor's adopt_next_ticket habit from cmd_claim to cmd_next",
+    "result": "cmd_claim feedback loop stopped (removed _igor_post); sloped retry in worker_daemon (20s after done, 300s when empty); Python code in adopt_next_ticket was already using cmd_next correctly",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-21T17:54:15.341146+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-queue-encapsulation-2026-05-21",
+    "description": "cmd_claim now raises LegacyDirectClaimError (D-queue-encapsulation-2026-05-21). Channel shows repeated errors: 'LegacyDirectClaimError: cmd_claim raises when called without cmd_next context. Old Igor habits describe the direct-claim model: claim a ticket, work it.' The adopt_next_ticket habit (and any related habits referencing cmd_claim) must be migrated to use cmd_next. This is final cleanup for the queue encapsulation decision — Igor should request work, not claim it.\n\n**Affected files:** clan.memories (PROCEDURAL habits referencing cmd_claim), wild_igor/igor/tools/worker_daemon.py or equivalent ticket pickup code\n**Design rules:** theigors/rules/coding\n**Scope boundary:** In scope: find all habits with cmd_claim references; update to cmd_next; verify no LegacyDirectClaimError after migration. Out of scope: changing cmd_next behavior.\n**Test plan:** After migration, run Igor for one full NE cycle with a sprint ticket available; verify no LegacyDirectClaimError in channel. Verify ticket picked up correctly via cmd_next.",
+    "completed_at": "2026-05-21T18:05:56.458376+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.341161+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4c2e630e-4978-4e67-afa3-54c16792efaf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

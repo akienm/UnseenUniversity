@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-theory-log-hierarchy-anomalies.20260530.175609449108",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theory-log-hierarchy-anomalies"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:56:09.449108",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-theory-log-hierarchy-anomalies"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theory-log-hierarchy-anomalies",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Hygiene"
+    ],
+    "title": "Fix datacenter_logs anomalies: librarian flat file + mystery device dirs",
+    "result": "fixed librarian log path to curation/curation.jsonl; _json_file_sink skips unbound records; deleted debris dirs d/ _minimaldevice/ unknown/",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "claimed_at": "2026-05-30T23:41:46.814151+00:00",
+    "created_at": "2026-05-30T17:56:09.449108+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "2026-05-30 alignment check found two anomalies in datacenter_logs/:\n\n1. librarian uses a flat file: datacenter_logs/librarian/curation.jsonl — no subsystem level. Rule requires datacenter_logs/<device>/<subsystem>/. Source: unseen_university/devices/librarian/tools/curation_tools.py:26.\n\n2. Three mystery device directories: d/ (single-char, test debris from 2026-05-23), _minimaldevice/ (test scaffold), unknown/ (fallback name — a device ran with no DEVICE_ID set). These are not real production devices.\n\n**Affected files:** unseen_university/devices/librarian/tools/curation_tools.py, possibly devices with missing DEVICE_ID\n**Scope boundary:** IN — fix librarian log path to use subsystem dir, identify what device produced unknown/ and fix its DEVICE_ID, delete debris dirs (d/, _minimaldevice/, unknown/); OUT — do not change log content format\n**Test plan:** After fix, datacenter_logs/ contains only production device dirs with proper subsystem hierarchy\n**Completion criteria:** librarian writes to datacenter_logs/librarian/curation/curation.jsonl or similar subsystem path; debris dirs removed",
+    "completed_at": "2026-05-31T06:23:03.839414+00:00",
+    "deposited_at": "2026-05-30T11:56:40.088243",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:41:46.814151+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T17:56:09.505951+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "29e5598c-3b00-4694-8b71-e7b6573c4a77",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-inference-models-registry.20260531.195307623336",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-models-registry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:53:07.623336",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-models-registry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-models-registry",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Inference proxy: Models registry with current pricing",
+    "result": "Built in 715eca0a — sources/models/rules/health all in devices/inference/, 14 tests passing",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 2.0,
+    "claimed_at": null,
+    "created_at": "2026-05-31T19:53:07.623336+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Model catalog seeded with current OR models and tiers. Each entry: model_id, provider, input_cost_per_1m, output_cost_per_1m, context_window, tier (minion/worker/analyst/designer), tags. Seeded with: qwen/qwen3.5-9b (minion $0.04), deepseek/deepseek-v4-flash (worker $0.10), qwen/qwen3.6-35b-a3b (analyst $0.14), claude-haiku-4-5 (designer). Registry is data (JSON/DB), not code.\n\n**Affected files:** devices/inference/ (models_registry.py + seed data)\n**Design rules:** none apply\n**Scope boundary:** In scope: registry CRUD, tier enum, seed data. Out of scope: routing, health.\n**Completion criteria:** Can query registry for cheapest model in a tier. Seed data loads on device start.",
+    "completed_at": "2026-05-31T20:02:24.889228+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T19:53:07.686415+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "76e1a310-ee43-4d04-a935-352fa5d759a8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

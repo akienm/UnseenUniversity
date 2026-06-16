@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-opentickets-skill.20260529.031619610371",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-opentickets-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T03:16:19.610371",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-opentickets-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-opentickets-skill",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Platform"
+    ],
+    "title": "Create /opentickets skill — list open tickets via script",
+    "result": "/opentickets skill: calls cc_queue list, groups by status, optional status filter, summary count line",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "created_at": "2026-05-29T03:16:19.610371+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The /opentickets skill should call a script that lists all open/pending/sprint tickets from cc_queue.py, formatted the same way CC currently does it manually. Eliminates ad-hoc queue queries each session.\n\n**Affected files:** ~/.claude/skills/opentickets/SKILL.md (new), lab/claudecode/cc_queue.py (read-only, no changes)\n**Design rules:** none apply\n**Scope boundary:** skill calls cc_queue.py list, filters to non-closed, groups by status. No queue modifications.\n**Test plan:** invoke /opentickets and verify output matches cc_queue.py list filtered output",
+    "completed_at": "2026-05-29T15:07:11.385772+00:00",
+    "github_issue": 803,
+    "required_files": [],
+    "scraps_validated": "2026-05-29T03:16:19.701974+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5211be20-dff2-42c8-baa9-599d99ddfd02",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

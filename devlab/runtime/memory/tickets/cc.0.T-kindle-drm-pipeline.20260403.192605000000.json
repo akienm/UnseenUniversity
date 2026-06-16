@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-kindle-drm-pipeline.20260403.192605000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-kindle-drm-pipeline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:05",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-kindle-drm-pipeline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-kindle-drm-pipeline",
+    "epic": "Training",
+    "size": "M",
+    "title": "Test/verify kindlekey+mobidedrm pipeline for Kindle books; Playwright+OCR as fallback",
+    "result": "Python 3 port complete: aescbc, kindlekey, k4mobidedrm, kgenpids, mobidedrm, alfcrypto all converted (raise X,msg → X(msg); except X,e: → X as e:; has_key → in; print stmts; ur-strings; htmlentitydefs). Pipeline runs without crash. NOKEY on Linux = expected (no desktop Kindle app to extract keys). Playwright+OCR fallback: separate ticket needed.",
+    "status": "done",
+    "claimed_at": "2026-04-04T22:47:21.730991+00:00",
+    "created_at": "2026-04-03T19:26:05Z",
+    "completed_at": "2026-04-04T22:50:46.507651+00:00",
+    "github_issue": 367,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

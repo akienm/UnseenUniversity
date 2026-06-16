@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-scraps-embedding-engine.20260528.182659727808",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scraps-embedding-engine"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T18:26:59.727808",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-recall-api-2026-05-28"
+    ],
+    "tickets": [
+      "T-librarian-retrieval-service",
+      "T-memory-write-path",
+      "T-scraps-embedding-engine"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scraps-embedding-engine",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Scraps",
+      "Memory",
+      "Embeddings"
+    ],
+    "title": "Scraps: embedding engine — text in, vector out, no inference at query time",
+    "result": "embed()/embed_batch() in devices/scraps/embedding_engine.py. OpenAI text-embedding-3-small primary; hash-SHA-256-384 fallback. 11 tests green.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-28T20:08:36.610328+00:00",
+    "created_at": "2026-05-28T18:26:59.727808+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-recall-api-2026-05-28",
+    "description": "Add a Scraps script that accepts text input and returns an embedding vector. Batched operation supported. Stores model name and embedding dimension as metadata alongside the vector. Enables pre-computed embeddings at write time — query-time similarity search is then pure vector math with no inference call.\n\nThe write path (T-memory-write-path) calls Scraps at memory-write time to compute and store the embedding. The retrieval path (T-librarian-retrieval-service) calls Scraps at query time to vectorize the query, then does similarity math in DB.\n\n**Affected files:** devices/scraps/ (new script)\n**Design rules:** no inference at query time; model metadata (name, dimension) must be stored with vector; batch mode required for write-time efficiency\n**Scope boundary:** Scraps device only — does not write to clan.memories directly; caller (Librarian write path) owns the DB write\n**Test plan:** script accepts a string, returns float vector of expected dimension; batch mode handles list of strings; model metadata returned with each vector; same input returns same vector (deterministic)",
+    "completed_at": "2026-05-28T20:09:21.918462+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-28T20:08:36.610328+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-28T18:26:59.727849+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "523c94ca-9052-4364-ae22-5d1c1d7d0bcf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

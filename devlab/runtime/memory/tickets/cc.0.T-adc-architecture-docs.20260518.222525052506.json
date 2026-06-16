@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-architecture-docs.20260518.222525052506",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-architecture-docs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:25:25.052506",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-architecture-docs",
+      "T-igor-into-adc-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-architecture-docs",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Architecture",
+      "Docs"
+    ],
+    "title": "Write root ARCHITECTURE.md + per-device docs/ pattern",
+    "result": "root ARCHITECTURE.md (nav map) + devices/inference/docs/ + devices/librarian/docs/; project→device→file navigation chain established",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:25:25.052506+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Establish the two-level architecture doc pattern: root ARCHITECTURE.md is a minimal map (fewest possible tokens) that names the components and points to their device folders. Each device folder gets devices/{device}/docs/ARCHITECTURE.md that describes that device's internals and points to specific files. Navigation path: root → device folder → ARCHITECTURE.md → specific file → ready to edit.\n\nRoot ARCHITECTURE.md shape: component table (device, folder, arch doc link) + storage schema map + one-line platform description. Under 50 lines total — it's a pointer document, not content.\n\nDevice ARCHITECTURE.md shape: what this device does (2-3 sentences), key files with one-line descriptions, external interfaces (comms://, MCP tools exposed, env vars required), related devices. Under 80 lines.\n\nShip the root doc + docs/ for inference and librarian (the two active devices). devices/igor/docs/ARCHITECTURE.md comes in T-igor-into-adc-device.\n\n**Affected files:** ARCHITECTURE.md (root, new), devices/inference/docs/ARCHITECTURE.md (new), devices/librarian/docs/ARCHITECTURE.md (new)\n**Design rules:** docs-live-in-code — architecture doc is adjacent to the code it describes. No separate docs repo.\n**Scope boundary:** inference and librarian only. Platform/skeleton arch doc is a follow-on. Igor's arch doc comes with the migration ticket.\n**Test plan:** no automated test. Manual: root doc links resolve, device docs name the correct files, a new reader could navigate from root to a specific function in under 3 hops.",
+    "completed_at": "2026-05-18T22:30:34.503261+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7686f0aa-06d4-4e93-9d1e-3d93d9b60fc5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

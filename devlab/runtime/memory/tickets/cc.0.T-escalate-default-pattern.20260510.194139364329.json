@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-escalate-default-pattern.20260510.194139364329",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-escalate-default-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T19:41:39.364329",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-escalate-as-default-2026-05-10"
+    ],
+    "tickets": [
+      "T-escalate-default-pattern",
+      "T-igor-watch-list"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-escalate-default-pattern",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "CodeQuality"
+    ],
+    "title": "CLOSED: Wire escalate-as-default to NE empty-result path + build shared escalate primitive",
+    "result": "escalate.py shared primitive + NE empty-result posts to channel with dedup; 5 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-10T19:56:17.445890+00:00",
+    "created_at": "2026-05-10T19:41:39.364329+00:00",
+    "related_to": null,
+    "decision_id": "D-escalate-as-default-2026-05-10",
+    "description": "Igor currently goes mute when NE produces no result — coa.py:202 `if result:` silently falls through with no channel post. scope_guard already escalates for HIGH-inertia writes; pe_chain escalates for no-description tickets. The remaining gap: NE empty-result path has no escalation. Design principle: escalate is the default fallback when nothing else will work (D-escalate-as-default-2026-05-10).\n\nFix: (1) In _ne_worker(), when `result` is falsy, post to channel: \"[NE] cycle produced no result — nothing actionable in TWM. Igor may be stuck: {last_valence}\". (2) Extract a shared `_escalate_to_channel(msg, dedup_key)` utility in a new `wild_igor/igor/cognition/escalate.py` module so all subsystems use the same primitive instead of copy-pasting _post_to_channel patterns.\n\n**Affected files:** wild_igor/igor/cognition/coa.py (NE empty-result block), wild_igor/igor/cognition/escalate.py (NEW — shared primitive)\n**Design rules:** HIGH-inertia pre-approval required for coa.py. PRE-APPROVED by Akien: 'add it to the queue. get it all ticketed. audited. and now you have stuff to keep you busy for the next couple hours' (2026-05-10, D-escalate-as-default-2026-05-10).\n**Scope boundary:** In scope: NE empty-result channel post; shared escalate.py primitive. Out of scope: migrating all existing escalation callers to use escalate.py (follow-on), watch list integration (T-igor-watch-list), scope_guard changes (already done).\n**Test plan:** Test NE worker posts to channel when ne.run() returns None; test NE worker posts when ne.run() returns {}. Verify existing 4521+ tests still pass.",
+    "completed_at": "2026-05-10T20:14:06.837488+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3ccdef46-d45a-43c3-a92a-9101c288939c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

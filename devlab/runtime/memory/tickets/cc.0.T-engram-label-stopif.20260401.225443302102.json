@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-engram-label-stopif.20260401.225443302102",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-label-stopif"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T22:54:43.302102",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engram-label-stopif"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-label-stopif",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Add LABEL and STOPIF to node_executor",
+    "result": "LABEL+STOPIF added to node_executor.py. Index-based while loop for label jumps. 24 new tests. 730 total passing.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Add LABEL and STOPIF instructions to node_executor.py (D290, D291). LABEL: [\"LABEL\", \"@name\"] no-op marker, jump target for local branches. STOPIF: [\"STOPIF\", condition] conditional stop. Changes: (1) convert for-loop to index-based while-loop for backward jumps; (2) LABEL handler (no-op marker); (3) STOPIF handler (eval condition, stopped_by=STOPIF, break); (4) BRANCHIF: if target starts with @ scan cell for matching LABEL else set next_node; (5) update ExecutionResult.stopped_by values; (6) update docstring; (7) add tests. File: wild_igor/igor/cognition/node_executor.py. Inertia: LOW.",
+    "completed_at": "2026-04-01T22:54:43.302102+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d872ef86-de6c-48cd-a473-15943c672ae0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

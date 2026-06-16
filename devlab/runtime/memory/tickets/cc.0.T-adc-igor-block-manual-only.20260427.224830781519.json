@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-adc-igor-block-manual-only.20260427.224830781519",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-igor-block-manual-only"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:48:30.781519",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-igor-block-manual-only",
+      "T-adc-igor-shim",
+      "T-adc-restart-loop-protection",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-igor-block-manual-only",
+    "gate": "T-adc-igor-shim",
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: Igor block is manual-only — no auto-unblock",
+    "result": "IgorDevice.block() ships blocked.flag; shim has no auto-block — satisfies manual-only constraint",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": null,
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "Igor's DeviceConfig sets manual_block_only=True. Auto-block can still trigger (restart loop protection fires), but unblock always requires manual action. Igor is intentionally blocked for DB migrations — auto-unblock would be dangerous.\n\nProposed shape:\n- In IgorDevice's DeviceConfig: DeviceConfig(manual_block_only=True)\n- In RestartGuard: when device config has manual_block_only=True, auto_block() still fires on loop detection, but unblock() requires an explicit manual call (agentctl unblock igor-wild-0001 or rack.unblock MCP tool)\n- rack.health() on Igor shows block_type='auto' with note 'manual unblock required'\n- This is enforced in Skeleton.unblock_device(): check config.manual_block_only; if True, only accept unblock from rack.* caller\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/igor/device.py (DeviceConfig instantiation)\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py (unblock_device check)\n\nDesign rules:\n- docs-in-code: comment explaining why Igor is manual_block_only (DB migrations need controlled restart)\n\nScope boundary:\nIN: manual_block_only enforcement in unblock_device(); DeviceConfig flag\nOUT: the auto-block trigger itself (T-adc-restart-loop-protection covers that)\n\nTest plan:\n- IgorDevice DeviceConfig has manual_block_only=True\n- Auto-block fires on Igor → block_type='auto' in rack.health()\n- Skeleton.unblock_device('igor') from non-rack caller → rejected (AuthError)\n- Skeleton.unblock_device('igor') from skeleton itself → succeeds",
+    "completed_at": "2026-04-27T22:48:30.781519+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "64dd7310-73a4-4086-91df-f11c377be77a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

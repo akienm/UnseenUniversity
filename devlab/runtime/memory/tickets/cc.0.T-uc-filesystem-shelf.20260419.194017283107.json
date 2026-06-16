@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-uc-filesystem-shelf.20260419.194017283107",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-filesystem-shelf"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T19:40:17.283107",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-filesystem-shelf",
+      "T-uc-module-migration-epic"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-filesystem-shelf",
+    "size": "M",
+    "tags": [
+      "Refactor",
+      "UC"
+    ],
+    "title": "Move filesystem.py to utility_closet/filesystem as rack shelf",
+    "result": "Partial shim landed (62f8c342): same pattern as budget. Canonical UC path + eventual inversion blocked on same registry migration. 29 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T19:39:21.066627+00:00",
+    "related_to": null,
+    "description": "Final piece of T-uc-module-migration-epic. Move wild_igor/igor/tools/filesystem.py into lab/utility_closet/filesystem/ as a rack shelf.\n\n## Scope\n- Create lab/utility_closet/filesystem/ with shelf module\n- Move filesystem tool code\n- Register as UC rack module; health reports sandbox root, disk usage, recent operations count\n- Add comms://log/filesystem channel for audit (every file op)\n- Thin re-export shim at wild_igor/igor/tools/filesystem.py during transition\n- Tests pass at both import paths\n\n## Sandbox considerations\n- filesystem.py operates in a sandboxed space — make sure the sandbox root config follows the move\n- Igor still uses the shelf through the same tool registry; no cognition-layer changes expected\n\n## Success criteria\n- All existing filesystem-tool tests pass\n- Old and new import paths both resolve during transition\n- UC health dashboard shows filesystem shelf\n\n## Related\n- T-uc-module-migration-epic (parent, closes after this)",
+    "completed_at": "2026-04-19T19:40:17.283107+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "73459f52-0d73-48a4-b29c-36f6c255c8c4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

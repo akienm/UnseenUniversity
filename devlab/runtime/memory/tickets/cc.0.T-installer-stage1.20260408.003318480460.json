@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-installer-stage1.20260408.003318480460",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-installer-stage1"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T00:33:18.480460",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-installer-stage1"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-installer-stage1",
+    "epic": "Operations",
+    "size": "M",
+    "title": "Installer stage 1: setup_assets scaffolding + templates + bug fixes",
+    "result": "setup_assets/ + 8 cfg templates + installer stub. igor.bat fix, install_igor_linux.sh fix, .gitignore gitignore patterns. Fixed 6 test regressions from T-pe-multi-file+preflight. 1868 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-08T00:26:50.509677+00:00",
+    "related_to": null,
+    "description": "Create wild_igor/setup_assets/ dir, cfg templates (swarm/igor/switches/models/credentials/context), installer.py stub. Fix igor.bat (igor_loop.ps1→igor.ps1). Fix install_igor_linux.sh Step 7 (hardcoded /home/akien/.claude/hooks/ → $HOME/.claude/hooks/). No behavior changes.",
+    "completed_at": "2026-04-08T00:33:18.480460+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dcfcc595-9497-4e61-980e-f5fc0da0569c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-ticket-status-approval-akien-removal.20260616.192446031959",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-status-approval-akien-removal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T19:24:46.031959",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ticket-status-model-2026-06-16"
+    ],
+    "tickets": [
+      "T-ticket-status-approval-akien-removal",
+      "T-uc-cert-domain-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-status-approval-akien-removal",
+    "title": "[sprint] Remove approval/akien/awaiting_approval as settable statuses (status model step 2)",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "TicketStatus",
+      "Queue",
+      "ArchitectureAsCode"
+    ],
+    "description": "Step 2 of D-ticket-status-model-2026-06-16. Remove approval/akien/awaiting_approval as settable statuses — sorted=approved makes them redundant. NOTE: the original sprint→ready string rename COLLAPSED (step 1 kept sprint internal, READY as display/concept name), so this is now LOW blast radius.\n\n**Affected files:** lab/claudecode/cc_queue.py (STATUS_ORDER legacy section, _ACTIONABLE_STATUSES still contains akien/approval — drop them; _ID_STATUS_OVERRIDE pins T-uc-cert-domain-migration=akien); the /sorted gate (sets status=approval then sprint — simplify to sprint); queue_view.py + web_server legacy labels can drop once 0 rows remain.\n**Design rules:** no-sqlite, log-state-change, test-plan; verify claim/dispatch loop unaffected (akien/approval are in _ACTIONABLE_STATUSES today).\n**Scope boundary:** IN — remove the 3 statuses from settable set + simplify the sorted gate + migrate the 1 live akien ticket. OUT — the literal sprint→ready rename (deliberately NOT done — see decision doc rename-collapse note).\n**Open question for Akien:** where does T-uc-cert-domain-migration (status akien, his external domain action, GH#413) land? Recommend DEPENDENCY (blocked on Akien action) per the model. His ticket, his call — that's why this is filed not auto-executed.\n**Test plan:** after removal, /sprint-ticket still finds work; the migrated cert ticket renders under its new status; 0 approval/akien/awaiting_approval rows remain.",
+    "decision_id": "D-ticket-status-model-2026-06-16",
+    "created_at": "2026-06-16T19:24:46.031959+00:00",
+    "updated_at": "2026-06-16T13:24:46.043665-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-experiment-enqueue-from-workflow.20260417.014130299343",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-enqueue-from-workflow"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T01:41:30.299343",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-enqueue-from-workflow"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-enqueue-from-workflow",
+    "size": "M",
+    "title": "Wire workflow ProposedExperiment → experiment scheduler enqueue",
+    "result": "11c9b51e — TurnPipeline._enqueue_experiments converts blob.proposed_experiment via from_proposed() and enqueues to ExperimentScheduler. PathStep.EXPERIMENT_ENQUEUE trace, enqueued_experiment_ids on TurnResult. 3 tests.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-experiment-primitive",
+    "claimed_at": "2026-04-17T01:36:52.392671+00:00",
+    "related_to": null,
+    "description": "When TurnPipeline receives a DecisionBlob with proposed_experiments, convert each ProposedExperiment to an Experiment (using from_proposed() bridge) and enqueue via ExperimentScheduler. This closes the reasoning→experiment loop. The reasoning workflows are the proposer — no separate proposer needed.",
+    "completed_at": "2026-04-17T01:41:30.299343+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "814350b9-7cf9-4c5b-a3a7-fd82917ce260",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

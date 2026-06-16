@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-sqlite-out-word-graph-db.20260502.225501627732",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-out-word-graph-db"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T22:55:01.627732",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reorg-execute-2026-05-01"
+    ],
+    "tickets": [
+      "T-sqlite-out-word-graph-db"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-out-word-graph-db",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "SQLite-Removal",
+      "Word-Graph",
+      "Reorg"
+    ],
+    "title": "Finish SQLite removal — purge word_graph.db construction + delete file",
+    "result": "Word graph SQLite purged (commit 9c136308). Postgres clan.wg_* was authoritative since D126; 4.6GB SQLite file trashed (recoverable). Vestigial APIs removed: WordGraph(db_path=), default_cache_path(), paths().word_graph(), WordGraph.save/.load, _SCHEMA CREATE TABLE block. 13 files updated across word_graph.py + main.py + training_corpus.py + tools/ + cognition/ + 3 test files + 2 lab scripts. Full suite 4186/0/32skip in 98s.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "P1",
+    "claimed_at": null,
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-reorg-execute-2026-05-01",
+    "description": "wild_igor/igor/paths.py:184 still types this as 'Path to a named word graph SQLite DB'; tests/test_d126_postgres.py reads it. mtime Mar 21 suggests migration completed but path still expected. Per Akien 2026-05-01 (reorg § 4 #1): finish removal.\n\n**Affected files:** wild_igor/igor/paths.py:184, wild_igor/igor/cognition/word_graph.py, tests/test_d126_postgres.py, ~/.agent_datacenter/Igor-wild-0001/word_graph.db (4.6GB delete)\n**Design rules:** no-sqlite (CLAUDE.md)\n**Scope boundary:** in — purge word_graph.db references, verify Postgres-only reads/writes, delete file; out — word graph cognition changes\n**Test plan:** test_d126_postgres updated to not-need-the-file; pytest green; spike-test Igor word-graph cold-start against deleted file",
+    "completed_at": "2026-05-02T22:55:01.627732+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1abfa61c-4d0e-49d2-b21c-1379a9eeb3d5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

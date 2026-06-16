@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-memory-node-shape-principle.20260415.185039480649",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-node-shape-principle"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T18:50:39.480649",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-node-shape-principle"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-node-shape-principle",
+    "body": "From Akien 2026-04-15: the shape of an Igor memory is id + three key/value stacks (metadata, triggers, payload), not a wide row with typed columns. This is the target architecture after the many-small-tables split from the current single 'memories' table. Anything that needs to live with a memory (creation date, kind, TTL, test_data flag, etc.) goes into metadata — not into a new column.\n\nClaude hit the wall of this principle when scoping T-test-data-lifecycle: reached for 'expires_at column' before catching himself. The rule is implied by D260 (payload) and DP13 in subsystem_memory.dsb but is not written as a principle anywhere Igor or CC could find it by grep or palace_read.\n\n## Scope\n\n1. Add `memory_node_shape` to `architecture_root.dsb` CORE_PRINCIPLES, alongside `everything_is_memory` and `timestamp_id_format_uniform`. One line, references subsystem_memory.dsb and D260 for detail.\n2. Add palace node `theigors/architecture/principles/memory-node-shape` mirroring the CORE_PRINCIPLE content — same pattern as the other 11 principle palace nodes already there.\n3. Optional: add a DP entry in subsystem_memory.dsb DESIGN_POINTS section explicitly stating 'memory node shape is id + metadata + triggers + payload; no new columns for per-memory fields'.\n4. docs_sync + palace_sync so repo echo is up to date.\n\n## Why S size\n\n10-15 minutes of documentation work. Mirrors the T-future-self-proud-principle sprint shape from earlier today. No code changes, no tests needed (it's a principle doc).\n\n## Content (draft)\n\n'memory_node_shape=a memory is id + three key/value stacks (metadata, triggers, payload) — not a row of typed columns. Kind-of-memory lives in metadata, not in a column. Triggers point into payload. Payload carries data and simple code (engram programs — see D260). Anything that needs to live with a memory (creation date, TTL, test_data flag, employer_id, scope) goes into metadata. Don''t add columns for per-memory state; the wide-table shape is a migration artifact being split into many small tables.'\n\n## Provenance\n\nAkien 2026-04-15 during T-test-data-lifecycle scoping. The test_data/TTL ticket triggered the principle being surfaced. future_self_proud_test applies: documenting this now prevents future-me + future-Igor from the same reach-for-a-column reflex.",
+    "size": "S",
+    "tags": [
+      "principles",
+      "architecture",
+      "memory",
+      "docs"
+    ],
+    "title": "Document memory-node shape (id + metadata + triggers + payload, not columns) as CORE_PRINCIPLE",
+    "result": "12th CORE_PRINCIPLE in architecture_root.dsb + DP14 in subsystem_memory.dsb + palace node. Documents id + 3 k/v stacks (metadata, triggers, payload) as the canonical shape — no new columns for per-memory state.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T18:49:37.395304+00:00",
+    "related_to": null,
+    "completed_at": "2026-04-15T18:50:39.480649+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

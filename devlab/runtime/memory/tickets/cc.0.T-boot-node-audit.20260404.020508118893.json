@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-boot-node-audit.20260404.020508118893",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-boot-node-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T02:05:08.118893",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-boot-node-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-boot-node-audit",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "BOOT SEQUENCE consolidation: verify no duplication on restart",
+    "result": "Audit complete — no bug. Each restart creates unique BOOT SEQUENCE node (15/15 distinct IDs). Working as designed.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Top 5 hot nodes (heat 448-478, 633-674 hits/48h) are all BOOT SEQUENCE consolidation_pass nodes. Verify each restart generates a NEW node (correct) vs re-activating the same node repeatedly (would indicate dedup or caching bug). Check consolidation_pass logic.",
+    "completed_at": "2026-04-04T02:05:08.118893+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b0b054ea-db9b-46f1-91bc-15ff1be0a3c5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

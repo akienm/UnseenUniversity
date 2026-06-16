@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-D-minion-escalation.20260531.205059514203",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-minion-escalation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T20:50:59.514203",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-minion-worker-escalation-2026-05-31"
+    ],
+    "tickets": [
+      "T-consequence-D-minion-escalation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-minion-escalation",
+    "gate": "2026-06-14",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: minion worker + tiered escalation (2026-06-14)",
+    "result": null,
+    "status": "dependency",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-31T20:50:59.514203+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-minion-worker-escalation-2026-05-31",
+    "description": "**What changed:** Minion worker device executes sprint tickets via cheap inference (DeepSeek V4 Flash) with DONE/ESCALATE tiered escalation baked into the system prompt.\n\n**Predicted unintended effects:** (1) cheap model produces plausible-but-wrong diffs that pass tests but break behavior; (2) ESCALATE signals loop (minion escalates to worker which escalates back); (3) ticket close rate drops vs Claude baseline; (4) budget ledger underestimates cost if DeepSeek charges differ from registry pricing; (5) Granny's cap=1 means one stuck ticket blocks the whole queue\n\n**Signals to watch:** budget ledger openrouter/deepseek spend per closed ticket; escalation tier distribution (what % reach analyst/designer); ticket close rate vs prior 10-ticket baseline; any ESCALATE: worker→worker loops in daemon log\n\n**Gate condition:** Check by 2026-06-14 or after 10 tickets close through the worker.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** no automated verification — observation ticket; done when predicted effects are annotated as occurred / clear / partial and ticket is closed",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2bcd0204-166a-4f2f-807c-ef4f14ed09cd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

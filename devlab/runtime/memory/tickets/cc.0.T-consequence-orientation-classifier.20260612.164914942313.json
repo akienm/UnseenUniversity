@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-consequence-orientation-classifier.20260612.164914942313",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-orientation-classifier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T16:49:14.942313",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-orientation-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-consequence-orientation-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-orientation-classifier",
+    "gate": "2026-06-26",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Cost"
+    ],
+    "title": "[sprint] Consequence check: orientation classifier builder report",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend to verify orientation classifier reduces orientation token burn without introducing wrong-file misdirections.",
+    "claimed_at": null,
+    "created_at": "2026-06-12T16:49:14.942313+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-orientation-classifier-2026-06-12",
+    "description": "**What changed:** DS/CC session start uses graph-tree classifier to produce builder report instead of exploratory grep/find/read.\n**Predicted unintended effects:** (1) Classifier misidentifies relevant files → DS works on wrong files silently. (2) Builder report confidence is overweighted — DS skips searching for files not in report. (3) Code_index staleness causes wrong results when file was recently renamed/moved.\n**Signals to watch:** Ticket close notes: did DS work on the right files? Token counts before/after (cost_usd per ticket). Builder report accuracy — files listed vs files actually touched.\n**Gate condition:** Check by 2026-06-26 or after 5 tickets have used the classifier.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate as occurred/clear/partial and close\n**Completion criteria:** Annotated with outcome and closed.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

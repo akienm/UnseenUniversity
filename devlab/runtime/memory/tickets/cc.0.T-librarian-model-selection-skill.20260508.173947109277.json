@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-librarian-model-selection-skill.20260508.173947109277",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-model-selection-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:39:47.109277",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-rack-agent-2026-05-08"
+    ],
+    "tickets": [
+      "T-librarian-model-selection-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-model-selection-skill",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "Skills"
+    ],
+    "title": "CLOSED: Librarian model selection skill file",
+    "result": "librarian/skills/model_selection.md — tier tuning guide; bdfd349",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T20:04:15.459510+00:00",
+    "created_at": "2026-05-08T17:39:47.109277+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "description": "Create a skill file for tuning Librarian model selection — same pattern as CC's model routing skills. Lets Akien change the Librarian's tier assignments, add new model options, or override for a session without editing source.\n\n**Affected files:** agent_datacenter/devices/librarian/skills/model_selection.md\n**Design rules:** skill file format consistent with CC_WORKFLOW_TOOLS skills\n**Scope boundary:** skill file only; does not change inference routing code\n**Test plan:** doc review; no code tests needed",
+    "completed_at": "2026-05-08T20:05:09.052950+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "338f5eeb-1d47-4b34-b78c-00971cfea818",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-routing-machine-in-use.20260323.192712901481",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-routing-machine-in-use"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T19:27:12.901481",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-routing-machine-in-use"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-routing-machine-in-use",
+    "size": "S",
+    "notes": "~/.TheIgors/local/machine_overrides.json. set_machine_in_use(hostname, ttl_hours=None), clear_machine_in_use(hostname). Alias map in machines.json. Habits: 'I'm at X' → set, 'I'm moving away from X' → clear. D211.",
+    "title": "machine_in_use signal: overrides.json + set/clear tools + location habits",
+    "result": "Seeded PROC_LOCATION_SET and PROC_LOCATION_CLEAR reactive habits. 'I'm at X' triggers set_machine_in_use; 'I'm leaving X' triggers clear_machine_in_use. Alias resolution in routing_tools.py handles shorthand names. Both seeded as children of CP1. Committed + pushed (seed_routing_habits.py).",
+    "status": "done",
+    "priority": 1,
+    "completed_at": "2026-03-23T19:27:12.901481+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "id": "cc.0.T-vetinari-device.20260530.210133706678",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-vetinari-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T21:01:33.706678",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-prescient-agents-pa20",
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-agent-kill-switch",
+      "T-factory-template",
+      "T-inference-budget-ledger",
+      "T-pa20-palace-foundation",
+      "T-provenance-trust-scoring",
+      "T-vetinari-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-vetinari-device",
+    "gate": null,
+    "role": "master",
+    "size": "L",
+    "tags": [
+      "Platform"
+    ],
+    "title": "Vetinari: meta-orchestrator device for the whole agent collective",
+    "result": "VetinariDevice: factory ownership, health rollup, Akien escalation via channel; 13 tests; stale stub replaced",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "blocked_at": "2026-06-02T21:48:59.750655+00:00",
+    "created_at": "2026-05-30T21:01:33.706678+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Lord Vetinari — the Patrician of Ankh-Morpork — manages the whole city without anyone noticing. As a rack device, Vetinari is the meta-orchestrator: knows what every factory and agent is doing, holds the owner_id for factories that don't have a more specific owner, makes high-level resource allocation decisions, and reports to Akien.\n\nVetinari is the 'agentized owner slot' from T-factory-template — the agent that can own factories so humans don't need to manage every one directly. Initially Akien owns everything; Vetinari takes over progressively as trust is established via the provenance + trust scoring system.\n\nCapabilities: factory lifecycle management (create/halt/retire), agent health rollup across the whole collective, resource reallocation (shift budget from idle factories to busy ones), escalation to Akien when something needs a human decision, cross-factory goal tracking.\n\nGated on: T-factory-template, T-provenance-trust-scoring, T-inference-budget-ledger, T-agent-kill-switch all shipping first.\n\n**Affected files:** devices/vetinari/ (new), config/profiles/vetinari.yaml\n**Design rules:** BaseDevice/BaseShim; Vetinari calls tools, does not contain systems; owner_id in factory specs resolves to comms://vetinari/ once this ships\n**Scope boundary:** IN — factory ownership, health rollup, budget reallocation, Akien escalation; OUT — Igor cognition, per-agent internal decisions\n**Completion criteria:** Vetinari can own a factory spec, receive its health rollup, and escalate to Akien when eval scores drop below threshold\n\n**PA2.0 Layer 3 (Future Modeling):** Vetinari is the Layer 3 device in the Prescient Agents 2.0 architecture. Alejandro'''s coding factory pattern: receive project brief → generate tasks with impl details + test criteria → route to worker tier → proof of life → CI gate → manual QA. Concept: C-prescient-agents-pa20. Goal: G-factory-of-factories.\n\n**Dependency:** T-pa20-palace-foundation (palace nodes G-factory-of-factories + C-prescient-agents-pa20 must exist before Vetinari references them).",
+    "completed_at": "2026-06-05T04:18:07.073692+00:00",
+    "deposited_at": "2026-05-30T15:09:31.846944",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T21:47:07.362425+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T21:01:33.909977+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f3e78176-3f09-4253-b2e3-96314bec9316",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

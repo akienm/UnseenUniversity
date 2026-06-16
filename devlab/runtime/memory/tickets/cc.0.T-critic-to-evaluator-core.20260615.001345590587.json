@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-critic-to-evaluator-core.20260615.001345590587",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-critic-to-evaluator-core"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T00:13:45.590587",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-evaluator-consolidation-2026-06-14"
+    ],
+    "tickets": [
+      "T-critic-to-evaluator-core"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-critic-to-evaluator-core",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "CompiledInference",
+      "Factory"
+    ],
+    "title": "Refactor CriticDevice to call EvaluatorCore(optimism=-1)",
+    "result": "Refactored: CriticDevice.evaluate_decision() now calls EvaluatorCore(optimism=-1.0). evaluate_replay() routes through it. CriticAgent heuristic unchanged — E2E test passes. All critic wiring tests pass. Commit d0e2ce29.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that CriticDevice no longer maintains its own inference logic and instead calls EvaluatorCore with optimism=-1, keeping the same calling convention for DickSimnel's tool loop.",
+    "created_at": "2026-06-15T00:13:45.590587+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-evaluator-consolidation-2026-06-14",
+    "description": "CriticDevice maintains its own inference logic for evaluating builder decisions. After EvaluatorCore exists, this is redundant — Critic is EvaluatorCore at optimism=-1.\n\n**HIGH-INERTIA PRE-APPROVAL (Akien, 2026-06-14):** devices/critic/ is wired into DickSimnel's tool loop. Refactoring it was explicitly approved in the design conversation for D-evaluator-consolidation-2026-06-14 before filing.\n\nRefactor CriticDevice.evaluate_decision() to call EvaluatorCore(context=decision_context, optimism=-1.0). Keep the CriticDevice wrapper and its calling convention identical — DickSimnel's tool loop calls Critic the same way. Only the inference implementation changes.\n\nRetire CriticAgent's direct inference calls. CriticJudgment output shape stays the same.\n\n**Affected files:** devices/critic/device.py; devices/critic/agent.py (retire inference logic, keep output shape)\n**Design rules:** no-autonomous-action; no SQLite; external-state; HIGH-inertia pre-approved\n**Scope boundary:** IN: CriticDevice inference replaced by EvaluatorCore call; same output shape. OUT: changing DickSimnel wiring; changing CriticJudgment schema; changing when Critic is called.\n**Completion criteria:**\n  1. CriticDevice.evaluate_decision() returns same output shape as before\n  2. devices/dicksimnel/test_end_to_end.py passes unchanged\n  3. CriticAgent no longer makes direct inference calls — verified by removing its InferenceRequest import\n  4. CriticDevice calls EvaluatorCore with optimism=-1.0 — verified by grep",
+    "completed_at": "2026-06-15T20:43:49.128373+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

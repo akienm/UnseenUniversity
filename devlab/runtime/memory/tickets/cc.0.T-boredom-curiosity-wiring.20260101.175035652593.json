@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-boredom-curiosity-wiring.20260101.175035652593",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-boredom-curiosity-wiring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T17:50:35.652593",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-boredom-curiosity-wiring"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-boredom-curiosity-wiring",
+    "title": "Wire boredom→curiosity motivational loop with milieu competition",
+    "result": "CuriositySource fires when BOREDOM_DETECTED in TWM + no goals active. Intrinsic questions replace watch habits. Milieu nudge +0.12v/+0.15a out-competes boredom -0.08v. Also fires when simply idle.",
+    "status": "done",
+    "priority": 1,
+    "description": "Boredom pushes mild negative (exists). Goals pull strong positive (exists). Curiosity should pull medium positive when boredom present + no goals active. CuriositySource must: (1) fire when BOREDOM_DETECTED in TWM, not just when idle, (2) generate intrinsic questions (improve self, read, find gaps), (3) push milieu-affecting positive valence that out-competes boredom. No new mechanism — just wire existing milieu signals.",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b59faf9a-2a65-4f21-b106-39d1f32654dd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

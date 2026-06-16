@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-experiment-findings-log.20260417.232144006970",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-findings-log"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T23:21:44.006970",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-findings-log",
+      "T-uc-schema-three-namespaces"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-findings-log",
+    "size": "M",
+    "tags": [
+      "Operations",
+      "Architecture"
+    ],
+    "title": "Experiment findings log — queryable record of what we tried and learned",
+    "result": "infra.experiment_findings table + findings.py CLI (add/list/search/show). Seeded DeepSeek vs Qwen result. 8 tests.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-17T23:15:26.018943+00:00",
+    "related_to": null,
+    "description": "We ran a DeepSeek vs Qwen reading comparison. Qwen won by one unit extracted. That finding exists only in a compacted CC conversation — neither Igor nor CC can find it.\n\n## Problem\n- experiment_queue table is for Igor's runtime micro-experiments (probe/observe cycle)\n- decisions_log.dsb is a flat file (and CC is told never to write to it)\n- Session records capture what was done, not what was learned\n- No queryable store for 'we tried X, Y won, here's the evidence'\n\n## Solution\nA Postgres table (infra schema) for experiment findings:\n- experiment_id, title, hypothesis, method, result, conclusion\n- participants (igor, cc, akien)\n- evidence_refs (memory IDs, commit hashes, session IDs)\n- created_at, created_by\n- tags for searchability\n\nBoth CC and Igor deposit findings. Both can query. Comms channel comms://log/experiments gets a line per finding for the file-based trail.\n\n## Not the same as\n- experiment_queue (runtime micro-experiments with probe/observe)\n- decisions_log (architectural decisions, not experimental findings)\n- session records (what happened, not what we learned)\n\n## Depends on\n- T-uc-schema-three-namespaces (done — infra schema exists)",
+    "completed_at": "2026-04-17T23:21:44.006970+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3586aeac-f252-4673-b3d8-3387aa081b79",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

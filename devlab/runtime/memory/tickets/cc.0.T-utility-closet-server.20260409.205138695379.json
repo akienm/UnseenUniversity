@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-utility-closet-server.20260409.205138695379",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-utility-closet-server"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-09T20:51:38.695379",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-utility-closet-server"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-utility-closet-server",
+    "size": "L",
+    "title": "D335 Phase 1: Standalone utility closet server",
+    "result": "D335 Phase 1 complete: standalone utility closet server with agent registration. 1800-line Starlette/uvicorn service. 20 passing tests. Launchers (superclaude + superclaude.ps1) start utility closet + forward args to Claude Code. Ready for Phase 2 (Igor as client).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-09T20:39:29.722493+00:00",
+    "related_to": null,
+    "description": "Extract web server from Igor into standalone utility_closet_server.py. Starlette/uvicorn, agent-agnostic. Dashboard API, /api/cc_send, channel, system health, static UI serving. /health endpoint + PID file + stale detection. Logging to ~/.TheIgors/logs/utility_closet.log.",
+    "completed_at": "2026-04-09T20:51:38.695379+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4fdd124e-1de7-4639-9e07-0a7cc0fc1b60",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

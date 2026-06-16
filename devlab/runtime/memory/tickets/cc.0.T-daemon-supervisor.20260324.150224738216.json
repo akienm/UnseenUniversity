@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-daemon-supervisor.20260324.150224738216",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-daemon-supervisor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:02:24.738216",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-daemon-supervisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-daemon-supervisor",
+    "title": "ThreadProxy / DaemonSupervisor — single owner of daemon thread lifecycle",
+    "result": "DaemonSupervisor singleton in igor/cognition/daemon_supervisor.py: register(name, thread, health_fn), status(), report_str(). Registered in boot_check, main (ne-worker, consolidation-worker, distillation-worker, ne-deep-consolidation), network/listener, discord_bot, web/server. get_daemon_report tool added to metrics.py. 12 tests pass.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": "2026-03-24T09:34:44.426534+00:00",
+    "description": "No central registry of what daemon threads are running, whether they're healthy, or whether they shut down cleanly. We just fixed an exit threadlock in ollama_reasoner. Need: register-on-create, health ping, clean-shutdown guarantee, /audit integration.",
+    "completed_at": "2026-03-24T15:02:24.738216+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "389bec21-525c-4895-beb5-67c9e02e3e5d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

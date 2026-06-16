@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-greeting-content-gate.20260402.210116663591",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-greeting-content-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T21:01:16.663591",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-greeting-content-gate",
+      "T-greeting-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-greeting-content-gate",
+    "epic": "Cognition",
+    "size": "XS",
+    "title": "PROC_GREETING: suppress when message has substantive content",
+    "result": "Added conditions={max_complexity: low} + match_mode=both to PROC_GREETING in DB — prevents greeting habit from firing on substantive messages. Fix applied directly to DB.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-02T20:29:23.875317+00:00",
+    "related_to": "T-greeting-habit",
+    "description": "PROC_GREETING misfires on substantive check-ins. Observed 2026-04-01: Akien sent a message with context (threading model, training epic) — PROC_GREETING fired and produced 'Hello, Akien. Good to hear from you. What's on your mind?' — discarding the actual content. Igor self-diagnosed this correctly (channel id=2903/2905).\n\nRoot cause: PROC_GREETING trigger pattern-matches on surface features (name, first-message signal) without checking whether the message is actually a bare greeting.\n\nFix: Add condition to PROC_GREETING that suppresses it when the message contains substantive content. Substantive = has_context OR asks_question OR references_ongoing_work OR message length > ~30 words.\n\nImplementation options (pick one):\n1. Add conditions to PROC_GREETING habit: not_intent=question, max_complexity=2, or keyword exclusion list\n2. Add a BLOOM_INHIBIT habit that fires on substantive content and inhibits greeting habits\n3. Add a conditions check: tags must NOT include has_code, multi_turn, has_ticket\n\nIgor diagnosed: 'suppress PROC_GREETING when message contains substantive content — whenever a message contains more than a greeting (has context, asks questions, or references ongoing work), skip greeting habits and respond to the content directly'\n\nThis is a habit calibration task — surgical edit to existing PROC_GREETING conditions, not a new habit.",
+    "completed_at": "2026-04-02T21:01:16.663591+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f1f6bdd3-d407-4564-9820-90bdb6e08715",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-budget-mcp-tool.20260518.220011977603",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-budget-mcp-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-18T22:00:11.977603",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-adc-budget-mcp-tool",
+      "T-adc-inference-budget-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-budget-mcp-tool",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Budget",
+      "Librarian",
+      "MCP"
+    ],
+    "title": "Add check_openrouter_balance MCP tool to librarian",
+    "result": "budget_tools.py: check_openrouter_balance + openrouter_burn_rate MCP tools wired into librarian; 15 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-18T22:00:11.977603+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "CC has no direct MCP path to query the OR account balance or burn rate. The only path today is Igor's budget.py tools, which require Igor to be running and responding. Adding a librarian MCP tool lets CC (and other callers) query balance and trajectory directly, without going through Igor.\n\n**Affected files:** agent_datacenter/devices/librarian/tools/budget_tools.py (new), agent_datacenter/devices/librarian/tools/__init__.py\n**Design rules:** no-sqlite, graceful degradation when OR API unreachable or OPENROUTER_API_KEY absent. Reads infra.balance_history from IGOR_HOME_DB_URL for trajectory (skip gracefully if DB absent).\n**Scope boundary:** Two MCP tools only: check_openrouter_balance (live OR API call, cached 1h) and openrouter_burn_rate (trajectory from infra.balance_history). No spend recording here — that belongs in T-adc-inference-budget-gate. Follow the existing budget_tools.py pattern from other librarian tools modules.\n**Test plan:** (1) budget_tools.SCHEMAS contains both tool names, (2) dispatch('check_openrouter_balance', {}) routes correctly, (3) OR API failure returns graceful error string not exception, (4) trajectory returns 'no_data' when infra.balance_history is empty or unreachable.",
+    "completed_at": "2026-05-18T22:09:07.774035+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eb99ec43-2a61-49fa-8c9a-01546b5b3882",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

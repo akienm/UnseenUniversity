@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.T-repo-root-on-path.20260603.172708793499",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-repo-root-on-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T17:27:08.793499",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dsimnel-launcher",
+      "T-repo-root-on-path",
+      "T-sudo-relay-tmux-window"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-repo-root-on-path",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Installer",
+      "Launcher"
+    ],
+    "title": "Installer: repo root on PATH + all device launchers present",
+    "result": "sudo_relay + thelibrarian launchers at root; uu bootstrap --path writes PATH idempotently. commit 26232234.",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "blocked_at": "2026-06-03T17:48:25.906720+00:00",
+    "claimed_at": "2026-06-03T17:46:56.916697+00:00",
+    "created_at": "2026-06-03T17:27:08.793499+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The factory-of-factories install experience requires that every device launcher works by name from any terminal after install. Non-technical users (directed by Vetinari) must be able to run 'sudo_relay', 'granny', 'dsimnel', 'thelibrarian', 'uu' without knowing where the repo lives. This ticket wires that up.\n\nThree parts:\n1. **Repo root on PATH**: installer writes `export PATH=\"$PATH:/path/to/UnseenUniversity\"` to `~/.bashrc` (and `~/.zshrc` if present). Idempotent — checks before writing. Absolute path resolved at install time.\n2. **Missing root launchers**: add thin launcher scripts at repo root for any device that doesn't have one yet — at minimum: `sudo_relay` (user-facing endpoint for the sudoer relay protocol, wraps `devices/igor/tools/sudo_relay.py`), `thelibrarian` (wraps Librarian shim). `dsimnel` is covered by T-dsimnel-launcher. `granny`, `uu`, `igor` already exist.\n3. **sudo_relay tmux design (future hook)**: the `sudo_relay` launcher at root is a thin script today. Future: it will open its own named tmux window (`sudo-relay`) running the sudoer daemon so Vetinari can direct users to that window for credential entry and they can watch output. Add a `# TODO: tmux window` comment in the script as a placeholder for T-sudo-relay-tmux-window.\n\nAll root launchers follow the existing pattern (see `granny`, `uu` at repo root) — Python shebang, activate venv if present, exec the device entry point.\n\n**Affected files:** devices/installer/factory.py or installer shim (add PATH write step), repo root (new: sudo_relay, thelibrarian scripts), devices/installer/manifest.json (if launchers need to be in manifest)\n**Design rules:** none apply (shell scripts + installer config, no DB touches)\n**Scope boundary:** IN: PATH write in installer, sudo_relay root launcher, thelibrarian root launcher, tmux comment placeholder. OUT: actual tmux window launch (T-sudo-relay-tmux-window), dsimnel launcher (T-dsimnel-launcher), Windows PATH (separate concern), moving sudoer_daemon.sh to a more visible location.\n**Completion criteria:** after running installer on a clean shell, `which granny`, `which sudo_relay`, `which thelibrarian`, `which dsimnel` (post T-dsimnel-launcher) all resolve; installer PATH write is idempotent (running twice doesn't duplicate the line); sudo_relay script at root runs without error when relay dir exists",
+    "completed_at": "2026-06-03T18:22:20.873860+00:00",
+    "deposited_at": "2026-06-03T11:54:26.698804",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T17:46:56.916697+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ec36f226-70e7-4a0f-90fe-168e3be4014e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

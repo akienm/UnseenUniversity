@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-swadl-add-pyautogui.20260508.162844858901",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-add-pyautogui"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T16:28:44.858901",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-swadl-add-pyautogui"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-add-pyautogui",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "SWADL",
+      "Automation"
+    ],
+    "title": "CLOSED: Add pyautogui driver to SWADL",
+    "result": "driver adapter added to swadl_driver.py with tests, 756f742",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:33:22.439098+00:00",
+    "created_at": "2026-05-08T16:28:44.858901+00:00",
+    "related_to": null,
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Add pyautogui as a supported interface library in SWADL. pyautogui is cross-platform (Linux/Mac/Windows), coordinate/image-recognition based, no accessibility tree required. Useful for apps that expose no AT-SPI and where Selenium isn't applicable.\n\n**Affected files:** swadl/SWADL/engine/swadl_driver.py, swadl/SWADL/engine/swadl_base_automation.py, requirements.txt\n**Design rules:** no-sqlite; new driver follows existing driver pattern in swadl_driver.py\n**Scope boundary:** add the driver wrapper + config key to select it; does NOT add image-matching helpers (future ticket)\n**Test plan:** unit test that pyautogui driver initialises and exposes the standard SWADL driver interface",
+    "completed_at": "2026-05-08T18:37:55.538687+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eb89cb73-b18c-4218-8c1c-1f943cac2b49",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-igor-theigers-archive.20260525.150615454045",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-theigers-archive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-25T15:06:15.454045",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-into-adc-2026-05-25"
+    ],
+    "tickets": [
+      "T-igor-import-rewrite",
+      "T-igor-theigers-archive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-theigers-archive",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Architecture",
+      "Igor"
+    ],
+    "title": "Remove wild_igor/ from TheIgors; make it a docs archive",
+    "result": "Archived TheIgors: deleted wild_igor/, updated all imports, added ARCHIVE.md, updated README.md, committed and pushed.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-05-25T15:06:15.454045+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-into-adc-2026-05-25",
+    "description": "After T-igor-import-rewrite is confirmed working: delete wild_igor/ from TheIgors repo. Add an ARCHIVE.md at the TheIgors root explaining it is now a docs/skills/slates archive — all runnable Igor code lives in devices/igor/ in UnseenUniversity. Update any remaining lab/ scripts in TheIgors that reference wild_igor paths. Commit and push.\n\n**Affected files:** ~/TheIgors/wild_igor/ (deleted), ~/TheIgors/ARCHIVE.md (new), ~/TheIgors/README.md (updated), any lab/ scripts referencing wild_igor paths\n**Design rules:** TheIgors becomes non-runnable after this step — verify nothing in TheIgors/lab/ imports from wild_igor before deleting\n**Scope boundary:** In scope: delete wild_igor/, add archive docs, update scripts. Out of scope: deleting TheIgors repo (kept for history, skills, slates). Out of scope: moving CC skills from TheIgors (separate decision).\n**Test plan:** `ls ~/TheIgors/wild_igor/` fails with 'No such file or directory'. `grep -rn 'from wild_igor\\|import wild_igor' ~/TheIgors/lab/ --include='*.py'` returns zero results. Igor still running from devices/igor/ location. `pytest tests/ -x -q` from UnseenUniversity still passes.",
+    "completed_at": "2026-05-25T20:13:22.859761+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-25T15:06:15.454069+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3d39f280-bf42-4aca-965a-9e628e98ed1f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

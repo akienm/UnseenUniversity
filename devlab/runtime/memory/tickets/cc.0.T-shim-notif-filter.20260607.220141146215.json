@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-shim-notif-filter.20260607.220141146215",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-notif-filter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-07T22:01:41.146215",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agent-notification-system-2026-06-07"
+    ],
+    "tickets": [
+      "T-notif-config-schema",
+      "T-notify-skill",
+      "T-shim-notif-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-notif-filter",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Shim",
+      "Notifications",
+      "Granny"
+    ],
+    "title": "Shim notification filter + tmux delivery",
+    "result": "NotificationDispatcher (filter+deliver, SILENT/QUIET/LOUD, tmux guard, drain_pending); BaseShim._notifier + filter_incoming additive; 13 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that every incoming bus message is delivered at the level the receiving shim's config specifies — SILENT queues silently, QUIET queues and surfaces at next break, LOUD fires an immediate tmux interrupt — so CC is never interrupted while working and always woken when idle.",
+    "claimed_at": null,
+    "created_at": "2026-06-07T22:01:41.146215+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agent-notification-system-2026-06-07",
+    "description": "Wire a NotificationDispatcher into BaseShim that intercepts incoming messages and applies the notification config to decide delivery mode. On message receipt: (1) load NotificationConfig for this device, (2) read current agent state (available flag) to determine effective default (available=idle → QUIET, available=false/working → SILENT), (3) apply per-sender override if present, (4) execute delivery. LOUD: tmux send-keys to own CC_TMUX_SESSION (guard with `tmux has-session` first; fall back to QUIET if no session). QUIET: leave in mailbox, append sender+summary to ~/.unseen_university/<device>/notify_pending.txt for surfacing at next /savestate or /context-load. SILENT: mailbox only. Log every delivery decision at INFO: 'notif: <sender> → <LEVEL> (reason: <state/override/default>)'.\n\n**Affected files:** unseen_university/shim.py (additive: new _notifier attribute, instantiated in __init__), unseen_university/notification_dispatcher.py (new class), tests/test_shim_notif.py (new)\n**Design rules:** external-state principle — no in-memory-only fields; log every interface crossing (AR-009)\n**Scope boundary:** In scope: NotificationDispatcher class, BaseShim wiring (additive only — no lifecycle method changes), tmux delivery with has-session guard, state-linked defaults, QUIET pending list. Out of scope: /notify skill (T-notify-skill), per-device config creation (T-notif-config-schema).\n**HIGH-INERTIA:** shim.py is design-center. Change is ADDITIVE ONLY — new _notifier attribute + instantiation. No existing methods modified. Akien pre-approval required before sprint.\n**Completion criteria:** BaseShim has _notifier attribute. Incoming message triggers delivery decision logged at INFO. LOUD falls back to QUIET when tmux session absent (tmux has-session returns false). SILENT leaves message in mailbox with no tmux action. QUIET appends to notify_pending.txt. State-linked default: when available.false file present, default is SILENT regardless of config. 5+ tests covering all delivery paths + fallback.",
+    "completed_at": "2026-06-07T22:16:00.490940+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

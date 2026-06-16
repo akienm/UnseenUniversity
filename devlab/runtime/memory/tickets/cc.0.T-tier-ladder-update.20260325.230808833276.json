@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-tier-ladder-update.20260325.230808833276",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-tier-ladder-update"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T23:08:08.833276",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-tier-ladder-update"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-tier-ladder-update",
+    "title": "Update tier ladder — Ollama primary, OR luxury (D234)",
+    "result": "D234 tier ladder inversion implemented. Ollama primary for all call levels. Background impulses no longer escalate to OR. Interactive level tries Ollama first; OR fires only as luxury fallback. DAG _local_preferred updated. CLAUDE.md updated. 460/467 tests pass (7 pre-existing). Commit f026cc52.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "D234. Ollama is now the default inference engine (tier.2), not a fallback. OR is the luxury/tone path (tier.3), scarce, will exhaust. Update: (1) inference_gateway.py routing logic — Ollama fires before OR; (2) budget gate logic — OR fires only when quality matters and budget allows; (3) CLAUDE.md tier ladder reference table; (4) any OR-as-default routing assumptions. Direction: graph expands, LLM usage shrinks. Weaning signal: watch where calls escape to which tier.",
+    "completed_at": "2026-03-25T23:08:08.833276+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "20d48fb4-2702-4369-ba5a-cf98cbb729ac",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

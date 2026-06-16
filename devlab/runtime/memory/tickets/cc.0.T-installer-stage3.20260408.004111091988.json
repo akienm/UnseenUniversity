@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-installer-stage3.20260408.004111091988",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-installer-stage3"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T00:41:11.091988",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-installer-stage3"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-installer-stage3",
+    "epic": "Operations",
+    "size": "M",
+    "title": "Installer stage 3: env_sync.py multi-file load + migration 002",
+    "result": "env_sync.py: _cfg_files() + updated boot_env_sync() to load split cfg files with .env fallback. migration_002 added to installer.py. 1868 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-08T00:38:50.437100+00:00",
+    "related_to": null,
+    "description": "Update env_sync.py (MEDIUM inertia) boot_env_sync() to load ordered cfg files instead of single .env. Add migration 002: rename .env → .env.backup-pre-d319, write 002.done. Fallback: warn+load .env if cfg files missing.",
+    "completed_at": "2026-04-08T00:41:11.091988+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3c687bc3-2db2-4ab2-a5e8-822943392b8d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

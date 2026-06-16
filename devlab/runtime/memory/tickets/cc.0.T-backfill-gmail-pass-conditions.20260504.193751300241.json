@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-backfill-gmail-pass-conditions.20260504.193751300241",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-backfill-gmail-pass-conditions"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T19:37:51.300241",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pass-condition-required-2026-05-04"
+    ],
+    "tickets": [
+      "T-backfill-gmail-pass-conditions",
+      "T-gmail-flow-integration-test",
+      "T-gmail-pages-build-to-flow-spec"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-backfill-gmail-pass-conditions",
+    "gate": null,
+    "size": "S",
+    "title": "CLOSED: Backfill Pass condition into Gmail tickets",
+    "result": "Both Gmail tickets updated in DB with pass condition: Igor opens gmail.com, navigates inbox, extracts sender+subject.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-05-04T19:35:45.127712+00:00",
+    "related_to": null,
+    "decision_id": "D-pass-condition-required-2026-05-04",
+    "description": "Update T-gmail-pages-build-to-flow-spec and T-gmail-flow-integration-test descriptions to include their known pass conditions. Pass condition for both: Igor's browser profile opens gmail.com, navigates to inbox, and can extract sender + subject from the newest unread email — without CC involvement.\n\n**Affected files:** queue.json (description fields only)\n**Design rules:** none apply\n**Scope boundary:** IN = add pass condition text to those two ticket descriptions; OUT = no scope change to the tickets themselves, no code changes\n**Test plan:** cc_queue.py show for both tickets shows a 'Pass condition:' line\n**Pass condition:** both Gmail ticket descriptions contain an explicit 'Pass condition:' line when shown via cc_queue.py show",
+    "completed_at": "2026-05-04T19:37:51.300241+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2ad2839b-b830-4853-8e77-42a5a12d55f2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

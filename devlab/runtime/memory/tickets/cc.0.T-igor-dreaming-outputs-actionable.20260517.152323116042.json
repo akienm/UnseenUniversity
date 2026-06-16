@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-dreaming-outputs-actionable.20260517.152323116042",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-dreaming-outputs-actionable"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.116042",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17"
+    ],
+    "tickets": [
+      "T-igor-dreaming-outputs-actionable"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-dreaming-outputs-actionable",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Dreaming",
+      "SelfImprovement",
+      "WatchProblems"
+    ],
+    "title": "CLOSED: Dreaming: recurring failure patterns in reflection auto-write watch_problems entry",
+    "result": "failure keyword scan in run(): _extract_failure_clusters() + _write_failure_watch_problems() on each dreaming pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-17T15:50:58.782523+00:00",
+    "created_at": "2026-05-17T15:23:23.116042+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "description": "Igor's dreaming reflections name problems but write them only to logs. Memory consolidation analog: synthesis during idle periods should produce structured improvement artifacts. Dreaming should feed the watch_problems lever-watcher pipeline, not just generate text.\n\nIn the dreaming pass, after the reflection LLM call, parse the reflection output for recurring failure patterns (regex or keyword scan for 'failed', 'blocked', 'stuck', 'retry'). If 2+ references to the same failure keyword cluster appear, call watch_problems.add_watch_problem(problem=failure_summary, watch_condition=keywords, lever_description='dreaming identified recurring pattern'). watch_problems dedup ensures no floods.\n\n**Affected files:** wild_igor/igor/cognition/dreaming.py (MEDIUM inertia)\n**Design rules:** theigors/rules/coding (MEDIUM inertia); theigors/rules/database (Postgres via watch_problems API — existing dedup handles floods)\n**Scope boundary:** In scope: parse dreaming reflection for recurring failure keywords + watch_problems write. Out of scope: ticket auto-filing from dreaming directly (lever_watcher handles escalation pathway); changes to reflection prompt.\n**Test plan:** Mock dreaming reflection containing 'old_string not found' twice — watch_problems.add_watch_problem() called once with watch_condition containing 'old_string'. Active problems query shows the entry. Second dreaming pass with same pattern does not duplicate (dedup by watch_condition).",
+    "completed_at": "2026-05-17T15:59:37.571449+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d4423d1c-871c-416e-9b1e-e02432da3ec3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cloud-fallback-alert.20260424.160216000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cloud-fallback-alert"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:16",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-budget-gate-before-cloud",
+      "T-cloud-fallback-alert",
+      "T-qwen-only-pe-chain-cloud"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cloud-fallback-alert",
+    "gate": "T-qwen-only-pe-chain-cloud",
+    "size": "S",
+    "tags": [
+      "Budget",
+      "Observability",
+      "ModelRouting"
+    ],
+    "title": "Make silent ollama→cloud fallback noisier (budget-surprise prevention)",
+    "result": "High-urgency cc_inbox push on _call_tier2 ollama→OR fallback. Companion to routing log line from T-cert-debugger-env-mirror. 2 regression tests. 221 related tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "blocked_at": "2026-04-23T02:28:51.568957+00:00",
+    "claimed_at": "2026-04-23T00:38:41.297638+00:00",
+    "created_at": "2026-04-24T16:02:16Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Today pe_chain fell back from local Ollama to paid OR cloud without any visible alert — Akien noticed only because it showed up in the forensic log. For a cloud call that costs budget, the routing decision should be surfaced (cc_alerts, milieu arousal bump, or dashboard banner) so it's not a silent surprise.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (fallback branch in _call_tier2 when Ollama unreachable + OR key present). Possibly cc_alerts.log append + a milieu urgency bump.\n**Design rules:** docs-in-code.\n**Scope boundary:** IN — one-line alert when the fallback engages (cc_alerts entry + optional stderr log at WARNING). OUT — gating the fallback behind an env flag (that's a separate policy question); building a full budget-guard wrapper (also separate — part of T-budget-gate-before-cloud if it exists).\n**Test plan:** unit test: _call_tier2 with Ollama unreachable + OR key present writes a cc_alerts entry before dispatching cloud call.\n**Gated on:** T-qwen-only-pe-chain-cloud (smaller blast radius and tighter scope sequencing).",
+    "completed_at": "2026-05-02T03:43:37.934395+00:00",
+    "github_issue": 520,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a0cb46e5-ccd8-4817-b782-2176ec6eee0d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

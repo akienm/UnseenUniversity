@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-retire-uc-watchdog.20260526.234541225444",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retire-uc-watchdog"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T23:45:41.225444",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-retire-uc-watchdog"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retire-uc-watchdog",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Cleanup"
+    ],
+    "title": "Retire uc_watchdog.py — it watches old utility_closet_server",
+    "result": "replaced uc_watchdog with web_server_watchdog; uses WebServerDevice.start(); legacy env var honoured; 16 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-26T23:45:41.225444+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "uc_watchdog.py in devices/igor/cognition/ watches utility_closet_server.py — the old ADC HTTP server that was replaced by devices/web_server/. The watchdog polls /api/health, relaunches the old server on failure, and keeps utility_closet.log. Now that web_server is the ADC, this file is either dead code or needs to be repointed to watch the web_server device.\n\n**Affected files:** devices/igor/cognition/uc_watchdog.py\n**Design rules:** none — this is cleanup\n**Scope boundary:** Either delete uc_watchdog.py entirely (if nothing calls it) or update it to watch the web_server device health endpoint. Check callers first.\n**Test plan:** Grep for uc_watchdog imports; verify no behavioral regression if deleted",
+    "completed_at": "2026-05-26T23:53:05.183117+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T23:45:41.291596+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f70ccf51-6856-464c-8787-e6806f5bf4b4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

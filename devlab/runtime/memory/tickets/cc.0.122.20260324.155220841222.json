@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.122.20260324.155220841222",
+  "emitter": "cc.0",
+  "namespace": [
+    "122"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:52:20.841222",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "122"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "122",
+    "body": "Evaluate containerizing Igor (Docker/Podman). Goals: reproducible deploys, easier multi-box, isolation. Eval only — not implementation. Produce a recommendation: worth it or not, and what the migration path looks like.",
+    "size": "S",
+    "title": "Containerization eval",
+    "result": "containerization eval: PROCEED. D108+D126+D114 = already container-ready. Migration: Dockerfile+compose+entrypoint only (no code changes). Complications: GPU/KoboldCpp defer, Chrome shm-size, Ollama as sibling. Priority: post Slate 0.",
+    "status": "done",
+    "created": "2026-03-22T11:50:47.647353",
+    "priority": 8,
+    "claimed_at": "2026-03-24T15:52:00.759991+00:00",
+    "completed_at": "2026-03-24T15:52:20.841222+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

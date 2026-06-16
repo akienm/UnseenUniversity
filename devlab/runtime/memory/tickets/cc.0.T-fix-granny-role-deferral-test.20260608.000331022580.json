@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-fix-granny-role-deferral-test.20260608.000331022580",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-granny-role-deferral-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T00:03:31.022580",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-granny-role-deferral-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-granny-role-deferral-test",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Granny",
+      "Bug"
+    ],
+    "title": "Fix: TestGrannyDeferralWithRole::test_builder_role_not_apprentice_no_or_fallback fails",
+    "result": "added _VALID_ROLES, _WORKER_TO_ROLE, _infer_role to devices/granny/daemon.py — test imported from granny but symbols lived in cc_queue; now granny owns them and consistency test has real coverage",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that the builder-role deferral test passes so the Granny role dispatch path is regression-tested.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T00:03:31.022580+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pre-existing failure: test_builder_role_not_apprentice_no_or_fallback asserts the Granny role-based deferral path for builder role. Confirmed pre-existing (fails without any local changes).\n\n**Affected files:** lab/claudecode/cc_queue.py (Granny role-check logic) or tests/igor/test_cc_queue_role.py\n**Design rules:** no-sqlite\n**Scope boundary:** In scope: fix the failing assertion. Out of scope: changing Granny role dispatch behavior beyond the test fix.\n**Completion criteria:** test_builder_role_not_apprentice_no_or_fallback passes. No other tests regress.",
+    "completed_at": "2026-06-08T03:15:08.320741+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

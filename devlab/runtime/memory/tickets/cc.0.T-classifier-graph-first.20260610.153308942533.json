@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-classifier-graph-first.20260610.153308942533",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-classifier-graph-first"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:33:08.942533",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-competition-bootstrap-2026-06-10"
+    ],
+    "tickets": [
+      "T-classifier-graph-first"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-classifier-graph-first",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Competition",
+      "Classifiers"
+    ],
+    "title": "Graph-first k-NN memory type classifier",
+    "result": "knn_classifier.py: classify() + build_index(); 6 tests pass; FACTUAL fallback when no embeddings; holdout excluded (3592ef8f)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the graph-first classifier demonstrates that existing embeddings can classify programming-book content with zero cloud calls.",
+    "claimed_at": "2026-06-10T16:07:19.720721+00:00",
+    "created_at": "2026-06-10T15:33:08.942533+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-inference-competition-bootstrap-2026-06-10",
+    "description": "Build Personality A: embed input text via embedder.embed(), query competition.memory_embeddings for K nearest neighbors (non-holdout rows only), vote by memory_type distribution, return majority. Zero LLM calls.\n\n**Affected files:** New `lab/competition/classifiers/knn_classifier.py`; uses `devices.igor.cognition.embedder` (LOW inertia)\n**Design rules:** No LLM calls; pure graph lookup; fallback to FACTUAL if tie\n**Scope boundary:** classify(text) → memory_type. No training loop — k-NN is instance-based. No changes to embedder.\n**Completion criteria:** `knn_classifier.classify(text)` returns a memory_type string; classifying 5 sample programming-book sentences produces plausible types; cloud_calls_count=0 per classification.",
+    "completed_at": "2026-06-10T16:11:40.873236+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

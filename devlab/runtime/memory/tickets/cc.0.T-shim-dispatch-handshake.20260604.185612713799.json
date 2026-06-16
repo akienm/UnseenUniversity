@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-shim-dispatch-handshake.20260604.185612713799",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-dispatch-handshake"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T18:56:12.713799",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-shim-dispatch-handshake-2026-06-04"
+    ],
+    "tickets": [
+      "T-granny-bus-dispatch",
+      "T-queue-dispatched-status",
+      "T-shim-dispatch-handshake"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-dispatch-handshake",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Workflow"
+    ],
+    "title": "BaseShim: two-phase dispatch handshake protocol",
+    "result": "BaseShim: _DispatchHandshake + receive_dispatch; ack synchronous, prod every 120s, timeout at 600s; 15 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": "I intend that BaseShim handles the receive→ack→prod→timeout cycle so every worker gets the handshake for free and no app code needs to know about it.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T18:56:12.713799+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-shim-dispatch-handshake-2026-06-04",
+    "description": "Workers currently have no way to signal Granny that a dispatch envelope was received but the app is busy. Add a two-phase protocol to BaseShim: (1) on receiving a dispatch envelope, shim immediately sends 'got it' back and flips ticket to `acked`; (2) shim prods the app every 2 minutes; when app picks up, shim sends 'started' and flips to `in_progress`; (3) if no pickup after 10 minutes from ack, shim sends 'timeout' and Granny marks `escalated`. The app sees none of this — it just gets called when it's ready.\n\n**Affected files:** `unseen_university/shim.py` (BaseShim — add dispatch receive handler, ack send, prod loop, timeout), `tests/test_shim_output_validation.py` or new `tests/test_shim_handshake.py`\n**Design rules:** none apply (shim-internal protocol; no DB schema changes here)\n**Scope boundary:** Protocol lives in BaseShim only. Granny's side of the handshake (sending envelopes, reading responses) is T-granny-bus-dispatch. Queue status additions are T-queue-dispatched-status (gate: must ship first).\n**Completion criteria:** Unit tests show: (a) dispatch envelope → ack sent within 50ms; (b) prod fires every 120s when app hasn't picked up; (c) timeout fires at 600s and sends timeout envelope; (d) app picks up → started envelope sent and prod loop stops.",
+    "completed_at": "2026-06-04T19:28:05.460193+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

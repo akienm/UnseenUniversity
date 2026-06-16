@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-walk-12.20260507.215508072566",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-12"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:08.072566",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-12"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-12",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Docs",
+      "walk"
+    ],
+    "title": "CLOSED: Rename hebbian_bridge to coactivation_counter + docstring fix",
+    "result": "coactivation_counter.py created; hebbian_bridge.py replaced with re-export shim; test_hebbian_bridge.py updated to reload canonical module; 4496 tests green. Commit 50f3d2df.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-07T21:55:08.072566+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 area_2 finding: hebbian_bridge.py is misnamed — it's a scalar co-activation counter, not Hebbian pairwise edge weight update. Rename module with back-compat shim; update 3 docstrings to clarify the distinction.\n\n**Affected files:** wild_igor/igor/cognition/hebbian_bridge.py (rename to coactivation_counter.py + shim), wild_igor/igor/cognition/basal_ganglia.py (docstring), wild_igor/igor/cognition/consolidation.py (docstring)\n**Design rules:** docs-in-code\n**Scope boundary:** IN — rename + shim + 3 docstring updates. OUT — implementing true Hebbian pairwise updates (separate ticket).\n**Test plan:** Existing tests pass with shim; grep confirms no remaining incorrect 'Hebbian weight update' docstrings in the three files.\n**Pass condition:** `python -c \"from wild_igor.igor.cognition import coactivation_counter\"` succeeds; `from wild_igor.igor.cognition import hebbian_bridge` still works via shim.",
+    "completed_at": "2026-05-08T02:46:51.164720+00:00",
+    "github_issue": 639,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0de5377c-3589-4ea6-814f-efa3d2e35765",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

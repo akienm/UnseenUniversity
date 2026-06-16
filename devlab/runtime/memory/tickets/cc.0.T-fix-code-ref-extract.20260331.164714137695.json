@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-fix-code-ref-extract.20260331.164714137695",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-code-ref-extract"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T16:47:14.137695",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-code-ref-extract"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-code-ref-extract",
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "fix: _extract_tool_call fires on code_ref tool output",
+    "result": "Fixed: _response_from_tool_dispatch flag skips _extract_tool_call for code_ref results; inline synthesis for large results with 800-char fallback cap. Verified: read ~/TheIgors/CLAUDE.md → Igor posts capped content to channel.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "code_ref dispatch sets response_text to raw tool output; _extract_tool_call finds <tool>name</tool> tags in file content and misfires. Fix: _response_from_tool_dispatch flag + inline synthesis for large results.",
+    "completed_at": "2026-03-31T16:47:14.137695+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "911a7086-283c-40b2-9d82-6b392ae75801",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

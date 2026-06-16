@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-first-msg-of-day-close-prompt.20260422.170558882383",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-first-msg-of-day-close-prompt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T17:05:58.882383",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cross-day-session-boundary-2026-04-22"
+    ],
+    "tickets": [
+      "T-export-chat-per-message-date-routing",
+      "T-first-msg-of-day-close-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-first-msg-of-day-close-prompt",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "DayClose"
+    ],
+    "title": "First message of new day prompts to close previous day's slate",
+    "result": "stale_slate_check.py + 11 unit tests + /context-load Step 0.25 wiring. Soft-prompt when prior-day slate has open items without ✅ CLOSED marker. Commit 17d7d0ac.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-22T17:02:25.869397+00:00",
+    "related_to": null,
+    "decision_id": "D-cross-day-session-boundary-2026-04-22",
+    "description": "When CC receives the first user message on a new calendar day and yesterday's (or older) slate has open items, soft-prompt: 'Last slate was YYYY-MM-DD — close it first? (y/defer/skip)'. If yesterday's slate is already fully closed (done/closed marker present), skip silently.\n\nAffected files:\n- New: detection helper in lab/claudecode/ (stale-slate check + open-items grep)\n- ~/.claude/skills/context-load/SKILL.md or a SessionStart hook — wire the prompt\n\nDesign rules:\n- This is a soft prompt, not a hard gate — 'defer'/'skip' both continue without running /day-close\n- Skip silently when yesterday's slate has no open items (happy path is invisible)\n- One-shot per new day — never fires twice in the same day\n\nScope:\n- Detection: newest ~/.TheIgors/claudecode/*.slate.txt date vs today\n- Open-items check: presence of '## Next up' or '## Blocked' items not marked ✅/closed\n- Fires on first user message of new day (CC-self-imposed at session-start time)\n\nOut of scope (separate tickets):\n- Hard block (design: this is a prompt, not a gate)\n- Mid-session midnight crossing (handle if/when it becomes a real problem)\n- export_chat date-routing (T-export-chat-per-message-date-routing)\n\nTest plan:\n- Unit: date-detection helper + open-items detection (stale slate with items, stale slate fully closed)\n- Manual: create stale slate with open items, start new session, verify prompt fires\n- Manual: fully-closed slate, start new session, verify silent skip\n- Manual: same day second message — verify does NOT re-prompt",
+    "completed_at": "2026-04-22T17:05:58.882383+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "93e90665-b47e-45e6-9c26-30c0d1ceb927",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

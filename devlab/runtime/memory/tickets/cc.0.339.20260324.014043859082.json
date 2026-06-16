@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.339.20260324.014043859082",
+  "emitter": "cc.0",
+  "namespace": [
+    "339"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T01:40:43.859082",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "339"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "339",
+    "size": "S",
+    "title": "Define basket schema — fields, defaults, write-back contract, __status__",
+    "result": "Basket schema defined (D216): basket = traversal context (traversal_contexts table). Reserved keys __status__ (running/complete/error/timeout/halted/branched), __error__, __init__. Standard inputs: input, node_id, trigger_type. basket_schema metadata key for field defaults, merged before step 1. Write-back ephemeral-only. schema_runner.py updated: __status__ written at init (running), completion (complete), error (error+__error__), timeout. Backwards compat with ctx_init preserved.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T01:38:15.483424+00:00",
+    "description": "Basket schema definition: fields, defaults, write-back contract, __status__ field. #339",
+    "completed_at": "2026-03-24T01:40:43.859082+00:00",
+    "deposited_at": "2026-05-14T19:04:40.924511",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2b5a7f91-2491-4540-99fe-0b9771fb8236",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

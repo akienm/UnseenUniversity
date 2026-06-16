@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-dreaming-wg-hebbian.20260511.170926512318",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dreaming-wg-hebbian"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-11T17:09:26.512318",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dreaming-enhancements-2026-05-11"
+    ],
+    "tickets": [
+      "T-dreaming-wg-hebbian"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dreaming-wg-hebbian",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Cognition",
+      "Learning"
+    ],
+    "title": "Dreaming pass: Hebbian edge strengthening from co-activated memory nodes",
+    "result": "_strengthen_coactivated_edges() in dreaming.py; 4 tests green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 6,
+    "claimed_at": "2026-05-23T21:29:20.632169+00:00",
+    "created_at": "2026-05-11T17:09:26.512318+00:00",
+    "related_to": null,
+    "decision_id": "D-dreaming-enhancements-2026-05-11",
+    "description": "Igor's dreaming module synthesizes cross-session patterns and proposes memories but does NOT strengthen connections between co-activated nodes. MIT astrocyte research shows: when the mediating layer (interpretive_edges = our astrocyte analog) strengthens based on co-activation, memory capacity scales dramatically faster. Hebbian principle: nodes that activate together should wire together more strongly.\n\nAdd _strengthen_coactivated_edges() helper to dreaming.py, called from run() after synthesis step. Implementation:\n1. Query recent clan.traces (last IGOR_DREAMING_LOOKBACK turns, default 100): SELECT nodes FROM clan.traces ORDER BY recorded_at DESC LIMIT N\n2. Parse each traces.nodes JSON array (confirmed format: [{node_id, relevance, memory_type, sequence_pos}, ...]); extract node_id values per trace\n3. Count co-activation frequency for all node pairs that appear in the same trace\n4. For pairs with co-activation_count >= threshold (env IGOR_HEBBIAN_THRESHOLD, default 3): UPSERT clan.interpretive_edges (from_id, to_id, weight += 0.1, layer='hebbian') — create if not exists, strengthen if exists\n5. Log count of edges created/strengthened\nNon-blocking: wrap in try/except, log error, continue dreaming if this step fails.\n\n**Affected files:** wild_igor/igor/cognition/dreaming.py (add helper + call in run()); clan.interpretive_edges (UPSERT via dreaming.py)\n**Design rules:** non-blocking on failure; configurable threshold + delta via env vars; new DB table access (clan.traces + clan.interpretive_edges) added to dreaming.py — verify connection pattern matches existing _conn() usage\n**Scope boundary:** In: co-activation query, interpretive_edge UPSERT, log. Out: wg_edges strengthening (word-level, separate future enhancement), changing spreading activation algorithm, pruning weak edges.\n**Test plan:** Mock traces with nodes A+B appearing in 5 same-turn traces. After run(), interpretive_edge(A,B) exists with weight>0. Pair appearing only 2 times (below threshold 3) does NOT create edge. Exception in _strengthen_coactivated_edges does not abort dreaming run().",
+    "completed_at": "2026-05-28T15:01:23.143296+00:00",
+    "github_issue": 724,
+    "dispatched_at": "2026-05-23T21:29:20.632169+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "92c80e13-efb0-44e7-b4ec-654c4924251c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

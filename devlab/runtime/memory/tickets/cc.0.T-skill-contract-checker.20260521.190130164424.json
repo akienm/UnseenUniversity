@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-skill-contract-checker.20260521.190130164424",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-contract-checker"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T19:01:30.164424",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-expert-lenses-confidence-2026-05-21"
+    ],
+    "tickets": [
+      "T-skill-contract-checker"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-contract-checker",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "AuditPipeline",
+      "Cherny"
+    ],
+    "title": "Warn on missing required description fields at cc_queue.py add time (ticket-field-lint)",
+    "result": "added _check_description_contracts() + wired into cmd_add; warns on missing Affected files/Scope boundary/Test plan sections (non-blocking)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-21T19:01:30.164424+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-expert-lenses-confidence-2026-05-21",
+    "description": "Boris Cherny's lens: contracts should be checkable at the boundary, not discovered at runtime. Today ticket descriptions are freeform — the required sections (Affected files, Scope boundary, Test plan) are convention enforced only by audit-ticket in /decided. Add a warning (not a block) at cc_queue.py cmd_add time: if description is provided and is missing one or more of the required labeled sections, print a clear warning listing the missing ones. Does not block filing (Akien can override). Makes the gap visible at the moment of filing instead of at sprint-time.\n\n**Affected files:** lab/claudecode/cc_queue.py (cmd_add validation), lab/claudecode/cc_queue.py (new _check_description_contracts helper)\n**Design rules:** none specific\n**Scope boundary:** In scope: warning on missing sections in cmd_add. Out of scope: blocking the add, retroactive checking of existing tickets, changing the description format.\n**Test plan:** Add a ticket with no Affected files section → warning printed, ticket still added. Add a ticket with all three sections → no warning. Add a ticket with no description → no warning (nothing to check).",
+    "completed_at": "2026-05-21T19:31:28.168196+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T19:01:30.164441+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "092b215d-cd7b-4b69-977c-fa54965fc8db",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-ollama-input-cap.20260429.115321935400",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ollama-input-cap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T11:53:21.935400",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ollama-input-cap"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ollama-input-cap",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Cognition"
+    ],
+    "title": "Cap ollama inputs at model context length before sending",
+    "result": "pe_chain autonomous: pass",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.85,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-29T11:33:08.782317+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor regularly sends oversized inputs to ollama, producing repeated 'llm embedding error: the input length exceeds the context length' in the ollama service log (seen throughout 2026-04-27). These are silent failures on Igor's side but cause ollama to return errors and accumulate partial work. On 2026-04-27 a 46.5s/500 chat request from a swarm machine pushed memory over the OOM threshold and triggered the cascade that orphaned PID 237776 for 24+ hours.\n\nFix: add a hard character-based truncation before every ollama call — embeddings and chat both. Safe caps (4 chars/token estimate): nomic-embed-text 8192 tokens → 32000 chars; qwen2.5:7b 4096 tokens → 15000 chars. Log a WARNING when truncation fires so the oversized call site can be found and fixed upstream.\n\n**Affected files:** wild_igor/igor/cognition/embedder.py (embed() — truncate before POST), wild_igor/igor/cognition/reasoners/ollama_reasoner.py (chat path — truncate prompt before POST)\n**Design rules:** docs-in-code (update Updated timestamp in both files). No new schemas.\n**Scope boundary:** IN: truncation at the two ollama call sites with WARNING log. OUT: actual tokenizer integration, upstream call-site fixes (those are follow-ons once the WARNING surfaces them).\n**Test plan:** Add unit tests: embed() with a 40000-char string should not raise; ollama_reasoner chat with a 20000-char prompt should truncate and log WARNING. Run: python -m pytest tests/ -x -q -k 'embed or ollama_reason'",
+    "proposed_at": "2026-04-28T23:01:18.403122+00:00",
+    "completed_at": "2026-04-29T11:53:21.935400+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f4b33f4d-9fba-43bb-a0df-f6e8bcac2f6b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

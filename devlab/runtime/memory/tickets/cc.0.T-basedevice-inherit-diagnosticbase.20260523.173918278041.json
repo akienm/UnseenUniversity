@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-basedevice-inherit-diagnosticbase.20260523.173918278041",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-basedevice-inherit-diagnosticbase"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T17:39:18.278041",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-basedevice-inherit-diagnosticbase"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-basedevice-inherit-diagnosticbase",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Observability"
+    ],
+    "title": "Wire BaseDevice (ADC) to inherit DiagnosticBase",
+    "result": "BaseDevice(DiagnosticBase, ABC) — all devices call super().__init__(), loguru sink wired, module-level log removed",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.3,
+    "claimed_at": "2026-05-23T20:38:34.363139+00:00",
+    "created_at": "2026-05-23T17:39:18.278041+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "ADC's BaseDevice currently imports only Stopwatch from diagnostic_base, does not inherit DiagnosticBase. Wiring in the inheritance means all ADC devices get the JSON log sink automatically.\n\nBaseDevice(ABC) → BaseDevice(DiagnosticBase, ABC). Stopwatch is already available via DiagnosticBase.stopwatch(). Remove the direct Stopwatch import.\n\n**Affected files:** agent_datacenter/device.py\n**Design rules:** none (ADC portable substrate)\n**Scope boundary:** In scope: device.py inheritance change. Out of scope: migrating individual device log calls.\n**Test plan:** Run ADC test suite. Verify a BaseDevice subclass produces JSON log files.",
+    "completed_at": "2026-05-23T20:53:21.142418+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-23T20:38:34.363139+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-23T17:39:18.278058+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c537237a-d05f-4766-a88c-a087c407f9bc",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-adc-queue-device.20260526.025649673377",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-adc-queue-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T02:56:49.673377",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-queue-device-2026-05-25"
+    ],
+    "tickets": [
+      "T-consequence-adc-queue-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-adc-queue-device",
+    "gate": "2026-06-08",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Queue",
+      "ADC"
+    ],
+    "title": "Consequence check: ADC queue rack device shipped",
+    "result": "No double-dequeue events in recent channel log; /query-ticket working; no unhealthy device reports. Gate date 2026-06-08 not yet reached but all observable signals clear now.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-26T02:56:49.673377+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-adc-queue-device-2026-05-25",
+    "description": "**What changed:** A rack device in UU now serves the work ticket queue via MCP; cc_queue.py is a backend implementation detail; claiming is gone.\n**Predicted unintended effects:** (1) Any consumer that bypasses MCP and reads cc_queue.py directly will still work but won't benefit from atomic in_progress marking — could produce double-dequeue if two consumers race. (2) If the queue device is down, all ticket access is blocked; prior cc_queue.py was always available (no device dependency). Single point of failure introduced. (3) Device startup time adds latency to first queue_next call after a rack restart. (4) The skills-sync rsync copy means skill files exist in two places — MCP path switch must land in both ~/.claude/skills/ and the cc_skills/ repo mirror or they'll diverge.\n**Signals to watch:** Double-dequeue log entries (same ticket in_progress twice); queue device appearing as unhealthy in rack_health; /query-ticket returning errors after rack restart; skill mirror divergence between ~/.claude/skills/ and cc_skills/.\n**Gate condition:** Check by 2026-06-08.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": "2026-06-02T19:51:30.445641+00:00",
+    "github_issue": 794,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T02:56:49.673400+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d39374c7-b59d-4261-a9f2-966f45df1bdb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

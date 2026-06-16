@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-constraint-normalizer-store.20260614.220909409034",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-constraint-normalizer-store"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:09:09.409034",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-storage-layer-formalization-2026-06-14"
+    ],
+    "tickets": [
+      "T-constraint-normalizer-decorator",
+      "T-constraint-normalizer-store",
+      "T-devlab-schema-create"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-constraint-normalizer-store",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "CompiledInference",
+      "Devlab"
+    ],
+    "title": "[in_progress] Constraint normalizer: build devlab.constraints ingestion pipeline",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that devlab.constraints.* is a queryable, up-to-date store of normalized constraints ingested from all constraint sources, callable by the decoration pipeline at ticket-add time.",
+    "blocked_at": null,
+    "created_at": "2026-06-14T22:09:09.409034+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-storage-layer-formalization-2026-06-14",
+    "description": "Constraints live in CLAUDE.md, palace rules, design_patterns_inventory.md, and the safeguards list — in incompatible formats. The normalizer ingests these sources and produces a uniform queryable schema in devlab.constraints.\n\nNormalized schema per record:\n  id, text, kind (prohibit|require|prefer), severity (hard_block|error|warn),\n  applies_to jsonb {files: [...], operations: [...], tags: [...]},\n  source jsonb {type, ref}, implies jsonb[] (IDs of implied constraints),\n  created_at, updated_at\n\nV1 ingestion sources:\n  1. CLAUDE.md hard rules section\n  2. palace unseenuniversity/rules/* nodes (via MCP memory_get)\n  3. docs/design_patterns_inventory.md\n  4. Safeguards HIGH-inertia list\n\nExposes MCP tool: get_constraints(files=[], tags=[], severity=None) -> list of matching constraints.\nCalled by the ticket decorator (T-constraint-normalizer-decorator), NOT by sprint agents directly.\n\n**Affected files:** devices/hubert/constraint_normalizer.py (new); MCP tool registration in devices/hubert/; SQL migration devlab.constraints (covered by T-devlab-schema-create)\n**Design rules:** external-state; all queries via MCP bus; no SQLite\n**Scope boundary:** IN — ingest pipeline + devlab.constraints store + get_constraints MCP tool. OUT — calling it at ticket time (T-constraint-normalizer-decorator); using it in sprint agents (they see pre-stamped ticket).\n**Completion criteria:** get_constraints(files=[\"devices/inference/sources.py\"]) returns >=4 constraints from >=3 sources; hard_block constraints include no-sqlite and log-crossings; re-ingestion is idempotent (run twice, same row count).",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "timeout_count": 1,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

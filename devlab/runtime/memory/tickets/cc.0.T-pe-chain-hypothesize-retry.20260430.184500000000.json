@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-pe-chain-hypothesize-retry.20260430.184500000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-hypothesize-retry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T18:45:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-claim-honors-worker",
+      "T-pe-chain-hypothesize-retry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-hypothesize-retry",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "pe_chain",
+      "HYPOTHESIZE",
+      "cert-driven"
+    ],
+    "title": "pe_chain HYPOTHESIZE: validate-then-retry on bad old_string — LLM paraphrases instead of copying verbatim",
+    "result": "Added _HYPOTHESIZE_MAX_RETRIES=2 and _build_retry_prompt helper. When validation fails on parsed edits, pe_hypothesize re-prompts with the failed attempt + validation error + verbatim-copy reminder. Up to 2 retries; on exhaustion, existing ESCALATE preserved. 105 pe_chain tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 5,
+    "claimed_at": "2026-04-30T18:32:24.350115+00:00",
+    "created_at": "2026-04-30T18:45:00Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Cert walk-02 substitute (T-cc-queue-claim-honors-worker) attempt 1 caught the next engram failure: HYPOTHESIZE LLM produces structurally-correct edit intent but textually wrong old_string. Igor proposed `if t['status'] == 'pending':` — single quotes + ==, where actual code is `if t[\"status\"] != \"pending\":` — double quotes + !=. The prompt rule 'old_string must appear verbatim' was ignored.\n\nFix: validate-then-retry pattern (Aider/Cursor convention). When validation fails AND the LLM produced edits, retry up to N=2 with feedback that includes:\n- The original prompt (so the LLM still has the ticket + actual code)\n- The failed edit's old_string/new_string (so the LLM sees what it produced)\n- The validation error (so the LLM knows what to correct)\n- Explicit instruction: copy verbatim, including quote style, whitespace, operators\n\nIf all retries exhaust, hypothesis_error is set and pe_chain ESCALATES as before (existing behavior preserved).\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py — adds _HYPOTHESIZE_MAX_RETRIES const, _build_retry_prompt helper, retry loop in pe_hypothesize.\n**Design rules:** test-plan-or-why-not\n**Scope boundary:** IN — retry-with-feedback for old_string verbatim failures. OUT — retry on structural parse failures (separate codepath); fuzzy-match auto-correction; switching LLM models.\n**Test plan:** existing 105 pe_chain tests pass. Live integration test: cert walk-02 substitute attempt 4 — expected outcome is either validated edit (success) or all-retries-exhausted-with-clearer-error (better diagnostic than before).\n",
+    "completed_at": "2026-04-30T18:32:41.711599+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b570af3b-aeb4-4ba4-89f9-73e5aebdf61f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

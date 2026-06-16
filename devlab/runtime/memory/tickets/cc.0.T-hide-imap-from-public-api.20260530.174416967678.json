@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-hide-imap-from-public-api.20260530.174416967678",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-hide-imap-from-public-api"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T17:44:16.967678",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-hide-imap-from-public-api"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-hide-imap-from-public-api",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Hide IMAP from all public-facing agent APIs",
+    "result": "DatacenterClient now takes flat identity args; bus/connection.py factory hides IMAPServer from announce/; 28 call sites updated; README fixed; listener/invalidator/channels deferred to follow-up",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.9,
+    "claimed_at": "2026-05-30T23:37:00.960408+00:00",
+    "created_at": "2026-05-30T17:44:16.967678+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "IMAP is a bus transport detail. No agent-facing API should ever expose IMAPServer or require callers to instantiate or pass one. Currently DatacenterClient accepts imap_server= as a constructor parameter and the README 'plug in an agent' example shows it. Both are wrong.\n\nFix: DatacenterClient manages its own IMAP connection internally — callers pass only agent identity (agent_id, instance, surfaces). Remove imap_server= from the constructor. Audit all other public-facing surfaces (announce/, bus/ public API) for any other IMAP leakage.\n\nFix README 'Plug in an agent' example to show only:\n    client = DatacenterClient(agent_id='my-agent', instance='my-agent-0001')\n    client.announce()\n\n**Affected files:** unseen_university/announce/client.py (or equivalent DatacenterClient), README.md\n**Design rules:** bus/ owns comms:// routing — nothing outside bus/ speaks to IMAP directly\n**Scope boundary:** IN — remove imap_server from DatacenterClient constructor; fix README example; audit announce/ public API for IMAP leakage; OUT — internal bus/ refactoring\n**Completion criteria:** grep -r 'IMAPServer' announce/ returns 0 results; DatacenterClient constructor takes no transport arguments; README example contains no IMAP references",
+    "completed_at": "2026-05-31T02:44:30.514194+00:00",
+    "deposited_at": "2026-05-30T11:45:30.464630",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:37:00.960408+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-30T17:44:17.017889+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eb15d475-babb-4bd5-bb76-71a96d87f93b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-skills-sync-skill.20260506.005613289807",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-sync-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T00:56:13.289807",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-portability-2026-05-05"
+    ],
+    "tickets": [
+      "T-cc-workflow-tools-env-var",
+      "T-skills-sync-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-sync-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Skills",
+      "Swarm"
+    ],
+    "title": "CLOSED: Build skills-sync skill — ~/.claude/skills ↔ repo canonical copy",
+    "result": "skills-sync/SKILL.md built — wraps agentctl skills deploy/status, batch consent, bidirectional (repo→local + local→repo), discovers repo path via DEFAULT_MASTER_ROOT import (commit fea2166 on agent_datacenter)",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-06T00:53:01.982403+00:00",
+    "related_to": null,
+    "decision_id": "D-skills-portability-2026-05-05",
+    "description": "No mechanism exists to keep ~/.claude/skills/ in sync with the canonical repo copy at ${AGENT_DATACENTER_HOME}/skills/. Skills drift across machines, improvements don't propagate to swarm boxes, and the swarm can't share procedural patterns (engrams). Build a skills-sync skill: list all skills, compare mtime/content, show summary of repo-newer vs local-newer, prompt for BATCH consent (not per-file), apply on consent. Future: swarm P2P engram exchange builds on this same mechanism.\n\n**Affected files:** New ~/.claude/skills/skills-sync/SKILL.md; new ${AGENT_DATACENTER_HOME}/skills/skills-sync/ (canonical copy added to repo).\n**Design rules:** Batch-consent pattern (no per-file prompts per user requirement). Uses AGENT_DATACENTER_HOME from T-cc-workflow-tools-env-var.\n**Scope boundary:** IN: local to repo sync both directions with consent, diff display. OUT: swarm P2P sync (future), auto-sync without consent, skill validation/testing.\n**Test plan:** Run skill with repo and local in sync -> 'nothing to sync'; modify one local skill, run -> shows local-newer with diff; modify one repo skill, run -> shows repo-newer; accept -> file updated.\n**Pass condition:** After agentctl init on a new machine, running /skills-sync pulls latest skills from repo and installs them in ~/.claude/skills/ in one batch action.",
+    "completed_at": "2026-05-06T00:56:13.289807+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8a9d355c-5005-4a8b-beae-7fd44124c6d5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-tiered-fallback.20260602.004636249786",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-tiered-fallback"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T00:46:36.249786",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-or-tiered-cascade-2026-06-02"
+    ],
+    "tickets": [
+      "T-inference-tiered-fallback"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-tiered-fallback",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Granny",
+      "Infrastructure"
+    ],
+    "title": "OR tiered cascade: analyst→worker→minion before CC block",
+    "result": "analyst→worker→minion cascade implemented; OR_TIER_ESCALATE channel events; escalation_history passthrough; 5 new tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": null,
+    "created_at": "2026-06-02T00:46:36.249786+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-or-tiered-cascade-2026-06-02",
+    "description": "Replace single-tier inference_dispatch_fn with a cascade: analyst→worker→minion. Each tier runs one full tool loop; on DONE close ticket; on ESCALATE try next tier with full escalation_history. When all tiers exhausted, block for CC with tier-by-tier failure summary including notes. OR_TIER_ESCALATE posted to channel on each hop. minion-tagged tickets skip to minion tier directly.\n\n**Affected files:** devices/granny/dispatch.py\n**Design rules:** no-sqlite; log every tier transition at WARNING\n**Scope boundary:** IN: analyst→worker→minion cascade; escalation_history passthrough; OR_TIER_ESCALATE channel event; all-tiers-exhausted block with notes. OUT: per-tier max_iterations cap (future), tier selection by ticket size (future).\n**Completion criteria:** 5 new cascade tests passing covering: analyst-first start, escalation_history passthrough, all-tiers-exhausted block, OR_TIER_ESCALATE channel post, minion-tag skip.",
+    "completed_at": "2026-06-02T00:46:39.120067+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "342e55a5-80ce-4be4-884a-52f47e85726f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

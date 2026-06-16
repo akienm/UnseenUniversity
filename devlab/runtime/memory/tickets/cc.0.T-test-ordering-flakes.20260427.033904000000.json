@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-test-ordering-flakes.20260427.033904000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-ordering-flakes"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:04",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-ordering-flakes",
+      "T-test-postgres-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-ordering-flakes",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Tests",
+      "Hygiene"
+    ],
+    "title": "CLOSED: Test-suite flakes from test-ordering/shared-state",
+    "result": "added per-test fixtures to clear shared state in both flaky test files",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": "2026-04-29T12:49:36.050471+00:00",
+    "claimed_at": "2026-04-29T12:34:35.887893+00:00",
+    "created_at": "2026-04-27T03:39:04Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Two tests fail non-deterministically depending on test execution order, when running `pytest -x` at the whole-suite level. Observed 2026-04-24:\n- Run A with my goal_adopt change: test_pr_accretion.py::test_pr_recent_accretions_orders_newest_first failed at position ~2638. Passes in isolation. Passes when the whole test_pr_accretion.py file runs alone.\n- Run B without my change (git stash, same commit): test_pe_chain_qwen_tier.py::TestPeChainRoutesToQwen::test_pe_plan_logs_qwen_model failed at position ~2487. Different test entirely.\n\nConclusion: shared state (Postgres DB rows, module-level singletons, TWM observations) leaks between tests. Test A that writes state → test B reads it and gets wrong answer. This has been masking real failures and making `pytest -x` unreliable as a gate. Folds into the broader T-test-postgres-schema (GH#511) work, but smaller scope: for the two named tests specifically, add per-test setup/teardown that clears the state they depend on.\n\n**Affected files:** tests/test_pr_accretion.py, tests/test_pe_chain_qwen_tier.py, possibly tests/conftest.py (for shared teardown). **Design rules:** test-plan-or-why-not. **Scope boundary:** IN — identify the shared-state source for each test, add per-test setup/teardown. OUT — the full test schema migration (that's T-test-postgres-schema), fixing every possible cross-test leak (just the two named above). **Test plan:** run the whole suite with `pytest tests/ -q` (no -x) 10 times; both named tests pass every time. Also run with `pytest tests/ --randomly-seed=1234` if randomization is on; still pass.",
+    "proposed_at": "2026-04-24T21:19:52.999801+00:00",
+    "completed_at": "2026-05-04T17:20:36.114824+00:00",
+    "github_issue": 528,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "79fcdaed-db83-46a8-87d4-60deb9f88d47",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

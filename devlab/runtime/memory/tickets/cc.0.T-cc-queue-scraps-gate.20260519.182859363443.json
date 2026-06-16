@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-queue-scraps-gate.20260519.182859363443",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-scraps-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-19T18:28:59.363443",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-ticket-signing-2026-05-19"
+    ],
+    "tickets": [
+      "T-cc-queue-scraps-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-queue-scraps-gate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Queue",
+      "Gatekeeper"
+    ],
+    "title": "Wire cc_queue.py to call Scraps before add/claim transitions",
+    "result": "wired _scraps_validate() into cmd_add and cmd_claim; 9 new tests; fixed worker/foreman seed tickets; graceful offline degradation; commits adb17bf (agent_datacenter) + 10549f81 (TheIgors)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-05-19T19:33:42.355956+00:00",
+    "created_at": "2026-05-19T18:28:59.363443+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-ticket-signing-2026-05-19",
+    "description": "Scraps device exists but doesn't intercept queue state changes yet — tickets can still be filed and claimed without validation.\n\nIn cc_queue.py `cmd_add` and `cmd_claim`, call `scraps_validate_ticket(ticket_json)` before proceeding. If Scraps returns invalid: print the issue list and abort the transition. If Scraps is offline: print 'Scraps offline — validation skipped' and continue (never hard-block on device offline). On pass: Scraps sign-off is written to ticket metadata by the device.\n\n**Affected files:** lab/claudecode/cc_queue.py (cmd_add and cmd_claim — pre-flight calls), devices/scraps/scraps_device.py (called)\n**Design rules:** graceful degradation is a hard requirement — Scraps offline must never block the queue; only an explicit invalid verdict blocks; no SQLite\n**Scope boundary:** In scope: gate at add and claim transitions; display issue list on block; write sign-off on pass. Out of scope: setstatus/done/close transitions (V2), retroactive scan of existing tickets, UI changes.\n**Test plan:** test add with empty-body ticket returns error with Scraps issue list; test valid ticket passes and metadata contains scraps_validated; test Scraps offline (mock device unreachable) → warning printed + transition proceeds; test claim on already-validated ticket skips redundant Scraps call",
+    "completed_at": "2026-05-19T19:50:42.788435+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8325965f-428d-4d71-ad0a-369343cb3be1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

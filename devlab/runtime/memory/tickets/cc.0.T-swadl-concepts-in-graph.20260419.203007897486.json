@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-swadl-concepts-in-graph.20260419.203007897486",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-concepts-in-graph"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T20:30:07.897486",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gmail-login-page-object",
+      "T-igor-as-user-epic",
+      "T-swadl-concepts-in-graph"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-concepts-in-graph",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Pedagogy"
+    ],
+    "title": "Seed SWADL software-design concepts as FACTUAL nodes in Igor's cortex",
+    "result": "5 SWADL concept anchors deposited + embedded (768-dim). SEPARATION_OF_CONCERNS (CP1, 0.8) via Igor's own store_memory call. PAGE_OBJECT/FLOW_OBJECT/IDEMPOTENCE (CP1, 0.7) and SELECTOR (CP3, 0.6) authored by Igor but dispatched by CC when Igor printed the calls as code blocks rather than invoking them (LLM tool-dispatch miss, not tool-surface issue). Narratives are in Igor's voice. Provenance: source='swadl_concepts_draft.md' on the first, 'igor_self_authored_2026_04_19' on the rest. Root cause of the SWADL block was graph_write.py not accepting memory_id/tags/identity_weight/source — shipped in commit 288988ef. Next: T-gmail-login-page-object can now reference these anchors.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Introduce SWADL's core concepts to Igor's graph so they become available for co-activation with future site-specific work. Collaborative — CC explains, Igor deposits via normal memory pipeline (so the nodes carry his own salience/interpretation, not just CC's handoff).\n\n## Concepts to seed\n- PAGE_OBJECT — a stable abstraction over a single UI surface; hides selectors; exposes actions\n- FLOW_OBJECT — sequence of page-object actions representing a domain task (e.g. login, send email)\n- SELECTOR — the brittle string that finds an element; lives inside page objects, not flows\n- IDEMPOTENCE — a good flow can be run twice without breaking\n- SEPARATION_OF_CONCERNS — UI changes touch page objects only; domain logic lives in flows\n\n## Shape\n- Each concept is a FACTUAL memory node with identity_weight=0.7 (high — these are anchors)\n- Edges: MEANING_TO_ME from each concept back to 'software_design' parent\n- Co-activation edges wired manually between related concepts (PAGE_OBJECT ↔ SELECTOR, FLOW_OBJECT ↔ PAGE_OBJECT)\n- Igor reads CC's explanation, does his own interpretation, produces the deposit — NOT CC dictating node text\n\n## Related\n- Parent: T-igor-as-user-epic\n- Unblocks: T-gmail-login-page-object",
+    "completed_at": "2026-04-19T20:30:07.897486+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c3a07418-fc3b-4cef-8df5-5fbbb0b3f666",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

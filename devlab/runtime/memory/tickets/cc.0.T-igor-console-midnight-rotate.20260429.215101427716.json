@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-console-midnight-rotate.20260429.215101427716",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-console-midnight-rotate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T21:51:01.427716",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-per-day-log-freshness-2026-04-29"
+    ],
+    "tickets": [
+      "T-adc-console-capture",
+      "T-igor-console-midnight-rotate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-console-midnight-rotate",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Logging",
+      "ADC",
+      "Fixit"
+    ],
+    "title": "Igor console.log midnight rotation — new file per UTC day",
+    "result": "rotate_igor_console.py shipped — re-points tmux pipe-pane to today's YYYYMMDD.console.log. Idempotent. Live-validated: today's file (20260429.console.log) created and growing. 12 new tests. Akien adds cron entry: '1 0 * * * /home/akien/TheIgors/venv/bin/python /home/akien/TheIgors/lab/claudecode/rotate_igor_console.py >> /home/akien/.TheIgors/logs/console_rotate.log 2>&1'.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-04-29T21:47:55.094322+00:00",
+    "related_to": "T-adc-console-capture",
+    "decision_id": "D-per-day-log-freshness-2026-04-29",
+    "description": "igor launcher (~/bin/igor → /home/akien/TheIgors/igor) sets up tmux pipe-pane to ~/.agent_datacenter/logs/Igor-wild-0001/YYYYMMDD.console.log AT SESSION START ONLY. Long-lived sessions (Igor still running from 2026-04-28) keep appending to the launch-day file; today has no file. Need: pipe-pane re-points to today's file at day boundary.\n\nFix shape: small Python script `lab/claudecode/rotate_igor_console.py` that (1) reads IGOR_TMUX_SESSION env (default 'igor'), (2) computes today's expected log path under $AGENT_DATACENTER_HOME/logs/Igor-wild-0001/, (3) issues `tmux pipe-pane -t <session>` (close existing) then `tmux pipe-pane -t <session> -o \"cat >> $LOG\"` (re-attach). Add cron entry: `1 0 * * * /path/to/venv/python /path/to/rotate_igor_console.py >> ~/.TheIgors/logs/console_rotate.log 2>&1`.\n\nAkien adds the cron line manually (CC doesn't edit user crontab).\n\n**Affected files:** new lab/claudecode/rotate_igor_console.py + new tests/test_rotate_igor_console.py. No edits to igor launcher (the launch-time pipe still works for fresh starts).\n**Design rules:** none apply.\n**Scope boundary:** in scope: rotation script + tests. Out of scope: editing user crontab (Akien does that), CC console rotation (separate fix if needed).\n**Test plan:** unit tests covering: target path computation given a date, tmux command formatting, no-op when session doesn't exist (graceful exit). Live-test by running script manually and verifying pipe-pane redirects.",
+    "completed_at": "2026-04-29T21:51:01.427716+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5644d813-90b1-47a0-903f-08d463f08d7e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

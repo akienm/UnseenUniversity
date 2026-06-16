@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-walk-17.20260507.215508072897",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-17"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:08.072897",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-17"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-17",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Cleanup",
+      "walk"
+    ],
+    "title": "CLOSED: retire wild_igor shims: budget, filesystem, registry, machine_manager",
+    "result": "rewrote ~127 import sites to lab.utility_closet.*; deleted 4 shims; 4507 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-08T19:19:40.760632+00:00",
+    "created_at": "2026-05-07T21:55:08.072897+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 area_5 finding: wild_igor/igor/tools/ has re-export shims for budget.py, filesystem.py, registry.py and cognition/machine_manager.py that just forward to lab.utility_closet.*. Rewrite all call sites to use canonical paths, then delete the shims.\n\n**Affected files:** wild_igor/igor/tools/budget.py, filesystem.py, registry.py, wild_igor/igor/cognition/machine_manager.py, all callers (~45 import sites)\n**Design rules:** no-sqlite\n**Scope boundary:** IN — grep callers, rewrite imports to lab.utility_closet.*, delete 4 shim files. OUT — changing any logic in the underlying modules.\n**Test plan:** Full test suite passes after import rewrites; `grep -r 'from wild_igor.igor.tools.budget' wild_igor/` returns empty.\n**Pass condition:** `python -c \"from lab.utility_closet.tools import budget\"` succeeds; shim files deleted; tests pass.",
+    "completed_at": "2026-05-08T19:38:45.218927+00:00",
+    "github_issue": 637,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "57ee5a81-e581-427c-9156-e88d4b67a728",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

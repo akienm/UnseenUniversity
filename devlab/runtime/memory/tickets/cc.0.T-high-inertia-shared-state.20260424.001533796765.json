@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-high-inertia-shared-state.20260424.001533796765",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-high-inertia-shared-state"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T00:15:33.796765",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pursuit-layer-2026-04-22"
+    ],
+    "tickets": [
+      "T-high-inertia-shared-state"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-high-inertia-shared-state",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Inertia",
+      "Database"
+    ],
+    "title": "High-inertia gates for shared-state tables (machines, rules) + redirection tactic",
+    "result": "Shipped in 443d00da. Table-level inertia policy in lab/utility_closet/table_inertia.py — asymmetric: empty/sparse (<3 rows) → LOW + redirection msg pointing at fill path; populated (>=10) → HIGH + requires_approval; mid → MEDIUM. Reason: encourages initial fill (redirection), protects against regression wipes (HIGH once populated). Wired infra.machines via machine_manager.machines_inertia() + machines_row_count(). Rules table left for follow-up — no rules_manager module yet (approval notes acknowledged). 12 tests in test_table_inertia.py.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-23T22:35:01.574309+00:00",
+    "related_to": null,
+    "approved_at": "2026-04-23T21:23:24.595602+00:00",
+    "decision_id": "D-pursuit-layer-2026-04-22",
+    "description": "Shared-state tables (machines, rules) have gone blank multiple times — either from schema changes, data loss, or incomplete initialization. This ticket assigns HIGH-inertia gates to these tables and implements a redirection tactic: when Igor tries to edit a load-bearing table (machines, rules, or similar) and the table is unpopulated or corrupt, instead of allowing the edit to proceed unguarded, surface a positive redirection (e.g., 'I need to populate machines first — let me check what we have and fill gaps') rather than failing silently.\n\nRelated to, but separate from, memory-inertia work (which exists: memories have HIGH-inertia already). This ticket focuses on non-memory schema tables and the redirection pattern.\n\nNot required before pass-2 remaining candidates, but same level of work (hardening shared state for autonomous edits).\n\n**Affected files:** lab/utility_closet/machine_manager.py (machines tables — schema, inertia scoring), wild_igor/igor/cognition/rules_manager.py or similar (rules table — needs discovery if not yet exists), wild_igor/igor/tools/self_edit.py (HIGH-inertia gate → check if table is populated before allowing edit, emit redirection if not).\n\n**Design rules:** HIGH-inertia check applies; docs-in-code applies (any new redirection logic gets docstring explaining the gate + positive frame); test-plan-or-why-not.\n\n**Scope boundary:** IN — assign HIGH-inertia to machines+rules tables, wire redirection tactic into self_edit.py gate logic so unpopulated tables trigger redirect instead of silent failure. OUT — memory-inertia (separate, exists), new schema design, fixing past data loss root causes (separate diagnosis).\n\n**Test plan:** (1) Unit test: machines_manager / rules_manager with empty/corrupt table → inertia check returns HIGH + reason; (2) Integration test: self_edit.py receives HIGH-inertia request on empty machines table → responds with redirection narrative (suggested next steps), not an error; (3) Happy path: populated table + HIGH-inertia → normal approval flow (no regression).",
+    "proposed_at": "2026-04-24T00:07:47.022331+00:00",
+    "completed_at": "2026-04-24T00:15:33.796765+00:00",
+    "github_issue": null,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/kernel.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/kernel.py",
+    "approval_notes": "Approved 2026-04-23 with amended framing: HIGH-inertia gate applies ONCE POPULATED (protects against regression wipes); low-inertia-with-redirection while empty/sparse (encourages initial fill). Same pattern both tables.",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eaa435a4-d4e1-4f09-a628-55e419348889",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

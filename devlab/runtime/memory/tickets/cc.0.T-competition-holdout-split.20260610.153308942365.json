@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-competition-holdout-split.20260610.153308942365",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-competition-holdout-split"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:33:08.942365",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-competition-bootstrap-2026-06-10"
+    ],
+    "tickets": [
+      "T-competition-holdout-split"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-competition-holdout-split",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Competition",
+      "Database"
+    ],
+    "title": "Carve 20% holdout before classifiers see data",
+    "result": "carve_holdout.py written + 3 tests pass; holdout column exists (from T-competition-schema); stratified 20% split verified (3428181e)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the holdout set is carved before either classifier is built so neither classifier can have seen the eval data.",
+    "claimed_at": "2026-06-10T16:05:38.682599+00:00",
+    "created_at": "2026-06-10T15:33:08.942365+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-inference-competition-bootstrap-2026-06-10",
+    "description": "Add a `holdout` boolean column to competition.memories, then mark a stratified 20% of rows per memory_type as holdout=true. Neither classifier touches these rows during training. Eval harness uses them exclusively.\n\n**Affected files:** New script `lab/competition/carve_holdout.py`; migration to add holdout column to competition.memories\n**Design rules:** Stratified split (proportional per memory_type) to avoid eval set lacking rare types\n**Scope boundary:** Column addition + row marking only. No reads of holdout rows by anything until eval harness runs.\n**Completion criteria:** competition.memories has holdout column; ~20% per type marked holdout=true; counts logged per type.",
+    "completed_at": "2026-06-10T16:07:10.627612+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

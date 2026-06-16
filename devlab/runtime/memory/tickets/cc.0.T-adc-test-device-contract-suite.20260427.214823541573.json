@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-test-device-contract-suite.20260427.214823541573",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-test-device-contract-suite"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:48:23.541573",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-test-device-contract-suite",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-test-device-contract-suite",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Testing"
+    ],
+    "title": "agent_datacenter: contract test suite — every registered device implements full BaseDevice",
+    "result": "28 parametrized tests in tests/test_device_contract.py. Covers: isinstance, interface_version, health/who_am_i/comms shape, startup_errors list, uptime numeric, shim self_test shape, ABC enforcement. All pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T21:43:14.761931+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Parametrized tests that verify every registered device in agent_datacenter implements the full BaseDevice and BaseShim contracts.\n\nProposed shape:\n- agent_datacenter/tests/fixtures/stub_devices.py:\n  StubDevice(BaseDevice) — minimal concrete implementation of all 16 abstract methods\n  StubShim(BaseShim) — minimal concrete shim\n- agent_datacenter/tests/test_device_contract.py:\n  ALL_DEVICE_CLASSES = [PostgresDevice, IgorDevice, ...] (extended as each Phase ships)\n  @pytest.mark.parametrize('device_class', ALL_DEVICE_CLASSES)\n  def test_implements_full_contract(device_class): check isinstance, all methods present\n  def test_interface_version(device_class): interface_version() == INTERFACE_VERSION\n  def test_health_shape(device_class): health() returns dict with 'healthy' key\n  def test_stub_device_instantiates(): StubDevice() instantiates cleanly\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/tests/fixtures/stub_devices.py\n- ~/dev/src/agent_datacenter/agent_datacenter/tests/test_device_contract.py\n\nDesign rules:\n- oop-first: StubDevice and StubShim in fixtures so every test can use them independently\n\nScope boundary:\nIN: contract verification tests, StubDevice/StubShim fixtures\nOUT: device-specific behavior tests (those live in each device's own test file)\n\nTest plan:\n- pytest tests/test_device_contract.py passes after PostgresDevice is implemented\n- Adding a new device class that misses a method fails the parametrized test immediately\n- StubDevice() instantiates with minimal correct return values",
+    "completed_at": "2026-04-27T21:48:23.541573+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f833a7cb-e442-4543-90e6-b7d1e6f1af29",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

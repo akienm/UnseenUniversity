@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-habit-health-audit.20260410.171618478744",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-health-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-10T17:16:18.478744",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-habit-health-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-health-audit",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Operations"
+    ],
+    "title": "Habit health audit: systematic failure detection from conversation data",
+    "result": "6-detector diagnostic tool + 15 tests + MCP endpoint. Detects bare responses, habit misfires, thread drops, intent misclassification, TWM noise.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Build diagnostic tooling to detect habit failures from real conversation data. Three components: (1) Thread health diagnostic — TWM entry count, category breakdown, ring memory conversation ratio, response length, parsed intent correctness at time of each response. (2) Habit misfire detector — walk recent conversations, identify which habit fired on each turn, compare against what should have fired. (3) any-thoughts detector — find instances where Akien had to prompt for engagement, trace back to what failed. Can run as sleep-time activity or on-demand. Feeds into Igor self-repair: once a failure is identified, Igor should be able to update habit triggers/conditions/type in DB. Related: D147 (habit-fires-before-meaning), D201 (habit-conditions-schema).",
+    "completed_at": "2026-04-10T17:16:18.478744+00:00",
+    "deposited_at": "2026-05-22T00:28:20.214150",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "07278366-0cb9-472f-8cff-0b3a19611928",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

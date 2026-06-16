@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-usage-hook-output-fix.20260505.172931366664",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-usage-hook-output-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-05T17:29:31.366664",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-usage-hook-output-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-usage-hook-output-fix",
+    "gate": null,
+    "tags": [
+      "hook",
+      "ui",
+      "kde-widget"
+    ],
+    "title": "CLOSED: Fix update-usage.sh hook output generation",
+    "result": "Fixed shell-to-Python variable passing: export USAGE_RESPONSE/PLAN_TYPE/CACHE_FILE, read via os.environ in heredoc. Heredoc delimiter quoted to prevent shell expansion inside Python.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 5,
+    "claimed_at": "2026-05-05T17:29:04.640432+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "The update-usage.sh hook (Claude Code stop hook for KDE Plasma widget) fails to generate required cache output due to improper shell variable interpolation in the Python heredoc. Variables $USAGE_RESPONSE and $PLAN_TYPE are not properly escaped before passing to Python json.loads() and dict construction, causing silent failures when response contains special chars or when plan type is empty.\n\n**Affected files:** /home/akien/.claude/hooks/update-usage.sh\n**Design rules:** none apply\n**Scope boundary:** Fix the shell-to-Python variable passing mechanism; ensure cache file is properly generated on every successful API call. Out of scope: API endpoint changes, credential file format changes.\n**Test plan:** Run hook after Claude Code session (or manually invoke with mocked credentials); verify usage-cache.json is created with correct structure (usage object, planType string, updatedAt timestamp). Test with response containing special chars (quotes, newlines).\n**Pass condition:** Hook generates valid usage-cache.json file after Claude Code stop with correct structure (usage, planType, updatedAt fields and timestamp).",
+    "completed_at": "2026-05-05T17:29:31.366664+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e278e040-89d1-4220-bced-0a6fa99ed97e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

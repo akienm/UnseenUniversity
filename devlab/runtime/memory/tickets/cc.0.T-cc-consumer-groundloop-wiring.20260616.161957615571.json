@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-cc-consumer-groundloop-wiring.20260616.161957615571",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-consumer-groundloop-wiring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T16:19:57.615571",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-consumer-groundloop-wiring",
+      "T-granny-bus-flip-fake-completion",
+      "T-granny-cc0-dispatch-decision"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-consumer-groundloop-wiring",
+    "title": "[sprint] Wire CC.0 consumer (CCWorkerListener) under Ground Loop — built+safe but orphaned",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "GroundLoop",
+      "Dispatch"
+    ],
+    "description": "**Problem:** Granny routes master-role tickets to CC.0 via `dispatch: bus` → `cc.0` mailbox (config/granny.yaml). The consumer that drains that mailbox — `devices/claude/groundloop/runme.py` → `CCWorkerListener.run_forever()` — is fully built and made SAFE (commit ca433bd7, 2026-06-15: deliver_fn is notify-only, posts 'you have a ticket waiting: {id}' into the CC tmux session, never injects /sprint-ticket, preserves CC's judgment). But NOTHING starts runme.py: no Ground Loop descriptor, no shim, no systemd unit. So CC.0 bus dispatches are never consumed — dual-dispatch is DS-only in practice today. This is cancelled-because-superseded, NOT a dead feature (the Jun-6 mismatch tickets T-granny-bus-flip-fake-completion / T-granny-cc0-dispatch-decision were the old problem statements, resolved by the Jun-15 build).\n\n**Proposed shape:** Add a `daemon`-mode Ground Loop descriptor `config/ground_loop/cc_worker.yaml` (start_cmd = venv python -m devices.claude.groundloop.runme, with CC_TMUX_SESSION env) so the SAME Ground Loop supervisor that now runs the web server also keeps the CC consumer alive — symmetric with the web_server.yaml work just shipped. Also fix the stale runme.py module docstring (still says 'Injects /sprint-ticket' — wrong since ca433bd7; it's notify-only now).\n\n**Affected files:** config/ground_loop/cc_worker.yaml (new), devices/claude/groundloop/runme.py (docstring fix). Discovery: confirm CCWorkerListener daemon-mode descriptor fields match plugin_proxy/daemon expectations; confirm target tmux session name (<hostname>.cc.0 by default, or CC_TMUX_SESSION).\n**Design rules:** no-sqlite (N/A — flag/IMAP only); feedback_granny_no_cc_spawn (send-keys to claude-main ONLY, NEVER subprocess.Popen — listener already complies, it's send-keys notify); cc_concurrency_hard_limit (one CC sprint at a time).\n**Scope boundary:** IN — build the descriptor + fix the docstring + dry-run verify. OUT — do NOT deposit the descriptor into config/ground_loop/ as part of routine merge without attended go-live: the ExecStartPre auto-deploy added in commit 220fd110 copies config/ground_loop/*.yaml into the live scan dir on every Ground Loop restart, so a committed cc_worker.yaml WOULD auto-start the consumer on the next restart/reboot. Go-live must be ATTENDED (Akien present), because notify-only lowers but does not eliminate the concurrency-runaway risk and the 2026-06-01 runaway proved one_at_a_time/busy-check gates can fail in practice. Keep the descriptor out of config/ground_loop/ (stage it elsewhere, e.g. config/ground_loop_staging/ or the ticket body) until go-live.\n**Test plan:** (1) Unit/dry-run: start runme.py manually in foreground, post a test envelope to cc.0 mailbox, assert a soft 'ticket waiting' note lands in the target tmux session and an ack is recorded to Granny — assert NO /sprint-ticket is injected. (2) Verify the descriptor loads under Ground Loop in daemon mode without port conflict (CC consumer binds no port). (3) Confirm `one_at_a_time` defer path still holds. No automated test added to the overnight suite for the go-live step (it's tmux/session-interactive); covered by the attended dry-run.\n**Completion criteria:** A daemon-mode Ground Loop descriptor for the CC consumer exists and is verified (attended) to keep runme.py/CCWorkerListener alive; a test envelope to cc.0 yields a soft 'ticket waiting' note in the CC tmux session plus a Granny ack with NO /sprint-ticket injected; the stale runme.py docstring is corrected to notify-only; the descriptor is NOT placed in config/ground_loop/ until attended go-live (ExecStartPre would otherwise auto-start it on next Ground Loop restart).",
+    "decision_id": null,
+    "created_at": "2026-06-16T16:19:57.615571+00:00",
+    "updated_at": "2026-06-16T10:21:10.101949-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.7,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that every master-role ticket Granny routes to CC.0 is received by a running consumer as a soft 'ticket waiting' notification CC can act on by its own judgment — not lost in an undrained cc.0 mailbox.",
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

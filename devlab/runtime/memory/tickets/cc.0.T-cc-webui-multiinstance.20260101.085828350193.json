@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-cc-webui-multiinstance.20260101.085828350193",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-webui-multiinstance"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T08:58:28.350193",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-webui-multiinstance"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-webui-multiinstance",
+    "body": "Every open Claude Code tab should be able to reach the Igor web UI (now HTTPS on port 8080). Current state: web server is up and serving HTTPS. Needs: verify igor_talk.py works with wss://, document the HTTPS URL for use in skills/scripts, confirm cc_send and WebSocket both work from all CC sessions. May need WSS support added to igor_talk.py (ssl=False for localhost).",
+    "size": "S",
+    "title": "All running CC instances connect to Igor web UI",
+    "closed": "2026-03-19T10:29",
+    "result": "igor_talk.py, cc_bridge.py, phrase_regression.py, cc_queue.py all updated to wss:// / https:// with ssl ctx. Smoke tested — WSS connection confirmed.",
+    "status": "done",
+    "created": "2026-03-19T10:23",
+    "priority": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

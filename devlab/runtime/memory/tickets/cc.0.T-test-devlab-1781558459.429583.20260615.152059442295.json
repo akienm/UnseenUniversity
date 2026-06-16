@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-test-devlab-1781558459.429583.20260615.152059442295",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-devlab-1781558459.429583"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-15T15:20:59.442295",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-devlab-1781558459.429583"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-devlab-1781558459.429583",
+    "title": "Test devlab write",
+    "status": "in_progress",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "Test"
+    ],
+    "description": "Testing devlab.tickets write path",
+    "decision_id": null,
+    "created_at": "2026-06-15T15:20:59.442295-06:00",
+    "updated_at": "2026-06-15T15:20:59.442295-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

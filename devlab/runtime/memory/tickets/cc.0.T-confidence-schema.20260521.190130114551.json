@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-confidence-schema.20260521.190130114551",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-confidence-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T19:01:30.114551",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-expert-lenses-confidence-2026-05-21"
+    ],
+    "tickets": [
+      "T-confidence-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-confidence-schema",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Memory",
+      "Shankar"
+    ],
+    "title": "Add confidence (-1 to 1) column to clan.memories and Memory model",
+    "result": "confidence (-1 to 1) column added to clan.memories and Memory model",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "blocked_at": null,
+    "claimed_at": "2026-05-21T23:05:53.050935+00:00",
+    "created_at": "2026-05-21T19:01:30.114551+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-expert-lenses-confidence-2026-05-21",
+    "description": "Every memory in Igor carries a binary implicit assumption: it is either trusted or not. Shankar's lens: nothing should be binary — confidence should be a first-class float. Add `confidence FLOAT` (nullable, -1.0 to 1.0) to clan.memories and the Memory dataclass. -1 = actively harmful/wrong, 0 = unknown/unvalidated, +1 = highly reliable. Null = not yet assessed (legacy entries). Update cortex.store() and MemoryStore.write() to accept optional confidence. Update read/search paths to return it. No existing callers changed by this ticket.\n\n**HIGH inertia pre-approved by Akien 2026-05-21 (in-session: 'ticket all of that and let's go').**\n\n**Affected files:** wild_igor/igor/memory/models.py (Memory dataclass), wild_igor/igor/memory/memory_store.py (write/read), migration SQL for clan.memories\n**Design rules:** theigors/rules/database (Postgres only, safe migration under concurrent reads)\n**Scope boundary:** In scope: schema, model, store API. Out of scope: setting confidence values on existing memories, any caller that writes habits or palace nodes.\n**Test plan:** New memories can be written with confidence; existing memories have null confidence after migration; MemoryStore.read() returns confidence field; confidence outside [-1,1] raises ValueError.",
+    "completed_at": "2026-05-22T01:52:24.499880+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T19:01:30.163873+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0ece9d93-6fad-4ddf-96f2-e56cf2fb80ea",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

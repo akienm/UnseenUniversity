@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-discord-device.20260428.031518403387",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-discord-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-28T03:15:18.403387",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-4-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-base-device-contract",
+      "T-adc-discord-device",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-discord-device",
+    "gate": "T-adc-base-device-contract",
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: Discord device — push-only v1, restart=reconnect",
+    "result": "DiscordBotDevice implemented in agent_datacenter/devices/discord_bot/device.py — push-only v1, health via discord.log recency. 114 contract tests pass. Commit 3850610.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-28T00:37:17.159080+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-4-2026-04-27",
+    "description": "Discord device — push-only in v1. Igor can send to Discord; Discord does not send to Igor (no inbound in v1). Restart semantics: reconnect the bot and re-authenticate.\n\nProposed shape:\n- agent_datacenter/devices/discord_bot/device.py:\n  class DiscordDevice(BaseDevice):\n    capabilities() → {'push_only': True, 'pull': False, 'read_write': False}\n    comms() → {'write_only': True, 'push': True, 'pull': False, 'nudge': False}\n    health() → {'bot_connected': bool, 'authenticated': bool, 'latency_ms': float}\n    restart() → shim.restart() = reconnect + re-authenticate\n    where_and_how() → {'token_env': 'DISCORD_BOT_TOKEN', 'guild': guild_id, 'channel': channel_id}\n    Send interface: DiscordDevice.send(channel_id, message) → sends via Discord API\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/devices/discord_bot/device.py\n\nDesign rules:\n- oop-first: DiscordDevice class; send() method — not a module-level function\n- docs-in-code: 'push-only v1' note in class docstring with pointer to future inbound ticket\n\nScope boundary:\nIN: push-only DiscordDevice implementing full BaseDevice contract\nOUT: inbound message reading (v2), Discord slash commands (v2)\n\nTest plan:\n- DiscordDevice() instantiates (all abstract methods implemented)\n- capabilities()['push_only'] == True\n- health() returns {bot_connected: False} when DISCORD_BOT_TOKEN not set (no exception)\n- restart() calls shim.restart() which does reconnect, not process kill",
+    "completed_at": "2026-04-28T03:15:18.403387+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d3d9aa35-7232-4c5b-abf9-72fcaf08f481",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

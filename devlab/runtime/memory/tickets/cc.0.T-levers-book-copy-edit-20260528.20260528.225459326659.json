@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-levers-book-copy-edit-20260528.20260528.225459326659",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-levers-book-copy-edit-20260528"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T22:54:59.326659",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-levers-book-copy-edit-20260528",
+      "T-reader-uri-resolver"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-levers-book-copy-edit-20260528",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Docs"
+    ],
+    "title": "Levers.md: minor book copy edit (logging + questions paragraph)",
+    "result": "copy edit shipped in ce81dfe4",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": null,
+    "created_at": "2026-05-28T22:54:59.326659+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Add \"at least\" qualifier to logging line; add note that closing questions are built into skills. Incidental edit shipped in ce81dfe4 alongside T-reader-uri-resolver.\n\n**Affected files:** lab/docs/the_ownership_gap/3.Levers.md\n**Design rules:** none\n**Scope boundary:** copy edit only\n**Test plan:** no tests — docs only",
+    "completed_at": "2026-05-28T22:55:02.322653+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T22:54:59.381208+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4b5a92d0-2970-4079-aac3-620d6f124c42",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

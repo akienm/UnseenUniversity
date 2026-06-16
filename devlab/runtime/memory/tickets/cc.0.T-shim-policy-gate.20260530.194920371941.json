@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.T-shim-policy-gate.20260530.194920371941",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-policy-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T19:49:20.371941",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-inference-budget-ledger",
+      "T-provenance-identity",
+      "T-shim-policy-gate",
+      "T-shim-traffic-spy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-policy-gate",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Pre-execution policy gate in BaseShim: allow/deny before dispatch",
+    "result": "PolicyGate in BaseShim.dispatch(): provenance+allowed_actions+budget checks, governance JSONL log, AgentContext/_policy param, 26 tests green",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.85,
+    "claimed_at": "2026-05-31T14:12:47.633362+00:00",
+    "created_at": "2026-05-30T19:49:20.371941+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "The shim already intercepts all tool calls (T-shim-traffic-spy adds logging). Extend it: before dispatch, evaluate the call against policy. Allow or deny. Turns shim from observer into gatekeeper.\n\nPolicy check order: (1) provenance token valid? (T-provenance-identity); (2) action in agent profile allowed_actions?; (3) budget remaining? (T-inference-budget-ledger). Any check fails → deny, log decision with reason, return error to caller.\n\nEvery governance decision (allow or deny) writes a structured record: agent_id, action, policy_checked, verdict, reason, ts. This is the 'decision bill of materials' — a full audit chain of what was allowed and why, not just what happened.\n\nPolicy device (new, lightweight): stores allowed_actions rules per agent_type. Rules are declarative YAML, loaded from config/policies/. Shim calls policy device synchronously before dispatch — must be fast (<5ms).\n\n**Affected files:** unseen_university/skeleton/base_shim.py, devices/policy/ (new), config/policies/ (new), datacenter_logs/shim/trace/ (governance decisions appended here)\n**Design rules:** BaseDevice/BaseShim; policy device is a dependency of shim — must boot before any device registers; flat-file policies survive DB outage\n**Scope boundary:** IN — pre-execution allow/deny, decision bill of materials, policy YAML per agent_type, provenance+profile+budget checks; OUT — content inspection of payloads, output validation (that is a separate post-result hook)\n**Completion criteria:** a tool call from an agent without a valid provenance token is denied and logged; a tool call exceeding budget is denied; a tool call not in allowed_actions is denied; all denials appear in decision log with reason; allowed calls proceed with <5ms added latency",
+    "completed_at": "2026-05-31T14:28:38.325657+00:00",
+    "deposited_at": "2026-05-30T13:49:33.695213",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T14:12:47.633362+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "experience",
+    "scraps_validated": "2026-05-30T19:49:20.464939+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8be9613b-84fd-4f28-8b66-58b2620d3a74",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

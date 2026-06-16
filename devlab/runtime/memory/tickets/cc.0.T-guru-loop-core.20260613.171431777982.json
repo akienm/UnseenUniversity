@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-guru-loop-core.20260613.171431777982",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-guru-loop-core"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T17:14:31.777982",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ground-loop-2026-06-13"
+    ],
+    "tickets": [
+      "T-ground-loop-cc-recovery",
+      "T-guru-loop-core"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-guru-loop-core",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "System Resilience"
+    ],
+    "title": "Ground Loop daemon — plugin-host process supervisor below the rack stack",
+    "result": "devices/ground_loop/: daemon.py + plugin_daemon.py + plugin_proxy.py; config/ground_loop/web_server.yaml; systemd/ground_loop.service; 11 tests pass",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.6,
+    "intention": "I intend that any rack service can be registered in Ground Loop by dropping a YAML file, and the system self-heals without manual intervention.",
+    "claimed_at": null,
+    "created_at": "2026-06-13T17:14:31.777982+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-ground-loop-2026-06-13",
+    "description": "Implement Ground Loop: a minimal plugin-host daemon that runs below all rack devices (ideally as a systemd unit) and manages registered services via YAML descriptors in ~/.unseen_university/ground_loop/.\\n\\nTwo plugin modes declared in the YAML:\\n  mode: daemon — Ground Loop polls every N seconds; restarts if dead; fires on_failure: cc_recovery if restart fails N times\\n  mode: http_proxy — listens on a stable port; on each inbound request checks if backend is alive, spawns if not, proxies through. HTTP passthrough + HTTPS CONNECT tunnel.\\n\\nDiscovery: scan ~/.unseen_university/ground_loop/*.yaml at boot and each poll cycle. No code changes to add a new service — drop a YAML file. Circuit breaker: touch ~/.unseen_university/flags/<name>.breaker to disable auto-launch.\\n\\nFirst plugins: (1) web_server — mode: http_proxy, proxies to backend on localhost:8080; (2) systemd .service unit for Ground Loop itself.\\n\\nCC recovery (on_failure hook) is scaffolded here; full consolidation in T-ground-loop-cc-recovery.\\n\\n**Affected files:** devices/ground_loop/ (new — daemon.py, plugin_daemon.py, plugin_proxy.py), config/ground_loop/ (repo-tracked plugin YAMLs), systemd/ground_loop.service (new)\\n**Design rules:** no-sqlite; log every state change and interface crossing; fail-open on plugin errors (one bad plugin never crashes the loop)\\n**Scope boundary:** In scope: daemon core, both plugin modes, web_server proxy plugin YAML, systemd unit, on_failure hook scaffold. Out of scope: full CC recovery consolidation (T-ground-loop-cc-recovery), metrics/alerting.\\n**Completion criteria:** (1) Ground Loop starts and stays running; (2) kill web_server process, curl root URL returns 200 within startup latency — this is the acceptance test; (3) dropping a new YAML into ~/.unseen_university/ground_loop/ is picked up on next poll with no code changes; (4) circuit breaker flag disables auto-launch; (5) all state changes logged at INFO; (6) all tests pass.",
+    "completed_at": "2026-06-13T22:25:42.997429+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-13T22:22:02.402426+00:00",
+    "required_files": [],
+    "scraps_validated": "2026-06-13T17:14:31.828845+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

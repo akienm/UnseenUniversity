@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-cc-task-listener.20260529.145344845354",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-task-listener"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T14:53:44.845354",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-task-listener",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-task-listener",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "CC task listener: background loop reads GRANNY_DISPATCH → auto-sprint",
+    "result": "cc_task_listener.py: polls shared channel, dispatches via cc_queue, posts GRANNY_ACK; HWM dedup; 9 tests",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.75,
+    "created_at": "2026-05-29T14:53:44.845354+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "For fully autonomous factory mode, a background CC session needs to watch the shared channel for GRANNY_DISPATCH messages from Granny and auto-sprint the assigned tickets. The listener: (1) polls channel_messages table (or JSONL fallback) for new GRANNY_DISPATCH|ticket=T-xxx messages, (2) calls cc_queue.py dispatch T-xxx (idempotent — already in_progress is OK), (3) invokes the sprint-ticket skill for each dispatched ticket (or queues them), (4) posts completion back to channel as GRANNY_COMPLETE|ticket=T-xxx.\n\nThis can run inside the existing superclaude/CC tmux session as a periodic background habit, or as a standalone watcher script at lab/claudecode/cc_task_listener.py.\n\nThe listener enables the factory: Granny routes → channel → CC picks up → sprints → closes → Granny routes next.\n\n**Affected files:** lab/claudecode/cc_task_listener.py (new), or a new habit in CC's scheduler\n**Design rules:** reads channel via Postgres (channel_messages table); idempotent dispatch; never double-sprint\n**Scope boundary:** reading GRANNY_DISPATCH messages + triggering sprint only. Does not do sprint work inline — delegates to /sprint-ticket flow.\n**Test plan:** insert a GRANNY_DISPATCH row into channel_messages; run one listener poll cycle; assert cc_queue shows ticket in_progress",
+    "completed_at": "2026-05-29T15:06:09.140713+00:00",
+    "deposited_at": "2026-05-29T08:56:37.466355",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-29T14:53:44.845383+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "40f9cbdb-2eee-4865-a964-be5bf1726c6d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

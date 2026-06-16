@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-consult-confidence-threshold-raise.20260427.033910000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-confidence-threshold-raise"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T03:39:10",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-consult-confidence-threshold-raise",
+      "T-consult-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-confidence-threshold-raise",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consult",
+      "Tuning"
+    ],
+    "title": "Raise consult confidence threshold 0.3 → 0.55",
+    "result": "Superseded by T-consult-confidence-gate (commit b5469f55) — ticket described 'raise 0.3 floor to 0.55' but no 0.3 constant existed; Akien clarified scope to 'add abort-on-low-confidence gate', shipped under T-consult-confidence-gate.",
+    "status": "done",
+    "worker": "igor",
+    "metadata": {
+      "cert_walk_n": 2,
+      "cert_reset_at": "2026-04-30T17:45Z",
+      "cert_reset_by": "claude"
+    },
+    "priority": 0.5,
+    "proposal": null,
+    "blocked_at": null,
+    "claimed_at": "2026-04-30T17:57:41.550311+00:00",
+    "created_at": "2026-04-27T03:39:10Z",
+    "related_to": null,
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "Consult observe-and-tune Finding 1: nothing in 104 sessions fell under confidence 0.62. The 0.3 floor is vestigial — sub-threshold confabulations can't currently surface as 'consult aborted, escalate to tier.4'. Raise to 0.55 so edge cases get explicit escalation instead of silent low-confidence accept.\n\n**Affected files:** wild_igor/igor/cognition/consult.py (constants at top), tests/test_consult_primitive.py (update boundary tests).\n**Design rules:** test-plan-or-why-not.\n**Scope boundary:** IN — one-line threshold constant change + test update. OUT — dynamic thresholding, per-problem-kind thresholds.\n**Test plan:** existing consult boundary tests updated to 0.55; 28 T-consult-primitive tests green.",
+    "proposed_at": "2026-04-28T18:47:01.758435+00:00",
+    "completed_at": "2026-05-02T03:15:14.483191+00:00",
+    "github_issue": 529,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a889c4d7-9c81-411e-ae56-e64410b6c118",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

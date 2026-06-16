@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-igor-dreaming-module.20260510.204021278326",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-dreaming-module"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T20:40:21.278326",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dreaming-patterns-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-dreaming-module",
+      "T-igor-proposals-queue"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-dreaming-module",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Memory"
+    ],
+    "title": "CLOSED: Igor dreaming module",
+    "result": "dreaming.py + COA cycle counter; 5 tests green; IGOR_DREAMING_INTERVAL=0 disables",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T23:29:00.510367+00:00",
+    "created_at": "2026-05-10T20:40:21.278326+00:00",
+    "related_to": null,
+    "decision_id": "D-dreaming-patterns-2026-05-10",
+    "description": "New module `wild_igor/igor/cognition/dreaming.py`. Scheduled pass triggered every N NE cycles (IGOR_DREAMING_INTERVAL env var, default 50) or manually. Reads: last N psych_log entries, active+recently-resolved watch_problems, escalation dedup_key patterns. Asks NE to synthesize cross-session patterns. Writes findings as proposals to instance.proposals queue (T-igor-proposals-queue); Igor NE/habits commits accepted proposals to clan.memories — dreaming PROPOSES, Igor DECIDES. Wire a cycle counter into `coa.py` tick() to trigger dreaming.run().\n\n**Affected files:** `wild_igor/igor/cognition/dreaming.py` (new), `wild_igor/igor/cognition/coa.py` (cycle counter + dreaming.run() call)\n**Design rules:** no-sqlite; DB writes use direct psycopg2 (same pattern as watch_problems.py, not through cortex.py — avoids HIGH-inertia cortex touch); all written memories human-inspectable; dreaming disabled when IGOR_DREAMING_INTERVAL=0; must not run while `_ne_thread` is alive\n**Scope boundary:** IN — dreaming.py module, cycle counter in coa.py, writes to instance.proposals (not directly to clan.memories). OUT — no weight updates, no automated habit execution, no UI, no cortex.py changes.\n**Test plan:** dreaming.run() inserts at least one instance.proposals row on seeded psych_log + watch_problems fixture; cycle counter triggers at correct interval; IGOR_DREAMING_INTERVAL=0 disables correctly",
+    "completed_at": "2026-05-10T23:32:03.081779+00:00",
+    "deposited_at": "2026-05-14T12:09:27.716994",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "130b8833-2b7f-4851-a761-8a07daffef2c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

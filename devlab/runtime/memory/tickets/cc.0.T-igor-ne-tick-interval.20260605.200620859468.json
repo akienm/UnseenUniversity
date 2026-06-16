@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-igor-ne-tick-interval.20260605.200620859468",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-ne-tick-interval"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T20:06:20.859468",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-ne-standing-goal-stall",
+      "T-igor-ne-tick-interval"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-ne-tick-interval",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Igor"
+    ],
+    "title": "Igor NE: structural polling tick replaces unbounded spin",
+    "result": "COA._ne_tick_should_yield: 30s hard floor via IGOR_NE_TICK_INTERVAL; breaks NARRATIVE_GAP re-fire loop; 6 tests",
+    "status": "closed",
+    "worker": null,
+    "purpose": "",
+    "priority": 0.4,
+    "intention": "I intend that Igor's NE loop has a natural yield/check rhythm derived from actual TWM activation propagation speed, making 'check and yield' the structural default rather than something cognition must choose.",
+    "created_at": "2026-06-05T20:06:20.859468+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor's NE loop currently spins unboundedly — when no action resolves, it generates meta-questions (NARRATIVE_GAP) rather than yielding. The fix is a structural polling interval: measure how fast TWM salience updates cycle at idle, use that as the natural tick size. Each tick: check for new observations worth acting on, act or yield. No unbounded spin.\n\nRelated to T-igor-ne-standing-goal-stall (behavioral fix); this is the structural complement — gives the loop a heartbeat regardless of what cognition chooses.\n\n**Affected files:** TBD — devices/igor/cognition/ NE loop; TWM observation cycle\n\n**Design rules:** none apply\n\n**Scope boundary:** In scope: add tick/yield point to NE loop; derive interval from measured idle activation speed. Out of scope: changing NARRATIVE_GAP logic (that's T-igor-ne-standing-goal-stall), changing inference provider.\n\n**Completion criteria:** Igor NE loop has a measurable tick interval; idle periods show periodic yield points in cognition.log rather than continuous spin; NARRATIVE_GAP loop cannot run more than N ticks without yielding (N defined by the measured interval).",
+    "completed_at": "2026-06-06T18:31:37.724147+00:00",
+    "deposited_at": "2026-06-05T14:06:50.005421",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

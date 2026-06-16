@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-salience-residue-scan.20260422.205720961410",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-salience-residue-scan"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T20:57:20.961410",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-architecture-2026-04-22"
+    ],
+    "tickets": [
+      "T-non-terminal-emission",
+      "T-salience-residue-scan"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-salience-residue-scan",
+    "gate": "T-non-terminal-emission",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "ReplyPath"
+    ],
+    "title": "Residue scan — 'anything else interesting?' after reflex reply",
+    "result": "residue_scan.scan_after_reply body replaces T-non-terminal-emission stub. Chunks input via T-input-chunker, classifies first chunk as reflex, scores residue via graph-tree signals (question-mark / content-words / density / habit-match), spawns continuation_reply pursuit above threshold. IGOR_RESIDUE_SCAN_ENABLED gate default false (log-only rollout). Must-not-raise contract preserved. 15 tests. Commit be90b5d4.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-22T20:55:22.338073+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-architecture-2026-04-22",
+    "description": "After a reflex reply handles part of input (greeting, ack, farewell), the rest of the input may contain substantive content the reflex didn't address. Need a cheap salience scan that runs in the resumed parent pursuit (per T-non-terminal-emission) and decides: is there more here worth responding to? Uses graph-tree lookups (habit_list, hot_attractors, NE-predict) to classify residue — not LLM. If high-salience content remains, spawn a continuation-reply pursuit. If not, terminate silently.\n\n**Affected files:** likely new `wild_igor/igor/cognition/residue_scan.py`; callsite in the resumed parent pursuit (from T-non-terminal-emission); `tests/test_residue_scan.py`.\n**Design rules:** docs-in-code; test-plan-or-why-not (covered); oop-first (class or function — scan is mostly functional, state is the input); no-new-memory-schemas.\n**Scope boundary:** IN: residue(full_input, addressed_span) → {salience_score, residue_content, suggested_handler}; graph-tree classification (reuse habit_list / hot_attractors / NE-predict); salience-threshold gate (below → silent terminate). OUT: continuation-reply articulation (that's the normal reply path, just invoked on residue); register coherence (follow-on if needed).\n**Test plan:** input=\"hi, and can you explain X?\" with addressed=\"hi\" → residue contains 'can you explain X?' with high salience; input=\"thanks!\" with addressed=\"thanks!\" → residue empty, silent terminate; input=\"hi, btw, random phrase with no clear intent\" → low-confidence residue, silent terminate (don't chase noise); salience threshold tunable via env var.",
+    "completed_at": "2026-04-22T20:57:20.961410+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "79c210e4-6a6d-4d8d-a445-e76226165bb2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

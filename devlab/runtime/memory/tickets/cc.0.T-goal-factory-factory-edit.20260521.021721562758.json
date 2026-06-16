@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-goal-factory-factory-edit.20260521.021721562758",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-factory-factory-edit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T02:17:21.562758",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-goal-factory-factory-2026-05-20"
+    ],
+    "tickets": [
+      "T-goal-factory-factory-edit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-factory-factory-edit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Goals",
+      "Palace"
+    ],
+    "title": "Extend ADC goal node to include factory-factory framing",
+    "result": "Palace nodes written: ADC summary updated + new palace.shared.akien.goals.factory-factory node defining the methodology-portable factory goal",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-21T02:17:21.562758+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-goal-factory-factory-2026-05-20",
+    "description": "Find the existing ADC program-factory goal node in the palace and extend it to include the factory-factory framing: same skills/telemetry/audit methodology portable to non-coding projects.\n\nAdd to node: 'The long-term target is a factory factory — a portable, self-improving development substrate that can build any project type, not just code.'\n\n**Affected files:** palace node (edit existing — find via memory_search 'program factory goal')\n**Design rules:** none apply\n**Scope boundary:** Palace edit only; no code changes, no new tickets referencing this goal yet\n**Test plan:** no tests — palace write; read back node and verify updated text is present",
+    "completed_at": "2026-05-21T02:27:02.000175+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T02:17:21.605980+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2149f84e-84a3-484e-9051-246df754b88f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

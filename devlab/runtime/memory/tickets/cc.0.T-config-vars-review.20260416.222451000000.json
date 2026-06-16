@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-config-vars-review.20260416.222451000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-config-vars-review"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T22:24:51",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-config-arch-finish",
+      "T-config-vars-review"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-config-vars-review",
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "Review all 169 env vars — slim the list, merge duplicates, remove dead ones",
+    "result": "Phase 1: unified boredom threshold duplicate (0.05→0.08), removed dead IGOR_CALL_COST_WARN_USD. Principle established: minimum env vars. Full knob→config.py migration follow-up.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T02:49:16.044741+00:00",
+    "created_at": "2026-04-16T22:24:51Z",
+    "related_to": null,
+    "description": "169 env vars in the codebase. Many are duplicates (IGOR_BOREDOM_AROUSAL_THRESH vs IGOR_BOREDOM_AROUSAL_THRESHOLD), dead (features removed), or could share a single tuning knob. Akien + CC review session to: (1) identify dead vars, (2) merge duplicates, (3) decide which are secrets vs switches vs tuning vs defaults-only. Prerequisite for T-config-arch-finish.",
+    "completed_at": "2026-04-18T02:55:04.632299+00:00",
+    "github_issue": 469,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1cea2825-41ff-41f3-bb03-3f5c98bd7ba2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

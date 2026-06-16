@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-pr-schema-seed.20260413.190724585835",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pr-schema-seed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-13T19:07:24.585835",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pr-accretion",
+      "T-pr-investment-weight-propagation",
+      "T-pr-load-as-primary-attractor",
+      "T-pr-schema-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pr-schema-seed",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Persistent-relationships schema — root facia + akien/igors_project seeds + CRUD tools",
+    "result": "53740afc — Persistent-relationships foundation. Seeded PR_ROOT facia + persistent_relationships tree + PR_AKIEN/PR_IGORS_PROJECT child facia with subtrees pr_akien/pr_igors_project. Pure additive (3 new files, zero modifications to existing code). Uses existing facia/trees infrastructure — REFERENCE memory_type sufficient, no models.py changes. CRUD module with pr_list/pr_get/pr_touch/pr_set_status/pr_update_weight, registered in tool registry. pr_get resolves by id, display_name, or lowercase short form. pr_update_weight clamps to [0.0, 2.0]. pr_set_status enforces active|dormant|archived. 12 new tests, 1983 total pass, zero regressions. Foundation ready for T-pr-load-as-primary-attractor (architectural hinge, next sprint).",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-13T18:59:08.511501+00:00",
+    "related_to": null,
+    "description": "Foundation sprint for the persistent-relationships epic. Akien's framing (2026-04-13): the unit of long-term conversational continuity is not person, not topic — it is the PERSISTENT-RELATIONSHIP itself. A persistent-relationship can be with a person (Leah, Krissy, Akien), a subject/field (test automation), a project (The Igors Project), or an avocation (calligraphy, Renaissance Faires). They can be active or dormant. Collectively they ARE the narrative of a life.\n\nTHIS TICKET: create the schema scaffolding only. No loading behavior yet — that's T-pr-load-as-primary-attractor.\n\nSTRUCTURE:\n1. Create PR_ROOT facia memory (memory_type=REFERENCE, id='PR_ROOT', narrative describing the tree purpose)\n2. Register trees row name='persistent_relationships' facia_id=PR_ROOT\n3. Create PR_AKIEN child facia memory with metadata fields: status='active', cumulative_investment_weight=1.0, last_activity_ts=<now>, display_name='Akien', relationship_type='person', description\n4. Register trees row name='pr_akien' facia_id=PR_AKIEN as subtree under PR_ROOT\n5. Same for PR_IGORS_PROJECT (relationship_type='project')\n6. New tool module wild_igor/igor/tools/persistent_relationships.py with: pr_list(), pr_get(name), pr_touch(name), pr_set_status(name, status), pr_update_weight(name, delta)\n7. Register tools in registry\n8. Seed script wild_igor/igor/tools/seed_persistent_relationships.py idempotent like seed_reply_obligation_look.py\n\nSLOT STRUCTURE PER CHILD FACIA (in metadata — subtree memories added by later tickets):\n- status: active | dormant | archived\n- cumulative_investment_weight: 0.0-1.0, updated by accretion/consolidation\n- last_activity_ts: most recent touch\n- display_name\n- relationship_type: person | project | field | avocation\n- description: brief narrative of what this relationship IS\n\nNo accretion yet (T-pr-accretion), no loading into TWM yet (T-pr-load-as-primary-attractor), no weight propagation yet (T-pr-investment-weight-propagation). Pure scaffolding.\n\nTESTS: seed script idempotency, tool CRUD round-trips (list/get/touch/set_status/update_weight), trees table rows exist after seed, facia memories exist and have expected metadata.\n\nINERTIA: LOW (tools/, new file) + LOW (DB seed). No main.py changes in this sprint.",
+    "completed_at": "2026-04-13T19:07:24.585835+00:00",
+    "deposited_at": "2026-05-22T02:03:38.483797",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "19933d89-ddd1-4553-8a6e-75e79682aa03",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

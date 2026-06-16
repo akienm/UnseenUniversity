@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-web-8080-channels.20260414.014753000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-8080-channels"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:47:53",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-8080-channels"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-8080-channels",
+    "title": "Fix web server 8080: group channel + DM support",
+    "result": "Superseded by T-uc-channel-tabs-redesign. Channel tabs + comms:// routing replace the old session-based web channels.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-04-14T01:47:53Z",
+    "description": "Port 8080 web server currently has a disconnected group channel. Should support: (1) group channel that actually works, (2) DMs between users (like the CC↔Igor bridge was). Akien wants both on 8080.",
+    "completed_at": "2026-04-17T22:15:23.077797+00:00",
+    "github_issue": 410,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5bfcc26a-539b-4aca-9868-af1083a5f7ca",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

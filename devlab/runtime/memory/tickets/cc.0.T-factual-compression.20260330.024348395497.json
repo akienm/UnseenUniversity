@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-factual-compression.20260330.024348395497",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-factual-compression"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T02:43:48.395497",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-distillation-habit",
+      "T-factual-compression"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-factual-compression",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "FACTUAL compression — concept clustering into INTERPRETIVE nodes",
+    "result": "factual_compression.py created (cluster→synthesize→novelty→store INTERPRETIVE + provenance) + wired into main.py background loop; syntax clean",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": null,
+    "description": "10709 FACTUAL nodes (book facts) have never been retrieved (activation_count=0). Need a periodic pass that clusters thin FACTUALs on the same concept and collapses them into richer INTERPRETIVE nodes. Distinct from EPISODIC distillation (already live). Key constraints per Igor: (1) preserve book-fact provenance — source attribution must survive on output INTERPRETIVE; (2) cluster by concept not by time; (3) separate module from distillation.py to avoid grab-bag. Priority metric: retrieval quality. Ref: T-distillation-habit phase 2.",
+    "completed_at": "2026-03-30T02:43:48.395497+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f1fe21c4-bebc-459d-85c4-67dfc5925b98",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-sweep-avoidance-frame-docs.20260422.021541641141",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sweep-avoidance-frame-docs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T02:15:41.641141",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-approach-frame-principle-2026-04-21"
+    ],
+    "tickets": [
+      "T-audit-cc-rules-approach-frame",
+      "T-igor-self-audit-approach-frame",
+      "T-palace-approach-frame-rule",
+      "T-sweep-avoidance-frame-docs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sweep-avoidance-frame-docs",
+    "gate": "T-palace-approach-frame-rule",
+    "size": "M",
+    "tags": [
+      "Docs",
+      "ApproachFrame",
+      "Sweep"
+    ],
+    "title": "Sweep generated docs + feedback files for avoidance-frame language; reframe",
+    "result": "5-category sweep. Pass-1/Pass-2 area docs clean. audit_checks.json: 3 descriptions reframed. SKILL.md Hard rules: 11 files (sprint, sprint-batch, review, decided, fixit, context-load, commit, day-close, day-close-audit, deep-audit, design). feedback_no_* memory files: 4 renamed+reframed + MEMORY.md index. Metric +17 reviewed +17 reframed (cumulative 33/25/1). Commit 3e8e31fe.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-22T02:07:36.258893+00:00",
+    "related_to": null,
+    "decision_id": "D-approach-frame-principle-2026-04-21",
+    "description": "Avoidance-frame language in generated and hand-written docs keeps pulling future sessions off-course — the 5-10 ticket cap in AGGREGATE.md (corrected 2026-04-21) is the canonical example. These docs become context on session-start.\n\n**Sweep targets:**\n1. Pass-2 area docs (`lab/design_docs/audit_2026/pass2_output/area_*.md`) — check for prohibition-shaped language, caps, 'must avoid' patterns. Annotate or reframe inline.\n2. Pass-1 output (`lab/design_docs/audit_2026/pass1_output/`) — same.\n3. `audit_checks.json` — entries like 'no-sqlite-imports' reframe to 'db_proxy for all DB access' where possible.\n4. Skills' 'Hard rules' sections — reframe proscriptive hard rules to approach targets (docs-in-code: update SKILL.md alongside).\n5. `feedback_no_*` memory files in `~/.claude/projects/.../memory/` — rename and reframe to approach-frame equivalents (e.g. `feedback_no_amend.md` → content rewritten as 'commits are always fresh — new commit for every change').\n\n**Affected files:** `lab/design_docs/audit_2026/pass2_output/area_*.md`, `lab/design_docs/audit_2026/pass1_output/`, `lab/claudecode/audit_checks.json`, `lab/claudecode/cc_skills/*/SKILL.md` (Hard rules sections), `~/.claude/projects/.../memory/feedback_no_*.md`.\n\n**Design rules:** no-sqlite (no persistence); docs-in-code (SKILL.md hard-rules are load-bearing — update alongside); no-new-memory-schemas (n/a); test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: listed sweep targets. Reframe or annotate. No deletion without replacement.\n- Out: palace rule nodes (T-audit-cc-rules-approach-frame). Out: Igor's memory corpus (T-igor-self-audit-approach-frame).\n\n**Gate:** T-palace-approach-frame-rule (need the criterion before sweeping).\n\n**Test plan:** no new tests. Verification: grep audit_checks.json for entries starting 'no-'/'avoid-'/'never-' — each either reframed or has keep-proscriptive rationale noted. Skills hard-rules: manual read confirms approach framing. feedback_no_* files: all renamed/reframed.",
+    "completed_at": "2026-04-22T02:15:41.641141+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "57e47b8b-bddd-472c-a8da-6f62394cacfe",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

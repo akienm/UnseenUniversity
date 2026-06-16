@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-web-ui-circuit-breakers.20260601.234908345174",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-ui-circuit-breakers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T23:49:08.345174",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-ui-controls-2026-06-01"
+    ],
+    "tickets": [
+      "T-web-ui-circuit-breakers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-ui-circuit-breakers",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "WebUI",
+      "Safety",
+      "Infrastructure"
+    ],
+    "title": "Web UI: circuit breaker control panel",
+    "result": "/api/circuit endpoint, rack UI toggles, Granny gate, CIRCUIT_OPEN channel posts; 6 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "blocked_at": "2026-06-02T15:43:13.164368+00:00",
+    "claimed_at": "2026-06-04T19:24:07.421459+00:00",
+    "created_at": "2026-06-01T23:49:08.345174+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-web-ui-controls-2026-06-01",
+    "description": "Circuit breakers live inside each device's health panel section (not a separate tab). Each breaker is a toggle: CLOSED (running) / OPEN (paused). All breakers start CLOSED; on web startup, the server polls each device's /health endpoint to detect any pre-existing open state. Colored indicator: 🟢 CLOSED / 🔴 OPEN — text only for now, no fancy graphics.\n\nCC.0 special breaker: activates stop_cc_minions (lab/claudecode/stop_cc_minions.py) to kill all cc-T-* sessions, AND sets a circuit_state.json flat file that Granny reads before each dispatch — if CC.0 is OPEN, Granny skips dispatch and posts GRANNY_THROTTLED|reason=circuit_open to channel. CC.0 CLOSED re-enables dispatch.\n\nDevice breakers: opening a device breaker posts CIRCUIT_OPEN|device=<id> to channel. BaseShim reads circuit state on each lifecycle iteration via a new check_circuit() method — if circuit is open, the device's run loop pauses. Web server /api/circuit/<device> endpoint reads/writes circuit_state.json.\n\n**Affected files:** devices/web_server/server.py (/api/circuit/<device> endpoint, health startup polling); unseen_university/shim.py (BaseShim.check_circuit(), health_surface() hook); devices/granny/daemon.py (check circuit_state before dispatch); lab/claudecode/stop_cc_minions.py (already exists); runtime root circuit_state.json\n**Design rules:** no-sqlite; flat-file circuit state; log CIRCUIT_OPEN/CLOSE at INFO; OOP-first — check_circuit() in BaseShim, not per-device\n**Scope boundary:** IN: CC.0 breaker + stop; per-device OPEN/CLOSE toggle; Granny checks CC.0 before dispatch; BaseShim.check_circuit() hook; startup health poll. OUT: automatic breaker trips (manual only), per-device custom circuit logic.\n**Completion criteria:** Opening CC.0 kills cc-T-* sessions and Granny posts GRANNY_THROTTLED on next poll cycle. Opening a device breaker posts CIRCUIT_OPEN to channel. State persists in circuit_state.json and survives web restart. BaseShim.check_circuit() returns True (paused) when circuit open.",
+    "completed_at": "2026-06-04T21:19:54.637746+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T21:07:49.038823+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a0807a55-8c39-4edc-85fd-10123758e8d6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

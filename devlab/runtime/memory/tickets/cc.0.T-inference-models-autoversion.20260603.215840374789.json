@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-models-autoversion.20260603.215840374789",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-models-autoversion"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T21:58:40.374789",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-models-autoversion",
+      "T-inference-models-versioned"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-models-autoversion",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "ModelRegistry",
+      "Versioning",
+      "Automation"
+    ],
+    "title": "Inference: automate model version rotation on registry update",
+    "result": "ModelVersionChecker compares OR created epoch vs registry created_at; injectable _fetch_fn; 7 tests; 64567988",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": "2026-06-04T01:00:59.031338+00:00",
+    "created_at": "2026-06-03T21:58:40.374789+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Gated on T-inference-models-versioned. Once versioned model entries exist, the versioning process itself should be automated: when OR or Ollama reports a model has been updated (via API model listing with version/date fields), or when a model's eval scores diverge significantly from stored baseline, the registry should auto-archive the old entry and update the facia. This closes the loop so capability history accumulates without manual intervention.\n\n**Affected files:** devices/inference/models_registry.py, devices/inference/sources.py (model listing endpoint calls), possibly a Scraps recurring job\n**Design rules:** no-sqlite; OOP-first; log every auto-version event at INFO\n**Scope boundary:** In scope: detect model version change via API listing (OR /models endpoint has created_at or similar); auto-call update_model() on change detected. Out of scope: eval score drift detection (separate capability-graph concern), notification when model updated.\n**Completion criteria:** (1) Scraps job or startup check compares OR model listing dates against registry; (2) mismatch triggers auto-archive + facia update; (3) event logged at INFO; (4) tests: mock OR listing with newer date → auto-version fires; same date → no-op",
+    "completed_at": "2026-06-04T01:22:04.070143+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "497fd98b-f003-492b-b60b-91430512a9bd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

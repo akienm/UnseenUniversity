@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-scope-guard-escalate-missing.20260407.230846425219",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scope-guard-escalate-missing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T23:08:46.425219",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scope-guard-escalate-missing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scope-guard-escalate-missing",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Fix SCOPE_GUARD HIGH inertia path — missing escalate call",
+    "result": "Fixed SCOPE_GUARD HIGH inertia path: now calls _pe_escalate() to properly close goal + mark ticket blocked, preventing infinite chain re-firing. On HIGH+write/delete: escalate immediately instead of returning silently.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "SCOPE_GUARD sets basket['pe_status']='escalated' but returns early without calling _pe_escalate(). Goal never closes. Chain re-fires infinitely. Fix: call _pe_escalate() on HIGH+write/delete, return early with escalate_reason set.",
+    "completed_at": "2026-04-07T23:08:46.425219+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5cc4267e-231f-4b73-b216-b134aec01a66",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

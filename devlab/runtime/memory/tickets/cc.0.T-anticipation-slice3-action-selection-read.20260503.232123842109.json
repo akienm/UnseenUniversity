@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-anticipation-slice3-action-selection-read.20260503.232123842109",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-anticipation-slice3-action-selection-read"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T23:21:23.842109",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-anticipation-primitive",
+      "T-anticipation-pull",
+      "T-anticipation-slice2-pursuit-emit",
+      "T-anticipation-slice3-action-selection-read"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-anticipation-slice3-action-selection-read",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Anticipation",
+      "BasalGanglia",
+      "ActionSelection"
+    ],
+    "title": "Anticipation slice 3 — basal_ganglia / action selection reads bus.top_k to bias toward high-want",
+    "result": "Slice 3 shipped. anticipator.anticipation_bias_for_referent helper + basal_ganglia step 2c bias-application for pursuit_id-tagged habits. IGOR_ANTICIPATION_BIAS_WEIGHT (default 0.1). Logs INFO when bias actually moves selection. 10 new tests. Suite 4347 → 4357. No-op for current habits but loop closed structurally — moment any habit gets pursuit_id metadata, BG bias kicks in.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-05-03T23:15:36.373000+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "## Akien pre-approval — THIRD time given (2026-05-03)\n\nCC has flagged this as HIGH-inertia-needs-pre-approval three separate times now. Akien has approved each time. Reading this back: the inertia gate is satisfied; sprint without re-asking. Remove `gate` field; greenlight stands.\n\n---\n\nSlice 3 of T-anticipation-primitive (slice 1 substrate shipped 2026-05-02 commit 6819d2a5; slice 2 = pursuit emit, separate ticket). Consumer-side wiring: action selection reads AnticipationBus.top_k() and biases decision toward high-want referents.\n\n**Goal:** the loop closes — Igor's pull-signal influences action selection, not just sits in a bus passively.\n\n**Mechanism (sketch — exact integration point TBD at sprint):**\n```python\nfrom wild_igor.igor.cognition.anticipator import get_bus\n\n# In basal_ganglia / TWM consumer / reasoner-depth selection:\ntop_anticipations = get_bus().top_k(k=5)\n# Use top_anticipations[].predicted_delta * confidence as bias signal\n# alongside existing priority/boredom signals\n```\n\n**Affected files:** wild_igor/igor/cognition/basal_ganglia.py (HIGH-inertia) + possibly cognition/turn_pipeline.py + tests/test_basal_ganglia_anticipation_bias.py (NEW).\n\n**Design rules:** docs-in-code; oop-first; HIGH-inertia-pre-approval (basal_ganglia.py); intentionally weaker than priority/boredom (anticipation is directional but not overriding — same calibration intuition the existing closure-valence helper uses with IGOR_ANTICIPATION_WEIGHT=0.3).\n\n**Scope boundary:** IN — one concrete plug-point in action selection, weighted bias signal. OUT — milieu/RPE feedback (slice 4); rewriting basal_ganglia rule structure.\n\n**Test plan:** unit test that pushing a high-predicted_delta anticipation shifts action selection toward the matching referent in a controlled basket; regression test that an empty bus leaves selection identical to today's behavior.\n\n**Related:** T-anticipation-primitive (parent); T-anticipation-slice2-pursuit-emit (provides the producers); T-anticipation-pull (existing closure-valence helper, may consolidate into this primitive in a later slice).",
+    "completed_at": "2026-05-03T23:21:23.842109+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e6a1d2c2-27d7-4e74-9ffe-08f244e5e797",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

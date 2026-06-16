@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-on-it-fork.20260331.002445863896",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-on-it-fork"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T00:24:45.863896",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-on-it-fork"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-on-it-fork",
+    "title": "On it — fork background execution",
+    "result": "fork_bg:true metadata flag added to habit dispatch in main.py + PROC_ON_IT_TWM_PUSH updated in DB. 555 tests pass.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "When On-it habit fires, spawn background job to actually execute the task; response habit emits acknowledgment but nothing follows through",
+    "completed_at": "2026-03-31T00:24:45.863896+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f517c51b-4602-4c33-b7db-535a4e566c05",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

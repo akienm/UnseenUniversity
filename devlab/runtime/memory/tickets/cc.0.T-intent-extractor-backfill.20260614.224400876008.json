@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-intent-extractor-backfill.20260614.224400876008",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intent-extractor-backfill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:44:00.876008",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intent-extractor-learning-substrate-2026-06-14"
+    ],
+    "tickets": [
+      "T-intent-extractor-backfill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-intent-extractor-backfill",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "CompiledInference",
+      "Workflow",
+      "Learning"
+    ],
+    "title": "Intent extractor: backfill tickets + decoration hook at add time",
+    "result": "cc_queue.py decoration hook + intent_backfill.py — predict on add, validate on add with existing intention, backfill script for existing tickets; fail-open on device unavailability",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that every ticket has an inferred intention pre-stamped at add time and that the hook fails open when the intent device is unavailable — cc_queue.py add is never blocked by the intent extractor.",
+    "created_at": "2026-06-14T22:44:00.876008+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-intent-extractor-learning-substrate-2026-06-14",
+    "description": "Two integration points for the intent extractor in the ticket pipeline:\n\n1. Decoration hook at cc_queue.py add time: call predict(context=ticket_description, domain=coding) and stamp inferred_intention into ticket metadata if intention field is blank. If intention field already has a value, call validate() with it as actual_outcome — every manually-authored intention is a free validation signal. MUST fail open: if intent extractor device is unavailable, add proceeds normally with a warning (same pattern as Scraps offline).\n\n2. Backfill script: one-time run over existing tickets missing intention field. Calls predict() for each. Calls validate() for closed tickets using result field as actual_outcome.\n\n**Affected files:** lab/claudecode/cc_queue.py (decoration hook); lab/claudecode/intent_backfill.py (new one-shot script)\n**Design rules:** external-state; idempotent; no SQLite; fail-open on device unavailability\n**Scope boundary:** IN — decoration hook; backfill script; graceful degradation. OUT — predict() logic changes.\n**Completion criteria:**\n  1. cc_queue.py add stamps inferred_intention in ticket metadata when intent field is blank\n  2. cc_queue.py add proceeds normally when intent extractor device is unreachable (warning printed, no exception raised)\n  3. Backfill script produces plausible intentions on 5 sample tickets\n  4. Closed tickets with result field generate validate() calls — verifiable via devlab.validations count increase\n\nCC.0 acked at 2026-06-15T20:51:16Z",
+    "completed_at": "2026-06-15T21:00:29.336783+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

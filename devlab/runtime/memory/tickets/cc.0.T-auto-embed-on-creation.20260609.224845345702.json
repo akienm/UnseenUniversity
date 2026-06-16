@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-auto-embed-on-creation.20260609.224845345702",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-auto-embed-on-creation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:45.345702",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-semantic-indexing-2026-06-09"
+    ],
+    "tickets": [
+      "T-auto-embed-on-creation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-auto-embed-on-creation",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Search",
+      "Embedding",
+      "Infrastructure"
+    ],
+    "title": "Auto-embed on memory creation via Postgres trigger",
+    "result": "Postgres trigger + drain loop; 184k memories backfill-queued; 50 processed/0 errors in test run",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "intention": "I intend that any memory row written with non-empty text content is automatically queued for embedding, making semantic search coverage a side-effect of writing rather than a manual step.",
+    "claimed_at": "2026-06-09T22:51:25.646684+00:00",
+    "created_at": "2026-06-09T22:48:45.345702+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-semantic-indexing-2026-06-09",
+    "description": "Add a Postgres trigger on INSERT/UPDATE to clan.memories that pushes a row to an embedding_queue table when content is non-null. The embedding rackmount polls the queue and computes embeddings async. Also backfill existing memories with no embedding. Implementation: DB trigger (not application layer) to avoid touching the high-inertia memory write path in code.\n\n**Affected files:** DB migration (new table: embedding_queue; new trigger on clan.memories); devices/embedding_rackmount/ or equivalent WG device (queue drain loop)\n**Design rules:** no-sqlite; Postgres trigger preferred over application hook to avoid inertia on memory write path\n**Scope boundary:** Queue push on creation + drain loop in embedding rackmount + one-time backfill script. Out of scope: code file indexing (separate ticket), routing improvements (separate ticket).\n**Completion criteria:** After INSERT into clan.memories with content, embedding_queue contains a pending row within 1s; after rackmount drain, the memory row has a non-null embedding vector; backfill script exits 0 and reports N rows processed.",
+    "completed_at": "2026-06-09T22:59:32.133404+00:00",
+    "deposited_at": "2026-06-09T16:49:08.296789",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-09T22:51:25.646684+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

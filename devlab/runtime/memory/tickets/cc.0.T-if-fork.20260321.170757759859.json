@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-if-fork.20260321.170757759859",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-if-fork"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T17:07:57.759859",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-if-fork"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-if-fork",
+    "body": "Extension of fork (#297). Branch fires only when guard expression evaluates true. M-size, no design needed. See GitHub #298.",
+    "size": "S",
+    "title": "T-if-fork-primitive (#298) — conditional fork when guard evaluates true",
+    "result": "if_fork habit type implemented in main.py (line 3815). Guard fields: milieu.valence/arousal/dominance, twm.attractor_salience. Guard ops: >=/>/<=/</==/!=. If guard passes → fires all branches in shared traversal context (same as fork). If guard fails → logs skip. Falls through to LLM either way. Syntax OK.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-21T17:06:20.272321+00:00",
+    "completed_at": "2026-03-21T17:07:57.759859+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

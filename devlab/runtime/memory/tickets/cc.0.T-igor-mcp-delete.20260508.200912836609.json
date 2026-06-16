@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-mcp-delete.20260508.200912836609",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-mcp-delete"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T20:09:12.836609",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-librarian-rack-agent-2026-05-08"
+    ],
+    "tickets": [
+      "T-igor-mcp-delete",
+      "T-igor-mcp-deprecate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-mcp-delete",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "igor",
+      "Cleanup"
+    ],
+    "title": "Delete igor_mcp.py after one sprint cycle without regressions",
+    "result": "igor_mcp.py deleted; Librarian is full replacement; settings.local.json updated; 2439 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "claimed_at": "2026-05-08T20:54:16.565171+00:00",
+    "created_at": "2026-05-08T20:09:12.836609+00:00",
+    "related_to": null,
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "description": "igor_mcp.py was deprecated 2026-05-08 (T-igor-mcp-deprecate). After one sprint cycle confirming no regressions with the Librarian MCP server as replacement, delete this file.\n\n**Affected files:** TheIgors/lab/claudecode/igor_mcp.py\n**Design rules:** no-sqlite\n**Scope boundary:** delete igor_mcp.py only. Confirm no remaining references in ~/.claude.json or skill files before deleting.\n**Test plan:** grep for igor_mcp.py references before deletion; run TheIgors test suite after to confirm clean.",
+    "completed_at": "2026-05-08T21:06:49.633053+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4650c448-b626-42e1-8a57-fa4bdd17a53a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

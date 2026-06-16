@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-cc-hook-igor-notify.20260412.214643609612",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-hook-igor-notify"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-12T21:46:43.609612",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-hook-igor-notify"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-hook-igor-notify",
+    "epic": "Claude",
+    "size": "S",
+    "title": "CC UserPromptSubmit hook: prepend pending Igor messages (minion-aware)",
+    "result": "cc_hook_pending.py reads new SHARED channel messages via Postgres, returns them as additionalContext for UserPromptSubmit. Per-session cursor files. CLAUDE_MINION=true bypass. Wired into ~/.claude/settings.json.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-12T21:44:41.591301+00:00",
+    "related_to": null,
+    "description": "Add UserPromptSubmit hook to ~/.claude/settings.json that reads new SHARED channel messages since last check and prepends them to CC's input. Skip when CLAUDE_MINION=true is set (worker CCs don't get interrupted). Per-session cursor file tracks last-read timestamp. Hook script in lab/claudecode/cc_hook_pending.py queries channel_messages table. Before polling Akien with 'anything else?', CC naturally sees what Igor said since last turn.",
+    "completed_at": "2026-04-12T21:46:43.609612+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3d0b2505-14b8-4cdd-a792-c9671ada139a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

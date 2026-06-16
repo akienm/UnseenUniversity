@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320f.20260321.011056357672",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320f"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:56.357672",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320f"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320f",
+    "body": "Decisions: D170. New tickets: #295 T-reading-integration, #296 json_extract fix. Theme: Experiment 4 answer. Subsystems touched: none (analysis session).",
+    "role": "scribe",
+    "size": "small",
+    "title": "day-close for session 2026-03-20d",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:56.357672+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

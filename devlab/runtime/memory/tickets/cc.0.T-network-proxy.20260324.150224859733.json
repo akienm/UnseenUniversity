@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-network-proxy.20260324.150224859733",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-network-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:02:24.859733",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-network-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-network-proxy",
+    "title": "NetworkProxy — unified outbound HTTP with aggregate health view",
+    "result": "NetworkProxy singleton in igor/network/proxy.py: get/post/post_json, per-host HostStats (call_count, error_count, p50/p95 latency, 500-sample cap), report_str(). get_network_proxy_report tool added to metrics.py. Callers opt-in — no forced migration. 16 tests pass.",
+    "status": "done",
+    "priority": 4,
+    "claimed_at": "2026-03-24T11:04:43.911091+00:00",
+    "description": "budget.py, embedder, cluster_router, OR reasoner, discord each roll their own timeout and retry. No aggregate view of external call health. Need: single HTTP client wrapper, per-host timeout/retry config, call count + failure rate + latency, feeds /audit.",
+    "completed_at": "2026-03-24T15:02:24.859733+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7737e815-5038-4f44-9e2f-e6ff926ba065",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

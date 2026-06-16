@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-container-shim.20260530.204523778023",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-container-shim"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T20:45:23.778023",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-container-shim",
+      "T-shim-policy-gate",
+      "T-shim-traffic-spy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-container-shim",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "ContainerShim: container-isolated execution tier for untrusted agents",
+    "result": "ContainerShim implemented: BaseShim subclass with --network=none enforcement, docker.sock rejection, Unix socket boundary, resource limits, dispatch tracing; profile YAML, Dockerfile, TheoryOfOperation §2.3, 25 tests",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.75,
+    "claimed_at": "2026-06-01T21:20:09.275477+00:00",
+    "created_at": "2026-05-30T20:45:23.778023+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Two-tier security model for agent execution. Tier 1 (trusted agents: Igor, CC, Librarian) uses policy gate + path sandbox — already designed. Tier 2 (untrusted/external agents) runs inside a container with a ContainerShim bridging to the rack.\n\nContainerShim is a BaseShim subclass. The agent runs inside a container with: loopback socket to the shim only, no host network, no host filesystem. The shim runs on the host, holds all rack access, enforces the policy gate. The container boundary IS the security perimeter. The agent can only do what its manifest allows — nothing else crosses the boundary.\n\nContainer spec per agent profile: container_image (default: uu-agent-base), network_policy (default: none — loopback only), allowed_mounts (default: none), resource_limits (cpu, memory, disk). Shim starts the container on announce, stops it on deregister.\n\nAudit: all cross-boundary calls logged via shim spy (T-shim-traffic-spy). Containment failures (container crash, escape attempt) logged to decision bill of materials (T-shim-policy-gate).\n\n**Affected files:** unseen_university/skeleton/container_shim.py (new, extends base_shim.py), config/profiles/ (container_image + network_policy fields), devices/installer/ (uu-agent-base image build), docs/TheoryOfOperation.md (§2 Devices — new §2.3 Security Tiers)\n**Design rules:** BaseDevice/BaseShim contract; ContainerShim is opt-in via profile field — existing agents unaffected; Docker required for tier 2 agents\n**Scope boundary:** IN — ContainerShim subclass, loopback-only container networking, resource limits, shim-as-boundary enforcement, audit logging; OUT — VM isolation (Docker sufficient for v1), cross-container agent communication, container image registry\n**Completion criteria:** a test agent running inside a container cannot make outbound HTTP calls; can call rack tools via shim; container stops when agent deregisters; all tool calls logged via shim spy; TheoryOfOperation §2.3 explains the two-tier model with the why",
+    "completed_at": "2026-06-01T21:24:39.776475+00:00",
+    "deposited_at": "2026-05-30T14:49:22.243643",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T21:20:09.275477+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "scraps_validated": "2026-05-30T20:45:23.981057+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8b09be90-5f07-4d1d-afa5-0909a8f0d7e4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

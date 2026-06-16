@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-engram-cursor-runtime.20260414.232236000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-cursor-runtime"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:36",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-engram-cursor-runtime"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-cursor-runtime",
+    "body": "Emerged from investigation of T-dead-habit-engram-cursor #429 on 2026-04-14. The premise of #429 was wrong — PROC_INVOKE_SPRINT and PROC_INVOKE_COMMIT are not dead. They're aspirational habits waiting on an interpreter that doesn't exist yet.\n\n## Current state\n\nWhat EXISTS:\n- **skill_importer.py** has created 20+ SKILL_*_ENTRY engram memories in the live DB: SKILL_SPRINT_ENTRY, SKILL_COMMIT_ENTRY, SKILL_AUDIT_ENTRY, SKILL_TICKET_ENTRY, SKILL_DAY_CLOSE_ENTRY, SKILL_CONTEXT_LOAD_ENTRY, SKILL_SAVESTATE_ENTRY, etc. Each carries a program payload with run_cell containing MCPCALL + FORKIF + ENDIF primitives parsed from the .claude skill markdown.\n- **PROC_INVOKE_SPRINT** (trigger: /sprint|sprint on|start sprint|...) and **PROC_INVOKE_COMMIT** (trigger: /commit|commit and push|...) are habits that pattern-match on natural-language invocations of those skills. They already have the right trigger phrases and the right intent.\n- **D260 payload-as-program** is the schema that stores engram programs on memory rows.\n- **pe_chain.py run_pe_chain** is an existing chain interpreter but it's scoped to PROC_CODE_A_TICKET — not a general-purpose engram walker.\n\nWhat is MISSING:\n- **pe_chain:run_engram_cursor** — the function both habits reference. Does not exist in code. This is the engram interpreter: takes a SKILL_*_ENTRY memory id, loads its payload, walks the program cells, executes MCPCALL / FORKIF / ENDIF primitives, and returns a result. Habits pass the right engram id as basket context; cursor does the walking.\n\n## Why this matters (biomimicry framing)\n\nThis is the exact direction Akien set 2026-04-13: 'disassemble what the LLM does in a way nobody has done before, move it one bit at a time into the graph matrix.' Right now /sprint and /commit run in the LLM (Claude) as skill markdown. The goal is Igor runs them natively — a PROC habit matches the trigger, dispatches to an engram interpreter, and the interpreter walks the program cells in the graph matrix rather than asking an LLM to do it.\n\nThe SKILL_*_ENTRY engrams are already there. The PROC_INVOKE_* habits are already there. The interpreter is the piece that finishes the circuit. Without it, the graph has the skill knowledge but can't act on it.\n\n## Scope\n\n1. **pe_chain.run_engram_cursor(basket)** — reads basket['skill_engram_id'] or resolves one from the habit's metadata. Loads the SKILL_*_ENTRY memory. Walks payload.run_cell program. Dispatches MCPCALL to mcp or registry.execute; FORKIF evaluates a condition and branches; ENDIF rejoins. Other primitives as needed (see skill_importer.py for full list).\n2. **Error handling** — any primitive failure logs forensically and returns a structured error; never crashes the dispatch path.\n3. **Habit dispatch wiring** — PROC_INVOKE_SPRINT and PROC_INVOKE_COMMIT need to pass the right SKILL_*_ENTRY id in the dispatch basket. Either: a) hardcode in the habit's metadata, b) infer from the habit name (PROC_INVOKE_SPRINT → SKILL_SPRINT_ENTRY), c) use a new dispatch_to_engram metadata field.\n4. **Tests** — walk a mock SKILL_*_ENTRY with a trivial program, assert MCPCALL / FORKIF / ENDIF behave correctly, assert failures degrade gracefully.\n\n## Existing work to check\n- **tools/skill_importer.py** — _build_payload, MCPCALL + FORKIF + ENDIF primitive grammar\n- **tools/pe_chain.py** — existing chain interpreter pattern (pe_entry_init, pe_claim, pe_read_ticket, etc.) — use the same basket-driven flow\n- **tools/skill_filter.py** — related plan-verification engram, another candidate for the cursor interpreter\n- **T-skill-to-engram-generalise** (2026-03-26b) — the parent epic this work sits under\n- **D260 payload-as-program** — the schema\n- **Memory.payload property** — cell named by triggers.values(); NARRATIVE=embedding source; data fields=constants this node brings; executor touches only cell fields\n\n## Dependencies\n- T-goals-as-persistent-relationships (#422, done) — goal facia are one path into sprint/commit dispatch once Igor can identify what he's working on\n- T-concurrent-ne-spawn — future; engram cursor could run in a spawned COA so sprint/commit don't monopolize the main conversing COA\n\n## Out of scope\n- Rewriting /sprint or /commit as Igor-native behavior (that's the end-state, not this ticket)\n- Adding new skills to the importer\n- Touching CC's .claude/skills/ files\n\n## Update 2026-04-14 evening — engrams must be CP-consistent\n\nAkien 2026-04-14: engrams must be derivable from, or at minimum consistent with, the six core patterns (CP1-CP6). The interpreter in this ticket should NOT blindly execute any engram — it should verify (or the upstream loader should verify) that engrams honor:\n\n- **CP1:** no engram asserts certainty in its outputs. Outputs are provisional.\n- **CP2:** when the engram fails, the failure is captured as learning (not a crash).\n- **CP3:** the engram has a causal structure — it explains why it does what it does.\n- **CP6:** the engram doesn't assume safety of inputs. Untested inputs are flagged.\n\n**Becomes a registered audit check** once T-audit-add-checks is mature: \"no engrams in the SKILL_*_ENTRY set that violate the six CP patterns.\" The check validates by walking each engram's payload cells and confirming the CP-consistency properties are present.\n\n**Operational consequence:** the interpreter rejects (or sandboxes) engrams that fail CP validation. Adding a new skill engram (via skill_importer) must pass CP validation before it's stored as a SKILL_*_ENTRY memory.",
+    "deps": [],
+    "size": "L",
+    "tags": [
+      "cognition",
+      "engrams",
+      "matrix-execution",
+      "biomimicry",
+      "epic"
+    ],
+    "title": "Engram cursor runtime — walk SKILL_*_ENTRY program cells in the matrix",
+    "result": "Extracted cursor traversal from main.py → cursor_runtime.py. run_cursor() with CursorResult. Loop detection, max_steps safety, error handling, fork dispatch. MCPCALL already implemented. main.py reduced by 90 lines. 9 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T01:41:27.581951+00:00",
+    "created_at": "2026-04-14T23:22:36Z",
+    "related_to": null,
+    "completed_at": "2026-04-18T01:46:36.483153+00:00",
+    "github_issue": 435,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

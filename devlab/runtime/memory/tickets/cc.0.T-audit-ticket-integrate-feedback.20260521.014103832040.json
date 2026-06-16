@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-audit-ticket-integrate-feedback.20260521.014103832040",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-ticket-integrate-feedback"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T01:41:03.832040",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-feedback-2026-05-20"
+    ],
+    "tickets": [
+      "T-audit-ticket-integrate-feedback"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-ticket-integrate-feedback",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Audit",
+      "Workflow"
+    ],
+    "title": "Wire /audit-feedback into /audit-ticket for skill-touching tickets",
+    "result": "SKILL.md check 17 added: scans Affected files for skills/<name>/, runs /audit-feedback, surfaces AMENDs as advisory [feedback-loop] findings",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-21T01:41:03.832040+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-audit-feedback-2026-05-20",
+    "description": "**Problem:** /audit-ticket currently has no skill-quality gate. Tickets that add or modify skills can pass audit without ever checking whether those skills close their feedback loop.\n\n**Proposed shape:** Add a step to `skills/audit-ticket/SKILL.md` (after the existing checks, before PASS verdict): detect if the ticket's 'Affected files' section includes any `skills/<name>/` path. If yes, run `/audit-feedback <name>` on each affected skill. If /audit-feedback returns AMEND, surface the missing properties as an AMEND item on the ticket (don't block, but require acknowledgment).\n\n**Affected files:**\n- `skills/audit-ticket/SKILL.md` — add step between existing checks and final verdict\n\n**Design rules:**\n- Detection is text-matching on 'Affected files' section — simple, no parsing\n- /audit-feedback AMEND does not auto-block the ticket; it adds to the AMEND list so Akien can override explicitly\n- If /audit-feedback is not yet deployed (skill dir absent), skip silently with a note\n\n**Scope boundary:** Only SKILL.md edit. No run script changes. No other audit skills touched.\n\n**Test plan:**\n- File a test ticket with 'Affected files: skills/note/' — verify /audit-ticket now surfaces the /audit-feedback AMEND items\n- File a test ticket with no skills/ paths — verify /audit-ticket does not invoke /audit-feedback",
+    "completed_at": "2026-05-21T02:45:00.669022+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T01:41:03.832078+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e7f77ca7-f12d-4d97-90cb-75ba80ecbb25",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

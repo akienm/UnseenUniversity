@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.247.20260323.221627130853",
+  "emitter": "cc.0",
+  "namespace": [
+    "247"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T22:16:27.130853",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "247"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "247",
+    "size": "S",
+    "title": "Dashboard: Cloud% label bug + p95 outlier guard",
+    "result": "Fixed dashboard label contradiction: renamed Cloud%→cloud calls and CloudMode→cloud_mode, putting cloud_mode gate first so the two metrics are clearly distinct. p95 outlier guard (60s cap) was already present. Added test_dashboard_terminal.py with 16 tests covering cloud_pct, p50/p95 outlier guard, label names, and valence_str.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-23T22:12:03.953467+00:00",
+    "description": "Cloud% contradicts cloud_mode label; p95 window needs outlier guard. #247",
+    "completed_at": "2026-03-23T22:16:27.130853+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4df94ff9-adb1-44fb-bbc2-b50920f919cd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

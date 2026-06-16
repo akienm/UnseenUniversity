@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-cc-channel-response.20260331.020528098677",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-channel-response"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T02:05:28.098677",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-channel-response"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-channel-response",
+    "title": "cc-channel-response-routing",
+    "result": "D263: cc_send responses visible in channel_messages; routing directive removed; 555 tests pass",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "cc_send responses and bg_job completions from CC-sourced turns are not visible in channel_messages — Phase D primitive",
+    "completed_at": "2026-03-31T02:05:28.098677+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0e52eecd-d086-4ef2-8541-560f2cf215fd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

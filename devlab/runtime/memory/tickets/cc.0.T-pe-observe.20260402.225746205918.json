@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-observe.20260402.225746205918",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-observe"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-02T22:57:46.205918",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-observe",
+      "T-programming-engrams"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-observe",
+    "epic": "Training",
+    "size": "M",
+    "title": "pe: Seed OBSERVE node — two-pass grep+read into basket[actual]",
+    "result": "OBSERVE step added: two-pass grep+read. Pass 1: _extract_grep_patterns from description, grep each plan_file → line_ranges. Pass 2: read 40-line section around hit → basket[actual]. 45 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": "T-programming-engrams",
+    "description": "Pass 1: grep_for(pattern derived from ticket, file) → basket[line_range]. Pass 2: read_file(file, offset=line_range) → basket[actual]. Uses L3 OBSERVE template. No LLM. Tests: basket[actual] contains only the relevant section, not full file.",
+    "completed_at": "2026-04-02T22:57:46.205918+00:00",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dabca22e-2136-4313-b518-0d73f5f7d07d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

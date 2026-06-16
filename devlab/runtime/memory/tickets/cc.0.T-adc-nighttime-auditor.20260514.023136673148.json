@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-nighttime-auditor.20260514.023136673148",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-nighttime-auditor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-14T02:31:36.673148",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-action-agency-tools-2026-05-13"
+    ],
+    "tickets": [
+      "T-adc-nighttime-auditor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-nighttime-auditor",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Observability",
+      "Autonomy"
+    ],
+    "title": "CLOSED: ADC nighttime auditor — daily action log review + channel summary",
+    "result": "nighttime_auditor.py; anomaly detection + channel summary; 9 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-05-14T02:40:57.679807+00:00",
+    "created_at": "2026-05-14T02:31:36.673148+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-action-agency-tools-2026-05-13",
+    "description": "No component reviews what action tools have been doing autonomously. As shell_exec, file_rw, and file_ticket are used by devices without human oversight, a daily summary and anomaly report is essential for confidence.\n\nProposed shape: Add `agent_datacenter/devices/librarian/nighttime_auditor.py`. Reads adc.action_log for last 24h; groups by tool_name; identifies: call volume per tool, failed executions (exit_code != 0), large file writes (> 100KB), tickets filed autonomously, and any tool called > 50 times (potential loop). Generates a plain-text summary; posts to 'shared' channel via channel_send (author='librarian-auditor'). Scheduling: 24h background thread started at Librarian MCP server init; sleeps until next 02:00-04:00 local window, then fires. Add `start_nighttime_auditor()` call in mcp_server.py serve() on first initialize.\n\n**Affected files:** new `agent_datacenter/devices/librarian/nighttime_auditor.py`, update `agent_datacenter/devices/librarian/mcp_server.py`\n**Design rules:** no-TheIgors-imports; no-sqlite; posts exactly one channel message per run\n**Scope boundary:** reads action_log only; posts one summary; never modifies or deletes log entries. Only fires when action_log has > 0 entries for the window.\n**Test plan:** mock action_log rows; verify summary message shape; verify channel_send called once with correct author; verify thread starts on mcp_server initialize.",
+    "completed_at": "2026-05-14T02:42:11.407842+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "87b68cf2-1264-4b0f-87e7-c2246a7cac56",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

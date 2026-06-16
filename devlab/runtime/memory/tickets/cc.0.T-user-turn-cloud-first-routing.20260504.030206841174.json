@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-user-turn-cloud-first-routing.20260504.030206841174",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-user-turn-cloud-first-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T03:02:06.841174",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-routing-fix-2026-05-03"
+    ],
+    "tickets": [
+      "T-inference-misreport-fix",
+      "T-no-local-inference-timeouts",
+      "T-user-turn-cloud-first-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-user-turn-cloud-first-routing",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Routing",
+      "Bug"
+    ],
+    "title": "CLOSED: Route user turns cloud-first (D254) — verified, contract locked by tests",
+    "result": "VERIFIED, NOT REFACTORED: routing at inference_gateway.py:651 already implements D254 correctly via 'not is_user_turn' guard. 3 tests added to lock in the contract (test_user_turn_cloud_first.py). The 20:17:27 incident was caused by upstream is_user_turn=False, not buggy routing — filed T-is-user-turn-flag-coverage for the actual gap. Commit 430d0ce2.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-04T03:00:11.823366+00:00",
+    "related_to": null,
+    "decision_id": "D-inference-routing-fix-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — 'since he was replying to me, it should never have gone to local').** D254 specifies user turns route cloud-first. Current inference_gateway.py at line 650 fires local FIRST regardless of user_turn (the cloud branch at line 679 only runs if local already failed). That's a routing inversion that defeats D254.\n\nFix: when is_user_turn=True AND _cloud_ok AND self._t4, the cloud reasoner takes the FIRST attempt. Local is the fallback only when cloud is unavailable (no key, no _t4 instance, or cloud raised). The current local-first-then-cloud structure stays in place ONLY for non-user turns (background processing, reading, etc.).\n\n**Affected files:** wild_igor/igor/cognition/inference_gateway.py (the routing block around lines 640-740 — restructure the local-first / cloud-fallback / local-retry chain so user turns take cloud-first / local-fallback instead).\n**Design rules:** theigors/rules/local-inference-no-timeouts (sibling rule — local takes whatever time it takes when it IS the right path, but user turns shouldn't take that path at all), D254 (user-turn cloud-first decision), theigors/rules/igor-constraints (Igor cognition path).\n**Scope boundary:** IN: user-turn routing change to cloud-first; preserve non-user-turn routing as-is. OUT: timeout removal (separate ticket T-no-local-inference-timeouts). OUT: misreport fix (separate ticket T-inference-misreport-fix).\n**Test plan:** unit test that with is_user_turn=True, the FIRST tier called is _t4 (cloud), not _t2 (local). Unit test that with is_user_turn=False (background), local is still called first. Integration: post a user query; confirm via reasoning_calls.log that the FIRST entry for that turn is cloud-source.\n**Validation:** `reasoning_calls.log` shows source=cloud as the first entry for any user-turn invocation. **Cleanup:** none (test mocks). **Logging:** add `log.info` at each routing decision point that names which tier fires first and why (user_turn / quality / fallback / etc.) — observability for future routing audits.",
+    "completed_at": "2026-05-04T03:02:06.841174+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b226f271-bb93-4513-b4b5-30e5d6aa334b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-review-loads-palace-rules.20260421.200027289600",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-review-loads-palace-rules"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T20:00:27.289600",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-scaffold-not-correct-2026-04-21"
+    ],
+    "tickets": [
+      "T-palace-ticket-design-rules",
+      "T-review-loads-palace-rules"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-review-loads-palace-rules",
+    "gate": "T-palace-ticket-design-rules",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Review",
+      "Scaffold"
+    ],
+    "title": "/review filing-time: load palace rules + positive checks",
+    "result": "/review SKILL.md Mode A Check 7 loads palace ticket_design_checks, iterates each check, emits failure_message as AMEND finding. Replaces old Test-plan check (subsumed). Commit b11ea1fa. Unblocks T-review-build-tightness-grade.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-21T19:57:13.382237+00:00",
+    "related_to": null,
+    "decision_id": "D-scaffold-not-correct-2026-04-21",
+    "description": "Extend /review filing-time mode (Mode A, called by /decided and /fixit) to load theigors/rules/ticket_design_checks/* from the palace and verify each ticket POSITIVELY against them — does the ticket address the check? Today /review runs generic checks (duplicate, size, scope-creep, test-plan, HIGH-inertia). After this change, /review also asks: 'does this ticket name its test plan?', 'does it name affected files?', 'does it address no-sqlite?', etc.\n\nScope boundary: extend Mode A only. Do NOT touch standalone plan/code/PR review modes (Mode B) in this ticket.\n\nVerdict mapping: a missed applicable check -> AMEND with the check's failure_message. Multiple misses -> list them in findings.\n\nWhy: scaffold-not-correct. Rules become scaffold only when verified at filing. Currently rules live in palace but /review does not read them.\n\nGated on T-palace-ticket-design-rules.\n\ntest_plan: file a ticket missing a test plan, confirm /review AMENDs with the right message; file one addressing all applicable checks, confirm PASS.",
+    "completed_at": "2026-04-21T20:00:27.289600+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cb32224e-66f6-4f0a-81a4-036c6d42db93",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

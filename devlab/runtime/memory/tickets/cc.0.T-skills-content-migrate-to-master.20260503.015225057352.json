@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-skills-content-migrate-to-master.20260503.015225057352",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-content-migrate-to-master"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T01:52:25.057352",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skills-content-migrate-to-master",
+      "T-skills-master-home-in-datacenter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-content-migrate-to-master",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "skills",
+      "migration",
+      "agent_datacenter"
+    ],
+    "title": "Move 25 cc_skills/* into agent_datacenter/skills/ master, drop the cc_skills copies",
+    "result": "Migrated 25 cc_skills/* trees to agent_datacenter/skills/ master (commits TheIgors@2e883e5a + agent_datacenter@5e5b8d7 + chase 96abd02e). Pre-commit rsync hook retired. Edit flow inverted: edit in agent_datacenter, agentctl skills deploy pushes to ~/.claude/skills/ on each box. map-igor + readigor stay TheIgors-internal. Verified byte-identical reconstitution. install_igor_linux.sh updated to install from new master.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": [
+      "T-skills-master-home-in-datacenter"
+    ],
+    "decision_id": null,
+    "description": "Companion to T-skills-master-home-in-datacenter (which shipped the mechanism). Move the actual skill content (25 machine-agnostic SKILL.md trees) from TheIgors/lab/claudecode/cc_skills/ into agent_datacenter/skills/, then run `agentctl skills deploy` to populate ~/.claude/skills/ from the new master. Verify deploy is no-op-equivalent vs the old in-place files. Delete the migrated cc_skills/* trees so master is unambiguous. Keep map-igor and readigor in cc_skills/ since they're TheIgors-internal.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/skills/<25 dirs> (NEW); /home/akien/TheIgors/lab/claudecode/cc_skills/<25 dirs> (DELETE after migrate); pre-commit hook SKILLS_DST may need a path update if it references cc_skills explicitly.\n\n**Design rules:** ship-clean (no aliasing shims after the move).\n\n**Scope boundary:** IN — copy 25 skills to master, run deploy, verify, delete cc_skills copies, fix any pre-commit hook references. OUT — adding new skills, changing skill content, Windows deploy backend.\n\n**Test plan:** (1) git diff of ~/.claude/skills/ before/after migrate+deploy is empty (deploy reproduces the previous state byte-for-byte); (2) `agentctl skills deploy` reports 25 deployed, 2 untouched-local (map-igor, readigor); (3) full pytest suite still passes; (4) pre-commit hook still syncs correctly if it touches cc_skills.",
+    "completed_at": "2026-05-03T01:52:25.057352+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9c1f664f-53df-41db-982e-02b787e848d7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

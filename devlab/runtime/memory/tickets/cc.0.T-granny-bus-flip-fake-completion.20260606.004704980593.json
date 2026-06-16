@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-granny-bus-flip-fake-completion.20260606.004704980593",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-bus-flip-fake-completion"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T00:47:04.980593",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "[REDACTED-CREDENTIAL]"
+    ],
+    "tickets": [
+      "T-cc-worker-idle-listener",
+      "T-granny-bus-flip-fake-completion",
+      "T-granny-flip-bus-cc",
+      "T-shim-dispatch-handshake"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-bus-flip-fake-completion",
+    "gate": null,
+    "role": "guru",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Operational"
+    ],
+    "title": "Granny CC.0 dispatch: docstring says bus, code says tmux_send_keys — fake completion",
+    "result": null,
+    "status": "cancelled",
+    "worker": "akien",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that Granny's CC.0 dispatch config and its docstring agree, and that the dispatch path either delivers the handshake or honestly documents that it does not.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T00:47:04.980593+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "[REDACTED-CREDENTIAL]",
+    "description": "GURU / AKIEN DECISION — held, not for auto-sprint (needs judgment, not Haiku).\n\n[REDACTED-CREDENTIAL]'s build tickets are all closed (T-shim-dispatch-handshake, T-cc-worker-idle-listener, T-granny-flip-bus-cc) but the flip is a fake completion: devices/granny/daemon.py _default_config() (~line 86) sets CC.0 dispatch='tmux_send_keys' while the module docstring (~lines 16-18) claims dispatch='bus, mailbox: cc.0'. Live Granny still raw send-keys /sprint-ticket (the 2026-06-05 re-dispatch barrage proves it), so the ack->started->timeout handshake NEVER runs for CC.0.\n\nDeeper question for Akien: bus dispatch assumes CC runs an IDLE listener to receive the envelope — but CC.0 is an interactive tmux session, not a daemon. Whatever receives the envelope still bottoms out in send-keys to claude-main. So bus may not be the right model for interactive CC at all.\n\nDecide between: (a) actually flip CC.0 to bus AND verify end-to-end that a dispatched envelope causes /sprint-ticket to run with an ack recorded; or (b) accept the pragmatic handshake shipped 2026-06-05 (worker=claude busy-check in _cc0_busy + CC.0.available.false gate during compact) as the real mechanism for interactive CC, and correct the lying docstring to match.\n\n**Affected files:** devices/granny/daemon.py (docstring and/or _default_config), possibly devices/claude/ IDLE listener wiring\n**Design rules:** none apply\n**Scope boundary:** The decision + the chosen wiring + making docstring and code agree. Out of scope: the compaction-cadence work.\n**Completion criteria:** daemon.py docstring and _default_config() agree on CC.0 dispatch kind. If bus chosen: an end-to-end test shows a dispatched envelope causes /sprint-ticket to run and an ack to be recorded. If tmux retained: docstring states the pragmatic handshake (busy-check + availability gate) and why bus was not used for interactive CC.",
+    "completed_at": null,
+    "deposited_at": "2026-06-05T18:54:04.560331",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

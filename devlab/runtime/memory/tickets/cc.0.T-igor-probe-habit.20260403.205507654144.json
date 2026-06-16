@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-igor-probe-habit.20260403.205507654144",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-probe-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T20:55:07.654144",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-probe-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-probe-habit",
+    "size": "M",
+    "title": "PROC_PROBE habit — cc_send stimulus, reads channel, emits probe_result",
+    "result": "Added pe_probe() to pe_chain.py — optional post-TEST cc_send stimulus+response check; SKIP if no probe_criterion; FAIL+escalate on expected pattern miss. Seeded PROC_PROBE habit memory. 5 tests.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 3,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Seed PROC_PROBE cognitive habit: injects probe stimulus via cc_send, reads channel for response, emits probe_result into basket",
+    "completed_at": "2026-04-03T20:55:07.654144+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "54ba40dc-2cf5-4869-a62d-5e128c00c838",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

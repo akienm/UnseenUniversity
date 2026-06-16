@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-prim-turn-trace-read.20260325.172858127566",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-prim-turn-trace-read"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T17:28:58.127566",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-prim-turn-trace-read"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-prim-turn-trace-read",
+    "size": "S",
+    "title": "prim_turn_trace_read — Igor queries his own recent cloud calls from turn_traces table",
+    "result": "prim_turn_trace_read() primitive tool implemented: reads recent turn traces from forensic logs, filters by cost_usd >= min_cost_usd (default 0.005), returns JSON list with input_preview, tier_used, cost_usd, bg_winner, created_at. Habit PRIM_TURN_TRACE_READ registered. Tests: 354/354 passing. Closes self-training loop — Igor can inspect own cloud calls.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-25T17:26:32.115738+00:00",
+    "description": "Add prim_turn_trace_read() to wild_igor/igor/tools/os_primitives.py. Basket inputs: limit (default 10), min_cost_usd (default 0.005 to filter for real cloud calls). Queries turn_traces table: SELECT input_preview, parsed_intent, tier_used, cost_usd, bg_winner, created_at WHERE cost_usd >= min_cost_usd ORDER BY created_at DESC LIMIT limit. Returns JSON list. Register habit PRIM_TURN_TRACE_READ with code_ref. This closes the self-training loop — Igor can see his own cloud calls without Claude Code delegation.",
+    "completed_at": "2026-03-25T17:28:58.127566+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "28edda3d-df1d-405d-bfd4-c44db5e1305b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

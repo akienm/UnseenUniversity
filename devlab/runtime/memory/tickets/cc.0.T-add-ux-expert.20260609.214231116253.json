@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-add-ux-expert.20260609.214231116253",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-add-ux-expert"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T21:42:31.116253",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-add-ux-expert"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-add-ux-expert",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Audit"
+    ],
+    "title": "Add UX Designer expert to audit panel",
+    "result": "UX Designer expert added to EXPERTS.md (e976e10d)",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "intention": "I intend that every expert audit pass now includes the G-invisible-tools lens — would a first-time user with no docs accomplish their goal?",
+    "claimed_at": null,
+    "created_at": "2026-06-09T21:42:31.116253+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Add a UX Designer expert (Norman / G-invisible-tools) to EXPERTS.md. Distinct from existing HCI expert which is operator-facing; this one applies the grandmother test and progressive-disclosure check.\n\n**Affected files:** EXPERTS.md\n**Design rules:** none apply\n**Scope boundary:** Append to EXPERTS.md only; no skill code changes\n**Completion criteria:** `grep -c '## UX Designer' EXPERTS.md` returns 1",
+    "completed_at": "2026-06-09T21:42:35.285933+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-09T21:42:31.202966+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

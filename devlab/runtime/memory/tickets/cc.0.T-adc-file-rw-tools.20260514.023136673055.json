@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-file-rw-tools.20260514.023136673055",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-file-rw-tools"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-14T02:31:36.673055",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-action-agency-tools-2026-05-13"
+    ],
+    "tickets": [
+      "T-adc-file-rw-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-file-rw-tools",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Librarian",
+      "ActionExecution"
+    ],
+    "title": "CLOSED: ADC MCP tools: file_read / file_write — filesystem access from any device",
+    "result": "file_read/file_write MCP tools, append mode, mkdir, 5 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-05-14T02:39:47.663382+00:00",
+    "created_at": "2026-05-14T02:31:36.673055+00:00",
+    "related_to": null,
+    "decision_id": "D-adc-action-agency-tools-2026-05-13",
+    "description": "No file I/O tools exist in ADC. Reading source code, writing reports, workspace organization — all blocked. Postgres for state; filesystem for everything else (source, configs, workspace). This machine is dedicated to the Igor project.\n\nProposed shape: Add `file_read(path)` → {content, size_bytes, path, encoding} and `file_write(path, content, mode='w', mkdir=False)` → {written_bytes, path} to Librarian tools. Uses pathlib. file_write with mkdir=True creates parent directories. Logs both to action_log. Protection: machine-level, no path whitelist.\n\n**Affected files:** new `agent_datacenter/devices/librarian/tools/file_tools.py`, update `agent_datacenter/devices/librarian/tools/__init__.py`\n**Design rules:** no-TheIgors-imports; action-log-every-call\n**Scope boundary:** file_read and file_write only. No rename/move/delete/list — use shell_exec for those.\n**Test plan:** file_write to /tmp/adc_test.txt; file_read back, content matches; action_log has two entries; file_write with mkdir=True creates parent dir.",
+    "completed_at": "2026-05-14T02:40:50.433966+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b45d96ac-e9f3-466b-9999-579cc79a5eed",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

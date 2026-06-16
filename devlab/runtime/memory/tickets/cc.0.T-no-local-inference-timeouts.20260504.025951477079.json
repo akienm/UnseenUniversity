@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-no-local-inference-timeouts.20260504.025951477079",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-no-local-inference-timeouts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T02:59:51.477079",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-routing-fix-2026-05-03"
+    ],
+    "tickets": [
+      "T-no-local-inference-timeouts",
+      "T-user-turn-cloud-first-routing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-no-local-inference-timeouts",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Routing",
+      "Bug",
+      "Palace-rule-enforcement"
+    ],
+    "title": "CLOSED: Remove short timeouts from local inference paths",
+    "result": "Removed sub-hour timeouts from 5 local-inference sites: IGOR_OLLAMA_TIMEOUT_SECS 90→7200, IGOR_OLLAMA_IMPULSE_TIMEOUT_SECS 15→3600, PREPARSE_TIMEOUT 8→3600, IGOR_LOCAL_PREPARSE_TIMEOUT_SEC 1.0→3600, config.py docstring 30→7200. Each site has inline pointer to theigors/rules/local-inference-no-timeouts. is_healthy (HTTP ping, not inference) explicitly exempt with comment. 5 new tests + 11 existing pass. Commit c112e23f.",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-04T02:56:35.152179+00:00",
+    "related_to": null,
+    "decision_id": "D-inference-routing-fix-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — repeated for the 5th+ time: 'no timeouts on local inference').** Palace rule theigors/rules/local-inference-no-timeouts is now the canonical home — this ticket implements it.\n\nRemove every sub-hour timeout on local inference paths. Replace with 1-2 hour sanity cap (or no timeout where the underlying caller can be cancelled out-of-band). Audit ALL local inference call sites — Ollama in cognition gateway, ollama_reasoner internals, any preparse/winnow paths that call local LLMs.\n\nEvery touched site SHALL include an inline comment: `# rule: theigors/rules/local-inference-no-timeouts — local takes whatever time it takes; brain-modeled goal makes local-fast NOT a constraint.` Per docs-live-in-code, the rule must be visible at the point of use.\n\n**Affected files:** wild_igor/igor/cognition/inference_gateway.py (lines 650-720 — the local→cloud→local-retry chain has at least one 90s timeout that fired 2026-05-03 20:17:27), wild_igor/igor/cognition/reasoners/ollama_reasoner.py (internal timeouts if any), wild_igor/igor/cognition/preparse* (verify no short timeouts on local preparse calls).\n**Design rules:** theigors/rules/local-inference-no-timeouts (the rule being implemented), theigors/rules/igor-constraints (Igor cognition path), theigors/rules/docs-live-in-code (inline rule comments at every touched site).\n**Scope boundary:** IN: every local inference call site gets timeout audited and either removed or capped at 1-2hr; inline rule pointer comments added. OUT: cloud-side timeouts (those are fine — cloud rate-limits + network warrant short timeouts). OUT: routing changes (separate ticket T-user-turn-cloud-first-routing).\n**Test plan:** integration test that simulates slow local inference (sleep 120s on Ollama call) and asserts it is NOT aborted and cloud is NOT auto-escalated. Manual: post a user turn after a known-slow local call mid-flight; verify inference completes rather than misreports as 'unavailable.'\n**Validation:** log line `[inference_gateway] local call completed in Ns` at every successful local return — confirms the timeout removal is observable in production. **Cleanup:** none (no test artifacts beyond mocked timing). **Logging:** every removed timeout site adds `log.info` with elapsed time so we can see actual local latencies in prod.",
+    "completed_at": "2026-05-04T02:59:51.477079+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "67a1ef1d-67fb-47b0-8c1e-7a9424ccc950",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

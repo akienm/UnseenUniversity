@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-audit-domain-humility.20260605.025155229344",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-domain-humility"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-05T02:51:55.229344",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-domain-humility-2026-06-04"
+    ],
+    "tickets": [
+      "T-audit-domain-humility"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-domain-humility",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Skills",
+      "Workflow"
+    ],
+    "title": "Audit skills: structural directives vs behavioral questions",
+    "result": "Finding types section added to audit-design + audit-ticket skills; levers doc updated",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that UU audit skills distinguish structural anti-patterns (directives) from behavioral complexity (questions), so audits are accurate about what an AI can and cannot safely assert.",
+    "created_at": "2026-06-05T02:51:55.229344+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-audit-domain-humility-2026-06-04",
+    "description": "Currently audit-design and audit-ticket issue directives on both structural and behavioral findings. Adopted from +ddai design-reviewer (2026-06-04): structural anti-patterns can be asserted confidently; behavioral complexity should be questioned, not directed — the AI cannot safely judge business logic or non-obvious design choices.\n\nUpdate both skill files to categorize findings as:\n- STRUCTURAL (directive: must change) — abstraction leaks, missing log calls, wrong inheritance, scope boundary violations, rule violations\n- BEHAVIORAL (question: why is this...) — complex logic, unusual patterns, non-obvious design choices, unexplained depth\n\n**Affected files:** ~/.claude/skills/audit-design/SKILL.md, ~/.claude/skills/audit-ticket/SKILL.md\n**Design rules:** none apply (skill file changes only)\n**Scope boundary:** Only audit-design and audit-ticket. No other audit skills changed here.\n**Completion criteria:** Both skill files have a Finding types section with STRUCTURAL/BEHAVIORAL distinction. The categorization is applied in the audit output format. Verified by running audit-design on a sample ticket and observing two-category output.",
+    "completed_at": "2026-06-05T03:30:14.262209+00:00",
+    "deposited_at": "2026-06-04T20:53:02.967082",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

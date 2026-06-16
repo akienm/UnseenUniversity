@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-sqlite-out-wild-0001-db.20260502.230516194826",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sqlite-out-wild-0001-db"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T23:05:16.194826",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reorg-execute-2026-05-01",
+      "D-sqlite-removal"
+    ],
+    "tickets": [
+      "T-sqlite-out-wild-0001-db"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sqlite-out-wild-0001-db",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "SQLite-Removal",
+      "Igor-Core",
+      "Reorg"
+    ],
+    "title": "Finish SQLite removal — purge wild-0001.db construction + delete file",
+    "result": "wild-0001.db purged (commit 9bfc31ae). Cortex(db_path=Path) → Cortex(instance_id=str|None). self.db_path → self._cache_key_id. 80+ files updated (production tools + lab seeds + conftest + tests). 4 SQLite files trashed: 2x102MB (live + archive) + hardlink twin + 724KB archive = ~205MB freed. paths.py + main.py docstrings refreshed. Backup habit string switched from tar wild-0001.db to pg_dump. Spike test clean: 106K memories accessible via Postgres. Full suite 4186/0/32skip in 98.66s. Lab archive seed scripts have dead DB_PATH constants — left for a future cleanup pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "P1",
+    "claimed_at": null,
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-reorg-execute-2026-05-01",
+    "description": "D-sqlite-removal closed at test/migration layer but wild_igor/igor/paths.py:14, cortex.py, conftest.py:164, and 10+ tools still construct Cortex(db_path=... wild-0001.db). Postgres has been the canonical store since D126; the SQLite file is shadow-state. Per Akien 2026-05-01 (reorg § 4 #1): remove it; migrate if needed; be ready to debug.\n\n**Affected files:** wild_igor/igor/paths.py:14, wild_igor/igor/main.py, wild_igor/igor/cortex.py, wild_igor/igor/tools/* (10+), tests/conftest.py:164, tests/test_skill_filter.py, tests/test_skill_importer.py, tests/test_self_inspect.py, ~/.agent_datacenter/Igor-wild-0001/wild-0001.db (102MB delete), ~/.agent_datacenter/Igor-wild-0001/wild-0001.db.archive-20260324 (delete), ~/.agent_datacenter/Igor-wild-0001/archive-Igor-wild-0001.db (delete)\n**Design rules:** no-sqlite (CLAUDE.md), HIGH-inertia: cortex.py, paths.py, conftest.py — Akien-pre-approved 2026-05-01\n**Scope boundary:** in — purge db_path=wild-0001.db construction sites, ensure all reads are Postgres-only, delete .db files; out — schema migration (already done at D126); out — Igor cognition logic changes\n**Test plan:** verify pytest -x -q all green BEFORE delete; tools that constructed Cortex(db_path) accept Postgres connection; conftest fixture stops creating SQLite; spike-test Igor restart against deleted file (should raise nothing); CLAUDE.md blocklist line removed for this file",
+    "completed_at": "2026-05-02T23:05:16.194826+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "69ebbc7d-80aa-4b20-bf5c-ee8f57d5cad4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

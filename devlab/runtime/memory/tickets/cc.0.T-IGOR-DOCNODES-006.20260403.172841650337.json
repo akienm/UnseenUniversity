@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-IGOR-DOCNODES-006.20260403.172841650337",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-IGOR-DOCNODES-006"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T17:28:41.650337",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-IGOR-DOCNODES-006"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-IGOR-DOCNODES-006",
+    "title": "Add freshness signal to DB doc tree nodes",
+    "result": "Added content_hash (MD5) + last_modified to docs_entries. _parse_dsb computes hash per entry. Upsert only bumps last_modified when content changes (CASE IS DISTINCT FROM). New 'changed-since' query subcommand. 6 tests. DB migrated live.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "p1",
+    "claimed_at": "2026-04-03T17:21:49.765095+00:00",
+    "description": "Add last_modified + content_hash fields to DB doc tree nodes to let context-load skip unchanged subtrees. REQUIRES Igor nap/migration.",
+    "completed_at": "2026-04-03T17:28:41.650337+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6634cf8b-393d-415a-88ac-2c51d91c8057",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

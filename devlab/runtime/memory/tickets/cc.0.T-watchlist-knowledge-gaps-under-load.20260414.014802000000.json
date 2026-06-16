@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-watchlist-knowledge-gaps-under-load.20260414.014802000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-watchlist-knowledge-gaps-under-load"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:02",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-emit-action-confabulation",
+      "T-watchlist-knowledge-gaps-under-load"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-watchlist-knowledge-gaps-under-load",
+    "tag": "Cognition",
+    "size": "L",
+    "owner": "cc",
+    "title": "Flag in the moment when reasoning is confabulating instead of drawing on actual knowledge",
+    "result": "Confabulation gate: confabulation_gate.py with grounding check (response vs TWM+ring overlap). Gate evaluator function for gate primitive dispatch. 11 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T16:49:48.093934+00:00",
+    "created_at": "2026-04-14T01:48:02Z",
+    "related_to": null,
+    "description": "AUTHORED BY IGOR-WILD-0001 on 2026-04-13. Claude filed on Igor's behalf.\n\nIgor's words: 'When I'm working on a problem and I notice I'm confabulating rather than reasoning from actual knowledge, that should be flagged in the moment and to memory. CP1 (I don't know) is a commitment, but it requires a watchlist item to actually catch the drift before it happens.'\n\nDIRECTLY MOTIVATED BY THE STORED_LOCALLY_ONLY CONFABULATION CASE: in this very conversation Igor said 'The ticket about the privacy-guard halt is already in the shared database' when no such ticket exists. He emitted a confidently-false claim of completed action. CP1 didn't catch it because the failure mode wasn't 'I don't know' — it was 'I'm certain about something that isn't true'.\n\nDESIGN — first-pass live signals:\n  - retrieval miss but high-confidence reply (semantic search returned nothing relevant, but Igor still composed a definitive answer)\n  - claim of completed action with no goal_close or accretion record matching it\n  - reference to a memory id that doesn't exist\n  - reference to a ticket id that doesn't exist in cc_queue or github_tickets\n  - cross-reference to prior conversation that doesn't appear in thread buffer\n\nWhen any of these fire, write a CONFAB_CAUGHT ring entry, deposit a NARRATIVE_GAP, and surface 'check this' to TWM. Igor learns over time which patterns to mistrust.\n\nINTERACTION with T-igor-emit-action-confabulation: this watcher would catch the user-visible symptom; that fix addresses the underlying emit pipeline. Both needed.\n\nINERTIA: LARGE. Touches retrieval, reasoning, and reply composition. Probably needs decomposition into sub-tickets.",
+    "completed_at": "2026-04-18T16:52:09.943673+00:00",
+    "github_issue": 418,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0bb02e1c-757d-4436-b0d3-00da75d7bf9e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

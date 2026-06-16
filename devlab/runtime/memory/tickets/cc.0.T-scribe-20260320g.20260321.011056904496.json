@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320g.20260321.011056904496",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320g"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:56.904496",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320g"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320g",
+    "body": "Decisions: [D181]. Gaps closed: [drain runner path bug — root fixed in paths.py]. New gaps: [inference_gateway.py + cluster_router.py not yet read — may already solve open problems]. Session theme: paths default fix + inference gateway discovery. Subsystems touched: paths.py, crontab.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-20f",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:56.904496+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

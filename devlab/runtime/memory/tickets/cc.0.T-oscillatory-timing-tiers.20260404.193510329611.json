@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-oscillatory-timing-tiers.20260404.193510329611",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-oscillatory-timing-tiers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T19:35:10.329611",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-oscillatory-timing-tiers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-oscillatory-timing-tiers",
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "Hierarchical timing tiers for push sources: fast (2s) / medium (30s) / slow (5min)",
+    "result": "Added TIMING_TIER class attribute to BasePushSource ('fast'/'medium'/'slow'). Assigned tiers: fast=InteroceptionSource/MilieuSource/InboxWatcher; slow=HeartbeatSource/HabitCandidateSource/CuriositySource/BoredomSource/SelfTestSource/ConsolidationReplay; medium=all others. run_background_sources() now gates entire tier groups by wall-clock (2s/30s/300s) — sources only called when their tier interval has elapsed. All 1684 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-04T19:32:13.810461+00:00",
+    "related_to": null,
+    "description": "All push sources run at flat intervals with no phase alignment. Biological cortex-BG loops run at theta/beta/gamma frequencies. Fix: implement 3 timing tiers in run_background_sources(): fast (2s — interoception, milieu tick), medium (30s — NE consolidation, memory surfacing), slow (5min — strategic review, boredom check). Sources declare their tier via class attribute; run_background_sources() dispatches per tier. Neuro finding from deep-audit Panel 3.",
+    "completed_at": "2026-04-04T19:35:10.329611+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "31f79af2-0bfd-4358-b02b-052d625908c9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

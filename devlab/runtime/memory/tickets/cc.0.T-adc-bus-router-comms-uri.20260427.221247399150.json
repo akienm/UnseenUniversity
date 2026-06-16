@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-bus-router-comms-uri.20260427.221247399150",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-bus-router-comms-uri"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:12:47.399150",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-bus-router-comms-uri",
+      "T-adc-bus-self-healing",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-bus-router-comms-uri",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Architecture"
+    ],
+    "title": "agent_datacenter: comms:// URI resolver — address any mailbox or device",
+    "result": "agent_datacenter/bus/router.py: Router class with send(address, envelope) + resolve(address). AddressError on unknown/malformed URI. comms:// scheme only.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.8,
+    "claimed_at": "2026-04-27T22:07:34.497112+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Implement the comms:// URI scheme router. Callers are topology-blind — they address devices by name; the bus handles routing.\n\nDesign decision (Akien 2026-04-27): Pub/sub falls out naturally from IMAP IDLE. comms:// is the addressing scheme; mailbox IDLE = subscription. No separate pub/sub layer needed.\n\nProposed shape:\n- agent_datacenter/bus/router.py:\n  class Router:\n    def send(self, address: str, envelope: Envelope) -> None:\n      # address form: 'comms://{mailbox_name}'\n      # parse mailbox_name; call imap_server.append(mailbox_name, envelope)\n    def resolve(self, address: str) -> str:\n      # extract mailbox_name from comms:// URI\n      # verify mailbox exists in imap_server.list_mailboxes(); raise AddressError if not\n  comms://Shared  → publish to Shared mailbox (all IDLE subscribers get it = pub/sub)\n  comms://CC.0    → addressed to CC.0 mailbox (direct)\n  comms://igor-wild-0001 → addressed to Igor's mailbox\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/bus/router.py\n\nDesign rules:\n- oop-first: Router class, not module-level send function\n- docs-in-code: Router docstring explains comms:// = IMAP APPEND; pub/sub via IDLE\n\nScope boundary:\nIN: URI parsing, mailbox resolution, IMAP APPEND dispatch\nOUT: IMAP IDLE subscription (that's the web server and inference device), bus self-healing (T-adc-bus-self-healing)\n\nTest plan:\n- Router.send('comms://CC.0', envelope) → imap_server.unseen_count('CC.0') == 1\n- Router.send('comms://Shared', envelope) → imap_server.unseen_count('Shared') == 1\n- Router.send('comms://nonexistent', envelope) → AddressError\n- Router.resolve('comms://CC.0') == 'CC.0'",
+    "completed_at": "2026-04-27T22:12:47.399150+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "218a0dd0-2a36-4692-aa2c-0c100aa18b3a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

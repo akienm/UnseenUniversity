@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-library-schema-create.20260614.220518479342",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-library-schema-create"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:05:18.479342",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-storage-layer-formalization-2026-06-14"
+    ],
+    "tickets": [
+      "T-library-schema-create"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-library-schema-create",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Database",
+      "Library",
+      "Librarian"
+    ],
+    "title": "Create library Postgres schema — Librarian-managed namespace",
+    "result": "created library schema with library.knowledge table; migration verified",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that library exists as a Postgres schema where the Librarian deposits curated distilled knowledge, separate from operational devlab data.",
+    "created_at": "2026-06-14T22:05:18.479342+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-storage-layer-formalization-2026-06-14",
+    "description": "Curated knowledge (patterns, distilled learnings, cross-project abstractions) has no home — it pollutes clan. The library schema establishes the correct namespace.\n\nCreate schema library in Igor-wild-0001 Postgres. Initial table: library.knowledge (id, title, content, domain, tags jsonb, source_ref, curated_at, updated_at). The Librarian is the sole writer; agents query via MCP tool.\n\n**Affected files:** new SQL migration file\n**Design rules:** no SQLite; external state; Postgres only\n**Scope boundary:** IN — CREATE SCHEMA library; CREATE TABLE library.knowledge. OUT — Librarian writer integration; migrating existing knowledge from clan.\n**Completion criteria:** SELECT schema_name FROM information_schema.schemata WHERE schema_name = library returns library; library.knowledge table exists with correct columns.",
+    "completed_at": "2026-06-15T00:34:30.305822+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

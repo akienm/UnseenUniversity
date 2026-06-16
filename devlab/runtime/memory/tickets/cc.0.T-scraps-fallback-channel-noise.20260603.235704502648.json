@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-scraps-fallback-channel-noise.20260603.235704502648",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scraps-fallback-channel-noise"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T23:57:04.502648",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scraps-fallback-channel-noise"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scraps-fallback-channel-noise",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Scraps",
+      "Channel"
+    ],
+    "title": "Suppress 'fallback on error' channel spam",
+    "result": "already closed above — this is a duplicate close call",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-06-03T23:57:04.502648+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "A recurring error is posting 'fallback on error' to the shared channel every few minutes, polluting visibility and making it hard to spot real events.\n\nEither: (1) silence the fallback message entirely (it's a graceful degradation, not an alert-worthy event), (2) drop it to DEBUG log level only, or (3) track down and fix the underlying error being caught.\n\n**Affected files:** unseen_university/channel.py, devices/scraps/, devices/igor/main.py\n**Design rules:** no-sqlite\n**Scope boundary:** IN — suppress or reroute the 'fallback on error' channel post; investigate why it's firing repeatedly. OUT — fix all possible fallback-triggering errors (focus on the recurring one visible in channel)\n**Completion criteria:** 'fallback on error' no longer appears in the shared channel feed; or if it does, it appears at most once per day and is accompanied by actionable context (the actual error, not just 'fallback')",
+    "completed_at": "2026-06-04T00:51:32.545427+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d524d7c6-aa6f-481e-9982-c5d19f86341b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

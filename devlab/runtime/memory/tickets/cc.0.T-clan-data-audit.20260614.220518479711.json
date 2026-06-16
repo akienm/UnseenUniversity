@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-clan-data-audit.20260614.220518479711",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-clan-data-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:05:18.479711",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-storage-layer-formalization-2026-06-14"
+    ],
+    "tickets": [
+      "T-clan-data-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-clan-data-audit",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Database",
+      "Devlab",
+      "Hygiene"
+    ],
+    "title": "Audit clan.memories — categorize by target namespace",
+    "result": "clan_migration_manifest.md: 187,177 records across 20 type+kind combos; categorized as bootstrap/devlab/library/employer.akien with row counts and rationale",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that every record type in clan.memories is categorized as bootstrap/devlab/library/employer.akien, producing an actionable migration manifest before any data moves.",
+    "created_at": "2026-06-14T22:05:18.479711+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-storage-layer-formalization-2026-06-14",
+    "description": "clan.memories has become a junk drawer. Before migrating anything, produce a manifest of what is there and where each kind belongs.\n\nQuery clan.memories, group by memory_type + metadata.kind. For each group: categorize as bootstrap (stays in clan), devlab (operational project data), library (curated knowledge), or employer.akien (Akien-specific context). Include row counts per type. Write manifest to lab/design_docs/clan_migration_manifest.md.\n\n**Affected files:** lab/design_docs/clan_migration_manifest.md (new — read-only audit output)\n**Design rules:** no SQLite; read-only pass — no data movement in this ticket\n**Scope boundary:** IN — categorization query + manifest file. OUT — actual data migration (follow-on tickets after Akien reviews manifest).\n**Completion criteria:** lab/design_docs/clan_migration_manifest.md exists; covers 100% of distinct memory_type+kind combinations in clan.memories; each type has target namespace assignment with rationale; row counts per type included; Akien review column (blank at close — review is the gate on follow-on tickets).",
+    "completed_at": "2026-06-15T21:05:41.652151+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

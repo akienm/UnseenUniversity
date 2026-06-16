@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-dicksimnel-close-failure-handling.20260604.012758500182",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-close-failure-handling"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T01:27:58.500182",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-close-failure-handling"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-close-failure-handling",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Reliability"
+    ],
+    "title": "DickSimnel: surface close() failure instead of silently completing",
+    "result": "escalate on None return from cc_queue close(); 5 tests; 61235a31",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "claimed_at": null,
+    "created_at": "2026-06-04T01:27:58.500182+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "_post_result() calls _run_queue_cmd('close', ticket_id, note) and then unconditionally clears _active_ticket and posts DICKSIMNEL_DONE. If close() fails (returns None), the ticket stays in in_progress status and will be re-claimed on the next poll cycle, causing repeated WORKING posts for the same ticket.\n\n**Affected files:** devices/dicksimnel/device.py\n**Design rules:** no-sqlite\n**Scope boundary:** In scope: check _run_queue_cmd close return value; escalate on failure. Out of scope: retry logic.\n**Completion criteria:** (1) if _run_queue_cmd('close', ...) returns None, call _escalate_ticket() with reason='close failed'; (2) test: close failure → escalate not done; close success → done posted",
+    "completed_at": "2026-06-04T01:29:25.938994+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68a3bf8d-9b8e-4def-a1d1-dffb4774bb8a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

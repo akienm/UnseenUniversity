@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-three-pass-audit.20260420.184453000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-three-pass-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:53",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-2026-03-25",
+      "T-audit-prompts-human-reviewed",
+      "T-case-study-lessons-learned",
+      "T-three-pass-audit",
+      "T-uc-chattable-llm-channel",
+      "T-uc-inference-channel"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-three-pass-audit",
+    "size": "XL",
+    "tags": [
+      "Audit",
+      "Architecture",
+      "Biomimicry"
+    ],
+    "title": "3-pass architecture audit — Gemini 1M breadth → Opus deep-dive → Opus synthesis with case-proof verdicts",
+    "result": "Pass 1 (Gemini breadth) + Pass 2 (Opus depth) complete. Output in lab/design_docs/audit_2026/{pass1_output,pass2_output}/. Disposal/review work continues under T-epic-fix-all-pass2-findings (GH#507, ~154 findings) + T-audit-design-thread-pass2 (GH#508, joint design thread) + T-audit-findings-to-tickets (auto-file tooling, parked). Pass 3 (human technical 'how it all works' docs + case-proof verdicts) deferred — file separately when we're ready.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-20T21:39:23.423773+00:00",
+    "created_at": "2026-04-20T18:44:53Z",
+    "related_to": null,
+    "description": "Run a three-pass audit of the whole project, each pass with a different cognitive profile. Validates both the code and the thesis — 'is Igor actually proving his biomimetic case?' — and as a bonus, exercises the new comms-channel architecture by using it as the Pass-1 transport.\n\n## Blockers — ALL CLEARED 2026-04-20a\n- T-uc-inference-channel — DONE\n- T-uc-chattable-llm-channel — DONE\n- Gemini 2.5 Pro: routable via OpenRouter (no separate API credential needed — CC is OR-funded)\n- T-audit-prompts-human-reviewed — DONE (pass1/pass2 prompts reviewed + edited by Akien, 811718cf)\n- Pass 3 prompt: intentionally NOT pre-written — Pass 3 shape depends on what passes 1-2 turn up\n\nReady to kick off. Pass 1 trigger: open comms://model/gemini-pro, send repo payload, read report.\n\n## Pass 1 — Gemini 2.5 Pro (breadth, 1M context)\n- Input: full repo (wild_igor/ + lab/ + tests/) as one payload\n- Role: multi-persona auditor — senior engineer, biomimicry engineer, QA skeptic, architect, documentation reviewer. No 'what to pay attention to' constraints.\n- Biomimicry lens specifically: flag things NAMED biologically but IMPLEMENTED procedurally (e.g. a habit called 'Hebbian' that actually just increments a counter). This is the recurring failure mode and the highest-value finding class.\n- Transport: comms://model/gemini-pro via the new inference-channel\n- Output: a structured findings report — concerns grouped by severity and area\n\n## Pass 2 — Opus 4.7 (depth)\n- Input: Pass 1 findings + repo access\n- Role: deep-dive engineer — for each Pass 1 finding, read the code, verify or refute, propose the fix, assess blast radius.\n- Additional remit: find what Gemini missed. Different model = different blind spots.\n- Output: list of ticket candidates with preliminary design for each (not full implementations).\n\n## Pass 3 — Opus 4.7 (synthesis + case-proof verdicts)\n- Input: Pass 2 ticket candidates + repo + Igor's live-state dashboards\n- Role: architect + evaluator\n- Two deliverables:\n  1. 'How it all works' — an honest architecture doc written post-hoc from the code, not from the design docs. What IS, not what was intended.\n  2. 'Is it proving its case?' — verdicts on each major claim of the Igor thesis, with evidence:\n     - Local-inference share of calls over time: trending up, flat, or down?\n     - TWM salience competition: genuinely competitive, or argmax-in-disguise?\n     - Habits forming from experience, or only from seeds?\n     - Graph showing real Hebbian patterns (organic co-activation clusters)?\n     - Is Igor shipping his own code? (Currently: no — gated. The gate status itself is a data point.)\n     - Each verdict is pass / partial / fail with pointer to evidence.\n\n## Disposal strategy (mandatory — prevents queue flood)\nPass 3 MUST categorize all Pass 2 ticket candidates:\n- SHIP — actionable now, add to queue\n- DEFER — valid but not now, record as reference memory in graph\n- INVESTIGATE — unknown if real, file as spike ticket\n- DISCARD — false positive, noted and dropped\nTarget: 5–10 SHIP tickets max. If Pass 2 produces 80 findings, 70 go into DEFER/DISCARD with reasoning.\n\n## Why this ticket is XL and bounded anyway\n- Each pass is one (long) run, not weeks of coding. Total elapsed: maybe 2–3 sessions once blockers clear.\n- The 'case-proof verdicts' are the highest-value artifact the project has ever produced — they either validate the whole thesis or redirect it. Worth every token.\n- Rerunnable: once the comms channel path is built, re-auditing is as cheap as 'open channel to gemini-auditor, send repo, read report' — we get this as a recurring capability, not a one-off.\n\n## Out of scope\n- Actually implementing the SHIP tickets (each becomes its own sprint)\n- Fixing anything DURING the audit passes (tempting; don't — contaminates findings)\n- Gemini-tuning / prompt engineering beyond what Pass 1 needs to cover the personas\n\n## Related\n- T-uc-inference-channel, T-uc-chattable-llm-channel — prerequisites\n- T-case-study-lessons-learned — parallel: outside-view writeup of CC+Akien working together; this ticket is inside-view of the codebase\n- T-audit-2026-03-25 (done) — prior single-pass audit, useful as a reference shape but far narrower",
+    "completed_at": "2026-04-23T21:52:29.440701+00:00",
+    "github_issue": 480,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "182ddd40-afd8-4adb-a29a-9ef4b9543b95",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

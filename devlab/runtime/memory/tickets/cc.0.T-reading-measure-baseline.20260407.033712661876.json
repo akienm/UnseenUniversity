@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-reading-measure-baseline.20260407.033712661876",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-measure-baseline"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T03:37:12.661876",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-measure-baseline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-measure-baseline",
+    "epic": "Training",
+    "size": "S",
+    "title": "Instrument first-pass graph density for a test source",
+    "result": "reading_graph_baseline() tool measures node count/edge density/embedding coverage/activation reach; baseline: On Intelligence 1659 nodes 1712 edges density=1.03; 3 tests",
+    "status": "done",
+    "worker": "igor",
+    "claimed_at": "2026-04-07T03:34:43.833927+00:00",
+    "related_to": null,
+    "description": "Count nodes deposited, edge density around key concepts, activation reach. Baseline measurement before any second-pass or lever-detection work.",
+    "completed_at": "2026-04-07T03:37:12.661876+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f7f51f86-c770-4abc-b091-56f52301942b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

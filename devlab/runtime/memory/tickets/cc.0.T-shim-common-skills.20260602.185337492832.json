@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-shim-common-skills.20260602.185337492832",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-common-skills"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T18:53:37.492832",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-shim-common-skills"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-common-skills",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Device",
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Base shim: 4 panes + common skill verbs for all devices",
+    "result": "BaseShim: handle_command + 5 common skills + _tokenize; ScrapsShim barks; NannyShim schedule voice; 18 tests (379ef63e)",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.6,
+    "blocked_at": "2026-06-03T01:15:38.307048+00:00",
+    "claimed_at": "2026-06-03T01:14:26.450721+00:00",
+    "created_at": "2026-06-02T18:53:37.492832+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "BaseShim provides 4 panes (status, chat, controls, feed) to every device regardless of whether it has an LLM. Non-LLM devices get a stub chat handler — Scraps barks, Nanny talks about her tasks, tokenizing shim returns numeric array of token ids (handy for unit testing).\n\nEvery device has skills. Common base: /help (list skills), /health (same as health web page, text format), /stop, /resume, /feed. Device-specific skills extend from base. Design rule: common verbs and nouns first — don't invent per-device names for shared concepts.\n\nThe tokenizing stub: any non-skill input to a non-LLM device gets tokenized and the token id array returned as the response. Funny but useful — unit tests can verify tokenization without needing LLM.\n\n**Affected files:** unseen_university/skeleton/skeleton.py (base skill protocol), devices/*/shim.py (per-device stubs), docs/TheoryOfOperation.md (skill section)\n**Design rules:** no-sqlite; OOP-first (skill registry in BaseShim); device-specific skills override but do not replace common ones\n**Scope boundary:** IN: common skill set (/help /health /stop /resume /feed) in BaseShim; stub chat/tokenize handlers for non-LLM devices; Scraps + Nanny as reference implementations. OUT: LLM skill routing, web pane rendering\n**Completion criteria:** import BaseShim; attach stub to Scraps and Nanny; /help returns common skills; /health returns text health; non-skill input to Scraps returns barks; non-skill input to tokenizing device returns token int array; tests cover all",
+    "completed_at": "2026-06-03T01:36:47.768426+00:00",
+    "deposited_at": "2026-06-02T12:54:33.661462",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T01:14:26.450721+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f7a6ed2f-fb77-4f5c-953c-62d12ef78596",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-librarian-inference-proxy.20260601.185857871820",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-librarian-inference-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T18:58:57.871820",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-chat-log-learning-bootstrap",
+      "T-inference-learning-pipeline",
+      "T-librarian-inference-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-librarian-inference-proxy",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Librarian",
+      "Inference",
+      "CompiledInference"
+    ],
+    "title": "Librarian owns the compiled-inference proxy layer",
+    "result": "superseded by T-archivist-device",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "blocked_at": "2026-06-01T19:10:53.113671+00:00",
+    "claimed_at": "2026-06-01T18:59:49.279526+00:00",
+    "created_at": "2026-06-01T18:58:57.871820+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The Librarian becomes the owner of the inference proxy. Every inference call already flows through the proxy; the Librarian adds a graph-tree pre-check layer before the call reaches any LLM. On a hit the answer returns locally (zero upstream cost). On a miss the call goes to the LLM and the proxy fans out: answer back to caller, AND (request + response + log pointer) enqueued for Librarian overnight learning. Callers never change — escalation routing and compilation happen invisibly in the proxy.\n\nWhether the Librarian IS the proxy (merged) or OWNS it (wraps it) is a TBD implementation detail to resolve in sprint.\n\n**Affected files:** unseen_university/devices/librarian/ (extend); devices/inference/ (proxy integration); TBD on merged vs. owned shape\n\n**Design rules:** bus+shim model; no-sqlite; log every interface crossing (AR-009); compiled inference — graph-tree pre-check fires before any LLM call\n\n**Scope boundary:** IN — proxy ownership by Librarian; graph-tree pre-check stub (always-miss initially is fine); dual output fan-out (answer + learning queue). OUT — overnight learning pipeline (T-inference-learning-pipeline); chat log bootstrap (T-chat-log-learning-bootstrap); emotional encoding distinction (handled in learning pipeline)\n\n**Completion criteria:** (1) every inference call routed through Librarian-owned proxy; (2) graph-tree pre-check runs before LLM call (stub that always misses is valid at ship); (3) on LLM response, learning payload enqueued to Librarian; (4) caller API unchanged; (5) PROXY_INTERCEPT logged at INFO for every call",
+    "completed_at": "2026-06-01T19:28:21.043435+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T18:59:49.279526+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "71437f24-efe0-4e20-b745-e6c7575e5e83",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

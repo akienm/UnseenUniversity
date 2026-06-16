@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-granny-worker-dispatch.20260531.205059513762",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-worker-dispatch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T20:50:59.513762",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-minion-worker-escalation-2026-05-31"
+    ],
+    "tickets": [
+      "T-granny-worker-dispatch",
+      "T-minion-worker-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-worker-dispatch",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Granny"
+    ],
+    "title": "Granny: dispatch to worker device instead of claude CLI",
+    "result": "inference_dispatch_fn now calls MinionDevice.execute() — tool loop + DONE/ESCALATE handling in 79e76cbf. 8 tests.",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1.85,
+    "claimed_at": null,
+    "created_at": "2026-05-31T20:50:59.513762+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-minion-worker-escalation-2026-05-31",
+    "description": "Change Granny's dispatch path from spawning `claude --dangerously-skip-permissions /sprint-ticket` to posting a WORKER_DISPATCH envelope to comms://worker-inbox. Worker device picks it up, runs the tool loop, and signals DONE or ESCALATE back to Granny. Granny re-routes ESCALATE signals up the tier chain via RulesEngine.\n\n**HIGH-INERTIA — Akien pre-approved 2026-05-31 (said 'go!' in session)**\n\n**Affected files:** devices/granny/dispatch.py (main change — post to comms:// instead of tmux spawn), devices/granny/daemon.py (handle DONE/ESCALATE reply envelope)\n**Design rules:** no direct claude CLI spawn for worker-tier work; log all dispatch decisions (AR-009); BaseDevice comms:// pattern\n**Scope boundary:** in: dispatch.py routing switch, DONE/ESCALATE reply handler. out: minion device internals (T-minion-worker-device), tier >worker routing (future)\n**Completion criteria:** (1) dispatch.py posts WORKER_DISPATCH envelope to comms://worker-inbox; (2) daemon.py handles DONE reply → closes ticket; (3) daemon.py handles ESCALATE: designer reply → falls back to claude CLI spawn; (4) tests pass; (5) Granny starts and dispatches one ticket without spawning claude",
+    "completed_at": "2026-05-31T21:05:47.683216+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a7cf589d-4dc5-4b08-b4d1-480e3258184a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

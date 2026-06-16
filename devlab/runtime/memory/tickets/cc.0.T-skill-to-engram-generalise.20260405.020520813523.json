@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-skill-to-engram-generalise.20260405.020520813523",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-to-engram-generalise"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T02:05:20.813523",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skill-to-engram-filter",
+      "T-skill-to-engram-generalise"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-to-engram-generalise",
+    "epic": "Cognition",
+    "size": "M",
+    "probe": "Igor re-imports a skill after source change and updated engram reflects the change",
+    "title": "Generalise skill→engram parser across all Claude Code skills",
+    "result": "skill_importer.py: generic parser reads any SKILL.md → PROCEDURAL Memory engram. Bash blocks→MCPCALL run_bash, /refs→FORKIF, hard rules+step prose as data fields. import_skill(name) upserts (self-updating). import_all_skills() seeded all 21 skills. 32 tests, 1781 total green.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-05T02:01:25.475259+00:00",
+    "related_to": null,
+    "description": "Extract the /filter parser (T-skill-to-engram-filter) into a generic skill_importer tool: read any skill markdown → emit engram nodes → seed/upsert to DB. Wire a DEFERRED_TASK|tool_call|import_skill|{path} update path so Igor can refresh any skill from source. Seed all current skills: sprint, commit, audit, fixit, savestate, context-load. Probe: Igor re-imports /sprint after a change to the skill file and the updated engram reflects the change.",
+    "completed_at": "2026-04-05T02:05:20.813523+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "52dfc59d-06ad-4aea-bfb0-1bb7ba24b30f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

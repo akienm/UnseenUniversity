@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-engram-purpose-schema.20260510.165729281489",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-engram-purpose-schema"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T16:57:29.281489",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reasoning-inspection-2026-05-10"
+    ],
+    "tickets": [
+      "T-engram-purpose-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-engram-purpose-schema",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Memory",
+      "Database"
+    ],
+    "title": "Add purpose, purpose_category, purpose_embedding fields to engram metadata",
+    "result": "PURPOSE_CATEGORIES + purpose/purpose_category/purpose_embedding properties + set_purpose() on Memory dataclass; metadata-based, no DB migration",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-10T17:17:30.301360+00:00",
+    "created_at": "2026-05-10T16:57:29.281489+00:00",
+    "related_to": null,
+    "decision_id": "D-reasoning-inspection-2026-05-10",
+    "description": "Engrams currently have no self-describing 'why does this memory exist?' field, making inspection require reading full content. Add three fields to engram metadata: purpose (free-text sentence), purpose_category (controlled vocab enum), purpose_embedding (pgvector vector for semantic search). Define starter vocabulary for purpose_category: skill, fact, preference, constraint, decision, experience, procedure.\n\n**Affected files:** wild_igor/igor/memory/models.py, clan schema migration, possibly wild_igor/igor/memory/cortex.py\n**Design rules:** theigors/rules/database (Postgres-only, no SQLite); theigors/rules/memory (memory shape changes need test coverage)\n**Scope boundary:** In scope: three new nullable fields on clan.memories (or engram table), starter vocabulary definition, schema migration. Out of scope: populating these fields (that's the annotator habit), changing existing engram query paths.\n**Test plan:** Migration runs cleanly on empty values; can store and retrieve all three fields; purpose_embedding accepts pgvector values; existing engram tests still pass.",
+    "completed_at": "2026-05-10T17:17:35.971489+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c41b032d-05f6-497c-b1c5-c44fe5dc4b12",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

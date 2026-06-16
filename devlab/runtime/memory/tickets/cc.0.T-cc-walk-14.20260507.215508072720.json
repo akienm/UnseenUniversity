@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-walk-14.20260507.215508072720",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-walk-14"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T21:55:08.072720",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-walk-14"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-walk-14",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Safety",
+      "walk"
+    ],
+    "title": "CLOSED: refractory window for coherence/confab detectors",
+    "result": "refractory window for coherence+confab detectors — 3 files, 3 test files, all tests green, commit d3c91429",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-07T21:55:08.072720+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 area_4 finding: coherence inhibitor and action_claim_verifier re-fire on consecutive turns even when the trigger is stale. Add a refractory window: each detector checks ring_memory for a recent failure within the last N turns and suppresses re-fire (still logs, doesn't push TWM).\n\n**Affected files:** wild_igor/igor/cognition/response_coherence_inhibitor.py, wild_igor/igor/tools/action_claim_verifier.py\n**Design rules:** no-sqlite\n**Scope boundary:** IN — ring_memory ring check + suppression flag, no detection logic changes. OUT — changing what triggers coherence/action-claim detection.\n**Test plan:** Write two consecutive turns that both trigger the detector; second turn should log 'refractory suppressed' and not push TWM.\n**Pass condition:** test verifies that detector fires on turn 1, logs 'refractory suppressed' on turn 2, and TWM push count == 1 not 2.",
+    "completed_at": "2026-05-08T15:58:17.333444+00:00",
+    "github_issue": 668,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f545e934-eaf1-4964-8619-137c266382d8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

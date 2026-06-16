@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-audit-day-skill.20260429.182034263290",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-day-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:20:34.263290",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29"
+    ],
+    "tickets": [
+      "T-audit-day-skill",
+      "T-audit-rename-pyramid",
+      "T-auto-scan-for-rest-tickets"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-day-skill",
+    "gate": "T-audit-rename-pyramid",
+    "size": "M",
+    "tags": [
+      "Audit",
+      "Skills",
+      "DayClose"
+    ],
+    "title": "Extend audit-day — cross-day watch-for + fix-one-leave-many sweep",
+    "result": "Created ~/.claude/skills/audit-day/SKILL.md: inherits day-close-audit + cross-day watch-for, fix-one-leave-many sweep, subsystem_index drift, inertia drift, TWM gaps, habit health, scan-for-rest auto-draft. Model: Sonnet.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T18:11:29.297484+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "audit-day inherits all current /day-close-audit checks. Add: cross-file consistency (signature changes propagated everywhere); cross-day watch-for (yesterday's notes — fire if hit, age if not, expire if stale); subsystem_index vs reality; inertia tags match touched files; TWM coverage gaps; habit health (inbox TTR, slate decay, OR burn); log-rotation triggers; DB schema drift; dependency hygiene; credential scan (cross-file); simplification review across all today's diffs; test count regression; in-flight slate decay; fix-one-leave-many sweep (across the day's diffs, find changes whose call graph wasn't fully updated → auto-draft scan-for-rest tickets via T-auto-scan-for-rest-tickets logic).\n\nSingle expert lens: Process / Meta Engineer (not the full panel). Ultraview NOT at this level.\n\nEmits per-run record. Reads watch_next from prior runs.\n\nModel: Sonnet.\n\n**Affected files:** ~/.claude/skills/audit-day/SKILL.md (renamed + extended).\n**Design rules:** no persistence beyond palace telemetry.\n**Test plan:** seed a day's commits with a partial signature change → fix-one-leave-many sweep catches it. Watch-for note from prior run hits in today's commits → recorded. Telemetry recorded.",
+    "completed_at": "2026-04-29T18:20:34.263290+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "256ab4f3-88dd-46c8-aaa5-40dc96dfe214",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

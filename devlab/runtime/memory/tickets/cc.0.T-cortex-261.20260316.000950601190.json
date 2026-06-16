@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-cortex-261.20260316.000950601190",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cortex-261"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T00:09:50.601190",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cortex-261"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cortex-261",
+    "body": "interpretive_edges migration UPDATE (layer=meaning_to_me) fires on every boot at 80ms. Already complete — add a check so it only runs if rows would actually change, or add a migrations marker. Low inertia. See #261.",
+    "role": "implementation",
+    "size": "S",
+    "title": "Fix meaning_to_me migration UPDATE firing every restart (#261)",
+    "result": "cortex.py: added _migrations table at _init_db() start; guarded meaning_to_me layer UPDATE behind migration marker 'meaning_to_me_layer_tag' — UPDATE now runs once instead of every boot (was 80ms per restart due to LIKE scan). Syntax OK.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-16T00:08:26.534592+00:00",
+    "completed_at": "2026-03-16T00:09:50.601190+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

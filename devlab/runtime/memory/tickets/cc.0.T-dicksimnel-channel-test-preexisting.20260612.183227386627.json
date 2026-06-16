@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-dicksimnel-channel-test-preexisting.20260612.183227386627",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-channel-test-preexisting"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T18:32:27.386627",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-channel-test-preexisting",
+      "T-json-envelope-inference"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-channel-test-preexisting",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Tests"
+    ],
+    "title": "Fix pre-existing failures in test_dicksimnel_channel.py",
+    "result": "autouse no_bus fixture + log message assertion fix — 10/10 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that the 6 pre-existing channel test failures are fixed by correcting the mock target paths.",
+    "blocked_at": "2026-06-12T21:00:00.882621+00:00",
+    "claimed_at": null,
+    "created_at": "2026-06-12T18:32:27.386627+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "6 tests in tests/inference/test_dicksimnel_channel.py fail pre-existing (confirmed by git stash check 2026-06-12). All failures related to post_to_channel not being called in _post_result mock setup — mock target is wrong (module path changed or import path). Not caused by T-json-envelope-inference.\n\n**Affected files:** tests/inference/test_dicksimnel_channel.py, devices/dicksimnel/device.py\n**Design rules:** none apply\n**Scope boundary:** Fix mock paths so channel post tests pass. No device logic changes.\n**Completion criteria:** `python3 -m pytest tests/inference/test_dicksimnel_channel.py` shows 0 failures.",
+    "completed_at": "2026-06-13T18:04:30.821315+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

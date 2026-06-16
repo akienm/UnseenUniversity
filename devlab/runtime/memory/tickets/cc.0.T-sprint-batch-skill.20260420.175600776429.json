@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-sprint-batch-skill.20260420.175600776429",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-batch-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T17:56:00.776429",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-sprint-batch-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-batch-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Skills",
+      "Sprint"
+    ],
+    "title": "/sprint-batch — run multiple tickets in dependency order",
+    "result": "~/.claude/skills/sprint-batch/SKILL.md — selectors: today-slate, slate:planned, slate:ad-hoc, decision:D-..., tag:..., explicit ids. Topo-sorts by deps, shared setup+teardown, one commit per ticket, includes the 'oh and I also fixed this' retroactive-ticket pattern. 5dfd5c34.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": "2026-04-20T17:50:56.424852+00:00",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Multi-ticket sprint with one shared setup (git pull, venv, env) instead of per-ticket.\n\n## Selectors\n- `/sprint-batch today-slate` — all open slate items\n- `/sprint-batch slate:planned` / `slate:ad-hoc`\n- `/sprint-batch decision:D###` — everything tied to a specific decision\n- `/sprint-batch tag:<tag>` — e.g. `tag:WorkflowOverhaul`\n- `/sprint-batch T-x T-y T-z` — explicit list\n\n## Dependency ordering\nFilter out gated tickets. Topo-sort by explicit related_to edges. If cycles: bail with a clear message and let Akien pick.\n\n## Per-ticket loop\nShared setup ONCE up front; then per ticket: claim → build → test → cleanup → doc-refresh → commit+push → close. Shared teardown (savestateauto) at end.\n\n## Abort/skip\nIf a ticket fails mid-batch, prompt: abort remaining? skip this one and continue? re-plan?\n\n## Not in scope\n- /fixit rewrite — separate ticket.",
+    "completed_at": "2026-04-20T17:56:00.776429+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "950da8ee-fe7c-42c2-b28c-c1df957fac9b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

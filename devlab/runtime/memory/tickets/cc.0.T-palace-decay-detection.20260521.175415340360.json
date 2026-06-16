@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-palace-decay-detection.20260521.175415340360",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-decay-detection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340360",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-palace-decay-detection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-decay-detection",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "MemorySystem",
+      "AuditPipeline",
+      "DayClose"
+    ],
+    "title": "Add palace node staleness detection to day-close-audit",
+    "result": "palace-decay-detection SQL audit check registered as forever check; surfaces palace nodes not updated in 30+ days as LOW severity finding at day-close",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-23T21:29:19.984438+00:00",
+    "created_at": "2026-05-21T17:54:15.340360+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "Palace nodes without recent verification are potential false confidence sources. A rule node claiming 'Postgres only' that was last verified 6 months ago may no longer reflect current practice. Add a day-close-audit step (Step 18.8) that surfaces nodes where updated_at > 30 days for spot-check. Distinct from capability_map.md drift check (step 18.6) — this applies to all palace branches, not just one doc.\n\n**Affected files:** ~/.claude/skills/day-close-audit/SKILL.md (new step 18.8), wild_igor/igor/tools/palace_decay.py (new)\n**Design rules:** theigors/rules/database (Postgres query against memory_palace/adc.palace)\n**Scope boundary:** In scope: detect nodes by age, emit findings report for Akien review. Out of scope: automated palace updates — Akien approves all changes.\n**Test plan:** Insert a test palace node with updated_at > 30 days; run step; verify it appears in findings. Verify nodes < 30 days are suppressed.",
+    "completed_at": "2026-05-28T02:04:51.184640+00:00",
+    "github_issue": 786,
+    "dispatched_at": "2026-05-23T21:29:19.984438+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340379+00:00",
+    "target_difficulty": 2,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "baa771c8-955e-4f06-8c85-926aea7c89bd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

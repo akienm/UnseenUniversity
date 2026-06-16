@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-palace-as-source-of-truth.20260420.175600884392",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-as-source-of-truth"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T17:56:00.884392",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-palace-source-of-truth-2026-04-20",
+      "D-xxx"
+    ],
+    "tickets": [
+      "T-decisions-into-palace-subtree",
+      "T-palace-as-source-of-truth",
+      "T-rules-canonical-db-first",
+      "T-skills-into-palace-subtree",
+      "T-slates-into-palace-subtree",
+      "T-sync-on-close-not-dayend",
+      "T-tickets-into-palace-subtree",
+      "T-xxx"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-as-source-of-truth",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "Palace",
+      "WorkflowOverhaul",
+      "Epic"
+    ],
+    "title": "Memory palace as source of truth — tickets/decisions/slates/rules/skills/history all live in theigors/* tree",
+    "result": "Shape-lock doc: lab/design_docs/palace_migration/shape_lock_2026-04-20.md. Two-layer model (canonical in memories table as first-class rows w/ parent=*_ROOT under PR_IGORS_PROJECT; navigable index in memory_palace as pointers). No new memory types — FACTUAL/REFERENCE/PROCEDURAL + metadata tags. Echo-on-close timing. Echoes: queue.json, decisions_log.dsb, slate.txt, 3× SKILL.md locations, CLAUDE.md shim, GitHub. Invariants + open questions documented. Child tickets (T-tickets/decisions/slates/skills-into-palace-subtree + T-sync-on-close-not-dayend) unblocked. 5dfd5c34.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.85,
+    "claimed_at": "2026-04-20T17:53:40.031207+00:00",
+    "related_to": null,
+    "decision_id": "D-palace-source-of-truth-2026-04-20",
+    "description": "Akien 2026-04-20: move every project-scoped artifact into the memory palace tree under theigors/* as canonical source of truth. Files on disk and GitHub become echoes updated by palace_sync, not primary storage.\n\n## Proposed tree shape\ntheigors/\n  rules/* (EXISTS) — canonical; CLAUDE.md shrinks to thin shim that reaches into DB\n  tickets/T-xxx (new subtree — replaces queue.json as canonical)\n  decisions/D-xxx (new — echoed to decisions log via palace_sync)\n  slates/YYYYMMDD (new — daily discussion tree nodes)\n  skills/<skill-name> (new — replaces ~/.claude/skills/ + lab/claudecode/cc_skills/ drift)\n  history (pointer node → git log, claude_chat_logs/, infra.sessions)\nPR_IGORS_PROJECT (existing facia) stays as the activation root pointing at all of the above.\n\n## Open storage question (resolve in T-tickets-into-palace-subtree first)\nTwo candidate homes:\n(a) memory_palace table (path/title/content/pointers) — signpost tree shape, would need extension to hold operational data\n(b) memories table with parent_id=PR_IGORS_PROJECT (or a new tickets-root under it), memory_type=FACTUAL, kind:ticket tag — first-class memory graph nodes, respects 'no new memory types' rule\nBias: (b) for canonical storage; (a) for a navigable signpost index that points at (b). Resolve cleanly in the tickets sub-ticket.\n\n## Scope boundary\nThis is the EPIC. Concrete sprint work happens in child tickets: T-rules-canonical-db-first, T-tickets-into-palace-subtree, T-decisions-into-palace-subtree, T-slates-into-palace-subtree, T-skills-into-palace-subtree, T-sync-on-close-not-dayend.\n\n## Provenance\nAkien 2026-04-20 post-/fixit dictation. Paired with the workflow overhaul batch from earlier this session.",
+    "completed_at": "2026-04-20T17:56:00.884392+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f95f24ad-8534-48e7-b4cd-4839d28b660f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

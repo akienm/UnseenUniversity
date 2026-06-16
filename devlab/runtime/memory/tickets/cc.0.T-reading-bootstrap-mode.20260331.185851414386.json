@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-reading-bootstrap-mode.20260331.185851414386",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-bootstrap-mode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T18:58:51.414386",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-bootstrap-mode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-bootstrap-mode",
+    "size": "L",
+    "tags": [
+      "Training",
+      "Infrastructure"
+    ],
+    "title": "reading bootstrap mode — TWM mode primitive + gateway min_tier + PROC_READING_BOOTSTRAP habit",
+    "result": "D268 implemented: TWM mode_override category + _force_cloud_mode flag in InferenceGateway (skips Ollama, routes to t4 when min_tier=tier.4 active). bootstrap_reader.py tools push/expire mode with TTL, record OR balance baseline. PROC_READING_BOOTSTRAP habit seeded. 5 unit tests, 560 total passing.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-31T18:48:18.568780+00:00",
+    "description": "Production primitive for mode-switched reading. Three components: (1) define MODE entry convention in TWM content_csb; (2) gateway reads min_tier from active MODE entry before tier selection; (3) PROC_READING_BOOTSTRAP workflow habit — pushes MODE, drains identity_weight>0.8 reading_list docs at Sonnet, records baseline escape rate for ROI comparison. Enables: calibrated bootstrap investment + unattended high-quality reading passes + future mode generalization.",
+    "completed_at": "2026-03-31T18:58:51.414386+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ddaf5084-584d-43ab-a936-6923df268e99",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

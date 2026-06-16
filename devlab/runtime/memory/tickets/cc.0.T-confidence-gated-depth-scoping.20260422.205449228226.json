@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-confidence-gated-depth-scoping.20260422.205449228226",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-confidence-gated-depth-scoping"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T20:54:49.228226",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-preparse-architecture-2026-04-22"
+    ],
+    "tickets": [
+      "T-confidence-gated-depth-scoping"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-confidence-gated-depth-scoping",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Design",
+      "Meta"
+    ],
+    "title": "Design-only — scope per-stage confidence emission + gating into concrete tickets",
+    "result": "design doc lab/design_docs/confidence_gated_depth.md — per-stage inventory of all 9 cognitive stages + 9 proposed per-stage tickets for Akien review. Recognize stage flagged mature (T-gist-before-retrieve); reason stage flagged HARD (prefer divergence-from-shadow over self-report). Commit 77b725ce.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.4,
+    "claimed_at": "2026-04-22T20:53:07.753374+00:00",
+    "related_to": null,
+    "decision_id": "D-preparse-architecture-2026-04-22",
+    "description": "The 9-stage operational model (attend → predict → recognize → retrieve → reason → select → articulate → reflect → learn) locked in during the design conversation calls for each stage to emit a confidence score, and the next stage to be gated on whether that confidence exceeds a threshold (high → short-circuit, low → proceed to full processing). This is a principle, not a single file change — it touches every cognitive stage. Before building, need a design pass that inventories each stage's current confidence emission (if any), identifies where it's missing, and scopes the work into per-stage tickets.\n\n**Affected files:** TBD — discovery step. Output is a design doc at `lab/design_docs/confidence_gated_depth.md` listing per-stage gaps and proposed per-stage tickets.\n**Design rules:** docs-in-code (the output IS the doc); no other checks apply — this is a design ticket, not a build ticket.\n**Scope boundary:** IN: inventory each stage's confidence emission (current state); identify missing emissions; propose per-stage tickets for the gaps; document threshold-tuning approach. OUT: actual implementation (each per-stage ticket); threshold values (belongs in the implementation tickets).\n**Test plan:** no tests — design ticket. Output is a markdown doc reviewed by Akien; once approved, spawns concrete per-stage tickets that DO have test plans.",
+    "completed_at": "2026-04-22T20:54:49.228226+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c2d3ed30-a681-4be2-94b0-ab7cfa971013",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.218.20260323.225433019807",
+  "emitter": "cc.0",
+  "namespace": [
+    "218"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T22:54:33.019807",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "218"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "218",
+    "size": "M",
+    "title": "Clean up design_docs/ — archive CSBs, create human-readable set",
+    "result": "Archived 7 .csb.txt per-ticket design files from design_docs/ to design_docs/archive/. Added README.md explaining the three-directory convention. Human-readable .md set in design_docs/ unchanged.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-23T22:53:44.577463+00:00",
+    "description": "Archive CSB files, create clean human-readable doc set in design_docs/. #218",
+    "completed_at": "2026-03-23T22:54:33.019807+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "be580211-c5ee-48df-966e-ff4b987f2f22",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

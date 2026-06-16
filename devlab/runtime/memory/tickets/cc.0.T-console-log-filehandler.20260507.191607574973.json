@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-console-log-filehandler.20260507.191607574973",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-console-log-filehandler"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T19:16:07.574973",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-console-log-filehandler"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-console-log-filehandler",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "sprint",
+      "logging"
+    ],
+    "title": "CLOSED: Replace tmux-capture console.log with FileHandler subscriber",
+    "result": "DailyConsoleFileHandler in logging_setup.py; pipe-pane removed from igor launcher; rotate_igor_console.py deleted; 4478 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": "low",
+    "claimed_at": "2026-05-07T19:07:11.373741+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Currently ~/.agent_datacenter/logs/Igor-wild-0001/YYYYMMDD.console.log is produced by a tmux pipe-pane capture (managed by rotate_igor_console.py). This captures raw terminal output including non-logging sequences like [?2004l (bracketed paste mode). Replace with a Python FileHandler subscribed to the same senders/levels as the console StreamHandler, using the same color formatter — both outputs come from the logging pipeline, terminal artifacts never reach the file. Remove the tmux pipe-pane capture mechanism and the rotate_igor_console.py cron entry.\n\n**Affected files:** lab/claudecode/rotate_igor_console.py, agent_datacenter/logcontrol/control_center.py, wild_igor/igor/logging_setup.py (TBD — discovery step in sprint), igor bash launch script (pipe-pane removal)\n**Design rules:** logging-centralization — LoggingControlCenter is the authority for file handlers\n**Scope boundary:** In scope: add FileHandler to logging init with same color formatter as StreamHandler; remove tmux pipe-pane capture and cron entry. Out of scope: changing log levels, adding new senders, modifying log format.\n**Test plan:** After change, start Igor fresh — verify YYYYMMDD.console.log contains ANSI color codes, contains no [?2004l, and content matches console output. Run existing logging tests.\n**Pass condition:** Fresh Igor start produces a .console.log that Kate renders with colors and contains no terminal control sequences outside SGR (color) codes.",
+    "completed_at": "2026-05-07T19:16:07.574973+00:00",
+    "github_issue": 662,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6d143077-e86c-4e6d-b2e2-2911c814a42c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

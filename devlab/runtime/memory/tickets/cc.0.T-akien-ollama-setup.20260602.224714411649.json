@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-akien-ollama-setup.20260602.224714411649",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-akien-ollama-setup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T22:47:14.411649",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-akien-ollama-setup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-akien-ollama-setup",
+    "gate": null,
+    "role": "guru",
+    "size": "S",
+    "tags": [
+      "Akien",
+      "Action",
+      "Infrastructure"
+    ],
+    "title": "Akien: install Ollama and pull inference models for local $0 tier",
+    "result": "done — Ollama installed and models pulled; capitalization updated in machines config",
+    "status": "closed",
+    "worker": "akien",
+    "purpose": "",
+    "priority": 0.85,
+    "blocked_at": "2026-06-02T22:56:17.233468+00:00",
+    "claimed_at": "2026-06-02T22:50:54.808704+00:00",
+    "created_at": "2026-06-02T22:47:14.411649+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The inference proxy Level 1 (local Ollama, $0) and Level 2 (pattern intercept → local model) both require a running Ollama instance with at least one model pulled.\n\nModels needed by the rules engine:\n- Minion tier: qwen3.5-9b or similar small model (available via ollama)\n- Worker tier: any 30B+ coding model if hardware supports it\n\n**Steps:**\n1. Install Ollama: https://ollama.com/download (Linux: curl -fsSL https://ollama.com/install.sh | sh)\n2. Pull a minion model: ollama pull qwen2.5:7b (or qwen3:8b when available)\n3. Set env: INFERENCE_ENDPOINT=http://127.0.0.1:11434 (this is already the default)\n4. Verify: python3 -c \"from devices.inference.sources import OllamaSource; s=OllamaSource(); print(s.ping())\"\n\n**Affected files:** ~/.unseen_university/.env (optional — default endpoint already correct)\n**Design rules:** No live keys in source.\n**Scope boundary:** Ollama install + model pull only. Granny and inference proxy will auto-detect when Ollama is available.\n**Completion criteria:** OllamaSource().ping() returns True; at least one model is pullable.",
+    "completed_at": "2026-06-03T23:59:45.578708+00:00",
+    "deposited_at": "2026-06-02T16:48:58.737896",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T22:50:54.808704+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "41785872-eb88-4597-a67c-924b8f4fe5c0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

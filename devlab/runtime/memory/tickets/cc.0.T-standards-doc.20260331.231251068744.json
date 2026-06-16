@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-standards-doc.20260331.231251068744",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-standards-doc"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T23:12:51.068744",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-standards-doc"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-standards-doc",
+    "size": "M",
+    "tags": [
+      "documentation",
+      "standards",
+      "productization"
+    ],
+    "title": "docs: design_docs/standards.md — forensic logging, module structure, testing, DB access",
+    "result": "Created design_docs/standards.md — 388 lines covering forensic logging (forensic_logger API, what must be logged, bash pattern), module structure (tool template, registration pattern, new-tool checklist), error handling (no silent failures, no bare except), database access (Postgres only, jsonb_exists, json.dumps, ON CONFLICT qualification), testing (live systems, file naming), inertia levels (table + practical meaning + Igor self-edit gates), and OR model ID format. Single source of truth for Claude and Igor. Future: promote to DSB for Igor memory traversal.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-31T23:10:25.723239+00:00",
+    "description": "Create design_docs/standards.md as authoritative reference for: forensic logging (what, where, how often), module structure (imports, registry pattern, docstrings), error handling (no bare except, always log), database access (psycopg2 only, jsonb_exists pattern), testing (live systems), inertia levels with examples. Single source of truth for both Claude and Igor (future DSB memory). Part of startup tree for new modules.",
+    "completed_at": "2026-03-31T23:12:51.068744+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "385294d8-7617-40a8-aba1-fa51501660ec",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

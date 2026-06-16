@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-audit-design-check-encapsulation.20260521.163331103787",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-design-check-encapsulation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T16:33:31.103787",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-encapsulation-audit-2026-05-21"
+    ],
+    "tickets": [
+      "T-audit-design-check-encapsulation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-design-check-encapsulation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AuditDesign",
+      "Workflow",
+      "doc-only"
+    ],
+    "title": "audit-design Check 10: what could be encapsulated here?",
+    "result": "added Check 10 (Encapsulation surface) to audit-design SKILL.md after Check 9; updated output format to 10/10; [encapsulation] finding tag; all-nine → all-ten in hard rules and steps",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-21T16:33:31.103787+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-encapsulation-audit-2026-05-21",
+    "description": "audit-design has 9 checks. Add Check 10: 'Encapsulation surface — does this design have any subsystem reaching across an interface it shouldn't?' Look for: (a) component A knowing B's internals when a service interface would suffice, (b) shared mutable state without a proxy, (c) caller selecting from a list when a dispatcher could hand it the right item. Fail (AMEND) when the design introduces new cross-cutting reach that could instead be a named service. Advisory note (not AMEND) when an existing reach is named and accepted. This check follows the DB proxy / inference proxy / queue-as-black-box pattern.\n\n**Affected files:** ~/.claude/skills/audit-design/SKILL.md (add Check 10 section after Check 9)\n**Design rules:** none apply\n**Scope boundary:** Check 10 text only; no changes to existing checks 1–9; no changes to output format (add encapsulation to findings tag list)\n**Test plan:** no automated tests — skill doc edit; verify by reading SKILL.md and confirming Check 10 present with AMEND condition and example finding tag '[encapsulation]'\n**Validation:** audit-design SKILL.md contains '### Check 10' section; next /decided that introduces new coupling triggers the check\n**Cleanup:** n/a\n**Observable via:** audit-design output includes '[encapsulation]' finding tag when triggered\n**Validation:** (1) Read ~/.claude/skills/audit-design/SKILL.md and confirm ### Check 10 section present with AMEND condition and [encapsulation] finding tag. (2) In the next /decided that introduces a new cross-subsystem call, confirm audit-design output contains [encapsulation] finding — either AMEND or advisory note.\n**Cleanup:** n/a — skill doc edit is idempotent",
+    "completed_at": "2026-05-21T17:03:16.849402+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T16:33:31.155245+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7dd45100-c9e4-4ad5-bdb1-fb0765bb778e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

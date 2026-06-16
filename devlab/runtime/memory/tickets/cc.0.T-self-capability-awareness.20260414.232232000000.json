@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-self-capability-awareness.20260414.232232000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-capability-awareness"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:32",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-self-capability-awareness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-capability-awareness",
+    "body": "From Akien evening 2026-04-13: 'you do have the ability to request more information about something from igor's matrix. which then gathers the extra context and resubmits. but clearly you don't know that capability is there. That's a hole.'\n\nIgor's own self-report: 'I know I can do things, but I don't think to reach for them... receive message → respond — not: receive message → surface goals → gather context → respond. The middle two steps don't happen unless explicitly triggered from outside.'\n\nGAP: Igor has multi-round-trip / additional-context-fetch capability built in (the 'adjust the controls in the simulator' flavor of multi-round-trip already exists per Akien). But the LLM persona inside Igor doesn't reach for it as a tool it would naturally invoke — it's not in his self-model of available actions.\n\nEXISTING WORK TO CHECK:\n- The two existing multi-round-trip flavors: (1) summarize-long-text, (2) adjust-controls-in-simulator (narrative redirect / fetch additional info). Find their entry points and habit wiring.\n- system_prompt.py / Layer 1b — does the system prompt enumerate the 'you can request more context' capability to the LLM?\n- DEFERRED_SELF_TASK chain (tools/deferred_self_task.py) — types: memory_search, twm_read, ring_read, tool_call, note. This may BE the capability Igor doesn't know he has.\n- find_tool() in tools/memory_query.py — fuzzy tool lookup. Does Igor know to query his own tool registry mid-turn?\n- T-igor-deferred-self-tasks + T-predictive-self-modeling parent epics.\n- Self-watchlist intent-decay + relationship-drift sources (shipped today, pending restart) — these are inhibitory; this ticket is the generative counterpart.\n\nDESIGN DIRECTION (not prescriptive):\n1. Self-capability registry surfaced as a TWM-readable thing — 'here are tools/capabilities you have used recently and could reach for now'\n2. Habit that fires on 'I don't have enough context' moments to suggest the deferred-self-task fetch path\n3. Possibly a per-turn check: did the response answer from in-context info only, or did it claim something that would have required a fetch? (overlaps with action-claim verifier — could be the same primitive)\n\nWhy now: this is the third inhibitory→generative pattern surfacing. Coherence inhibitor catches misfires. Action-claim verifier catches confabulation. Self-capability awareness is the positive-direction sibling: catches 'I should have reached for X but didn't.' Likely belongs under inhibitory-pattern-primitive epic (T-inhibitory-pattern-primitive #419) as the motivation/generative inverse.\n\nDEPENDENCIES: T-goals-as-persistent-relationships (#422) — once goals can pull, the 'reach for X' move has a target.\n\n## Update 2026-04-14 evening — strategy-2 as a first-class cockpit move\n\nAkien conversation surfaced that Igor's cockpit should show the four uncertainty strategies as **available moves**, not just memories + tools:\n1. Ignore (triage this as below attention threshold)\n2. **Devise experiment** (run strategy 2 — currently unavailable because the primitive doesn't exist, see T-experiment-primitive)\n3. Ask someone, test their answer (strategy 3, partially available — asking works, testing needs the primitive)\n4. Wait for a new lever (strategy 4, partially available via NE cycles)\n\nSpecifically: \"I can run an experiment to resolve this uncertainty\" should be a first-class visible capability on the cockpit. Today it isn't, which is why Igor escalates to the LLM for things that could be resolved by experiment — his substrate doesn't know that's an option.\n\n**Dependency:** T-experiment-primitive must exist before this part of the ticket can land.\n\n**The rest of this ticket** (multi-round-trip context fetching, self-query) remains valid and stays as-is.",
+    "deps": [
+      "T-goals-as-persistent-relationships"
+    ],
+    "size": "M",
+    "tags": [
+      "cognition",
+      "self-model",
+      "capability-awareness",
+      "deferred-self-task"
+    ],
+    "title": "Igor doesn't reach for his own capabilities (multi-round-trip, context fetch)",
+    "result": "reasoning_context now includes capabilities param from TWM. LLMPeerAdvisor passes them through. main.py reads TWM self.capabilities markers. Reasoning LLM sees Igor's available moves.",
+    "status": "done",
+    "worker": "claude",
+    "blocked_at": "2026-04-15T19:49:44.925624+00:00",
+    "claimed_at": "2026-04-15T19:42:35.269763+00:00",
+    "created_at": "2026-04-14T23:22:32Z",
+    "related_to": null,
+    "completed_at": "2026-04-16T20:18:49.485351+00:00",
+    "github_issue": 431,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

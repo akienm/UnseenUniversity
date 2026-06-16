@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.T-cc-igor-channel-sync.20260101.075537922290",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-igor-channel-sync"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T07:55:37.922290",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-igor-channel-sync"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-igor-channel-sync",
+    "size": "S",
+    "notes": "Root cause: _channel_append was JSONL-only; channel_read MCP queries Postgres. Fixed in server.py.",
+    "title": "CC↔Igor channel sync — Igor replies visible to MCP channel_read",
+    "result": "server._channel_append now mirrors to Postgres channel_messages. MCP channel_read sees Igor replies without copy-paste. Requires Igor restart to take effect. D210.",
+    "status": "done",
+    "priority": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

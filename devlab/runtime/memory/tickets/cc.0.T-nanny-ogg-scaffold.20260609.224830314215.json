@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-nanny-ogg-scaffold.20260609.224830314215",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nanny-ogg-scaffold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:30.314215",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-nanny-ogg-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-nanny-ogg-scaffold"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nanny-ogg-scaffold",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Device",
+      "NannyOgg",
+      "Scaffold"
+    ],
+    "title": "Nanny Ogg device scaffold — BaseDevice/BaseShim + registry",
+    "result": "Nanny Ogg registered in skeleton registry; appears in /api/device/list",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that Nanny Ogg appears as a first-class device in the rack — visible in the web UI, registered in the skeleton, with a clear role boundary (cron only, no inference).",
+    "claimed_at": "2026-06-09T22:59:52.034198+00:00",
+    "created_at": "2026-06-09T22:48:30.314215+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-nanny-ogg-device-2026-06-09",
+    "description": "Create devices/nanny_ogg/ with BaseDevice + BaseShim, register in the skeleton flat-file registry so she appears in /api/device/list and gets a fascia tab in the web UI. Mirror the Hubert scaffold pattern.\n\n**Affected files:** devices/nanny_ogg/__init__.py, devices/nanny_ogg/device.py, devices/nanny_ogg/shim.py\n**Design rules:** no-sqlite; device must inherit BaseDevice/BaseShim per structural rules\n**Scope boundary:** Scaffold only — no cron wiring, no quotes table, no fascia settings logic. Out of scope: any scheduling functionality.\n**Completion criteria:** `pip install -e .` succeeds; `GET /api/device/list` includes nanny_ogg; web UI shows Nanny Ogg tab with a basic fascia page.",
+    "completed_at": "2026-06-09T23:02:49.513933+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-09T22:59:52.034198+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.GH-185.20260312.173219000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "GH-185"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-12T17:32:19",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "GH-185"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "GH-185",
+    "title": "feat: Matter hub / home automation — Igor as scheduling + sensor backbone",
+    "result": "MatterShelf: RackModule with MockController, device registry, SensorTree integration. Foundation for physical Matter bridge. 12 tests.",
+    "status": "done",
+    "priority": 3,
+    "created_at": "2026-03-12T17:32:19Z",
+    "description": "GitHub issue #185. Imported from GH audit — needs triage.",
+    "completed_at": "2026-04-18T16:56:03.267986+00:00",
+    "github_issue": 185,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fd713aa4-7bdf-4aab-b8d5-c4260370b0d9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

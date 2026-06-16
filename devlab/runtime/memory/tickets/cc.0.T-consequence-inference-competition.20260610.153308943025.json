@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-inference-competition.20260610.153308943025",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-inference-competition"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T15:33:08.943025",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-competition-bootstrap-2026-06-10"
+    ],
+    "tickets": [
+      "T-competition-eval-harness",
+      "T-consequence-inference-competition"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-inference-competition",
+    "gate": "2026-06-24",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Competition"
+    ],
+    "title": "[sprint] Consequence check: inference competition bootstrap",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that predicted side effects of the competition bootstrap are observed and annotated within 14 days of shipping.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T15:33:08.943025+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-inference-competition-bootstrap-2026-06-10",
+    "description": "**What changed:** Created competition schema + reading pipeline config + two competing classifiers + eval harness for memory type classification on programming books.\n**Predicted unintended effects:** (1) competition schema adds Postgres maintenance surface — needs to not be confused with production clan schema; (2) reading pipeline schema param could silently deposit to wrong schema if param is misspelled; (3) book_learner labels used as ground truth may be noisy — winning classifier may be optimizing against imperfect labels; (4) k-NN classifier quality depends heavily on embedding coverage — if drain loop hasn't run, graph-first starts at a disadvantage.\n**Signals to watch:** competition.memories and clan.memories row counts stay independent; reading pipeline production runs still deposit to clan only; eval scorecard accuracy is non-trivial (>50% for both classifiers — if either scores near random, label noise is the likely cause).\n**Gate condition:** Check by 2026-06-24 or when T-competition-eval-harness closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

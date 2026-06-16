@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-granny-dispatch-config.20260602.175241107249",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-dispatch-config"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T17:52:41.107249",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-worker-registry-2026-06-02"
+    ],
+    "tickets": [
+      "T-dicksimnel-device",
+      "T-granny-cc0-dispatch",
+      "T-granny-dispatch-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-dispatch-config",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Infrastructure"
+    ],
+    "title": "Granny: config-driven worker dispatch rules in granny.yaml",
+    "result": "dispatch_config.py with pure gate evaluator; granny.yaml schema with CC.0+DickSimnel.0; 28 tests; overnight time_window fixed",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "created_at": "2026-06-02T17:52:41.107249+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-worker-registry-2026-06-02",
+    "description": "Granny's worker dispatch logic is hardcoded Python. Move to config/profiles/granny.yaml: each worker entry declares dispatch_method, gates (time_window, usage_max_pct, max_concurrent, semaphore), and session (for tmux workers). Granny reads this at startup; run_once() evaluates gates generically — no per-worker if/else blocks.\n\nExample schema:\n  workers:\n    CC.0:\n      dispatch: tmux\n      session: claude-main\n      gates:\n        time_window: '21:00-06:00'\n        away_semaphore: CC.0.available.true\n        usage_max_pct: 70\n        max_concurrent: 1\n    DickSimnel.0:\n      dispatch: channel\n      address: comms://dicksimnel\n      gates:\n        available_semaphore: DickSimnel.0.available.true\n        max_concurrent: 1\n\n**Affected files:** config/profiles/granny.yaml (new), devices/granny/daemon.py (config reader, gate evaluator), optionally devices/granny/dispatch_config.py\n**Design rules:** no-sqlite; gate evaluation is a pure function (testable without I/O side effects); use PyYAML (already a project dep)\n**Scope boundary:** IN: granny.yaml schema; config reader; generic gate evaluator replacing hardcoded checks; granny.queue.available.* semaphore support. OUT: actual CC.0 tmux dispatch (T-granny-cc0-dispatch), DickSimnel device (T-dicksimnel-device).\n**Completion criteria:** Adding a worker entry to granny.yaml changes dispatch behavior without touching Python; gate evaluator tests cover time_window boundary (in/out), usage_max_pct threshold, semaphore absent/present.",
+    "completed_at": "2026-06-02T18:37:58.682142+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T18:31:45.436312+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0ad95625-49e6-45d3-bf9c-c0c06cf1bab6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-test-skeleton.20260427.221255838276",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-test-skeleton"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:12:55.838276",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-test-skeleton",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-test-skeleton",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Testing"
+    ],
+    "title": "agent_datacenter: skeleton tests — registration, health rollup, collision",
+    "result": "tests/test_skeleton.py: 14 tests — registration, deregistration, reattach, collision (online+offline), health rollup (healthy/error/timeout), auth (skeleton/self allowed, third-party raises). All pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.65,
+    "claimed_at": "2026-04-27T22:07:44.680438+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Tests for the skeleton's core behaviors: device registration, health rollup, and namespace collision hard-fail.\n\nProposed shape:\n- agent_datacenter/tests/test_skeleton.py:\n  def test_register_device(): register StubDevice → appears in rack.devices()\n  def test_deregister_device(): register then deregister → status='offline' in rack.devices()\n  def test_namespace_collision(): register StubDevice twice with same id → RegistrationError\n  def test_health_rollup_healthy(): register 1 healthy StubDevice → rack.health()['stub'] == {healthy: True}\n  def test_health_rollup_offline(): device goes down → rack.health()['stub'] == {healthy: False, error: 'timeout'}\n  def test_skeleton_self_registers(): skeleton starts → rack.devices() contains 'skeleton'\n  All tests use StubDevice from fixtures; no real Postgres or IMAP needed\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/tests/test_skeleton.py\n\nDesign rules:\n- No real external deps in skeleton tests — StubDevice and mock IMAP server only\n\nScope boundary:\nIN: registration, deregistration, collision, health rollup tests using stubs\nOUT: integration tests with real Postgres or IMAP (those are separate integration test files)\n\nTest plan:\n- pytest tests/test_skeleton.py passes cleanly without Postgres or Dovecot running\n- All 6 test functions present and passing",
+    "completed_at": "2026-04-27T22:12:55.838276+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ab2ff174-fee2-47a2-8e14-d59a1415ba9b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-reorg-bucket-archive-moves.20260502.230917941180",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reorg-bucket-archive-moves"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T23:09:17.941180",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-reorg-execute-2026-05-01"
+    ],
+    "tickets": [
+      "T-reorg-bucket-archive-moves"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reorg-bucket-archive-moves",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Reorg",
+      "Archive"
+    ],
+    "title": "Reorg execute — bucket archive moves (seed/migrate/cc_memory_seed/papers-history-archive)",
+    "result": "Partial ship (commit c3d3a039): 33 of 99 files moved. migrate_*.py (13) → TheIgorsProject/migrations_archive/. papers/history/_archive/ (20) → TheIgorsProject/papers_history_archive/. Suite 4186/0/32skip. Pre-move grep blocked seed_layer3_/layer4_ (test importers), seed_goal_close_habit (test reads file), cc_memory_seed (installer dependency), other seeds (need per-file verification) — filed T-reorg-seed-cc-memory-archive-deferred (M) covering all 66 blocked files.",
+    "status": "done",
+    "worker": "claude",
+    "priority": "P2",
+    "claimed_at": null,
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-reorg-execute-2026-05-01",
+    "description": "Reorg § 4 #2/#5/#6/#7 — Akien-approved 2026-05-01: move 4 archive buckets from TheIgors/ → TheIgorsProject/ subdirs.\n\n**Affected files:**\n- lab/claudecode/seed_*.py (~80 files) → TheIgorsProject/seed_archive/\n- lab/claudecode/migrate_*.py (13 files) → TheIgorsProject/migrations_archive/\n- lab/claudecode/cc_memory_seed/ (43 files) → TheIgorsProject/20260427.Cleanup/auto_memory_archive/\n- papers/history/_archive/ (1 dir) → TheIgorsProject/papers_history_archive/\n- LEAVE: papers/history/*.csb.txt loose files (5 files — keep for next pass)\n\n**Design rules:** archives → TheIgorsProject (rubric default per reorg-plan-2026-05-01-opus-pass.md)\n**Scope boundary:** in — bulk file moves with git mv; verify no live referrer to moved paths (grep before move); update any palace/doc references; out — utility_closet/, cc_skills/ (separate ticket)\n**Test plan:** pre-move grep for 'lab/claudecode/seed_', 'lab/claudecode/migrate_', 'cc_memory_seed' across wild_igor/+lab/+tests/; if hits → ticket those references first; pytest -x -q passes after moves; git log shows the renames",
+    "completed_at": "2026-05-02T23:09:17.941180+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3d69d6e1-f325-4d8a-83f2-0ed1a493c36a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

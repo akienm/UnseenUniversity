@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-fixit-rewrite-decided-plus-sprint-batch.20260420.183542324481",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fixit-rewrite-decided-plus-sprint-batch"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:35:42.324481",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-decided-skill",
+      "T-fixit-rewrite-decided-plus-sprint-batch",
+      "T-sprint-batch-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fixit-rewrite-decided-plus-sprint-batch",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Skills"
+    ],
+    "title": "Rewrite /fixit = /decided + /sprint-batch (bug-path shortcut)",
+    "result": "/fixit rewritten as /decided + /sprint-batch composition. Synced to ~/.claude/skills/fixit/, lab/claudecode/cc_skills/fixit/, ClaudeAndAkien/skills/fixit.md. Inherits /sprint-batch multi-ticket handling; /review still runs per draft w/ HIGH-inertia inline approval. e8f96273 + 3bbc7aa.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-20T18:30:44.316872+00:00",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "After /decided and /sprint-batch ship, /fixit becomes a thin composition — implicit design (just-discussed), /decided on that scope, /sprint-batch on the just-filed tickets.\n\n## Positioning\n/fixit stays the fast reactive path for bugs and quick fixes. /decided handles the real design loop. Clear separation of intent.\n\n## Blocked by\n- T-decided-skill\n- T-sprint-batch-skill\n\n## Not in scope\n- Changing what bug-fix sprints look like — just the routing.",
+    "completed_at": "2026-04-20T18:35:42.324481+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2f3bcfcf-60f1-4fc4-9491-05846d75c541",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

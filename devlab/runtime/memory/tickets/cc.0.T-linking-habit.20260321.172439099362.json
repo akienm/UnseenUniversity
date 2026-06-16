@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.T-linking-habit.20260321.172439099362",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-linking-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T17:24:39.099362",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-linking-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-linking-habit",
+    "body": "Directly addresses 5139 orphaned nodes exposed by D199 work. New FACTUAL/EPISODIC nodes auto-linked to appropriate CP/ID parents via habit. See GitHub #318.",
+    "size": "M",
+    "title": "Memory-to-interpretive-tree linking habit (#318) — connect orphaned FACTUAL/EPISODIC to CP/ID parents",
+    "result": "HeartbeatSource._run_orphan_adoption() added to push_sources.py — runs every 5min when IGOR_NODE_ADOPTION_ENABLED=true, calls cortex.adopt_orphans(batch_size=50), logs ORPHAN_ADOPTED on activity. PROC_NODE_ADOPTION habit seeded (CP1 parent, action type, code_ref=tools.graph_ops:run_node_adoption) for on-demand dispatch. Both gated by IGOR_NODE_ADOPTION_ENABLED. seed script at claudecode/seed_linking_habit.py.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-21T17:21:00.539449+00:00",
+    "completed_at": "2026-03-21T17:24:39.099362+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

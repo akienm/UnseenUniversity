@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-google-source-429-fallthrough.20260609.165759675433",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-google-source-429-fallthrough"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.675433",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-google-source-429-fallthrough"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-google-source-429-fallthrough",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Reliability"
+    ],
+    "title": "Detect HTTP 429 in GoogleSource and mark temporarily unavailable",
+    "result": "429 → available=False + _rate_limited_until=now+60; ping() checks TTL; recovers via check_and_update(); 4 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": "I intend that a Google 429 causes automatic fallthrough to the next inference source within 60 seconds.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.675433+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (Reliability Engineer) found GoogleSource has no client-side rate limiting. On 429, RuntimeError is raised; the rules engine checks availability via TCP ping() which returns True; next request also 429s — infinite loop. Fix: catch 429 specifically, mark source unavailable with 60-second TTL, allowing rules engine to cascade to next route.\n\n**Affected files:** devices/inference/ (GoogleSource.call(), source availability tracking)\n**Design rules:** fail-open graceful degradation\n**Scope boundary:** IN — 429 detection + temporary availability flag with TTL; OUT — other error types, rate limiter implementation\n**Completion criteria:** integration test injects a mock 429 response and verifies the next inference call routes to a different source; source becomes available again after TTL expiry",
+    "completed_at": "2026-06-09T17:38:41.096310+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-restart-loop-protection.20260427.215818155537",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-restart-loop-protection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:58:18.155537",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-access-control-stub",
+      "T-adc-restart-loop-protection",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-restart-loop-protection",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: restart loop protection — N failures in window triggers auto-block",
+    "result": "RestartGuard in agent_datacenter/skeleton/restart_guard.py. Sliding window, auto-block after N failures. block_type='auto', blocked_since timestamp. clear() on successful restart. All tests pass.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-27T21:50:50.239802+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Prevent runaway restart loops by auto-blocking a device after N failures within a time window. Auto-block is distinct from manual block — surfaced differently.\n\nProposed shape:\n- agent_datacenter/skeleton/restart_guard.py:\n  class RestartGuard:\n    def record_failure(self, device_id: str) -> None:\n      # append timestamp to failure_log[device_id]\n      # prune entries older than restart_window_seconds\n    def should_auto_block(self, device_id: str, config: DeviceConfig) -> bool:\n      # count failures in window; return True if >= max_restart_failures\n    def auto_block(self, device_id: str) -> None:\n      # update registry: status='blocked', block_type='auto', blocked_at=now, reason='restart loop'\n  Integrated into Skeleton.restart_device(): calls record_failure() on each restart attempt; calls should_auto_block() before next attempt\n  Auto-block requires manual unblock (agentctl unblock {device_id} or rack.unblock MCP call)\n  Health endpoint reports: block_type: 'auto' | 'manual' | None\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/restart_guard.py (new)\n- ~/dev/src/agent_datacenter/agent_datacenter/skeleton/skeleton.py (restart_device integration)\n\nDesign rules:\n- oop-first: RestartGuard class, not inline logic in skeleton.py\n- docs-in-code: comment distinguishing auto-block from manual block\n\nScope boundary:\nIN: failure recording, window-based count, auto-block trigger, block_type field in registry\nOUT: manual block/unblock command (T-adc-access-control-stub covers block/halt ACL)\n\nTest plan:\n- 3 failures in 60s → auto_block() called; device status='blocked', block_type='auto'\n- 2 failures in 60s, 1 failure at 61s → not auto-blocked (window slides)\n- Auto-blocked device: Skeleton.restart_device() refuses without manual unblock",
+    "completed_at": "2026-04-27T21:58:18.155537+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a6ee2935-f42a-44ff-ac85-1d81c2028895",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

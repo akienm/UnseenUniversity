@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-rebuild-skill-telemetry-py-upstream-spri.20260521.194048607461",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rebuild-skill-telemetry-py-upstream-spri"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T19:40:48.607461",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skill-telemetry-2026-05-20"
+    ],
+    "tickets": [
+      "T-consequence-skill-telemetry",
+      "T-rebuild-skill-telemetry-py-upstream-spri",
+      "T-skill-telemetry-logger",
+      "T-skill-telemetry-rollup",
+      "T-skill-telemetry-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rebuild-skill-telemetry-py-upstream-spri",
+    "size": "S",
+    "tags": [
+      "SkillTelemetry",
+      "Workflow"
+    ],
+    "title": "Rebuild skill_telemetry.py — upstream sprint never committed",
+    "result": "skill_telemetry.py created in TheIgors lab/claudecode/ + 10 tests; all functions present (TheIgors 7876a619)",
+    "status": "closed",
+    "priority": 0.5,
+    "decision_id": "D-skill-telemetry-2026-05-20",
+    "description": "**What happened:** T-skill-telemetry-schema, T-skill-telemetry-logger, T-skill-telemetry-rollup all marked closed but skill_telemetry.py was never committed to the repo. Discovered by T-consequence-skill-telemetry consequence check.\n\n**What to build:** lab/claudecode/skill_telemetry.py with:\n- TypedDicts: SkillContract, ViolationRecord, OutcomeRecord\n- append_violation(skill, flag, context) → appends to IGOR_HOME/claudecode/violation_log.jsonl\n- append_outcome(skill, metric, value) → appends to IGOR_HOME/claudecode/outcome_log.jsonl\n- top_violations(n=5, days=30) → list[(skill, flag, count)] sorted desc\n- skill_outcome_trend(skill, metric, days=30) → slope/direction\n- monthly_rollup() → dict summarizing last 30 days\n\n**Log location:** IGOR_HOME/claudecode/violation_log.jsonl, outcome_log.jsonl (IGOR_HOME defaults to ~/.TheIgors)\n\ncontext-load/run already imports it correctly at `from lab.claudecode.skill_telemetry import top_violations` — just needs the file to exist.\n\n**Affected files:** lab/claudecode/skill_telemetry.py (create), tests/test_skill_telemetry.py (create)\n**Design rules:** none apply\n**Scope boundary:** File creation only; no changes to context-load/run or SKILL.md\n**Test plan:** Test append_violation round-trip, top_violations with fixture log, graceful empty-log handling",
+    "completed_at": "2026-05-21T19:40:48.607461+00:00",
+    "github_issue": 764,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6648358e-d3ec-4490-a2f6-be33d0d78a09",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

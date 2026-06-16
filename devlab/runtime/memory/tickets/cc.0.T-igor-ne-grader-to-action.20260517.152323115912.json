@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-ne-grader-to-action.20260517.152323115912",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-ne-grader-to-action"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.115912",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17"
+    ],
+    "tickets": [
+      "T-igor-ne-grader-to-action"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-ne-grader-to-action",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "NarrativeEngine",
+      "Metacognition"
+    ],
+    "title": "CLOSED: NE grader: low-scoring cycles write TWM diagnostic entry naming failing dimension",
+    "result": "NE_QUALITY_ALERT pushed to TWM at salience=0.75 category=ne_quality when overall<0.4 or any dim<0.3",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-05-17T15:44:26.308399+00:00",
+    "created_at": "2026-05-17T15:23:23.115912+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "description": "The NE grader (_grade_ne_output in coa.py) scores three dimensions and escalates when overall < 0.5, but produces no structured diagnostic for the NE to act on. The grader result should feed back into cognition so Igor can self-correct.\n\nIn coa.py, after _grade_ne_output() returns, when overall < 0.4 or any dimension < 0.3, call cortex.twm_push() with content_csb='NE_QUALITY_ALERT|dim=[failing_dim]|score=[score]' at salience=0.75 category='ne_quality'. The NE sees this on the next cycle and can adapt its approach. Existing channel escalation unchanged.\n\n**Affected files:** wild_igor/igor/cognition/coa.py (MEDIUM inertia)\n**Design rules:** theigors/rules/coding (MEDIUM inertia); theigors/rules/database (twm_push via cortex, Postgres)\n**Scope boundary:** In scope: twm_push() call after low grader score in _ne_worker. Out of scope: NE response strategy to quality alerts (emergent from NE seeing TWM content).\n**Test plan:** Mock _grade_ne_output() returning {'memory_retrieval_quality': 0.2, 'context_assembly_quality': 0.6, 'output_coherence': 0.7, 'overall_score': 0.5} — cortex.twm_push() called with content containing 'NE_QUALITY_ALERT|dim=memory_retrieval_quality'. Channel escalation still fires. Dashboard TWM panel shows the alert entry.",
+    "completed_at": "2026-05-17T15:45:15.201055+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "366206e6-556b-4810-a901-cee46b534c0a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

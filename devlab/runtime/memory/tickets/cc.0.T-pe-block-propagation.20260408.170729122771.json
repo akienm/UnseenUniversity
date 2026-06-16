@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-pe-block-propagation.20260408.170729122771",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-block-propagation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T17:07:29.122771",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-block-propagation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-block-propagation",
+    "epic": "Operations",
+    "size": "S",
+    "title": "PE chain block propagation — ticket_id unknown + adopt loop",
+    "result": "Fixed: _pe_escalate recovers ticket_id from active GOAL; adopt_top_queue_ticket skips blocked_at tickets; cmd_reset clears blocked_at. 1875 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "description": "_pe_escalate fails to block ticket when basket ticket_id is unknown. adopt_top_queue_ticket re-adopts blocked tickets. Fix: recover ticket_id in escalate, check blocked_at in adopt, clear blocked_at on manual reset.",
+    "completed_at": "2026-04-08T17:07:29.122771+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e1fbec7b-5daf-43b7-852f-5f252167d440",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

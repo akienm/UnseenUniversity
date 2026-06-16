@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-imap-24hr-retention.20260427.220618709306",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-imap-24hr-retention"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:06:18.709306",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-1-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-imap-24hr-retention",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-imap-24hr-retention",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure"
+    ],
+    "title": "agent_datacenter: IMAP 24-hour message retention policy",
+    "result": "IMAPServer.purge_old_messages(retention_hours=24) added: rebuilds mailbox lists, updates seen indices, logs purges. RETENTION_HOURS=24 in device_config.py. config/dovecot.conf.template created with expire plugin config.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-27T22:03:38.170964+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-1-2026-04-27",
+    "description": "Configure IMAP-native 24hr retention on all mailboxes. Read messages (SEEN) remain browseable until expiry; they are not deleted on read.\n\nProposed shape:\n- Dovecot production: configure mail_plugins = expire, expire2; set expire=24h for INBOX pattern matching all device mailboxes\n- Python stub: IMAPServer.purge_old_messages() called on a 1hr timer; deletes messages with sent_at older than 24hr\n- Retention behavior:\n  - UNSEEN message: retained until 24hr after sent_at\n  - SEEN message: retained until 24hr after sent_at (read does NOT trigger early deletion)\n  - Expiry: IMAP EXPUNGE — message gone from mailbox, not recoverable\n- Configuration: device_config.py RETENTION_HOURS = 24 (rack-level, not per-device)\n\nAffected files:\n- ~/dev/src/agent_datacenter/agent_datacenter/bus/imap_server.py (purge logic for Python stub)\n- ~/dev/src/agent_datacenter/config/dovecot.conf.template (Dovecot config template for production)\n\nDesign rules:\n- no-sqlite: retention handled at IMAP level, not via a separate SQLite log\n\nScope boundary:\nIN: 24hr retention config for both Dovecot and Python stub implementations\nOUT: manual cleanup tooling (agentctl cleanup-mailboxes — future)\n\nTest plan:\n- Python stub: advance clock 25hr via monkeypatch; run purge_old_messages(); old message gone\n- SEEN messages at 23hr: still present\n- SEEN messages at 25hr: gone",
+    "completed_at": "2026-04-27T22:06:18.709306+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b527cdd4-392b-4104-924b-75467b9c73b1",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

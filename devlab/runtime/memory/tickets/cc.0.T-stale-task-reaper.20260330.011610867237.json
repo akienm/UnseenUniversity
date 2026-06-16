@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-stale-task-reaper.20260330.011610867237",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stale-task-reaper"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T01:16:10.867237",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-book-learner-hash-lookup",
+      "T-stale-task-reaper"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stale-task-reaper",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "PROC_STALE_TASK_REAPER — auto-shelve TASK_SET memories older than 2h",
+    "result": "stale_task_reaper.py + seed script written and run. PROC_STALE_TASK_REAPER seeded at 45min schedule. Shelves TASK_SET memories >2h with no resolved status. Smoke test: 0 found (existing 4 manually-closed not re-touched). Igor needs restart to pick up new habit.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": null,
+    "description": "Background habit runs every 45min, finds TASK_SET memories with no done/closed/shelved status older than 2 hours, marks them shelved. Prevents consolidation→NE→arc loop (observed: T-book-learner-hash-lookup cycling 195min). Logs to ~/.TheIgors/logs/stale_task_reaper.log.",
+    "completed_at": "2026-03-30T01:16:10.867237+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "795b18c1-f49f-44e5-b49b-e656ab02a005",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

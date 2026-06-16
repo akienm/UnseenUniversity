@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-emission-log-standard.20260523.170343140397",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-emission-log-standard"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T17:03:43.140397",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-finding-codes",
+      "T-emission-log-standard"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-emission-log-standard",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Observability",
+      "Infrastructure",
+      "Workflow"
+    ],
+    "title": "Emission-log standard — one file per event, timestamp+source in filename",
+    "result": "emit.py helper + pe_chain/goal/scope_guard migrations; prune_emissions() wired into day-close; 30-day rolling retention",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.35,
+    "claimed_at": "2026-05-23T17:09:43.120386+00:00",
+    "created_at": "2026-05-23T17:03:43.140397+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Current logging: append-only files with mixed events (utility_closet.log, igor.log, pe_chain traces). To find a specific event you must know which file it's in and parse the whole thing. This caps what CC can reason about to what fits in context.\n\nThe emission-log pattern: every discrete event is its own file. Filename encodes timestamp + source + event type. Content is JSON (or plain text). Result: `grep -r 'old_string_not_found' ~/.TheIgors/emissions/` finds every HYPOTHESIZE failure in system history in one call, with provenance and timeline in the filename. CC's reasoning surface expands from 'what fits in context' to 'anything in system history, sampled efficiently.'\n\n**Standard:**\n- Filename: `YYYYMMDD-HHMMSS_<subsystem>_<event-type>[_<ticket-or-key>].json`\n- Location: `~/.TheIgors/emissions/<subsystem>/` (hierarchy optional; flat also works)\n- Content: JSON with at minimum: `ts`, `source`, `event`, plus event-specific fields\n- One emission = one file. Never append to an existing emission file.\n- Plain text acceptable when JSON adds no value (e.g. prose notes)\n\n**Emitter helper:** Write `lab/claudecode/emit.py` — a single `emit(source, event, data)` call that handles filename generation, directory creation, and write. All subsystems call this instead of writing log lines.\n\n**Priority migrations (highest diagnostic value first):**\n1. pe_chain HYPOTHESIZE phase — emit old_string, new_string, file, validation result per attempt. This alone would have made T-audit-finding-codes failure instantly diagnosable.\n2. Goal lifecycle — emit on GOAL_ADOPT, GOAL_READY, GOAL_COMPLETE, GOAL_ABANDONED with source (CC_DISPATCH vs engram pickup)\n3. scope_guard — emit file, inertia level, rationale on every block\n\n**Affected files:** lab/claudecode/emit.py (new), wild_igor/igor/tools/pe_chain.py (add emit calls), wild_igor/igor/tools/ops.py (goal lifecycle), wild_igor/igor/cognition/scope_guard.py (or wherever scope_guard lives)\n**Design rules:** theigors/rules/database (Postgres or flat-file only — flat files are correct here)\n**Scope boundary:** In scope: the emitter helper + pe_chain/goal/scope_guard migrations. Out of scope: migrating all existing log calls (that's follow-on work).\n**Test plan:** After pe_chain migration: trigger a HYPOTHESIZE failure on a known ticket, confirm emission file exists with old_string field, confirm `grep -r old_string_not_found ~/.TheIgors/emissions/` finds it.",
+    "completed_at": "2026-05-23T17:21:38.641179+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-23T17:09:43.120386+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-23T17:03:43.187122+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7f7900b7-8464-47bf-b1a0-cd6c58a49c5a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

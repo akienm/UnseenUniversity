@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-inhibit-mid-conv-greeting.20260407.024916215167",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inhibit-mid-conv-greeting"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T02:49:16.215167",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inhibit-mid-conv-greeting"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inhibit-mid-conv-greeting",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Inhibit generic Hello greeting when conversation is in-progress",
+    "result": "PROC_GREET_AKIEN trigger fixed (removed 'akien'), PROC_SUPPRESS_MID_CONV_GREETING seeded at 0.97. Tests green.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "blocked_at": "2026-04-07T02:27:06.660393+00:00",
+    "claimed_at": "2026-04-07T02:09:49.499137+00:00",
+    "related_to": null,
+    "description": "GREETING_STANDARD fires on any greeting-intent match and emits 'Hello! What would you like to tackle?' — even mid-conversation. Need inhibitory memory: if recent channel activity within N minutes (akien or igor authored messages), suppress GREETING_STANDARD. Use inhibition_seeder or add inhibitor node child of GREETING_STANDARD that checks recency of last channel exchange. Trigger: LAST_CHANNEL_MSG_AGE < 5 min → inhibit greeting habit.",
+    "completed_at": "2026-04-07T02:49:16.215167+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "07ca9c31-cde5-4aaf-a6eb-702244ca2cde",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

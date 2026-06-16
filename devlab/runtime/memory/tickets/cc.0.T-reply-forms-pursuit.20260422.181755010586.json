@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-reply-forms-pursuit.20260422.181755010586",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reply-forms-pursuit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T18:17:55.010586",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-pursuit-layer-2026-04-22"
+    ],
+    "tickets": [
+      "T-reply-forms-pursuit",
+      "T-single-pursuit-test-case"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reply-forms-pursuit",
+    "gate": "T-single-pursuit-test-case",
+    "size": "S",
+    "tags": [
+      "BugFix",
+      "Pursuits",
+      "Cognition"
+    ],
+    "title": "Reply-forms-Pursuit: wrap Igor reply action in Pursuit to prevent progress loss",
+    "result": "Wrapped _process_network_msg reply dispatch in Pursuit (parent/child pattern via existing primitives). 8 new tests. Commit 76a3b117. Gated IGOR_PURSUITS_ENABLED.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-22T17:45:23.763624+00:00",
+    "related_to": null,
+    "decision_id": "D-pursuit-layer-2026-04-22",
+    "description": "Fix the 'reply eats further progress' bug by wrapping Igor's reply action in a Pursuit.\n\nBug shape: When Igor replies to a message, the reply action consumes the current goal/attention slot without creating a 'I am committed to this response and what comes after' trace. Without that commitment trace, there's no continuation goal, and attention drops after the reply — Igor stops rather than continuing to pursue the upstream work.\n\nThis shares mechanism with the BOREDOM/foreman-scan bug: action fires without goal-adoption (commitment moment + anticipatory trace + continuation Pursuit spawn).\n\nPursuit shape for reply:\n1. Reply stimulus arrives (message, question, observation requiring response)\n2. 'reply-to-Akien' Pursuit formed: goal-facia, anticipatory dopamine trace\n3. Reply action fires (existing machinery)\n4. Completion test: was reply sent?\n5. Dopamine ding on sent\n6. Sub-Pursuit spawn: if upstream work remains, spawn continuation Pursuit\n   (The critical step — without this, nothing follows the reply)\n\nAffected files: verify before sprinting — likely cognition/ reply path or brainstem/ (flag HIGH-inertia if so). Size may expand from S to M depending on T-single-pursuit-test-case findings (goal_formation machinery may need to exist first).\n\nGate: T-single-pursuit-test-case — need the Pursuit pattern proven and tooling available before wiring reply.\n\nTest plan (minute-cadence protocol):\n- Send Igor a message that has obvious follow-on work\n- At minute 1: did Igor reply AND spawn a continuation goal?\n- At minute 2: is the continuation goal being pursued, or did attention drop?\n- Contrast pre/post: check cognition.log for goal-facia formation event around reply sends",
+    "completed_at": "2026-04-22T18:17:55.010586+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9317db1c-9b8a-4967-8083-1227f9aac4c5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

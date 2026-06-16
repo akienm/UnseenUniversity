@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-experiment-tick-cadence.20260417.014659354743",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-experiment-tick-cadence"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T01:46:59.354743",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-tick-cadence"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-experiment-tick-cadence",
+    "size": "S",
+    "title": "Wire scheduler.tick() into NE cycle + idle slot",
+    "result": "9deb6cc0 — scheduler.tick() called in NE worker (after ne.run) and boredom_idle (after cascade, before wonder). Experiments now have a heartbeat.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-experiment-primitive",
+    "claimed_at": "2026-04-17T01:41:34.994771+00:00",
+    "related_to": null,
+    "description": "Call ExperimentScheduler.tick() from NE cycle (each pass checks for queued experiments) and from boredom_idle (idle time = experiment time). Sleep consolidation can also drain the queue. Tick is already single-experiment, safe to call frequently.",
+    "completed_at": "2026-04-17T01:46:59.354743+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f618140-2b01-4ec4-b1fc-f5550d39713c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-registered-dispatcher-pattern.20260603.201329953793",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-registered-dispatcher-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-03T20:13:29.953793",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "C-registered-dispatcher",
+      "D-xxx"
+    ],
+    "tickets": [
+      "T-google-secretary-registered-dispatcher",
+      "T-registered-dispatcher-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-registered-dispatcher-pattern",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Platform",
+      "Docs"
+    ],
+    "title": "Doc: Registered Dispatcher — rack's recurring orchestration pattern",
+    "result": "§3.10 added to TheoryOfOperation.md; palace.concepts.registered-dispatcher node written; T-google-secretary-registered-dispatcher filed as follow-on",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "priority": 0.55,
+    "created_at": "2026-06-03T20:13:29.953793+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "The rack keeps reinventing the same structure: a data queue, a registry of capable handlers that self-declare what they accept, and a dispatcher that matches items to available handlers. Granny does this now (ticket queue + worker registry + capability matching). Inference likely has the same shape (problem + classifier/router stack + outcome). GoogleSecretary could be refactored into it. This pattern has names — Registered Dispatcher, or in the filter-chain variant, Pipeline/Chain of Responsibility — but we haven't written it down, so each device invents its own version.\n\nDocument this pattern as a palace concept (C-registered-dispatcher): what the three stacks are, the two variants (capability matching vs sequential filter pipeline), when to use each, and how to identify existing devices that should be refactored toward it. Audit Granny, Inference, GoogleSecretary, Librarian for fit. The goal is that the next device doesn't re-invent this from scratch.\n\n**Affected files:** lab/design_docs/decisions/ (new D-xxx.md), palace concept node (C-registered-dispatcher via psql insert), docs/TheoryOfOperation.md §refactor if pattern warrants a section\n**Design rules:** Theory of Operation pattern — every design rule carries its why. Concept node should link to examples (Granny as canonical impl).\n**Scope boundary:** In scope: name the pattern, describe the two variants, inventory existing devices, write the palace concept node. Out of scope: actual refactors (GoogleSecretary, Librarian) — those get their own tickets gated on this one.\n**Completion criteria:** palace.concepts.registered-dispatcher node exists in adc.palace with pattern description + two variants + example links; TheoryOfOperation.md updated if the pattern merits a section; at least one follow-on refactor ticket filed (e.g. T-google-secretary-registered-dispatcher) gated on this ticket.",
+    "completed_at": "2026-06-03T20:24:52.970361+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-03T20:14:48.266074+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fa99cd46-cdde-4791-bff7-5eac5867388c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-intent-extractor-agent.20260614.001802637814",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intent-extractor-agent"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T00:18:02.637814",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-intent-extractor-agent"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-intent-extractor-agent",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "CompiledInference",
+      "Factory"
+    ],
+    "title": "Intent extractor: auto-populate intention field from ticket + code context",
+    "result": null,
+    "status": "cancelled",
+    "worker": "claude",
+    "priority": 0.25,
+    "intention": "I intend that the intention field on tickets is populated by inference from existing ticket prose + affected file symbols, not by manual authoring.",
+    "created_at": "2026-06-14T00:18:02.637814+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "We have IBD: every ticket has an `intention:` field (I intend that...), manually authored at filing time. An intent extractor agent would infer this from the ticket description, affected files, and symbol map — making it a compiled artifact rather than a hand-filled field.\n\nUse cases:\n- Backfill `intention:` on tickets filed without one\n- Validate that the manually-authored intention matches what the code actually does post-sprint\n- Feed into scenario generator (intent → scenarios)\n\nObserved in working form at a parallel project (test automation context, serves non-engineer test authors).\n\n**Affected files:** TBD — new inference agent; likely lab/claudecode/ or devices/hubert/\n**Design rules:** none — inference agent, no DB writes required beyond updating the ticket field\n**Scope boundary:** IN — infer intention from prose + symbols. OUT — acting on the intention (that's scenario-generator).\n**Completion criteria:** Intent extractor produces a plausible `intention:` sentence for 5 sample tickets; at least 3 match the manually-authored original within one Akien review.",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

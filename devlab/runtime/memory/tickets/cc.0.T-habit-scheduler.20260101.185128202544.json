@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-habit-scheduler.20260101.185128202544",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-scheduler"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T18:51:28.202544",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-habit-scheduler"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-scheduler",
+    "size": "M",
+    "title": "SchedulerSource: register habits at intervals, fires PROC_WORKER_FOREMAN + PROC_MEMORY_SYNC",
+    "result": "SchedulerSource added to push_sources.py — reads habits with schedule_interval_sec metadata, calls code_ref tool on interval, pushes SCHEDULER_TICK to TWM. PROC_WORKER_FOREMAN updated with schedule_interval_sec=60.",
+    "status": "done",
+    "priority": 9,
+    "claimed_at": null,
+    "description": "SchedulerSource daemon thread wakes every 60s, fires overdue registered habits. Registry: [(habit_id, interval_sec, last_fired_ts)]. Boot: register PROC_WORKER_FOREMAN@60s (check queue, launch_next_worker if pending+no active worker), PROC_MEMORY_SYNC@21600s. Replaces worker_daemon.sh as primary launch path. worker_daemon.sh stays as fallback.",
+    "completed_at": null,
+    "deposited_at": "2026-04-21T15:02:42.928160",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1fe7bec2-1ee8-434f-b266-36db42720a30",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

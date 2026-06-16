@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-twm-age-decay.20260517.152323115709",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-twm-age-decay"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-17T15:23:23.115709",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-cognition-research-improvements-2026-05-17"
+    ],
+    "tickets": [
+      "T-igor-twm-age-decay"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-twm-age-decay",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "TWM",
+      "Attention"
+    ],
+    "title": "CLOSED: TWM effective salience decays with age at read time using exponential half-life",
+    "result": "exp(-age_s/1800) multiplier applied at twm_read() before lateral inhibition; stored salience unchanged",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-05-17T15:45:23.082195+00:00",
+    "created_at": "2026-05-17T15:23:23.115709+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "description": "Items in TWM hold full salience until TTL expiry. Biological working memory uses dopamine-gated decay: items that have been in WM longer gradually lose attentional weight. A stale TWM item at salience 0.8 unaddressed for 30 minutes should not compete equally with a fresh 0.8 item.\n\nIn cortex.twm_read(), compute effective_salience = stored_salience * exp(-age_seconds / 1800.0) where age_seconds = NOW - created_at and half_life = 1800s (30 min). At 30min: multiplier = 0.37; at 60min: 0.14. Return effective_salience for ordering and filtering. Stored salience unchanged — decay is read-time only.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (MEDIUM inertia)\n**Design rules:** theigors/rules/coding (MEDIUM inertia); theigors/rules/database (read-time computation, no stored mutation)\n**Scope boundary:** In scope: age-decay multiplier applied at read time using created_at timestamp already on TWM rows. Out of scope: changing stored salience; changes to TTL mechanism.\n**Test plan:** A TWM item written 30 min ago at salience 0.8 reads back with effective_salience ≈ 0.30 (0.8 * 0.37). A fresh item at salience 0.8 reads back at 0.80. Dashboard TWM panel shows decayed values. Existing TTL-based expiry unchanged.",
+    "completed_at": "2026-05-17T15:48:23.235664+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7f971d46-384d-416c-8b0a-05d39f5e3ef0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

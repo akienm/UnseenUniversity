@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-swadl-pypi-tagged-release.20260508.171019931461",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-pypi-tagged-release"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T17:10:19.931461",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-swadl-pypi-tagged-release"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-pypi-tagged-release",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Operations",
+      "Infrastructure",
+      "SWADL"
+    ],
+    "title": "GitHub Action: tagged release → PyPI publish for SWADL",
+    "result": "swadl now live on PyPI; OIDC trusted publishing confirmed working on first tag push.",
+    "status": "closed",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-05-08T17:10:19.931461+00:00",
+    "related_to": null,
+    "commit_hash": "f906c8e",
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Add a GitHub Actions workflow to SWADL repo that publishes to PyPI on every semver tag push. Uses pypa/gh-action-pypi-publish. Check that pyproject.toml name field is available on PyPI before publishing.\n\n**Affected files:** .github/workflows/publish.yml, pyproject.toml\n**Design rules:** none\n**Scope boundary:** publish workflow only\n**Test plan:** test against TestPyPI first; verify pip install swadl works",
+    "completed_at": "2026-06-11T20:21:10.778408+00:00",
+    "github_issue": 710,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c9a6e9ca-196b-435f-b5fa-bf8c235dd7b8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

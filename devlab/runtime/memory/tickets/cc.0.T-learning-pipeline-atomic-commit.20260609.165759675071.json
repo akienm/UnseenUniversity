@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-learning-pipeline-atomic-commit.20260609.165759675071",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-learning-pipeline-atomic-commit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.675071",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-learning-pipeline-atomic-commit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-learning-pipeline-atomic-commit",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Librarian",
+      "Safety",
+      "Database"
+    ],
+    "title": "Make LearningPipeline.run_once() atomic: single transaction for process + store",
+    "result": "single-transaction fix: _store_knowledge_node accepts conn kwarg; run_once passes outer conn; mark-processed only commits after all stores succeed; 2 new tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.65,
+    "intention": "I intend that no learning queue entry is lost due to a partial batch failure.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.675071+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (Safety Engineer) found split-transaction bug: LearningPipeline.run_once() marks rows processed=true in an outer transaction, then opens a separate inner transaction to store knowledge nodes. If store fails, rows are already marked consumed — silent data loss. Fix: mark processed only after successful store, or use a single transaction for both operations.\n\n**Affected files:** devices/librarian/learning_pipeline.py\n**Design rules:** no-sqlite; Postgres transactions are the atomicity mechanism\n**Scope boundary:** IN — restructure transaction boundary so process+store are atomic; OUT — schema changes, queue design changes\n**Completion criteria:** a simulated _store_knowledge_node() failure causes run_once() to NOT mark any rows processed=true; test verifies this",
+    "completed_at": "2026-06-09T17:33:36.260289+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

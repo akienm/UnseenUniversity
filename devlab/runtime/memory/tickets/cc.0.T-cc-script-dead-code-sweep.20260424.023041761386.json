@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-cc-script-dead-code-sweep.20260424.023041761386",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-script-dead-code-sweep"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T02:30:41.761386",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-script-dead-code-sweep"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-script-dead-code-sweep",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "CCWorkflow",
+      "DeadCode",
+      "Cleanup",
+      "Pass2"
+    ],
+    "title": "Sweep dead/orphan functions in lab/claudecode/ scripts",
+    "result": "Shipped in 7eab3704. -440 LOC: slate_manager.py deleted (429 lines orphan; only grep hits in chat_logs), cmd_inject + COMMANDS entry removed (xdotool path superseded by worker daemon), export_chat.py OUTPUT_DIR now CLAUDE_CHAT_LOGS_DIR env var with ~/TheIgors/claude_chat_logs default. Kept verified-live: set-worker, needs-review. Import smoke + test_worker_foreman (16 tests) pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-04-24T02:28:51.220145+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Pass-2 Area 8 Finding 11B-11 (disposal: SHIP). Targeted dead-code cleanup in lab/claudecode/. Verified consumers:\n- slate_manager.py (429 lines): orphan — only grep hits are historical chat_logs. Skills write slate via bash heredocs inline.\n- cmd_inject in cc_queue.py: deprecated; xdotool injection replaced by worker daemon. Only grep hits in chat_logs. Remove function + COMMANDS entry.\n- export_chat.py: OUTPUT_DIR hardcoded to /home/akien/TheIgors/claude_chat_logs. Parameterize via env var with same default.\n\nKeep (verified live): set-worker (test_worker_foreman), needs-review (seed_work_ticket_habits.py). decision_manager.py:75 path is correct post-D328 reorg — no fix needed.\n\n**Affected files:** lab/claudecode/slate_manager.py (delete), lab/claudecode/cc_queue.py (remove cmd_inject), lab/claudecode/export_chat.py (env var + default).\n**Design rules:** test-plan-or-why-not (no tests because: dead-code removal + env-var plumbing; import-check clean is the verification).\n**Scope boundary:** IN — the three cleanups above. OUT — other dead-code audits; parameterizing skills; consolidating manager scripts (separate 11B-1 ticket).\n**Test plan:** no new tests — existing pytest suite must stay green after removals. import check: python3 -c 'import lab.claudecode.cc_queue; import lab.claudecode.export_chat'",
+    "completed_at": "2026-04-24T02:30:41.761386+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "05026279-a342-4449-ac92-64a9e92cc936",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

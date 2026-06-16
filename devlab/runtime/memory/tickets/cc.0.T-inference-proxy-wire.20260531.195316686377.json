@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-inference-proxy-wire.20260531.195316686377",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-proxy-wire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T19:53:16.686377",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-proxy-wire",
+      "T-model-eval-harness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-proxy-wire",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Infrastructure"
+    ],
+    "title": "Inference proxy: Wire mini-rack + update Granny routing",
+    "result": "inference_dispatch_fn routes sprint tickets to deepseek-v4-flash via OR (worker) or qwen (minion); Granny daemon defaults non-claude tickets to inference path; budget_ledger.py committed; operational note: worker=claude required to keep CC dispatch",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 1.9,
+    "claimed_at": "2026-05-31T20:12:09.171200+00:00",
+    "created_at": "2026-05-31T19:53:16.686377+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Wire the 4 inference sub-devices into the proxy mini-rack. Update Granny to pass task_class on dispatch so the rules engine routes correctly. Granny sets task_class='worker' for sprint tickets by default; 'minion' for tickets tagged 'minion'. Sprint tickets now route to deepseek-v4-flash (~$0.10/1M) instead of Claude.\n\n**Affected files:** devices/inference/device.py, devices/granny/dispatch.py\n**Design rules:** none apply\n**Scope boundary:** In scope: mini-rack assembly, Granny dispatch update, task_class field. Out of scope: eval harness integration (T-model-eval-harness already done).\n**Completion criteria:** Granny dispatches a sprint ticket that runs against deepseek-v4-flash via OR. Cost logged in inference Store. Not Claude.",
+    "completed_at": "2026-05-31T20:39:02.154285+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T20:12:09.171200+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "scraps_validated": "2026-05-31T19:53:16.743036+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bad82efa-281c-4fa1-a6a1-a8c351678c5c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

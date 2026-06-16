@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-superclaude-openrouter-leak.20260616.002840888109",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-superclaude-openrouter-leak"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-16T00:28:40.888109",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-superclaude-openrouter-leak"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-superclaude-openrouter-leak",
+    "title": "superclaude leaked OpenRouter routing vars → CC 401 + paid-API token burn",
+    "status": "closed",
+    "worker": null,
+    "size": null,
+    "tags": [
+      "bug",
+      "auth",
+      "superclaude",
+      "openrouter",
+      "token-burn"
+    ],
+    "description": "BUG (fixed, commit e4b30898). superclaude's require_api_key() sources igor.credentials.cfg with `set -a`, exporting ANTHROPIC_BASE_URL=https://openrouter.ai/api and ANTHROPIC_AUTH_TOKEN (OpenRouter, for Igor's inference layer) into the env. The launched `claude` inherited them and routed auth to OpenRouter instead of the x5max subscription -> '401 User not found' infinite retry loop, AND billed paid OpenRouter API tokens instead of the included subscription (this is the unexplained token burn). Manual launches worked because the interactive shell never sourced the creds file. Banner proof: hand-launched=Claude Max, superclaude=API Usage Billing.\n\nROOT CAUSE introduced by commit 57605208 (2026-06-06, 'load igor.credentials.cfg, not deprecated .env'). Same commit wave as the session-rename work, which is why it felt tied to the rename (coincidence).\n\nFIX: prepend `env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY` to the claude invocation in BOTH launch paths (in-tmux exec + send-keys). Advisor chose env -u over unset for robustness against fresh-tmux-server env inheritance. Rack server still gets OpenRouter routing via normal sourcing; only the claude process is stripped.\n\nVERIFY: next ./superclaude banner must read 'Claude Max', not 'API Usage Billing'.\n\nRed herrings ruled out: missing && (8c4f0cf1), _igor_common.sh sourcing (801ec699), rack timeout 5->15s, CC_TMUX_SESSION/.bashrc mismatch. See memory incident_superclaude_401.",
+    "decision_id": null,
+    "created_at": "2026-06-16T00:28:40.888109+00:00",
+    "updated_at": "2026-06-15T18:28:40.902205-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "assignee": "claude",
+    "intention": null,
+    "created_by": null,
+    "difficulty": "M",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-home-db-rename.20260612.155347107767",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-home-db-rename"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T15:53:47.107767",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-home-db-rename"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-home-db-rename",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "infrastructure",
+      "naming",
+      "portability"
+    ],
+    "title": "Rename IGOR_HOME_DB_URL → UU_HOME_DB_URL across codebase",
+    "result": "470 refs renamed to UU_HOME_DB_URL; backward-compat shim in db_proxy.py, paths.py, and unseen_university/__init__.py reads IGOR_HOME_DB_URL as fallback",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.4,
+    "intention": "I intend that the DB connection env var uses the UnseenUniversity namespace so it is meaningful without Igor present.",
+    "blocked_at": "2026-06-12T21:00:05.854656+00:00",
+    "claimed_at": null,
+    "created_at": "2026-06-12T15:53:47.107767+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "IGOR_HOME_DB_URL is the wrong namespace — the database belongs to UnseenUniversity, not Igor. Rename to UU_HOME_DB_URL everywhere. 436 references across .py files.\n\n**Affected files:** grep -rn IGOR_HOME_DB_URL — ~436 references, primarily devices/, unseen_university/, lab/claudecode/, migrations\n**Design rules:** No SQLite. Portability — UU must run without Igor.\n**Scope boundary:** IN: rename env var string, update all references, update .env.example / docs. OUT: actual DB schema changes, changing what the var points to.\n**Completion criteria:** `grep -rn IGOR_HOME_DB_URL` returns 0 results outside .git; `grep -rn UU_HOME_DB_URL` returns same count; system boots and tests pass with new var name. Backward-compat shim: read IGOR_HOME_DB_URL as fallback for one cycle.",
+    "completed_at": "2026-06-13T18:20:42.746447+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

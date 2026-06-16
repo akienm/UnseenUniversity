@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-dicksimnel-escalation-chain.20260610.234358392065",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-dicksimnel-escalation-chain"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T23:43:58.392065",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dicksimnel-escalation-chain-2026-06-10"
+    ],
+    "tickets": [
+      "T-consequence-dicksimnel-escalation-chain"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-dicksimnel-escalation-chain",
+    "gate": "2026-06-24",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "DickSimnel"
+    ],
+    "title": "[sprint] Consequence check: Dick escalation chain design",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "intention": "I intend that the escalation chain produces no silent token burns or infinite escalation loops.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T23:43:58.392065+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dicksimnel-escalation-chain-2026-06-10",
+    "description": "**What changed:** Dick's escalation produces structured summaries; creator tier intercepts before master.\n**Predicted effects:** Summary generation burns extra tokens on every escalation (model must summarize before handing off). Creator tier may not have tools to resolve what builder couldn't — adds latency without value if tier gap is small.\n**Signals to watch:** Escalation rate by tier (builder→creator vs creator→master). Token cost per escalated ticket vs pre-chain. Any tickets that loop (escalate → re-dispatch → escalate again).\n**Gate:** Check by 2026-06-24.\n**Affected files:** None — observation only\n**Scope boundary:** Observe escalation patterns; annotate efficient/wasteful/looping\n**Completion criteria:** Checked escalation logs; annotated outcome; filed follow-up tickets for any 'looping' or 'wasteful' patterns found.\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "deposited_at": "2026-06-10T17:53:47.409872",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

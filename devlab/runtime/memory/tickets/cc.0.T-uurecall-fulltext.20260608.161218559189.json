@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-uurecall-fulltext.20260608.161218559189",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uurecall-fulltext"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T16:12:18.559189",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cheap-model-minions",
+      "T-inference-proxy-mini-rack",
+      "T-model-eval-harness",
+      "T-uurecall-fulltext"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uurecall-fulltext",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "CLI",
+      "Librarian",
+      "Search"
+    ],
+    "title": "uurecall: literal search across logs/tickets/code (semantic-only is wrong)",
+    "result": "Rewrote uurecall to search 4 sources: CC.0 logs (literal), tickets (id/title/desc), git grep, semantic recall. De-dups ticket IDs across sources. Cap 5 per source.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that uurecall returns literal matches from CC.0 logs, ticket content, and code files — 'everything you need to sort what we talked about' — before falling back to semantic results.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T16:12:18.559189+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "uurecall currently calls Librarian recall() which does semantic/embedding search only. This misses the primary use case: finding what we actually said and wrote about a term.\n\nExample failure: `uurecall T-inference-proxy-mini-rack` returns semantically related but lexically unrelated tickets (T-model-eval-harness, T-cheap-model-minions). grep on CC.0/2026-06-07.md finds 8 literal hits immediately.\n\nIntended behavior: 'everything you need to sort what we talked about for any search term — code, past conversations, tickets in the DB.'\n\nFix: search in order:\n1. CC.0 chat logs (`~/.unseen_university/logs/CC.0/*.md`) — literal grep, show line + context\n2. Tickets (clan.memories TICKETS_ROOT) — id/title/description match\n3. Code files (git grep in repo root) — show file:line + snippet\n4. Semantic search via Librarian recall() — existing behavior, label clearly as 'semantic'\n\nDe-duplicate ticket hits (same ticket appearing in log + ticket DB). Cap each source at 5 results, show source label.\n\n**Affected files:** lab/claudecode/uurecall.py\n**Design rules:** no-sqlite; flat-file reads for logs, Postgres for tickets\n**Scope boundary:** IN: rewrite uurecall.py to search all 4 sources. OUT: indexing logs into Librarian (separate ticket), uuresearch changes.\n**Completion criteria:** `uurecall T-inference-proxy-mini-rack` returns the ticket description AND at least one CC.0 log hit with the literal string. Zero false-only-semantic results for literal ticket IDs.",
+    "completed_at": "2026-06-08T19:53:04.838935+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

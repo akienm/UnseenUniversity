@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-twm-salience-time-decay.20260423.220356585500",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-salience-time-decay"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T22:03:56.585500",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-twm-hygiene-2026-04-23"
+    ],
+    "tickets": [
+      "T-twm-leap-on-lever",
+      "T-twm-salience-time-decay"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-salience-time-decay",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "TWM",
+      "Cognition"
+    ],
+    "title": "TWM salience decays with time — even big topics fade to background",
+    "result": "Shipped in 235114c0. Effective salience at eviction = stored * 0.5^(age/halflife); halflife env-tunable via IGOR_TWM_SALIENCE_HALFLIFE_SEC (default 7200s). Added 3 pure helpers (_twm_decay_factor + _twm_effective_salience + _twm_pick_eviction_victims) to cortex.py and rewired twm_push eviction ranking to use them. 16 unit tests (tests/test_twm_salience_decay.py) cover decay properties + ticket's bug scenario (old 0.85 row loses to fresh 0.6 row). Full suite 3793 pass. SELF_EVICTED WARNING extended with eff= field for observability. Also unblocks T-intent-decay-test-fail (gated on this).",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.75,
+    "claimed_at": "2026-04-23T21:53:24.691978+00:00",
+    "related_to": null,
+    "decision_id": "D-twm-hygiene-2026-04-23",
+    "description": "Paired with T-twm-leap-on-lever — this ticket handles 'big topics fade with time'; the lever ticket handles 'latent items leap when the right event arrives.' Framing captured in memory at project_salience_decay_and_lever.md (Akien 2026-04-23).\n\n**The bug that surfaced this:** Igor's TWM was observed full of goal_adopt rows at salience 0.85-1.0 from hours earlier (none decayed), blocking all new pushes with salience < 0.85 (they got SELF_EVICTED — see commit 088c9bf5 for the WARNING). Root cause: salience on TWM observations never decreases over time. Relevance-weighted TTL shortening (twm_apply_goal_decay) shortens TTLs for off-topic entries but doesn't touch salience for on-topic old entries. Big topics retain their initial salience forever and keep winning eviction.\n\n**Proposed shape (for discussion):** salience computed on read / on eviction-ranking as `stored_salience * decay_fn(age)` where decay_fn is monotonically non-increasing and tuned so that a salience-0.85 observation drops to ~0.4 over a few hours. Observations are never DELETED by decay alone — low-salience rows persist as latent until evicted by the normal over-cap rule or leapt by a lever.\n\n**Tuning starting point:** half-life of ~2-3 hours feels right for Akien's intuition of 'big topics fade to background.' Env-var gate (IGOR_TWM_SALIENCE_HALFLIFE_SEC) so it's tunable without code change.\n\n**Affected files:** wild_igor/igor/memory/cortex.py (twm_push eviction ranking query ~line 4196, twm_read if decay is computed on read), tests/test_twm_salience_decay.py (new).\n\n**Design rules:** docs-in-code, test-plan-or-why-not, no-new-memory-schemas (reuse existing twm_observations timestamp + salience columns).\n\n**Scope boundary:** IN — time-decay function applied at eviction-ranking (at minimum) + possibly at read time, env-var tunable half-life, tests that verify decay produces expected salience curve, verification that SELF_EVICTED WARNING rate drops post-deploy. OUT — leap-on-lever mechanism (separate ticket), replacing twm_apply_goal_decay (that stays; it's a different axis — relevance vs age), auto-deletion of decayed rows (they persist until evicted or integrated).\n\n**Test plan:** unit: decay_fn(age=0) = 1.0, decay_fn(age=halflife) ≈ 0.5, decay_fn monotonic. Integration: push obs at salience 0.85 with fake old timestamp, push new obs at salience 0.6 with current timestamp — verify new obs wins eviction ranking (opposite of current behavior). Live metric: SELF_EVICTED WARNING rate in logs before vs after.\n\n**Sequence:** pairs with T-twm-leap-on-lever — either order works.",
+    "completed_at": "2026-04-23T22:03:56.585500+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6ffcbc1c-d13f-459d-98b0-57db191620a6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

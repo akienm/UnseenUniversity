@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-uc-web-server-refactor.20260412.220143235837",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-web-server-refactor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-12T22:01:43.235837",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-web-server-refactor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-web-server-refactor",
+    "epic": "Operations",
+    "size": "L",
+    "title": "Utility closet as THE web server: kill 8081 + claude_bridge, wire Igor through uc_client",
+    "result": "UC (8080) is now the only web server. Igor's web/server.py gutted to a 150-line facade preserving legacy API. Background poll thread drains UC → incoming queue. main.py launches UC if not running. claude_bridge.py deleted (415 lines). Igor launcher path fixed. 1947 tests pass. Net: -1829 lines. Follow-up: MCP tool rename (T-mcp-channel-rename).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-12T21:46:50.869356+00:00",
+    "related_to": null,
+    "description": "Utility closet (8080) becomes the only web server. (1) Move Igor's channel-tabs UI from wild_igor/igor/web/ to lab/claudecode/utility_closet_server.py UI if not already there. (2) Ensure UC has named channel support matching current Igor 8081 behavior (SHARED, IGOR, CLAUDE, per-agent as they attach). (3) Wire Igor's outbound exclusively through utility_closet_client.py (currently a fallback path per D335 — make it the only path). (4) Delete wild_igor/igor/web/server.py HTTP/WS code (keep internal message queue if needed). (5) Delete lab/claudecode/claude_bridge.py entirely. (6) Update MCP tools: rename cc_send→channel_send with channel param, point at 8080. (7) Verify dashboard/metrics/upload endpoints still work on 8080. Igor brings up UC on boot if not running (PID file already atomic).",
+    "completed_at": "2026-04-12T22:01:43.235837+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ff51402e-8153-436b-9aec-9bbc668b01fd",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

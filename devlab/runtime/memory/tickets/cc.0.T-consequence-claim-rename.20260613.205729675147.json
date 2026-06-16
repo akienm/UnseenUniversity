@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-claim-rename.20260613.205729675147",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-claim-rename"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T20:57:29.675147",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-claim-rename-dispatch-2026-06-13"
+    ],
+    "tickets": [
+      "T-consequence-claim-rename"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-claim-rename",
+    "gate": "2026-06-27",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: claim→dispatch rename in queue",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-13T20:57:29.675147+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-claim-rename-dispatch-2026-06-13",
+    "description": "**What changed:** claimed_at renamed to dispatched_at in cc_queue.py and devices/queue/device.py; cmd_claim stub removed; log action strings updated.\n**Predicted unintended effects:** (1) Any external script reading queue JSON and looking for 'claimed_at' will silently get None — could affect monitoring, stall_check, GitHub sync, any tool reading raw queue rows. (2) Existing Postgres rows in the queue metadata JSONB still have 'claimed_at' key — old rows silently return nothing on dispatched_at queries. (3) Tests renamed but not migrated may flip silently. (4) action_claim_verifier.py is explicitly excluded from rename — verify no test harness crosses the two 'claim' namespaces.\n**Signals to watch:** stall_check.py output showing correct ticket ages after rename; GitHub sync still running; no 'dispatched_at is None' errors in Granny logs when it should be set; grep of production logs for stray 'claimed_at' references.\n**Gate condition:** Check by 2026-06-27 or after first full Granny dispatch cycle post-rename.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** All predicted effects checked; outcome annotated; ticket closed with one-line verdict.\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5ae72fe9-3461-4b1f-b645-9a3ccf369c7a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

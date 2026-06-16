@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-forkif-new-basket.20260405.191656758507",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-forkif-new-basket"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T19:16:56.758507",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-forkif-new-basket"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-forkif-new-basket",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "FORKIF: new empty basket + emit-based value transfer",
+    "result": "Superseded by T-spawnif-new-opcode. D311 revised: FORKIF keeps shared-basket semantics to preserve T-basket-fork-sharing and existing skill sub-cursor composition (DEEP_AUDIT spawns 30+ FORKIF sub-cursors). New opcode SPAWNIF handles the new-empty-basket use case instead.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Change FORKIF semantics: instead of sharing parent basket by reference, FORKIF creates a new empty basket for the child cursor. Emit lines in the source node that appear before FORKIF run into the new child basket (selective transfer). Parent basket is unaffected. BRANCHIF stays as-is (existing basket carries intact). Use case: REPLAN loop — fork fresh basket, emit ticket_id + attempt_history, discard rest of failed-attempt state. Requires: (1) node_executor.py FORKIF handling creates new basket dict, (2) emit lines before FORKIF write to child basket not parent, (3) update FORKIF docstring + engram language docs. Size M, inertia MEDIUM (cognition/).",
+    "completed_at": "2026-04-05T19:16:56.758507+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "82ba569a-cb76-4f04-a011-45dcdefe24e2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

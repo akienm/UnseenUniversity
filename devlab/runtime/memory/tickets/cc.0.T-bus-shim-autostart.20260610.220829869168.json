@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-bus-shim-autostart.20260610.220829869168",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bus-shim-autostart"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T22:08:29.869168",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bus-shim-autostart"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bus-shim-autostart",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Bus",
+      "Reliability"
+    ],
+    "title": "Shim auto-starts bus server if not running",
+    "result": "won't fix — superseded by T-bus-postgres-transport (Postgres LISTEN/NOTIFY replaces IMAP entirely)",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.7,
+    "intention": "I intend that any shim needing the bus can start the bus server itself when it finds none running, so devices come up cleanly without manual infrastructure setup.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T22:08:29.869168+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Currently shims call `make_bus_connection()` which wraps `_DovecotClient` in production (connects to Dovecot on port 143) or `_StubServer` in TEST_MODE. When neither is running the shim fails silently. The fix: add a shared in-process bus server that any shim can start or join.\n\nApproach:\n1. Extract a `BusServer` singleton (module-level in `bus/imap_server.py` or `bus/connection.py`) that starts a `_StubServer` on port 10143 if port 10143 isn't already bound.\n2. `make_bus_connection()` checks port 10143 first: if something answers, connect to it; if not, start the singleton and connect.\n3. The first shim to call `make_bus_connection()` starts the bus; subsequent shims join it. Clean separation: any shim can bootstrap the bus, but only one server runs.\n4. `_StubServer` already handles concurrent clients via asyncio — no locking needed beyond the singleton start guard (threading.Lock or check-then-start under a lock).\n\nThis replaces the Dovecot dependency for in-rack dev/production use when a real IMAP server isn't deployed.\n\n**Affected files:** bus/imap_server.py, bus/connection.py, devices/dicksimnel/shim.py (verification only — `_connect_bus` should just work after this)\n**Design rules:** no-sqlite; no new external dependencies\n**Scope boundary:** IN — shared stub bus singleton on 10143; `make_bus_connection()` auto-starts it. OUT — Dovecot deployment, IMAP auth, persistence across process restarts.\n**Completion criteria:** Start DickSimnel with no bus running; `nc -z 127.0.0.1 10143` returns open within 3s; DickSimnel's listener stops logging 'Connection refused' and starts polling successfully; all existing bus tests pass.",
+    "completed_at": "2026-06-10T22:43:54.453904+00:00",
+    "deposited_at": "2026-06-10T16:10:46.593310",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

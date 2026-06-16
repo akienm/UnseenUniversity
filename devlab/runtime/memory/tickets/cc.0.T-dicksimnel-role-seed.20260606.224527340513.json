@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-dicksimnel-role-seed.20260606.224527340513",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-role-seed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T22:45:27.340513",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-role-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-role-seed",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Queue",
+      "Reliability"
+    ],
+    "title": "DickSimnel: seed 3 builder-role tickets so it has work to process",
+    "result": "filed T-dicksimnel-toolloop-docstrings, T-dicksimnel-worker-listener-tests, T-shim-docstring-pass — all role=builder, all S",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "intention": "I intend that DickSimnel's poll loop finds and processes real tickets instead of running idle indefinitely.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T22:45:27.340513+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** Granny only dispatches role=builder or role=creator tickets to DickSimnel. All current sprint/pending tickets are role=master. DickSimnel's 30s poll loop runs but returns nothing — it's starved, not broken.\n\n**What to build:** File 3 S-sized tickets with role=builder covering genuinely mechanical work DickSimnel can handle:\n1. A docstring pass on a module with missing/stale docstrings\n2. A test coverage gap on an already-tested file\n3. A small utility cleanup (rename, type hints, dead code)\n\nEach ticket must have concrete Completion criteria, role=builder, and worker=dicksimnel.\n\n**Affected files:** None (ticket creation only)\n**Design rules:** none apply\n**Scope boundary:** File 3 tickets with role=builder and worker=dicksimnel; do not run DickSimnel\n**Completion criteria:** 3 new tickets visible in cc_queue list with role=builder status=sprint worker=dicksimnel",
+    "completed_at": "2026-06-07T00:32:06.812866+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

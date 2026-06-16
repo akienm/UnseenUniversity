@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-coa-spawn-primitive.20260508.215613030694",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-coa-spawn-primitive"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T21:56:13.030694",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "T-concurrent-ne-spawn"
+    ],
+    "tickets": [
+      "T-coa-object-wrap",
+      "T-coa-spawn-primitive",
+      "T-concurrent-ne-spawn",
+      "T-swarm-manager"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-coa-spawn-primitive",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "cognition",
+      "narrative-engine",
+      "concurrency",
+      "modes"
+    ],
+    "title": "CLOSED: COA spawn primitive — CPU gate, intra-box milieu, multi-COA tests",
+    "result": "spawn(), CPU gate (IGOR_COA_CPU_GATE), background tick loop, dissolve on empty queue. 12 tests in test_coa_spawn.py. Intra-box milieu via existing global file. Commit 1dc0255a.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "claimed_at": "2026-05-08T22:56:59.728900+00:00",
+    "created_at": "2026-05-08T21:56:13.030694+00:00",
+    "related_to": null,
+    "decision_id": "T-concurrent-ne-spawn",
+    "description": "Build on T-coa-object-wrap. Add the spawn-a-second-COA capability with load gating.\n\nPieces:\n1. COA.spawn() — creates a second COA instance, starts its tick loop, registers with daemon_supervisor\n2. CPU gate: blocks spawn when CPU > IGOR_COA_CPU_GATE (default 60%) over 60s rolling window\n3. Intra-box milieu propagation: extend cross-box pattern from memory_sync to intra-box COAs (each COA gets own milieu that shares partial propagation with other COAs on the same box)\n4. Sleep-and-dissolve: background COA's tick() exits cleanly when its task queue is exhausted\n\nHIGH-inertia pre-approval: Akien stamped 2026-05-07 for main.py, milieu.py — covers this child.\n\n**Affected files:** wild_igor/igor/cognition/coa.py (spawn method + dissolve), wild_igor/igor/main.py (spawn trigger hook), wild_igor/igor/cognition/milieu.py (intra-box propagation), tests/test_coa_spawn.py (new)\n**Design rules:** docs-in-code, no-sqlite, test-plan-or-why-not\n**Scope boundary:** IN — spawn, CPU gate, milieu intra-box, sleep+dissolve, isolation tests. OUT — COA-decides-to-spawn-based-on-boredom-engram, fleet-wide COA visibility (T-swarm-manager), GUI surfacing of COAs.\n**Test plan:** tests/test_coa_spawn.py — spawn 2nd COA, assert NE/TWM isolation (separate instances), assert CPU gate refuses 5th COA, assert background COA dissolves after empty queue. Existing single-COA tests still pass.",
+    "completed_at": "2026-05-08T23:06:49.041172+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "80ed00de-79ce-45a5-9e2a-851108a35f29",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

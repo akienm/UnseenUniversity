@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-scribe-20260320e-v2.20260321.011056545933",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scribe-20260320e-v2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-21T01:10:56.545933",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scribe-20260320e-v2"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scribe-20260320e-v2",
+    "body": "Decisions: [D171, D172, D173]. Gaps closed: [#295, #296]. New gaps: [notedetail concept D173]. Session theme: reading integration pipeline — Experiment 5 complete. Subsystems touched: book_learner.py, reading_integrator.py (new), reading_integration.py (new), cortex.py (tails migration), tools/__init__.py, learner.py.",
+    "role": "scribe",
+    "size": "medium",
+    "title": "day-close steps for session 2026-03-20e",
+    "result": "cancelled — scribe pattern retired",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "completed_at": "2026-03-21T01:10:56.545933+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

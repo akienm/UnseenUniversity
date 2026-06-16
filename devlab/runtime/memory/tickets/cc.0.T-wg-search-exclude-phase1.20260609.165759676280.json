@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-wg-search-exclude-phase1.20260609.165759676280",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wg-search-exclude-phase1"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T16:57:59.676280",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-wg-search-exclude-phase1"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wg-search-exclude-phase1",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Performance",
+      "Database"
+    ],
+    "title": "Exclude WORD_GRAPH nodes from Phase 1 text search in cortex.py",
+    "result": "added memory_type NOT IN _ALWAYS_EXCLUDE guard to all_memories filter before Phase 1 scoring; WORD_GRAPH (57K) nodes from traversal no longer enter candidate pool",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "intention": "I intend that Phase 1 text search never scans WORD_GRAPH nodes.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T16:57:59.676280+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Expert audit (Data Engineer): the Phase 1 full-text search in cortex.search() runs across ALL memory types including the 57K WORD_GRAPH nodes. Word nodes whose narrative contains text will appear as Phase 1 candidates and must be filtered in Phase 2 — unnecessary work. Adding AND memory_type != 'WORD_GRAPH' to the Phase 1 WHERE clause prevents all 57K nodes from entering the candidate set.\n\n**Affected files:** devices/igor/memory/cortex.py (Phase 1 search query)\n**Design rules:** HIGH-inertia cortex.py — Akien pre-approval required\n**Scope boundary:** IN — add memory_type exclusion to Phase 1 text search; OUT — other search phases, WORD_GRAPH access path via spread_word_graph()\n**Completion criteria:** EXPLAIN ANALYZE on the Phase 1 query confirms WORD_GRAPH nodes are excluded from the scan; search quality test verifies relevant non-WORD_GRAPH results still appear",
+    "completed_at": "2026-06-09T19:10:50.938979+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

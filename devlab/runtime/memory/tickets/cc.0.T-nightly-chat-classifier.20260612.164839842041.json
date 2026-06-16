@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-nightly-chat-classifier.20260612.164839842041",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-nightly-chat-classifier"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-12T16:48:39.842041",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-nightly-chat-classifier-2026-06-12"
+    ],
+    "tickets": [
+      "T-nightly-chat-classifier"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-nightly-chat-classifier",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Training",
+      "Classifier",
+      "Nanny"
+    ],
+    "title": "Nightly classifier pass over chat transcripts",
+    "result": "ChatClassifier integrated into nightly pipeline: reads .jsonl transcripts, classifies via PurposeClassifier, deposits nodes to palace",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that the existing LLM/KNN classifiers run nightly over CC chat transcripts, depositing classified nodes into the memory graph to feed the training pipeline.",
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-06-12T16:48:39.842041+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-nightly-chat-classifier-2026-06-12",
+    "description": "Classifiers exist (devices/scraps/purpose_classifier.py, lab/competition/classifiers/llm_classifier.py + knn_classifier.py) and Nanny runs cron_learning_pipeline.py at 03:30. Missing: a step that reads raw CC chat transcripts (.jsonl session files), extracts turn content, runs the classifier, and deposits memory nodes. This closes the observe→learn→improve loop for chat-derived training data.\n\n**Affected files:** devices/scraps/purpose_classifier.py or new devices/scraps/chat_classifier.py, Nanny nightly schedule, cron_learning_pipeline.py\n**Design rules:** no-sqlite; log every interface crossing; Postgres for state\n**Scope boundary:** In scope: classifier pass over .jsonl transcripts + node deposit. Out of scope: classifier model training, competition harness changes, cloud classifiers.\n**Completion criteria:** T-nightly-chat-classifier is CLOSED; Nanny schedule includes chat_classifier step; morning after deploy, palace contains nodes deposited from prior night's transcripts; log shows classifier run.",
+    "completed_at": "2026-06-13T01:49:48.304945+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

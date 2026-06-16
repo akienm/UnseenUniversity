@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-adc-claudeandakien-salvage.20260427.213701360256",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-claudeandakien-salvage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T21:37:01.360256",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-0-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-claudeandakien-salvage",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-claudeandakien-salvage",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "AgentDatacenter",
+      "Docs"
+    ],
+    "title": "agent_datacenter: migrate workflow docs from ClaudeAndAkien, archive old repo",
+    "result": "4 docs migrated: framework_overview (updated for ADC), getting_started (updated for agentctl init), working_together (kept), crash_safe_sessions (kept). ClaudeAndAkien README has archived notice pointing to new repo.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-27T21:34:37.347465+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-0-2026-04-27",
+    "description": "ClaudeAndAkien (~/dev/src/ClaudeAndAkien) is the spiritual ancestor of agent_datacenter — channel, claudecode helpers, docs, and skill set from March 2026. Review and migrate what's current; archive the rest.\n\nProblem: Valuable onboarding docs exist there (framework_overview, getting_started, working_together, crash_safe_sessions) but the code and skills are superseded. Need to surface the good parts into the new repo.\n\nProposed shape:\n- MIGRATE to agent_datacenter/docs/:\n  - framework_overview.md (update dates, remove igor-specific refs)\n  - getting_started.md (update to agentctl init flow)\n  - working_together.md (keep as-is, workflow philosophy still valid)\n  - crash_safe_sessions.md (keep, still relevant)\n- DO NOT migrate: channel/channel.py (superseded by IMAP bus), claudecode/*.py (igor-specific helpers), skills/ (superseded by current TheIgors skills)\n- ARCHIVE: add to ~/dev/src/ClaudeAndAkien/README.md: 'This repo is archived. Superseded by agent_datacenter (github.com/akienm/agent_datacenter). Docs migrated 2026-04-27.'\n\nAffected files:\n- ~/dev/src/ClaudeAndAkien/README.md (add archived notice)\n- ~/dev/src/agent_datacenter/docs/*.md (4 migrated docs)\n\nDesign rules:\n- docs-in-code: only docs that are currently accurate migrate; stale content stays archived\n\nScope boundary:\nIN: doc migration with date+content updates, archived notice on old repo\nOUT: any code migration — channel.py stays archived (will be superseded by IMAP)\n\nTest plan:\n- 4 docs exist in agent_datacenter/docs/ with updated dates\n- ClaudeAndAkien README shows archived notice with pointer to new repo",
+    "completed_at": "2026-04-27T21:37:01.360256+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "707462fd-2484-4ad5-a7a2-cbe7589092ee",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

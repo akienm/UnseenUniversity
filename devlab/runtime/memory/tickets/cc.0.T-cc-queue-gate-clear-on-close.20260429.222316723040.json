@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-cc-queue-gate-clear-on-close.20260429.222316723040",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-gate-clear-on-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T22:23:16.723040",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-unstick-2026-04-29"
+    ],
+    "tickets": [
+      "T-cc-queue-gate-clear-on-close",
+      "T-cc-walk-01",
+      "T-cc-walk-01-bliss-igorbase",
+      "T-cc-walk-02"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-queue-gate-clear-on-close",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Workflow",
+      "Fixit"
+    ],
+    "title": "cc_queue.py — auto-clear gates referencing just-closed ticket id on cmd_done",
+    "result": "_ungate_dependents added to cmd_done — scans pending tickets whose gate references just-closed id and nulls them. Retroactive sweep unstuck 6 tickets including T-cc-walk-02 (now Igor-claimable). 6 new tests pass. Commit 2162fa85.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": "2026-04-29T22:22:04.254274+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-unstick-2026-04-29",
+    "description": "T-cc-walk-01 closed at 02:09 today; T-cc-walk-02 still has gate='T-cc-walk-01-bliss-igorbase' (and the rest of the chain stays gated transitively). cmd_done in cc_queue.py only triggers _decision_rollup — no logic clears gates referencing the just-closed ticket id. Result: any chained gating sticks until manually ungated.\n\nFix: in cmd_done, after the rollup call, scan all pending tasks; for each task whose gate text contains the just-closed ticket id, null the gate and log the action. Mirrors the existing _decision_rollup ungate pattern at the ticket-id level.\n\nAfter shipping, manually run on T-cc-walk-01 (since 01 already closed) to retroactively unstick T-cc-walk-02..10.\n\n**Affected files:** lab/claudecode/cc_queue.py + tests/test_cc_queue.py (add test for new behavior).\n**Design rules:** none apply (clerical workflow fix).\n**Scope boundary:** in scope: scan-and-clear pending gates referencing just-closed ticket id on cmd_done. Out of scope: rewriting gate semantics, retroactive scan of all done tickets (one-shot manual fix afterward).\n**Test plan:** unit test that cmd_done clears gates referencing the closed id; existing tests stay green. Verify via cc_queue.py list that T-cc-walk-02 becomes pickable after the manual retro-fix.",
+    "completed_at": "2026-04-29T22:23:16.723040+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "34ab01d1-cd83-4244-9428-e74c91e35e74",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

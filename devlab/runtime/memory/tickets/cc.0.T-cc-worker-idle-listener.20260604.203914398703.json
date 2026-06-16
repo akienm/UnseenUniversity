@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-cc-worker-idle-listener.20260604.203914398703",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-worker-idle-listener"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-04T20:39:14.398703",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-fast-sprint-2026-06-04"
+    ],
+    "tickets": [
+      "T-cc-worker-idle-listener",
+      "T-granny-bus-dispatch"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-worker-idle-listener",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Infrastructure",
+      "Bus"
+    ],
+    "title": "CC worker IDLE bus listener — receives dispatch envelopes, drives handshake",
+    "result": "CCWorkerListener: poll+IMAP, BaseShim.receive_dispatch wired, tmux inject, 8 tests; T-granny-flip-bus-cc ungated",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.68,
+    "intention": "I intend that CC receives Granny's bus dispatch envelopes via IMAP IDLE and completes the two-phase handshake, making bus dispatch end-to-end functional without any tmux send-keys from Granny.",
+    "claimed_at": null,
+    "created_at": "2026-06-04T20:39:14.398703+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-fast-sprint-2026-06-04",
+    "description": "The bus dispatch chain (T-granny-bus-dispatch, commit 3149f761) is complete on Granny's side: it sends dispatch envelopes to cc.0, processes ack/started/timeout replies, and has a DB watchdog. The missing piece is the CC worker-side IDLE listener that receives these envelopes and drives the handshake.\n\nNew file: devices/granny/cc_worker_listener.py — a standalone daemon:\n1. Connects to IMAP via make_bus_connection()\n2. IDLE-loops on 'cc.0' mailbox\n3. On dispatch envelope: extracts ticket_id + from_device, calls shim.receive_dispatch(env, send_fn=..., deliver_fn=...)\n   - send_fn(to, payload): appends reply envelope to Granny's mailbox via imap.append()\n   - deliver_fn(ticket_id): checks tmux session 'claude-main' exists; injects '/sprint-ticket {ticket_id}' via send-keys; returns True on success, False if session not found or busy check fails\n4. Manages CC.0.available semaphore: does NOT set .false on dispatch (Granny's _cc0_busy() handles that via DB); sets .true via mark_available('CC.0') when no in_progress claude ticket remains (polled after each delivery)\n\nThe listener runs as a long-lived process, separate from the CC tmux session itself. Entry point: python -m devices.granny.cc_worker_listener or python devices/granny/cc_worker_listener.py.\n\n**Affected files:** devices/granny/cc_worker_listener.py (new file)\n**Design rules:** no-sqlite; bus/ owns IMAP — use make_bus_connection() not raw imaplib; OOP-first (CCWorkerListener class with start/stop)\n**Scope boundary:** New file only. No changes to daemon.py, shim.py, or BaseShim. The tmux_send_keys fallback in daemon.py stays untouched. DickSimnel listener is out of scope.\n**Completion criteria:** (a) Start listener, have Granny send a dispatch envelope to cc.0; within 5s a dispatch_ack envelope appears in granny.0. (b) deliver_fn returns True → dispatch_started sent. (c) Tests: _FakeIMAP + mock subprocess.run for tmux; verify ack sent synchronously, started sent after deliver_fn True, timeout sent after prod exhaustion.",
+    "completed_at": "2026-06-04T21:10:11.981489+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

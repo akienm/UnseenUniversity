@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-reader-provenance-fix.20260417.231502149649",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reader-provenance-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T23:15:02.149649",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-experiment-findings-log",
+      "T-provenance-coverage-enforcement",
+      "T-reader-provenance-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reader-provenance-fix",
+    "size": "M",
+    "tags": [
+      "Operations",
+      "Memory"
+    ],
+    "title": "Reader provenance — wire reading_runs, model tracking, deposit metadata",
+    "result": "All reader deposit points now carry model_used, source_title, source_author, inference_tier, campaign_id. Fixed 501 reading_list status mismatches. Removed 279 spam entries.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-17T23:05:17.649136+00:00",
+    "related_to": null,
+    "description": "The reader deposits 8800+ memories with source='reading' and no other provenance. reading_runs/reading_run_items tables exist but have zero rows — infrastructure built, never connected.\n\n## Problems\n1. No model_used tracking — two expensive reading passes (one Qwen, one DeepSeek) are indistinguishable\n2. reading_runs/reading_run_items never populated despite having the right columns\n3. reading_list status lies — completed_at set but status still 'queued'\n4. Duplicate entries (Making Money x2, Pratchett titles x2)\n5. Memory metadata at deposit carries no book title, author, model, pass, or chunk reference\n\n## Fix\n1. Wire drain_learn_queue.py / reading_engine.py to create reading_runs and populate reading_run_items\n2. Pass model_used through inference to memory deposit metadata\n3. Each deposited memory gets metadata: source_title, source_author, source_path, model_used, pass_id, inference_tier, chunk_ref, deposited_by\n4. Fix reading_list status management (completed_at must update status)\n5. Deduplicate reading_list entries\n\n## Depends on\n- T-provenance-coverage-enforcement (sprint first — establishes the metadata contract)\n\n## Related\n- T-experiment-findings-log — experiment results need to be findable too",
+    "completed_at": "2026-04-17T23:15:02.149649+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c111d9a9-10a2-40cd-821e-20df0fee4628",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

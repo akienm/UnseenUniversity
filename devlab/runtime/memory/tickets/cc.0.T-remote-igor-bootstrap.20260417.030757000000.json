@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-remote-igor-bootstrap.20260417.030757000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remote-igor-bootstrap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-17T03:07:57",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-remote-igor-bootstrap",
+      "T-swarm-manager"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remote-igor-bootstrap",
+    "size": "L",
+    "notes": "## Consolidated into T-swarm-manager 2026-04-19\n\nPer Akien: remote-igor-bootstrap is not a separate ticket — it is a workflow of SwarmManager. See T-swarm-manager for the consolidated spec. Keeping this ticket open as a scope-flag: the \"bootstrap a new Igor on a new box\" work is the concrete deliverable once SwarmManager's scaffold lands. Close when T-swarm-manager ships the add_box flow.\n\n## Original one-paragraph summary (still accurate)\n\nGH-264 successor. SwarmManager can bootstrap a new Igor instance on a remote box: push env template, git pull, install deps, launch. Windows + Linux. Depends on SwarmManager + SystemProxy existing.\n",
+    "title": "Remote Igor bootstrap — launch Igor on a new box from swarm manager",
+    "result": "Withdrawn per Akien 2026-05-03.",
+    "status": "done",
+    "worker": "claude",
+    "parent_id": "T-system-gateway",
+    "claimed_at": null,
+    "created_at": "2026-04-17T03:07:57Z",
+    "related_to": null,
+    "description": "## Consolidated into T-swarm-manager 2026-04-19\n\nPer Akien: remote-igor-bootstrap is not a separate ticket — it is a workflow of SwarmManager. See T-swarm-manager for the consolidated spec. Keeping this ticket open as a scope-flag: the \"bootstrap a new Igor on a new box\" work is the concrete deliverable once SwarmManager's scaffold lands. Close when T-swarm-manager ships the add_box flow.\n\n## Original one-paragraph summary (still accurate)\n\nGH-264 successor. SwarmManager can bootstrap a new Igor instance on a remote box: push env template, git pull, install deps, launch. Windows + Linux. Depends on SwarmManager + SystemProxy existing.\n\n**Affected files:** lab/utility_closet/swarm_manager.py (the consolidated home — see T-swarm-manager); platform-specific install scripts under lab/utility_closet/installer/ (linux + windows). No new top-level files — this ticket's deliverable is a workflow on swarm_manager, not a standalone module.\n\n**Design rules:** docs-in-code (the add_box workflow lives in swarm_manager; document there); no-secrets-in-repo (env template excludes creds).\n\n**Scope boundary:** IN — add_box workflow on SwarmManager: push env template, git pull, install deps, launch on a new box. Linux + Windows. OUT — multi-datacenter federation; per-OS installer hardening beyond linux+windows.\n\n**Test plan:** tests/test_swarm_manager_add_box.py — mocked SSH/transport asserts the right commands fire in the right order. E2E manual smoke against a fresh VM (linux first, windows second). Ticket closes when T-swarm-manager ships add_box.",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": 472,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eb21b2ed-97c0-4846-8e66-192c161359f4",
+    "description_updated_at": "2026-04-19T23:45:27.125367+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

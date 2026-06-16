@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-dicksimnel-max-turns-reason.20260606.224527340898",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-max-turns-reason"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T22:45:27.340898",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-granny-dicksimnel-priority-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-max-turns-reason"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-max-turns-reason",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Bug",
+      "Reliability"
+    ],
+    "title": "DickSimnel: max-turns hit should escalate with specific reason, not DONE: gate message",
+    "result": "MAX_TURNS: sentinel in toolloop.run(); _post_result detects it and escalates with clear 'max turns hit' reason; 4 new tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "intention": "I intend that when DickSimnel hits max_turns, CC picks up the escalated ticket knowing the real reason (ran out of turns) not a misleading one (DONE: missing).",
+    "claimed_at": null,
+    "created_at": "2026-06-06T22:45:27.340898+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-granny-dicksimnel-priority-2026-06-06",
+    "description": "**Problem:** When ToolLoop hits max_turns (20), it returns the last assistant content (possibly empty). Then _post_result() sees no DONE: prefix → escalates with reason 'result missing DONE: prefix'. But the real reason is 'max turns hit'. This misleads CC when diagnosing the escalation.\n\n**What to build:** In `_poll_and_work()`, detect max-turns return by adding a sentinel or checking the result against the loop's turn count. Better approach: have ToolLoop return a named result (dataclass or dict with {text, hit_max_turns: bool}) so the caller knows why it terminated.\n\nSimpler fix: ToolLoop.run() returns a string starting with 'MAX_TURNS:' when max_turns is hit (same as DONE: protocol). _post_result() handles MAX_TURNS: by escalating with a clear 'max turns (20) hit' reason.\n\n**Affected files:** devices/dicksimnel/toolloop.py, devices/dicksimnel/device.py, tests/inference/test_dicksimnel_toolloop.py\n**Design rules:** none apply\n**Scope boundary:** Max-turns signaling only\n**Completion criteria:** Test shows: ToolLoop hitting max_turns returns text starting with 'MAX_TURNS:'; device escalates with reason containing 'max turns'. 2 new tests.",
+    "completed_at": "2026-06-07T00:35:18.872445+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

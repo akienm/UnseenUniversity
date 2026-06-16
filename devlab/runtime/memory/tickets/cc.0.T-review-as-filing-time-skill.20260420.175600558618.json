@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-review-as-filing-time-skill.20260420.175600558618",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-review-as-filing-time-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T17:56:00.558618",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-overhaul-2026-04-20"
+    ],
+    "tickets": [
+      "T-review-as-filing-time-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-review-as-filing-time-skill",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "WorkflowOverhaul",
+      "Skills",
+      "Review"
+    ],
+    "title": "Sharpen /review for filing-time use (called by /decided + /fixit)",
+    "result": "Reshaped ~/.claude/skills/review/SKILL.md — filing-time mode (for /decided) + standalone mode (plan/code/PR). Filing checks: duplicate, already-done-in-code, blocked-by-pending, size sanity, scope-creep, test-plan emit, HIGH-inertia inline approval+stamp. Logs to review.log for future T-review-self-learning. 5dfd5c34.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.9,
+    "claimed_at": "2026-04-20T17:50:56.260822+00:00",
+    "related_to": null,
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "description": "Current /review is positioned as 'before sprinting' — reshape it as the filing-time gate called by /decided before a ticket lands in queue.json.\n\n## Filing-time checks (Haiku-minion shaped — known output format)\n1. Duplicate vs queue.json (pending + in_progress + recent done)\n2. Already-done-in-code — grep for the proposed feature's key symbols/tool names\n3. Blocked-by-pending — implicit dep on a still-pending ticket\n4. Size sanity — does description's scope match declared size? flag XL; nudge breakdown on L\n5. Scope-creep — does this contain >1 ticket's worth of work?\n6. Test plan — emit a `test_plan:` field: which new tests, which regression guards, any real-DB integration test\n7. HIGH-inertia touchpoints — if touching brainstem/, memory/models.py, cognition/reasoners/base.py, ASK Akien inline for pre-approval, stamp ticket body with 'pre-approved by Akien YYYY-MM-DD for touching <file> — reason: X'\n\n## Standalone invocation\n/review can still be called on a risky diff/PR/plan — same checks, different input shape. Detect input type and branch.\n\n## Not in scope\n- Self-learning from history — separate ticket.\n- Building /decided that calls /review — separate ticket.",
+    "completed_at": "2026-04-20T17:56:00.558618+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "85ab350c-ccd7-4854-9a7f-57c4b9cd13de",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

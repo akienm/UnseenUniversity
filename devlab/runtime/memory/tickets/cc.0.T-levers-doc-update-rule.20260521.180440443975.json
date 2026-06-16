@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-levers-doc-update-rule.20260521.180440443975",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-levers-doc-update-rule"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T18:04:40.443975",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-levers-doc-update-rule"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-levers-doc-update-rule",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Documentation",
+      "AuditPipeline"
+    ],
+    "title": "Codify 'update levers doc on skill/capability changes' as audit check + sprint step",
+    "result": "Added step 12.5 to sprint-ticket SKILL.md (levers-doc check) + registered levers-doc-skill-sync forever audit check",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-21T18:04:40.443975+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "The levers doc (lab/docs/Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.md) is the single summary of how we work. Currently it's updated informally after design sessions. Codify the rule: whenever skills are edited or new capabilities added, the levers doc must be updated to reflect the change.\n\n**Affected files:** ~/.claude/skills/sprint-ticket/SKILL.md (add teardown note), lab/claudecode/audit_runner.py or audit_add.py (register check)\n**Design rules:** none — process rule\n**Scope boundary:** In scope: add a note in sprint-ticket teardown Step 13 to check if the sprint changed a skill — if so, update levers doc. Register an audit_add check that detects skill files modified in the last day without a corresponding levers doc update. Out of scope: automated levers doc rewriting — the update is always human-authored (Akien) or CC-authored with Akien review.\n**Test plan:** No automated tests. Done when: sprint-ticket SKILL.md Step 13 contains the levers-doc note; audit_add.py has a registered check. Verify by running audit_runner.py and seeing the check appear.",
+    "completed_at": "2026-05-21T18:13:25.318894+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T18:04:40.492004+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1b5240f2-3e28-4c6f-8f14-c8c8a5d90781",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-audit-design-thread-pass2.20260422.145101000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-design-thread-pass2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T14:51:01",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-id"
+    ],
+    "tickets": [
+      "T-audit-design-thread-pass2",
+      "T-epic-fix-all-pass2-findings"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-design-thread-pass2",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Audit2026",
+      "Pass2",
+      "Design",
+      "Thread",
+      "epic"
+    ],
+    "title": "Akien+Claude design-discussion thread for Pass-2 findings that need design calls",
+    "result": "Closed per Akien 2026-05-03: placeholder for T-epic-fix-all-pass2-findings; that epic covers the actual work.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.75,
+    "claimed_at": null,
+    "created_at": "2026-04-22T14:51:01Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Companion to T-epic-fix-all-pass2-findings. Tracks the subset of Pass-2 findings that neither Igor nor CC can resolve alone — they need a design call between Akien and CC.\n\n**How it works:**\n- Child epic tickets tagged `needs-design` surface here before sprinting.\n- Each design call produces a D-* decision via `/decided`. D-id is appended to this ticket's body with one-line rationale + which child ticket(s) it resolved.\n- This ticket stays OPEN for the full duration of the Pass-2 batch. It closes when T-epic-fix-all-pass2-findings closes.\n\n**Known design-needing findings already visible (more will surface as we go):**\n- Engram identity question: ensembles refactor vs retire vocabulary. Default per `feedback_biology_commitment.md`: implement real mechanism (ensembles).\n- Hebbian commitment: enable real bridge + replay-based sleep vs retract from docstrings. Same default.\n- Safety-gate bypass via SYSCFG env_sync (Pass 2 area_4). HIGH-inertia implications.\n- `decision_manager.py:75` + silent-`except Exception` family — policy on how aggressively to purge swallow-and-noop patterns.\n\n**Scope boundary:**\n- In: design calls on Pass-2 findings during this epic. D-* rollups recorded here.\n- Out: design calls on non-Pass-2 topics. Those get their own decision rollups.\n- Out: single-ticket design pre-approvals (HIGH-inertia checks at /review time are a different flow).\n\n**Design rules:** no persistence (tracking ticket — decisions themselves live in the palace at theigors/decisions/D-* which this ticket just indexes); test-plan n/a (no code); docs-in-code n/a.\n\n**Test plan:** no new tests. Verification = at epic closure, every design-call-needing finding has an associated D-* id linked here.\n\n**Trip condition (per `feedback_no_immobile_observe_tickets.md`):** this ticket closes when its companion T-epic-fix-all-pass2-findings closes. Not immobile — gated on real event.",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": 508,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "005a5ae3-31da-4874-9420-796bd54892c4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

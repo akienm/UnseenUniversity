@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-cascade-level-4-past-experiment.20260415.225304215358",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cascade-level-4-past-experiment"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-15T22:53:04.215358",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cascade-level-4-past-experiment",
+      "T-substrate-experiment-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cascade-level-4-past-experiment",
+    "body": "Sub-ticket of T-substrate-experiment-cascade. Level 4 is currently a _StubLevel that returns EXHAUSTED. This ticket replaces it with a concrete implementation that queries experiment_queue for past Experiments whose hypothesis signature matches the current situation.\n\n## The probe\n\nGiven a CascadeSituation, look up OBSERVED experiments in experiment_queue whose hypothesis statement token-set overlaps with the situation query tokens. If any past experiment with outcome=MATCH has a matching signature, return its recorded result as the level-4 match. This is the cheapest form of reusing prior learning — 'I already ran this experiment once, here's what I found.'\n\n## Match criteria\n\n- Past experiment has status in (OBSERVED, UPDATED)\n- Past experiment's hypothesis.statement token-set has >= 2 overlapping tokens with situation.query\n- Past experiment's outcome is MATCH or PARTIAL (not MISMATCH or INCONCLUSIVE — those are negative evidence for different problems)\n- Most-recent match wins on ties\n\n## CascadeResult shape\n\nMATCHED with data being the past Experiment's observation.data payload. The reason string includes the experiment_id so cognition can trace the lookup.\n\n## Out of scope\n\n- Semantic similarity (just token overlap for MVP)\n- Result combination across multiple past matches\n- Updating the past experiment's metadata on re-use (that's reconsolidation-adjacent)\n\n## Tests\n\n- Empty experiment_queue → EXHAUSTED\n- Past experiment with matching tokens → MATCHED\n- Past experiment with MISMATCH outcome → not matched (negative evidence skipped)\n- Insufficient token overlap → EXHAUSTED\n- Multiple matches → most-recent wins\n- Degraded gracefully on db failure\n\n## Depends on\n\nT-substrate-experiment-cascade (level registration), T-experiment-primitive-scheduler (experiment_queue table)",
+    "deps": [
+      "T-substrate-experiment-cascade"
+    ],
+    "size": "S",
+    "tags": [
+      "cascade",
+      "experiment-reuse",
+      "graduation"
+    ],
+    "title": "Cascade level 4: past-experiment lookup (replace stub with concrete impl)",
+    "result": "Level4PastExperimentLookup with token-overlap scoring against experiment_queue OBSERVED/UPDATED rows. MATCH/PARTIAL outcomes reused; MISMATCH/INCONCLUSIVE skipped as negative evidence. 20 tests, 2551 total pass.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-15T22:44:21.023649+00:00",
+    "related_to": "T-substrate-experiment-cascade",
+    "completed_at": "2026-04-15T22:53:04.215358+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

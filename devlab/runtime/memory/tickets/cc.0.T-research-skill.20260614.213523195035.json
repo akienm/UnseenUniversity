@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-research-skill.20260614.213523195035",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-research-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T21:35:23.195035",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-research-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-research-skill",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Workflow",
+      "Librarian"
+    ],
+    "title": "Create /research skill — CC-side interface to uuresearch",
+    "result": "/research skill created at skills/research/SKILL.md — wraps uuresearch with graceful offline degradation",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "intention": "I intend that /research is a usable CC skill backed by the uuresearch.py script that already exists.",
+    "created_at": "2026-06-14T21:35:23.195035+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "uuresearch.py and ~/bin/uuresearch exist and work. No skill file exists so /research is unavailable inside Claude Code sessions. This ticket creates the SKILL.md.\n\nThe skill should: (1) accept a topic/question as args, (2) call uuresearch.py via Bash with those args, (3) surface the summarized result inline. Should gracefully degrade when librarian/embedding pipeline is offline.\n\n**Affected files:** ~/.claude/skills/research/SKILL.md (new)\n**Design rules:** none\n**Scope boundary:** IN — skill file only. OUT — changes to uuresearch.py or the underlying research pipeline.\n**Completion criteria:** /research <topic> runs in a CC session and returns a summarized research result; graceful message when offline.\n\nCC.0 acked at 2026-06-15T20:40:04Z",
+    "completed_at": "2026-06-15T20:46:05.211148+00:00",
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

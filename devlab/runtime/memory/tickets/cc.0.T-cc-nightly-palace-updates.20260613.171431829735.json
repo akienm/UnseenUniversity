@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-cc-nightly-palace-updates.20260613.171431829735",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-nightly-palace-updates"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-13T17:14:31.829735",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-nightly-learning-2026-06-13"
+    ],
+    "tickets": [
+      "T-cc-nightly-palace-updates",
+      "T-guru-loop-"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-nightly-palace-updates",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Autonomy",
+      "Learning",
+      "CC System"
+    ],
+    "title": "CC Nightly: palace node generation and updates",
+    "result": "nightly palace writer: decision nodes + session brief, 18 tests green",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.6,
+    "intention": null,
+    "claimed_at": null,
+    "created_at": "2026-06-13T17:14:31.829735+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-cc-nightly-learning-2026-06-13",
+    "description": "Generate decision nodes and session briefs from transcript analysis.\n\n**Affected files:** lab/design_docs/D-*.md (generated), palace.decisions.*, palace.sessions.*\n**Design rules:** palace-integration, idempotent-writes\n**Scope boundary:**\n  IN: Compile feedback + patterns + decisions into palace nodes, write decision records\n  OUT: Palace query optimization, metrics\n**Completion criteria:**\n  1. For each decision made today, create palace node (spawned_tickets, decision narrative, hypothesis)\n  2. For today's session, create palace.sessions.DATE.brief (what happened, next priorities, key insights)\n  3. All writes are idempotent (same transcript → same nodes)\n  4. Test: run nightly script, verify T-guru-loop-* decisions appear in palace",
+    "completed_at": "2026-06-13T23:42:03.564269+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-06-13T17:14:31.829755+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ddee5445-818c-4993-a568-46dff7114164",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

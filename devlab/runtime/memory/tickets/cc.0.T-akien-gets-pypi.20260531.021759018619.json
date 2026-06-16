@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-akien-gets-pypi.20260531.021759018619",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-akien-gets-pypi"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T02:17:59.018619",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-akien-gets-pypi",
+      "T-uu-tagged-release"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-akien-gets-pypi",
+    "gate": null,
+    "role": "guru",
+    "size": "S",
+    "tags": [
+      "Infrastructure"
+    ],
+    "title": "Akien creates PyPI account and API tokens",
+    "result": "PYPI_API_TOKEN added to /home/akien/.unseen_university/akien/akien.credentials.cfg",
+    "status": "closed",
+    "worker": "akien",
+    "priority": 1.0,
+    "claimed_at": null,
+    "created_at": "2026-05-31T02:17:59.018619+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Before any UU/Igor/SWADL packages can be published, Akien needs a PyPI account and per-project API tokens. This is a pure external action — no code work.\n\n**Affected files:** none\n**Design rules:** none apply\n**Scope boundary:** In scope: create account, generate tokens, store in .env. Out of scope: actual publish pipeline (that's T-uu-tagged-release etc.).\n**Completion criteria:** .env contains PYPI_TOKEN_UU, PYPI_TOKEN_IGOR, PYPI_TOKEN_SWADL (or equivalent). The three publish tickets can then be ungated.",
+    "completed_at": "2026-06-11T18:09:41.951178+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T02:17:59.336964+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "fc8cdb2b-8a0e-4069-b7b7-4735ad6823fb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

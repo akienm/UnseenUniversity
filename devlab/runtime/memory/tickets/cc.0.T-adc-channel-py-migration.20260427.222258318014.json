@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-channel-py-migration.20260427.222258318014",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-channel-py-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-27T22:22:58.318014",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-adc-phase-2-2026-04-27"
+    ],
+    "tickets": [
+      "T-adc-channel-py-migration",
+      "T-agent-datacenter-project"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-channel-py-migration",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AgentDatacenter",
+      "Infrastructure",
+      "Migration"
+    ],
+    "title": "agent_datacenter: migrate lab/claudecode/channel.py to comms://Shared IMAP mailbox",
+    "result": "channel.py: dual-write shim added. post() mirrors to comms://Shared via IMAP Router. read/listen/sessions remain JSONL-backed. JSONL is authoritative until Phase 5 removal. Lazy IMAP init; silent fallback if unavailable.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-27T22:17:58.459187+00:00",
+    "related_to": "T-agent-datacenter-project",
+    "decision_id": "D-adc-phase-2-2026-04-27",
+    "description": "Migrate the current TheIgors channel (lab/claudecode/channel.py, JSONL file-based) to the IMAP-backed Shared mailbox. One-release deprecation shim keeps callers working during migration.\n\nCurrent state: channel.py reads/writes ~/.TheIgors/cc_channel/messages.jsonl. 307 lines. Used by CC and Igor for shared message passing.\n\nProposed shape:\n- Deprecation shim: channel.py API (read, write) updated to call Router.send('comms://Shared') and imap_server.fetch_unseen('Shared') respectively\n- Existing callers (cc_bridge.py, igor's channel reads) work unchanged via the shim\n- Old JSONL file: keep for one release as backup; after verification, remove\n- Verification: send a message via old channel API; confirm it appears in Shared IMAP mailbox\n- Migration complete: remove shim, update callers to call comms:// directly\n\nAffected files:\n- ~/TheIgors/lab/claudecode/channel.py (rewritten to call comms:// + IMAP)\n- ~/TheIgors/lab/claudecode/cc_bridge.py (if it calls channel.py; verify and update)\n\nDesign rules:\n- docs-in-code: deprecation comment at top of channel.py: 'DEPRECATED: use comms://Shared directly. Shim retained for one release.'\n\nScope boundary:\nIN: channel.py shim rewrite, JSONL backup retained, caller verification\nOUT: removal of JSONL file (that's a separate cleanup after verification)\n\nTest plan:\n- channel.write('test message') → imap_server.unseen_count('Shared') == 1\n- channel.read() returns the message that was sent\n- All existing callers of channel.py work without code changes (shim compatibility)",
+    "completed_at": "2026-04-27T22:22:58.318014+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2cd9bbb8-5d0f-435b-a122-a59e4b854a0f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

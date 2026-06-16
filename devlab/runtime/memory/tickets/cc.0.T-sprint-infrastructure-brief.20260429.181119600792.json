@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-sprint-infrastructure-brief.20260429.181119600792",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sprint-infrastructure-brief"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-29T18:11:19.600792",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-pyramid-redesign-2026-04-29",
+      "D-scaffold-not-correct-2026-04-21"
+    ],
+    "tickets": [
+      "T-sprint-infrastructure-brief"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sprint-infrastructure-brief",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Sprint",
+      "Skills",
+      "Sonnet-Constraints",
+      "Palace"
+    ],
+    "title": "/sprint plan-review — surface infrastructure brief for touched area",
+    "result": "Seeded 8 palace nodes theigors/infrastructure/by_area/{cognition,memory,network,tools,reasoning,brainstem,index,parent}. Created sprint_infrastructure_brief.py (InfrastructureBrief class, area detection from paths, one-screen brief render). Updated /sprint skill step 4.5 to call brief + /audit-precode before first edit.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-29T18:08:03.143687+00:00",
+    "related_to": null,
+    "decision_id": "D-audit-pyramid-redesign-2026-04-29",
+    "description": "Counter to architectural amnesia (Sonnet forgetting MCP / IMAP / proxy infrastructure exists). At /sprint plan-review (before audit-precode), surface a one-screen 'infrastructure brief' scoped to the touched area: relevant MCP tools, IMAP buses, proxies, channels, base classes. Built from theigors/subsystem_index + new palace branch theigors/infrastructure/by_area/<area>.\n\nThe brief is positive scaffolding — rules visible at point of use, not after the wrong choice (D-scaffold-not-correct-2026-04-21).\n\nThis ticket: build the by_area palace branch (initial seed: cognition, memory, network, tools, reasoning), update /sprint to surface it.\n\n**Affected files:** /sprint skill SKILL.md (insert after plan-review, before audit-precode); new palace subtree theigors/infrastructure/by_area/*; helper at lab/claudecode/sprint_infrastructure_brief.py.\n**Design rules:** no persistence beyond palace. oop-first: InfrastructureBrief class. docs-in-code: top-of-file docstring on the helper.\n**Test plan:** sprint touches cognition → brief lists cognition MCP tools, base class, related buses. Sprint touches a not-yet-mapped area → brief flags 'no entry, propose adding'. Manual review confirms the brief is short (one screen) and relevant.",
+    "completed_at": "2026-04-29T18:11:19.600792+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "33e70d1b-9193-4e91-aba8-e99370583e3f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

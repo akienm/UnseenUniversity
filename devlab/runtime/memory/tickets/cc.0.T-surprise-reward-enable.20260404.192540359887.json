@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-surprise-reward-enable.20260404.192540359887",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-surprise-reward-enable"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T19:25:40.359887",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-surprise-reward-enable"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-surprise-reward-enable",
+    "size": "S",
+    "tags": [
+      "Training",
+      "Cognition"
+    ],
+    "title": "Enable IGOR_SURPRISE_REWARD + add metrics to measure its effect",
+    "result": "Enabled IGOR_SURPRISE_REWARD_ENABLED by default (changed default from false→true in word_graph.surprise_scale()). Promoted surprise log from DEBUG→INFO in basal_ganglia.py so every surprise reinforcement event is visible in logs. Search for 'SURPRISE_REWARD' in igor.log to measure frequency after 2 weeks. Disable via IGOR_SURPRISE_REWARD_ENABLED=false in .env if needed.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-04T19:25:02.775803+00:00",
+    "related_to": null,
+    "description": "self_trainer.py surprise reward (IGOR_SURPRISE_REWARD_ENABLED) is gated OFF by default and metrics are never measured. The reinforce() call with flatness=1.0 surprise bonus exists but is never activated. Fix: (1) enable in production .env; (2) log surprise_scale() output per reinforce call to costs.log; (3) measure habit-firing correlation with flatness=1.0 queries for 2 weeks then review. ML finding from deep-audit Panel 8.",
+    "completed_at": "2026-04-04T19:25:40.359887+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eb0c133a-3894-4914-952b-42136b190477",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

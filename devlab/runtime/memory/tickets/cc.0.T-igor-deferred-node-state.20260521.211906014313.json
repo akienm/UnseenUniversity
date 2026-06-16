@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-igor-deferred-node-state.20260521.211906014313",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-deferred-node-state"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T21:19:06.014313",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-deferred-inference-2026-05-21"
+    ],
+    "tickets": [
+      "T-igor-deferred-node-state"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-deferred-node-state",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "Igor",
+      "Inference",
+      "CognitiveArchitecture",
+      "MemoryGraph"
+    ],
+    "title": "Add deferred-resolution node state to Igor's inference engine",
+    "result": "mark_unresolved/is_unresolved/accumulate_unresolved/resolve_node/tick_watch_pass/get_watched_nodes added to Cortex; store() auto-marks thin evidence; search() filters unresolved; 13 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-21T21:19:06.014313+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-deferred-inference-2026-05-21",
+    "description": "**Problem:** Igor currently forces resolution at query time. If a node has insufficient evidence, it either receives a low-confidence answer or gets dropped. This is wrong in the same way that looking up an unfamiliar word in a dictionary at first encounter is lossy — you get a definition, but you miss the network of contextual edges that give the concept its actual meaning and color.\n\nThe correct model (described by Akien from direct introspection): unfamiliar nodes start 'clear' — isolated, no load-bearing edges. They go on an implicit watchlist. Each subsequent encounter adds edges. When enough edges accumulate, the node colors (resolves) naturally. If surrounding context makes the node's precise meaning irrelevant, it stays clear but falls off the watchlist — it doesn't need resolution.\n\n**Key insight from the design conversation:** 'Forcing early resolution is lossy.' A low-confidence guess is not a deferred resolution — it's a premature one that forecloses further accumulation. The node needs to know it is unresolved, not merely uncertain.\n\n**Proposed shape:**\n\n1. **New node state: `unresolved`** — distinct from low-confidence. A node in `unresolved` state has been queried but lacked sufficient evidence to resolve. It is not assigned a value. It is flagged for continued accumulation.\n\n2. **Watchlist mechanism** — unresolved nodes are held in a watchlist (could be a metadata flag on the node: `watch: true`). When new context arrives, the system checks if any watched nodes can now accumulate edges from that context.\n\n3. **Resolution trigger** — when an unresolved node's edge count (or total edge weight) crosses a threshold, resolution fires. The node acquires a value from the accumulated evidence, not from a single pass.\n\n4. **Irrelevance trigger** — when enough surrounding context has been processed that the unresolved node is no longer needed for inference (i.e., queries are being answered without touching it), it drops off the watchlist. It may remain in the graph as a low-priority stub.\n\n5. **Resolution threshold** — configurable per node type. Factual nodes (dates, names) may need only 2-3 consistent edges. Conceptual nodes (abstract terms) may need more, and may need edges from diverse contexts (not just one source saying the same thing three times).\n\n**What this is NOT:** This is not a confidence score update mechanism. Low confidence is a different thing — it means 'I have an answer but I'm not sure.' Unresolved means 'I do not yet have an answer and I am waiting.'\n\n**Affected files:** (Linux CC: find the right paths in TheIgors — the graph node model, the query/traversal logic, and wherever node state is persisted)\n- The node schema / data model (add `status: unresolved`, `watch: bool`, `edge_accumulator`)\n- The query/resolution path (return `unresolved` instead of low-confidence when evidence is thin)\n- The context-ingestion path (check watchlist, attempt accumulation on new passes)\n- The watchlist manager (track watched nodes, fire resolution trigger, handle irrelevance decay)\n\n**Design rules:**\n- `unresolved` is a first-class status, not a confidence level. Do not conflate the two.\n- Resolution must come from accumulated edges, not from a single pass with more context.\n- The watchlist must be persistent across sessions — an unresolved node from yesterday should still be watched today.\n- Irrelevance decay should be gradual, not binary. A node that hasn't been touched in N passes gets deprioritized before it gets dropped.\n\n**Scope boundary:** Igor's inference/memory graph layer only. Does not touch the skill layer, the comms bus, or the MCP skeleton. Skills that query Igor will automatically benefit once the node state is correct.\n\n**Test plan:**\n- Query a node with thin evidence: assert status is `unresolved`, no value assigned\n- Add two more context passes with consistent edges: assert node resolves to expected value\n- Add three context passes that don't touch the node: assert watchlist priority decreases\n- Query a well-evidenced node: assert it still resolves normally (regression check)\n- Confirm unresolved nodes persist across a session boundary",
+    "completed_at": "2026-06-09T00:58:53.140910+00:00",
+    "github_issue": 774,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T21:19:06.073966+00:00",
+    "target_difficulty": 3,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "25964913-8822-426d-a887-2bb2849bfa74",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

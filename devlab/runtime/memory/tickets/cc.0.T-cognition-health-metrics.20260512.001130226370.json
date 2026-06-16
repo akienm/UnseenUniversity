@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-cognition-health-metrics.20260512.001130226370",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cognition-health-metrics"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T00:11:30.226370",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cognition-health-metrics-2026-05-11"
+    ],
+    "tickets": [
+      "T-cognition-health-metrics"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cognition-health-metrics",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Observability"
+    ],
+    "title": "Cognition health metrics — NE rate, LTM count, arousal gate to infra.metrics",
+    "result": "record_metric() added to Cortex; cognition.ne_cycle_result/ltm_surfaced_count/arousal_gate_suppression written from coa.py and push_sources.py",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "blocked_at": null,
+    "claimed_at": "2026-05-23T21:29:13.582591+00:00",
+    "created_at": "2026-05-12T00:11:30.226370+00:00",
+    "related_to": null,
+    "decision_id": "D-cognition-health-metrics-2026-05-11",
+    "description": "Write three cognition health metrics to infra.metrics so signal/noise ratio is observable via SQL. The table exists (created in cortex.py) but has no write helper. Metric points: (1) cognition.ne_cycle_result (1.0=success, 0.0=empty) in coa.py after each NE evaluation; (2) cognition.ltm_surfaced_count (N memories pushed) in MemorySurfacer.push() after the push loop; (3) cognition.arousal_gate_suppression (arousal value) in MemorySurfacer.push() when milieu_scale() returns a reduced salience (salience_in != salience_out and arousal > 0.3). Pattern: add cortex.record_metric(name, value, tags=None) helper that INSERTs to infra.metrics, then call it from the three sites. Observable via: SELECT metric_name, AVG(metric_value), COUNT(*) FROM infra.metrics WHERE metric_name LIKE 'cognition.%' AND recorded_at > now() - interval '1 hour' GROUP BY metric_name;\n\n**Affected files:** wild_igor/igor/memory/cortex.py (add record_metric() method), wild_igor/igor/cognition/coa.py (NE result write ~line 237 empty-result branch + success branch), wild_igor/igor/cognition/push_sources.py (MemorySurfacer.push() ~line 199, after milieu_scale call and after push loop)\n**Design rules:** OOP-first (record_metric on Cortex, not standalone); no-sqlite (infra.metrics is Postgres)\n**Scope boundary:** IN: record_metric() helper on Cortex; three metric write points listed above. OUT: TTL/purge for infra.metrics (accumulates — acceptable for now, low-volume); instrumenting other push sources; dashboards or alerting. cortex.record_metric() may also be called from other sites in future but this ticket adds the helper only.\n**Test plan:** After Igor restart, let one NE cycle complete. Query: SELECT metric_name, metric_value, recorded_at FROM infra.metrics WHERE metric_name LIKE 'cognition.%' ORDER BY recorded_at DESC LIMIT 10; — should see at least cognition.ne_cycle_result row within 1 cycle. No unit test (cognition loop integration only; DB writes hit real Postgres per theigors/rules/database).",
+    "completed_at": "2026-05-28T01:51:24.934536+00:00",
+    "github_issue": 717,
+    "dispatched_at": "2026-05-23T21:29:13.582591+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cab8d725-c932-490d-9ea8-7d8b0e902e12",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

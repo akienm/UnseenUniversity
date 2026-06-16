@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-routing-inference-context.20260323.154603553938",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-routing-inference-context"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T15:46:03.553938",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-routing-inference-context"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-routing-inference-context",
+    "size": "M",
+    "notes": "Add is_user_turn (from main.py author check), research_mode (purpose-based), cloud_funded (balance + burn rate gate, MIN_DAYS env var). Rename cloud_active→master_cloud. Complexity gates user_turn→cloud: only medium|high. D211.",
+    "title": "InferenceContext: is_user_turn, research_mode, cloud_funded, complexity gate",
+    "result": "D211 local-first routing wired: inference_gateway.py interactive branch tries local (t2) first for low-complexity user turns, cloud (t4) as fallback; main.py passes is_user_turn=True + complexity. Tests: 30 passed.",
+    "status": "done",
+    "priority": 1,
+    "completed_at": "2026-03-23T15:46:03.553938+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

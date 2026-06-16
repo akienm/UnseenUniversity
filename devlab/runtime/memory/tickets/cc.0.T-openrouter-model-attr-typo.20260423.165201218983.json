@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-openrouter-model-attr-typo.20260423.165201218983",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-openrouter-model-attr-typo"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T16:52:01.218983",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-web-reply-coherence-inhibitor-fix-2026-04-23"
+    ],
+    "tickets": [
+      "T-openrouter-model-attr-typo"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-openrouter-model-attr-typo",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "BugFix",
+      "OpenRouter"
+    ],
+    "title": "Fix: openrouter_reasoner.py:520 self._model() should be self.model",
+    "result": "self._model() → self.model. b9688b6b.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-23T16:49:50.267791+00:00",
+    "related_to": null,
+    "decision_id": "D-web-reply-coherence-inhibitor-fix-2026-04-23",
+    "description": "openrouter_reasoner.py:520 calls self._model() (method call) in the CONTEXT_OVERFLOW logging path, but the attribute is self.model (plain attribute). Raises AttributeError caught as BARE_EXCEPT. Not the primary drop cause but fires on every context-overflow turn as noise.\n\n**Affected files:** wild_igor/igor/cognition/reasoners/openrouter_reasoner.py (line ~520)\n**Design rules:** docs-in-code\n**Scope boundary:** IN — one-line typo fix. OUT — refactoring model attribute naming.\n**Test plan:** grep confirms self._model() no longer exists; BARE_EXCEPT for this error stops appearing in errors.log.",
+    "completed_at": "2026-04-23T16:52:01.218983+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b0753eaf-76b5-4f17-91f6-82ff3b625155",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

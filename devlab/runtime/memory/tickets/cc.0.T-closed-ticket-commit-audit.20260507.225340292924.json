@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-closed-ticket-commit-audit.20260507.225340292924",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-closed-ticket-commit-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T22:53:40.292924",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-closed-ticket-commit-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-closed-ticket-commit-audit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Hygiene",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: ticket commit audit — 322 flagged, report in slate",
+    "result": "report produced: 322/1062 flagged with no commit (mostly old tickets predating T-id commit convention, not phantom closes)",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-07T22:53:40.292924+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Several tickets closed today turned out to be phantom closes (no actual code shipped). Audit all tickets closed in the last 60 days: for each, run `git log --all --grep=<ticket-id>` — if zero commits AND the ticket is not a tracking/coordination/doc-only ticket, flag it for re-examination.\n\n**Affected files:** TheIgors/lab/claudecode/cc_queue.py (read closed tickets), git log\n**Design rules:** none apply\n**Scope boundary:** IN — tickets closed in last 60 days, non-coordination tickets (skip epics, decision stubs, doc-only). OUT — going back further than 60 days; auto-reopening tickets (human reviews flags).\n**Test plan:** Script produces a report; no code changes.\n**Pass condition:** Report lists all flagged tickets with zero-commit evidence; Akien reviews and decides which to reopen.",
+    "completed_at": "2026-05-07T23:04:12.152699+00:00",
+    "github_issue": 630,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cbf64e2d-f164-4666-9638-9339548aa7a4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

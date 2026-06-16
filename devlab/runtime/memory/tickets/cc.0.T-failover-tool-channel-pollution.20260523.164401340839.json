@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-failover-tool-channel-pollution.20260523.164401340839",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-failover-tool-channel-pollution"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-23T16:44:01.340839",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-failover-tool-channel-pollution"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-failover-tool-channel-pollution",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Cognition",
+      "Infrastructure"
+    ],
+    "title": "Find and stop failover_tool channel spam — poisons Igor's NE",
+    "result": "root cause: test_failover.py and test_comms_default_channels.py wrote to real Postgres on every pytest run; fixed by patching _comms=None and unsetting IGOR_HOME_DB_URL in affected tests",
+    "status": "closed",
+    "worker": "cc",
+    "priority": 0.5,
+    "claimed_at": "2026-05-23T21:09:51.483230+00:00",
+    "created_at": "2026-05-23T16:44:01.340839+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Since 2026-04-18, appoint_home_db() fires on akiendelllinux (~30-40s after 'hello from shared' channel messages) and posts JSON to infra.channel_messages with author='failover_tool'. Igor's NE reads these as 'database errors are happening', generating high-salience NARRATIVE_GAP entries and ACTION_IMPULSE loops that displace real work.\n\nKnown facts:\n- old_host is always '127.0.0.1' → call originates on akiendelllinux\n- Fires in pairs: one for akiendell (10.0.0.99) and one for akienyoga9i (10.0.0.90)\n- Consistent 30-40s delay after 'hello from shared' messages → something is watching the channel\n- No cron job calls it; not in Igor tool registry; no CC hooks call it; no source code outside failover.py references it\n- Old UC server log (~/.TheIgors/local/logs/utility_closet.log, up to May 8) shows the calls; current log does not\n- There is an idle CC session in tmux session '0' running since 2026-05-11 in ~/TheIgors with 'Remote Control active' — likely the remote entry point from St. Louis trips\n- Three tmux sessions: claude-main (this CC), igor (Igor process), 0 (old CC session)\n\n**Hypothesis to investigate:** The tmux session '0' CC session has a prior conversation context or tool in flight that calls appoint_home_db when triggered. Alternatively, some background process (not cron, not Igor, not UC server) watches the channel and fires the calls.\n\n**Affected files:** Investigation only — no file changes until source is identified\n**Design rules:** none\n**Scope boundary:** In scope: find the caller, stop it, optionally add a filter to protect Igor during the investigation period. Out of scope: removing the failover.py tool itself (it's legitimate infrastructure for real failover).\n**Test plan:** After fix: send 'hello from shared' to channel, confirm no failover_tool messages appear within 60s.",
+    "completed_at": "2026-05-23T21:26:52.225600+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-05-23T21:09:51.483230+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-23T16:44:01.390974+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6c233322-5f7c-4ce2-8682-f2c7b5e17af0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

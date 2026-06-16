@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-swadl-base-automation-split.20260502.180625048624",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-swadl-base-automation-split"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-02T18:06:25.048624",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-swadl-base-automation-split"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-swadl-base-automation-split",
+    "gate": null,
+    "size": "M",
+    "notes": "Filed 2026-05-02 during T-web-chat-swadl-regression Haiku test after orphan-browser discovery. Root cause: swadl_cfg.py:88-95 spawns webdriver at module import time. Akien confirmed scope: SWADL was originally selenium-only test framework; now it's also pywinauto + non-test process automation (Igor's Gmail flows, web chat). Split design pre-approved as the right architecture. Design doc to be reviewed before build.",
+    "title": "SWADL: split BaseTest into BaseAutomation+BaseTest, lazify driver creation",
+    "result": "SWADL split shipped (akienm/swadl@84f3567): SWADLBaseAutomation extracted from SWADLTest, driver creation lazified (was spawning Chrome at module import = orphan-browser leak). New @property driver/actions on SWADLBase, maximize_window added to driver interface, SWADLTest.tearDown auto-quits driver. 3 SWADL self-tests pass. TheIgors smoke test consumes SWADLBaseAutomation. Design doc at lab/design_docs/decisions/T-swadl-base-automation-split.md.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Split SWADL's monolithic SWADLTest into BaseAutomation (process-automation plumbing — driver + page/flow access) + BaseTest (BaseAutomation + unittest runner glue). Lazify driver creation so importing SWADL no longer spawns a Chrome browser at module-import time. Unblocks Igor-as-user epic, Gmail flow tickets, web-chat regression test, and any future pywinauto-based process automation.\n\n**Affected files:** /home/akien/dev/src/swadl/SWADL/engine/swadl_base_automation.py (NEW); /home/akien/dev/src/swadl/SWADL/engine/swadl_base_test.py (slim down, inherit from BaseAutomation); /home/akien/dev/src/swadl/SWADL/engine/swadl_cfg.py (replace eager driver creation with get_driver() lazy helper + _quit_driver_if_running()); /home/akien/dev/src/swadl/SWADL/engine/swadl_base.py (lazy driver property if needed); /home/akien/TheIgors/tests/test_web_chat_swadl_smoke.py (simplify after lazy driver lands).\n\n**Design rules:** SWADL framework conventions (kwargs-everywhere, state in __dict__, instance properties); docs-in-code on new BaseAutomation class; preserve backward compatibility for existing /Project/ tests in SWADL repo.\n\n**Scope boundary:** IN — split base classes, lazify driver, ship updated TheIgors web-chat smoke test using new pattern, commit to SWADL repo (separate from TheIgors). OUT — adding PyWinAutoDriver (separate ticket); refactoring existing /Project/ tests; new context-manager API for flows.\n\n**Test plan:** (1) SWADL self-test asserting no chrome process exists after `import SWADL.engine.swadl_base_test`; (2) TheIgors web-chat smoke test runs and skips cleanly with zero orphan browsers; (3) existing /Project/*.py tests in SWADL repo still pass.",
+    "completed_at": "2026-05-02T18:06:25.048624+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e3030f5a-f8e6-4eff-8ffe-bc8d8ff3ca7c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

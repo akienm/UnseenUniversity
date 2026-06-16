@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-graph-calving-execution.20260414.232251000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-graph-calving-execution"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T23:22:51",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-graph-calving-execution"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-graph-calving-execution",
+    "body": "From D153 (closed as ticketed). Akien 2026-04-14: thought this was done, found out only the candidate-detection piece was built.\n\n## What's already built (not enough)\n\n- cortex.find_calving_candidates(depth_threshold=5) at cortex.py:4958 — recursive CTE returning candidate node ids. Detection only.\n- tools/graph_ops.py:run_calving_check() — wraps the above, comment says 'does not calve automatically yet'\n- IGOR_CALVING_ENABLED env var mentioned as future\n- trees table (D257) holds 11 well-known trees but is the named-trees registry, NOT per-calved-subtree storage\n- All memories live in ONE physical memories table\n\n## What needs building\n\nThe actual SPLIT operation, per-subtree physical tables, id→(table,row) lookup table with Redis upper layer, and the audit + removal of any current code that depends on enumeration operations like `get_by_type()`.\n\n## Biomimicry framing (load-bearing)\n\nThe biology check from Akien 2026-04-14: 'give me all FACTUAL memories' isn't a thing humans do. There is no enumeration operation in biology. Memory retrieval is spreading activation from a seed via Hebbian-strengthened edges, with effort gradient bounded by boredom/fatigue. The current single-table `memories` model preserves RDBMS conveniences that aren't biological. Calving + per-subtree physical storage IS the biologically honest model:\n\n- **Per-subtree physical tables = cortical columns / engram clusters.** Small dense neighborhoods that share semantic territory.\n- **id→(table,row) lookup table = hippocampal index.** Hippocampus stores pointers to where in cortex an episode lives, not the episode itself.\n- **Redis upper layer + Postgres lower layer = working memory + LTM.** Brain doesn't load all of LTM into awareness; it loads what the index says is relevant.\n- **Spreading activation entirely within and between subtrees, never across the whole store.** This is how brains scale to 10^11 neurons without scanning anything.\n- **Calving event = cortical reorganization.** Reorganize when a region gets too dense; specialize.\n- **Boredom as natural termination of spreading activation** — already have BoredomSource + T-boredom-goal-coupling.\n\nThe physical version is biologically honest. The 'logical separation with one shared physical table' alternative I floated was RDBMS-flavored compromise — Akien correctly called it out.\n\n## Sub-slices\n\n### 1. T-graph-calving-execution-trigger (S)\nDefine the 'this subtree is full' trigger. Akien's intuition: mid-hundreds to low-thousands node count per subtree. Combine with attractor divergence (split happens between most-prominent attractors). 'Next add forces the split' semantics — the trigger fires on insert, the split happens before the new row is committed.\n\n### 2. T-graph-calving-execution-split (M)\nPerform the split when triggered:\n- Identify split points by attractor prominence (use existing trail data + interpretive_edges)\n- Create the new physical table for the calved subtree (CREATE TABLE memories_<id> with same schema)\n- Migrate rows from parent table to child table, preserving all metadata + edges\n- Update the lookup table\n- Bridge across subtrees with interpretive_edges (so spreading activation can traverse boundaries)\n- Atomic transaction across both operations or rollback both\n\n### 3. T-graph-calving-id-and-lookup (M)\n- Decision: does the id format change to encode subtree-of-origin (yyyymmddhhmmssuuuuuu.<subtree_id>), or stay as-is and let the lookup table do all the work?\n- Build the lookup table itself: id → (table_name, row_id, subtree_id, depth)\n- Postgres-backed primary, Redis-cached upper layer (see #4)\n- API: cortex.locate(id) → (table, row) or None\n- All read operations go through locate() to find the right table before querying\n\n### 4. T-graph-calving-execution-dual-db (M)\nThe upper-layer cache architecture. **Use Redis** — already installed (Redis 7.0.15 running, redis==7.3.0 in requirements.txt) and we already have a proven precedent in `cognition/redis_word_graph.py` (D121) where Redis caches the hot subset of the word graph cooccurrence layer with shadow-mode writes during migration.\n\nReuse the D121 pattern:\n- Hot subset of the lookup table cached in Redis (sorted sets or hashes)\n- Postgres holds the authoritative table\n- Reads fall through Redis → Postgres on miss\n- Shadow-mode writes during migration (Redis + Postgres both written) until cache is warmed and verified\n- Then Redis-first reads with Postgres fallback\n- Same migration pattern as D121, less risk\n\n### 5. T-graph-calving-rdbms-caller-audit (S, IGOR TASK)\n**Igor inventories** every call site that uses `get_by_type()`, `cortex.get_all()`, `memories.fetchall()` without a WHERE clause, or any other enumeration operation. Reports them. CC + Akien decide which to convert to spreading-activation retrieval, which to keep, which to delete.\n\nThis is an Igor task per the auto-memory rule about delegating investigation to Igor. Lower token cost, builds Igor's self-understanding of the codebase. Output: a structured list of call sites + Igor's classification (RDBMS-flavored / biologically-needed / dead-code / unsure).\n\n## Why not now (urgency)\n\nThe current single-table model works at ~100K memories. cortex.search() is fast enough today. The urgency is 'we'll need this before we hit 10M memories, not tomorrow.' But the substrate is needed for:\n- T-llm-shrinkage-roadmap — local-mostly cognition needs fast retrieval that doesn't burn cloud tokens on full-table scans\n- T-concurrent-ne-spawn — multiple COAs each doing spreading activation simultaneously; full-table scans contend, subtree scans don't\n- Cockpit framing — fast spreading activation is what Igor's substrate work needs to be fast\n\nFile now, sprint when growth pressure makes it urgent (probably after we cross 1M memories or when search latency becomes the bottleneck).\n\n## Existing infrastructure\n\n- cortex.find_calving_candidates() — detection seed\n- redis-server installed, Python redis==7.3.0\n- cognition/redis_word_graph.py (D121) — proven Redis-as-upper-layer pattern\n- interpretive_edges (with cascade migrations m027-m033) — bridge layer between subtrees\n- tails infrastructure — knows which trail activated which node, useful for choosing split points\n- D257 trees table — could be repurposed as the per-subtree registry\n\n## Out of scope\n\n- Replacing Postgres entirely (lower layer stays Postgres)\n- Cross-instance subtree synchronization (memory_sync handles that)\n- Web UI for visualizing calved subtrees (CLI + queries are enough)\n- Automatic re-merging of subtrees that lose density (calving is one-way for now)\n\n## Provenance\n\nD153 (Akien 2026-04-11, surfaced + ticketed 2026-04-14). Long discussion in today's session including the biomimicry recasting (RDBMS conveniences vs biological retrieval) and the discovery that Redis is already installed for this exact pattern.",
+    "deps": [],
+    "size": "L",
+    "tags": [
+      "epic",
+      "memory",
+      "scaling",
+      "biomimicry",
+      "redis",
+      "calving"
+    ],
+    "title": "EPIC: Graph calving execution — actually split trees, not just detect candidates",
+    "result": "All 3 sub-tickets complete: split op (5089a74f), trigger on write at 1000 nodes (a71db938), post-calve facia cleanup (08392e75). Graph calving is live behind IGOR_CALVING_ENABLED.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "created_at": "2026-04-14T23:22:51Z",
+    "related_to": null,
+    "completed_at": "2026-04-17T02:05:13.031504+00:00",
+    "github_issue": 451,
+    "required_files": [],
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

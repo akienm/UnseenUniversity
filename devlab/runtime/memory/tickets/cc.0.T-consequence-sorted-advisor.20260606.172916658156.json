@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-sorted-advisor.20260606.172916658156",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-sorted-advisor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T17:29:16.658156",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-sorted-advisor-probe-2026-06-06"
+    ],
+    "tickets": [
+      "T-consequence-sorted-advisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-sorted-advisor",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: proactive advisor() in /sorted for L/XL tickets",
+    "result": "PARTIAL: advisor() wired at /sorted step 3.5; gate not met (0/3 L/XL tickets post-change); no AMEND loops or cost signals observable yet",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that the advisor() call at L/XL draft time is worth the token cost.",
+    "created_at": "2026-06-06T17:29:16.658156+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-sorted-advisor-probe-2026-06-06",
+    "description": "**What changed:** /sorted calls advisor() before filing L/XL ticket drafts.\n\n**Predicted unintended effects:** (1) Each L/XL /sorted run costs an additional advisor() call — verify quality gain justifies cost; (2) advisor() may give advice contradicting /audit-ticket — watch for AMEND loops; (3) S-ticket quality gap may widen if advisor() is too impactful — consider lowering threshold to M.\n\n**Signals to watch:** L/XL tickets post-change: more specific completion criteria? Sprint reset_count for L/XL: decreasing? Any AMEND loop between advisor() and /audit-ticket.\n\n**Gate condition:** After 3 L/XL tickets filed via /sorted with advisor() active.\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Completion criteria:** observation ticket; done when predicted effects annotated and ticket closed",
+    "completed_at": "2026-06-06T18:42:31.943435+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

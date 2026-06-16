@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-announce-slice5-profile-inheritance.20260501.224235027832",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-slice5-profile-inheritance"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-01T22:42:35.027832",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-announce-protocol-2026-05-01"
+    ],
+    "tickets": [
+      "T-announce-slice5-profile-inheritance"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-slice5-profile-inheritance",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AnnounceProtocol",
+      "Slice5",
+      "Datacenter",
+      "Profile"
+    ],
+    "title": "profile.py — deep-merge inheritance with __replace__ marker (slice 5)",
+    "result": "Profile inheritance shipped: load_profile resolves inherits chains; deep-merge dicts; lists child-replace; __replace__ sentinel for explicit override; cycle detection. 11 new tests. agent_datacenter 165→176 tests. commit a966485.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-01T22:40:28.097674+00:00",
+    "related_to": null,
+    "assigned_to": "claude",
+    "decision_id": "D-announce-protocol-2026-05-01",
+    "description": "load_profile() currently logs a WARNING when 'inherits' is non-empty but does no merging (slice 5 deferred). This ticket implements the merge: each parent in inherits is loaded recursively, deep-merged left-to-right (children override parents), and the child's keys layered on top. A literal {'__replace__': True, 'value': X} sentinel forces a wholesale replacement of a key rather than recursive merge — needed when a child wants to drop a parent's allowed_devices entirely instead of unioning. Cycle detection raises ProfileValidationError.\n\n**Affected files:** /home/akien/dev/src/agent_datacenter/agent_datacenter/announce/profile.py (load_profile + new _merge helpers; remove the WARNING-only branch), /home/akien/dev/src/agent_datacenter/tests/test_profile_inheritance.py (NEW)\n**Design rules:** dicts deep-merge by default; lists in child REPLACE parent (no implicit union — too magical); __replace__ sentinel is the explicit override knob; cycle detection raises with the cycle path in the error.\n**Scope boundary:** in — profile.load_profile resolves inherits chains, deep-merges dicts, child-replaces lists, honors __replace__ marker, detects cycles. Out — runtime profile reload (slice 3b inotify), CLI tooling for merge inspection, profile schema migration.\n**Test plan:** test_no_inherits_unchanged (existing behavior preserved); test_single_parent_merge (child key overrides parent); test_dict_deep_merge (nested device_permissions merge cleanly); test_list_child_replaces_parent (allowed_devices in child wins outright); test_replace_marker_drops_parent_value (child uses {__replace__: True, value: []} to clear); test_chain_resolution_left_to_right (multiple parents in order); test_cycle_detection_raises; test_missing_parent_raises_profile_not_found.",
+    "completed_at": "2026-05-01T22:42:35.027832+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "35380cd8-6133-443e-a335-7bf5f19d4e7b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

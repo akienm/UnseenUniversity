@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-audit-expert-load-experts-md.20260521.021724370366",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-expert-load-experts-md"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T02:17:24.370366",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-experts-per-project-2026-05-20"
+    ],
+    "tickets": [
+      "T-audit-expert-load-experts-md"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-expert-load-experts-md",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "AuditExpert",
+      "Workflow"
+    ],
+    "title": "Redesign /audit-expert to load expert panel from EXPERTS.md",
+    "result": "audit-expert/run: load_experts() + select_experts() from EXPERTS.md; fallback to default 11; SKILL.md step 2 updated; 9 tests pass",
+    "status": "closed",
+    "worker": "claude",
+    "grep_for": [
+      "audit.expert",
+      "EXPERTS.md"
+    ],
+    "priority": 0.55,
+    "claimed_at": null,
+    "created_at": "2026-05-21T02:17:24.370366+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-experts-per-project-2026-05-20",
+    "description": "Redesign /audit-expert skill to load its expert panel from EXPERTS.md at the project root instead of the hardcoded 11-expert list.\n\n**Proposed shape:**\n- skills/audit-expert/run: add load_experts(project_root) function that reads EXPERTS.md and returns list of expert dicts\n- Fallback: if EXPERTS.md absent, use the existing 11-expert list (backwards compat)\n- skills/audit-expert/SKILL.md: update step 2 (select experts) to call python run load <path> instead of the static table\n- Weekly/monthly cadence unchanged; random selection draws from the loaded list\n\n**Affected files:** skills/audit-expert/SKILL.md, skills/audit-expert/run (new)\n**Design rules:** none apply\n**Scope boundary:** Load + select from EXPERTS.md; expert output format and cadence unchanged\n**Test plan:** Unit test load_experts() with fixture EXPERTS.md; test fallback when file absent; test random selection stays within loaded list",
+    "completed_at": "2026-05-21T02:41:43.097708+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-21T02:17:24.370398+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5029ceea-9f16-433e-a70c-ee9d5df9aa0a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

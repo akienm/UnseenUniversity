@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-fix-drain-log-titles.20260331.205746801465",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-drain-log-titles"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T20:57:46.801465",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-fix-drain-log-titles"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-drain-log-titles",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Fix drain_learn_queue logging — titles not hex hashes, persist to reading_list before drain",
+    "result": "drain_learn_queue.py: (1) flock single-instance guard replacing racy psutil scan, (2) _persist_queue_to_reading_list() INSERTs all pending web URLs to reading_list on startup, (3) _save_slate_file() saves <memoryid>_<label>.txt to ~/TheIgorsProject/akien/Readings/ on startup (D271), (4) --label CLI arg. 567 tests pass.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "drain_learn_queue.py logs hex hashes instead of book titles. Fix: resolve calibre ID or URL to title+author before each log line. Also: write full queued list to reading_list table BEFORE launching drain so list survives if queue.json is wiped.",
+    "completed_at": "2026-03-31T20:57:46.801465+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4304bb76-17e3-4cdd-99c8-986135e6fd95",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

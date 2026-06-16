@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc1-test-minion.20260504.153859000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc1-test-minion"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-04T15:38:59",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-capability-protocol-2026-05-03"
+    ],
+    "tickets": [
+      "T-cc1-test-minion",
+      "T-test-fixture-id"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc1-test-minion",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "TestInfra",
+      "Capability",
+      "Skills"
+    ],
+    "title": "CLOSED: CC.1 test minion — haiku-backed skill executor for end-to-end skill regression",
+    "result": "CC1Minion(AgentBase): haiku executor + Bash interceptor; sprint_claim fixture; 5 unit tests + 1 live; commit 3194885a",
+    "status": "done",
+    "worker": "claude",
+    "akien_tier": "P1",
+    "claimed_at": "2026-05-04T23:40:44.414266+00:00",
+    "created_at": "2026-05-04T15:38:59Z",
+    "related_to": null,
+    "decision_id": "D-capability-protocol-2026-05-03",
+    "description": "**Approved 2026-05-03 (Akien — 'this is a big lever').** Foundation for the capability-protocol family — closes the missing CC-side regression gap (Igor side is testable directly via pytest; CC behavior currently has no automated regression).\n\nCC.1 is a haiku-backed Anthropic SDK process that loads a skill file, asks haiku to follow it, intercepts the resulting MCP/Bash calls, and asserts on the request shapes + vocabulary used (per theigors/rules/capability-protocol/vocabulary). Smoke-test fidelity, not certification — passing CC.1 is a strong signal that live-CC will follow the skill correctly; failing is a strong signal something is ambiguous.\n\n**Affected files:** agent_datacenter/test_minions/cc1.py (NEW — haiku executor + tool-call interceptor), agent_datacenter/test_minions/__init__.py (NEW), agent_datacenter/test_minions/fixtures/ (NEW — skill test fixtures), tests/test_cc1_minion.py (NEW)\n**Design rules:** theigors/rules/capability-protocol (root), theigors/rules/inherit-base-class (CC.1 inherits AgentBase), theigors/rules/docs-live-in-code (cc1.py top-of-file docstring documents the executor contract).\n**Scope boundary:** IN: haiku skill executor with intercepted tool calls, fixture format for skill tests, one example test exercising /sprint claim-step against a sandboxed cc_queue. OUT: full skill-test corpus (each downstream ticket adds its own fixtures). OUT: CC fidelity certification (CC.1 is smoke-test, not gold-standard).\n**Test plan:** unit tests for the executor + interceptor (mocked Anthropic responses); one live-haiku integration test gated by ANTHROPIC_API_KEY env var (skipped in CI without the key). Acceptance: cc1.run_skill('/sprint claim T-test-fixture-id') correctly identifies and emits the cc_queue.py claim call.",
+    "completed_at": "2026-05-04T23:47:44.402929+00:00",
+    "github_issue": 580,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e96ef279-f1fe-4ba3-97bb-8abbb69c8fce",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

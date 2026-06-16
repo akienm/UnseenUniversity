@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consult-prompts.20260423.174318532088",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-prompts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T17:43:18.532088",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-primitive-2026-04-23"
+    ],
+    "tickets": [
+      "T-consult-primitive",
+      "T-consult-prompts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-prompts",
+    "gate": "T-consult-primitive",
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Consult",
+      "Prompts"
+    ],
+    "title": "Consult prompt templates: reasoning-stuck + coding-stuck",
+    "result": "build_system_prompt + build_state_message. Per-kind templates share register preamble (identity, DO NOT SOLVE, not-on-my-behalf), differ per-kind tail. State message canonical-ordered per kind. 19 tests. 6d7d5e15.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.6,
+    "claimed_at": "2026-04-23T17:41:31.203791+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-primitive-2026-04-23",
+    "description": "Build wild_igor/igor/cognition/consult_prompts.py with two register-forcing prompt templates: REASONING_STUCK_PROMPT and CODING_STUCK_PROMPT. Each preamble frames the LLM as a peer consultant (not an answer-service): 'I am Igor, a graph matrix reasoning engine. I am stuck. Help me understand — do not solve. Return JSON with up to 3 hypotheses, one best next question, confidence 0-1. Do not generate code. Do not write the reply. Frame suggestions as questions.' JSON-mode forced; parsing tolerates minor drift.\n\n**Affected files:** new wild_igor/igor/cognition/consult_prompts.py, tests/test_consult_prompts.py\n**Design rules:** docs-live-in-code, test-plan-or-why-not\n**Scope boundary:** IN — two prompt templates, JSON-mode enforcement, parse helper. OUT — routing decisions about which template fires when (call sites own that).\n**Test plan:** verify templates mention Igor identity + 'do not solve' + JSON return shape; parse helper handles well-formed JSON, handles extra prose wrapping, raises on missing hypotheses/next_question fields.",
+    "completed_at": "2026-04-23T17:43:18.532088+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f9892788-bd49-4d2b-9ad6-6af37c2f64d6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

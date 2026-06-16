@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-epic-fix-all-pass2-findings.20260422.145059000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-epic-fix-all-pass2-findings"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T14:50:59",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-design-thread-pass2",
+      "T-cc-admin-consolidation",
+      "T-cc-env-split-startup-check",
+      "T-cc-hook-autonomics",
+      "T-context-load-rule-hash",
+      "T-engram-trigger-cell-name-mismatch",
+      "T-epic-fix-all-pass2-findings",
+      "T-skill-model-audit-haiku"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-epic-fix-all-pass2-findings",
+    "gate": null,
+    "size": "XL",
+    "tags": [
+      "Epic",
+      "Audit2026",
+      "Pass2",
+      "FixAll"
+    ],
+    "title": "CLOSED: Epic: Fix ALL non-REFUTED Pass-2 audit findings",
+    "result": "All pass-2 findings triaged and fixed by Opus in deep triage session",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.8,
+    "claimed_at": null,
+    "created_at": "2026-04-22T14:50:59Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Policy: every non-REFUTED finding across Pass 1 + Pass 2 becomes a ticket and gets fixed. No 5-10 cap. No filter-down step. Corrected 7+ times. See `project_three_pass_audit_shape.md`.\n\n**Current state (2026-04-21):**\n- 160 proposed tickets extracted from `lab/design_docs/audit_2026/pass2_output/area_*.md`\n- 6 already filed+mostly-done (T-cc-admin-consolidation, T-cc-env-split-startup-check, T-cc-hook-autonomics, T-context-load-rule-hash, T-engram-trigger-cell-name-mismatch, T-skill-model-audit-haiku)\n- **~154 remaining to file**\n\n**Three-tier routing (Akien 2026-04-21):**\n1. **Igor-tier** — Igor fixes what he can. Worker field on each child ticket = `igor` when the finding is within his reach (dispatchable by `worker_foreman`).\n2. **Claude-tier** — CC fixes what Igor can't. Worker = `claude` for findings that need judgment Igor doesn't have (cross-cutting refactors, CC-infra changes, HIGH-inertia calls).\n3. **Akien-Claude-tier** — Akien + Claude talk through findings that need design. Companion tracker: T-audit-design-thread-pass2. Routing signal: child ticket has tag `needs-design` → surfaces in the design thread before sprinting.\n\n**Child-ticket convention:**\n- Each non-REFUTED Pass-2 proposal → one child ticket filed via `/decided` (so `/review` runs filing-time checks, including the new no-sqlite DISCARD filter).\n- Child ticket body includes `epic: T-epic-fix-all-pass2-findings` line so rollup can find them.\n- Filing batched per area (area_1 through area_8). One `/decided` call per area; `/sprint-batch tag:<area>` when ready to ship.\n- Worker assignment at filing time (igor / claude / needs-design).\n\n**Scope boundary:**\n- In: every non-REFUTED proposal in `pass2_output/area_*.md` gets filed + shipped (or explicitly DISCARDED with rationale at filing time).\n- Out: Pass 3. Pass 3 runs only after this epic closes. Pass 3 does not decide anything — it's (a) conditional re-review + (b) brief-and-compelling human docs.\n- Out: new findings from post-Pass-2 audits. Those get their own epic.\n\n**Design rules:** no persistence (this is a tracking ticket — no new tables, no new state); test-plan-or-why-not — no tests (tracking ticket, not code); docs-in-code n/a (no load-bearing code).\n\n**Test plan:** no new tests. Verification = rollup query on epic closure: `SELECT count(*) FROM tickets WHERE description LIKE '%epic: T-epic-fix-all-pass2-findings%' AND status <> 'done'` should reach 0 before this ticket closes.\n\n**Status tracker (manual until palace automation lands):** append progress to description as areas complete, e.g. 'area_1 filed 2026-04-21a: N tickets; area_1 shipped 2026-04-22a: N-k shipped, k blocked on design (see T-audit-design-thread-pass2).'",
+    "completed_at": "2026-05-07T20:17:28.346470+00:00",
+    "github_issue": 507,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b9c6be94-0f0f-4574-9158-cc703d98362a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

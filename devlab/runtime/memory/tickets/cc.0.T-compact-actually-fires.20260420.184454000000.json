@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-compact-actually-fires.20260420.184454000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-compact-actually-fires"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-20T18:44:54",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-stale-compact-request-leak",
+      "T-compact-actually-fires",
+      "T-compact-via-file-handoff"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-compact-actually-fires",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "CC-infra",
+      "Low-priority"
+    ],
+    "title": "/compact file-handoff primes context but doesn't actually compact — make it trim the conversation",
+    "result": "Resolved in-code. lab/claudecode/cc_mcp_server.py.request_compaction (lines 58-109) now injects /compact <preserve> into CC's tmux pane via tmux send-keys — exactly Fix option 1 from the ticket body. Verified via fb5c1b68 'superclaude launches Claude Code inside tmux — self-compaction now works' which guarantees TMUX_PANE is set when called. Compaction actually trims now (not just file-handoff). Note: user flagged separately that auto-compact is firing too frequently — that's a cadence issue, orthogonal to this ticket's 'does it fire at all' concern.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-24T00:29:52.924625+00:00",
+    "created_at": "2026-04-20T18:44:54Z",
+    "related_to": null,
+    "description": "The existing compact file-handoff (write pending file → hook injects preserve string on next UserPromptSubmit) only carries the preserve-string FORWARD as additional context. It does NOT actually run /compact to trim the conversation. The assistant receives an instruction that says 'Run /compact now' but has no tool to invoke the slash command — /compact is harness-level, user-typed.\n\nResult: preserve-string-carryover works (future context knows what was salient), but the conversation itself keeps growing. The name 'request_compaction' implies trimming; only half of that promise is delivered.\n\n## Priority: low\nAkien 2026-04-18b: 'not a high priority with how we keep pushing everything to the database all the time. savestate doesn't save as much as it used to.' Most durable state is in Postgres now (cc_queue, session_manager, cortex, decisions_log), so token cost of un-trimmed context is real but not crippling.\n\n## Fix options (pick one)\n1. **tmux send-keys** — instead of the file-handoff, request_compaction directly injects `/compact <preserve>` into the claude-main tmux session. This is what the existing fallback path does. Downsides: fragile mid-response (known from T-compact-via-file-handoff context); depends on CLAUDE_TMUX_SESSION being set.\n2. **A CC-side Stop hook that fires /compact via tmux** — hook reads the pending file at Stop time (not UserPromptSubmit), uses send-keys while CC is definitely idle. Better timing than mid-turn injection.\n3. **Just echo the preserve string to console** (the current interim) — Akien sees what WOULD preserve, can paste /compact himself. This is the Akien-directed behavior until the ticket lands.\n\n## Interim behavior (effective now)\nWhenever CC would call request_compaction, also print the preserve string directly to chat output so Akien can paste /compact manually. No silent file-write-only.\n\n## Related\n- T-compact-via-file-handoff (#464) — established the file-handoff pattern; this ticket reveals the half-that-wasn't\n- T-cc-stale-compact-request-leak (done, 5ab111be) — staleness guard on the pending file\n\n## Provenance\nAkien-Claude 2026-04-18b. Discovered when a queued compact didn't visibly fire on Akien's side, despite the hook being wired correctly.",
+    "completed_at": "2026-04-24T00:30:01.001330+00:00",
+    "github_issue": 481,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9ef1327e-2495-4a94-a85e-9f9cff6ce118",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

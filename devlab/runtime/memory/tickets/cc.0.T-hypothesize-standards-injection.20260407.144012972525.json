@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-hypothesize-standards-injection.20260407.144012972525",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-hypothesize-standards-injection"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T14:40:12.972525",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-facia-template-provenance",
+      "T-hypothesize-standards-injection"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-hypothesize-standards-injection",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "PE chain HYPOTHESIZE injects coding standards before edit",
+    "result": "_get_coding_standards() injects CODING_STANDARDS_ROOT rule narratives into HYPOTHESIZE prompt; gated on write ops; capped at 6 rules",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-07T03:44:53.765768+00:00",
+    "related_to": null,
+    "description": "Before generating a file edit, walk CODING_STANDARDS_ROOT children and prepend rule narratives to the HYPOTHESIZE prompt. Only when task involves a file write. Prereq: coding standards nodes seeded (done 2026-04-06), T-facia-template-provenance.",
+    "completed_at": "2026-04-07T14:40:12.972525+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ad479d5e-c6a2-4588-95b7-287bae06f747",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

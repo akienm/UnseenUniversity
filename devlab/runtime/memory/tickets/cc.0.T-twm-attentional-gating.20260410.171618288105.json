@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-twm-attentional-gating.20260410.171618288105",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-attentional-gating"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-10T17:16:18.288105",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-multi-twm",
+      "T-twm-attentional-gating"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-attentional-gating",
+    "size": "L",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "TWM attentional gating: conversation vs background workspace",
+    "result": "D352-D354: conversation mode gating in cortex.twm_push(), sleep consolidation push source, intent gate fix for conversation engagement. 31 new tests.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Human conversation input should dominate TWM during active conversation. Background sources (pe_chain, reading feeder, boredom trigger, heartbeat checks) should be gated OUT of the conversation workspace or run at sub-attentional salience. Current state: user input enters at 0.7/0.7 while system noise routinely hits 0.5-0.8 — not enough separation. Two approaches: (1) multi-TWM with separate workspaces per concern, or (2) attentional gating that inhibits background push sources when conversation is active. Biology: Baars GWT workspace is gated, not an open dump. Related: D099, T-multi-twm (narrower). This is broader: ALL background noise must be separated from conversation workspace.",
+    "completed_at": "2026-04-10T17:16:18.288105+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "14dba2eb-17a7-48a5-af8e-0f0a647778d7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

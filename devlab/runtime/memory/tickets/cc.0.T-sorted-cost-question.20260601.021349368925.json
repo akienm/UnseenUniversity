@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-sorted-cost-question.20260601.021349368925",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sorted-cost-question"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T02:13:49.368925",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-constraints-first-class-2026-05-31"
+    ],
+    "tickets": [
+      "T-sorted-cost-question"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sorted-cost-question",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Workflow"
+    ],
+    "title": "/sorted consequence-check: add cost-impact field for spawn designs",
+    "result": "added spawn/dispatch cost trigger + Worst-case token spend required section to /sorted Step 5.5 and Invariants",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 1.8,
+    "claimed_at": "2026-06-01T20:31:01.547020+00:00",
+    "created_at": "2026-06-01T02:13:49.368925+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-constraints-first-class-2026-05-31",
+    "description": "Add a required 'worst-case token spend' field to the consequence-check ticket template in /sorted, triggered when the batch includes any design involving dispatch, escalation, or spawning. Field asks: what is the per-failure token spend? Is there a hard cap? What is the blast radius if the failure loops?\n\n**Affected files:** ~/.claude/skills/sorted (consequence ticket shape in Step 5.5)\n**Design rules:** additive only — don't change existing fields, add one new section\n**Scope boundary:** in: new field in consequence ticket template, trigger condition (dispatch/spawn keywords). out: enforcement (that's audit-design's job)\n**Completion criteria:** (1) /sorted consequence ticket for a design mentioning 'dispatch' includes 'Worst-case token spend' field; (2) field is required (not optional) when trigger fires; (3) skill updated and documented",
+    "completed_at": "2026-06-01T20:34:19.425470+00:00",
+    "github_issue": null,
+    "dispatched_at": "2026-06-01T20:31:01.547020+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b4e0c2c1-8641-4d5d-9012-1193073af68a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

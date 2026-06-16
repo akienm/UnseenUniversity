@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cc-inbox-consumer.20260423.173655108708",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-inbox-consumer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T17:36:55.108708",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-inbox-2026-04-23"
+    ],
+    "tickets": [
+      "T-cc-inbox-consumer",
+      "T-cc-inbox-producer",
+      "T-cc-inbox-storage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-inbox-consumer",
+    "gate": "T-cc-inbox-storage",
+    "size": "S",
+    "tags": [
+      "Skill",
+      "CCInbox",
+      "ClaudeCode"
+    ],
+    "title": "CC inbox consumer: /readinbox skill + context-load auto-read",
+    "result": "/readinbox skill + context-load Step 5.6 unread check + 'you've got mail' pattern documented. End-to-end sanity verified (append → list → mark-all-read flow). 6c1c3101.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-04-23T17:34:54.723472+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-inbox-2026-04-23",
+    "description": "Build the CC-side consumer: (1) a /readinbox skill that displays unread entries summarized; (2) a context-load step addition that reads unread on session start so CC surfaces Igor notifications up front; (3) a 'you've got mail' query-hook pattern documented in the skill so CC peeks at inbox on every user prompt and surfaces unread before answering. Mark-read happens when surfaced.\n\n**Affected files:** new ~/.claude/skills/readinbox/SKILL.md, ~/.claude/skills/context-load/SKILL.md (add step), lab/claudecode/cc_inbox.py (already has read_unread/mark_read from T-cc-inbox-storage)\n**Design rules:** docs-live-in-code, test-plan-or-why-not (no tests because: skill-level behavior, tested through manual invocation + observation)\n**Scope boundary:** IN — the skill files + context-load wiring. OUT — producer side (T-cc-inbox-producer), email bridge (future).\n**Test plan:** manual — post a fake entry via cc_inbox.append(), invoke /readinbox, verify summary displays, verify entry marked read after display. Follow-up observation: does the 'on every user prompt' pattern get me to actually check? If not, iterate.",
+    "completed_at": "2026-04-23T17:36:55.108708+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d38d1766-50e6-465d-8d6f-7a49d279c4c6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

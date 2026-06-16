@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-store-memory-bg-fix.20260330.200409606857",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-store-memory-bg-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T20:04:09.606857",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-store-memory-bg-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-store-memory-bg-fix",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "store_memory bg-job hallucination fix",
+    "result": "Fixed _bg_reason() to execute tool calls from LLM output. Prevents hallucinated store_memory where Igor fabricates tool_response blocks without persisting. Tool result written to ring_memory. 555 tests pass.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "store_memory calls in bg-job LLM context produce hallucinated stored responses — nothing persists to DB. Igor thinks he stored but write never happens. Breaks self-training loop. Investigate bg-job tool dispatch vs foreground and fix.",
+    "completed_at": "2026-03-30T20:04:09.606857+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "66059205-038f-4c27-a2b8-d75670937df0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

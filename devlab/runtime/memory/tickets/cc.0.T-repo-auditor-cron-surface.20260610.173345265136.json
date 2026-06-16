@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-repo-auditor-cron-surface.20260610.173345265136",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-repo-auditor-cron-surface"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T17:33:45.265136",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-repo-auditor-device-2026-06-10"
+    ],
+    "tickets": [
+      "T-repo-auditor-cron-surface"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-repo-auditor-cron-surface",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Hygiene",
+      "Hubert",
+      "Infrastructure"
+    ],
+    "title": "Repo auditor: Nanny Ogg cron + web UI flag panel",
+    "result": "nanny cron entry + _run_repo_audit() + GET/POST /api/device/hubert/audit_flags + review_flag() + 3 new tests; all pass",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "purpose": "",
+    "priority": 0.4,
+    "intention": "I intend that the structural auditor runs nightly via Nanny Ogg and surfaces its flags in the Hubert web fascia with dismiss/approve actions, making the output actionable rather than a report no one reads.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T17:33:45.265136+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-repo-auditor-device-2026-06-10",
+    "description": "Wire the structural auditor into operations:\n\n1. **Nanny Ogg cron**: add `nightly_repo_audit` to the Nanny default schedule — runs `run_structural_audit('.')` at 03:00 daily, writes to `hubert.audit_flags`\n2. **Web fascia panel**: add a 'Commit Audit' section to the Hubert fascia at `/api/device/hubert/audit_flags` — lists unreviewed flags sorted by severity; each flag has Dismiss / Confirm buttons that write `reviewed_at` + `verdict` back to the DB\n\n**Affected files:** devices/nanny_ogg/ (cron registration), devices/hubert/device.py, web_server/static/ (fascia JS), web_server/app.py (API endpoint)\n**Design rules:** no-sqlite; channel post on new HIGH-severity flags\n**Scope boundary:** IN — cron registration, REST endpoint, fascia panel with dismiss/confirm. OUT — email/alert on flags (use channel post only).\n**Completion criteria:** `GET /api/device/hubert/audit_flags` returns JSON list of unreviewed flags; cron entry appears in `/cron list`; dismissing a flag from the web UI sets `reviewed_at` and `verdict`; a HIGH severity flag triggers a channel post.",
+    "completed_at": "2026-06-13T23:37:52.167920+00:00",
+    "deposited_at": "2026-06-10T11:39:13.598228",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "observation",
+    "scraps_validated": "2026-06-10T17:33:45.265227+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

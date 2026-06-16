@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-bus-reconnect-watchdog.20260610.215251618524",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bus-reconnect-watchdog"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T21:52:51.618524",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bus-reconnect-watchdog"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bus-reconnect-watchdog",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Infrastructure",
+      "Bus",
+      "Reliability"
+    ],
+    "title": "Shim bus watchdog: reconnect on sustained Connection refused",
+    "result": "WorkerListener counts failures, shim reconnects bus in-place after 5; gives up + removes flag after 3 failed reconnects; 8 tests",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.6,
+    "intention": "I intend that when any device shim detects sustained bus connection failures, it automatically attempts reconnection so devices recover without manual intervention.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T21:52:51.618524+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "DickSimnel (and any shim using the bus) currently loops indefinitely on 'Connection refused' with no recovery attempt. The shim should detect N consecutive fetch failures, attempt to rebuild the bus connection via `make_bus_connection()`, and if reconnect also fails after M attempts, set device status to 'fault' and remove the availability flag.\n\nPattern: add `_consecutive_failures` counter to the WorkerListener poll loop. After 5 consecutive failures, call back to the shim's `restart()` which re-runs `_connect_bus()`. If reconnect succeeds, reset counter and resume. After 3 failed restart attempts, call `stop()` and write a fault log entry — don't keep spinning.\n\nApply the same pattern to DickSimnelShim first; document it in BaseShim as the recommended watchdog pattern for any bus-using shim.\n\n**Affected files:** devices/dicksimnel/worker_listener.py, devices/dicksimnel/shim.py, unseen_university/shim.py (doc only)\n**Design rules:** none apply\n**Scope boundary:** IN — reconnect logic in DickSimnel worker listener + shim. OUT — fixing Dovecot not running (infrastructure, not code); applying to other shims (follow-on).\n**Completion criteria:** Unit test: listener with a bus that raises ConnectionRefusedError 5 times triggers shim.restart(); listener with 3*5 failures calls shim.stop(); normal operation resumes after successful reconnect.",
+    "completed_at": "2026-06-10T22:03:24.005978+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

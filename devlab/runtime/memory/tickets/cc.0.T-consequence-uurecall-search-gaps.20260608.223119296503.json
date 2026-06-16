@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-uurecall-search-gaps.20260608.223119296503",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-uurecall-search-gaps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T22:31:19.296503",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uurecall-search-gaps-2026-06-08"
+    ],
+    "tickets": [
+      "T-consequence-uurecall-search-gaps",
+      "T-inference-proxy-mini-rack",
+      "T-uurecall-search-gaps"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-uurecall-search-gaps",
+    "gate": "2026-06-22",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: uurecall literal search fix",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that we verify the uurecall fix has no silent regressions in semantic recall quality or tool latency.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T22:31:19.296503+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-uurecall-search-gaps-2026-06-08",
+    "description": "**What changed:** uurecall now filters tickets by all statuses, suppresses semantic results below 0.4 score threshold, and adds palace nodes as a fifth search source.\n\n**Predicted unintended effects:**\n- Semantic threshold of 0.4 may over-suppress legitimate but weakly-scored matches for rare or domain-specific terms\n- All-status ticket loading may return too many closed/design tickets, making Tickets section noisy for common terms\n- Palace search adds a DB round-trip; if palace is slow or offline, uurecall latency increases noticeably\n- Template/specialization question (Q1 in ticket) may resurface: if single-tool approach still misses cases, pressure builds toward splitting\n\n**Signals to watch:**\n- `uurecall T-inference-proxy-mini-rack` returns ticket in Tickets section (the regression test from the ticket)\n- No increase in uurecall wall-clock time > 500ms vs baseline\n- Semantic section not empty for conceptual queries (e.g. `uurecall spreading activation`) — threshold not too aggressive\n\n**Gate condition:** Check by 2026-06-22 after T-uurecall-search-gaps closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

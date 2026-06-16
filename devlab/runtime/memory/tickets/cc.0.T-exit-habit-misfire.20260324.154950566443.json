@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-exit-habit-misfire.20260324.154950566443",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-exit-habit-misfire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T15:49:50.566443",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-exit-habit-misfire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-exit-habit-misfire",
+    "size": "S",
+    "title": "Exit habit misfires on imperative phrases like \"run it yourself\"",
+    "result": "Two root causes fixed: (1) author_filter stored as list ['akien','user'] was broken — string vs list comparison always True, habit disabled for all authors; fixed to support both string and list formats in basal_ganglia.select_habit. (2) PROC_EXIT_IGOR used space-separated trigger; 'yourself' (len 8) matched 'run it yourself'; converted to pipe-separated phrases in live DB, added 'web-user' to author_filter. 13 tests in test_exit_habit_misfire.py. Commit 153f96e.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-24T15:41:04.861285+00:00",
+    "description": "Igor wrote exit flag in response to CC message containing \"Run it yourself.\" Trigger for exit/restart habit is too broad — matching short imperative phrases it should not. Audit exit/restart habit triggers and tighten them. Also audit author_filter — exit habit should not fire on claude-code author messages at all.",
+    "completed_at": "2026-03-24T15:49:50.566443+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "48687ab3-a725-4562-aab8-c95637b17c40",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

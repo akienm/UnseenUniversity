@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-adc-registration-recovery.20260512.174901818615",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-registration-recovery"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-12T17:49:01.818615",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-pipeline-observability-2026-05-12"
+    ],
+    "tickets": [
+      "T-adc-registration-recovery",
+      "T-cc-adc-shim",
+      "T-igor-adc-shim"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-registration-recovery",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "ADC",
+      "Infrastructure",
+      "Reliability"
+    ],
+    "title": "CLOSED: Re-register with ADC automatically after ADC restarts",
+    "result": "epoch-based restart detection: started_at in /health, check_server_epoch() in client, poll_loop calls every 10 polls. 85 tests green. d578b3fc",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": null,
+    "created_at": "2026-05-12T17:49:01.818615+00:00",
+    "related_to": null,
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "description": "When ADC (utility_closet_server) restarts while Igor or the Librarian are running, all agent registrations are lost. The residents' UC clients have is_registered=True in memory but ADC has no record of them. Igor's poll loop keeps running but ADC ignores the polls. Result: Igor and Librarian disappear from the web UI with no recovery attempt and no error visible to the user.\n\nRoot cause: uc_client.is_registered is a plain in-memory flag. There is no mechanism to detect that the server it registered with has since restarted.\n\nFix in two parts:\n\n1. ADC (utility_closet_server.py): Expose _boot_ts as a stable epoch string in /health response: { ..., \"started_at\": \"2026-05-12T17:41:00Z\" }. The _boot_ts variable already exists — just add it to the health dict.\n\n2. UC client (utility_closet_client.py): After successful register(), store the server's started_at value. In the poll loop (web/server.py _poll_loop or uc_client itself), periodically (every N polls) hit /health and compare started_at against the stored value. If different: ADC restarted — call register() again to re-establish presence.\n\nSame fix applies to the Librarian's UC client if it uses the same utility_closet_client module; if not, apply the same pattern there.\n\n**Affected files:** lab/claudecode/utility_closet_server.py (expose started_at in /health), wild_igor/igor/web/utility_closet_client.py (store epoch + detect restart), wild_igor/igor/web/server.py (_poll_loop: periodic epoch check + re-register)\n**Design rules:** docs-live-in-code (update utility_closet_client.py module docstring to describe epoch-based reconnect)\n**Scope boundary:** Registration recovery only. Does not change the poll interval or message delivery. Does not cover the startup case (that is T-igor-adc-shim and T-cc-adc-shim).\n**Test plan:** Unit test: mock /health to return a different started_at than the stored value; verify register() is called again. Integration: start Igor, restart ADC manually, confirm Igor and Librarian reappear in the web UI within 2 poll cycles without any manual restart.",
+    "completed_at": "2026-05-12T18:48:47.658451+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "32b7ac45-cb2b-415f-bcfd-9457c33650a7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

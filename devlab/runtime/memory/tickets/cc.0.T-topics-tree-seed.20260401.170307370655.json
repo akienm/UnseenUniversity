@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-topics-tree-seed.20260401.170307370655",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-topics-tree-seed"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-01T17:03:07.370655",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-topics-tree-seed"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-topics-tree-seed",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "Topics-important-to-Akien tree — seed 9 nodes + facia",
+    "result": "Seeded TOPICS_FACIA (child of CP4) + 10 topic nodes: Language, Neuro, Programming, IgorsDesign, AI, ClaudeCode, Biology, Psychology, Culture. Each with arousal_weight for idle traversal priority. seed_topics_tree.py created.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "claimed_at": "2026-04-01T17:01:51.308095+00:00",
+    "description": "Seed 9 topics as INTERPRETIVE nodes: Language, Neurological systems, Programming, Igors Design, AI, Claude Code, Biology, Psychology, Culture and sociology. Each as pull target for idle traversal. Add topics facia node. Part of D272.",
+    "completed_at": "2026-04-01T17:03:07.370655+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "03c774a1-ca49-47de-a771-8327239776a8",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

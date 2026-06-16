@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-spawnif-new-opcode.20260406.010810377455",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-spawnif-new-opcode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-06T01:08:10.377455",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-spawnif-new-opcode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-spawnif-new-opcode",
+    "epic": "Cognition",
+    "size": "M",
+    "title": "Add SPAWNIF opcode: new empty basket + emit-seeded carry",
+    "result": "SPAWNIF opcode fully implemented: node_executor.py (spawned_fresh field + opcode block), main.py (dispatch loop with empty basket), 8 new tests. 1852 tests pass. Committed ec14033b.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "blocked_at": "2026-04-05T22:29:59.025548+00:00",
+    "claimed_at": "2026-04-05T22:14:31.425597+00:00",
+    "related_to": null,
+    "description": "Add SPAWNIF opcode to wild_igor/igor/cognition/node_executor.py — creates a new empty basket for the child cursor. Emit lines before SPAWNIF in the parent node seed values into the child basket selectively. Follow the same dispatch pattern as FORKIF and BRANCHIF already in node_executor.py. Do NOT touch brainstem/, memory/models.py, or any HIGH inertia file.",
+    "completed_at": "2026-04-06T01:08:10.377455+00:00",
+    "github_issue": null,
+    "required_files": [
+      "wild_igor/igor/cognition/node_executor.py"
+    ],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ffbeab7d-d0e2-4de0-a018-7499dfa41254",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

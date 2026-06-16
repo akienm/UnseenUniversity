@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-memory-tsvector-index.20260404.181022572208",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-tsvector-index"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:10:22.572208",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-tsvector-index"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-tsvector-index",
+    "size": "M",
+    "tags": [
+      "Database"
+    ],
+    "title": "Add GIN tsvector index on memories.payload for full-text search",
+    "result": "Added schema migrations m034 (GIN tsvector on payload), m035 (GIN trigram on payload), m036 (GIN trigram on narrative). Also updated FACTUAL keyword supplement search to use to_tsvector/plainto_tsquery first (hits GIN index, eliminates sequential scan) with ILIKE trigram fallback for partial/non-English tokens. Indexes created on next Igor restart.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": "2026-04-04T18:08:08.669523+00:00",
+    "related_to": null,
+    "description": "cortex.py search uses LIKE %...% patterns on memories.payload with no index — sequential scans on 10k+ rows. Fix: CREATE INDEX idx_memories_payload_gin ON memories USING GIN (to_tsvector('english', payload)); migrate existing search queries to use to_tsquery() instead of LIKE. Also add trigram index as fallback for non-English text: CREATE INDEX idx_memories_payload_trgm ON memories USING gin (payload gin_trgm_ops) — requires pg_trgm extension. DB finding from deep-audit Panel 1.",
+    "completed_at": "2026-04-04T18:10:22.572208+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8a516ed8-c88b-41b2-ba49-f91fb4458ba5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

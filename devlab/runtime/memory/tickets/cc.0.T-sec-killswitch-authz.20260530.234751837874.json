@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-sec-killswitch-authz.20260530.234751837874",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sec-killswitch-authz"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T23:47:51.837874",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-agent-kill-switch",
+      "T-murderbot-security-review",
+      "T-sec-killswitch-authz"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sec-killswitch-authz",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Security"
+    ],
+    "title": "Security: restrict agent_halt() to rack-admin callers only",
+    "result": "Already implemented: skeleton.py agent_halt() MCP tool enforces rack-admin allowlist (line 195) and proof token validation (line 213) before dispatching to HaltRegistry — unauthorized callers receive DENY with governance log entry",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "blocked_at": "2026-06-02T19:14:04.318473+00:00",
+    "claimed_at": "2026-06-01T21:22:52.712720+00:00",
+    "created_at": "2026-05-30T23:47:51.837874+00:00",
+    "created_by": null,
+    "related_to": "T-agent-kill-switch",
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "Gap surfaced by T-murderbot-security-review. T-agent-kill-switch exposes agent_halt(agent_id, reason) as an MCP tool but does not restrict which callers may invoke it. If available to all registered agents including ContainerShim-tier (untrusted), any agent can halt Igor, CC, or Granny — a critical DoS capability.\n\nThe halt tool must be restricted to rack-admin callers. Define what 'rack-admin' means in the provenance model (e.g., a declared admin agent_id list in config, or a separate admin token tier). Untrusted and ContainerShim-tier agents must receive a permission-denied error on agent_halt().\n\n**Affected files:** devices/policy/ (authorization rule for agent_halt), unseen_university/skeleton/ (halt MCP tool — add caller check)\n**Scope boundary:** IN — caller authorization check on agent_halt() and agent_resume(); definition of admin-tier callers; denial logged to decision bill of materials; OUT — multi-admin delegation, audit of who defined the admin list\n**Completion criteria:** a ContainerShim-tier agent calling agent_halt('igor', 'test') receives permission-denied; a rack-admin caller succeeds; denial logged; test covers both cases\n**Akien approval note (2026-06-02):** agent_halt() must cut inference to that device until explicitly unhalted — not just log the call. All our callers are internal; breaking uncredentialed callers is intentional and correct.\n",
+    "completed_at": "2026-06-03T02:56:49.548300+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-30T23:47:52.253433+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "425ed8b0-6746-4e11-921f-bee2fea784ae",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

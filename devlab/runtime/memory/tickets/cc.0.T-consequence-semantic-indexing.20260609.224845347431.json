@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-semantic-indexing.20260609.224845347431",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-semantic-indexing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T22:48:45.347431",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-semantic-indexing-2026-06-09"
+    ],
+    "tickets": [
+      "T-consequence-semantic-indexing"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-semantic-indexing",
+    "gate": "2026-06-23",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: auto-embed and code index pipeline",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.3,
+    "intention": "I intend to verify that the auto-embed pipeline does not degrade memory write performance and that the code index sweep does not produce stale or incorrect entries.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T22:48:45.347431+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-semantic-indexing-2026-06-09",
+    "description": "**What changed:** Postgres trigger on clan.memories auto-queues embeddings; code_index table populated by Nanny Ogg cron; CC.0 session content deposited as memory on close.\n**Predicted unintended effects:** Postgres trigger adds latency to every memory INSERT (measure: should be < 5ms); embedding_queue may accumulate unbounded if rackmount is slow or down; code_index sweep may index test files or vendor code that pollutes search results; session memory deposit may duplicate palace.sessions.* nodes.\n**Signals to watch:** Monitor embedding_queue depth after 1 week — should drain to near-zero daily; check EXPLAIN ANALYZE on clan.memories INSERT; grep code_index for test_ and vendor paths; check for duplicate palace.sessions entries after multiple autocompacts.\n**Gate condition:** Check by 2026-06-23.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "completed_at": null,
+    "deposited_at": "2026-06-09T16:55:24.109205",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "experience",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

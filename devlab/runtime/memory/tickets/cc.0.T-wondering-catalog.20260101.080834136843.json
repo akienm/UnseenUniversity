@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-wondering-catalog.20260101.080834136843",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wondering-catalog"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T08:08:34.136843",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-wondering-catalog"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wondering-catalog",
+    "body": "Wondering is the universal retrieval trigger. Epistemic uncertainty = drive state = habit signal. Pattern: [wondering about X] -> reactive habit fires -> live X pushed to TWM -> tension resolves. Currently wired: PROC_WHAT_TIME, (pending) PROC_QUEUE_STATUS. Work: enumerate every live-state question Igor will naturally form. Categories: time/schedule, open work (queue), own affect (milieu VAD), active TWM slots, ring contents, last search, last habit fired, resource state (CPU/mem), Igor instance health, reading queue depth, word-graph training state, pending MCP results. For each: is a reactive habit already wired? If not, spec it. Output: seeding script adding missing PROC_WONDER_* habits. All mechanism already exists (reactive habit pattern, TWM push, short TTL). This is purely an inventory + seeding gap.",
+    "size": "M",
+    "title": "Wondering catalog — inventory live-state questions, map each to reactive habit",
+    "result": "Seeded PROC_STEW_READOUT (twm_read), PROC_AFFECT_CHECK (twm_read), PROC_PORTABILITY (placeholder). Added prim_twm_read primitive. Insight: catalog IS the habits — no doc to maintain. Phase 2: PROC_QUEUE_STATUS, interoception loop (T-interoception).",
+    "status": "done",
+    "created": "2026-03-22T11:53:16.653256",
+    "priority": 3,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-announce-proof-validation.20260531.023345497398",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-announce-proof-validation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-31T02:33:45.497398",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-announce-proof-validation",
+      "T-murderbot-security-review",
+      "T-provenance-identity"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-announce-proof-validation",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform",
+      "Infrastructure",
+      "Security"
+    ],
+    "title": "Announce broker: validate proof field before issuing token (prevent identity spoofing)",
+    "result": "Already implemented: AnnounceBroker.resolve_announce() validates proof field for _protected_agents() at broker.py:128-134; test_announce_proof_validation.py confirms; proof='test-proof-stub' added to igor_envelope fixture",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.85,
+    "blocked_at": "2026-06-02T20:01:56.162018+00:00",
+    "claimed_at": "2026-05-31T21:23:19.141456+00:00",
+    "created_at": "2026-05-31T02:33:45.497398+00:00",
+    "created_by": null,
+    "related_to": "T-provenance-identity",
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "HIGH gap found in T-murderbot-security-review.\n\nAnnounceBroker.resolve_announce() issues a token to any IdentityEnvelope that names a recognized agent_id. The proof field is stored in the envelope but never validated. Any process -- including a ContainerShim-tier untrusted agent -- can announce as agent_id='igor' or agent_id='cc' and receive a token granting them that identity. This allows: (a) trust tier gaming (tier_2 memory writes attributed to Igor), (b) receiving Igor's tool bindings and ACL, (c) gaming allowed_actions in the policy gate.\n\nThe proof field (IdentityEnvelope.proof: dict) is the design's own intended identity hook (see comment: 'locality trust for v1'). It is currently a no-op.\n\nv1 fix: at minimum, reject announces where agent_id is in a 'protected' set (igor, cc, skeleton) and proof is empty. The protected agent types have known launch paths (tmux session, cc process, skeleton boot) and can supply a shared secret or challenge-response. For non-protected agent_ids, proof remains optional.\n\n**Affected files:** unseen_university/announce/broker.py (resolve_announce), unseen_university/announce/envelope.py (proof field docs), config/profiles/ (protected agent list)\n**Design rules:** flat-file registry; no Postgres dependency in announce path\n**Scope boundary:** IN -- reject protected-agent announces with empty proof; define proof schema for protected agents; OUT -- full challenge-response PKI, non-protected agent proof enforcement\n**Completion criteria:** an announce envelope claiming agent_id='igor' with empty proof is rejected with AnnounceError; an announce with valid proof passes; existing test agents (igor fixture in tests) updated to supply proof",
+    "completed_at": "2026-06-03T02:56:43.163975+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-31T02:33:45.497449+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f2158e26-27c2-49eb-b267-ccb4f9595044",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

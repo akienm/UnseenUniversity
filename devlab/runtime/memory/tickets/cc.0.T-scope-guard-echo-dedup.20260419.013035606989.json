@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-scope-guard-echo-dedup.20260419.013035606989",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-scope-guard-echo-dedup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-19T01:30:35.606989",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-scope-guard-echo-dedup",
+      "T-scope-guard-reattempt-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-scope-guard-echo-dedup",
+    "size": "S",
+    "tags": [
+      "Bug",
+      "Cognition",
+      "Noise"
+    ],
+    "title": "De-duplicate SCOPE_GUARD / pe_chain block notifications — stop the echo loop",
+    "result": "Added dedup_key + window params to channel_post.post_to_channel (default 30min). scope_guard MEDIUM posts + pe_chain blocked posts now pass stable keys. pe_chain._post_to_channel consolidated into thin wrapper around shared utility. Suppressed posts logged as CHANNEL_POST_SUPPRESSED for audit. 7 new tests + 25 total green. Commit d121605f. Root-cause loop (habit re-firing the same blocked op) is a separate follow-up — should be filed as T-scope-guard-reattempt-loop if the echo-suppression alone doesn't quiet things.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-19T01:27:38.347397+00:00",
+    "related_to": null,
+    "description": "Igor is stuck in an echo loop: the same triplet of block messages fires to the shared channel every 10-60 minutes and keeps bumping him back to the same goal. Akien 2026-04-18b: 'message repetition and echo is driving him bonkers.'\n\n## The triplet\nObserved >6 times in recent channel history:\n1. [SCOPE_GUARD] MEDIUM inertia: wild_igor/igor/cognition/thalamus.py — write. Rationale: none provided.\n2. [pe_chain] ✗ unknown: blocked after 0 attempts. Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/kernel.py. Needs human review.\n3. [pe_chain] ✗ unknown: blocked after 0 attempts. Reason: HIGH inertia delete requires human approval: wild_igor/igor/memory/models.py. Needs human review.\n\nFiring at: 08:00, 09:08, 09:17, 00:31, 06:46, 06:58, 07:08 (UTC), and continuing. Periodic re-attempts of the same blocked operation.\n\n## Root cause (two layers)\n- **Symptom layer (echo):** SCOPE_GUARD and pe_chain both post to the channel on every attempt without checking 'have I posted this same block message recently?'. Same (file, action) tuple → same message → spam.\n- **Cause layer (re-attempt):** a habit or goal is repeatedly trying the same HIGH-inertia write. Suppressing the echo doesn't stop the underlying re-attempt — it just silences the noise. Both layers need attention, but fixing the echo first is the quick win.\n\n## Scope (this ticket — symptom only)\n1. Find the channel-post sites for SCOPE_GUARD and pe_chain block messages (grep for '[SCOPE_GUARD]' and '[pe_chain] ✗').\n2. Add a de-dup cache keyed on (message_type, file_path, action). If the same tuple posted within DEDUP_WINDOW_MINUTES (default 30), skip the channel post. Still log to instance_log.jsonl for audit.\n3. Reset the dedup cache on Igor boot so a restart gives Akien fresh visibility.\n4. Test: simulate 3 rapid pe_chain blocks on the same (file, action) — only one channel post; a different (file, action) still posts.\n\n## Scope (explicitly NOT this ticket)\n- Stopping the underlying re-attempt loop. That's a separate ticket — file as T-scope-guard-reattempt-loop if diagnosis reveals a stuck goal/habit.\n\n## Success criteria\n- Channel traffic for SCOPE_GUARD/pe_chain drops dramatically (from triplet-every-hour to at-most-once-per-30min-per-tuple)\n- Akien + Igor both report the noise level is tolerable\n- No loss of audit info (still in instance_log)\n- Tests pass\n\n## Provenance\nObserved during /readigor in session 2026-04-18b. Akien-flagged as 'driving him bonkers.'",
+    "completed_at": "2026-04-19T01:30:35.606989+00:00",
+    "deposited_at": "2026-06-05T13:47:13.333697",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "superseded_by": "T-situate-kernel-hallucination-fix",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0b722b4c-3907-417b-bfdc-f946d2c2a8ef",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

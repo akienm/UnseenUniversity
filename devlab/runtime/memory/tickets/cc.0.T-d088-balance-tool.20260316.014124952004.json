@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-d088-balance-tool.20260316.014124952004",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-d088-balance-tool"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-16T01:41:24.952004",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-d088-balance-tool"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-d088-balance-tool",
+    "body": "Add check_claude_balance tool to ~/TheIgors/wild_igor/igor/tools/browser.py. Uses browse_as_employer to navigate to https://console.anthropic.com/settings/billing, scrapes the credit balance number, writes {\"balance_usd\": X.XX, \"fetched_at\": ISO-timestamp} to ~/.TheIgors/cc_channel/anthropic_balance.json. Register as Tool with name=check_claude_balance. caller_source should be passed through — use repl/web only. Log start/complete/error to browser_use.log. Return balance as string.",
+    "role": "implementation",
+    "size": "M",
+    "title": "D088: check_claude_balance Igor tool",
+    "result": "check_claude_balance added to tools/browser.py: uses employer Chrome profile to scrape https://console.anthropic.com/settings/billing; regex parses balance; writes {balance_usd,fetched_at} to ~/.TheIgors/cc_channel/anthropic_balance.json; same trust gate as browse_as_employer (repl/web only); logs start/complete/error to browser_use.log; registered as Tool. Syntax OK.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-16T01:40:17.333266+00:00",
+    "completed_at": "2026-03-16T01:41:24.952004+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

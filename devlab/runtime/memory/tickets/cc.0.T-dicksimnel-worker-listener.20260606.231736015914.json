@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-dicksimnel-worker-listener.20260606.231736015914",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-worker-listener"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-06T23:17:36.015914",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dicksimnel-idle-dispatch-redesign-2026-06-06"
+    ],
+    "tickets": [
+      "T-dicksimnel-double-close",
+      "T-dicksimnel-granny-dispatch-wire",
+      "T-dicksimnel-max-turns-reason",
+      "T-dicksimnel-worker-listener"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-worker-listener",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Worker",
+      "Bus",
+      "DickSimnel"
+    ],
+    "title": "DickSimnel: add DickSimnelWorkerListener mirroring CCWorkerListener",
+    "result": "DickSimnelWorkerListener added: passive bus dispatch, ack→OR check→inertia gate→started→ToolLoop. 38 new tests, 957 total pass.",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "intention": "I intend that DickSimnel receives work exclusively via Granny dispatch envelopes on mailbox dicksimnel.0, never by polling cc_queue for work.",
+    "claimed_at": null,
+    "created_at": "2026-06-06T23:17:36.015914+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-dicksimnel-idle-dispatch-redesign-2026-06-06",
+    "description": "DickSimnel currently polls cc_queue every 30s to discover work. The correct pattern (same as CC) is a pushed-dispatch listener: Granny sends {kind:dispatch, ticket_id} to dicksimnel.0; DickSimnel's listener polls that mailbox, receives the envelope, and runs inference.\n\nCreate devices/dicksimnel/worker_listener.py containing DickSimnelWorkerListener — a class that mirrors CCWorkerListener's structure (devices/granny/cc_worker_listener.py is the canonical reference):\n- Polls dicksimnel.0 mailbox via fetch_unseen every DICKSIMNEL_LISTENER_POLL_INTERVAL seconds (default 5)\n- On dispatch envelope: calls receive_dispatch(env, send_fn, deliver_fn) for ack+started protocol\n- deliver_fn: checks OR balance floor (fail-open), fetches full ticket via cc_queue show, checks HIGH-inertia tags, runs ToolLoop, calls _post_result\n- On halt/priority envelope: sets stop event (no tmux inject — DickSimnel is a process)\n- IMAP connection created at start(), closed at stop()\n\nUpdate devices/dicksimnel/shim.py: replace _poll_loop() + stop.wait(30s) with DickSimnelWorkerListener.start() / .stop(). Shim.start() instantiates the listener with imap=make_bus_connection().\n\nUpdate devices/dicksimnel/device.py: _poll_and_work() → _handle_dispatch(ticket_id) called from deliver_fn. Remove _claim_next_ticket() — ticket_id comes from the envelope, not queue.next. Move OR balance check and HIGH-inertia check into _handle_dispatch.\n\n**Affected files:** devices/dicksimnel/worker_listener.py (NEW), devices/dicksimnel/shim.py, devices/dicksimnel/device.py\n**Design rules:** bus/ owns comms routing (satisfied — listener subscribes to bus mailbox); external state principle (shim holds no in-flight ticket state between calls)\n**Scope boundary:** IN: listener class, shim wiring, device dispatch handler, ack/started reply protocol. OUT: Granny config change (T-dicksimnel-granny-dispatch-wire), double-close fix (T-dicksimnel-double-close), max-turns reason fix (T-dicksimnel-max-turns-reason)\n**Completion criteria:** tests/inference/test_dicksimnel.py covers: (1) dispatch envelope in dicksimnel.0 → ToolLoop called + dispatch_ack sent to granny.0; (2) halt envelope → listener stop event set; (3) IMAP fetch_unseen raises → _poll_once returns silently (no crash); (4) OR balance at floor → dispatch declined via channel event, NOT unhandled exception. Completion condition: no calls to cc_queue.py next --worker dicksimnel anywhere in the listener/shim/device; all 103 existing tests still pass.",
+    "completed_at": "2026-06-06T23:34:04.698808+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

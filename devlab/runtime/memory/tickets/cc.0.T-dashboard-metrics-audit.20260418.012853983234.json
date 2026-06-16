@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-dashboard-metrics-audit.20260418.012853983234",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dashboard-metrics-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-18T01:28:53.983234",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dashboard-metrics-audit",
+      "T-metrics-store",
+      "T-uc-comms-module"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dashboard-metrics-audit",
+    "size": "M",
+    "tags": [
+      "Operations"
+    ],
+    "title": "Audit dashboard/metrics — every number from a real, active source",
+    "result": "Full audit: all metrics verified live + accurate. Removed misleading 'Graph: 0%' (tier.1 count, always zero). Report at ~/.TheIgors/akien/inbox/dashboard_metrics_audit.md.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-18T01:25:53.536899+00:00",
+    "related_to": null,
+    "description": "Review every number shown in Igor's dashboard and metrics commands. Ensure each value comes from a real, active data source — no stale caches, no hardcoded defaults, no dead code paths.\n\n## Scope\n- Dashboard terminal display (boot banner, /introspect)\n- get_stats() values sent to utility closet web UI\n- /api/metrics endpoint\n- build_report() sections in metrics.py\n\n## For each metric, verify:\n1. Where does the number come from? (DB query, in-memory counter, system call)\n2. Is the source still active? (not a removed module, not a deprecated path)\n3. Is it fresh? (not a stale cached value from hours ago)\n4. Is it meaningful? (does it tell Igor or Akien something actionable)\n\n## Known suspects\n- Graph: 0% shown in boot log — is word graph usage actually measured?\n- cloud_mode: OFF / cloud calls: 100% — contradictory or confusing labels\n- MACHINES_EMPTY spam — machine_manager queried before register_self completes\n\n## Related\n- T-metrics-store (#411) — broader metrics infrastructure\n- T-uc-comms-module — metrics logging may move to comms channels",
+    "completed_at": "2026-04-18T01:28:53.983234+00:00",
+    "deposited_at": "2026-05-13T08:27:01.012060",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2c03c1c6-b27c-4bc3-9600-5d38459be247",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

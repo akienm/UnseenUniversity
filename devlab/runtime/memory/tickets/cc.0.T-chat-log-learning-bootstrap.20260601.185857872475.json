@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-chat-log-learning-bootstrap.20260601.185857872475",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-chat-log-learning-bootstrap"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T18:58:57.872475",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-chat-log-learning-bootstrap",
+      "T-inference-learning-pipeline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-chat-log-learning-bootstrap",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Librarian",
+      "Inference",
+      "CompiledInference"
+    ],
+    "title": "Bootstrap inference graph from all historical chat logs",
+    "result": "bootstrap_learning.py: chunked session processor with configurable N, pre-chunk scope logging, human abort prompt, flat-file idempotency; 21 tests",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.5,
+    "blocked_at": "2026-06-05T15:27:11.220023+00:00",
+    "claimed_at": null,
+    "created_at": "2026-06-01T18:58:57.872475+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Run all existing chat logs (CC session transcripts + Igor conversation history) through the inference learning pipeline to bootstrap the knowledge graph before the live system has accumulated enough calls to learn from. Chunked processing with cost monitoring — each chunk is a metered unit, not a fire-and-forget bulk job.\n\nGoal: the graph tree starts populated from years of existing patterns rather than learning from scratch on the first live inference call.\n\n**Affected files:** lab/claudecode/export_chat.py or new bootstrap_runner.py; devices/librarian/learning_pipeline.py (reuse)\n\n**Design rules:** no-sqlite; cost-monitored chunked processing (never unbounded batch); log every chunk with token count and cost\n\n**Scope boundary:** IN — chunked processing of existing transcripts; cost monitoring per chunk; progress tracking. OUT — live inference pipeline (T-inference-learning-pipeline); real-time processing\n\n**Completion criteria:** (1) all transcripts processable in N-chunk batches where N is configurable; (2) cost per chunk logged before next chunk fires; (3) human can abort between chunks; (4) idempotent — re-running doesn't duplicate graph nodes",
+    "completed_at": "2026-06-09T15:44:04.355809+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ed4b3d92-3685-4cd7-8e18-5bff1dc80d71",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

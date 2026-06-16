@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-audit-runner-pass-but-fail.20260424.160223000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-runner-pass-but-fail"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:23",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-audit-runner-pass-but-fail"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-runner-pass-but-fail",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Audit",
+      "Tooling",
+      "Bug"
+    ],
+    "title": "audit_runner: no-cortex-store-bypass reports stdout 'PASS' but exit-code FAIL",
+    "result": "run_shell now uses exit code as authoritative signal (0=PASS, non-0=FAIL). Previously any stdout was treated as FAIL, causing PASS-printing checks to be misreported. Committed 6edc38e7.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "blocked_at": null,
+    "claimed_at": null,
+    "created_at": "2026-04-24T16:02:23Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Day-close audit 2026-04-23: no-cortex-store-bypass check stdout starts with 'PASS:' but the runner counts it as FAIL. Either the exit code or the success-detection rule is off. Investigate audit_runner.py logic.\n\n**Affected files:** lab/claudecode/audit_runner.py.\n**Test plan:** audit_runner --drain reports the check correctly.",
+    "completed_at": "2026-04-26T19:32:34.584408+00:00",
+    "github_issue": 523,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "38dada7b-ad9c-436b-9337-d055731c9487",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

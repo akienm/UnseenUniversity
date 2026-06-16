@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-pe-chain-via-uc-proxy.20260424.160221000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-chain-via-uc-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T16:02:21",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-rack-tool-migration",
+      "T-pe-chain-via-uc-proxy",
+      "T-qwen-only-pe-chain-cloud"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-chain-via-uc-proxy",
+    "gate": "T-qwen-only-pe-chain-cloud",
+    "size": "M",
+    "tags": [
+      "Cognition",
+      "Budget",
+      "UtilityCloset",
+      "ModelRouting"
+    ],
+    "title": "Route pe_chain cloud calls through UC inference proxy (comms://model/*)",
+    "result": "closed as obsolete — pe_chain coding-sprint mechanism removed 2026-05-23 (commit 06d9b6a5); no target file exists to route",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": "2026-06-05T15:26:51.402228+00:00",
+    "claimed_at": "2026-04-29T00:17:45.115976+00:00",
+    "created_at": "2026-04-24T16:02:21Z",
+    "related_to": null,
+    "approved_at": "2026-04-24T02:03:01.161362+00:00",
+    "decision_id": null,
+    "description": "pe_chain._call_cloud_programming currently makes a raw urllib.request POST directly to openrouter.ai/api/v1/chat/completions. This bypasses the UC inference proxy (lab/utility_closet/transports/inference.py, comms://model/<purpose>) which exists specifically to provide centralized routing, budget tracking, and request/response audit trail. Move the call.\n\n**Affected files:** wild_igor/igor/tools/pe_chain.py (_call_cloud_programming implementation); possibly a thin client helper if one doesn't already exist. UC transport (lab/utility_closet/transports/inference.py) already handles the gateway dispatch — pe_chain just needs to construct an inference/request message on comms://model/tier2 (or an appropriate purpose channel) and await the response.\n**Design rules:** oop-first (use UC client API, don't re-implement HTTP); docs-in-code; test-plan-or-why-not.\n**Scope boundary:** IN — replace raw urllib with UC proxy call for the cloud-programming path. Preserve current behavior for Ollama-local path (already goes through cluster_router). OUT — changing purpose routing conventions (comms://model/tier2 is fine); adding new UC transports.\n**Test plan:** (a) unit: _call_cloud_programming with mocked UC client returns text when the gateway responds. (b) integration: pe_chain via UC with a stub inference_gateway verifies the request and response are stored as channel messages (mirrors tests/test_inference_transport.py pattern). (c) regression: existing pe_chain tests still pass.\n**Inertia check:** pe_chain.py is HIGH-traffic but not brainstem — MEDIUM at most. Flag before touching if scope guard reports otherwise.\n**Gated on:** T-qwen-only-pe-chain-cloud (the default model swap lands first so the proxy route inherits the correct default).\n\n**Note [2026-06-08 11:08]:** pe_chain.py doesn't exist in devices/igor/ — gated on T-igor-rack-tool-migration port question. Both tickets need same prerequisite: Akien decides whether to port pe_chain or close as stale given Igor-coding-retired.",
+    "proposed_at": "2026-04-24T18:11:06.281255+00:00",
+    "completed_at": "2026-06-09T12:17:33.984069+00:00",
+    "github_issue": 522,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "false-positive brainstem/core_patterns.py gate — ticket does not touch HIGH-inertia files; cleared 2026-04-23",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bb44bf9b-e61e-461d-83b6-ccf026613c61",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

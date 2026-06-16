@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-test-launch-cortex-isolation.20260520.165040853616",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-launch-cortex-isolation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-20T16:50:40.853616",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-legacy-direct-claim-error",
+      "T-test-launch-cortex-isolation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-launch-cortex-isolation",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Test",
+      "Reliability"
+    ],
+    "title": "TestLaunchNextWorkerDispatch: mock Cortex in _run_launch to avoid live-DB sensitivity",
+    "result": "Added Cortex+MemoryType mocks to _run_launch in commit 679e771f — routing tests now hermetic to DB state",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-05-20T16:50:40.853616+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "_run_launch did not mock Cortex in launch_next_worker. Live GOAL memories left by other tests caused the active-goal check to return early, skipping adopt_next_ticket, failing routing assertions.\n\n**Affected files:** tests/test_worker_foreman.py (_run_launch method)\n**Test plan:** no new tests — existing TestLaunchNextWorkerDispatch tests are the verification\n**Scope boundary:** incidental fix committed alongside T-legacy-direct-claim-error (commit 679e771f)",
+    "completed_at": "2026-05-20T16:50:49.669845+00:00",
+    "deposited_at": "2026-05-20T19:12:29.723431",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-20T16:50:40.898553+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9629f212-a1ed-4ead-8cf3-5f4a2f271905",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

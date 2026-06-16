@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.T-interoception.20260101.230013110010",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-interoception"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T23:00:13.110010",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-interoception"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-interoception",
+    "size": "M",
+    "notes": "ResourceMonitorSource currently fires binary alarms (threshold crossed → TWM push). Missing: chronic gradient contribution to milieu from resource posture. CPU 40% → small positive valence. CPU 80% sustained → arousal builds. DB+Ollama on same box → friction in dominance channel. Inference latency high → arousal spike. This is Igors interoception — his body. Closes the physical grounding gap Igor himself identified (ESCAPE HYPOTHESIS memory a82b4dcc, 2026-02-26). Connects to T-inference-colocation-signal. Design note from Akien: inside/outside signals are on the same map — resource state should be first-class milieu input, not a separate alarm pathway.",
+    "title": "Interoception: continuous resource state as milieu signal (not threshold alarms)",
+    "result": "InteroceptionSource added to push_sources.py — continuous 30s VAD gradient from cpu/mem/disk. Maps resource stress to milieu nudge + TWM entry. Registered in run_background_sources().",
+    "status": "done",
+    "priority": 5,
+    "completed_at": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

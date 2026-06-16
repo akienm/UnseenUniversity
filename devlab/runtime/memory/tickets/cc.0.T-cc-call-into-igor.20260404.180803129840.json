@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-cc-call-into-igor.20260404.180803129840",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-call-into-igor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T18:08:03.129840",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-call-into-igor",
+      "T-main-loop-exception"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-call-into-igor",
+    "size": "M",
+    "tags": [
+      "Operations",
+      "Claude"
+    ],
+    "title": "Move Claude Code crash-recovery call from bash into Igor exception handler",
+    "result": "Main loop except handler now calls 'claude --dangerously-skip-permissions' with the full Python traceback. Skips CC if debug_session.flag is present. Exits with code 42 (restart signal) so bash loop restarts cleanly without double-invoking CC. Bash remains as fallback for startup/import crashes Python can't catch.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T18:06:07.576050+00:00",
+    "related_to": null,
+    "description": "Currently the igor bash startup script detects crashes and calls Claude Code externally. With T-main-loop-exception adding an outer try-except in main.py, Igor can invoke Claude Code from inside Python on unhandled exceptions — much cleaner, gets full Python traceback context, can pass structured crash info. Fix: in the outer except handler, call subprocess to launch CC with the crash details passed as structured args. This removes the crash-detection logic from bash entirely and makes Igor self-aware of his own crashes. Akien's suggestion from 2026-04-04.",
+    "completed_at": "2026-04-04T18:08:03.129840+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dbb95c0a-8130-4129-804d-142fd62b3aa7",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

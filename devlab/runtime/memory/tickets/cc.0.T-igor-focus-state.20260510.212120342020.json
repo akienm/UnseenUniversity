@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-igor-focus-state.20260510.212120342020",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-focus-state"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T21:21:20.342020",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-activate-primitive-2026-05-10"
+    ],
+    "tickets": [
+      "T-igor-activate-primitive",
+      "T-igor-focus-state"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-focus-state",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Memory"
+    ],
+    "title": "CLOSED: instance.focus_state cross-cycle persistence",
+    "result": "instance.focus_state with hysteresis+expiry; 6 tests pass",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-10T23:00:31.448460+00:00",
+    "created_at": "2026-05-10T21:21:20.342020+00:00",
+    "related_to": null,
+    "decision_id": "D-activate-primitive-2026-05-10",
+    "description": "New `instance.focus_state` table (single-row upsert pattern, id=1). Schema: id serial PK, memory_id bigint (FK clan.memories), activation_score float, status text (candidate|committed), committed_at timestamptz, expires_at_cycle int, ne_cycle_counter int default 0, focus_history jsonb default '[]'. API in `wild_igor/igor/cognition/focus_state.py`: get_focus() → dict|None; update_from_activation(memory_id, score) (called by activate()); advance_cycle() → bool (True if focus expired); reset_focus().\n\nDisplacement hysteresis: update_from_activation() displaces current focus only if new_score >= current_score * HYSTERESIS_FACTOR (module constant = 1.2). Status: candidate on first set, committed when committed_at is set (by habit or manual). Committed focus expires when ne_cycle_counter reaches expires_at_cycle (set to current + EXPIRY_CYCLES at commit time; EXPIRY_CYCLES = 5). focus_history is JSONB ring buffer capped at 5 entries [{memory_id, score, ts}]; pop oldest on overflow.\n\n**Affected files:** `wild_igor/igor/cognition/focus_state.py` (new), DB migration (CREATE TABLE instance.focus_state)\n**Design rules:** no-sqlite; direct psycopg2; single-row upsert (ON CONFLICT (id) DO UPDATE); focus_history ring buffer enforced in update_from_activation(); HYSTERESIS_FACTOR=1.2 and EXPIRY_CYCLES=5 as module-level constants (overridable for tests via monkeypatch)\n**Scope boundary:** IN — focus_state.py CRUD, instance.focus_state schema. OUT — no NE wiring (separate ticket), no activate() logic (activate() calls update_from_activation() — see T-igor-activate-primitive).\n**Test plan:** update_from_activation() inserts first focus as candidate; score 1.19× current does not displace (below hysteresis); score 1.2× displaces; advance_cycle() at expires_at_cycle returns True (expired); focus_history capped at 5 (6th entry drops oldest); reset_focus() clears row",
+    "completed_at": "2026-05-10T23:06:03.313083+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b88c024a-72db-409a-8f73-c55b333f2010",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-igor-filter-habit.20260403.205507498637",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-filter-habit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T20:55:07.498637",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-igor-filter-habit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-filter-habit",
+    "size": "M",
+    "title": "PROC_FILTER habit — runs filter checklist, emits filter_result",
+    "result": "Added pe_filter() to pe_chain.py — checks plan_defined, test_defined, not_high_inertia; hard-fail escalates on HIGH inertia files. Seeded PROC_FILTER habit memory. 7 tests.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 3,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Seed PROC_FILTER cognitive habit: runs filter checklist against basket.plan (scope ok? risk? test plan?), emits filter_result pass/fail into basket",
+    "completed_at": "2026-04-03T20:55:07.498637+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2bbbefbe-f361-4bc7-ab19-d2a3f297eb26",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

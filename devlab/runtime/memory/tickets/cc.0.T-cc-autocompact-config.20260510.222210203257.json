@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-cc-autocompact-config.20260510.222210203257",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-autocompact-config"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-10T22:22:10.203257",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-session-hygiene-2026-05-10"
+    ],
+    "tickets": [
+      "T-cc-autocompact-config"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-autocompact-config",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "CC"
+    ],
+    "title": "CLOSED: CC session config — autocompact at 50%, cap MCP output, shell profile commit",
+    "result": "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50 + MAX_MCP_OUTPUT_TOKENS=8000 + BASH_MAX_OUTPUT_LENGTH=20000 in ~/.bashrc + config/cc_env.sh committed to agent_datacenter for cross-machine sync",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.7,
+    "claimed_at": "2026-05-10T22:23:03.837554+00:00",
+    "created_at": "2026-05-10T22:22:10.203257+00:00",
+    "related_to": null,
+    "decision_id": "D-cc-session-hygiene-2026-05-10",
+    "description": "Set CC session hygiene env vars in shell profile so they sync to other boxes via dotfiles commit: CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50 (compact at 50% context, not 95% default), MAX_MCP_OUTPUT_TOKENS=8000 (cap noisy MCP responses), BASH_MAX_OUTPUT_LENGTH=20000 (cap terminal output). If no dotfiles repo, commit to `config/cc_env.sh` in agent_datacenter with source instructions.\n\n**Affected files:** `~/.bashrc` or `~/.zshrc` (env var additions), or `config/cc_env.sh` in agent_datacenter\n**Design rules:** idempotent (safe to source multiple times); comment each var explaining why\n**Scope boundary:** IN — three env vars, commit so other boxes pick them up. OUT — no settings.json changes, no CLAUDE.md changes.\n**Test plan:** `echo $CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` returns 50 in new shell; vars present after shell restart",
+    "completed_at": "2026-05-10T22:23:46.714406+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ccac3425-bf9e-48a4-96c5-7f80311cad80",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

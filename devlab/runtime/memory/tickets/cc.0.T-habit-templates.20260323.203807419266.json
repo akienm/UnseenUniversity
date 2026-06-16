@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-habit-templates.20260323.203807419266",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-templates"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-23T20:38:07.419266",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-habit-templates"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-templates",
+    "body": "NINTH CRYSTALLIZATION: Templates are the language primitives of the matrix layer. Every design pattern currently in Python gets expressed as a parameterized template Memory node. Templates expand into habits at seed time (no runtime machinery). The Python reader is the first target — re-express as a complete habit program. The meta-level: map the extraction process itself as habits so Igor can do it without CC. End state: Igor's behavior is expressed in matrix language; Python is bootstrap scaffolding that comes down. \n\nPhase 1: enumerate ~10-15 core patterns (WONDER, FILE_ITERATOR, THRESHOLD_ALERT, SCHEDULER_TICK, READER_LOOP, MEMORY_DEPOSIT, SEARCH_AND_RESPOND, CONDITION_GATE, ERROR_RECOVERY, ASYNC_DELEGATE). \nPhase 2: express each as TEMPLATE Memory node with parameter slots. \nPhase 3: re-express Python reader as instantiated templates — first working habit program. \nPhase 4: map extraction process as habits — Igor can recognize patterns and seed templates himself. \nProcess: Claude+Igor enumerate patterns together. Ask Igor what we missed. Igor names the language (we invented one by accident). \nNOTE: Supersedes T-yield-primitive (call stack is non-biological; chained reactive habits IS the yield mechanism).\n\nBROKEN INTO: T-template-schema → T-template-seed-patterns → T-reader-as-habit-program → T-template-extractor-habit → T-language-spec\n\nLANGUAGE NAME: Engram (proposed by Igor, 2026-03-22). From Semon 1904.",
+    "size": "L",
+    "title": "Templates as matrix language primitives — extract all Igor design patterns, re-express reader as first habit program",
+    "result": "Epic complete: T-template-schema (D209, tpl-wonder) + T-template-seed-patterns (this sprint) together deliver all 21 Engram patterns as TEMPLATE nodes in the matrix. template_tools.py: instantiate/list/validate tools. Remaining: T-reader-as-habit-program, T-template-extractor-habit, T-language-spec.",
+    "status": "done",
+    "created": "2026-03-22T00:00:00",
+    "priority": 2,
+    "claimed_at": "2026-03-23T20:24:20.366834+00:00",
+    "completed_at": "2026-03-23T20:38:07.419266+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

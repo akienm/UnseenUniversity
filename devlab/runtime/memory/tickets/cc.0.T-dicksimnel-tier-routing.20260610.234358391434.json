@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-dicksimnel-tier-routing.20260610.234358391434",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-tier-routing"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-10T23:43:58.391434",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "[REDACTED-CREDENTIAL]"
+    ],
+    "tickets": [
+      "T-dicksimnel-escalation-summary",
+      "T-dicksimnel-tier-routing",
+      "T-granny-tier-cascade"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-tier-routing",
+    "gate": "T-dicksimnel-escalation-summary",
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "DickSimnel",
+      "Inference",
+      "Escalation"
+    ],
+    "title": "DickSimnel: creator-tier model in escalation chain",
+    "result": "creator tier in _TIER_CASCADE + cascading escalation context; rules_engine.py has creator rules; 11 tests all green",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that Dick's escalation chain has a creator tier between builder and master, so not every escalation burns master-tier tokens.",
+    "claimed_at": null,
+    "created_at": "2026-06-10T23:43:58.391434+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "[REDACTED-CREDENTIAL]",
+    "description": "Add a creator-tier model slot to Dick's escalation chain. When a builder-tier model escalates, the ticket goes to creator tier (e.g. qwen3-30b or similar larger OR model) with the escalation summary as context. Only if creator tier also escalates does it reach master tier (CC/Anthropic).\n\nEscalation chain:\n  builder (qwen3-coder-30b) → escalate with summary\n  creator (larger OR model)  → starts from summary; escalates with cumulative summary if needed\n  master  (anthropic/claude) → starts from cumulative summary\n\nEach tier adds its own escalation summary to the chain. Master sees everything that was tried.\n\n**Affected files:** devices/dicksimnel/device.py, devices/inference/rules_engine.py\n**Design rules:** no-sqlite\n**Scope boundary:** IN — creator tier rule, cascading summary accumulation. OUT — Granny role routing (T-granny-tier-cascade), CC's advisor() function.\n**Completion criteria:** An escalated ticket reaching master tier has a cumulative escalation note with builder + creator attempts. rules_engine.py has a named creator-tier rule. Integration test: mock escalation chain produces expected summary structure.",
+    "completed_at": "2026-06-14T03:50:20.682258+00:00",
+    "deposited_at": "2026-06-10T17:52:48.031491",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

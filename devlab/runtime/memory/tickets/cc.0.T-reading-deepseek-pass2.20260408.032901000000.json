@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-reading-deepseek-pass2.20260408.032901000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reading-deepseek-pass2"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-08T03:29:01",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-reading-deepseek-pass2",
+      "T-reading-measure-baseline"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reading-deepseek-pass2",
+    "epic": "Training",
+    "size": "M",
+    "title": "Second pass on absorbed source with DeepSeek — compare vs baseline",
+    "result": "Done: DeepSeek vs Qwen comparison completed. Qwen won by one unit extracted. Results not tracked due to missing reader provenance (T-reader-provenance-fix filed). Closing.",
+    "status": "done",
+    "worker": "igor",
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/kernel.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/kernel.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-10T20:16:36.539253+00:00",
+    "created_at": "2026-04-08T03:29:01Z",
+    "related_to": null,
+    "description": "Run a second pass on a previously-absorbed source using DeepSeek (OR batch). Compare node count, edge density, and concept reach against T-reading-measure-baseline. Validates whether model quality and re-pass both matter.",
+    "proposed_at": "2026-04-10T20:32:17.079512+00:00",
+    "completed_at": "2026-04-17T22:42:39.217054+00:00",
+    "github_issue": 392,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5483b1aa-6347-4095-8533-1bc846e9c8b0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

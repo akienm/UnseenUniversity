@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-worker-inject.20260320.220815805766",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-worker-inject"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T22:08:15.805766",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-worker-inject"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-worker-inject",
+    "size": "S",
+    "files": [
+      "claudecode/cc_queue.py",
+      "claudecode/channel.py"
+    ],
+    "title": "Track worker konsole PID at launch — enable xdotool keystroke injection",
+    "result": "worker-launch + inject subcommands added to cc_queue.py. PID recorded to worker_pids.json. xdotool injects to konsole window by PID. Smoke tested.",
+    "status": "done",
+    "claimed_at": null,
+    "description": "When launching a worker terminal via konsole, capture the PID and write it to ~/.TheIgors/cc_channel/worker_pids.json keyed by ticket-id. Add a channel.py or cc_queue.py subcommand 'inject <ticket-id> <text>' that uses xdotool type --window $(xdotool search --pid <konsole-pid>) to send keystrokes. Enables designer to unblock an idle worker without requiring manual terminal interaction. Also document this pattern in ClaudeAndAkien repo (getting_started.md or skills_guide.md — worker lifecycle section).",
+    "completed_at": "2026-03-20T22:08:15.805766+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f146980a-5aab-4dbe-952b-ab692e624810",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

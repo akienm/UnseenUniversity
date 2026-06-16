@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-delete-memory-fk-cascade.20260424.201617399305",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-delete-memory-fk-cascade"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T20:16:17.399305",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-consult-hardening-2026-04-24"
+    ],
+    "tickets": [
+      "T-db-populate-embeddings",
+      "T-delete-memory-fk-cascade",
+      "T-duplicate-memory-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-delete-memory-fk-cascade",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Memory",
+      "DB",
+      "ResourceLeak"
+    ],
+    "title": "cortex.delete_memory doesn't cascade to memory_embeddings/blobs — NE merge loops + floods logs at MB/sec",
+    "result": "cortex.delete_memory (cortex.py:3880) now deletes memory_embeddings + memory_blobs rows first, then memories — all in one _conn context. 3 tests pass (without-embedding, nonexistent, source-regression); 1 skipped (pgvector insert schema). Igor needs restart to pick up. NE merge loop will then succeed and stop flooding error pipeline.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.98,
+    "claimed_at": "2026-04-24T20:14:46.510365+00:00",
+    "related_to": null,
+    "decision_id": "D-consult-hardening-2026-04-24",
+    "description": "cortex.delete_memory (cortex.py:3880) runs a plain DELETE on the memories table. memory_embeddings.memory_id and memory_blobs.memory_id both hold FOREIGN KEY constraints referencing memories.id. Any memory with an embedding (all of them, post T-db-populate-embeddings) fails to delete with: `violates foreign key constraint memory_embeddings_memory_id_fkey`.\n\nNE (narrative_engine._merge_cluster, narrative_engine.py:1836) loops over a cluster calling delete_memory on each; each failure writes to cc_alerts.log + errors.log + master.log + cognition.log. Observed 2026-04-24 PM: disk write rate spiked >200MB/sec sustained while Igor churned through merge attempts. Akien stopped Igor to contain.\n\nFix: delete_memory must FK-aware-cascade within a single transaction — DELETE from memory_embeddings and memory_blobs keyed on memory_id first, then DELETE from memories. Pattern established in test_data_lifecycle.py and the one-shot dupe cleanup (T-duplicate-memory-cleanup).\n\n**Affected files:** wild_igor/igor/memory/cortex.py:3880 (delete_memory), tests/test_cortex_delete_memory.py (new, or add to existing cortex tests).\n**Design rules:** test-plan-or-why-not.\n**Scope boundary:** IN — FK cascade in delete_memory. OUT — redesigning NE merge, adding cascade to DB schema migrations (that's separate), rate-limiting NE log fanout.\n**Test plan:** deposit a memory + an embedding, call delete_memory, assert both rows gone + returns True. Delete of nonexistent memory returns False. Transaction rollback on failure preserves both tables.",
+    "completed_at": "2026-04-24T20:16:17.399305+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b80f9fc0-6a26-4d73-9754-7f99e251f117",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

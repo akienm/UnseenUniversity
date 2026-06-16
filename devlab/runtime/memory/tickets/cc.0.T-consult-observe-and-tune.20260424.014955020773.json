@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-consult-observe-and-tune.20260424.014955020773",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consult-observe-and-tune"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T01:49:55.020773",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-cc-inbox-2026-04-23",
+      "D-consult-primitive-2026-04-23"
+    ],
+    "tickets": [
+      "T-consult-observe-and-tune"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consult-observe-and-tune",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consult",
+      "ObserveTune",
+      "Tuning"
+    ],
+    "title": "Observe-and-tune consult: review thresholds + triggers after 50 log entries",
+    "result": "Trip condition met (wc -l consults.log = 309 ≥ 50). Memo shipped in lab/design_docs/consult_tuning_2026-04-23.md (commit 9f904ef0). Key findings from 104-session analysis: (1) confidence threshold 0.3 is too low — nothing under 0.62 observed, recommend raise to 0.55; (2) 24% test-fixture pollution from T-test/GOAL_123 — gate log behind IGOR_TEST_MODE; (3) 'pre-flight blocked (no recognizer)' trigger produces unactionable hypotheses — narrow with second signal; (4) 0/104 confab_flag events — wiring verify needed. Three follow-on tuning tickets recommended; actual tuning changes deferred per scope-out.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.3,
+    "proposal": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "blocked_at": null,
+    "claimed_at": "2026-04-24T01:49:37.688214+00:00",
+    "related_to": null,
+    "approved_at": "2026-04-24T01:49:32.833229+00:00",
+    "decision_id": "D-consult-primitive-2026-04-23",
+    "description": "Go-live-when ticket: sits in the observe queue until ~/.TheIgors/local/logs/consults.log has accumulated 50 turns of consult transcripts (across all ConsultSessions). When trip condition fires, review: (a) confidence threshold (currently 0.3 — guess; tune from data), (b) call-site triggers in pe_chain and _process_network_msg (are they firing at the right moments?), (c) whether confab-scan flags correlate with bad hypotheses (is scanner catching the right things?). Output is either a follow-on ticket with tuned parameters or a writeup confirming current tuning is right.\n\n**Trip condition:** wc -l ~/.TheIgors/local/logs/consults.log ≥ 50\n**Notification:** via cc_inbox when D-cc-inbox-2026-04-23 ships\n\n**Affected files:** (none on trip — this ticket only reads logs when it fires)\n**Design rules:** test-plan-or-why-not (no tests because: observe/review ticket, no code path to test)\n**Scope boundary:** IN — read logs, review tuning, write findings. OUT — actual tuning changes (file separate follow-on if needed).\n**Test plan:** no tests — this is a review task that fires once and produces human-readable output. The trip condition is auditable by tail+wc; review output is a short memo.",
+    "proposed_at": "2026-04-23T22:12:40.920828+00:00",
+    "completed_at": "2026-04-24T01:49:55.020773+00:00",
+    "github_issue": null,
+    "approved_plan": "Igor wants to edit wild_igor/igor/brainstem/core_patterns.py (HIGH inertia). Plan: . Reason: HIGH inertia write requires human approval: wild_igor/igor/brainstem/core_patterns.py",
+    "approval_notes": "trip condition met; memo shipped in lab/design_docs/consult_tuning_2026-04-23.md",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f393ceb5-4eff-42ce-bf18-0f2161e88dcf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

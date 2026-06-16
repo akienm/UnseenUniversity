@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-retire-worker-daemon-sh.20260526.025643910781",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retire-worker-daemon-sh"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-26T02:56:43.910781",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-worker-daemon-retired-2026-05-25"
+    ],
+    "tickets": [
+      "T-adc-queue-no-claiming",
+      "T-retire-worker-daemon-sh",
+      "T-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retire-worker-daemon-sh",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Queue"
+    ],
+    "title": "Retire worker_daemon.sh — add disabled sentinel + remove claim",
+    "result": "worker_daemon.sh retired: exits immediately with redirect message; cc_queue.py claim already raises LegacyDirectClaimError",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": null,
+    "created_at": "2026-05-26T02:56:43.910781+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-worker-daemon-retired-2026-05-25",
+    "description": "worker_daemon.sh is suspended as of 2026-05-25 (PID killed). Formally retire it: add a DISABLED/ARCHIVED header comment and comment out the main polling loop so it can never be accidentally restarted. Remove the `claim` CLI command from cc_queue.py — any caller gets a clear LegacyDirectClaimError explaining the mechanism is removed (per standing instruction: 'no claiming ever from anybody. remove all that code. when it gets called, throw an exception that it is no longer supported').\n\n**Affected files:** ~/TheIgors/lab/claudecode/worker_daemon.sh, ~/TheIgors/lab/claudecode/cc_queue.py\n**Design rules:** no-claiming (standing instruction); /query-ticket is the canonical read-only path\n**Scope boundary:** sentinel + claim command removal only; NOT build ADC queue device; NOT update /sprint-ticket skill (that's T-adc-queue-no-claiming, gated on the device)\n**Test plan:** `python3 ~/TheIgors/lab/claudecode/cc_queue.py claim T-test 2>&1` → output contains 'LegacyDirectClaimError' or 'no longer supported'; worker_daemon.sh loop is commented out",
+    "completed_at": "2026-05-26T03:00:39.393528+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-26T02:56:43.964368+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "640babd2-a7a4-4f7c-8a7a-a5a3040b08e4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

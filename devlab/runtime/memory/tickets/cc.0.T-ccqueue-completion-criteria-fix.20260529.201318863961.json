@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-ccqueue-completion-criteria-fix.20260529.201318863961",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ccqueue-completion-criteria-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-29T20:13:18.863961",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-ccqueue-completion-criteria-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ccqueue-completion-criteria-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform"
+    ],
+    "title": "cc_queue.py + granny shim: rename 'Test plan' → 'Completion criteria' section label",
+    "result": "All 4 stale 'Test plan' strings renamed; 61/61 tests pass; no more spurious warning on correctly-formatted tickets",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "claimed_at": null,
+    "created_at": "2026-05-29T20:13:18.863961+00:00",
+    "created_by": null,
+    "related_to": null,
+    "commit_hash": "dd506e4b",
+    "decision_id": null,
+    "description": "devices/granny/device.py was updated to check for 'Completion criteria' but three callers still reference the old 'Test plan' label: cc_queue.py _REQUIRED_DESCRIPTION_SECTIONS, devices/granny/shim.py self-test fixture, tests/test_granny_shim.py intake fixture. Results: spurious WARNING on every correctly-formatted ticket filed via cc_queue.py add, and a misleading fixture in granny shim tests.\n\n**Affected files:** lab/claudecode/cc_queue.py (line 1117), devices/granny/shim.py (line 111), tests/test_granny_shim.py (lines 34, 113)\n**Design rules:** none apply\n**Scope boundary:** IN: rename the 4 stale string occurrences across 3 files. OUT: scraps device fixtures, igor test fixtures (separate tickets if needed).\n**Completion criteria:** (1) cc_queue.py add no longer emits 'Test plan' warning for correctly-formatted tickets. (2) All granny tests pass. (3) No other 'Test plan' references remain in devices/granny/ or lab/claudecode/cc_queue.py.",
+    "completed_at": "2026-05-29T20:16:14.678480+00:00",
+    "deposited_at": "2026-05-29T14:13:31.847056",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-05-29T20:13:18.915004+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5c544a08-df41-4958-9a7d-2cf7184464d3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

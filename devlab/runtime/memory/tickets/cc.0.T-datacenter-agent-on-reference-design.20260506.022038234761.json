@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-datacenter-agent-on-reference-design.20260506.022038234761",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-datacenter-agent-on-reference-design"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-06T02:20:38.234761",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-datacenter-agent-on-reference-design"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-datacenter-agent-on-reference-design",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "agent_datacenter"
+    ],
+    "title": "CLOSED: Datacenter agent helper device built on reference chat agent pattern",
+    "result": "no-op/by-design: devices/claude/ is a rack registration device (bus mailboxes, YGM nudge), not a chat agent client. examples/chat_agent/agent.py is the pattern for NEW standalone Anthropic SDK agents. No alignment needed — different concerns. Any future agent-helper script should follow the reference pattern; no changes to devices/claude/ warranted.",
+    "status": "done",
+    "worker": "igor",
+    "priority": "medium",
+    "claimed_at": "2026-05-06T02:20:04.329489+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "The reference chat agent (examples/chat_agent/agent.py) established the canonical pattern for direct-API Claude agent clients in this repo. Any CC/agent helper device added to agent_datacenter should either start from that skeleton directly, or be rebuilt to match it once the reference matures. Gate agent-helper device work on an explicit review of the reference design and a decision: build-on-it-now vs wait-for-it-to-mature.\n\n**Affected files:** examples/chat_agent/agent.py, devices/ (future agent-helper device dir, TBD)\n**Design rules:** two-sided capability build (handler + skill consumer ship together); vocabulary discipline (claim/dispatch/status/result verbs)\n**Scope boundary:** IN — review reference design, file decision, create device stub if reference is ready. OUT — building the full agent-helper device (separate ticket), changes to the reference design itself.\n**Test plan:** no tests in this ticket — it is a design-gate/decision ticket; the device ticket that follows will carry the test plan",
+    "completed_at": "2026-05-06T02:20:38.234761+00:00",
+    "github_issue": null,
+    "pass_condition": "A /decided entry exists stating whether to build agent-helper on current reference or wait; if build-now, device stub exists in devices/agent_helper/ extending BaseDevice.",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f95ce37e-155d-4cc7-9173-7e4a01c5f6ad",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

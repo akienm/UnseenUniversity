@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-goal-support-burden.20260602.193333197156",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-goal-support-burden"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-02T19:33:33.197156",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-goal-support-burden"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-goal-support-burden",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "Architecture"
+    ],
+    "title": "Goal: Minimize support burden through good design",
+    "result": "palace.goals.minimize-support-burden registered; child tickets T-palace-namespace-rename + T-skills-in-repo + T-theigors-path-cleanup already shipped",
+    "status": "closed",
+    "worker": "igor",
+    "purpose": "",
+    "priority": 0.8,
+    "blocked_at": "2026-06-02T19:36:39.484099+00:00",
+    "created_at": "2026-06-02T19:33:33.197156+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Explicit design goal: every naming inconsistency, namespace leak, or context-dependent convention is a future support question. As the repo goes public, confusing names (theigors/, .TheIgors, cc-minion jargon) generate questions Akien has to answer.\n\nRule: names should be self-explanatory to someone who never heard of TheIgors. If a path, namespace, or convention only makes sense with backstory, rename it.\n\n**Affected files:** docs/TheoryOfOperation.md, palace paths, skill file comments\n**Design rules:** none apply (meta-goal, not code)\n**Scope boundary:** Define the principle; create child tickets for specific renames\n**Completion criteria:** This goal is added to the active goals list; child tickets filed for theigors/ namespace rename and skills-in-repo",
+    "completed_at": "2026-06-02T22:01:55.774800+00:00",
+    "deposited_at": "2026-06-02T13:52:46.182291",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-06-02T19:34:40.101264+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "constraint",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "84f8a4f5-1d73-4d75-8a39-4add60ee0cf6",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

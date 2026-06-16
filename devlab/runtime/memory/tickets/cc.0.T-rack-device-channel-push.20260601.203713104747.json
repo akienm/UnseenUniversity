@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-rack-device-channel-push.20260601.203713104747",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rack-device-channel-push"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-01T20:37:13.104747",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-rack-device-channel-push"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rack-device-channel-push",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Platform",
+      "WebUI",
+      "Granny",
+      "Observability"
+    ],
+    "title": "Device channel posts appear in web UI per-device tab",
+    "result": "channel.py _ws_push added; Granny posts route to comms://granny-weatherwax with WS broadcast",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.4,
+    "claimed_at": null,
+    "created_at": "2026-06-01T20:37:13.104747+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Granny's _post_channel() writes to Postgres channel_messages only. The web UI only shows messages that go through the web server's WebSocket hub. So Granny's dispatch/pickup events are invisible in the web UI — her tab exists (from agent registration) but is always empty.\n\nProposed shape: add POST /api/channel/push endpoint to web server: {\"session_id\": \"comms://granny-weatherwax\", \"author\": \"granny-weatherwax\", \"content\": \"...\"}. This calls agent_send() internally — broadcasts to WS clients in that session. Update _post_channel in Granny and channel.py post_to_channel to also POST to this endpoint when UC_BASE is reachable.\n\n**Affected files:** devices/web_server/server.py, devices/granny/daemon.py, unseen_university/channel.py\n**Design rules:** graceful degradation — if web server unreachable, Postgres write still happens; WS push is best-effort\n**Scope boundary:** Granny events visible in web UI; not a general Postgres→WS bridge\n**Completion criteria:** Granny dispatches a ticket → event appears in comms://granny-weatherwax tab in web UI within 5 seconds",
+    "completed_at": "2026-06-01T20:41:45.999525+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "45c5f4bb-3153-44dd-8e4b-472ad9e72f22",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

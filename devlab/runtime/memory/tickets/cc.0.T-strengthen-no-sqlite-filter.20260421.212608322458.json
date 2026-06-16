@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-strengthen-no-sqlite-filter.20260421.212608322458",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-strengthen-no-sqlite-filter"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-21T21:26:08.322458",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-strengthen-no-sqlite-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-strengthen-no-sqlite-filter",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Scaffold",
+      "DB",
+      "FilterAtFilingTime"
+    ],
+    "title": "Strengthen filing-time no-sqlite check — no SQLite anywhere, no fallbacks, DISCARD not AMEND",
+    "result": "palace no-sqlite check: applies_when unconditional, verdict DISCARD, intent-based red-flag scan. Narrative at theigors/rules/database sharpened: no fallbacks, no dual paths, no 'both supported.' /review Mode A Check 7 now honors optional verdict field (default AMEND, escalates to DISCARD if check YAML asks). Test plan verified via mental walk of 2 synthesized drafts: 'sqlite fallback...' → DISCARD ✅; 'Postgres table cc_work_queue. No sqlite.' → PASS ✅. Follow-up: T-intent-decay-test-fail (pre-existing test fail, unrelated).",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-21T21:20:51.620310+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "5th attempt to remove SQLite and it keeps creeping back. Akien 2026-04-21: 'more filtering at the ticket level. do that now. should remove all sqlite everywhere no fallbacks.'\n\n**The rule (sharpened):** NO SQLite anywhere. No fallbacks. No dual-path branches. No 'both supported.' No 'SQLite fallback if Postgres unavailable.' Every code path assumes Postgres. If a ticket mentions SQLite at all, or mentions dual-path/fallback storage, it is DISCARD — not AMEND.\n\n**Why the existing check misses:**\nThe filing-time `no-sqlite` palace check fires only when the ticket description mentions 'data persistence, storage, records, databases, tables, CRUD, or writing/reading state.' Tickets like 'add worker queue' or 'cache results' don't trip those exact words, check is skipped, SQLite slips in at sprint time. Past done tickets still carry fallback-shaped phrases ('Postgres and SQLite both supported', 'sqlite path doesn't exist on Windows') — that language is the leak.\n\n**Affected files:**\n- palace node `theigors/rules/ticket_design_checks/no-sqlite` (content field — YAML `applies_when` + `check_body` + `failure_message`)\n- palace node `theigors/rules/database` (narrative — state the rule unambiguously: no sqlite, no fallbacks, Postgres only)\n\n**Design rules:** no-sqlite (this IS that check); docs-in-code n/a (palace content); test-plan-or-why-not — see below.\n\n**Scope boundary:**\n- In: palace YAML + narrative content. Sharpens the rule to DISCARD-on-sight for SQLite mentions + fallback language.\n- Out: /review skill body (already dynamically loads palace checks — picks up new content automatically).\n- Out: sweeping the codebase for existing SQLite fallback branches. That's a separate, larger ticket — file as follow-up if Akien wants it now.\n- Out: audit_checks.json `no-sqlite-imports` (already runs at audit-time; complementary, not duplicate).\n\n**Test plan:** no new unit tests (palace YAML content, not code). Verification = immediately after shipping, synthesize two example drafts to confirm the check fires:\n  1. A ticket mentioning 'sqlite fallback for offline mode' → must produce DISCARD.\n  2. A ticket saying 'worker queue, Postgres table cc_work_queue, no sqlite' → must pass the check.\nLog both as review_manager.py `write` entries so self-learning sees them.\n\n**Change shape:**\n1. `applies_when` → fires on every ticket unconditionally. Trivial to pass when ticket has no persistence concern.\n2. `check_body` → red-flag scan: if ticket text matches `sqlite`, `sqlite3`, `.sqlite`, `.db` (as file), `embedded db`, `local db`, `file-backed cache`, `on-disk cache`, `both supported`, `fallback.*postgres|postgres.*fallback|sqlite.*fallback`, `dual.*(path|backend|store)` → verdict is DISCARD with `failure_message`. Otherwise, if ticket touches persistence, it must name the Postgres table; if not, it must explicitly say `no persistence`.\n3. `failure_message` → 'NO SQLite anywhere. No fallbacks, no dual paths, no \"both supported.\" Postgres only. Matched red flag: `<matched phrase>`. See theigors/rules/database.'\n4. `theigors/rules/database` narrative → tighten wording: 'NO SQLITE ANYWHERE. No fallbacks. No dual-path branches. No \"both supported.\" Every code path assumes Postgres. Fallback-shaped language in a ticket → DISCARD at filing time.' Plus the red-flag list.",
+    "completed_at": "2026-04-21T21:26:08.322458+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a7135dbe-0fdd-4d6e-80b7-89ab5cbfdd39",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

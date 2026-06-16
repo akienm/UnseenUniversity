@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-pull-qwen-coder.20260407.144348105020",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pull-qwen-coder"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T14:43:48.105020",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pull-qwen-coder"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pull-qwen-coder",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Pull Qwen2.5-Coder-7B-Instruct Q4 on CPU-only machines",
+    "result": "Pulls started on yogai7 (DeepSeek+coder) and yoga9i (coder) via Start-Process background. Fixed SSH key path (igor_ed25519) and Windows Ollama path (_ollama_cmd helper) in cluster_ssh.py",
+    "status": "done",
+    "worker": "igor",
+    "priority": 2,
+    "blocked_at": "2026-04-07T03:44:47.418177+00:00",
+    "claimed_at": "2026-04-07T03:39:24.658844+00:00",
+    "related_to": null,
+    "description": "ollama pull qwen2.5-coder:7b-instruct-q4_K_M on yogai7 and yoga9i (CPU-only, no GPU). Code-specific fine-tune, runs ~4 tok/s on CPU, designed for structured output. Better than general-purpose 7B for PE chain edit generation. After pull: update machines DB ollama_model_batch to include this model. Test with a simple edit task via ssh_exec.",
+    "completed_at": "2026-04-07T14:43:48.105020+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c36b2864-5d2f-45cf-a399-19b6ff9aaf50",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

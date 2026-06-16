@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-encapsulation-audit.20260521.163331155559",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-encapsulation-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T16:33:31.155559",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-encapsulation-audit-2026-05-21"
+    ],
+    "tickets": [
+      "T-audit-expert-encapsulation-lens",
+      "T-consequence-encapsulation-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-encapsulation-audit",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "Consequence check: encapsulation audit check adoption",
+    "result": "closed — pe_chain coding mechanism decommissioned; ticket no longer relevant to reasoning-first direction",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-05-23T21:29:27.789954+00:00",
+    "created_at": "2026-05-21T16:33:31.155559+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-encapsulation-audit-2026-05-21",
+    "description": "**What changed:** audit-design gained Check 10 (encapsulation surface) and EXPERTS.md gained encapsulation key questions for Systems Architect and Process/Meta experts.\n**Predicted unintended effects:** (1) Check 10 may be too broad and fire as AMEND on every design, adding noise; (2) Check 10 may be too narrow and never fire because encapsulation issues are subtle; (3) EXPERTS.md encapsulation question may be redundant with existing coupling/cohesion questions and not add signal.\n**Signals to watch:** audit-design output over next 30 days — did Check 10 fire at least once? Was it signal (legitimate encapsulation gap caught) or noise (false alarm that blocked a good design)? Did the Systems Architect expert surface an encapsulation finding in any audit-expert run?\n**Gate condition:** Check after T-audit-expert-encapsulation-lens closes (both tickets shipped).\n\n**Affected files:** None — observation only\n**Design rules:** none apply\n**Scope boundary:** Observe; annotate as occurred / clear / partial and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": "2026-05-23T22:09:07.834829+00:00",
+    "github_issue": 791,
+    "dispatched_at": "2026-05-23T21:29:27.789954+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T16:33:31.155585+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "340833c8-09f5-423b-8e28-4c0ead184808",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

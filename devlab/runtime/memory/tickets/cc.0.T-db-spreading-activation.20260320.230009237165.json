@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-db-spreading-activation.20260320.230009237165",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-spreading-activation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-20T23:00:09.237165",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-db-spreading-activation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-spreading-activation",
+    "body": "Seed search from recently-accessed memory IDs, walk interpretive_edges by weight, collect activated neighborhood, rank within that set. Cold search becomes fallback only. Connects to T-trails-infra (trail = activation path). Code change only. Igor up.",
+    "role": "worker",
+    "size": "medium",
+    "title": "Seed cortex.search() from recently-activated nodes",
+    "result": "committed c94f83d — spreading activation seeded from recently-activated nodes",
+    "status": "done",
+    "priority": 5,
+    "claimed_at": null,
+    "completed_at": "2026-03-20T23:00:09.237165+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

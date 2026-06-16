@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-control-station-breakers-only.20260609.214404043358",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-control-station-breakers-only"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T21:44:04.043358",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-hubert-device-2026-06-09"
+    ],
+    "tickets": [
+      "T-control-station-breakers-only",
+      "T-hubert-wire-dev-tools"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-control-station-breakers-only",
+    "gate": null,
+    "role": "apprentice",
+    "size": "M",
+    "tags": [
+      "WebUI",
+      "Architecture"
+    ],
+    "title": "Strip Control Station to pure breaker panel",
+    "result": "dev tool cards removed; Master Kill + Soft Kill + per-device breaker table; note directs to Hubert feed (31fa58ed)",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.5,
+    "intention": "I intend that Control Station is a single-purpose breaker panel — master kill, soft kill, per-device breakers — nothing else.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T21:44:04.043358+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-hubert-device-2026-06-09",
+    "description": "Remove Goals, Decisions, Questions, Hypotheses, Outcomes, Palace Browser, Tools cards from Control Station. Add: master kill button (kills all devices), soft kill button (kills all except rack + web server), per-device circuit breaker row. GATE: T-hubert-wire-dev-tools must be closed first so the removed cards are already reachable from Hubert's fascia.\n\n**Affected files:** devices/web_server/server.py (ctrl-grid HTML, breaker endpoint stubs)\n**Design rules:** log every breaker toggle at INFO\n**Scope boundary:** UI restructure only. Breaker toggles can log to console if backend endpoint not yet wired — visual affordance is the deliverable here.\n**Completion criteria:** Control Station shows only kill/soft-kill controls and per-device breaker row; no Goals/Decisions/etc cards present.\n**Validation:** Open Control Station — only breakers visible. No dev tool cards.\n**Observable via:** log.INFO('BREAKER_TOGGLE device={id} state={on|off}') when breaker clicked.",
+    "completed_at": "2026-06-09T22:06:13.989716+00:00",
+    "deposited_at": "2026-06-09T15:55:46.908440",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "required_files": [],
+    "purpose_category": "fact",
+    "scraps_validated": "2026-06-09T21:44:04.043392+00:00",
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

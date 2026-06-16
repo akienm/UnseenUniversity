@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-memory-search-rrf.20260521.175415340644",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-search-rrf"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-21T17:54:15.340644",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-articles-synthesis-2026-05-21"
+    ],
+    "tickets": [
+      "T-memory-search-rrf"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-search-rrf",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "MemorySystem",
+      "Search"
+    ],
+    "title": "Implement Reciprocal Rank Fusion in memory_search combining FTS and semantic signals",
+    "result": "RRF fusion added to memory_search: _rrf_merge() + _fts_search(); holistic + FTS signals combined; falls back gracefully; 21 tests all green",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": "2026-05-23T21:29:19.779103+00:00",
+    "created_at": "2026-05-21T17:54:15.340644+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "description": "Current memory_search uses FTS index only. Semantic similarity and exact-match relevance are complementary signals: FTS excels at known terms, semantic at concept similarity. RRF (Reciprocal Rank Fusion) combines both by computing sum(1/(k + rank_i)) for each signal's rank — no threshold tuning required. Based on hybrid memory agent research (URL 4) and context architecture pull model (URL 16: freshness and cost apply to retrieval).\n\n**Affected files:** wild_igor/igor/tools/memory_search.py, tests/test_memory_search.py\n**Design rules:** theigors/rules/database (Postgres; pg_trgm or separate embedding table for semantic signal)\n**Scope boundary:** In scope: add semantic retrieval path, combine with FTS via RRF, return merged ranked results, backward-compatible API. Out of scope: changing the memory_search function signature.\n**Test plan:** Query containing both exact match and semantically-related term; verify RRF ranks combined match higher than either signal alone. Verify known-keyword queries are not degraded vs current FTS behavior.",
+    "completed_at": "2026-05-28T02:15:01.411712+00:00",
+    "github_issue": 789,
+    "dispatched_at": "2026-05-23T21:29:19.779103+00:00",
+    "dispatched_by": "cc",
+    "required_files": [],
+    "scraps_validated": "2026-05-21T17:54:15.340660+00:00",
+    "target_difficulty": 2,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "5742ea63-8312-48ec-b075-baeb60ff91ca",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

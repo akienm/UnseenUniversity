@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-adc-performance-points.20260508.162844859414",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-adc-performance-points"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-08T16:28:44.859414",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-diagnostic-base-class-2026-05-08"
+    ],
+    "tickets": [
+      "T-adc-performance-points",
+      "T-python-diagnostic-base-class-repo"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-adc-performance-points",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "ADC",
+      "Observability",
+      "Logging"
+    ],
+    "title": "CLOSED: Add stopwatch performance-point logging to ADC BaseDevice",
+    "result": "BaseDevice.stopwatch() wired to python-diagnostic-base-class, CSV logging, 10 tests, bd7fa43",
+    "status": "closed",
+    "worker": "igor",
+    "claimed_at": "2026-05-08T18:38:13.569721+00:00",
+    "created_at": "2026-05-08T16:28:44.859414+00:00",
+    "related_to": null,
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "description": "Add stopwatch performance-point logging to agent_datacenter BaseDevice. Depends on T-python-diagnostic-base-class-repo — wire in the micro-package once it exists; do not reimplement inline.\n\n**Logging backend:** loguru (via python_diagnostic_base_class). CSV rows written by PerformanceHandler filtering on tag='perf' from loguru .bind().\n\nPrimary interface (context manager): `with self.stopwatch('id', comment='...') as t:`\nExplicit form also supported: `t = self.start_stopwatch('id'); ...; t.stop()`\nOn stop: logs via self.logger.perf AND appends row to datacenter_logs/<device>/perf/YYYY-MM-DD.perf.csv\nCSV columns: ts_start, ts_end, device_id, class_name, stopwatch_id, comment, elapsed_s, success (bool)\nFiles older than N days (default 10) pruned on startup.\n\n**Affected files:** agent_datacenter/device.py (or new agent_datacenter/perf.py), agent_datacenter/logcontrol/\n**Design rules:** no-sqlite; CSV is flat-file; follows datacenter_logs/<device>/ hierarchy; gate on T-python-diagnostic-base-class-repo\n**Scope boundary:** infrastructure only — no callers instrumented in this ticket; no analysis tooling\n**Test plan:** context manager logs on clean exit; logs success=False on exception; CSV row written with correct columns; old files pruned after N days",
+    "completed_at": "2026-05-08T18:41:04.922611+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b4682140-a47d-40b4-b6b2-264b636833b9",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-twm-context-timeout.20260507.161128000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-twm-context-timeout"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-07T16:11:28",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-twm-context-timeout"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-twm-context-timeout",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Test",
+      "Infrastructure"
+    ],
+    "title": "CLOSED: test_twm_context timeout on external Ollama service",
+    "result": "Added _ollama_reachable() TCP probe (2s) at top of each test; @pytest.mark.timeout(120/360) overrides for Ollama-dependent tests; 4 pass when Ollama live, skip cleanly when not",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.3,
+    "claimed_at": "2026-05-07T19:16:15.626613+00:00",
+    "created_at": "2026-05-07T16:11:28Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "test_complex_questions_need_ring times out (>30s) when connecting to Ollama inference service. Test has skipTest logic but timeout fires first. Needs either: (1) increased pytest-timeout for this test, (2) better skip detection before calling external service, or (3) local mock of inference.\n\n**Affected files:** tests/test_twm_context.py\n**Design rules:** test-plan-or-why-not\n**Scope boundary:** Fix timeout/skip behavior only, no migration-related code changes\n**Test plan:** Run test with timeout increase; verify skip logic works when Ollama unavailable",
+    "completed_at": "2026-05-07T19:24:20.086066+00:00",
+    "github_issue": 614,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "50e4e57d-8b66-48a6-9352-6a16587472d0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

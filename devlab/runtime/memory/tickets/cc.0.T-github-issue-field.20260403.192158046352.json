@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-github-issue-field.20260403.192158046352",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-github-issue-field"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:21:58.046352",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-github-issue-field"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-github-issue-field",
+    "epic": "Claude",
+    "size": "S",
+    "title": "Add github_issue field to cc_queue ticket schema",
+    "result": "Added github_issue field to cc_queue schema (setdefault in cmd_add), set-github-issue command, and GH# tag in cmd_list",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-03T19:21:11.885143+00:00",
+    "related_to": null,
+    "description": "Add github_issue field (GitHub issue number) to cc_queue ticket schema. Update cc_queue.py add/done/show to handle it. Each ticket links to its GitHub Issue for cloud backup.",
+    "completed_at": "2026-04-03T19:21:58.046352+00:00",
+    "deposited_at": "2026-05-20T20:22:32.720617",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e5094332-937c-4659-bd3a-56b961a831d2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.T-inner-cc-revamp.20260331.192102733780",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inner-cc-revamp"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-31T19:21:02.733780",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inner-cc-revamp"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inner-cc-revamp",
+    "tags": [
+      "Training",
+      "Cognition"
+    ],
+    "title": "inner_cc revamp — model-flexible, multi-turn, prompt caching",
+    "result": "D269: _make_or_request() unified OR helper with Anthropic prompt caching (cache_control ephemeral + anthropic-beta header for anthropic/* models). call_inner_cc_long() multi-turn loop (12 turns default). long_running=False param on call_inner_cc() delegates to long path. _HAIKU_MODEL/_SONNET_MODEL env-var constants. _log_error() forensic logger. 4 tests, 564 total passing.",
+    "status": "done",
+    "priority": 2,
+    "claimed_at": "2026-03-31T19:16:19.744531+00:00",
+    "description": "Revise inner_cc.py: model-selectable (haiku/sonnet via OR, not just gpt-4o-mini), add long_running path using OpenRouterReasoner for multi-turn agentic loop, add Anthropic prompt caching headers (cache_control ephemeral + anthropic-beta header) when model is anthropic/*. Reclaims the inner-Claude concept for training and other focused-agent tasks.",
+    "completed_at": "2026-03-31T19:21:02.733780+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "68ec3468-cd95-4841-9ac7-08a16a720f1f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

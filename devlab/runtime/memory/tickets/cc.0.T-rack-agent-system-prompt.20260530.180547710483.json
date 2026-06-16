@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-rack-agent-system-prompt.20260530.180547710483",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-rack-agent-system-prompt"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T18:05:47.710483",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-agentic-os-platform-2026-05-30"
+    ],
+    "tickets": [
+      "T-rack-agent-system-prompt"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-rack-agent-system-prompt",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Platform"
+    ],
+    "title": "Default rack system prompt injected at announce time for all agents",
+    "result": "base.yaml with system_prompt_sections added; ManifestAssembler merges base+profile overrides; 12 tests all pass",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.85,
+    "claimed_at": "2026-05-31T21:09:59.341572+00:00",
+    "created_at": "2026-05-30T18:05:47.710483+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-agentic-os-platform-2026-05-30",
+    "description": "When an agent announces and receives its manifest, it knows what tools it has but not what they're for or how to use the rack. There is no default system prompt orienting the agent to its environment. A new agent bootstrapped from template has a cockpit with no flight manual.\n\nAdd a default rack system prompt — a base context block injected into every agent's manifest at announce time — that explains: what the rack is, what recall(topic) is for, how to communicate with other devices via the channel, what the shared channel is, how to ask questions, and that other agents exist and are reachable. Device-specific profiles can extend or override sections.\n\nThis is the minimum viable orientation for any agent that announces on the rack to be useful without custom prompting.\n\n**Affected files:** unseen_university/announce/broker.py (or manifest builder), config/profiles/base.yaml (new base profile), config/profiles/ (existing profiles inherit from base)\n**Design rules:** no-sqlite; announce protocol owns manifest construction; profiles are declarative YAML\n**Scope boundary:** IN — base system prompt in manifest for all agents; profile inheritance (base → agent-type); OUT — per-session prompt injection, skill-specific prompts, Igor cognition prompts\n**Completion criteria:** a newly announced test agent receives a manifest containing a non-empty system_prompt field with rack orientation text; an agent-type profile can override or extend it; existing agents unaffected",
+    "completed_at": "2026-05-31T21:16:36.678715+00:00",
+    "deposited_at": "2026-05-30T12:07:08.860892",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-31T21:09:59.341572+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "skill",
+    "scraps_validated": "2026-05-30T18:05:47.858566+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0eee5d3f-c8ee-4534-b542-1e63fe604b94",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

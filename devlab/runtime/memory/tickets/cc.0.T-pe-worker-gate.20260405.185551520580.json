@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-pe-worker-gate.20260405.185551520580",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-pe-worker-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T18:55:51.520580",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-pe-worker-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-pe-worker-gate",
+    "epic": "Training",
+    "size": "S",
+    "title": "PE chain: skip worker=claude tickets",
+    "result": "Added worker gate in run_pe_entry_chain() between ENTRY and CLAIM: loads ticket via _load_ticket(), checks ticket.worker — if not None/''/igor, sets basket[error] and aborts immediately. Prevents Igor's PE chain from attempting worker=claude tickets (Claude Code skill files).",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "PE chain attempts worker=claude tickets (e.g. Claude Code skill files) which are outside the repo sandbox and structurally impossible to work. Fix: check ticket.worker before PLAN/SITUATE — if worker != igor, post to channel and exit immediately without attempting.",
+    "completed_at": "2026-04-05T18:55:51.520580+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "dafb5ba2-79e0-4e31-a663-04e353b5b57a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

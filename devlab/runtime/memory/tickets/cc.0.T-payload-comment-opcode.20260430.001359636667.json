@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-payload-comment-opcode.20260430.001359636667",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-payload-comment-opcode"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-30T00:13:59.636667",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-memory-metadata-comment-convention",
+      "T-payload-comment-opcode"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-payload-comment-opcode",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Habits",
+      "NodeExecutor"
+    ],
+    "title": "NOOP_COMMENT opcode — inline comments in habit payloads",
+    "result": "NOOP_COMMENT opcode added to node_executor known-set; runtime no-op, text logged at DEBUG. 5 new tests, 4149 regression pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.3,
+    "claimed_at": "2026-04-30T00:09:55.295463+00:00",
+    "related_to": "T-memory-metadata-comment-convention",
+    "decision_id": null,
+    "description": "Habit payloads currently have no in-line commenting mechanism. Add a NOOP_COMMENT opcode to node_executor that the runtime skips during execution but preserves in the payload for human readability. Lets habit authors leave breadcrumbs about WHY a particular branch/check exists without misusing other opcodes.\n\nShape: opcode='NOOP_COMMENT', args={'text': '...'}. Runtime treats as no-op (continues to next opcode). Linter/printer surfaces them to humans.\n\n**Affected files:** wild_igor/igor/cognition/node_executor.py (add opcode handler), tests/test_node_executor.py (add coverage).\n**Design rules:** none apply.\n**Scope boundary:** in scope: opcode + handler + tests. Out of scope: retroactive comment injection on existing habits, UI for surfacing comments.\n**Test plan:** unit tests: NOOP_COMMENT runs without affecting basket state; chain with NOOP_COMMENT in middle preserves all other opcode results.",
+    "completed_at": "2026-04-30T00:13:59.636667+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e3b4df5a-bd56-4b48-8cdb-239f11d468fa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

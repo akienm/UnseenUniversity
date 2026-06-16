@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-cognition-delay-cascade-scaffold.20260503.210508115175",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cognition-delay-cascade-scaffold"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-03T21:05:08.115175",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-discuss-cognition-delay-by-brain-size"
+    ],
+    "tickets": [
+      "T-anticipation-primitive",
+      "T-cognition-delay-cascade-scaffold",
+      "T-discuss-cognition-delay-by-brain-size",
+      "T-goal-formation-from-conversation",
+      "T-planning-as-waypoint-graph"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cognition-delay-cascade-scaffold",
+    "gate": null,
+    "size": "L",
+    "tags": [
+      "cognition",
+      "scaffold",
+      "engram-template"
+    ],
+    "title": "Cognition-delay cascade scaffold — 8-question sequencer that other primitives plug into",
+    "result": "Closed per Akien 2026-05-03: shipped over the last two sessions. Not re-opening.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": [
+      "T-anticipation-primitive",
+      "T-planning-as-waypoint-graph",
+      "T-goal-formation-from-conversation",
+      "T-discuss-cognition-delay-by-brain-size"
+    ],
+    "decision_id": null,
+    "description": "Build the cognition-delay cascade as the SCAFFOLD that other cognition primitives plug into (not a fifth primitive sitting alongside them). Synthesis from D-discuss-cognition-delay-by-brain-size: cognition delay scales with brain size; what fills the delay is a question-cascade; the cascade is the scaffold that anticipation / planning / goal-formation / consult execute *within*.\n\n**The 8-question cascade (per Akien refinement #4):**\n1. Am I safe?  (fast pattern-match, parallel, override-able — amygdala-shape)\n2. Do I need to reply?  (first firing — gate on whether to engage at all)\n3. What does this mean to me?  (cortex/TWM/milieu integration)\n4. What does the speaker mean to me?\n5. How do I feel about this person?\n6. Can I help?  (T-anticipation-primitive: predicted-valence-delta lands here)\n7. What might get in the way?  (T-planning-as-waypoint-graph: waypoint construction lands here)\n8. Do I need to reply? (re-fire after preceding answers settle — may produce a follow-up turn)\n\n**Semantics:** answers don't cancel the cascade, they COLOUR FORWARD (enter working state, bias later questions). Sub-cascades are STATE AUGMENTATION (thread-following with memory retrieval, not recursive function calls). am-I-safe = NO interrupts to a short threat-response cascade.\n\n**Slot map (which primitive plugs into which question):**\n| Question | Primitive |\n|---|---|\n| 1, 6 (am-I-safe / can-I-help) | T-anticipation-primitive (predicted-valence-delta) |\n| 7 (what-might-get-in-the-way) | T-planning-as-waypoint-graph (waypoint construction) |\n| 4-5 (speaker-mean / how-I-feel) | T-goal-formation-from-conversation (relationship-derived) |\n| 2, 8 (do-I-need-to-reply x2) | turn-pipeline + reasoning-workflow (existing) |\n| 3 (what-does-this-mean) | cortex / TWM / milieu (existing) |\n\n**Persona note:** persona is NOT injected by the cascade. It accumulates GRADIENT-STYLE through the layered cognition pipeline (words → tokens → meaning → meaning-to-me → what-could-I-do → what-do-I-want → how-to-reply → phrase → words). The cascade questions fire AT specific layers; persona-accumulation already happens in the data flow. Maps to existing thalamus.py:16, cortex.py:1920, basal_ganglia.py:571, decision_blob.py + goal_formation.py, prompt_contexts.voice_context, voice_ab.VoiceABFramework.\n\n**Brain-size capability ceiling:** each cognition tier (matching an animal-mind level — roundworm/bee/octopus/scrub-jay/human) gets a CEILING on cascade depth. Within that ceiling, actual cascade per-turn shaped by stimulus complexity. Observed delay = (questions fired) × (per-question time) + (re-fire passes).\n\n**Affected files:** wild_igor/igor/cognition/cognition_delay.py (NEW — cascade sequencer + question-template registry); wild_igor/igor/cognition/turn_pipeline.py (wire cascade entry at turn-start); wild_igor/igor/cognition/reasoning_workflow.py (cascade re-fire wiring); cascade-question-template seeds in clan.memories under appropriate path.\n\n**Design rules:** docs-in-code on cognition_delay.py (the cascade structure IS the design); engram-template framing (each question is a small probe / engram check / reasoning sub-task — adjustable per-context, per-personality); recency-trumps-age palace rule (this design baseline supersedes overlapping decision_blob / basal_ganglia logic; consolidation work at sprint-time reshapes older code to match cascade structure).\n\n**Scope boundary:** IN — cascade sequencer + 8 question templates + stub fillers for the slots whose primitives aren't built yet (anticipation, planning, goal-formation can call into the slot from existing code while scaffold runs); state-augmentation semantics; coloring-forward semantics; threat-cascade interrupt; brain-size capability-ceiling field on engram templates. OUT — anticipation primitive itself (T-anticipation-primitive); planning waypoint graph (T-planning-as-waypoint-graph); goal-formation (T-goal-formation-from-conversation); biology-end research (separate research thread; cascade above is the working model until research lands); migration of existing decision_blob / basal_ganglia logic to cascade shape (separate consolidation ticket once scaffold is proven).\n\n**Test plan:** (1) cascade runs the 8 questions in order with state augmentation visible at each step; (2) am-I-safe = NO interrupts to threat-response cascade and back-routes to short physical-action response; (3) do-I-need-to-reply re-fire produces a second output event when answers shifted post first-fire; (4) coloring-forward: a negative answer at question N visibly biases questions N+1..8 (not abort); (5) brain-size ceiling: a tier-2 (bee-equivalent) cascade truncates at slot 3-4 while a tier-5 (human-equivalent) runs the full set + re-fire.",
+    "completed_at": "2026-05-03T21:05:08.115175+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ed9955ac-5723-4295-8b00-56f3fa13b0c4",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

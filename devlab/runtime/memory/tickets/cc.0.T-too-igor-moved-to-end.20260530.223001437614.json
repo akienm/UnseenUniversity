@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-too-igor-moved-to-end.20260530.223001437614",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-too-igor-moved-to-end"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-30T22:30:01.437614",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-too-igor-moved-to-end"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-too-igor-moved-to-end",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Docs",
+      "Platform"
+    ],
+    "title": "Reorder TheoryOfOperation.md: move Igor to the end, platform model first",
+    "result": "reordering already shipped in T-theory-log-hierarchy-anomalies sprint — §3 Platform Subsystems (queue+memory), §4 Igor Reference Implementation, all cross-refs updated, no forward jumps from §1-3 into §4+",
+    "status": "closed",
+    "worker": "claude",
+    "purpose": "",
+    "priority": 0.7,
+    "claimed_at": "2026-05-30T23:45:52.348835+00:00",
+    "created_at": "2026-05-30T22:30:01.437614+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "TheoryOfOperation primary audience is people building agents on UnseenUniversity, not Igor-specific material. Igor is the reference implementation (proof of concept) but not the foundation for new builders. Reorder: move Igor sections to the end so early sections teach the platform abstractions (devices, shims, bus, queue, memory, node registry, tags, triggers, compiled inference) first. Builders learn the platform model before seeing Igor as an example of how to use it.\n\nCRITICAL: the memory system sections stay EARLY — memory is a shared platform resource used by CC, Igor, Librarian, and every future agent. The 'what do I know about X?' design point (low-inference search, node_registry, unified node format, tags at both levels) is foundational platform knowledge, not Igor-specific. Memory sections belong alongside devices/shims/bus/queue in the platform block, NOT in the Igor block.\n\nCurrent structure: §1 intro, §2 architecture, §3 subsystems (including Igor-specific brainstem/cognition), §4 Igor lifecycle, §5+ misc. New: §1 intro (unchanged), §2 architecture (unchanged), §3 platform subsystems (devices, shims, bus, queue, memory/cortex/node-registry, unified node format + compiled inference), §4 Igor as reference impl (brainstem/cognition/lifecycle), §5+ misc.\n\n**Affected files:** docs/TheoryOfOperation.md\n**Design rules:** audience-first organization — structure for the reader, not the writer\n**Scope boundary:** IN — reorder existing sections, keep memory sections in the platform block, update cross-references; OUT — rewriting content, adding new sections, changing substance\n**Completion criteria:** §1-3 teach platform abstractions (including memory) without Igor-specific internals; memory sections (cortex, node types, node_registry, unified format) appear before Igor; Igor sections form their own coherent block at §4+ with back-references to platform sections; all internal cross-references updated; doc reads front-to-back without forward jumps",
+    "completed_at": "2026-05-31T06:24:33.479850+00:00",
+    "deposited_at": "2026-05-30T16:31:40.448726",
+    "deposited_by": "cc_queue",
+    "github_issue": null,
+    "dispatched_at": "2026-05-30T23:45:52.348835+00:00",
+    "dispatched_by": "granny-weatherwax",
+    "required_files": [],
+    "purpose_category": "skill",
+    "scraps_validated": "2026-05-30T22:30:01.562836+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f6ab6f01-1eee-434d-a5ae-d260d27f75e2",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.T-factual-retrieval-trace.20260330.175330856049",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-factual-retrieval-trace"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-30T17:53:30.856049",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-factual-retrieval-trace"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-factual-retrieval-trace",
+    "epic": "Cognition",
+    "title": "Trace why cortex.search() misses 99.97% of FACTUALs",
+    "result": "5-fix chain: (1) factual_question intent (thalamus), (2) semantic_anchor traversal (thalamus), (3) per-term ILIKE FACTUAL supplement with stop-word filter (cortex), (4) Phase 2 force-inject for FACTUAL supplement nodes (cortex), (5) parsed.core_input in _tier0_response to strip routing directives (main.py). Probe confirmed: Hebbian learning → FACTUAL 'fire together wire together'. G-FACTUAL-RETRIEVAL1 closed.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": null,
+    "description": "10711/10714 FACTUAL nodes never retrieved. Investigate: FACTUALs excluded from search scope? Embeddings missing? Threshold too high? S-size — trace cortex.search() call path, check embedding coverage on FACTUAL nodes, test with a known book node ID.",
+    "completed_at": "2026-03-30T17:53:30.856049+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d8ceaad-dda1-4868-a118-5723814ac7bf",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

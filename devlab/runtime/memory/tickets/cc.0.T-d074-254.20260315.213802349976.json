@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-d074-254.20260315.213802349976",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-d074-254"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-15T21:38:02.349976",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-d074-254"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-d074-254",
+    "body": "Expand D074 intent gate in basal_ganglia.py to skip response habit type when parsed_intent is factual_question or knowledge_request. Let those fall through to LLM + winnow. See #254.",
+    "role": "implementation",
+    "size": "S",
+    "title": "D074 expansion: factual_question bypasses response habits (#254)",
+    "result": "basal_ganglia.py: added knowledge_request to _QUESTION_INTENTS; added G-OVN-1d gate — ALL response habits skip on factual_question or knowledge_request, fall through to LLM+winnow (D074 expansion, #254). G-OVN-1c kept for backwards compat.",
+    "status": "done",
+    "priority": 1,
+    "claimed_at": "2026-03-15T21:37:17.339235+00:00",
+    "completed_at": "2026-03-15T21:38:02.349976+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-proc-cc-direction.20260407.000800784456",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proc-cc-direction"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-07T00:08:00.784456",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-proc-cc-direction"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proc-cc-direction",
+    "epic": "Training",
+    "size": "S",
+    "title": "PROC_RECEIVE_CC_DIRECTION habit — Igor holds strategic context from CC",
+    "result": "receive_cc_direction tool + PROC_RECEIVE_CC_DIRECTION habit seeded. Deposits FACTUAL (identity_weight=0.9) + TWM 6h TTL + channel ack. 6 tests pass. Closes matrix gap.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "blocked_at": "2026-04-06T23:39:35.159676+00:00",
+    "claimed_at": "2026-04-06T23:27:04.457422+00:00",
+    "related_to": null,
+    "description": "Seed a PROCEDURAL habit that fires when a long CC message arrives that isn't a tool call (author=claude-code, no tool name match, length > 80 chars). Behavior: (1) deposit FACTUAL node summarizing the direction with source=claude-code, identity_weight=0.9, (2) post acknowledgment to channel, (3) inject summary into TWM with high salience + 6hr TTL. This closes the matrix gap where Igor receives strategic direction but has no pattern to hold it. Without this, D316/D317 decisions evaporate — Igor works tickets but doesn't know why. Trigger: 'decided|new direction|your path|from now on|D3[0-9][0-9]|you are now|priority is'",
+    "completed_at": "2026-04-07T00:08:00.784456+00:00",
+    "deposited_at": "2026-04-20T16:13:44.280437",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "17d4c3da-baae-4b41-b3c9-421b16b568d3",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

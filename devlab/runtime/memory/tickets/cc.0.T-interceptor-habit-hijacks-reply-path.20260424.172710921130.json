@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-interceptor-habit-hijacks-reply-path.20260424.172710921130",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-interceptor-habit-hijacks-reply-path"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-24T17:27:10.921130",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-interceptor-habit-hijacks-reply-path"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-interceptor-habit-hijacks-reply-path",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Cognition",
+      "Habits",
+      "Reply-path"
+    ],
+    "title": "Interceptor habits fire template output AS reply instead of alongside it",
+    "result": "Two bugs fixed: (1) DB UPDATE on both check_process habits — match_mode conditions_first → both, so 'process' keyword alone no longer fires; trigger phrases now required. (2) Widened _CSB_TOOL_LEAK regex with a bare-form variant catching NOT_RUNNING|name=... without a [tool_name] prefix. 5 new filter tests. 3949 pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.6,
+    "claimed_at": "2026-04-24T17:21:11.522283+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Observed 2026-04-24 11:08:16: Akien sent 'we are sprinting toward igor can process a ticket on his own'. Igor's reply was 'NOT_RUNNING|name=[Web message from akien]: we are sprinting toward...' — a template-format status string, not a conversational reply. A habit matched on some phrase in the message and fired its template as if it WERE Igor's reply, completely replacing the normal response path. Akien's diagnosis: 'interceptor habits that don't leave a follow-on expectation' — i.e., the habit shortcuts the reply path without leaving the normal reply obligation in place.\n\nTwo candidate fixes, pick one:\n(a) Change the matching habit so its output posts as a ring-memory observation / internal note, and the normal reply path still fires afterward.\n(b) Add a 'satisfies_reply_obligation' flag (default False) to habits; only habits explicitly flagged True can close the reply obligation. Habits without the flag run as side-effects, not as replies.\n\nFirst step is identifying WHICH habit fired. Search habit trigger patterns for phrases like 'sprint', 'processing', 'ticket' — or grep the habit registry for 'NOT_RUNNING|name=' template strings.\n\n**Affected files:** TBD — discovery step. Starting points: wild_igor/igor/cognition/habits/ (or wherever habits live), grep for 'NOT_RUNNING' and 'name=' template strings, wild_igor/igor/main.py reply-path. **Design rules:** test-plan-or-why-not. **Scope boundary:** IN — identify the firing habit, pick remediation (a) or (b), apply to the one habit OR establish the flag pattern for all habits. OUT — rewriting habit system, adding new habit types, retroactively fixing all interceptor-shaped habits beyond this one (file follow-up tickets if broad pattern emerges). **Test plan:** unit test: simulate turn with message matching the trigger phrase, assert (1) habit side-effect happened AND (2) normal reply path was invoked and produced conversational output. Integration regression: send message like 'we are sprinting' and assert Igor replies conversationally, not with a template.\n\n**Context:** Akien said: 'this came from one of those interceptor habits that don't leave a follow on expectation'. The message 'we are sprinting toward igor can process a ticket on his own' is the current session's north star.",
+    "completed_at": "2026-04-24T17:27:10.921130+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bcbd8d04-8a7d-42db-b039-1f814bd85bd5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

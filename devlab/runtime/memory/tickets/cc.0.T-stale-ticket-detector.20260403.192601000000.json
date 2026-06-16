@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-stale-ticket-detector.20260403.192601000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stale-ticket-detector"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-03T19:26:01",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-stale-ticket-detector"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stale-ticket-detector",
+    "epic": "Claude",
+    "size": "S",
+    "title": "Stale ticket cross-check in /context-load and /day-close — flag DB vs slate.md drift",
+    "result": "Stale check bash snippet added to context-load Step 4.5 and day-close Step 1. Flags in_progress tickets not found in today's dated slate.",
+    "status": "done",
+    "claimed_at": null,
+    "created_at": "2026-04-03T19:26:01Z",
+    "completed_at": "2026-04-03T22:57:58.347559+00:00",
+    "github_issue": 363,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

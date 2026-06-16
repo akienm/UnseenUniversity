@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-uc-delivery-telemetry.20260423.161100562031",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uc-delivery-telemetry"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-23T16:11:00.562031",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uc-delivery-telemetry"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uc-delivery-telemetry",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Observability",
+      "UC",
+      "Web",
+      "Telemetry"
+    ],
+    "title": "UC-side delivery telemetry — trace POST → fanout → per-WS-client send",
+    "result": "7 log points + zero-fanout channel diagnostic across UC POST handler, agent_send, broadcast, enqueue exceptions, WS send failures, join_session, disconnect. Next drop will announce its stage. 11 tests. db3ce4ab.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 0.7,
+    "claimed_at": "2026-04-23T16:08:28.568602+00:00",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Igor-side send telemetry (d5186515) catches Igor→UC failures, but the observed drops (09:58:26 804c5f99, 08:27:19 fb274171) return 200 OK and vanish downstream. Log each stage on UC so drop-point is localizable.\n\n**Affected files:** lab/claudecode/utility_closet_server.py\n**Design rules:** docs-live-in-code, test-plan-or-why-not\n**Scope boundary:** IN — logging + channel diagnostics at 7 points (POST entry, fanout count, enqueue exceptions, ws.send_text failures, join_session, disconnect, zero-fanout channel post). OUT — fixing the suspected session_id mismatch itself (separate ticket if/when logs confirm it).\n**Test plan:** unit tests for _broadcast_to_session (count logging + zero-fanout diagnostic), agent_send (log on entry), and mock-WS _send_text failure (log on exception). Channel-post is lazy-imported (same pattern as d5186515) to keep the server testable without Igor DB.\n\nPrincipal hypothesis from stage-walk of the delivery path: the web browser joined a session_id different from the one Igor sends to (default 'shared'). _broadcast_to_session looks up _session_clients[session_id]; if empty, fanout is a silent no-op and agent POST still returns 200. The zero-fanout diagnostic will prove or falsify this immediately on the next drop.",
+    "completed_at": "2026-04-23T16:11:00.562031+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b6a7e948-6230-4510-9679-64ae9075433f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

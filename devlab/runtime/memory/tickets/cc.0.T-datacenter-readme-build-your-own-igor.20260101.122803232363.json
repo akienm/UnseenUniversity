@@ -1,0 +1,43 @@
+{
+  "id": "cc.0.T-datacenter-readme-build-your-own-igor.20260101.122803232363",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-datacenter-readme-build-your-own-igor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T12:28:03.232363",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-datacenter-readme-build-your-own-igor",
+      "T-docs-live-code-rollout"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-datacenter-readme-build-your-own-igor",
+    "gate": null,
+    "size": "M",
+    "tags": [
+      "Documentation",
+      "AgentDatacenter"
+    ],
+    "title": "agent_datacenter README — kit-assembly guide for a fresh Claude building their own Igor",
+    "result": null,
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "Document the agent_datacenter as a kit a fresh Claude (working for someone else) can use to assemble their own Igor-shaped agent. Lives at agent_datacenter root README.\n\nShipped agent_datacenter@5499a9a — README rewritten 41 → 296 lines; covers all 8 areas: hierarchy (clan/instance/COA + home_db/local_db + swarm-box), bus shape (envelopes + comms:// addresses + announce protocol), two plug-in shapes (DatacenterClient + MCP wrapper), shims + agentctl + skill installer + RsyncBackend, profile YAML + __replace__ inheritance, what is NOT in the kit (cognition + seed memory), 5-minute smoke test, component file map. Phase status table updated to reflect actual state. Test plan per ticket: Akien-readthrough — pushed to main so review happens against landed copy.\n\n**Note:** ticket appears to have been lost from queue.json mid-session (write race during inventory edit of T-docs-live-code-rollout). Re-filed as done to reflect the shipped work.",
+    "completed_at": null,
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "6f384f28-cf34-4ff6-8794-5db49ed093f0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

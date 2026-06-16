@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-context-load-path-fix.20260528.235044744146",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-context-load-path-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-05-28T23:50:44.744146",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "none"
+    ],
+    "tickets": [
+      "T-context-load-path-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-context-load-path-fix",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Startup"
+    ],
+    "title": "Fix stale palace path in context-load + add ethos node",
+    "result": "Fixed stale palace path (agent_datacenter → unseen_university) + added ethos node query in context-load Step 2c; wrote palace.projects.unseen_university.ethos with compiled-inference principles",
+    "status": "closed",
+    "worker": "igor",
+    "priority": 0.5,
+    "claimed_at": null,
+    "created_at": "2026-05-28T23:50:44.744146+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "none",
+    "description": "context-load Step 2c was querying `palace.projects.agent_datacenter.summary` which no longer exists. Actual path is `palace.projects.unseen_university.summary`. Also added `palace.projects.unseen_university.ethos` — a new node containing the compiled-inference design principles from the ownership gap book, so future sessions load project ethos at startup without re-reading 7 chapters.\n\n**Affected files:** ~/.claude/skills/context-load/SKILL.md\n**Design rules:** none apply\n**Scope boundary:** skill file path fix + palace node creation only; no other workflow changes\n**Completion criteria:** `context-load` Step 2c query includes both `unseen_university.summary` and `unseen_university.ethos`; `palace.projects.unseen_university.ethos` node exists in adc.palace with compiled inference principles",
+    "completed_at": "2026-05-28T23:51:07.367974+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "scraps_validated": "2026-05-28T23:50:44.831569+00:00",
+    "target_difficulty": 1,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9279d75d-3cc3-46d7-97dd-12bda70f950a",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

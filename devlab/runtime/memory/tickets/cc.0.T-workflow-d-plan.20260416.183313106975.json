@@ -1,0 +1,39 @@
+{
+  "id": "cc.0.T-workflow-d-plan.20260416.183313106975",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-workflow-d-plan"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-16T18:33:13.106975",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-workflow-d-plan"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-workflow-d-plan",
+    "size": "S",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "WorkflowD: plan reasoning workflow",
+    "result": "WorkflowD_Plan: numbered steps + risks + first step extraction. ActionPlan output struct. 9 tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-16T18:25:10.671867+00:00",
+    "related_to": null,
+    "description": "WorkflowD_Plan — peer conversation to plan a multi-step action. Same pattern as WorkflowA. Opening: state the goal + constraints. Workflow steps: decompose, identify risks, sequence. Output: ActionPlan(goal, steps, risks, first_step). Sub-ticket of #436.",
+    "completed_at": "2026-04-16T18:33:13.106975+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2dd28b72-87a2-4cee-a4f1-4222d25b7b8d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

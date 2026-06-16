@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-wg-words-as-memories.20260608.193323916414",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-wg-words-as-memories"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T19:33:23.916414",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wg-node-tree-architecture-2026-06-08"
+    ],
+    "tickets": [
+      "T-wg-cooccur-retire",
+      "T-wg-spread-via-cortex",
+      "T-wg-words-as-memories"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-wg-words-as-memories",
+    "gate": null,
+    "role": "master",
+    "size": "M",
+    "tags": [
+      "Memory",
+      "WordGraph",
+      "Architecture",
+      "Database"
+    ],
+    "title": "Migrate wg_edges words into memories as WORD_GRAPH nodes",
+    "result": "57,298 words from wg_edges migrated to clan.memories as WORD_GRAPH nodes; links_weighted populated from wg_edges similarity weights; m061 unique index; get_or_create_word_memory() in cortex; WORD_GRAPH excluded from search",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.55,
+    "intention": "I intend that word-graph words are first-class memory nodes sharing the stable node ID scheme, calving infrastructure, and spreading activation pipeline.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T19:33:23.916414+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-wg-node-tree-architecture-2026-06-08",
+    "description": "wg_edges holds 57K distinct source words (semantic similarity graph, ~20 edges/word) that are not yet memory nodes. Migrate them into clan.memories as WORD_GRAPH type, with co-occurrence edges stored in links_weighted using the existing semantic weights from wg_edges. No new embedding calls needed for v1 — wg_edges similarity weights port directly.\n\nScope: 57K words × 20 edges avg = ~1.1M links_weighted entries. Batched background migration (1000 words/tx).\n\n**Affected files:** devices/igor/memory/cortex.py (add WORD_GRAPH memory_type, add get_or_create_word_memory() helper, batched migration), lab/claudecode/migrate_wg_to_memories.py (one-time migration script, idempotent)\n**Design rules:** no-sqlite; append-only (no DELETE); batch writes 1000/tx; WORD_GRAPH memory_type added; links_weighted format {memory_id: similarity_weight} sourced from wg_edges (semantic), NOT wg_cooccur (frequency) — preserves existing spread_from_words semantics; stable node IDs via node_id.generate()\n**Scope boundary:** IN: word→memory migration, wg_edges weights→links_weighted (top-100 per word), get_or_create_word_memory() helper. OUT: embedding vectors on word nodes (separate decision — model choice not made), wg_cooccur/wg_edges table removal (T-wg-cooccur-retire), spreading activation update (T-wg-spread-via-cortex)\n**Completion criteria:** SELECT COUNT(*) FROM memories WHERE memory_type='WORD_GRAPH' >= 50000 after migration; 5 spot-check words have stable node IDs, correct links_weighted entries sourced from wg_edges; migration script is idempotent (run twice = same result, no duplicates); existing igor test suite passes.",
+    "completed_at": "2026-06-08T20:38:21.356845+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

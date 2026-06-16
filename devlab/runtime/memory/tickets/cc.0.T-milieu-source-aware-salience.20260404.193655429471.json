@@ -1,0 +1,42 @@
+{
+  "id": "cc.0.T-milieu-source-aware-salience.20260404.193655429471",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-milieu-source-aware-salience"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T19:36:55.429471",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-milieu-source-aware-salience"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-milieu-source-aware-salience",
+    "size": "M",
+    "tags": [
+      "Cognition"
+    ],
+    "title": "Push sources: dynamic salience/urgency based on milieu state",
+    "result": "Added milieu_scale(salience, urgency) helper to BasePushSource. Under high arousal (>0.3) background salience is suppressed (scale 0.3-1.0); under low arousal (<-0.2) boosted slightly (+15% max). Urgency not scaled — only relevance. Wired into MemorySurfacer (LTM surfacing) and HeartbeatSource (time tick). Other sources can opt-in via self.milieu_scale() call. All 1684 tests pass.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 3,
+    "claimed_at": "2026-04-04T19:35:44.195708+00:00",
+    "related_to": null,
+    "description": "Every push source has hardcoded salience/urgency values (e.g. user_input 0.7/0.7, heartbeat 0.5/0.3). Under high arousal the system cannot narrow attention — all sources retain static priority. Fix: push() methods query milieu.get_state() and scale salience inversely to arousal (high stress → suppress low-urgency background noise). Implement as a BasePushSource.milieu_scale() helper. Systems dynamics finding from deep-audit Panel 10.",
+    "completed_at": "2026-04-04T19:36:55.429471+00:00",
+    "deposited_at": "2026-05-13T06:56:56.121091",
+    "deposited_by": "ticket-migration-2026-04-20",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a5fceba9-f4aa-4068-a1af-6148b698ad2d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

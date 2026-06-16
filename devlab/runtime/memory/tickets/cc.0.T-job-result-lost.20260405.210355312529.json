@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-job-result-lost.20260405.210355312529",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-job-result-lost"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T21:03:55.312529",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-job-result-lost"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-job-result-lost",
+    "epic": "Operations",
+    "size": "S",
+    "title": "Background job result silently dropped — never posted to channel",
+    "result": "Replaced inline DB write in _announce_completed_jobs with post_to_channel() (PG+JSONL fallback). Changed silent loginfo to log.warning. Root cause (CC messages going to background) also fixed by D313.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "claimed_at": "2026-04-05T21:01:47.535027+00:00",
+    "related_to": null,
+    "description": "Background jobs occasionally complete (status=completed) but their result is never posted to channel. Seen with job d573731e: job file shows completed at 14:12:49 but channel ends at Started background job. result_path is empty. Completion queue handler likely has a silent failure path when result is large or contains certain content. Check job_manager completion callback and channel post step for swallowed exceptions.",
+    "completed_at": "2026-04-05T21:03:55.312529+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0c68e387-1c21-4082-90e2-94c41b331096",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

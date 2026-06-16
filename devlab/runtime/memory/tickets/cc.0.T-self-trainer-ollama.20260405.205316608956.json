@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-self-trainer-ollama.20260405.205316608956",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-self-trainer-ollama"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T20:53:16.608956",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-self-trainer-ollama"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-self-trainer-ollama",
+    "epic": "Cognition",
+    "size": "S",
+    "title": "self_trainer: catch Ollama turns, not just cloud turns",
+    "result": "Extended _read_candidate_turns() to include tier.2 (Ollama) turns alongside cloud turns (cost>threshold). Added OLLAMA_TIERS frozenset. Updated DB supplement path to also query EPISODIC memories with tier_hint in OLLAMA_TIERS via ANY(). Design conversations via Ollama now land in Igor's training matrix.",
+    "status": "done",
+    "worker": "igor",
+    "priority": 1,
+    "claimed_at": "2026-04-05T20:52:01.110740+00:00",
+    "related_to": null,
+    "description": "PROC_SELF_TRAINING scans interaction logs for cloud turns (cost > threshold, input > MIN_LEN). Design conversations via Ollama produce zero cost — they are invisible to self_trainer. Fix: extend self_trainer to also scan Ollama turns above MIN_LEN threshold, or add a separate signal (e.g. cc_send author=claude-code) as a training trigger. Result: back-and-forth design sessions with Claude Code land in Igor matrix.",
+    "completed_at": "2026-04-05T20:53:16.608956+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "896bb491-6298-4d2b-9170-0de5b66d81da",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

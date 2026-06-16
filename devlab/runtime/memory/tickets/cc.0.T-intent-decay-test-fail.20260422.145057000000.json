@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-intent-decay-test-fail.20260422.145057000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intent-decay-test-fail"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-22T14:50:57",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-intent-decay-test-fail",
+      "T-strengthen-no-sqlite-filter"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-intent-decay-test-fail",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "Tests",
+      "IntentDecay"
+    ],
+    "title": "test_surface_aged_intents_pushes_twm_markers fails — GOAL_TEST_DECAY_SURFACE not surfaced",
+    "result": "Verified test passes (1/1) on current main — auto-resolved by T-twm-salience-time-decay as the ticket itself predicted.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 0.3,
+    "blocked_at": "2026-04-23T21:24:00.345335+00:00",
+    "claimed_at": null,
+    "created_at": "2026-04-22T14:50:57Z",
+    "related_to": null,
+    "decision_id": null,
+    "description": "Surfaced during T-strengthen-no-sqlite-filter sprint. Pre-existing failure unrelated to that ticket's palace/skill-only change.\n\n**Symptom:** tests/test_intent_decay.py::test_surface_aged_intents_pushes_twm_markers fails — after calling surface_aged_intents(), cortex.twm_read(category='aged_intent') returns 0 matching entries when the test expects >= 1.\n\n**Affected files:** tests/test_intent_decay.py:216, wild_igor/igor/* intent-decay path (surface_aged_intents + twm writer). Affected files TBD — discovery-shaped.\n\n**Design rules:** no-sqlite — no persistence changes; this is a test+glue-code investigation. no-new-memory-schemas — reuses existing memories/twm infra. test-plan-or-why-not — existing test is the spec; fix makes it pass.\n\n**Scope boundary:** In: diagnose why the aged intent doesn't land in twm_read('aged_intent'). Fix. Out: broader intent-decay design review.\n\n**Test plan:** re-run `pytest tests/test_intent_decay.py::test_surface_aged_intents_pushes_twm_markers` → must pass. Full suite `pytest tests/` → no new failures.",
+    "completed_at": "2026-05-02T03:41:43.455538+00:00",
+    "github_issue": 506,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "9786df38-0b63-4d11-8559-1fbc358f9f57",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-test-cortex-delete-missing-file.20260608.195342048255",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-cortex-delete-missing-file"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-08T19:53:42.048255",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-cortex-delete-missing-file"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-cortex-delete-missing-file",
+    "gate": null,
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Test",
+      "Infra"
+    ],
+    "title": "Fix pre-existing test failure: test_cortex_delete_memory looks for missing cortex.py path",
+    "result": "Fixed stale path: parent.parent → parent.parent.parent to reach repo root",
+    "status": "closed",
+    "worker": "claude",
+    "priority": 0.2,
+    "intention": "I intend that all tests in the suite pass without manually deselecting pre-existing failures.",
+    "claimed_at": null,
+    "created_at": "2026-06-08T19:53:42.048255+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": null,
+    "description": "tests/igor/test_cortex_delete_memory_fk_cascade.py::test_delete_memory_source_deletes_children_first fails with FileNotFoundError: '/home/akien/dev/src/UnseenUniversity/tests/devices/igor/memory/cortex.py'. The test looks for a file at a path that doesn't exist — likely a stale path from pre-migration layout.\n\n**Affected files:** tests/igor/test_cortex_delete_memory_fk_cascade.py\n**Design rules:** none apply\n**Scope boundary:** IN: fix the file path reference or update the test to match current layout. OUT: changing test logic.\n**Completion criteria:** pytest tests/igor/test_cortex_delete_memory_fk_cascade.py passes without --deselect.",
+    "completed_at": "2026-06-08T23:55:13.586629+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

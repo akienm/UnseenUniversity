@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.T-main-loop-exception.20260404.174633278095",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-main-loop-exception"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-04T17:46:33.278095",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-main-loop-exception"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-main-loop-exception",
+    "size": "M",
+    "tags": [
+      "Operations"
+    ],
+    "title": "Add outer try-except around main loop (line 2545) + graceful shutdown on any exception path",
+    "result": "Per-iteration try/except guard wrapping all background work in main loop (main.py:2602). Logs MAIN_LOOP_CRASH, calls _shutdown(reason), re-raises. SystemExit propagates unmodified. Committed 3fc59a1b.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 1,
+    "claimed_at": "2026-04-04T17:43:23.447326+00:00",
+    "related_to": null,
+    "description": "main.py while True loop (~line 2545) has no outer try-except. Any unhandled exception crashes the process with zero graceful state capture — warm context not saved, in-flight turns lost. Fix: (1) wrap main loop in try-except BaseException; call _shutdown(reason=str(e)) before exit; (2) set a threading.Event instead of catching SIGTERM/SIGINT in signal handlers (currently run in whatever thread receives signal — unsafe); (3) check shutdown_event at top of each loop iteration. SRE finding from deep-audit Panel 11.",
+    "completed_at": "2026-04-04T17:46:33.278095+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4a3d398f-9f86-4d73-b880-9d3348b68d18",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

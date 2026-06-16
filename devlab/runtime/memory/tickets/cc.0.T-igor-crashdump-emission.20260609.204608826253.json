@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-crashdump-emission.20260609.204608826253",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-crashdump-emission"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-09T20:46:08.826253",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-igor-crashdump-emission-2026-06-09"
+    ],
+    "tickets": [
+      "T-igor-crashdump-emission"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-crashdump-emission",
+    "gate": null,
+    "role": "apprentice",
+    "size": "S",
+    "tags": [
+      "Igor",
+      "Debug",
+      "Observability"
+    ],
+    "title": "Igor: emit crashdump on exception before exit",
+    "result": "Implemented _write_crashdump() helper in devices/igor/main.py main loop exception handler. Writes exception details to ~/.unseen_university/crashdumps/crash_*.jsonl synchronously before exit, so CC can diagnose without waiting for restart.",
+    "status": "closed",
+    "worker": "igor",
+    "intention": "I intend that Igor writes an exception/error to a crashdump file synchronously before exiting, so CC can diagnose failures without waiting for restart.",
+    "claimed_at": null,
+    "created_at": "2026-06-09T20:46:08.826253+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-igor-crashdump-emission-2026-06-09",
+    "description": "**When Igor's NE loop hits an exception (AttributeError, etc.), it catches and logs but exits silently ('See you next time'). The restart loop hides the actual error from CC until manual log archaeology.**\n\n**Solution:** Before exiting, write a crashdump JSON file to ~/.unseen_university/crashdumps/ with:\n- timestamp, error message, exception type, full traceback\n- instance ID\n\nCC's next context-load or poll finds it immediately (no restart needed).\n\n**Affected files:** devices/igor/main.py (wrap main NE loop try/except)\n**Design rules:** log every state change and interface crossing per CLAUDE.md\n**Scope boundary:** IN: write crashdump synchronously before exit, ensure directory exists. OUT: auto-ticket emission (defer to follow-on).\n**Completion criteria:** Igor hits exception, writes crashdump file to disk, CC finds and reads the file without waiting for restart. Verify by intentionally breaking Cortex, triggering exception, confirming crashdump appears.\n**Test plan:** Add temporary test that breaks Cortex.read_milieu, run Igor, confirm crashdump_*.jsonl file appears in ~/.unseen_university/crashdumps/.",
+    "completed_at": "2026-06-09T20:48:21.909279+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

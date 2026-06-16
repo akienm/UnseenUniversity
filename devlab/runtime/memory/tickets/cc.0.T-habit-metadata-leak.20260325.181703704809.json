@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.T-habit-metadata-leak.20260325.181703704809",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-habit-metadata-leak"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-25T18:17:03.704809",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-habit-metadata-leak"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-habit-metadata-leak",
+    "body": "PROC_RESP_ACTION_ANNOUNCE and PROC_RESP_SELF_CORRECT are outputting their habit definition text as the actual response: \"Habit executed. [PROC_RESP_SELF_CORRECT: When the employer gently corrects me...]\". This appears on the web channel as Igor's reply.\n\nROOT CAUSE: response_template or habit dispatch is using the habit narrative/metadata as the output string instead of triggering an LLM call or canned reply.\n\nFIX: Identify where response habits output their content. The output should either be (a) a canned response_template string, or (b) an LLM call with the habit context. Not the raw habit metadata.\n\nINERTIA: thalamus.py = LOW. main.py = MEDIUM.\n\nTESTS: probe that PROC_RESP_SELF_CORRECT produces a natural reply, not bracket metadata.\n\nFORENSIC LOGGING: log_error if habit response is detected to contain its own ID string.",
+    "role": "worker",
+    "size": "S",
+    "title": "Habits outputting their own metadata to channel instead of response",
+    "result": "Fixed response habits outputting metadata. Extended fallthrough check at line 3951 to reject response habits without response_template. Response habits now fall through to LLM for natural reply instead of outputting 'Habit executed. [HABIT_ID]' debug metadata. Added forensic logging (HABIT_RESPONSE_MISSING_TEMPLATE). Tests: 424 passed. Commit: a0cb5b3d. Probe deferred pending Igor restart.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-25T18:13:17.696396+00:00",
+    "completed_at": "2026-03-25T18:17:03.704809+00:00",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

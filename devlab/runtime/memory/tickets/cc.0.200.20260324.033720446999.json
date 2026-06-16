@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.200.20260324.033720446999",
+  "emitter": "cc.0",
+  "namespace": [
+    "200"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-03-24T03:37:20.446999",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "200"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "200",
+    "size": "M",
+    "title": "Non-blocking concurrent turn processing — remove debounce",
+    "result": "Removed debounce from stdin path. Each line now dispatched immediately to per-thread worker via _enqueue_stdin()/_stdin_worker(). Main loop never blocks on LLM inference. _STDIN_EOF sentinel fixes pre-existing EOF detection bug where Ctrl-D was silently ignored. Commands still run inline. Network messages were already non-blocking since #200 was partially in place.",
+    "status": "done",
+    "priority": 3,
+    "claimed_at": "2026-03-24T03:30:39.924475+00:00",
+    "description": "Remove debounce, enable interleaved responses, non-blocking concurrent turn processing. #200",
+    "completed_at": "2026-03-24T03:37:20.446999+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "feed452a-1996-4d9f-80f0-af2cf3e61bfa",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-active-suppression-action-claims.20260414.014805000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-active-suppression-action-claims"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-14T01:48:05",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-active-suppression-action-claims",
+      "T-igor-emit-action-confabulation",
+      "T-inhibitory-pattern-primitive"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-active-suppression-action-claims",
+    "tag": "Cognition",
+    "size": "M",
+    "owner": "cc",
+    "title": "Active inline suppression of false action claims (graduate verifier from detection-only)",
+    "result": "Graduated to active suppression: false action claims stripped from response text. suppress_false_claims() + main.py wiring. 6 new tests.",
+    "status": "done",
+    "worker": "claude",
+    "claimed_at": "2026-04-18T01:18:09.249069+00:00",
+    "created_at": "2026-04-14T01:48:05Z",
+    "related_to": null,
+    "description": "Follow-up to T-igor-emit-action-confabulation (22c57af6). The verifier shipped today is detection-only: it logs CONFAB_CAUGHT and pushes a high-salience TWM marker for the next turn, but does NOT modify response_text. The user still sees the false claim once.\n\nThis ticket graduates the verifier to active inline suppression. When a confabulated action claim is detected, intercept the reply at the emit gate and either:\n\n  (a) replace the false claim with 'let me actually do that now' and re-fork the actual action (requires understanding what action was claimed and how to execute it — hardest path)\n\n  (b) suppress the false claim sentence and continue with the rest of the response (medium difficulty — requires sentence boundary detection and confidence that the false claim is local)\n\n  (c) suppress the entire response and fall through to LLM with a 'previous draft contained an unverified action claim' hint (simplest — same shape as PROC_SUPPRESS_MID_CONV_GREETING, fall-through-to-LLM)\n\nDESIGN GATE: observe action_claim_verifier.log for 1-2 weeks post-ship to see what patterns trigger and what replacement strategies would be safe. The detection-only first pass IS the design data collection.\n\nWHEN THE INHIBITORY PATTERN PRIMITIVE LANDS (T-inhibitory-pattern-primitive), this becomes a config change on the existing INHIBITOR_ACTION_CLAIM instance — flip inhibition_action from MARK to REPLACE. No new module.\n\nINERTIA: MEDIUM. Touches reply emit gate.\n\nDEPENDS ON: empirical observation period, T-inhibitory-pattern-primitive (preferred but not strictly required).",
+    "completed_at": "2026-04-18T01:22:58.383489+00:00",
+    "github_issue": 420,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8d3e5f79-a84b-4ea3-a9cc-a266dcb94b09",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-find-tool-fuzzy.20260405.031619479373",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-find-tool-fuzzy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-04-05T03:16:19.479373",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-find-tool-fuzzy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-find-tool-fuzzy",
+    "epic": "Cognition",
+    "title": "find_tool fuzzy lookup",
+    "result": "Added find_tool(query,limit=5) registered tool in memory_query.py — keyword overlap with underscore-splitting against tool names+descriptions. find_tool('search memory') → memory_search. Resolves the search_memory vs memory_search class of confusion.",
+    "status": "done",
+    "worker": "claude",
+    "priority": 2,
+    "claimed_at": null,
+    "related_to": null,
+    "description": "Igor hallucinated wrong tool name; add find_tool(query) registered tool doing keyword overlap against tool names+descriptions so approximate names resolve",
+    "completed_at": "2026-04-05T03:16:19.479373+00:00",
+    "github_issue": null,
+    "required_files": [],
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "de92bdd4-7ed2-4377-80b9-19b3665eb31b",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

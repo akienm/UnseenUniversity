@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-consequence-intent-extractor.20260614.224400876402",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-intent-extractor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-14T22:44:00.876402",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intent-extractor-learning-substrate-2026-06-14"
+    ],
+    "tickets": [
+      "T-consequence-intent-extractor",
+      "T-intent-extractor-backfill",
+      "T-intent-extractor-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-intent-extractor",
+    "gate": "2026-06-28",
+    "role": "master",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "title": "[sprint] Consequence check: intent extractor learning substrate",
+    "result": null,
+    "status": "sprint",
+    "worker": "claude",
+    "priority": 0.3,
+    "intention": "I intend that intent extractor consequences are observed — specifically whether learning improves predictions and whether the cc_queue.py add pipeline remains reliable.",
+    "created_at": "2026-06-14T22:44:00.876402+00:00",
+    "created_by": null,
+    "related_to": null,
+    "decision_id": "D-intent-extractor-learning-substrate-2026-06-14",
+    "description": "**What changed:** Intent extractor device built as canonical learning substrate; cc_queue.py add stamps inferred intentions (fail-open); Librarian research completions send validate() signals.\n\n**Predicted unintended effects:**\n- predict() adds latency to cc_queue.py add even with fail-open — measure add time before/after\n- Backfill validate() on closed tickets may generate low-quality signals if result fields are sparse\n- patterns() may surface noise patterns before enough validations accumulate — early callers may get low-confidence garbage\n- Learning delta test (baseline vs after-20) may show zero improvement if Haiku is already at ceiling on intent-from-prose — the few-shot mechanism would be complexity without payoff\n- devlab.validations grows unboundedly — needs pruning/archival strategy eventually\n\n**Signals to watch:** cc_queue.py add latency; devlab.validations row count at 2-week mark; learning delta measured during T-intent-extractor-device close; patterns() quality spot-check by Akien at 2 weeks.\n\n**Gate condition:** Check by 2026-06-28 or when T-intent-extractor-backfill closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate as occurred / clear / partial and close\n**Test plan:** no tests — observation ticket",
+    "completed_at": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}
