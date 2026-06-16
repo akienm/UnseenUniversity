@@ -45,6 +45,31 @@ except ImportError:
 
 _CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
 TRANSCRIPT_DIR = Path(os.environ.get("CLAUDE_PROJECTS_DIR", str(_CLAUDE_PROJECTS)))
+
+
+def project_transcripts(projects_root: Path) -> list[Path]:
+    """Return transcript .jsonl files sorted oldest→newest by mtime.
+
+    Claude Code stores transcripts one level down from the projects root:
+    ``<projects_root>/<project-slug>/<session-id>.jsonl`` where ``<project-slug>``
+    is the cwd with every ``/`` replaced by ``-`` (e.g. cwd
+    ``/home/akien/dev/src/UnseenUniversity`` → ``-home-akien-dev-src-UnseenUniversity``).
+    Globbing the projects root directly (``*.jsonl``) finds nothing because the
+    root holds only those subdirectories — that was the "No transcripts found" bug.
+
+    Prefer the current cwd's project subdir so the default ("most recently
+    modified = the current session") really means *this* session and not a more
+    recently touched transcript from a parallel session in another repo. Fall
+    back to every project subdir when the cwd subdir is missing or empty, so the
+    tool still works when run from an unexpected cwd.
+    """
+    slug = str(Path.cwd()).replace("/", "-")
+    preferred = projects_root / slug
+    if preferred.is_dir():
+        scoped = list(preferred.glob("*.jsonl"))
+        if scoped:
+            return sorted(scoped, key=lambda p: p.stat().st_mtime)
+    return sorted(projects_root.glob("*/*.jsonl"), key=lambda p: p.stat().st_mtime)
 # T-cc-script-dead-code-sweep: parameterize output dir so this isn't
 # user-hostile across checkouts. Default keeps the prior behavior.
 _ADC_HOME = Path(
@@ -168,20 +193,20 @@ def render_day_file(date_str: str, per_session: list[tuple[str, list[str]]]) -> 
 
 
 def resolve_target_sessions(
-    transcript_dir: Path, session_id: str | None, all_mode: bool
+    all_transcripts: list[Path], session_id: str | None, all_mode: bool
 ) -> list[Path]:
-    files = sorted(transcript_dir.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
+    files = all_transcripts
     if not files:
         print("No transcripts found.", file=sys.stderr)
         sys.exit(1)
     if all_mode:
         return files
     if session_id:
-        p = transcript_dir / f"{session_id}.jsonl"
-        if not p.exists():
+        matches = [p for p in files if p.stem == session_id]
+        if not matches:
             print(f"No transcript for session {session_id}", file=sys.stderr)
             sys.exit(1)
-        return [p]
+        return matches
     return [files[-1]]
 
 
@@ -194,14 +219,12 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    all_transcripts = sorted(
-        TRANSCRIPT_DIR.glob("*.jsonl"), key=lambda p: p.stat().st_mtime
-    )
+    all_transcripts = project_transcripts(TRANSCRIPT_DIR)
     if not all_transcripts:
         print("No transcripts found.", file=sys.stderr)
         sys.exit(1)
 
-    targets = resolve_target_sessions(TRANSCRIPT_DIR, args.session, args.all)
+    targets = resolve_target_sessions(all_transcripts, args.session, args.all)
 
     # Partition every session once — we need the other sessions' contributions
     # when rewriting the day-files touched by the target sessions.
