@@ -15,6 +15,12 @@ Type=simple
 # Repo root — adjust if installed elsewhere
 WorkingDirectory=/home/akien/dev/src/UnseenUniversity
 
+# Auto-deploy plugin descriptors from the repo into the live scan dir on every
+# start. Without this, the descriptor only lives in config/ and the daemon
+# (which scans ~/.unseen_university/ground_loop/) never sees it — the exact
+# failure that took the web server down. Makes the supervisor self-deploying.
+ExecStartPre=/bin/sh -c 'mkdir -p %h/.unseen_university/ground_loop && cp /home/akien/dev/src/UnseenUniversity/config/ground_loop/*.yaml %h/.unseen_university/ground_loop/'
+
 # Python from the repo's venv
 ExecStart=/home/akien/dev/src/UnseenUniversity/.venv/bin/python3 \
           -m devices.ground_loop.daemon \
