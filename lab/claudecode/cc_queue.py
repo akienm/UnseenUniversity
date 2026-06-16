@@ -341,6 +341,42 @@ def _save(tasks):
     finally:
         conn.close()
 
+    # Fail-open dual-write: project every persisted ticket into the filesystem
+    # memory store (devlab/runtime/memory/tickets/). Runs ONLY after a successful
+    # commit above — if commit raised, the exception propagates before we get here
+    # and no unpersisted ticket is projected.
+    _project_to_memory(tasks)
+
+
+def _project_to_memory(tasks):
+    """Additive projection of tickets into the filesystem memory store.
+
+    D-filesystem-memory-store-2026-06-16. The Postgres tables stay authoritative;
+    this is a dual-write so the grep-able store tracks live ticket state (creation
+    AND every status transition that flows through _save → AR-009 interface
+    crossing). Reuses migrate_tickets.migrate_one so a freshly-written ticket and
+    a re-migration produce the IDENTICAL filename + envelope (idempotent by
+    construction — no drift between the live hook and the bulk migrator).
+
+    FAIL-OPEN: a projection failure must never break the DB write path, so every
+    error is swallowed and logged at DEBUG. Lazy import dodges the
+    migrate_tickets→cc_queue circular import (and keeps the store optional).
+    """
+    import logging
+    try:
+        import migrate_tickets
+    except Exception as e:  # store/migrator unavailable — DB write already durable
+        logging.getLogger(__name__).debug("memory projection unavailable: %s", e)
+        return
+    for t in tasks:
+        if not t.get("id"):
+            continue
+        try:
+            migrate_tickets.migrate_one(t)
+        except Exception as e:
+            logging.getLogger(__name__).debug(
+                "memory projection failed for %s: %s", t.get("id"), e)
+
 
 # ── Public API ────────────────────────────────────────────────────────────
 
