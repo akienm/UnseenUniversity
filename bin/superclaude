@@ -273,7 +273,13 @@ SESSION_NAME="$_CC_SESSION"
 
 if [[ -n "${TMUX:-}" ]] && [[ "$(tmux display-message -p '#{session_name}')" == "$_CC_SESSION" ]]; then
     # Already inside the correct CC session — launch directly; CC_TMUX_SESSION already in env.
-    exec claude --dangerously-skip-permissions \
+    # Strip OpenRouter routing vars (ANTHROPIC_BASE_URL/AUTH_TOKEN/API_KEY) that
+    # require_api_key() exported from igor.credentials.cfg — those are for Igor's
+    # inference layer, not Claude Code. Leaving them set routes CC to OpenRouter
+    # ("401 User not found") and bills paid API tokens instead of the x5max
+    # subscription. See incident_superclaude_401. (T-superclaude-openrouter-leak)
+    exec env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
+        claude --dangerously-skip-permissions \
         -n "$SESSION_NAME" \
         --remote-control "$SESSION_NAME" \
         "$@"
@@ -286,8 +292,13 @@ else
     # Create a fresh session from scratch.
     tmux new-session -d -s "$CC_TMUX_SESSION" 2>/dev/null || true
 
-    # Build the command string with proper quoting
-    CLAUDE_CMD="CC_TMUX_SESSION=$(printf '%q' "$CC_TMUX_SESSION") && cd $(printf '%q' "$PWD") && claude --dangerously-skip-permissions"
+    # Build the command string with proper quoting.
+    # Strip OpenRouter routing vars at the claude invocation (env -u ...) so the
+    # CC session uses the x5max subscription, not OpenRouter. The send-keys command
+    # runs in a fresh tmux server that inherits superclaude's env (where
+    # require_api_key() exported these), so stripping at exec time is required.
+    # See incident_superclaude_401. (T-superclaude-openrouter-leak)
+    CLAUDE_CMD="CC_TMUX_SESSION=$(printf '%q' "$CC_TMUX_SESSION") && cd $(printf '%q' "$PWD") && env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY claude --dangerously-skip-permissions"
     CLAUDE_CMD+=" -n $(printf '%q' "$SESSION_NAME")"
     CLAUDE_CMD+=" --remote-control $(printf '%q' "$SESSION_NAME")"
     for arg in "$@"; do
