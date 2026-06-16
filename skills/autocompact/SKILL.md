@@ -20,7 +20,7 @@ python3 ${CC_WORKFLOW_TOOLS}/debug_session_cli.py release
 
 Fallback:
 ```bash
-rm -f ${IGOR_HOME:-~/.unseen_university}/Igor-wild-0001/debug_session.flag
+rm -f ${IGOR_HOME:-$HOME/.unseen_university}/Igor-wild-0001/debug_session.flag
 ```
 
 ### 1.3. Deposit session content to clan.memories (T-cc-log-session-memory)
@@ -35,7 +35,7 @@ python3 ${CC_WORKFLOW_TOOLS}/session_memory_deposit.py 2>/dev/null || true
 ### 1.5. Mark CC.0 unavailable — prevents Granny dispatch during compact
 
 ```bash
-GRANNY_AVAIL=${GRANNY_AVAIL_DIR:-~/.granny/available}
+GRANNY_AVAIL=${GRANNY_AVAIL_DIR:-$HOME/.granny/available}
 mkdir -p "$GRANNY_AVAIL"
 rm -f "$GRANNY_AVAIL/CC.0.available.true"
 touch "$GRANNY_AVAIL/CC.0.available.false"
@@ -54,14 +54,14 @@ resumes from the durable record.
 Preserve string is a fixed generic pointer — no per-session customization:
 
 ```
-preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
+preserve: Read today's slate: ${IGOR_HOME:-$HOME/.unseen_university}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
 ```
 
 Always print the block clearly labeled:
 
 ```
 ── COMPACT PRESERVE STRING (in case the auto-fire below failed) ──
-preserve: Read today's slate: ${IGOR_HOME:-~/.unseen_university}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
+preserve: Read today's slate: ${IGOR_HOME:-$HOME/.unseen_university}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
 ───────────────────────────────────────────────────────────────
 ```
 
