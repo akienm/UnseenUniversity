@@ -7,19 +7,19 @@ metadata.kind='ticket').
 
 Log file:  ~/.unseen_university/cc_channel/log.jsonl
 
-Statuses (what happens next):
-    triage      — needs classification; any agent can triage
-    design      — needs design work before sprinting
-    open_questions — has numbered Q1:/Q2: questions without matching A1:/A2: answers; Akien answers, status flips to sprint
-    approval    — plan submitted, awaiting Akien sign-off
-    akien       — requires Akien to take an external action
-    sprint      — ready to pick up and work
-    in_progress — assigned, actively in flight
-    hold        — explicitly paused (reason in ticket)
-    dependency  — gated on a future event or condition
-    pending     — waiting on a specific other ticket (list it)
-    cancelled   — decided not to do
-    closed      — done
+Statuses — canonical set is D-ticket-status-model-2026-06-16 (the concrete).
+    triage      — not yet ready to work: needs classification, design, or open
+                  questions answered. Absorbs the old {design, open_questions,
+                  needs_review}. Any agent can triage.
+    sprint      — cleared to work (the canonical concept is READY); claimable.
+    in_progress — actively in flight (canonical concept: INPROGRESS).
+    hold        — explicitly paused (reason in ticket). Akien-only.
+    dependency  — blocked on a named dependency (ticket id or Akien action).
+    closed      — terminal: done, won't-do, and rejected all land here.
+    pending     — legacy catch-all; treat as triage or dependency.
+    cancelled   — legacy terminal; treat as closed.
+    approval / akien — legacy pre-sprint gates; sorted = approved, so these
+                  collapse to triage (not yet cleared) or sprint (cleared).
 
 Usage:
     cc_queue.py list                          — show tasks (sprint first, gated hidden)
@@ -94,10 +94,9 @@ _WORKER_TO_ROLE = {
 }
 
 STATUS_ORDER = {
-    # Canonical statuses (what happens next):
+    # Canonical statuses — D-ticket-status-model-2026-06-16 (the concrete).
+    # TRIAGE absorbs {triage, design, open_questions, needs_review}.
     "triage": 0,
-    "design": 1,
-    "open_questions": 1.5,
     "approval": 2,
     "akien": 3,
     "sprint": 4,
@@ -111,7 +110,9 @@ STATUS_ORDER = {
     "pending": 9,
     "cancelled": 10,
     "closed": 11,
-    # Legacy aliases (kept for old DB rows):
+    # Legacy aliases (kept for old DB rows so they still sort; folded → triage):
+    "design": 0,
+    "open_questions": 0,
     "needs_review": 0,
     "awaiting_approval": 2,
     "blocked": 7,
@@ -119,7 +120,9 @@ STATUS_ORDER = {
 }
 
 _TERMINAL_STATUSES = {"closed", "done", "cancelled"}
-_ACTIONABLE_STATUSES = {"sprint", "design", "akien", "awaiting_approval", "approval"}
+# design folded into triage (TRIAGE = not yet ready to work), so it is no longer
+# auto-claimable — deliberate claim-path change per D-ticket-status-model-2026-06-16.
+_ACTIONABLE_STATUSES = {"sprint", "akien", "awaiting_approval", "approval"}
 
 # Status prefix helpers — embed [status] in title for one-grep searchability
 _STATUS_PREFIX_RE = None
@@ -478,8 +481,6 @@ def _find(tasks, tid):
 def _format_task_line(t: dict) -> str:
     STATUS_ICON = {
         "triage": "🔍",
-        "design": "📐",
-        "open_questions": "❓",
         "approval": "🟠",
         "akien": "👤",
         "sprint": "⬜",
@@ -490,8 +491,10 @@ def _format_task_line(t: dict) -> str:
         "pending": "⏳",
         "cancelled": "❌",
         "closed": "✅",
-        # Legacy:
-        "needs_review": "🟡",
+        # Legacy (folded → triage, kept so stragglers still render):
+        "design": "🔍",
+        "open_questions": "🔍",
+        "needs_review": "🔍",
         "awaiting_approval": "🟠",
         "blocked": "🔴",
         "done": "✅",
@@ -2010,7 +2013,7 @@ def cmd_setstatus(args):
 # Title prefix → canonical status mapping for migrate-statuses
 _PREFIX_STATUS = {
     "DESIGNED:": "sprint",
-    "NEEDS DESIGN:": "design",
+    "NEEDS DESIGN:": "triage",  # design folded → triage (D-ticket-status-model-2026-06-16)
     "NEW:": "triage",
     "CLOSED:": "hold",
 }
@@ -2046,7 +2049,10 @@ def cmd_migrate_statuses(args):
         legacy_map = {
             "blocked": "hold",
             "awaiting_approval": "approval",
+            # Fold → triage (D-ticket-status-model-2026-06-16):
             "needs_review": "triage",
+            "design": "triage",
+            "open_questions": "triage",
         }
         if new_status in legacy_map:
             new_status = legacy_map[new_status]
@@ -2217,7 +2223,9 @@ COMMANDS["set-role"] = cmd_set_role
 
 
 def cmd_needs_review(args):
-    """Mark a ticket needs_review — Igor self-coding review gate."""
+    """Mark a ticket as needing review. Folds → triage per
+    D-ticket-status-model-2026-06-16 (needs_review is no longer a distinct
+    status; "needs review" = "not yet ready to work" = TRIAGE)."""
     if not args:
         print("Usage: needs-review <id>")
         sys.exit(1)
@@ -2226,11 +2234,11 @@ def cmd_needs_review(args):
     if not t:
         print(f"Task {args[0]} not found.")
         sys.exit(1)
-    t["status"] = "needs_review"
+    t["status"] = "triage"
     t["needs_review_at"] = _now()
     _save(tasks)
-    _log({"action": "needs_review", "id": args[0], "title": t["title"]})
-    print(f"Needs review: {args[0]}: {t['title']}")
+    _log({"action": "needs_review", "id": args[0], "title": t["title"], "status": "triage"})
+    print(f"Triage (needs review): {args[0]}: {t['title']}")
 
 
 COMMANDS["needs-review"] = cmd_needs_review

@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""uuquestions — surface tickets with open design questions.
+"""uuquestions — surface TRIAGE tickets, flagging those with open questions.
 
-Shows:
-  - status = open_questions  (Q1: present without matching A1:)
-  - status = design          (needs design review before sprint)
+Per D-ticket-status-model-2026-06-16, design and open_questions folded into
+TRIAGE. A ticket "has open questions" when its description carries a Q<n>: line
+with no matching A<n>: answer — that's a property of the description now, not a
+separate status. This tool surfaces TRIAGE tickets and separates the ones still
+waiting on Akien's answers from the rest.
 
-Usage: uuquestions [--design-only | --questions-only]
+Usage: uuquestions [--questions-only | --design-only]
+  --questions-only  only TRIAGE tickets with unanswered questions
+  --design-only     only TRIAGE tickets without unanswered questions
 """
 from __future__ import annotations
 
@@ -23,12 +27,16 @@ PG = os.environ.get(
 )
 
 
-def _first_question(description: str) -> str | None:
-    """Extract first Q1: / Q2: line from ticket description."""
+def _open_questions(description: str) -> list[str]:
+    """Return Q<n>: lines that have no matching A<n>: answer."""
     if not description:
-        return None
-    m = re.search(r'Q\d+:\s*(.+)', description)
-    return m.group(0).strip() if m else None
+        return []
+    answered = set(re.findall(r'A(\d+):', description))
+    out = []
+    for m in re.finditer(r'Q(\d+):\s*(.+)', description):
+        if m.group(1) not in answered:
+            out.append(f"Q{m.group(1)}: {m.group(2).strip()}")
+    return out
 
 
 def main(argv=None):
@@ -36,13 +44,6 @@ def main(argv=None):
     p.add_argument("--design-only", action="store_true")
     p.add_argument("--questions-only", action="store_true")
     args = p.parse_args(argv)
-
-    if args.design_only:
-        statuses = ["design"]
-    elif args.questions_only:
-        statuses = ["open_questions"]
-    else:
-        statuses = ["open_questions", "design"]
 
     try:
         conn = psycopg2.connect(PG)
@@ -57,47 +58,47 @@ def main(argv=None):
             FROM clan.memories
             WHERE parent_id = 'TICKETS_ROOT'
               AND metadata->>'kind' = 'ticket'
-              AND metadata->>'status' = ANY(%s)
+              AND metadata->>'status' = 'triage'
             ORDER BY
-              CASE metadata->>'status'
-                WHEN 'open_questions' THEN 0
-                WHEN 'design' THEN 1
-                ELSE 2
-              END,
               (metadata->>'priority')::float DESC NULLS LAST,
               metadata->>'id'
             """,
-            (statuses,),
         )
         rows = [r["metadata"] for r in cur.fetchall()]
     conn.close()
 
-    if not rows:
-        print("(none)")
-        sys.exit(0)
-
-    current_status = None
+    # Split TRIAGE into "has open questions" vs "no open questions".
+    with_q: list[tuple[dict, list[str]]] = []
+    without_q: list[dict] = []
     for t in rows:
-        status = t.get("status", "?")
-        if status != current_status:
-            current_status = status
-            if status == "open_questions":
-                print("OPEN QUESTIONS:")
-            else:
-                print(f"\n{status.upper()}:")
+        oq = _open_questions(t.get("description", ""))
+        (with_q.append((t, oq)) if oq else without_q.append(t))
 
-        tid = t.get("id", "?")
-        size = t.get("size", "?")
+    def _title(t: dict) -> str:
         title = t.get("title", "")
         if title.startswith("[") and "]" in title:
             title = title[title.index("]") + 1:].strip()
+        return title
 
-        icon = "❓" if status == "open_questions" else "📐"
-        print(f"  {icon} {tid} ({size}) — {title}")
+    printed = False
+    if not args.design_only and with_q:
+        print("OPEN QUESTIONS (triage, awaiting answers):")
+        for t, oq in with_q:
+            print(f"  ❓ {t.get('id','?')} ({t.get('size','?')}) — {_title(t)}")
+            print(f"       {oq[0]}")
+        printed = True
 
-        q = _first_question(t.get("description", ""))
-        if q:
-            print(f"       {q}")
+    if not args.questions_only and without_q:
+        if printed:
+            print()
+        print("TRIAGE (needs classification / design):")
+        for t in without_q:
+            print(f"  🔍 {t.get('id','?')} ({t.get('size','?')}) — {_title(t)}")
+        printed = True
+
+    if not printed:
+        print("(none)")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

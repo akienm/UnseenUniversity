@@ -20,30 +20,35 @@ from pathlib import Path
 
 _TERMINAL = {"done", "closed", "cancelled", "discarded"}
 
+# Display order — canonical concept names per D-ticket-status-model-2026-06-16.
+# Internal status strings are unchanged (sprint == READY) — this is the display
+# layer only. Legacy values (approval/akien/pending/escalated) still render at
+# the bottom until step 2 migrates them; design/open_questions/needs_review have
+# folded into triage and no longer appear as their own group.
 _STATUS_ORDER = [
-    "in_progress",
-    "sprint",
-    "dependency",
+    "in_progress",   # INPROGRESS
+    "sprint",        # READY
+    "triage",        # TRIAGE (absorbs design / open_questions / needs_review)
+    "dependency",    # DEPENDENCY
+    "hold",          # HOLD
+    # legacy — folded/removed by the status model, shown until migrated:
+    "approval",
+    "akien",
     "pending",
     "escalated",
-    "approval",
-    "hold",
-    "design",
-    "triage",
-    "akien",
 ]
 
 _STATUS_LABEL = {
     "in_progress": "In progress",
-    "sprint":      "Sprint (ready)",
-    "escalated":   "Escalated",
-    "approval":    "Awaiting approval",
-    "hold":        "Hold",
-    "design":      "Design",
+    "sprint":      "Ready",
     "triage":      "Triage",
-    "akien":       "Akien",
     "dependency":  "Dependency",
-    "pending":     "Pending",
+    "hold":        "Hold",
+    # legacy:
+    "escalated":   "Escalated (legacy → role bump)",
+    "approval":    "Awaiting approval (legacy → sorted=approved)",
+    "akien":       "Akien (legacy)",
+    "pending":     "Pending (legacy → triage/dependency)",
 }
 
 _SIZE_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}

@@ -16,16 +16,20 @@ PG = os.environ.get(
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
 )
 
+# D-ticket-status-model-2026-06-16: design / open_questions fold into triage.
 STATUS_ICON = {
     "in_progress": "🔵",
     "sprint":      "⬜",
-    "design":      "📐",
-    "open_questions": "❓",
-    "hold":        "🔒",
     "triage":      "🔍",
+    "hold":        "🔒",
+    "dependency":  "🔗",
     "done":        "✅",
     "closed":      "✅",
     "cancelled":   "❌",
+    # legacy (folded → triage):
+    "design":      "🔍",
+    "open_questions": "🔍",
+    "needs_review": "🔍",
     "akien":       "👤",
 }
 

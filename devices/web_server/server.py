@@ -2617,7 +2617,20 @@ async def _page_outcomes(request: Request):
 
 # ── Queue route ──────────────────────────────────────────────────────────────
 
-_STATUS_ORDER = ["in_progress", "sprint", "design", "triage", "hold", "pending", "dependency", "approval", "akien"]
+# Canonical status model — D-ticket-status-model-2026-06-16. Internal strings are
+# unchanged (sprint == READY); _STATUS_LABEL renders the canonical concept name.
+# design/open_questions/needs_review fold into triage (no longer their own column).
+_STATUS_ORDER = ["in_progress", "sprint", "triage", "dependency", "hold", "pending", "approval", "akien"]
+_STATUS_LABEL = {
+    "in_progress": "In progress",
+    "sprint": "Ready",
+    "triage": "Triage",
+    "dependency": "Dependency",
+    "hold": "Hold",
+    "pending": "Pending (legacy)",
+    "approval": "Awaiting approval (legacy)",
+    "akien": "Akien (legacy)",
+}
 _STATUS_CLASS = {
     "in_progress": "ok",
     "sprint": "ok",
@@ -2625,7 +2638,6 @@ _STATUS_CLASS = {
     "pending": "warn",
     "dependency": "warn",
     "triage": "",
-    "design": "",
     "approval": "warn",
     "akien": "warn",
 }
@@ -2762,8 +2774,9 @@ async def _page_queue(request: Request):
     for status in order:
         group = grouped[status]
         cls = _STATUS_CLASS.get(status, "")
+        label = _STATUS_LABEL.get(status, status)
         sections.append(
-            f'<h2><span class="{cls}">{status}</span>'
+            f'<h2><span class="{cls}">{label}</span>'
             f' <span style="color:#888;font-size:0.85rem">({len(group)})</span></h2>'
             + _queue_table(group)
         )
