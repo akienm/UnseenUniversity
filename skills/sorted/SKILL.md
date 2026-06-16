@@ -179,6 +179,7 @@ Consequence ticket shape:
   "gate": "<YYYY-MM-DD — 14 days from today>",   # compute with: python -c "from datetime import datetime,timedelta; print((datetime.now()+timedelta(days=14)).strftime('%Y-%m-%d'))"
   "priority": 0.3,
   "status": "sprint"
+  # worker omitted — consequence tickets default to unassigned (no worker field)
 }
 ```
 
@@ -208,6 +209,16 @@ Fields expected on the palace node (same shape):
 - `spawned_tickets` — list of ticket ids created
 - `date` — YYYY-MM-DD
 - `status` — `open` (auto-closes when all spawned_tickets close, via decision-rollup)
+
+**Then project the decision into the filesystem memory store** (dual-write,
+D-filesystem-memory-store-2026-06-16). The `.md` stub stays authoritative;
+this keeps `devlab/runtime/memory/decisions/` current via the SAME idempotent
+projector the bulk migrator uses, so a fresh /sorted and a re-migration emit
+the identical file. Fail-open — a projection failure must never block /sorted:
+```bash
+( cd "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/lab/claudecode" && \
+  python3 -c "import migrate_decisions; migrate_decisions.migrate_one('${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/lab/design_docs/decisions/D-<id>.md')" ) || true
+```
 
 ### 7. Append to decisions log
 
