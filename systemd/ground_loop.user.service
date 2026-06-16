@@ -1,0 +1,37 @@
+[Unit]
+Description=UnseenUniversity Ground Loop — plugin-host process supervisor (user unit)
+Documentation=https://github.com/akienm/UnseenUniversity
+# User-manager variant of ground_loop.service. Runs without sudo and starts
+# at boot because the user has lingering enabled (loginctl enable-linger akien).
+# Install:
+#   cp systemd/ground_loop.user.service ~/.config/systemd/user/ground_loop.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now ground_loop.service
+After=network.target
+
+[Service]
+Type=simple
+
+# Repo root — adjust if installed elsewhere
+WorkingDirectory=/home/akien/dev/src/UnseenUniversity
+
+# Python from the repo's venv
+ExecStart=/home/akien/dev/src/UnseenUniversity/.venv/bin/python3 \
+          -m devices.ground_loop.daemon \
+          --poll 15 \
+          --log-level INFO
+
+# Restart on failure (systemd keeps it alive; Ground Loop restarts plugins internally)
+Restart=on-failure
+RestartSec=10
+
+# Environment
+Environment=IGOR_HOME=/home/akien/.unseen_university
+Environment=UU_ROOT=/home/akien/dev/src/UnseenUniversity
+
+# Logs go to the user journal — view with: journalctl --user -u ground_loop -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
