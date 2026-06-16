@@ -27,7 +27,9 @@ from urllib.error import URLError
 
 log = logging.getLogger(__name__)
 
-_FLAGS_DIR = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university")) / "flags"
+_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+_FLAGS_DIR = _IGOR_HOME / "flags"
+_BACKEND_LOG_DIR = _IGOR_HOME / "ground_loop" / "logs"
 
 
 class PluginProxy:
@@ -61,16 +63,33 @@ class PluginProxy:
 
     def _spawn_backend(self) -> None:
         env = {**os.environ, **self.start_env}
+        # Capture backend stdout+stderr to a logfile rather than DEVNULL.
+        # A bare `python3` with a missing import dies on a silent ImportError;
+        # DEVNULL made that invisible and turned a one-line log read into a
+        # diagnosis session. Append so restarts accumulate, not truncate.
+        log_path = _BACKEND_LOG_DIR / f"{self.name}.backend.log"
+        try:
+            _BACKEND_LOG_DIR.mkdir(parents=True, exist_ok=True)
+            backend_log = open(log_path, "ab")
+        except OSError as exc:
+            log.warning(
+                "GROUND_LOOP_PROXY|plugin=%s|warn=backend_log_open_failed|exc=%s",
+                self.name, exc,
+            )
+            backend_log = subprocess.DEVNULL
         log.info(
-            "GROUND_LOOP_PROXY|plugin=%s|action=spawn_backend|cmd=%s|backend_port=%d",
-            self.name, self.start_cmd, self.backend_port,
+            "GROUND_LOOP_PROXY|plugin=%s|action=spawn_backend|cmd=%s|backend_port=%d|log=%s",
+            self.name, self.start_cmd, self.backend_port, log_path,
         )
         self._proc = subprocess.Popen(
             self.start_cmd,
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=backend_log,
+            stderr=subprocess.STDOUT,
         )
+        # Popen dups the fd; close our handle so we don't leak one per spawn.
+        if backend_log is not subprocess.DEVNULL:
+            backend_log.close()
         log.info(
             "GROUND_LOOP_PROXY|plugin=%s|action=spawned|pid=%d",
             self.name, self._proc.pid,
