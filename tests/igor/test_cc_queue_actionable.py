@@ -75,15 +75,20 @@ class TestActionableFilter:
         out = _list_actionable(tasks)
         assert "T-a" in out
 
-    def test_includes_design_ticket(self):
+    def test_excludes_design_ticket(self):
+        # D-ticket-status-model-2026-06-16 step 2 (commit 84da5557): _ACTIONABLE_STATUSES
+        # is {"sprint"} only. `design` folded into `triage` and is no longer actionable —
+        # work must be explicitly cleared to `sprint` before it can be picked up.
         tasks = [_t(id="T-a", status="design", worker=None)]
         out = _list_actionable(tasks)
-        assert "T-a" in out
+        assert "T-a" not in out
 
-    def test_includes_awaiting_approval_ticket(self):
+    def test_excludes_awaiting_approval_ticket(self):
+        # Step 2 dropped awaiting_approval/approval as settable+actionable (sorted =
+        # approved makes the pre-sprint approval gate redundant). Not actionable.
         tasks = [_t(id="T-a", status="awaiting_approval", worker=None)]
         out = _list_actionable(tasks)
-        assert "T-a" in out
+        assert "T-a" not in out
 
     def test_excludes_worker_igor(self):
         tasks = [_t(id="T-a", status="sprint", worker="igor")]

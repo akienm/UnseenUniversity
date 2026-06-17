@@ -56,6 +56,18 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+# This script is invoked as a bare file (`python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py`)
+# by every ticket skill, under the SYSTEM python3 — not the venv. For a script file
+# sys.path[0] is the script's own dir (lab/claudecode), so top-level packages
+# `devices` and `unseen_university` are NOT importable. The lazy `from devices.*`
+# hooks below (classifier, annotator, constraint decorator, intent, scraps) all
+# fail-open on ImportError, so the breakage was SILENT: every queue op printed
+# "No module named 'devices'" to stderr and skipped classification/decoration.
+# Put the repo root (two parents up) on sys.path so those features actually run.
+_REPO_ROOT = str(Path(__file__).resolve().parents[2])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 IGOR_FLUSH_URL = "https://localhost:8080/api/cc_send"
 
 TICKETS_ROOT_ID = "TICKETS_ROOT"
