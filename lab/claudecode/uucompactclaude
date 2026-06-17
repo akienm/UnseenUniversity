@@ -30,3 +30,7 @@ sleep 30
 tmux send-keys -t "$SESSION" "/model sonnet"
 sleep 0.5
 tmux send-keys -t "$SESSION" Enter
+sleep 0.5
+tmux send-keys -t "$SESSION" "resume"
+sleep 0.5
+tmux send-keys -t "$SESSION" Enter
