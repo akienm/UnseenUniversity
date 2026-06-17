@@ -5,6 +5,41 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 
+# ── Status-label single-source consolidation (T-status-label-source-consolidation) ──
+
+
+def test_status_label_single_canonical_source():
+    """Both render paths import the SAME status-label dict object — no drift."""
+    import importlib
+
+    import os
+    import sys
+
+    sys.path.insert(
+        0, os.path.join(os.path.dirname(__file__), "..", "lab", "claudecode")
+    )
+    canonical = importlib.import_module("unseen_university.ticket_status")
+    server = importlib.import_module("devices.web_server.server")
+    queue_view = importlib.import_module("queue_view")
+
+    # Same object identity, not just equal values — a change can't diverge.
+    assert server._STATUS_LABEL is canonical.STATUS_LABEL
+    assert queue_view._STATUS_LABEL is canonical.STATUS_LABEL
+    assert server._STATUS_ORDER is canonical.STATUS_ORDER
+    assert queue_view._STATUS_ORDER is canonical.STATUS_ORDER
+
+
+def test_akien_is_not_legacy_anywhere():
+    """The akien bucket must render as Akien's, never marked '(legacy)'."""
+    from unseen_university.ticket_status import STATUS_LABEL
+
+    assert "Akien" in STATUS_LABEL["akien"]
+    assert "legacy" not in STATUS_LABEL["akien"].lower()
+    # No canonical (non-legacy) status carries a legacy marker.
+    for status in ("in_progress", "sprint", "triage", "dependency", "hold", "akien"):
+        assert "legacy" not in STATUS_LABEL[status].lower(), status
+
+
 def _make_app():
     import devices.web_server.server as _srv
     with patch("devices.web_server.server._init_comms"):

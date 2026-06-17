@@ -25,31 +25,10 @@ _TERMINAL = {"done", "closed", "cancelled", "discarded"}
 # layer only. Legacy values (approval/akien/pending/escalated) still render at
 # the bottom until step 2 migrates them; design/open_questions/needs_review have
 # folded into triage and no longer appear as their own group.
-_STATUS_ORDER = [
-    "in_progress",   # INPROGRESS
-    "sprint",        # READY
-    "triage",        # TRIAGE (absorbs design / open_questions / needs_review)
-    "dependency",    # DEPENDENCY
-    "hold",          # HOLD
-    "akien",         # Akien's ownership bucket (not legacy)
-    # legacy — folded/removed by the status model, shown until migrated:
-    "approval",
-    "pending",
-    "escalated",
-]
-
-_STATUS_LABEL = {
-    "in_progress": "In progress",
-    "sprint":      "Ready",
-    "triage":      "Triage",
-    "dependency":  "Dependency",
-    "hold":        "Hold",
-    "akien":       "👤 Akien (yours)",
-    # legacy:
-    "escalated":   "Escalated (legacy → role bump)",
-    "approval":    "Awaiting approval (legacy → sorted=approved)",
-    "pending":     "Pending (legacy → triage/dependency)",
-}
+# Canonical status display vocab lives in unseen_university.ticket_status —
+# imported (not copied) so a label change lands in every renderer at once.
+from unseen_university.ticket_status import STATUS_LABEL as _STATUS_LABEL  # noqa: E402
+from unseen_university.ticket_status import STATUS_ORDER as _STATUS_ORDER  # noqa: E402
 
 _SIZE_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
 
