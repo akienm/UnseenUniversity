@@ -29,6 +29,37 @@ def test_status_label_single_canonical_source():
     assert queue_view._STATUS_ORDER is canonical.STATUS_ORDER
 
 
+def test_queue_view_runs_as_bare_script_under_system_python():
+    """The /mytickets + /opentickets skills run `python3 queue_view.py` as a bare
+    file under the SYSTEM python3 (not the venv). For a script file sys.path[0] is
+    the script's own dir, so the top-level `from unseen_university.ticket_status
+    import ...` would raise ModuleNotFoundError unless the script bootstraps the
+    repo root onto sys.path. Reproduce that exact invocation from a neutral cwd so
+    the consolidation import can never silently break the skills again.
+    """
+    import os
+    import subprocess
+    import sys
+
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    script = os.path.join(repo_root, "lab", "claudecode", "queue_view.py")
+    # Run from /tmp with a clean PYTHONPATH so only the script's own bootstrap can
+    # make unseen_university importable — mirrors the skill's bare invocation.
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    proc = subprocess.run(
+        [sys.executable, script, "--view", "opentickets"],
+        cwd="/tmp",
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    # Must not crash on import. (Exit may be non-zero only if the DB is down; the
+    # import error we're guarding against shows as ModuleNotFoundError in stderr.)
+    assert "ModuleNotFoundError" not in proc.stderr, proc.stderr
+    assert "No module named 'unseen_university'" not in proc.stderr, proc.stderr
+
+
 def test_akien_is_not_legacy_anywhere():
     """The akien bucket must render as Akien's, never marked '(legacy)'."""
     from unseen_university.ticket_status import STATUS_LABEL

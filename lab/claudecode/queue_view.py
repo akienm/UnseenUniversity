@@ -27,6 +27,17 @@ _TERMINAL = {"done", "closed", "cancelled", "discarded"}
 # folded into triage and no longer appear as their own group.
 # Canonical status display vocab lives in unseen_university.ticket_status —
 # imported (not copied) so a label change lands in every renderer at once.
+#
+# This script is invoked as a bare-file path by the /mytickets + /opentickets
+# skills (`python3 ${CC_WORKFLOW_TOOLS}/queue_view.py`) under the SYSTEM python3,
+# not the project venv. For a script file, sys.path[0] is the script's own dir
+# (lab/claudecode), so `unseen_university` is NOT importable without help and the
+# import below would raise ModuleNotFoundError. Put the repo root (two parents up)
+# on sys.path first so the canonical-source import resolves under any interpreter.
+_REPO_ROOT = str(Path(__file__).resolve().parents[2])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 from unseen_university.ticket_status import STATUS_LABEL as _STATUS_LABEL  # noqa: E402
 from unseen_university.ticket_status import STATUS_ORDER as _STATUS_ORDER  # noqa: E402
 
