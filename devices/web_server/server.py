@@ -2620,16 +2620,19 @@ async def _page_outcomes(request: Request):
 # Canonical status model — D-ticket-status-model-2026-06-16. Internal strings are
 # unchanged (sprint == READY); _STATUS_LABEL renders the canonical concept name.
 # design/open_questions/needs_review fold into triage (no longer their own column).
-_STATUS_ORDER = ["in_progress", "sprint", "triage", "dependency", "hold", "pending", "approval", "akien"]
+_STATUS_ORDER = ["in_progress", "sprint", "triage", "dependency", "hold", "akien", "pending", "approval"]
 _STATUS_LABEL = {
     "in_progress": "In progress",
     "sprint": "Ready",
     "triage": "Triage",
     "dependency": "Dependency",
     "hold": "Hold",
+    # akien is Akien's at-a-glance "these are mine" ownership bucket (per Akien
+    # 2026-06-16) — NOT a deprecated gate. Keep it labeled as his, above the legacy
+    # tail. Mirrors lab/claudecode/queue_view.py + ~/bin/uuopentickets.
+    "akien": "👤 Akien (yours)",
     "pending": "Pending (legacy)",
     "approval": "Awaiting approval (legacy)",
-    "akien": "Akien (legacy)",
 }
 _STATUS_CLASS = {
     "in_progress": "ok",
@@ -2639,7 +2642,7 @@ _STATUS_CLASS = {
     "dependency": "warn",
     "triage": "",
     "approval": "warn",
-    "akien": "warn",
+    "akien": "",  # ownership bucket, not a warning — neutral styling like triage
 }
 
 

@@ -133,6 +133,12 @@ class TestPageQueue:
         assert "Ready" in html        # sprint
         assert "Hold" in html          # hold
         assert "Akien" in html         # akien
+        # Regression guard (T-queue-view-akien-not-legacy): akien is Akien's
+        # ownership bucket, NOT a deprecated gate — its rendered label must read
+        # as his and must never revert to "(legacy)". The fixture has no legacy
+        # statuses, so "legacy" must not appear anywhere in the rendered HTML.
+        assert "Akien (yours)" in html  # akien ownership-bucket label, not "(legacy)"
+        assert "legacy" not in html.lower()
 
     def test_no_db_shows_unavailable(self):
         from starlette.testclient import TestClient
