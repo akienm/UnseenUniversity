@@ -2839,7 +2839,7 @@ class StaleChatLogBackfiller(BasePushSource):
                     "python3",
                     str(
                         paths().source_root
-                        / "lab"
+                        / "devlab"
                         / "claudecode"
                         / "cc_log_stop_hook.py"
                     ),
