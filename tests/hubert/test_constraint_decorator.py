@@ -63,6 +63,54 @@ def test_hard_block_sorts_first():
     assert lines[0].startswith("[hard_block]")
 
 
+# ── Bounded stamp: drop advisory `warn`, cap the list ─────────────────────────
+
+
+def _warn(i):
+    return {
+        "id": i,
+        "text": f"Advisory rule {i}.",
+        "kind": "suggest",
+        "severity": "warn",
+        "applies_to": {"files": [], "operations": [], "tags": ["all"]},
+        "source": {"type": "palace", "ref": "palace/rules/style"},
+    }
+
+
+def test_warn_severity_is_not_stamped():
+    """Advisory `warn` rules are omitted — the block is a binding checklist."""
+    out = cd.format_block([_warn(10), _warn(11)])
+    assert out == ""  # all-advisory → no block at all
+
+
+def test_warn_dropped_but_binding_kept():
+    out = cd.format_block(_constraints() + [_warn(10), _warn(11)])
+    assert "[hard_block]" in out
+    assert "[error]" in out
+    assert "[warn]" not in out
+    # The two dropped advisories are summarised, not silently hidden.
+    assert "2 more" in out
+
+
+def test_stamp_is_capped_with_overflow_summary():
+    """A rack-wide query returning many rules stamps at most _STAMP_CAP lines."""
+    many = [
+        {
+            "id": i,
+            "text": f"Error rule {i}.",
+            "kind": "require",
+            "severity": "error",
+            "applies_to": {"files": [], "operations": [], "tags": ["all"]},
+            "source": {"type": "palace", "ref": "palace/rules/x"},
+        }
+        for i in range(40)
+    ]
+    out = cd.format_block(many)
+    entry_lines = [l for l in out.splitlines() if l.startswith("[")]
+    assert len(entry_lines) == cd._STAMP_CAP
+    assert f"{40 - cd._STAMP_CAP} more" in out
+
+
 # ── Criterion 2: idempotent replace, not duplicate ────────────────────────────
 
 

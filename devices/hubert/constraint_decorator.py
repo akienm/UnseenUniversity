@@ -79,27 +79,47 @@ def _source_str(source: dict | None) -> str:
     return source.get("ref") or source.get("type") or "?"
 
 
+# Only binding severities are stamped — advisory `warn` rules are dropped so the
+# block stays a short, sprint-relevant checklist rather than a copy of the whole
+# rulebook. The cap bounds the worst case (a rack-wide query returning dozens of
+# rules) so a ticket description never balloons; the dropped count is summarised.
+_STAMP_SEVERITIES = {"hard_block", "error"}
+_STAMP_CAP = 12
+
+
 def format_block(constraints: list[dict]) -> str:
     """Pure: render the constraints block, or '' when there are none.
 
     Each line: [severity] <first line of text> — applies: <scope> (source: <ref>)
     Ordered hard_block first so the most binding rules read at the top.
+
+    Only `hard_block` and `error` constraints are stamped — advisory `warn`
+    rules are omitted to keep the block a short checklist. At most `_STAMP_CAP`
+    entries are listed; any beyond that (plus the dropped advisories) are
+    summarised in a trailing "+N more" line so nothing is silently hidden.
     """
     if not constraints:
         return ""
     sev_rank = {"hard_block": 0, "error": 1, "warn": 2}
+    binding = [c for c in constraints if c.get("severity") in _STAMP_SEVERITIES]
+    if not binding:
+        return ""
     ordered = sorted(
-        constraints,
+        binding,
         key=lambda c: (sev_rank.get(c.get("severity", "warn"), 3), c.get("id", 0)),
     )
+    shown = ordered[:_STAMP_CAP]
     lines = [BLOCK_HEADING]
-    for c in ordered:
+    for c in shown:
         sev = c.get("severity", "warn")
         text = (c.get("text") or "").strip().splitlines()[0] if (c.get("text") or "").strip() else ""
         text = re.sub(r"\*\*", "", text)[:100]
         applies = _applies_str(c.get("applies_to"))
         source = _source_str(c.get("source"))
         lines.append(f"[{sev}] {text} — applies: {applies} (source: {source})")
+    dropped = (len(ordered) - len(shown)) + (len(constraints) - len(binding))
+    if dropped:
+        lines.append(f"…and {dropped} more (lower-severity or capped) — query constraints_get for the full set")
     return "\n".join(lines)
 
 
