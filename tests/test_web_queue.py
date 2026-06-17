@@ -74,6 +74,7 @@ class TestApiQueue:
         assert "sprint" in data["grouped"]
         assert "hold" in data["grouped"]
         assert "in_progress" in data["grouped"]
+        assert "akien" in data["grouped"]
 
     def test_no_db_returns_empty(self):
         from starlette.testclient import TestClient

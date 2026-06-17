@@ -31,9 +31,9 @@ _STATUS_ORDER = [
     "triage",        # TRIAGE (absorbs design / open_questions / needs_review)
     "dependency",    # DEPENDENCY
     "hold",          # HOLD
+    "akien",         # Akien's ownership bucket (not legacy)
     # legacy — folded/removed by the status model, shown until migrated:
     "approval",
-    "akien",
     "pending",
     "escalated",
 ]
@@ -44,10 +44,10 @@ _STATUS_LABEL = {
     "triage":      "Triage",
     "dependency":  "Dependency",
     "hold":        "Hold",
+    "akien":       "👤 Akien (yours)",
     # legacy:
     "escalated":   "Escalated (legacy → role bump)",
     "approval":    "Awaiting approval (legacy → sorted=approved)",
-    "akien":       "Akien (legacy)",
     "pending":     "Pending (legacy → triage/dependency)",
 }
 
