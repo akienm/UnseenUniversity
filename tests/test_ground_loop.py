@@ -141,6 +141,87 @@ class TestPluginProxy:
         finally:
             px.stop()
 
+    def test_backend_404_passes_through_not_502(self, tmp_path):
+        """A genuine backend 404 must reach the client as 404, not masked as 502.
+        Regression for T-ground-loop-proxy-passthrough-status."""
+        proxy_port = _free_port()
+        backend_port = _free_port()
+        # SimpleHTTPRequestHandler answers 404 for any path it can't resolve.
+        # (http.server.test defaults to BaseHTTPRequestHandler, which 501s every
+        # method — pin SimpleHTTPRequestHandler so a missing path is a true 404.)
+        backend_cmd = [
+            sys.executable, "-c",
+            f"import http.server; http.server.test("
+            f"HandlerClass=http.server.SimpleHTTPRequestHandler, "
+            f"port={backend_port}, bind='127.0.0.1')"
+        ]
+        cfg = {
+            "name": "test_passthrough_404",
+            "mode": "http_proxy",
+            "proxy_port": proxy_port,
+            "backend_port": backend_port,
+            "start_cmd": backend_cmd,
+            "start_timeout": 10,
+        }
+        px = PluginProxy(cfg)
+        px.start()
+        time.sleep(0.3)
+        try:
+            import urllib.request
+            from urllib.error import HTTPError
+            try:
+                resp = urllib.request.urlopen(
+                    f"http://127.0.0.1:{proxy_port}/definitely-no-such-path-xyz",
+                    timeout=12)
+                status = resp.status
+                resp.close()
+            except HTTPError as e:
+                status = e.code  # the pass-through path we're asserting on
+        except (URLError, OSError):
+            pytest.skip("backend or proxy did not start in time (CI environment)")
+        else:
+            assert status == 404, f"expected 404 passthrough, got {status}"
+        finally:
+            px.stop()
+
+    def test_transport_failure_returns_502(self, tmp_path):
+        """When the backend appears up but the TCP connection is refused, the
+        proxy returns 502 — distinct from a backend's own 4xx/5xx pass-through.
+        Regression for T-ground-loop-proxy-passthrough-status."""
+        from unittest.mock import patch as _patch
+        proxy_port = _free_port()
+        dead_backend_port = _free_port()  # nothing ever listens here
+        cfg = {
+            "name": "test_502",
+            "mode": "http_proxy",
+            "proxy_port": proxy_port,
+            "backend_port": dead_backend_port,
+            "start_cmd": [sys.executable, "-c", "import time; time.sleep(999)"],
+            "start_timeout": 2,
+        }
+        px = PluginProxy(cfg)
+        # Make the backend *appear* ready so _forward proceeds to urlopen, which
+        # then hits connection-refused on the dead port → genuine transport 502.
+        with _patch.object(px, "_ensure_backend", return_value=True):
+            px.start()
+            time.sleep(0.3)
+            try:
+                import urllib.request
+                from urllib.error import HTTPError
+                try:
+                    resp = urllib.request.urlopen(
+                        f"http://127.0.0.1:{proxy_port}/", timeout=12)
+                    status = resp.status
+                    resp.close()
+                except HTTPError as e:
+                    status = e.code  # 502 arrives at the client as an HTTPError
+            except (URLError, OSError):
+                pytest.skip("proxy did not bind in time (CI environment)")
+            else:
+                assert status == 502, f"expected 502 on transport failure, got {status}"
+            finally:
+                px.stop()
+
     def test_circuit_breaker_returns_503(self, tmp_path):
         proxy_port = _free_port()
         backend_port = _free_port()

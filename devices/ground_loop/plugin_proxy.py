@@ -23,7 +23,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Optional
 from urllib.request import urlopen
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 
 log = logging.getLogger(__name__)
 
@@ -164,7 +164,27 @@ class PluginProxy:
                                 self.send_header(key, val)
                         self.end_headers()
                         self.wfile.write(resp.read())
+                except HTTPError as http_err:
+                    # The backend answered with a real 4xx/5xx. HTTPError IS the
+                    # response object (status + headers + body), so pass it through
+                    # verbatim — masking it as 502 would hide a legitimate 404/401/
+                    # 500 and the client couldn't tell an absent route from a proxy
+                    # failure. (AR-009: preserve the backend's verdict across the
+                    # interface crossing.) MUST precede the URLError/Exception arms —
+                    # HTTPError is a URLError subclass.
+                    log.info(
+                        "GROUND_LOOP_PROXY|plugin=%s|backend_status=%s|path=%s",
+                        plugin.name, http_err.code, self.path,
+                    )
+                    self.send_response(http_err.code)
+                    for key, val in http_err.headers.items():
+                        if key.lower() not in ("transfer-encoding",):
+                            self.send_header(key, val)
+                    self.end_headers()
+                    self.wfile.write(http_err.read())
                 except Exception as exc:
+                    # Genuine transport failure (connection refused, timeout, DNS) —
+                    # there is no backend response to relay, so 502 is correct here.
                     log.warning(
                         "GROUND_LOOP_PROXY|plugin=%s|error=forward_failed|exc=%s",
                         plugin.name, exc,
