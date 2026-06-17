@@ -1,0 +1,4 @@
+daemon: demo-daemon
+description: Ground Loop supervisor smoke test — heartbeat logger
+restart_policy: always
+poll_interval_s: 5
