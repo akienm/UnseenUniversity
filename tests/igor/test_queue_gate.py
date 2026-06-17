@@ -55,7 +55,7 @@ def _seed_ticket(ticket_id: str, priority, worker: str | None = None) -> None:
             """
             INSERT INTO clan.memories
               (id, narrative, memory_type, parent_id, metadata, timestamp,
-               source, scope, confidence, updated_at)
+               source, scope, certainty, updated_at)
             VALUES (%s, %s, 'FACTUAL', %s, %s::jsonb, NOW(), 'cc_queue_test',
                     'class', 1.0, NOW())
             """,
