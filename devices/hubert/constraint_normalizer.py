@@ -106,7 +106,16 @@ def _parse_claude_md() -> list[dict]:
             if not bullet:
                 continue
             kind = "require"
-            severity = "error"
+            # Audit-enforced structural rules are not advisory: an audit check
+            # (e.g. AR-009 "log every state change and interface crossing") gates
+            # the build, so a violation is a hard block, not a soft error. Detect
+            # the narrowest signal — an explicit audit-rule reference — rather than
+            # blanket-promoting every structural bullet.
+            lo = bullet.lower()
+            if "enforced by audit" in lo or re.search(r"\bar-\d", lo):
+                severity = "hard_block"
+            else:
+                severity = "error"
             rows.append({
                 "text": bullet[:500],
                 "kind": kind,
@@ -298,19 +307,30 @@ def ingest(conn=None) -> int:
     Idempotent: deletes existing rows for each source type before inserting.
     Returns total row count after ingestion.
     """
+    close_conn = conn is None
+    if conn is None:
+        conn = _connect()
+
     all_rows = []
     all_rows.extend(_parse_claude_md())
     all_rows.extend(_parse_design_patterns())
     all_rows.extend(_parse_palace_safeguards())
     all_rows.extend(_parse_palace_rules())
+    # Live palace rules via direct SQL — the import-based palace parsers above
+    # fail-open when devices.igor.tools.memory is absent, so this is the source
+    # that actually populates source.type="palace" in practice. All three palace
+    # parsers share that one DELETE key, so they MUST run together (below) or
+    # palace rows get orphaned across re-ingests.
+    try:
+        all_rows.extend(_parse_palace_rules_db(conn))
+    except Exception as exc:  # fail-open: palace is one source among several
+        log.warning("ConstraintNormalizer.ingest: palace SQL parse failed (%s) — continuing", exc)
 
     if not all_rows:
         log.warning("ConstraintNormalizer.ingest: no constraints extracted — check sources")
+        if close_conn:
+            conn.close()
         return 0
-
-    close_conn = conn is None
-    if conn is None:
-        conn = _connect()
 
     try:
         with conn.cursor() as cur:

@@ -44,6 +44,7 @@ class HubertDevice(BaseDevice):
             "can_send": False,
             "can_receive": False,
             "emitted_keywords": [],
+            "mcp_tools": ["constraints_get", "constraints_ingest"],
             "owns": ["lab/", "tickets", "decisions", "outcomes", "palace", "goals", "racks"],
         }
 
