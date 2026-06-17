@@ -1,0 +1,33 @@
+# Ground Loop plugin: build_digester (daemon mode)
+#
+# Tails cc_channel/log.jsonl and datacenter_logs/queue/trace/*.jsonl,
+# extracts ticket-keyed events, and upserts them into devlab.build_digest.
+# Enables context resumption from a compact ticket-keyed digest instead of
+# re-tokenizing raw logs.
+#
+# ⚠️  STAGED — NOT in config/ground_loop/ intentionally.
+# Go-live procedure (run with Postgres available):
+#   1. Verify devlab schema is accessible (psql ... -c "\dn devlab").
+#   2. cp config/ground_loop_staging/build_digester.yaml config/ground_loop/
+#   3. systemctl --user restart ground_loop
+#   4. Watch: journalctl --user -u ground_loop -f — confirm digester starts.
+#   5. Check: psql ... -c "SELECT count(*) FROM devlab.build_digest;"
+#
+# Environment:
+#   BUILD_DIGESTER_POLL_INTERVAL  — seconds between polls (default: 30)
+#   BUILD_DIGESTER_RETRY_DELAY    — retry delay on error (default: 30)
+#   UU_HOME_DB_URL or IGOR_HOME_DB_URL — Postgres connection string
+#
+# Circuit breaker: touch ~/.unseen_university/flags/build_digester.breaker
+
+name: build_digester
+mode: daemon
+
+start_cmd:
+  - /home/akien/dev/src/UnseenUniversity/.venv/bin/python3
+  - -m
+  - devices.build_digester.groundloop.runme
+
+start_env:
+  PYTHONPATH: /home/akien/dev/src/UnseenUniversity
+  IGOR_HOME_DB_URL: postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001

@@ -1,0 +1,9 @@
+{"action": "add", "id": "T-foo-ticket", "title": "Foo ticket title", "ts": "2026-06-10T10:00:00+00:00"}
+{"action": "setstatus", "id": "T-foo-ticket", "old": "sprint", "new": "in_progress", "ts": "2026-06-10T10:05:00+00:00"}
+{"action": "close", "id": "T-foo-ticket", "title": "Foo ticket title", "result": "Shipped the feature. All tests pass.", "cost_usd": null, "ts": "2026-06-10T11:00:00+00:00"}
+{"action": "add", "id": "T-bar-ticket", "title": "Bar ticket title", "ts": "2026-06-10T12:00:00+00:00"}
+{"action": "hold", "id": "T-bar-ticket", "reason": "blocked on T-foo-ticket", "ts": "2026-06-10T12:05:00+00:00"}
+{"action": "awaiting_validation", "id": "T-baz-ticket", "title": "Baz ticket", "result": "Implementation done, awaiting review", "ts": "2026-06-10T13:00:00+00:00"}
+{"action": "note", "message": "system note unrelated to tickets", "ts": "2026-06-10T14:00:00+00:00"}
+{"action": "auto_validate_skip", "id": "T-foo-ticket", "reason": "worker_not_igor", "ts": "2026-06-10T11:01:00+00:00"}
+{"action": "dispatch", "id": "T-baz-ticket", "dispatched_by": "claude", "ts": "2026-06-10T12:30:00+00:00"}

@@ -21,8 +21,8 @@
   },
   "body": {
     "id": "T-build-log-digester",
-    "title": "[sprint] Build-log digester — inference-free minion that keeps build state pick-up-ready",
-    "status": "sprint",
+    "title": "[in_progress] Build-log digester — inference-free minion that keeps build state pick-up-ready",
+    "status": "in_progress",
     "worker": "claude",
     "size": "M",
     "tags": [
