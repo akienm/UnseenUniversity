@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-queue-view-akien-not-legacy.20260617.010246820190",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-queue-view-akien-not-legacy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T01:02:46.820190",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ticket-status-model-2026-06-16"
+    ],
+    "tickets": [
+      "T-queue-view-akien-not-legacy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-queue-view-akien-not-legacy",
+    "title": "queue_view._STATUS_LABEL mislabels akien as legacy — contradicts ownership-bucket decision",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "size": "S",
+    "tags": [
+      "TicketStatus",
+      "Queue",
+      "WebUI"
+    ],
+    "description": "lab/claudecode/queue_view.py:_STATUS_LABEL has `\"akien\": \"Akien (legacy)\"`, which contradicts the explicit decision (Akien 2026-06-16) that `akien` is his intentional at-a-glance \"these are mine\" ownership bucket, NOT a deprecated legacy gate. The ~/bin view tools (uuopentickets/uumytickets) were already corrected to render `\"👤 Akien (yours)\"`; queue_view.py is the remaining drift in the same regression family (consequence-checking gap — a label shipped before the keep-akien correction landed). Align the web /queue renderer's label with Akien's bucket semantics.\n\n**Affected files:** lab/claudecode/queue_view.py (_STATUS_LABEL akien entry); confirm no other renderer still tags akien legacy. Reference: ~/bin/uuopentickets, ~/bin/uumytickets (already correct).\n**Design rules:** test-plan; no-sqlite n/a.\n**Scope boundary:** IN - change the akien label to Akien's ownership-bucket wording (e.g. \"\\ud83d\\udc64 Akien (yours)\") and move it out of the `# legacy:` comment block; add/adjust a test asserting the akien row renders the ownership label, not 'legacy'. OUT - touching other status labels, the status model, or the bin tools.\n**Test plan:** add/extend a test in tests/test_web_queue.py asserting the akien-status row renders the ownership-bucket label and NOT the string 'legacy'; full tests/test_web_queue.py green.",
+    "decision_id": "D-ticket-status-model-2026-06-16",
+    "created_at": "2026-06-17T01:02:46.820190+00:00",
+    "updated_at": "2026-06-16T19:02:46.831739-06:00",
+    "completed_at": "2026-06-17T01:11:14.845418+00:00",
+    "result": "DickSimnel.0: DONE: Aligned akien label with ownership-bucket semantics in queue_view.py",
+    "role": "master",
+    "priority": 0.25,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-decisions-dsb-cutover.20260617.021713853446",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decisions-dsb-cutover"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T02:17:13.853446",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-decisions-dsb-cutover"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decisions-dsb-cutover",
+    "title": "[sprint] Retire decisions_log.dsb — repoint /sorted write path to JSON, swap readers, drop guard",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "FilesystemMemoryStore",
+      "Decisions",
+      "Cutover",
+      "Migration"
+    ],
+    "description": "All 36 decisions in lab/design_docs_for_igor/decisions_log.dsb are now projected into the JSON filesystem memory store (devlab/runtime/memory/decisions/) as of commit 4061e43d — the additive migration is complete. The .dsb cannot simply be deleted: it is an ACTIVE write target with a /sorted write path, a pre-commit guard, and ~6 readers. Deleting it bare → the next /sorted run recreates it. This ticket is the cutover that lets it actually be removed.\n\n**Affected files:** lab/claudecode/decision_manager.py (the /sorted write path — currently prepends a decision line to the .dsb AND writes a source='decisions_log' DB row; repoint to memory_emit.py emit(category='decisions', kind='decision')); tests/hooks/test_pre_commit_guard.sh (remove the decisions-log-direct reject case); skills that READ the .dsb as fallback — context-load (Step 3 fallback `tail -10 ...decisions_log.dsb`), audit-design, map-igor, deep-audit; devices/igor/tools/learner.py (reading_list entry, priority 0.95); lab/claudecode/findings.py (or wherever findings reads the .dsb). Final step: git rm lab/design_docs_for_igor/decisions_log.dsb.\n**Design rules:** no-sqlite (n/a — JSON flat-file, compliant); docs-live-in-code (the why-this-is-the-write-chokepoint note lives with decision_manager.py); test-plan (below); AR-009 (log the write-path crossing in decision_manager.py at INFO).\n**Scope boundary:** IN — repoint decision_manager.py to emit JSON via memory_emit (original-timestamp stamp for idempotency); swap all ~6 readers to read the JSON store (grep devlab/runtime/memory/decisions/, or a small helper that lists+sorts by emitted_at); remove the pre-commit guard case; delete the .dsb; verify /sorted end-to-end produces a JSON record and NOT a recreated .dsb. OUT — changing the decision record shape/links schema; migrating any OTHER .dsb/.csb file (capabilities_index.dsb, cognition_pipeline.dsb, etc. are separate tickets); changing the /sorted skill UX.\n**Test plan:** (1) unit: decision_manager.write_decision() produces a JSON file under devlab/runtime/memory/decisions/ with correct links and is idempotent on re-run (same stamp → same filename, overwrite not dupe); (2) the context-load Step 3 fallback resolves decisions from JSON when palace is down; (3) pre-commit guard test no longer references decisions_log.dsb and still rejects .env/.db; (4) manual: run /sorted on a throwaway decision, confirm a JSON record appears and decisions_log.dsb is NOT recreated; (5) grep the repo for residual `decisions_log.dsb` references after delete — zero in live code paths.",
+    "decision_id": null,
+    "created_at": "2026-06-17T02:17:13.853446+00:00",
+    "updated_at": "2026-06-16T20:17:13.864879-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.45,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-granny-bus-circuit-test-drift.20260617.043555543995",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-bus-circuit-test-drift"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T04:35:55.543995",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-cc-parity-map",
+      "T-granny-bus-circuit-test-drift",
+      "T-granny-dispatch-deadcode-spawn"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-bus-circuit-test-drift",
+    "title": "[sprint] Pre-existing granny bus-dispatch + circuit-breaker test failures (signature/routing drift)",
+    "status": "sprint",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "test",
+      "granny",
+      "preexisting"
+    ],
+    "description": "6 pre-existing failures in tests/test_granny_bus_dispatch.py + tests/test_circuit_breaker.py (confirmed independent of T-granny-dispatch-deadcode-spawn — same set fails with that change reverted). Two root causes: (1) circuit_breaker tests call run_once(cfg, X) but daemon.run_once() now takes 1 positional arg — signature drift; (2) bus-dispatch tests assert builder/creator tickets land in the dicksimnel.0 mailbox but the envelope goes to cc.0 — either routing regressed or the test fixture is stale. NOTE: the live DS rail DOES route to DS (T-dicksimnel-cc-parity-map reached worker=dicksimnel and escalated), so (2) is most likely stale test fixtures, but verify the daemon role->mailbox map before assuming.\n\n**Affected files:** tests/test_granny_bus_dispatch.py, tests/test_circuit_breaker.py, devices/granny/daemon.py (run_once signature + _dispatch_bus role routing — read, don't necessarily change).\n**Design rules:** test-plan.\n**Scope boundary:** IN - reconcile the tests with the current daemon.run_once signature and the live role->mailbox routing; fix whichever side is actually wrong (confirm live behavior first). OUT - redesigning the bus dispatch or circuit breaker.\n**Test plan:** tests/test_granny_bus_dispatch.py + tests/test_circuit_breaker.py green; spot-confirm a builder ticket routes to dicksimnel.0 in the live daemon.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "created_at": "2026-06-17T04:35:55.543995+00:00",
+    "updated_at": "2026-06-16T22:35:55.709774-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.2,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T04:35:55.593415+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "80bb7160-6f26-49ac-803b-1dc6b3143739",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

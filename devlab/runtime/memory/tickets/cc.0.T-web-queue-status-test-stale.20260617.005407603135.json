@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-web-queue-status-test-stale.20260617.005407603135",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-queue-status-test-stale"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T00:54:07.603135",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ticket-status-model-2026-06-16"
+    ],
+    "tickets": [
+      "T-web-queue-status-test-stale"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-queue-status-test-stale",
+    "title": "test_renders_status_groups asserts raw status strings vs canonical display labels",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "size": "S",
+    "tags": [
+      "TicketStatus",
+      "Tests",
+      "Queue"
+    ],
+    "description": "Pre-existing failure (confirmed independent of the akien-bucket fix): tests/test_web_queue.py::TestPageQueue::test_renders_status_groups asserts the raw status strings 'in_progress'/'sprint'/'hold' appear in the rendered /queue HTML, but the status-model display work (queue_view._STATUS_LABEL, e.g. in_progress->'In progress') now renders canonical display labels, so the raw 'in_progress' literal is no longer guaranteed in the markup. Fix the TEST to match the canonical 7-status display vocab (or assert on the label/data attribute), not the code.\n\n**Affected files:** tests/test_web_queue.py (test_renders_status_groups); reference lab/claudecode/queue_view.py (_STATUS_LABEL) + devices/web_server/server.py render path.\n**Design rules:** test-plan; no-sqlite n/a.\n**Scope boundary:** IN - update the assertion to the canonical display labels (or stable data attrs) and confirm the fixture _TICKET_ROWS exercises in_progress/sprint/hold. OUT - changing the renderer or the status model.\n**Test plan:** test_renders_status_groups passes; full tests/test_web_queue.py green.\n\n## Escalation summary\n**What was tried:** {\"status\": \"error\", \"result\": \"MAX_TURNS: hit 80 turns without terminal response\", \"error_class\": \"MAX_TURNS\", \"error_number\": 80}\n**Where it broke:** result missing DONE: prefix — not a completion\n**What now?**",
+    "decision_id": "D-ticket-status-model-2026-06-16",
+    "created_at": "2026-06-17T00:54:07.603135+00:00",
+    "updated_at": "2026-06-16T18:54:07.615537-06:00",
+    "completed_at": "2026-06-17T04:32:26.941819+00:00",
+    "result": "CC-validated: DS fix green under canonical labels",
+    "role": "master",
+    "priority": 0.2,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "commit_hash": "165890f0",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

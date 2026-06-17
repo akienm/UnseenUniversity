@@ -18,8 +18,8 @@
   },
   "body": {
     "id": "T-ground-loop-proxy-passthrough-status",
-    "title": "[sprint] Ground Loop proxy masks backend 4xx/5xx as 502",
-    "status": "sprint",
+    "title": "Ground Loop proxy masks backend 4xx/5xx as 502",
+    "status": "closed",
     "worker": "claude",
     "size": "S",
     "tags": [
@@ -30,8 +30,8 @@
     "decision_id": null,
     "created_at": "2026-06-16T16:09:37.721150+00:00",
     "updated_at": "2026-06-16T10:09:37.732798-06:00",
-    "completed_at": null,
-    "result": null,
+    "completed_at": "2026-06-17T00:35:57.953884+00:00",
+    "result": "Fixed in e80f0feb: _forward catches HTTPError separately and passes backend 4xx/5xx through verbatim; 502 reserved for transport failures. 2 regression tests (404 passthrough, conn-refused→502) pass. View-tool akien label also corrected to 'yours' (not legacy).",
     "role": "master",
     "priority": 0.5,
     "gate": null,

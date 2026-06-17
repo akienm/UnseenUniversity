@@ -20,21 +20,21 @@
   },
   "body": {
     "id": "T-granny-dispatch-deadcode-spawn",
-    "title": "[sprint] Remove dead CC-spawn functions from granny/dispatch.py (footgun)",
-    "status": "sprint",
-    "worker": "claude",
+    "title": "Remove dead CC-spawn functions from granny/dispatch.py (footgun)",
+    "status": "closed",
+    "worker": "dicksimnel",
     "size": "S",
     "tags": [
       "Security",
       "granny",
       "cleanup"
     ],
-    "description": "devices/granny/dispatch.py contains cc_dispatch_fn, inference_dispatch_fn, and _launch_cc_instance, which subprocess.Popen a `claude --dangerously-skip-permissions -p /sprint-ticket` instance. These are NOT imported or called anywhere in the live wiring (verified by grep) — the daemon routes everything through _dispatch_bus (IMAP envelope) per D-cc-shim-assignment-model-2026-06-06. But they directly contradict feedback_granny_no_cc_spawn (Granny NEVER subprocess.Popen for CC) and feedback_cc_concurrency_hard_limit (one CC at a time). Leaving them present is a re-wiring footgun: anyone reconnecting dispatch.py to the daemon re-introduces the forbidden auto-spawn. Remove the spawn functions (or gut them to raise NotImplementedError with a pointer to the bus model). Keep nothing that can Popen a CC.\n\n**Affected files:** devices/granny/dispatch.py (and any test importing it)\n**Design rules:** none apply (deletion of dead code); honors feedback_granny_no_cc_spawn\n**Scope boundary:** IN: remove/neuter cc_dispatch_fn, inference_dispatch_fn, _launch_cc_instance. OUT: changing the live bus dispatch path in daemon.py.\n**Test plan:** grep confirms no importers; run any granny test module after removal. no new tests because: pure dead-code removal.",
+    "description": "devices/granny/dispatch.py contains cc_dispatch_fn, inference_dispatch_fn, and _launch_cc_instance, which subprocess.Popen a `claude --dangerously-skip-permissions -p /sprint-ticket` instance. These are NOT imported or called anywhere in the live wiring (verified by grep) — the daemon routes everything through _dispatch_bus (IMAP envelope) per D-cc-shim-assignment-model-2026-06-06. But they directly contradict feedback_granny_no_cc_spawn (Granny NEVER subprocess.Popen for CC) and feedback_cc_concurrency_hard_limit (one CC at a time). Leaving them present is a re-wiring footgun: anyone reconnecting dispatch.py to the daemon re-introduces the forbidden auto-spawn. Remove the spawn functions (or gut them to raise NotImplementedError with a pointer to the bus model). Keep nothing that can Popen a CC.\n\n**Affected files:** devices/granny/dispatch.py (and any test importing it)\n**Design rules:** none apply (deletion of dead code); honors feedback_granny_no_cc_spawn\n**Scope boundary:** IN: remove/neuter cc_dispatch_fn, inference_dispatch_fn, _launch_cc_instance. OUT: changing the live bus dispatch path in daemon.py.\n**Test plan:** grep confirms no importers; run any granny test module after removal. no new tests because: pure dead-code removal.\n\n## Escalation summary\n**What was tried:** (no analysis captured)\n**Where it broke:** HIGH-inertia tags: ['Security']\n**What now?**",
     "decision_id": null,
     "created_at": "2026-06-16T16:09:33.695667+00:00",
     "updated_at": "2026-06-16T10:09:33.707253-06:00",
-    "completed_at": null,
-    "result": null,
+    "completed_at": "2026-06-17T04:35:32.623677+00:00",
+    "result": "CC-validated: import+raise check green, pre-existing failures isolated",
     "role": "master",
     "priority": 0.5,
     "gate": null,
@@ -45,6 +45,7 @@
     "target_difficulty": 1,
     "intention": null,
     "created_by": null,
+    "commit_hash": "27787f5a",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
   }
 }

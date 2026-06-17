@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-gate-clear-source-consolidation.20260617.043739529099",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gate-clear-source-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T04:37:39.529099",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-foo",
+      "T-foo-bar",
+      "T-gate-clear-source-consolidation",
+      "T-status-label-source-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gate-clear-source-consolidation",
+    "title": "[sprint] _gate_clear logic duplicated across 3 files — same multi-dep/substring bug, consolidate to one source",
+    "status": "sprint",
+    "worker": null,
+    "size": "M",
+    "tags": [
+      "consequence-gap",
+      "dependency-ordering",
+      "consolidation"
+    ],
+    "description": "Same drift pattern as T-status-label-source-consolidation, but for gate/dependency logic. _gate_clear is copied into lab/claudecode/cc_queue.py (FIXED this session: all-terminal multi-dep + substring-safe via _GATE_ID_RE), lab/claudecode/queue_view.py:57 (inline copy, STILL has the first-match `t['id'] in gate_val` substring bug + only checks the first predecessor), and ~/bin/uuopentickets (inline copy, same bug, runs under system python3 so cannot import the package). They will drift exactly like the status labels did. Extract the gate-clear + id/date token logic to one canonical module the in-repo callers import; document the ~/bin divergence (can't import).\n\n**Affected files:** lab/claudecode/cc_queue.py (_gate_clear/_ungate_dependents/_GATE_ID_RE — canonical), lab/claudecode/queue_view.py (_gate_clear inline at ~57, repoint to import), ~/bin/uuopentickets (document divergence; back up before any edit — outside git).\n**Design rules:** test-plan; docs-live-in-code.\n**Scope boundary:** IN - one canonical gate module (or export cc_queue's functions) imported by queue_view; queue_view inherits the multi-dep + substring fix; test asserting queue_view and cc_queue agree on a 2-predecessor + substring case. OUT - editing ~/bin without backup (document divergence); changing the gate semantics themselves.\n**Test plan:** a test importing both queue_view._gate_clear and cc_queue._gate_clear asserting identical verdicts on (multi-dep partial, multi-dep all-terminal, T-foo vs T-foo-bar substring, future date); existing gate-ordering tests stay green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "created_at": "2026-06-17T04:37:39.529099+00:00",
+    "updated_at": "2026-06-16T22:37:39.684289-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.4,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T04:37:39.579042+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "030cb513-3716-4390-98cd-5a8401b4066e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

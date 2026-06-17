@@ -21,7 +21,7 @@
   },
   "body": {
     "id": "T-constraint-normalizer-decorator",
-    "gate": "T-constraint-normalizer-store",
+    "gate": null,
     "role": "master",
     "size": "M",
     "tags": [
@@ -29,9 +29,9 @@
       "CompiledInference",
       "Workflow"
     ],
-    "title": "[sprint] Constraint normalizer: stamp constraints into ticket at add time",
-    "result": null,
-    "status": "sprint",
+    "title": "Constraint normalizer: stamp constraints into ticket at add time",
+    "result": "CC-validated (commit 3da1e7a0). devices/hubert/constraint_decorator.py stamps a ## Pre-computed constraints block (hard_block first) into ticket descriptions at add time; wired into cc_queue.py add pipeline as _decorate_with_constraints after intent decoration, fail-open. Idempotent (re-add replaces not duplicates); block omitted when get_constraints empty. 9 decorator tests + verified end-to-end through the real cc_queue hook against live DB (no-sqlite + log-crossings stamped). 15 hubert tests pass.",
+    "status": "closed",
     "worker": "claude",
     "priority": 0.45,
     "intention": "I intend that every ticket has applicable constraints pre-stamped into it at add/audit time so sprint agents see zero discovery cost — constraints are already there when the ticket is opened.",
@@ -40,7 +40,7 @@
     "related_to": null,
     "decision_id": "D-storage-layer-formalization-2026-06-14",
     "description": "Currently sprint agents must read CLAUDE.md, palace rules, and ticket design rules fields manually — expensive in tokens and easy to miss. The decorator runs at ticket-add time (background, no LLM) and stamps the output of get_constraints() directly into the ticket.\n\nIntegration point: cc_queue.py add pipeline, after Scraps validation. Also runs on audit-ticket.\n\nWhat gets stamped into the ticket (appended to description as a fenced block):\n  ## Pre-computed constraints (auto-stamped at add time)\n  [hard_block] No SQLite — applies: **/*.py (source: CLAUDE.md)\n  [error] Log every interface crossing — applies: devices/* (source: palace/rules/coding)\n  ...\n\nThe LLM opening the ticket sees these already. No MCP call needed at sprint time.\n\nThis is the same hook pattern as Scraps validation — lightweight background call, result embedded in ticket, transparent to the sprint agent.\n\n**Affected files:** lab/claudecode/cc_queue.py (add pipeline); devices/hubert/constraint_decorator.py (new — calls get_constraints, formats stamp)\n**Design rules:** external-state; decoration is idempotent (re-stamp replaces previous block); no SQLite\n**Scope boundary:** IN — call get_constraints at add/audit time; stamp block into ticket description. OUT — building the constraints store (T-constraint-normalizer-store); orientation decoration (pre_inference_assemble.py — separate concern).\n**Completion criteria:** After cc_queue.py add, ticket description contains ## Pre-computed constraints block with >=1 constraint entry; re-running add on same ticket replaces not duplicates the block; block is absent when get_constraints returns empty.",
-    "completed_at": null,
+    "completed_at": "2026-06-17T04:14:17.144683+00:00",
     "github_issue": null,
     "dispatched_at": null,
     "required_files": [],

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-dicksimnel-commit-coauthor-mislabel.20260617.010746813906",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dicksimnel-commit-coauthor-mislabel"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T01:07:46.813906",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dicksimnel-commit-coauthor-mislabel",
+      "T-web-queue-status-test-stale"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dicksimnel-commit-coauthor-mislabel",
+    "title": "DS commits attribute Co-Authored-By: Claude Sonnet 4.6, but DS runs devstral-only",
+    "status": "closed",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "DickSimnel",
+      "Provenance"
+    ],
+    "description": "DickSimnel's commit-message template hardcodes `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` in devices/dicksimnel/device.py:114 and devices/dicksimnel/toolloop.py:124. But DS's _TIER_CASCADE is OLLAMA-ONLY (devstral-small-2:24b, OR/paid tiers disabled) — it never runs Sonnet. Verified live on commit 165890f0 (T-web-queue-status-test-stale): $0 devstral run, commit said Sonnet 4.6. This is misleading provenance: the commit log claims a model that did not produce the work. Not a cost event (the run was genuinely free), purely an attribution defect. Also observed: git author surfaced as akien@example.com placeholder rather than a DS identity.\n\n**Affected files:** devices/dicksimnel/device.py (line ~114, prompt/commit template), devices/dicksimnel/toolloop.py (line ~124, commit-message instruction). Optionally DS git author/email config.\n**Design rules:** none apply (string/template change); provenance-accuracy is the intent.\n**Scope boundary:** IN - change the hardcoded co-author to truthfully reflect DS/devstral (e.g. `Co-Authored-By: DickSimnel (devstral-small-2:24b) <noreply@anthropic.com>` or an agreed DS identity). OUT - changing the tier cascade, the commit flow, or CC's own co-author convention.\n**Test plan:** no automated test (template string); manual confirm via a follow-up DS dispatch that the next DS commit footer reflects the corrected attribution. Alternatively grep the templates assert the Sonnet-4.6 string is gone.",
+    "decision_id": null,
+    "created_at": "2026-06-17T01:07:46.813906+00:00",
+    "updated_at": "2026-06-16T19:07:46.825374-06:00",
+    "completed_at": "2026-06-17T04:37:02.765060+00:00",
+    "result": "CC-validated: grep clean, both template sites corrected",
+    "role": "master",
+    "priority": 0.15,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "commit_hash": "f6bf56ec",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}
