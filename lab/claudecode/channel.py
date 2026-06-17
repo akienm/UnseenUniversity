@@ -46,11 +46,6 @@ def _get_imap_router():
         return _imap, _imap_router
     _imap_init_done = True
     try:
-        import sys as _sys
-
-        _sys.path.insert(
-            0, str(Path(__file__).parents[3] / "dev" / "src" / "unseen_university")
-        )
         from bus.imap_server import IMAPServer
         from unseen_university.bus.router import Router
 
@@ -60,8 +55,8 @@ def _get_imap_router():
         r = Router(s)
         _imap = s
         _imap_router = r
-    except Exception:
-        pass  # IMAP unavailable — JSONL remains authoritative
+    except Exception as _e:
+        print(f"channel: IMAP mirror unavailable — JSONL authoritative ({_e})", file=sys.stderr)
     return _imap, _imap_router
 
 
@@ -174,8 +169,8 @@ def post(content: str, author: str = "", msg_type: str = "message") -> dict:
                 payload=entry,
             )
             router.send("comms://Shared", env)
-        except Exception:
-            pass  # JSONL write already succeeded — IMAP mirror is best-effort
+        except Exception as _e:
+            print(f"channel: IMAP mirror send failed ({_e})", file=sys.stderr)
     return entry
 
 

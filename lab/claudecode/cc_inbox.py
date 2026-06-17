@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -61,8 +62,8 @@ def _get_imap_router():
         s.start()
         s.create_mailbox("CC.0")
         _imap_router = Router(s)
-    except Exception:
-        pass  # IMAP unavailable — JSONL remains authoritative
+    except Exception as _e:
+        print(f"cc_inbox: IMAP mirror unavailable — JSONL authoritative ({_e})", file=sys.stderr)
     return _imap_router
 
 
@@ -190,8 +191,8 @@ def append(
                 payload=entry.to_dict(),
             )
             router.send("comms://CC.0", env)
-        except Exception:
-            pass  # JSONL write already succeeded — IMAP mirror is best-effort
+        except Exception as _e:
+            print(f"cc_inbox: IMAP mirror send failed ({_e})", file=sys.stderr)
     return entry
 
 
