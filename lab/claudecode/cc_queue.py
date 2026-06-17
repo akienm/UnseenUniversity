@@ -48,6 +48,7 @@ Usage:
 
 import json
 import os
+import re
 import ssl
 import sys
 import time
@@ -1068,43 +1069,55 @@ def _append_to_todays_slate(ticket: dict) -> None:
         _log({"action": "slate_append_failed", "error": str(e), "id": ticket.get("id")})
 
 
-def _gate_clear(gate_val: str | None, all_tasks: list) -> bool:
-    """Return True if gate is null, a past/today date, or a closed ticket reference.
+# Ticket-id token in a gate string. Case-insensitive after the `T-` prefix so
+# ids like T-consequence-D-constraints (embedded uppercase) round-trip. Used to
+# extract EVERY referenced predecessor from a free-form gate, so a multi-
+# predecessor gate ('T-A T-C') is evaluated against ALL its ids, not just the
+# first one found.
+_GATE_ID_RE = re.compile(r"T-[A-Za-z0-9][A-Za-z0-9_-]*")
+_GATE_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
-    Priority:
-    1. Null gate → clear.
-    2. First token matches YYYY-MM-DD → date gate; clear only if date <= today.
-    3. Any ticket ID found in the string → check that ticket's terminal status.
-    4. Unknown format → fail closed (blocked).
+
+def _gate_clear(gate_val: str | None, all_tasks: list) -> bool:
+    """Return True only when EVERY predecessor referenced by the gate is satisfied.
+
+    Multi-predecessor semantics (ports devices/granny/workflow_executor.py's
+    all-after-deps-done gate): a gate is clear iff
+      - every ticket-id token in it is terminal (closed/done/cancelled), AND
+      - every YYYY-MM-DD token in it is today or in the past.
+    A gate of 'T-A T-C' is therefore NOT clear until BOTH A and C are terminal —
+    the previous code released on the first referenced id alone, which let a
+    multi-dep ticket unlock prematurely. Null gate → clear. A gate with neither
+    an id nor a date token is an unknown format → fail closed (blocked), matching
+    prior behavior. A referenced id absent from the queue is treated as NOT
+    terminal (fail closed) — conservative; gates only ever loosen, never tighten,
+    relative to today.
     """
-    import re as _re
     from datetime import date as _date
-    import logging as _logging
 
     if not gate_val:
         return True
 
-    # Date gate: first token is YYYY-MM-DD
-    first_token = gate_val.split()[0] if gate_val.strip() else ""
-    if _re.fullmatch(r"\d{4}-\d{2}-\d{2}", first_token):
+    ids = _GATE_ID_RE.findall(gate_val)
+    dates = _GATE_DATE_RE.findall(gate_val)
+    if not ids and not dates:
+        return False  # unknown format → fail closed
+
+    # Every date token must have elapsed.
+    for d in dates:
         try:
-            gate_date = _date.fromisoformat(first_token)
-            clear = gate_date <= _date.today()
-            if not clear:
-                _logging.getLogger(__name__).debug(
-                    "[gate-date] blocked until %s (gate: %s)", gate_date, gate_val[:60]
-                )
-            return clear
+            if _date.fromisoformat(d) > _date.today():
+                return False
         except ValueError:
-            pass  # malformed date — fall through to fail-closed
+            return False  # malformed date → fail closed
 
-    # Ticket-ID gate: scan for any known ticket id in the string
-    for t in all_tasks:
-        if t["id"] in gate_val:
-            return t["status"] in _TERMINAL_STATUSES
+    # Every referenced ticket id must be terminal.
+    status_by_id = {t.get("id"): t.get("status") for t in all_tasks}
+    for tid in ids:
+        if status_by_id.get(tid) not in _TERMINAL_STATUSES:
+            return False
 
-    # Unknown format → fail closed
-    return False
+    return True
 
 
 def _ungate_dependents(tasks: list, closed_id: str) -> int:
@@ -1121,10 +1134,28 @@ def _ungate_dependents(tasks: list, closed_id: str) -> int:
         gate = t.get("gate") or ""
         if not gate:
             continue
-        if closed_id in gate:
+        # Only this gate's predecessors trigger a re-evaluation. Exact id-token
+        # membership (not substring): closing T-foo must NOT ungate a ticket
+        # gated on T-foo-bar.
+        if closed_id not in _GATE_ID_RE.findall(gate):
+            continue
+        # Multi-predecessor fix: release only when ALL referenced predecessors
+        # are terminal (and any date token has elapsed). _gate_clear is the
+        # single source of truth for that, shared with the read/visibility path.
+        if _gate_clear(gate, tasks):
             t["gate"] = None
             ungated += 1
-            print(f"  [ungate] {t['id']} (was gated on {closed_id})")
+            print(f"  [ungate] {t['id']} (all predecessors terminal; gate was {gate!r})")
+        else:
+            _log(
+                {
+                    "action": "ungate_deferred",
+                    "id": t.get("id"),
+                    "closed_id": closed_id,
+                    "gate": gate,
+                }
+            )
+            print(f"  [hold-gate] {t['id']} still gated — not all predecessors terminal: {gate!r}")
     if ungated:
         _log(
             {
