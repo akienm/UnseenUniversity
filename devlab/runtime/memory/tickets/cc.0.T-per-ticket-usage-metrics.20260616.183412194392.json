@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-per-ticket-usage-metrics",
-    "title": "[in_progress] Per-ticket token/usage attribution + store — metrics substrate for cost-aware builders",
-    "status": "in_progress",
+    "title": "[awaiting_validation] Per-ticket token/usage attribution + store — metrics substrate for cost-aware builders",
+    "status": "awaiting_validation",
     "worker": "claude",
     "size": "M",
     "tags": [
@@ -33,8 +33,8 @@
     "decision_id": "D-architecture-as-code-cognition-pipeline-2026-06-16",
     "created_at": "2026-06-16T18:34:12.194392+00:00",
     "updated_at": "2026-06-16T12:34:24.420764-06:00",
-    "completed_at": null,
-    "result": null,
+    "completed_at": "2026-06-17T20:21:28.616111+00:00",
+    "result": "UsageStore (devlab.ticket_usage) reads sprint_tokens.log per ticket, writes Postgres row at cmd_close+cmd_done; get_by_ticket+get_aggregate for estimator substrate; 19 tests pass. No SQLite. AR-009 at interface crossing. Commit c7b3335b.",
     "role": "master",
     "priority": 0.6,
     "gate": null,
@@ -45,6 +45,7 @@
     "target_difficulty": 1,
     "intention": "I intend that every ticket's actual token/usage cost is measured and stored attributed to its ticket id, so the system can later estimate ticket cost up front and treat inference as a shared, monitored resource.",
     "created_by": null,
+    "commit_hash": "c7b3335b",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
   }
 }

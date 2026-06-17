@@ -22,8 +22,8 @@
   },
   "body": {
     "id": "T-state-inventory-leak-audit",
-    "title": "[sprint] State inventory / leak audit — run every state kind through durability x readiness",
-    "status": "sprint",
+    "title": "[in_progress] State inventory / leak audit — run every state kind through durability x readiness",
+    "status": "in_progress",
     "worker": "claude",
     "size": "M",
     "tags": [

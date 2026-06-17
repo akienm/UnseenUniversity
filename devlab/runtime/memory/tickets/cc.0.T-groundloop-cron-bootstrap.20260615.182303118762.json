@@ -29,7 +29,7 @@
     ],
     "title": "[sprint] Ground Loop cron bootstrap — system cron trigger + cross-platform daemon orchestration",
     "result": null,
-    "status": "sprint",
+    "status": "dispatched",
     "worker": "claude",
     "priority": 0.6,
     "intention": "I intend that Ground Loop provides unified daemon orchestration across all platforms, replacing per-device dispatcher logic.",
