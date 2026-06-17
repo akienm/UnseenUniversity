@@ -1609,6 +1609,25 @@ def _decorate_with_intent(ticket: dict) -> None:
         })
 
 
+def _decorate_with_constraints(ticket: dict) -> None:
+    """Constraint decoration hook: stamp pre-computed binding rules into the
+    ticket description at add time (background, no LLM).
+
+    Graceful degradation: if the constraint decorator/store is unavailable,
+    proceed normally. Never raises — mirrors _decorate_with_intent.
+    """
+    try:
+        from devices.hubert.constraint_decorator import decorate_ticket
+    except ImportError:
+        _log({"action": "constraint_decorate_skip", "id": ticket.get("id"), "reason": "import_failed"})
+        return
+    try:
+        decorate_ticket(ticket)
+        _log({"action": "constraint_decorate", "id": ticket.get("id")})
+    except Exception as exc:
+        _log({"action": "constraint_decorate_error", "id": ticket.get("id"), "error": str(exc)[:200]})
+
+
 def cmd_add(args):
     """Add tasks from a JSON file (array of task objects) or inline JSON string."""
     if not args:
@@ -1682,6 +1701,9 @@ def cmd_add(args):
         _check_intention_field(nt["id"], nt.get("intention"))
         # Intent extractor decoration: predict intention or validate if already present
         _decorate_with_intent(nt)
+        # Constraint decoration: stamp pre-computed binding rules into the
+        # description so the sprint agent sees them without an MCP call.
+        _decorate_with_constraints(nt)
         # Embed status prefix in title for one-grep searchability
         nt["title"] = _with_status_prefix(nt["status"], nt["title"])
         tasks.append(nt)
