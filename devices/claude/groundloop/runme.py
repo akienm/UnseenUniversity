@@ -4,9 +4,12 @@ CC.0 Ground Loop daemon — listens on cc.0 mailbox for Granny dispatch envelope
 When a dispatch arrives:
   1. Acks receipt to Granny immediately.
   2. Appends "CC.0 acked at <timestamp>" note to the ticket.
-  3. Injects /sprint-ticket <id> into the CC tmux session.
-  4. Starts nag thread: if ticket not picked up within CC_SHIM_NAG_INTERVAL (default 600s),
-     sends a soft tmux nudge. Stops when ticket reaches a terminal status.
+  3. Posts a soft tmux nudge ("\r\r\rcheck messages when possible\n") into
+     the CC tmux session. DOES NOT inject /sprint-ticket — CC decides whether
+     and when to pick up the ticket (feedback_granny_no_cc_spawn; ca433bd7).
+  4. Starts a nag thread: if the ticket is still not in_progress after
+     CC_SHIM_NAG_INTERVAL (default 600s), sends another soft nudge.
+     Stops when the ticket reaches a terminal status.
 
 Nag state is persisted to ~/.granny/nag_state/ so restarts resume cleanly.
 """

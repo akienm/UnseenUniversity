@@ -1,0 +1,45 @@
+# Ground Loop plugin: cc_worker (daemon mode)
+#
+# Keeps CCWorkerListener alive so Granny bus dispatches to cc.0 are consumed.
+# When a dispatch arrives, CCWorkerListener:
+#   1. Acks to Granny
+#   2. Appends a note to the ticket
+#   3. Posts a soft tmux nudge ("check messages when possible") — NOTIFY ONLY,
+#      never injects /sprint-ticket (feedback_granny_no_cc_spawn rule; ca433bd7)
+#   4. Starts a nag thread (CC_SHIM_NAG_INTERVAL default 600s)
+#
+# ⚠️  STAGED — NOT in config/ground_loop/ intentionally.
+# ExecStartPre in the systemd unit copies config/ground_loop/*.yaml into
+# ~/.unseen_university/ground_loop/ on every Ground Loop restart, so placing
+# this file there would auto-activate the consumer without an attended go-live.
+# Go-live procedure (Akien present):
+#   1. Verify CC.0 tmux session is running and CC is NOT currently in a sprint.
+#   2. cp config/ground_loop_staging/cc_worker.yaml ~/.unseen_university/ground_loop/
+#      (or: cp config/ground_loop_staging/cc_worker.yaml config/ground_loop/ && git commit)
+#   3. systemctl --user restart ground_loop  (ExecStartPre picks it up)
+#   4. Watch: journalctl --user -u ground_loop -f  — confirm CCWorkerListener starts.
+#   5. Post a test envelope to cc.0; verify soft nudge, no /sprint-ticket injection.
+#
+# To disable after go-live (circuit breaker):
+#   touch ~/.unseen_university/flags/cc_worker.breaker
+
+name: cc_worker
+mode: daemon
+
+start_cmd:
+  - /home/akien/dev/src/UnseenUniversity/.venv/bin/python3
+  - -m
+  - devices.claude.groundloop.runme
+
+start_env:
+  PYTHONPATH: /home/akien/dev/src/UnseenUniversity
+  # CC_TMUX_SESSION: override if the target tmux session name differs from the
+  # CCWorkerListener default (<hostname>.cc.0).
+  # CC_TMUX_SESSION: akiendelllinux.cc.0
+
+# Poll every 30s; restart up to 3 times before tripping the circuit breaker.
+poll_interval: 30
+max_restarts: 3
+
+# on_failure: log only (null) — a failed CC consumer doesn't need CC to fix it.
+on_failure: null
