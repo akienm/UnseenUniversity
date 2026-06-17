@@ -133,8 +133,24 @@ def effective_status(ticket: dict, all_tickets: list) -> str:
       * ``dependency`` — a ``sprint`` ticket gated on work we haven't finished.
 
     Everything else returns its stored status unchanged.
+
+    Precedence ladder (Akien, 2026-06-17, "set in concrete"):
+    AKIEN > HOLD > CONSEQUENCE > DEPENDENCY. A ticket Akien has explicitly
+    claimed (``akien``) or held (``hold``) renders as THAT even when it also
+    carries an uncleared gate — his action/hold buckets outrank the derived
+    "waiting" buckets. So the own-status check runs FIRST, before the
+    consequence/dependency derivation. (The two literal top tiers Akien named —
+    a dependency *gated on* an akien ticket, then one gated on a hold ticket —
+    are latent: there are currently zero such tickets, so gate-target
+    resolution is intentionally not built; such a ticket falls through to plain
+    DEPENDENCY until the first instance makes it worth wiring. CONSEQUENCE >
+    DEPENDENCY, the only live tiers, is preserved by check order below.)
     """
     status = ticket.get("status", "unknown")
+    # AKIEN / HOLD own-status trump — runs before derivation so a held or
+    # Akien-claimed ticket is never reclassified into a waiting bucket.
+    if status in ("akien", "hold"):
+        return status
     gate = ticket.get("gate")
     gated = bool(gate) and not gate_clear(gate, all_tickets)
     if str(ticket.get("id", "")).startswith(CONSEQUENCE_PREFIX) and gated:

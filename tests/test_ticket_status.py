@@ -107,6 +107,25 @@ class TestEffectiveStatus:
         t = _t("T-uc-cert", "akien")
         assert effective_status(t, [t]) == "akien"
 
+    def test_akien_trumps_consequence(self):
+        # Akien's 2026-06-17 ladder: AKIEN > CONSEQUENCE. A T-consequence-* ticket
+        # Akien has explicitly claimed renders as akien, NOT consequence, even with
+        # an uncleared gate — his action bucket outranks the waiting bucket.
+        t = _t("T-consequence-foo", "akien", gate="2999-12-31")
+        assert effective_status(t, [t]) == "akien"
+
+    def test_hold_trumps_consequence(self):
+        # AKIEN > HOLD > CONSEQUENCE: a held consequence-check stays held, not
+        # reclassified into the waiting bucket.
+        t = _t("T-consequence-bar", "hold", gate="2999-12-31")
+        assert effective_status(t, [t]) == "hold"
+
+    def test_hold_trumps_dependency(self):
+        # A held sprint ticket gated on an open predecessor stays HOLD, not
+        # reclassified as a (derived) dependency.
+        tasks = [_t("T-feature", "hold", gate="T-open"), _t("T-open", "sprint")]
+        assert effective_status(tasks[0], tasks) == "hold"
+
 
 # ── Regression guard: no open ticket can land in an unrendered group ──────────
 

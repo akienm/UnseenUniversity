@@ -210,5 +210,36 @@ CONSEQUENCE · DEPENDENCY · READY · ASSIGNED · INPROGRESS · TRIAGE · HOLD �
   lingering cosmetic `[gate: <past-date>]`.
 - **Flagged for Akien:** 3 acurite-hardware tickets
   (`T-acurite-usb-isolated-config`, `-integrate-weather-html`, `-isolated-daemon`)
-  auto-moved pending→READY but need his physical hardware action — candidates for
-  AKIEN/TRIAGE, his call.
+  auto-moved pending→READY but need his physical hardware action — set to AKIEN
+  per Akien's ruling 2026-06-17 ("assigned to me cuz I need to find and connect
+  the usb ethernet dongle").
+
+### Precedence ladder — set in concrete (Akien, 2026-06-17)
+
+When a ticket can match multiple display groups, this ladder decides:
+
+```
+AKIEN > HOLD > CONSEQUENCE > DEPENDENCY
+```
+
+Verbatim: *"a dependency on AKIEN trumps all, a dependency on akien HOLD is
+next, then CONSIQUENCE, then all other DEPENDANCY."*
+
+Implementation: `effective_status()` checks own-status `akien`/`hold` **first**,
+before the consequence/dependency derivation, so a held or Akien-claimed ticket
+is never reclassified into a waiting bucket. The top two tiers (gated-on-akien,
+gated-on-hold) are currently latent — zero live tickets are gated on an `akien`
+or `hold` ticket — so gate-target resolution is not built yet; when such a ticket
+exists it will fall into plain DEPENDENCY until it's wired. This note is the
+trigger: implement it when the first real instance appears.
+
+**Storage reconciliation (Akien 2026-06-17):** Akien asked whether the `/ticket`
+skill could "mark CONSEQUENCE as a status." The answer: the `T-consequence-`
+**id prefix IS the durable mark** — no stored status change is needed. The stored
+status must remain `sprint` so gate-clearance → READY graduation is free (falls
+through `return status` automatically). Storing literal `consequence` as a status
+would break graduation: the fallthrough would return `"consequence"` forever,
+requiring a daily sweep to un-mark it. The prefix convention achieves the intent
+without that debt. Verified: nothing in the codebase programmatically constructs
+`T-consequence-` ids (only the constant definition exists); the `/ticket` skill
+is already de facto the sole creator.
