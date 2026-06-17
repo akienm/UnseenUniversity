@@ -121,7 +121,7 @@ No other non-tool responses are valid.
 
 - Run tests before commit: Bash `.venv/bin/python3 -m pytest tests/ -q --tb=short 2>&1 | tail -15`
 - Stage by name only — never git add -A or git add .
-- Commit message must include: Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+- Commit message must include: Co-Authored-By: DickSimnel (devstral-small-2:24b) <noreply@anthropic.com>
 - Never force-push
 - Use absolute paths for Read/Edit/Write
 """

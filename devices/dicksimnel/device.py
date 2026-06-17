@@ -111,7 +111,7 @@ Your FIRST ACTION must be a tool call — read the ticket, then explore, impleme
 3. Edit/Write: implement the change
 4. Bash: cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python -m pytest tests/ -q --tb=short 2>&1 | tail -20
 5. Bash: git add <specific-files> && git pull --rebase origin main && git push origin main
-   (commit message: "feat/fix: description\\n\\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>")
+   (commit message: "feat/fix: description\\n\\nCo-Authored-By: DickSimnel (devstral-small-2:24b) <noreply@anthropic.com>")
 6. Bash: python3 ~/dev/src/UnseenUniversity/lab/claudecode/cc_queue.py close <ticket_id> "<one-line summary>"
 7. Output (no tool call): DONE: <one-line summary>
 
