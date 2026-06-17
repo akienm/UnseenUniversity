@@ -68,6 +68,16 @@ _REPO_ROOT = str(Path(__file__).resolve().parents[2])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
+# Canonical gate/dependency-ordering logic — single source shared with
+# queue_view.py (T-gate-clear-source-consolidation). Imported, not copied, so the
+# multi-predecessor + substring-safe fix can never drift between the two callers.
+from unseen_university.gate_logic import (  # noqa: E402
+    GATE_DATE_RE as _GATE_DATE_RE,
+    GATE_ID_RE as _GATE_ID_RE,
+    TERMINAL_STATUSES as _TERMINAL_STATUSES,
+    gate_clear as _gate_clear,
+)
+
 IGOR_FLUSH_URL = "https://localhost:8080/api/cc_send"
 
 TICKETS_ROOT_ID = "TICKETS_ROOT"
@@ -132,7 +142,7 @@ STATUS_ORDER = {
     "done": 11,
 }
 
-_TERMINAL_STATUSES = {"closed", "done", "cancelled"}
+# _TERMINAL_STATUSES is imported from unseen_university.gate_logic (above).
 # design folded into triage (TRIAGE = not yet ready to work), so it is no longer
 # auto-claimable — deliberate claim-path change per D-ticket-status-model-2026-06-16.
 # Step 2 (T-ticket-status-approval-akien-removal): approval/awaiting_approval
@@ -1081,55 +1091,9 @@ def _append_to_todays_slate(ticket: dict) -> None:
         _log({"action": "slate_append_failed", "error": str(e), "id": ticket.get("id")})
 
 
-# Ticket-id token in a gate string. Case-insensitive after the `T-` prefix so
-# ids like T-consequence-D-constraints (embedded uppercase) round-trip. Used to
-# extract EVERY referenced predecessor from a free-form gate, so a multi-
-# predecessor gate ('T-A T-C') is evaluated against ALL its ids, not just the
-# first one found.
-_GATE_ID_RE = re.compile(r"T-[A-Za-z0-9][A-Za-z0-9_-]*")
-_GATE_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
-
-
-def _gate_clear(gate_val: str | None, all_tasks: list) -> bool:
-    """Return True only when EVERY predecessor referenced by the gate is satisfied.
-
-    Multi-predecessor semantics (ports devices/granny/workflow_executor.py's
-    all-after-deps-done gate): a gate is clear iff
-      - every ticket-id token in it is terminal (closed/done/cancelled), AND
-      - every YYYY-MM-DD token in it is today or in the past.
-    A gate of 'T-A T-C' is therefore NOT clear until BOTH A and C are terminal —
-    the previous code released on the first referenced id alone, which let a
-    multi-dep ticket unlock prematurely. Null gate → clear. A gate with neither
-    an id nor a date token is an unknown format → fail closed (blocked), matching
-    prior behavior. A referenced id absent from the queue is treated as NOT
-    terminal (fail closed) — conservative; gates only ever loosen, never tighten,
-    relative to today.
-    """
-    from datetime import date as _date
-
-    if not gate_val:
-        return True
-
-    ids = _GATE_ID_RE.findall(gate_val)
-    dates = _GATE_DATE_RE.findall(gate_val)
-    if not ids and not dates:
-        return False  # unknown format → fail closed
-
-    # Every date token must have elapsed.
-    for d in dates:
-        try:
-            if _date.fromisoformat(d) > _date.today():
-                return False
-        except ValueError:
-            return False  # malformed date → fail closed
-
-    # Every referenced ticket id must be terminal.
-    status_by_id = {t.get("id"): t.get("status") for t in all_tasks}
-    for tid in ids:
-        if status_by_id.get(tid) not in _TERMINAL_STATUSES:
-            return False
-
-    return True
+# _GATE_ID_RE, _GATE_DATE_RE and _gate_clear are imported from
+# unseen_university.gate_logic (top of file) — the canonical single source shared
+# with queue_view.py. See T-gate-clear-source-consolidation.
 
 
 def _ungate_dependents(tasks: list, closed_id: str) -> int:

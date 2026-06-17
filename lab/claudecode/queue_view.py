@@ -41,26 +41,12 @@ if _REPO_ROOT not in sys.path:
 from unseen_university.ticket_status import STATUS_LABEL as _STATUS_LABEL  # noqa: E402
 from unseen_university.ticket_status import STATUS_ORDER as _STATUS_ORDER  # noqa: E402
 
+# Gate logic shares the SAME canonical source as cc_queue.py — imported, not
+# copied, so queue_view inherits the multi-predecessor + substring-safe fix and
+# can never drift from the queue authority (T-gate-clear-source-consolidation).
+from unseen_university.gate_logic import gate_clear as _gate_clear  # noqa: E402
+
 _SIZE_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
-
-
-def _gate_clear(gate_val: str | None, all_tickets: list) -> bool:
-    """Inline gate check — mirrors cc_queue._gate_clear without import."""
-    import re as _re
-    from datetime import date as _date
-
-    if not gate_val:
-        return True
-    first_token = gate_val.split()[0] if gate_val.strip() else ""
-    if _re.fullmatch(r"\d{4}-\d{2}-\d{2}", first_token):
-        try:
-            return _date.fromisoformat(first_token) <= _date.today()
-        except ValueError:
-            pass
-    for t in all_tickets:
-        if t["id"] in gate_val:
-            return t.get("status") in _TERMINAL
-    return False
 
 
 def _effective_status(t: dict, all_tickets: list) -> str:
