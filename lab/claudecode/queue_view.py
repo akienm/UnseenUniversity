@@ -41,20 +41,16 @@ if _REPO_ROOT not in sys.path:
 from unseen_university.ticket_status import STATUS_LABEL as _STATUS_LABEL  # noqa: E402
 from unseen_university.ticket_status import STATUS_ORDER as _STATUS_ORDER  # noqa: E402
 
-# Gate logic shares the SAME canonical source as cc_queue.py — imported, not
-# copied, so queue_view inherits the multi-predecessor + substring-safe fix and
-# can never drift from the queue authority (T-gate-clear-source-consolidation).
+# The display-status derivation (gated sprint → dependency, still-gated
+# T-consequence-* → consequence) lives in the canonical ticket_status module —
+# imported, not copied, so queue_view and the web server can never drift on how a
+# ticket is grouped (the exact bug ticket_status' docstring laments). gate_clear
+# is re-exported here under its historical private name for the cross-caller
+# identity tests (T-gate-clear-source-consolidation).
+from unseen_university.ticket_status import effective_status as _effective_status  # noqa: E402
 from unseen_university.gate_logic import gate_clear as _gate_clear  # noqa: E402
 
 _SIZE_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
-
-
-def _effective_status(t: dict, all_tickets: list) -> str:
-    """Return display status — reclassifies gated sprint tickets as 'dependency'."""
-    status = t.get("status", "unknown")
-    if status == "sprint" and t.get("gate") and not _gate_clear(t.get("gate"), all_tickets):
-        return "dependency"
-    return status
 
 
 def _gate_label(t: dict) -> str:
@@ -177,7 +173,9 @@ def view_opentickets(tickets: list[dict]) -> None:
             print(f"  … and {len(group) - limit} more")
 
     totals = " · ".join(
-        f"{counts.get(s, 0)} {s}" for s in ["in_progress", "sprint", "hold", "triage"]
+        f"{counts.get(s, 0)} {s}"
+        for s in ["consequence", "dependency", "sprint", "assigned",
+                  "in_progress", "triage", "hold", "akien"]
         if counts.get(s, 0) > 0
     )
     print(f"\nTotals: {totals}")

@@ -2625,6 +2625,7 @@ from unseen_university.ticket_status import (  # noqa: E402
     STATUS_ORDER as _STATUS_ORDER,
     STATUS_LABEL as _STATUS_LABEL,
     STATUS_CLASS as _STATUS_CLASS,
+    effective_status as _effective_status,
 )
 
 
@@ -2687,7 +2688,7 @@ async def _api_queue(request: Request):
     tickets = _load_queue_tickets()
     grouped: dict[str, list] = {}
     for t in tickets:
-        grouped.setdefault(t["status"], []).append(t)
+        grouped.setdefault(_effective_status(t, tickets), []).append(t)
     return JSONResponse({"tickets": tickets, "grouped": grouped, "count": len(tickets)})
 
 
@@ -2749,9 +2750,11 @@ async def _page_queue(request: Request):
         body = tabs + msg
         return HTMLResponse(_html_wrap(title, body))
 
+    # Group by DISPLAY status (consequence/dependency are derived) — gate
+    # resolution uses the full open set, not the role-filtered display subset.
     grouped: dict[str, list] = {}
     for t in display_tickets:
-        grouped.setdefault(t["status"], []).append(t)
+        grouped.setdefault(_effective_status(t, tickets), []).append(t)
 
     sections = []
     seen_statuses = set(grouped.keys())

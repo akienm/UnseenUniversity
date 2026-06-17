@@ -15,13 +15,16 @@ a label changed in one place, stale in another. With one canonical source the
 renderers import, a label change lands everywhere at once.
 
 ``akien`` is Akien's at-a-glance "these are mine" ownership bucket — NOT a
-deprecated gate. It is labeled as his and sits above the legacy tail. The legacy
-statuses (``pending`` / ``approval`` / ``escalated``) are folded or removed by
-the status model and render with a ``(legacy)`` marker until migration completes;
-no canonical (non-legacy) status ever renders ``(legacy)``.
+deprecated gate. It is labeled as his and sits at the bottom of the canonical
+groups (the action items he reads last). ``pending`` was migrated to ``sprint``
+2026-06-17 and removed; the remaining legacy statuses (``approval`` /
+``escalated``) render with a ``(legacy)`` marker until migration completes; no
+canonical status ever renders ``(legacy)``.
 
-In-repo renderers (``queue_view.py``, ``server.py``) import from here, so they
-can never drift again. The ``~/bin/uuopentickets`` + ``uumytickets`` tools run
+The two DERIVED display groups — ``consequence`` and ``dependency`` — are
+computed by ``effective_status`` here, the single source every renderer imports.
+In-repo renderers (``queue_view.py``, ``server.py``) import both the vocab and
+``effective_status`` from here, so they can never drift again. The ``~/bin/uuopentickets`` + ``uumytickets`` tools run
 under the system ``python3`` (not the project venv) and so CANNOT import this
 package — they keep a local copy by necessity. Their divergence is intentional
 and documented here rather than risking an un-backed-up edit outside git:
@@ -35,46 +38,110 @@ Both tools already label ``akien`` correctly (Akien's bucket, not legacy), so th
 
 from __future__ import annotations
 
-# Display order: live statuses first, legacy tail last. Renderers filter this to
-# the statuses actually present, then append any unknown statuses sorted.
+from unseen_university.gate_logic import gate_clear
+
+# Display order, salience-first per Akien's 2026-06-17 taxonomy: the groups that
+# need the LEAST action from Akien sit at the top, so a top-down read front-loads
+# "nothing for you to do here" and the action items land at the bottom where he
+# stops. CONSEQUENCE first (waiting on a date/data he can't influence), AKIEN
+# last (needs him to spend money / take an external action).
+#
+#   consequence — waiting on something we CAN'T influence (a date, data becoming
+#                 available). Derived, not stored: a still-gated `T-consequence-*`
+#                 verification-check ticket. Once its gate clears it graduates to
+#                 its underlying status (a passed date → READY), so this group
+#                 holds only the checks that genuinely can't run yet.
+#   dependency  — waiting on something WE'RE doing (another ticket we could
+#                 reprioritise). Derived: a gated `sprint` ticket whose gate is a
+#                 ticket id we haven't closed.
+#   sprint      — READY to build.
+#   assigned    — assigned to a worker but not started (stored status pending the
+#                 ASSIGNED shim, T-ticket-status-assigned-shim-nag; display-ready
+#                 now so it renders the moment the status exists).
+#   in_progress — building now.
+#   triage      — needs Akien's input to move forward (design, triage of build
+#                 tickets). Absorbs design / open_questions / needs_review.
+#   hold        — Akien has explicitly held this.
+#   akien       — needs Akien to take an external action (e.g. spend money).
+#
+# Renderers filter this to the statuses actually present, then append any unknown
+# statuses sorted. The legacy tail (approval/escalated) renders below the canonical
+# groups until migrated — kept here so no open ticket is silently dropped (a status
+# absent from this list never renders). `pending` is gone: migrated to sprint
+# 2026-06-17 (the "Pending (legacy → triage/dependency)" group Akien objected to).
 STATUS_ORDER = [
-    "in_progress",   # INPROGRESS
+    "consequence",   # CONSEQUENCE — derived (still-gated T-consequence-*)
+    "dependency",    # DEPENDENCY — derived (gated sprint)
     "sprint",        # READY
+    "assigned",      # ASSIGNED (assigned, not started)
+    "in_progress",   # INPROGRESS
     "triage",        # TRIAGE (absorbs design / open_questions / needs_review)
-    "dependency",    # DEPENDENCY
     "hold",          # HOLD
-    "akien",         # Akien's ownership bucket (NOT legacy)
-    # legacy — folded/removed by the status model, shown until migrated:
-    "pending",
+    "akien",         # AKIEN — needs an external action from Akien
+    # legacy tail — shown until migrated so nothing vanishes:
     "approval",
     "escalated",
 ]
 
 STATUS_LABEL = {
-    "in_progress": "In progress",
+    "consequence": "⏳ Consequence (awaiting date/data)",
+    "dependency":  "Dependency (awaiting our work)",
     "sprint":      "Ready",
-    "triage":      "Triage",
-    "dependency":  "Dependency",
+    "assigned":    "Assigned",
+    "in_progress": "In progress",
+    "triage":      "Triage (needs your input)",
     "hold":        "Hold",
-    "akien":       "👤 Akien (yours)",
+    "akien":       "👤 Akien (needs your action)",
     # legacy:
-    "pending":     "Pending (legacy)",
     "approval":    "Awaiting approval (legacy)",
     "escalated":   "Escalated (legacy → role bump)",
 }
 
 # CSS class hint for the web renderer. "" = neutral (no styling emphasis).
 STATUS_CLASS = {
-    "in_progress": "ok",
-    "sprint":      "ok",
-    "triage":      "",
+    "consequence": "",      # least action needed — neutral, not a warning
     "dependency":  "warn",
+    "sprint":      "ok",
+    "assigned":    "ok",
+    "in_progress": "ok",
+    "triage":      "",
     "hold":        "warn",
     "akien":       "",   # ownership bucket, not a warning — neutral like triage
-    "pending":     "warn",
     "approval":    "warn",
     "escalated":   "warn",
 }
+
+# id prefix that marks a consequence-check (verification) ticket — the candidate
+# pool for the CONSEQUENCE display group (Akien 2026-06-17: "every consequence
+# ticket starts with T-consequence-").
+CONSEQUENCE_PREFIX = "T-consequence-"
+
+
+def effective_status(ticket: dict, all_tickets: list) -> str:
+    """Canonical DISPLAY status for a ticket — single source for every renderer.
+
+    Two display-only groups are *derived* here from stored fields rather than
+    stored as statuses (consolidated so queue_view, the web server, and any other
+    in-repo renderer can't drift — the bug ``ticket_status``' docstring laments):
+
+      * ``consequence`` — a ``T-consequence-*`` ticket whose gate has NOT cleared.
+        Takes precedence over ``dependency`` (a consequence-check that's also a
+        dependency is still first-and-foremost "waiting on a date/data"). Once the
+        gate clears — a date passes, or every predecessor ticket closes — it falls
+        through to its underlying status, so a passed-date consequence check shows
+        as READY and is dispatchable, exactly like any other ready ticket.
+      * ``dependency`` — a ``sprint`` ticket gated on work we haven't finished.
+
+    Everything else returns its stored status unchanged.
+    """
+    status = ticket.get("status", "unknown")
+    gate = ticket.get("gate")
+    gated = bool(gate) and not gate_clear(gate, all_tickets)
+    if str(ticket.get("id", "")).startswith(CONSEQUENCE_PREFIX) and gated:
+        return "consequence"
+    if status == "sprint" and gated:
+        return "dependency"
+    return status
 
 
 def status_label(status: str) -> str:
