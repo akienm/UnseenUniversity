@@ -104,6 +104,8 @@ def _make_pg_conn(rows: list[dict]):
     return type("Conn", (), {
         "cursor": lambda self, **kw: cur,
         "close": lambda self: None,
+        "__enter__": lambda self: self,
+        "__exit__": lambda self, *a: None,
     })()
 
 
@@ -222,15 +224,22 @@ class TestProcessHandshakeReplies:
 
 class TestEscalateStaleDispatched:
     def test_escalates_stale_tickets(self):
-        mock_run, calls = _mock_run_factory()
+        # _escalate_stale_dispatched resets via _setstatus_direct (direct DB),
+        # not subprocess — the old subprocess-based assertion is stale.
         conn = _make_pg_conn([{"tid": "T-stale"}])
+        setstatus_calls = []
+
+        def _fake_setstatus(tid, status, worker=None):
+            setstatus_calls.append((tid, status))
+            return True
 
         with patch("psycopg2.connect", return_value=conn), \
-             patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
+             patch("devices.granny.daemon._setstatus_direct", side_effect=_fake_setstatus), \
+             patch("devices.granny.availability.mark_unavailable"):
             count = _escalate_stale_dispatched()
 
         assert count == 1
-        assert ["T-stale", "escalated"] in calls
+        assert ("T-stale", "sprint") in setstatus_calls
 
     def test_no_stale_tickets_returns_zero(self):
         conn = _make_pg_conn([])
@@ -369,6 +378,19 @@ class TestRunOnceBusDispatch:
 class TestDickSimnelBusDispatch:
     """Verify that builder-tier tickets route to DickSimnel via bus envelope, not set-worker."""
 
+    def _no_cascade_config(self) -> dict:
+        """_default_config with cascade_if_idle disabled on CC.0.
+
+        cascade_if_idle lets CC absorb builder/creator tickets when no master
+        work exists — that's live behavior tested elsewhere. These tests check
+        native role routing, so cascade must be off to avoid CC absorbing the
+        ticket before DickSimnel sees it.
+        """
+        cfg = _default_config()
+        cfg["workers"]["CC.0"] = dict(cfg["workers"]["CC.0"])
+        cfg["workers"]["CC.0"]["cascade_if_idle"] = False
+        return cfg
+
     def test_default_config_dicksimnel_uses_bus(self):
         cfg = _default_config()
         ds = cfg["workers"]["DickSimnel.0"]
@@ -385,7 +407,7 @@ class TestDickSimnelBusDispatch:
              patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
              patch("devices.granny.daemon._setstatus_direct", return_value=True), \
              patch("devices.granny.daemon._post_channel"):
-            run_once(_default_config(), imap=imap)
+            run_once(self._no_cascade_config(), imap=imap)
 
         assert imap._boxes.get("dicksimnel.0"), "no dispatch envelope sent to dicksimnel.0"
         env = imap._boxes["dicksimnel.0"][0]
@@ -410,7 +432,7 @@ class TestDickSimnelBusDispatch:
              patch("devices.granny.daemon._setstatus_direct", return_value=True), \
              patch("devices.granny.daemon._post_channel"), \
              patch("devices.granny.daemon.subprocess.run", side_effect=_run):
-            run_once(_default_config(), imap=imap)
+            run_once(self._no_cascade_config(), imap=imap)
 
         assert not set_worker_calls, f"set-worker must not be called for bus dispatch; got: {set_worker_calls}"
 
@@ -424,7 +446,7 @@ class TestDickSimnelBusDispatch:
              patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
              patch("devices.granny.daemon._setstatus_direct", return_value=True), \
              patch("devices.granny.daemon._post_channel"):
-            run_once(_default_config(), imap=imap)
+            run_once(self._no_cascade_config(), imap=imap)
 
         assert imap._boxes.get("dicksimnel.0"), "creator ticket must route to dicksimnel.0 via bus"
         assert imap._boxes["dicksimnel.0"][0].payload["ticket_id"] == "T-create"

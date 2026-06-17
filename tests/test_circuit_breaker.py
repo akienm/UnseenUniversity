@@ -67,10 +67,10 @@ class TestGrannyCircuitGate:
              patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
              patch("devices.granny.daemon._post_channel") as mock_post, \
              patch("devices.granny.daemon._CIRCUIT_STATE_FILE", circuit_file), \
-             patch("devices.granny.daemon.subprocess.run"):
-            result = run_once(_default_config(), set())
+             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_dispatch:
+            run_once(_default_config())
 
-        assert "T-skip" not in result
+        mock_dispatch.assert_not_called()
         throttled = [c for c in mock_post.call_args_list if "GRANNY_THROTTLED" in str(c)]
         assert throttled, "GRANNY_THROTTLED should be posted when circuit is OPEN"
 
@@ -79,6 +79,9 @@ class TestGrannyCircuitGate:
         circuit_file = tmp_path / "circuit_state.json"
         circuit_file.write_text(json.dumps({"CC.0": "CLOSED"}))
 
+        # imap must be provided (not None) — dispatch=bus skips when imap is None
+        # regardless of circuit state. MagicMock stands in for the real IMAPServer.
+        fake_imap = MagicMock()
         ticket = {"id": "T-allow", "tags": [], "role": "master"}
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
              patch("devices.granny.availability.is_available", return_value=True), \
@@ -87,15 +90,18 @@ class TestGrannyCircuitGate:
              patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
              patch("devices.granny.daemon._post_channel"), \
              patch("devices.granny.daemon._CIRCUIT_STATE_FILE", circuit_file), \
-             patch("devices.granny.daemon.subprocess.run", return_value=MagicMock(returncode=0)):
-            result = run_once(_default_config(), set())
+             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_dispatch:
+            run_once(_default_config(), imap=fake_imap)
 
-        assert "T-allow" in result
+        mock_dispatch.assert_called_once()
+        call_ticket_id = mock_dispatch.call_args[0][0]["id"]
+        assert call_ticket_id == "T-allow", f"wrong ticket dispatched: {call_ticket_id}"
 
     def test_no_circuit_file_allows_dispatch(self, tmp_path):
         from devices.granny.daemon import run_once, _default_config
         circuit_file = tmp_path / "nonexistent.json"  # does not exist
 
+        fake_imap = MagicMock()
         ticket = {"id": "T-nofile", "tags": [], "role": "master"}
         with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
              patch("devices.granny.availability.is_available", return_value=True), \
@@ -104,10 +110,12 @@ class TestGrannyCircuitGate:
              patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
              patch("devices.granny.daemon._post_channel"), \
              patch("devices.granny.daemon._CIRCUIT_STATE_FILE", circuit_file), \
-             patch("devices.granny.daemon.subprocess.run", return_value=MagicMock(returncode=0)):
-            result = run_once(_default_config(), set())
+             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_dispatch:
+            run_once(_default_config(), imap=fake_imap)
 
-        assert "T-nofile" in result
+        mock_dispatch.assert_called_once()
+        call_ticket_id = mock_dispatch.call_args[0][0]["id"]
+        assert call_ticket_id == "T-nofile", f"wrong ticket dispatched: {call_ticket_id}"
 
 
 class TestChatSlashTicket:
