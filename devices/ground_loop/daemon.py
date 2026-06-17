@@ -35,6 +35,9 @@ _PLUGIN_DIR = _IGOR_HOME / "ground_loop"
 _FLAGS_DIR = _IGOR_HOME / "flags"
 _DEFAULT_POLL = 15  # seconds
 
+# Repo root: two levels up from this file (devices/ground_loop/daemon.py → repo root).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 def _load_yaml(path: Path) -> dict | None:
     try:
@@ -53,10 +56,12 @@ def _load_yaml(path: Path) -> dict | None:
 
 
 class GroundLoop:
-    def __init__(self, poll_interval: int = _DEFAULT_POLL) -> None:
+    def __init__(self, poll_interval: int = _DEFAULT_POLL, repo_root: Path = _REPO_ROOT) -> None:
         self._poll = poll_interval
         self._daemons: dict[str, "PluginDaemon"] = {}
         self._proxies: dict[str, "PluginProxy"] = {}
+        from .supervisor import RunmeSupervisor
+        self._supervisor = RunmeSupervisor(repo_root)
         self._running = False
 
     def _scan_plugins(self) -> None:
@@ -109,6 +114,7 @@ class GroundLoop:
     def run_once(self) -> None:
         self._scan_plugins()
         self._tick_daemons()
+        self._supervisor.scan()
 
     def run_forever(self) -> None:
         self._running = True
@@ -142,6 +148,7 @@ class GroundLoop:
                 plugin.stop()
             except Exception as exc:
                 log.error("GROUND_LOOP|action=stop_proxy_error|exc=%s", exc)
+        self._supervisor.stop_all()
 
 
 def main() -> None:
