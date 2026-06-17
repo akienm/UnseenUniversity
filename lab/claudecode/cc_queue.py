@@ -1346,92 +1346,6 @@ def cmd_block(args):
     print(f"Hold {args[0]}: {args[1]}")
 
 
-def cmd_propose(args):
-    """D331: propose a design change for review. Sets status=triage.
-
-    Step 2 (D-ticket-status-model-2026-06-16): the legacy `approval` status is
-    gone (sorted = approved). A proposal awaiting review is "not yet cleared" —
-    that is exactly TRIAGE, which absorbs the old needs_review concept. The
-    `proposal` field still flags it for cmd_approve to pick up.
-    """
-    if len(args) < 2:
-        print("Usage: propose <id> <proposal text>")
-        sys.exit(1)
-    tasks = _load()
-    t = _find(tasks, args[0])
-    if not t:
-        print(f"Task {args[0]} not found.")
-        sys.exit(1)
-    proposal = " ".join(args[1:])
-    t["status"] = "triage"
-    t["title"] = _with_status_prefix("triage", t["title"])
-    t["proposal"] = proposal
-    t["proposed_at"] = _now()
-    _save(tasks)
-    _log(
-        {
-            "action": "propose",
-            "id": args[0],
-            "title": t["title"],
-            "proposal": proposal[:200],
-        }
-    )
-    print(f"Proposed {args[0]}: {proposal[:120]}")
-    print(f"Status: triage — CC will review on next context-load")
-
-
-def cmd_approve(args):
-    """D331: Approve a pending proposal. Resets ticket to sprint with approved plan."""
-    if not args:
-        print("Usage: approve <id> [approval notes]")
-        sys.exit(1)
-    tasks = _load()
-    t = _find(tasks, args[0])
-    if not t:
-        print(f"Task {args[0]} not found.")
-        sys.exit(1)
-    # A proposal lives in `triage` now (step 2: approval status removed). Accept
-    # any ticket carrying a proposal, plus the legacy approval/awaiting_approval
-    # rows still in the DB, for backward compatibility.
-    if not t.get("proposal") and t["status"] not in ("approval", "awaiting_approval", "triage"):
-        print(f"Task {args[0]} has no pending proposal (status {t['status']}).")
-        sys.exit(1)
-    notes = " ".join(args[1:]) if len(args) > 1 else ""
-    t["status"] = "sprint"
-    t["title"] = _with_status_prefix("sprint", t["title"])
-    t["approved_plan"] = t.get("proposal", "")
-    t["approval_notes"] = notes
-    t["approved_at"] = _now()
-    t["blocked_at"] = None  # Clear any prior block
-    _save(tasks)
-    _log(
-        {"action": "approve", "id": args[0], "title": t["title"], "notes": notes[:200]}
-    )
-    print(f"Approved {args[0]}: {t['title']}")
-    if notes:
-        print(f"Notes: {notes}")
-
-    # D333: notify Igor so he re-adopts without waiting 30min PROC_QUEUE_DRAIN
-    try:
-        import urllib.request
-
-        cc_send_url = os.environ.get("CC_SEND_URL", "http://localhost:8080/api/cc_send")
-        msg = (
-            f"[APPROVED] {args[0]} approved by CC. "
-            f"adopt top ticket. {f'Notes: {notes[:100]}' if notes else ''}"
-        )
-        req = urllib.request.Request(
-            cc_send_url,
-            data=json.dumps({"content": msg}).encode(),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        urllib.request.urlopen(req, timeout=5)
-        print("Notified Igor via cc_send")
-    except Exception as e:
-        print(f"Igor notification failed (non-fatal): {e}")
-
-    print("Status: pending — Igor notified, will adopt on next turn")
 
 
 def cmd_log(args):
@@ -2232,8 +2146,6 @@ COMMANDS = {
     "done": cmd_done,
     "close": cmd_close,
     "block": cmd_block,
-    "propose": cmd_propose,
-    "approve": cmd_approve,
     "log": cmd_log,
     "add": cmd_add,
     "append-note": cmd_append_note,
