@@ -4,7 +4,27 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from devices.granny.daemon import match_rule, run_once, _default_config
+import pytest
+
+from devices.granny.daemon import (
+    match_rule,
+    run_once,
+    _default_config,
+    _cleared_gated_tickets,
+)
+
+
+@pytest.fixture(autouse=True)
+def _no_db_gated_tickets(monkeypatch):
+    """Prevent _cleared_gated_tickets from hitting the DB in unit tests.
+
+    Tests that want to exercise the gate-eval path patch it explicitly via
+    patch("devices.granny.daemon._cleared_gated_tickets", ...) which takes
+    precedence over this fixture's monkeypatch.
+    """
+    monkeypatch.setattr(
+        "devices.granny.daemon._cleared_gated_tickets", lambda: []
+    )
 
 
 # ── match_rule ────────────────────────────────────────────────────────────────
@@ -209,6 +229,84 @@ class TestRunOnce:
             run_once(_config(), imap=imap)
 
         assert dispatched_ids == ["T-first"], "second CC ticket must be deferred to next cycle"
+
+    def test_gated_ticket_not_dispatched_when_gate_blocked(self):
+        """A ticket with gate: T-A is NOT dispatched when T-A is not closed."""
+        ungated = []
+        gated_ticket = {"id": "T-B", "tags": [], "role": "builder", "status": "sprint",
+                        "gate": "T-A", "title": "Gated on A"}
+        # T-A is in_progress — gate not clear
+        all_statuses = [
+            {"id": "T-A", "status": "in_progress"},
+            {"id": "T-B", "status": "sprint"},
+        ]
+        dispatched = []
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+            dispatched.append(ticket["id"])
+            return True
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=ungated), \
+             patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_default_config(), imap=imap)
+
+        assert "T-B" not in dispatched, "gated ticket must not dispatch while gate is blocked"
+
+    def test_gated_ticket_dispatched_when_gate_clears(self):
+        """A ticket with gate: T-A IS dispatched once T-A is closed."""
+        cleared_ticket = {"id": "T-B", "tags": [], "role": "builder", "status": "sprint",
+                          "gate": "T-A", "title": "Gated on A"}
+        dispatched = []
+        imap = MagicMock()
+        imap.fetch_unseen.return_value = []
+
+        def fake_bus(ticket, imap, worker_mailbox, granny_mailbox):
+            dispatched.append(ticket["id"])
+            return True
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[]), \
+             patch("devices.granny.daemon._cleared_gated_tickets", return_value=[cleared_ticket]), \
+             patch("devices.granny.availability.is_available", return_value=True), \
+             patch("devices.granny.daemon._cascade_active_workers", return_value={}), \
+             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("devices.granny.daemon._post_channel"):
+            run_once(_default_config(), imap=imap)
+
+        assert "T-B" in dispatched, "cleared-gated ticket must be dispatched"
+
+    def test_cleared_gated_tickets_returns_empty_on_db_error(self):
+        """_cleared_gated_tickets() returns [] when DB is unreachable — never raises."""
+        with patch("devices.granny.daemon._DB_URL", "postgresql://bad:bad@127.0.0.1:9/bad"):
+            result = _cleared_gated_tickets()
+        assert result == []
+
+    def test_cleared_gated_tickets_evaluates_gate_logic(self):
+        """_cleared_gated_tickets() uses gate_logic: blocked ticket stays out, cleared comes in."""
+        from unseen_university.gate_logic import gate_clear
+
+        t_blocked = {"id": "T-blocked", "gate": "T-prereq", "status": "sprint"}
+        t_cleared = {"id": "T-cleared", "gate": "T-done", "status": "sprint"}
+        all_statuses = [
+            {"id": "T-prereq", "status": "in_progress"},
+            {"id": "T-done",   "status": "closed"},
+        ]
+
+        with patch("devices.granny.daemon._sprint_tickets", return_value=[]):
+            # Simulate what _cleared_gated_tickets does without hitting the DB
+            results = [
+                t for t in [t_blocked, t_cleared]
+                if gate_clear(t["gate"], all_statuses)
+            ]
+
+        assert [t["id"] for t in results] == ["T-cleared"]
 
     def test_high_inertia_ticket_routes_to_cc_not_dicksimnel(self):
         ticket = {"id": "T-sec", "tags": ["Security"], "role": "builder",

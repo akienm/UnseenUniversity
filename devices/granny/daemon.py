@@ -174,7 +174,7 @@ def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
 
 
 def _sprint_tickets() -> list[dict]:
-    """Load sprint tickets directly from Postgres. Returns [] on error."""
+    """Load ungated sprint tickets directly from Postgres. Returns [] on error."""
     try:
         import psycopg2
         import psycopg2.extras
@@ -195,6 +195,64 @@ def _sprint_tickets() -> list[dict]:
     except Exception as e:
         log.warning("Granny: ticket query failed: %s", e)
         return []
+
+
+def _cleared_gated_tickets() -> list[dict]:
+    """Return gated sprint tickets whose gate has cleared per gate_logic.gate_clear().
+
+    Fetches all gated sprint tickets plus the full ticket status index, evaluates
+    each gate, and returns only those whose every predecessor is terminal.
+    Logs blocked tickets at DEBUG, cleared ones at INFO.
+    Returns [] on any DB error (fail open — never blocks the dispatch cycle).
+    """
+    try:
+        import psycopg2
+        import psycopg2.extras
+        from unseen_university.gate_logic import gate_clear
+
+        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """SELECT metadata FROM clan.memories
+                   WHERE metadata->>'kind' = 'ticket'
+                   AND metadata->>'status' = 'sprint'
+                   AND metadata->>'gate' IS NOT NULL
+                   AND metadata->>'gate' != ''
+                   ORDER BY (metadata->>'priority')::float DESC NULLS LAST
+                   LIMIT 50"""
+            )
+            gated = [dict(r["metadata"]) for r in cur.fetchall()]
+
+            if not gated:
+                conn.close()
+                return []
+
+            cur.execute(
+                """SELECT metadata->>'id' AS id, metadata->>'status' AS status
+                   FROM clan.memories
+                   WHERE metadata->>'kind' = 'ticket'"""
+            )
+            all_statuses = [{"id": r["id"], "status": r["status"]} for r in cur.fetchall()]
+        conn.close()
+    except Exception as e:
+        log.warning("Granny: gated ticket query failed: %s", e)
+        return []
+
+    cleared = []
+    for t in gated:
+        gate_val = t.get("gate", "")
+        if gate_clear(gate_val, all_statuses):
+            log.info(
+                "Granny: gate_cleared|ticket=%s|gate=%s — promoting to dispatch",
+                t.get("id", "?"), gate_val,
+            )
+            cleared.append(t)
+        else:
+            log.debug(
+                "Granny: gate_blocked|ticket=%s|gate=%s",
+                t.get("id", "?"), gate_val,
+            )
+    return cleared
 
 
 def _cc0_busy() -> bool:
@@ -662,10 +720,13 @@ def run_once(config: dict, *, imap=None) -> None:
     _escalate_stale_dispatched()
     _reset_stale_inprogress()
 
+    # Compute candidate tickets once: ungated ready tickets + gated tickets whose
+    # gate has now cleared. The combined list drives both the launch check and dispatch.
+    tickets = _sprint_tickets() + _cleared_gated_tickets()
+
     # Launch any idle workers that have sprint tickets waiting but aren't running.
     # Only fires when there's actually work to do and the worker isn't on cooldown.
-    sprint_tickets_exist = bool(_sprint_tickets())
-    if sprint_tickets_exist:
+    if tickets:
         from devices.granny.availability import _avail_dir as _get_avail_dir
         avail_dir = _get_avail_dir()
         for wid, wcfg in workers_cfg.items():
@@ -684,7 +745,6 @@ def run_once(config: dict, *, imap=None) -> None:
         get_executor().tick(workers_cfg)
     except Exception as exc:
         log.warning("Granny: workflow executor tick failed (non-fatal): %s", exc)
-    tickets = _sprint_tickets()
 
     # Determine which workers have cascade_if_idle active this cycle.
     cascade = _cascade_active_workers(config, tickets)
