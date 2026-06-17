@@ -73,6 +73,7 @@ STATUS_ORDER = [
     "consequence",   # CONSEQUENCE — derived (still-gated T-consequence-*)
     "dependency",    # DEPENDENCY — derived (gated sprint)
     "sprint",        # READY
+    "escalated",     # ESCALATED — ready at next worker level (failed at lower)
     "assigned",      # ASSIGNED (assigned, not started)
     "in_progress",   # INPROGRESS
     "triage",        # TRIAGE (absorbs design / open_questions / needs_review)
@@ -80,13 +81,13 @@ STATUS_ORDER = [
     "akien",         # AKIEN — needs an external action from Akien
     # legacy tail — shown until migrated so nothing vanishes:
     "approval",
-    "escalated",
 ]
 
 STATUS_LABEL = {
     "consequence": "⏳ Consequence (awaiting date/data)",
     "dependency":  "Dependency (awaiting our work)",
     "sprint":      "Ready",
+    "escalated":   "Escalated (ready at next worker level)",
     "assigned":    "Assigned",
     "in_progress": "In progress",
     "triage":      "Triage (needs your input)",
@@ -94,7 +95,6 @@ STATUS_LABEL = {
     "akien":       "👤 Akien (needs your action)",
     # legacy:
     "approval":    "Awaiting approval (legacy)",
-    "escalated":   "Escalated (legacy → role bump)",
 }
 
 # CSS class hint for the web renderer. "" = neutral (no styling emphasis).
@@ -102,13 +102,13 @@ STATUS_CLASS = {
     "consequence": "",      # least action needed — neutral, not a warning
     "dependency":  "warn",
     "sprint":      "ok",
+    "escalated":   "ok",    # ready-tier — same urgency as sprint, different audience
     "assigned":    "ok",
     "in_progress": "ok",
     "triage":      "",
     "hold":        "warn",
     "akien":       "",   # ownership bucket, not a warning — neutral like triage
     "approval":    "warn",
-    "escalated":   "warn",
 }
 
 # id prefix that marks a consequence-check (verification) ticket — the candidate

@@ -43,16 +43,14 @@ class TestTaxonomy:
     def test_akien_is_last_canonical(self):
         # AKIEN (needs an external action from him) is the last canonical group,
         # before the legacy tail.
-        canonical = [s for s in STATUS_ORDER if s not in ("approval", "escalated",
-                                                           "design", "pending")]
+        canonical = [s for s in STATUS_ORDER if s not in ("approval", "design", "pending")]
         assert canonical[-1] == "akien"
 
     def test_salience_order(self):
-        # The exact order Akien specified 2026-06-17.
-        canonical = [s for s in STATUS_ORDER if s not in ("approval", "escalated",
-                                                           "design", "pending")]
+        # The exact order: ESCALATED now lives right after READY (sprint).
+        canonical = [s for s in STATUS_ORDER if s not in ("approval", "design", "pending")]
         assert canonical == [
-            "consequence", "dependency", "sprint", "assigned",
+            "consequence", "dependency", "sprint", "escalated", "assigned",
             "in_progress", "triage", "hold", "akien",
         ]
 
