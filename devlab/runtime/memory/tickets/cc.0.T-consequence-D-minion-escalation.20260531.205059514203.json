@@ -28,7 +28,7 @@
     ],
     "title": "[sprint] Consequence check: minion worker + tiered escalation (2026-06-14)",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,

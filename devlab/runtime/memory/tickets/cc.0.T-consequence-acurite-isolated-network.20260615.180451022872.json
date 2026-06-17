@@ -27,9 +27,9 @@
       "Consequence",
       "AcuRite"
     ],
-    "title": "[pending] Consequence check: AcuRite isolated network data flow",
+    "title": "[sprint] Consequence check: AcuRite isolated network data flow",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "intention": "I intend that the isolated network daemon reliably captures weather data without regressing cloud sync or creating silent data loss.",

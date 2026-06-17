@@ -27,9 +27,9 @@
       "Critic",
       "Skill"
     ],
-    "title": "[pending] Implement /critic skill — adversarial analysis on targets",
+    "title": "[sprint] Implement /critic skill — adversarial analysis on targets",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.6,
     "intention": "I intend that /critic provides a callable, testable interface for adversarial reasoning on any codebase artifact.",

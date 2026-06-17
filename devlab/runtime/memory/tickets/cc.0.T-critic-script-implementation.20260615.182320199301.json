@@ -27,9 +27,9 @@
       "Critic",
       "Script"
     ],
-    "title": "[pending] Implement scripts/critic.py — adversarial analysis CLI",
+    "title": "[sprint] Implement scripts/critic.py — adversarial analysis CLI",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.6,
     "intention": "I intend that critics.py provides a lightweight CLI for experimmentation without the skill infrastructure, encouraging iterative refinement.",

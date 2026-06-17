@@ -31,7 +31,7 @@
     ],
     "title": "[sprint] Consequence check: concept layer + tag architecture",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,

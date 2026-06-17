@@ -27,9 +27,9 @@
       "Consequence",
       "Daemon"
     ],
-    "title": "[pending] Consequence check: unified daemon supervisor resilience",
+    "title": "[sprint] Consequence check: unified daemon supervisor resilience",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": null,
     "priority": 0.3,
     "intention": "I intend that the Ground Loop supervisor improves daemon resilience without introducing new failure modes.",

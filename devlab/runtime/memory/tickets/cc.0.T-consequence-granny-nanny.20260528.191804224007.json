@@ -28,7 +28,7 @@
     ],
     "title": "[sprint] Consequence check: Granny + Nanny orchestration devices",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,

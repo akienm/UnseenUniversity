@@ -27,9 +27,9 @@
       "Daemon",
       "Test"
     ],
-    "title": "[pending] Demo daemon — test Ground Loop supervisor end-to-end",
+    "title": "[sprint] Demo daemon — test Ground Loop supervisor end-to-end",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.5,
     "intention": "I intend that the Ground Loop supervisor pattern is proven to work via a concrete, testable demo.",

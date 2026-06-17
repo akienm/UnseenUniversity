@@ -30,7 +30,7 @@
     ],
     "title": "[sprint] Consequence check: Granny bus dispatch handshake",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "intention": "I intend that predicted side effects of the bus dispatch switch are tracked and annotated within two weeks so nothing silently regresses.",

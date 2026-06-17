@@ -31,7 +31,7 @@
     ],
     "title": "[sprint] Consequence check: Granny autonomous dispatch loop",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "intention": "I intend to verify that the autonomous dispatch loop does not silently regress ticket integrity, double-dispatch, or enable runaway token spend.",

@@ -31,7 +31,7 @@
     ],
     "title": "[sprint] Consequence check: PA2.0 adopted as UU north star",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,

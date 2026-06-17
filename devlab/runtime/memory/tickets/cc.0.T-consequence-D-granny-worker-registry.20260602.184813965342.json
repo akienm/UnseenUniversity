@@ -29,7 +29,7 @@
     ],
     "title": "[sprint] Consequence check: Granny worker registry availability + CC.0 dispatch",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "purpose": "",
     "priority": 0.3,

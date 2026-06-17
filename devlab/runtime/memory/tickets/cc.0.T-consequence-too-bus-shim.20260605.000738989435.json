@@ -29,7 +29,7 @@
     ],
     "title": "[sprint] Consequence check: bus+shim framing in ToO",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "intention": "I intend that this ticket surfaces whether the ToO framing addition achieved its goal of reducing re-explanation load.",

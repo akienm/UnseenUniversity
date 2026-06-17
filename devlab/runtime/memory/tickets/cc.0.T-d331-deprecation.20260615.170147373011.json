@@ -28,9 +28,9 @@
       "Deprecation",
       "Decision"
     ],
-    "title": "[pending] Deprecate D331 — superseded by no-Igor-programming rule + DickSimnel escalation",
+    "title": "[sprint] Deprecate D331 — superseded by no-Igor-programming rule + DickSimnel escalation",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.6,
     "intention": "I intend that stale decision infrastructure from April does not distract from current architecture.",

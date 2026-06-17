@@ -29,7 +29,7 @@
     ],
     "title": "[sprint] Consequence check: skill telemetry signal vs noise",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "blocked_at": null,

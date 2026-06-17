@@ -28,7 +28,7 @@
     ],
     "title": "[sprint] Consequence check: role-ladder dispatch routing",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,

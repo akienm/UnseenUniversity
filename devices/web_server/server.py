@@ -2630,7 +2630,15 @@ from unseen_university.ticket_status import (  # noqa: E402
 
 
 def _load_queue_tickets() -> list[dict]:
-    """Load open tickets from clan.memories. Returns [] when DB unavailable."""
+    """Load open tickets from clan.memories. Returns [] when DB unavailable.
+
+    NOTE: this loads OPEN tickets only, so `effective_status`' gate resolution
+    here cannot see a gate that references a *closed* predecessor (it would read
+    as still-gated). In practice every live gate is either a date or an open
+    predecessor — closing a ticket nulls its dependents' id-gates (cmd_done →
+    _ungate_dependents) — so the gap is latent. (uuopentickets resolves this via
+    a separate _closed_ids query; this renderer deliberately stays simpler.)
+    """
     conn = _db_conn()
     if not conn:
         return []

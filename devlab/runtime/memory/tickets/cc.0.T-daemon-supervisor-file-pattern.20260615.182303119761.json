@@ -27,9 +27,9 @@
       "Daemon",
       "Orchestration"
     ],
-    "title": "[pending] Daemon supervisor — runme.py hot-reload, .borkedpy error handling",
+    "title": "[sprint] Daemon supervisor — runme.py hot-reload, .borkedpy error handling",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.6,
     "intention": "I intend that Ground Loop's file-pattern supervisor is robust, transparent, and requires no code changes to add new daemons.",

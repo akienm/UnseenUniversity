@@ -27,9 +27,9 @@
       "Consequence",
       "Critic"
     ],
-    "title": "[pending] Consequence check: /critic and scripts/critic.py produce actionable critique",
+    "title": "[sprint] Consequence check: /critic and scripts/critic.py produce actionable critique",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "intention": "I intend that /critic and scripts/critic.py are useful before wiring them into automated decision flows.",

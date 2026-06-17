@@ -28,7 +28,7 @@
     ],
     "title": "[sprint] Consequence check: constraints as first-class citizens (2026-06-14)",
     "result": null,
-    "status": "dependency",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.3,
     "claimed_at": null,

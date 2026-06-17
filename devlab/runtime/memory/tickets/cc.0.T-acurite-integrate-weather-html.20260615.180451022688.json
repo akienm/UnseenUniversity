@@ -27,9 +27,9 @@
       "AcuRite",
       "Frontend"
     ],
-    "title": "[pending] weather.html — point to isolated network CSV endpoint",
+    "title": "[sprint] weather.html — point to isolated network CSV endpoint",
     "result": null,
-    "status": "pending",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.5,
     "intention": "I intend that the weather.html dashboard displays live data from the isolated AcuRite daemon.",

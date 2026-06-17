@@ -155,3 +155,60 @@ constant (e.g. `cc_queue.py` `CANONICAL_STATUSES`) that the audit layer can chec
 against, so a ticket with an off-list status is flagged as drift — the same way
 AR-009 enforces interface-crossing logs. (Audit-check ticket is downstream; this
 doc is the spec it checks against.)
+
+---
+
+## v2 — salience-first DISPLAY taxonomy (Akien, 2026-06-17, commit `da2a658f`)
+
+The canonical *stored* set above is unchanged. v2 is a **display** layer: how open
+tickets are grouped and ordered in reports (`uuopentickets`, `uumytickets`,
+`queue_view`, the web queue page). Akien ran `uuopentickets`, objected to a bogus
+"Pending (legacy → triage/dependency)" group, and specified report groups ordered
+by **how little action he needs to take** — least-action first, so reading
+top-down he clears the no-action sections first and lands on his action items last:
+
+```
+CONSEQUENCE · DEPENDENCY · READY · ASSIGNED · INPROGRESS · TRIAGE · HOLD · AKIEN
+```
+
+### Two groups are DERIVED, not stored
+
+- **CONSEQUENCE** (net-new, first section) — "waiting on a date/data we can't
+  influence." Identification rule (Akien verbatim): *"every consequence ticket
+  starts with `T-consequence-`."* Derived = id-prefix `T-consequence-` **AND an
+  uncleared gate**. When the gate clears (date passes / predecessors close) it
+  **graduates to its underlying status** — so a passed-date check renders as READY
+  and is dispatchable, with **no daily job** (live derivation). This is the answer
+  to Akien's "gate passed → auto-move to READY, yes?" — yes, automatically.
+  CONSEQUENCE takes precedence over DEPENDENCY (a still-gated check is
+  first-and-foremost "waiting", even if its gate is an id).
+- **DEPENDENCY** — now **purely derived** (a gated `sprint` ticket = waiting on
+  work we could reprioritise). No stored `dependency` status; `cmd_gate` only sets
+  the `gate` field. Migrated 21 legacy stored-`dependency` rows → sprint so the
+  derivation is the single source.
+
+### Distinctions Akien drew
+
+- **CONSEQUENCE** = can't influence (a date, data becoming available).
+- **DEPENDENCY** = could influence by reprioritising another ticket.
+- **AKIEN** = needs him to take an external action (spend $). Last group =
+  the one action bucket, at the bottom of the report.
+
+### Mechanics
+
+- **`pending` retired:** 13 legacy pending → sprint (the group Akien objected to is
+  gone). Legacy tail (`approval`/`escalated`/`design`) stays in `STATUS_ORDER` so a
+  stray row is surfaced, never silently dropped (AR-009 spirit).
+- **Canonical source:** `effective_status(ticket, all_tickets)` lives in
+  `unseen_university/ticket_status.py` (imports `gate_clear` from the `gate_logic`
+  leaf). `queue_view.py` + `web_server/server.py` import the SAME object — a
+  cross-caller `is`-identity test (`tests/test_ticket_status.py`) pins no-drift.
+  `~/bin/uuopentickets` + `uumytickets` keep a hand-maintained local copy (system
+  python3 can't import the package); backed up `.bak.20260617`.
+- **Follow-up filed:** `T-day-close-gate-sweep` (S, 0.4) — day-close GC of elapsed
+  date-gate *strings*. Live derivation is already correct; this only clears the
+  lingering cosmetic `[gate: <past-date>]`.
+- **Flagged for Akien:** 3 acurite-hardware tickets
+  (`T-acurite-usb-isolated-config`, `-integrate-weather-html`, `-isolated-daemon`)
+  auto-moved pending→READY but need his physical hardware action — candidates for
+  AKIEN/TRIAGE, his call.
