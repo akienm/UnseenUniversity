@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-guru-loop-master-control-2026-06-13.20260613.111400000000",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-guru-loop-master-control-2026-06-13"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-13T11:14:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-guru-loop-master-control-2026-06-13"
+    ],
+    "tickets": [
+      "T-guru-loop-core",
+      "T-guru-loop-tests",
+      "T-consequence-guru-loop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-guru-loop-master-control-2026-06-13",
+    "title": "Guru Loop — Master control for dynamic service management",
+    "status": "open",
+    "date": "2026-06-13",
+    "source": "lab/design_docs/D-guru-loop-master-control-2026-06-13.md",
+    "text": "# D-guru-loop-master-control-2026-06-13\n\n**Title:** Guru Loop — Master control for dynamic service management\n\n**Date:** 2026-06-13\n\n**Status:** open\n\n**Spawned tickets:** T-guru-loop-core, T-guru-loop-tests, T-consequence-guru-loop\n\n## Decision Narrative\n\nWeb server going down required manual restart. This violates the \"easy to the point of disappearing\" design principle. Solution: A stable, immutable master control loop (Guru Loop) that:\n- Manages all rack services dynamically\n- Auto-launches services on demand (if circuit breaker closed)\n- Proxies requests transparently\n- Services pluggable via YAML config (no code changes to add services)\n- Supports circuit breaker for maintenance mode\n\n## Hypothesis\n\n**Q2: What should be observably different?**\nWhen a service crashes (e.g., web_server), the next incoming request auto-restarts it transparently without manual intervention.\n\n**Q3: How will we know?**\nTest: Kill web_server. Next HTTP request succeeds (not 503). Log shows: `[guru] spawned web_server (health check failed) → launched → proxied request`.\n\n**Q1: Which goal does this serve?**\nInfrastructure hardening / system self-healing (no explicit G- goal; tactical resilience).\n\n## Key Design Decisions\n\n1. **Immutable core, pluggable children** — Guru loop itself is ~300 LOC and never crashes. Everything else swappable.\n2. **YAML-driven registry** — Services registered in config, no code changes to add them.\n3. **Health-check + on-demand launch** — Critical services health-checked; others spawn on first request.\n4. **Circuit breaker for maintenance** — Touch `~/.unseen_university/flags/SERVICE.breaker` to disable auto-spawn.\n\n## Related Decisions\n\n- None yet (first decision in this session)\n\n## Next Steps\n\n1. T-guru-loop-core: Implement Guru loop + service registry\n2. T-guru-loop-tests: Test resilience and circuit breaker\n3. T-consequence-guru-loop: Verify in production after 2 weeks\n"
+  }
+}
