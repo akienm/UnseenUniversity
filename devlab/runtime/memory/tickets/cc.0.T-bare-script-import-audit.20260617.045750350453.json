@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-bare-script-import-audit.20260617.045750350453",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-bare-script-import-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T04:57:50.350453",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-bare-script-import-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-bare-script-import-audit",
+    "title": "[sprint] Audit residual bare-script package-import fragility in lab/claudecode",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "audit",
+      "tooling",
+      "import-hygiene"
+    ],
+    "description": "Closes out the bare-script import bug class surfaced while fixing the status-label consolidation regression. Skills/cron invoke `python3 ${CC_WORKFLOW_TOOLS}/<script>.py` under SYSTEM python3 (NOT the venv), where sys.path[0] is the script's own dir and the editable install is absent — so top-level `unseen_university`/`devices` imports are unresolvable without a per-script repo-root bootstrap.\n\nThe two genuinely-broken, bare-invoked scripts (cc_queue.py, queue_view.py) are ALREADY FIXED (commits 746ce063, 14798231) with the `_REPO_ROOT = Path(__file__).resolve().parents[2]` bootstrap + a subprocess regression test. This ticket captures the RESIDUAL, lower-severity items found in the full sweep — none are active production breakage:\n\n1. channel.py:52-66 / cc_inbox.py:55-66 — lazy IMAP-mirror import inside `except Exception: pass`. This is INTENDED fallback (JSONL/Postgres authoritative, IMAP is a mirror) — do NOT resurrect the import (would spin up IMAPServer().start() on every CLI call, an unwanted behavior change). The real defect is the AR-009 violation: the swallow is a bare `pass` with no log at the interface crossing. Fix = one-line `log.debug(...)` in the except, not an import change. Also channel.py has a DEAD legacy sys.path insert pointing at a nonexistent `parents[3]/dev/src/unseen_university` path — remove it.\n2. book_learner.py:66, cc_task_listener.py:133, reading_campaign.py:602 — import devices/unseen_university but are NOT bare-invoked by any current skill/cron/shim (book_learner's only hits are stale VSCode logs). If any becomes bare-invoked, add the bootstrap. Low priority; documented so a future grep doesn't re-discover from scratch.\n3. code_indexer.py — VERIFIED SELF-HEALING under bare invocation (sweep_python_files inserts repo_root before the devices.nanny import; empirical run gave inserted=5380 errors=0). No action; recorded so it isn't re-flagged.\n\n**Affected files:** lab/claudecode/channel.py, lab/claudecode/cc_inbox.py (AR-009 log + dead-path removal); book_learner.py / cc_task_listener.py / reading_campaign.py (note-only unless they become bare-invoked).\n**Design rules:** AR-009 interface-crossing logging; no-sqlite (n/a); portability (rejected the systemic .pth/--user fix as machine-global + un-versioned).\n**Scope boundary:** IN: AR-009 one-line logs in the two swallow sites, remove channel.py dead legacy sys.path insert. OUT: do NOT enable CLI->IMAP mirroring (deliberate, separately-ticketed, tested change); do NOT mechanically bootstrap channel/cc_inbox (the standard fix wouldn't even resolve their top-level `bus.imap_server` import).\n**Test plan:** Extend the existing tests/test_web_queue.py bare-script subprocess pattern to assert channel.py + cc_inbox.py run bare under system python3 with no traceback in stderr; assert the AR-009 log line is emitted when the IMAP import fails. No test for code_indexer (already covered by empirical verification + its own bootstrap).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "created_at": "2026-06-17T04:57:50.350453+00:00",
+    "updated_at": "2026-06-16T22:57:50.395035-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.25,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}
