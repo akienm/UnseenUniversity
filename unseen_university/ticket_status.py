@@ -70,11 +70,12 @@ from unseen_university.gate_logic import gate_clear
 # absent from this list never renders). `pending` is gone: migrated to sprint
 # 2026-06-17 (the "Pending (legacy → triage/dependency)" group Akien objected to).
 STATUS_ORDER = [
-    "consequence",   # CONSEQUENCE — derived (still-gated T-consequence-*)
-    "dependency",    # DEPENDENCY — derived (gated sprint)
-    "sprint",        # READY
-    "escalated",     # ESCALATED — ready at next worker level (failed at lower)
-    "assigned",      # ASSIGNED (assigned, not started)
+    "consequence",          # CONSEQUENCE — derived (still-gated T-consequence-*)
+    "dependency",           # DEPENDENCY — derived (gated sprint)
+    "sprint",               # READY
+    "awaiting_validation",  # AWAITING VALIDATION — work submitted, pending verify
+    "escalated",            # ESCALATED — ready at next worker level (failed at lower)
+    "assigned",             # ASSIGNED (assigned, not started)
     "in_progress",   # INPROGRESS
     "triage",        # TRIAGE (absorbs design / open_questions / needs_review)
     "hold",          # HOLD
@@ -86,8 +87,9 @@ STATUS_ORDER = [
 STATUS_LABEL = {
     "consequence": "⏳ Consequence (awaiting date/data)",
     "dependency":  "Dependency (awaiting our work)",
-    "sprint":      "Ready",
-    "escalated":   "Escalated (ready at next worker level)",
+    "sprint":               "Ready",
+    "awaiting_validation":  "Awaiting validation (submitted, pending verify)",
+    "escalated":            "Escalated (ready at next worker level)",
     "assigned":    "Assigned",
     "in_progress": "In progress",
     "triage":      "Triage (needs your input)",
@@ -101,8 +103,9 @@ STATUS_LABEL = {
 STATUS_CLASS = {
     "consequence": "",      # least action needed — neutral, not a warning
     "dependency":  "warn",
-    "sprint":      "ok",
-    "escalated":   "ok",    # ready-tier — same urgency as sprint, different audience
+    "sprint":               "ok",
+    "awaiting_validation":  "ok",   # nearly-done tier — submitted but not closed
+    "escalated":            "ok",   # ready-tier — same urgency as sprint, different audience
     "assigned":    "ok",
     "in_progress": "ok",
     "triage":      "",

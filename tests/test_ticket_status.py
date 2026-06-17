@@ -50,8 +50,8 @@ class TestTaxonomy:
         # The exact order: ESCALATED now lives right after READY (sprint).
         canonical = [s for s in STATUS_ORDER if s not in ("approval", "design", "pending")]
         assert canonical == [
-            "consequence", "dependency", "sprint", "escalated", "assigned",
-            "in_progress", "triage", "hold", "akien",
+            "consequence", "dependency", "sprint", "awaiting_validation", "escalated",
+            "assigned", "in_progress", "triage", "hold", "akien",
         ]
 
     def test_no_pending_group_label(self):
@@ -135,8 +135,8 @@ class TestNoSilentDrop:
         # the legacy tail) — else tickets vanish silently (AR-009 violation).
         # The derivable + canonical stored statuses, exhaustively:
         producible = {
-            "consequence", "dependency", "sprint", "assigned", "in_progress",
-            "triage", "hold", "akien", "approval", "escalated",
+            "consequence", "dependency", "sprint", "awaiting_validation", "assigned",
+            "in_progress", "triage", "hold", "akien", "approval", "escalated",
         }
         missing = producible - set(STATUS_ORDER)
         assert not missing, f"these statuses would be silently dropped: {missing}"
