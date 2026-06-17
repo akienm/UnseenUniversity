@@ -908,6 +908,26 @@ def _annotator_delta_update(ticket_id: str) -> None:
         print(f"annotator delta: {exc}", file=sys.stderr)
 
 
+def _record_ticket_usage(ticket_id: str, ticket: dict, cost_usd: float | None = None) -> None:
+    """Write per-ticket usage actuals to devlab.ticket_usage. Non-fatal.
+
+    AR-009: logs the interface crossing (Postgres write) at INFO when successful.
+    Sprint token data comes from sprint_tokens.log; cost_usd from _compute_cost_usd.
+    """
+    try:
+        from lab.claudecode.usage_store import UsageStore
+        store = UsageStore()
+        store.record(
+            ticket_id=ticket_id,
+            worker=ticket.get("worker"),
+            cost_usd=cost_usd,
+            started_at=ticket.get("dispatched_at"),
+            closed_at=ticket.get("completed_at"),
+        )
+    except Exception as exc:
+        print(f"usage_store: record failed for {ticket_id}: {exc}", file=sys.stderr)
+
+
 def _close_igor_goal(ticket_id: str) -> None:
     """Close Igor's GOAL memory for a ticket so pe_chain stops re-firing."""
     try:
@@ -1289,6 +1309,7 @@ def cmd_done(args):
         }
     )
     _close_igor_goal(ticket_id)
+    _record_ticket_usage(ticket_id, t, cost_usd=_compute_cost_usd(ticket_id))
     # When commit evidence is missing, force manual review — skip auto-validate
     if not missing_evidence and _try_auto_validate(tasks, t):
         return
@@ -1322,6 +1343,7 @@ def cmd_close(args):
     _close_igor_goal(args[0])
     _classifier_clear_in_flight(args[0])
     _annotator_delta_update(args[0])
+    _record_ticket_usage(args[0], t, cost_usd=cost_usd)
     _append_to_todays_slate(t)
     cost_str = f"  cost=${t['cost_usd']:.4f}" if t.get("cost_usd") is not None else ""
     print(f"Closed {args[0]}: {t['title']}{cost_str}")

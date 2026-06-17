@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-per-ticket-usage-metrics",
-    "title": "[sprint] Per-ticket token/usage attribution + store — metrics substrate for cost-aware builders",
-    "status": "sprint",
+    "title": "[in_progress] Per-ticket token/usage attribution + store — metrics substrate for cost-aware builders",
+    "status": "in_progress",
     "worker": "claude",
     "size": "M",
     "tags": [

@@ -21,8 +21,8 @@
   },
   "body": {
     "id": "T-build-log-digester",
-    "title": "[in_progress] Build-log digester — inference-free minion that keeps build state pick-up-ready",
-    "status": "in_progress",
+    "title": "[awaiting_validation] Build-log digester — inference-free minion that keeps build state pick-up-ready",
+    "status": "awaiting_validation",
     "worker": "claude",
     "size": "M",
     "tags": [
@@ -34,8 +34,8 @@
     "decision_id": "D-rewind-as-workflow-primitive-2026-06-16",
     "created_at": "2026-06-16T20:31:03.013640+00:00",
     "updated_at": "2026-06-16T14:31:03.027219-06:00",
-    "completed_at": null,
-    "result": null,
+    "completed_at": "2026-06-17T20:16:37.816371+00:00",
+    "result": "37-test digester daemon with log_parser (event extraction + flat-timeline degrade + boundary marker detection), digest_store (devlab.build_digest Postgres CRUD), Ground Loop runme plugin (cursor-resumed polling), staged descriptor. Degrades gracefully to flat timeline when boundary markers absent (verified by test). Commit 92723cdf.",
     "role": "master",
     "priority": 0.65,
     "gate": null,
@@ -46,6 +46,7 @@
     "target_difficulty": 1,
     "intention": "I intend that a context resuming a build reads a small ticket-keyed digest of attempt->outcome + current blocker, never re-tokenizing raw logs, maintained by an inference-free minion.",
     "created_by": null,
+    "commit_hash": "92723cdf",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
   }
 }
