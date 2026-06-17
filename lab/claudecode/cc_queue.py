@@ -122,15 +122,18 @@ STATUS_ORDER = {
 _TERMINAL_STATUSES = {"closed", "done", "cancelled"}
 # design folded into triage (TRIAGE = not yet ready to work), so it is no longer
 # auto-claimable — deliberate claim-path change per D-ticket-status-model-2026-06-16.
-# Step 2 (T-ticket-status-approval-akien-removal): approval/akien/awaiting_approval
+# Step 2 (T-ticket-status-approval-akien-removal): approval/awaiting_approval
 # dropped from the actionable set — sorted = approved makes the approval gate
-# redundant, and `akien` means "needs Akien" (never dispatchable to a worker).
+# redundant. `akien` is ALSO non-actionable ("needs Akien" → never dispatchable
+# to a worker) but it is NOT deprecated: it is Akien's intentional at-a-glance
+# "these are mine" ownership bucket (per Akien 2026-06-16), so it stays settable.
 # Only READY (internal string `sprint`) is claimable.
 _ACTIONABLE_STATUSES = {"sprint"}
 # Recognized for legacy DB rows (display/sort) but NO LONGER settable — a status
-# transition into one of these is rejected by setstatus/propose. The lone live
-# `akien` row (T-uc-cert-domain-migration) stays visible until Akien reclassifies it.
-_DEPRECATED_STATUSES = {"approval", "akien", "awaiting_approval"}
+# transition into one of these is rejected by setstatus/propose. NOTE: `akien` is
+# deliberately NOT here — it is settable-but-non-actionable (Akien's ownership
+# bucket), distinct from the deprecated pre-sprint approval gates.
+_DEPRECATED_STATUSES = {"approval", "awaiting_approval"}
 
 # Status prefix helpers — embed [status] in title for one-grep searchability
 _STATUS_PREFIX_RE = None
@@ -2053,8 +2056,8 @@ def cmd_setstatus(args):
     if new_status in _DEPRECATED_STATUSES:
         # D-ticket-status-model-2026-06-16 step 2: these are recognized for legacy
         # display but no longer settable. sorted = approved, so the pre-sprint
-        # approval gate is gone; "needs Akien" should be `dependency` (blocked on
-        # Akien) or `triage` (not yet cleared), never the legacy `akien` status.
+        # approval gate is gone (fold to `triage`). NOTE: `akien` is NOT rejected
+        # here — it stays settable as Akien's ownership bucket (per Akien 2026-06-16).
         settable = sorted(_VALID_STATUSES - _DEPRECATED_STATUSES)
         print(
             f"Status {new_status!r} is deprecated (D-ticket-status-model-2026-06-16) "
