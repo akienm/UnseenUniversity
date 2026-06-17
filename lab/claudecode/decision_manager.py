@@ -3,37 +3,35 @@
 decision_manager.py — Record a design decision atomically.
 
 Does three things in one shot:
-  1. Prepends the decision line to decisions_log.dsb (file stays canonical)
-  2. Updates the DSB header (latest=Dxx, updated=date)
-  3. Upserts to docs_entries Postgres table (token-efficient DB mirror)
-  4. Posts to cc_queue for Igor memory flush (non-fatal if Igor down)
+  1. Emits a JSON record to devlab/runtime/memory/decisions/ via memory_emit
+     (T-decisions-dsb-cutover: was DSB prepend — cutover 2026-06-17)
+  2. Upserts to docs_entries Postgres table (token-efficient DB mirror)
+  3. Posts to cc_queue for Igor memory flush (non-fatal if Igor down)
 
 Usage:
     python3 claudecode/decision_manager.py add D133 "session-in-db" "implemented" \
         "sessions table in Postgres; session_manager.py; sessions.md rendered from DB"
-    python3 claudecode/decision_manager.py show [N]     — last N decisions from DB
+    python3 claudecode/decision_manager.py show [N]     — last N decisions from JSON store
     python3 claudecode/decision_manager.py get D133     — print one decision
 
 Called by /decided skill at Step 2 to eliminate manual DSB editing.
 
-Ref: D133, T-decided-habit
+Ref: D133, T-decided-habit, T-decisions-dsb-cutover
 """
 
 import os
-import re
-import subprocess
 import sys
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
-DSB_FILE = (
-    Path.home()
-    / "TheIgors.archive"
-    / "lab"
-    / "design_docs_for_igor"
-    / "decisions_log.dsb"
-)
 DB_URL = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+
+_HERE = Path(__file__).resolve().parent
+_REPO_ROOT = _HERE.parent.parent
+_MEMORY_ROOT = os.environ.get(
+    "UU_MEMORY_ROOT", str(_REPO_ROOT / "devlab" / "runtime" / "memory")
+)
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -47,7 +45,7 @@ def _conn():
 
 
 def _upsert_docs_entry(decision_id: str, line: str):
-    """Upsert decision line into docs_entries."""
+    """Upsert decision line into docs_entries (secondary — JSON store is primary)."""
     if not DB_URL:
         return
     try:
@@ -93,54 +91,63 @@ def _flush_to_igor(decision_id: str, description: str):
             capture_output=True,
         )
     except Exception:
-        pass  # Igor down is fine — DSB + DB are durable
+        pass  # Igor down is fine — JSON store + DB are durable
 
 
-# ── DSB helpers ───────────────────────────────────────────────────────────────
+# ── JSON store helpers ─────────────────────────────────────────────────────────
 
 
-def _update_dsb(
-    decision_id: str, short_name: str, status: str, description: str
-) -> str:
-    """Prepend decision line to DSB. Update header. Return the line."""
-    line = f"{decision_id}|{short_name}|{status}|{description}"
-    today = datetime.now().strftime("%Y-%m-%d")
+def _emit_json(decision_id: str, short_name: str, status: str, description: str) -> str:
+    """Write one decision to devlab/runtime/memory/decisions/ via memory_emit.
 
-    text = DSB_FILE.read_text(encoding="utf-8", errors="replace")
-    lines = text.splitlines()
+    AR-009: logs the interface crossing at INFO level.
+    Stamp is deterministic from decision_id + today (idempotent on same-day re-run).
+    """
+    sys.path.insert(0, str(_HERE))
+    from memory_emit import emit, stamp_for_day_only
 
-    # Update header: latest= and updated=
-    new_lines = []
-    header_done = False
-    decision_inserted = False
+    today = datetime.now().strftime("%Y%m%d")
+    stamp = stamp_for_day_only(decision_id, today)
+    body = {
+        "decision_id": decision_id,
+        "short_name": short_name,
+        "status": status,
+        "description": description,
+        "line": f"{decision_id}|{short_name}|{status}|{description}",
+    }
+    path = emit(
+        "decisions",
+        "cc.0",
+        body,
+        kind="decision",
+        namespace=[decision_id],
+        links={"decisions": [decision_id]},
+        stamp=stamp,
+    )
+    print(f"DECISION_EMIT|id={decision_id}|path={path}", file=sys.stderr)
+    return path
 
-    last_decision_idx = -1
-    for i, l in enumerate(lines):
-        if re.match(r"^D\d+\|", l):
-            last_decision_idx = i
 
-    for i, l in enumerate(lines):
-        # Update DOC header line
-        if l.startswith("DOC|") and not header_done:
-            l = re.sub(r"updated=\S+", f"updated={today}", l)
-            l = re.sub(r"latest=\S+", f"latest={decision_id}", l)
-            new_lines.append(l)
-            header_done = True
+def _list_decisions(n: int = 10) -> list[dict]:
+    """Return last N decision records from the JSON store, sorted by emitted_at desc."""
+    import json
+
+    decisions_dir = Path(_MEMORY_ROOT) / "decisions"
+    if not decisions_dir.exists():
+        return []
+    files = sorted(decisions_dir.glob("cc.0.D*.json"), reverse=True)
+    results = []
+    for f in files[:n * 3]:  # read a few extra to allow for non-decision records
+        try:
+            with open(f) as fh:
+                record = json.load(fh)
+            if record.get("kind") == "decision":
+                results.append(record)
+                if len(results) >= n:
+                    break
+        except Exception:
             continue
-
-        new_lines.append(l)
-
-        # Insert after the last existing Dxxx| line (append convention — oldest-first)
-        if i == last_decision_idx and not decision_inserted:
-            new_lines.append(line)
-            decision_inserted = True
-
-    if not decision_inserted:
-        # No existing decisions — append at end
-        new_lines.append(line)
-
-    DSB_FILE.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-    return line
+    return results
 
 
 # ── Commands ──────────────────────────────────────────────────────────────────
@@ -159,12 +166,13 @@ def cmd_add(args: list[str]):
     short_name = args[1]
     status = args[2]
     description = args[3]
+    line = f"{decision_id}|{short_name}|{status}|{description}"
 
-    # 1. Update DSB file
-    line = _update_dsb(decision_id, short_name, status, description)
-    print(f"DSB updated: {line}")
+    # 1. Emit to JSON filesystem memory store (primary write)
+    path = _emit_json(decision_id, short_name, status, description)
+    print(f"JSON store: {path}")
 
-    # 2. Upsert to docs_entries
+    # 2. Upsert to docs_entries (secondary — token-efficient DB mirror)
     if DB_URL:
         _upsert_docs_entry(decision_id, line)
         print(f"docs_entries upserted: {decision_id}")
@@ -177,7 +185,15 @@ def cmd_add(args: list[str]):
 
 
 def cmd_show(n: int = 10):
-    """Show last N decisions from DB (or DSB if no DB)."""
+    """Show last N decisions from JSON store (or DB if JSON unavailable)."""
+    records = _list_decisions(n)
+    if records:
+        print(f"Last {n} decisions (from JSON store):")
+        for r in records:
+            body = r.get("body", {})
+            print(f"  {body.get('line', r.get('id', '?'))}")
+        return
+
     if DB_URL:
         try:
             with _conn() as conn:
@@ -198,17 +214,29 @@ def cmd_show(n: int = 10):
         except Exception:
             pass
 
-    # Fallback: read DSB directly
-    text = DSB_FILE.read_text(encoding="utf-8", errors="replace")
-    decisions = [l for l in text.splitlines() if re.match(r"^D\d+\|", l)]
-    print(f"Last {n} decisions (from DSB):")
-    for l in decisions[:n]:
-        print(f"  {l}")
+    print("No decisions found (JSON store empty, DB unavailable)")
 
 
 def cmd_get(decision_id: str):
-    """Print one decision by ID — uses decisions table (fast), falls back to DSB."""
+    """Print one decision by ID — checks JSON store first, then DB."""
     decision_id = decision_id.upper()
+    import json as _json
+    from pathlib import Path as _Path
+
+    # Search JSON store
+    decisions_dir = _Path(_MEMORY_ROOT) / "decisions"
+    if decisions_dir.exists():
+        for f in decisions_dir.glob(f"cc.0.{decision_id}.*.json"):
+            try:
+                record = _json.loads(f.read_text())
+                body = record.get("body", {})
+                print(f"{body.get('decision_id', decision_id)} — {body.get('short_name', '?')}")
+                print(f"  status: {body.get('status', '?')}")
+                print(f"  {body.get('description', '')[:200]}")
+                return
+            except Exception:
+                pass
+
     if DB_URL:
         try:
             with _conn() as conn:
@@ -232,12 +260,6 @@ def cmd_get(decision_id: str):
         except Exception:
             pass
 
-    # Fallback: grep DSB
-    text = DSB_FILE.read_text(encoding="utf-8", errors="replace")
-    for line in text.splitlines():
-        if line.startswith(f"{decision_id}|"):
-            print(line)
-            return
     print(f"Decision {decision_id} not found")
     sys.exit(1)
 

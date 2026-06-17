@@ -100,7 +100,7 @@ practice — see `unseenuniversity/rules/collaboration`."
 days. Read the recent decisions log:
 
 ```bash
-tail -30 ~/dev/src/UnseenUniversity/lab/design_docs_for_igor/decisions_log.dsb
+ls devlab/runtime/memory/decisions/cc.0.D*.json 2>/dev/null | sort -r | head -30 | xargs -I{} python3 -c "import json,sys; r=json.load(open('{}')) ; b=r.get('body',{}); print(b.get('line', r.get('id','?')))" 2>/dev/null
 ```
 
 **Fail when:** the new decision contradicts or undoes a recent one without
@@ -195,7 +195,7 @@ explicitly overridden inline).
 When called from `/decided`: the decision summary + scope are passed in
 the parent context. When called standalone with `<decision-id>`: read the
 decision file at `~/dev/src/UnseenUniversity/lab/design_docs/decisions/<decision-id>.md`
-plus the corresponding window of `decisions_log.dsb`.
+plus recent decisions from `devlab/runtime/memory/decisions/`.
 
 ### 2. Read prior watch-for notes
 

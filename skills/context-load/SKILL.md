@@ -154,7 +154,7 @@ psql $ADC_PG -tAc \
    WHERE path LIKE 'palace.decisions.%'
    ORDER BY updated_at DESC
    LIMIT 10" 2>/dev/null \
-  || tail -10 ~/dev/src/UnseenUniversity/lab/design_docs_for_igor/decisions_log.dsb | sed 's/|/ — /g'
+  || (ls devlab/runtime/memory/decisions/cc.0.D*.json 2>/dev/null | sort -r | head -10 | xargs -I{} python3 -c "import json,sys; r=json.load(open('{}')) ; b=r.get('body',{}); print(b.get('line', r.get('id','?')))" 2>/dev/null)
 ```
 
 ## Step 4 — Channel (last 5)

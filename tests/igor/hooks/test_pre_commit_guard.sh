@@ -69,7 +69,6 @@ _assert_accept() {
 _assert_reject "env-file"             ".env" "SECRET=x"
 _assert_reject "env-variant"          ".env.local" "SECRET=y"
 _assert_reject "sqlite-db"            "some.db" "binary"
-_assert_reject "decisions-log-direct" "lab/design_docs_for_igor/decisions_log.dsb" "fake entry"
 _assert_accept "normal-python-file"   "foo.py" "print('ok')"
 
 echo "---"

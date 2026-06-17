@@ -1126,7 +1126,6 @@ registry.register(
 _ARCH_DOCS = [
     # Core identity — highest priority
     ("design_docs_for_igor/igor_identity_master.dsb", 1, 0.95),
-    ("design_docs_for_igor/decisions_log.dsb", 1, 0.95),
     ("design_docs_for_igor/ethical_framework.dsb", 1, 0.95),
     # Architecture + capabilities
     ("design_docs_for_igor/architecture_root.dsb", 2, 0.90),

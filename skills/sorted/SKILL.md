@@ -220,21 +220,6 @@ the identical file. Fail-open — a projection failure must never block /sorted:
   python3 -c "import migrate_decisions; migrate_decisions.migrate_one('${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/lab/design_docs/decisions/D-<id>.md')" ) || true
 ```
 
-### 7. Append to decisions log
-
-Chronological append (this is the exception to "don't write to
-decisions_log.dsb directly" — /sorted is a structured writer, not a blind
-dump; the file becomes a generated echo once the palace migration ships):
-```
-python -c "
-from datetime import datetime; from pathlib import Path; import os
-ts = datetime.now().isoformat(timespec='seconds')
-f = Path(os.environ.get("UU_ROOT", str(Path.home()/"dev/src/UnseenUniversity"))))/'lab'/'design_docs_for_igor'/'decisions_log.dsb'
-f.parent.mkdir(parents=True, exist_ok=True)
-f.open('a',encoding='utf-8').write(ts+' | D-... | <summary> | tickets: T-x, T-y, T-z\n')
-"
-```
-
 ### 8. Append to slate
 
 ```
