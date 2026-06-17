@@ -127,9 +127,11 @@ class TestPageQueue:
         with patch("devices.web_server.server._db_conn", return_value=conn):
             with TestClient(app) as client:
                 html = client.get("/queue").text
-        assert "in_progress" in html
-        assert "sprint" in html
-        assert "hold" in html
+        # Assert canonical display labels (from _STATUS_LABEL) appear in rendered HTML
+        assert "In progress" in html  # in_progress
+        assert "Ready" in html        # sprint
+        assert "Hold" in html          # hold
+        assert "Akien" in html         # akien
 
     def test_no_db_shows_unavailable(self):
         from starlette.testclient import TestClient
