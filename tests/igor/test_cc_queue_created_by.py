@@ -20,7 +20,7 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from lab.claudecode.cc_queue import _format_task_line
+from devlab.claudecode.cc_queue import _format_task_line
 
 
 def _base_ticket(**kwargs) -> dict:
@@ -83,8 +83,8 @@ class TestQueueTaskCreatedByInjection:
             mock_tasks.clear()
             mock_tasks.extend(tasks)
 
-        with patch("lab.claudecode.cc_queue.load_tasks", mock_load), patch(
-            "lab.claudecode.cc_queue.save_tasks", mock_save
+        with patch("devlab.claudecode.cc_queue.load_tasks", mock_load), patch(
+            "devlab.claudecode.cc_queue.save_tasks", mock_save
         ):
             from devices.igor.tools.ops import queue_task
 
@@ -117,8 +117,8 @@ class TestQueueTaskCreatedByInjection:
         def mock_save(tasks):
             pass
 
-        with _patch("lab.claudecode.cc_queue.load_tasks", mock_load), _patch(
-            "lab.claudecode.cc_queue.save_tasks", mock_save
+        with _patch("devlab.claudecode.cc_queue.load_tasks", mock_load), _patch(
+            "devlab.claudecode.cc_queue.save_tasks", mock_save
         ):
             from devices.igor.tools.ops import queue_task
 

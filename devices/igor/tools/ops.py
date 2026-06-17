@@ -161,7 +161,7 @@ def queue_task(task_json: str) -> str:
         if not task.get("id") or not task.get("title"):
             return "[ERROR] task_json must include id and title"
 
-        from lab.claudecode import cc_queue as _cc_queue
+        from devlab.claudecode import cc_queue as _cc_queue
 
         tasks = _cc_queue.load_tasks()
         existing_ids = {t["id"] for t in tasks}
@@ -642,7 +642,7 @@ def read_queue_top() -> str:
     """
     try:
         # T-cc-queue-drop-json-stage-b: canonical Postgres source
-        from lab.claudecode import cc_queue as _cc_queue
+        from devlab.claudecode import cc_queue as _cc_queue
 
         tasks = _cc_queue.load_tasks()
         pending = [
@@ -682,7 +682,7 @@ def adopt_top_queue_ticket() -> str:
     workers must not pull from the queue on their own initiative.
     CC dispatches; Igor works.
     """
-    from lab.claudecode.cc_queue import LegacyDirectClaimError
+    from devlab.claudecode.cc_queue import LegacyDirectClaimError
 
     raise LegacyDirectClaimError(
         "adopt_top_queue_ticket is no longer supported. "

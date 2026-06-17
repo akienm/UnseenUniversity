@@ -108,7 +108,7 @@ def _detect_cc_workflow_tools() -> Path | None:
     try:
         from devices.installer.shim import DEFAULT_MASTER_ROOT
 
-        candidate = DEFAULT_MASTER_ROOT.parent / "lab" / "claudecode"
+        candidate = DEFAULT_MASTER_ROOT.parent / "devlab" / "claudecode"
         if (candidate / "cc_queue.py").exists():
             return candidate
     except ImportError:

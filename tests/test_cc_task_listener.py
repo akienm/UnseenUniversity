@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from lab.claudecode.cc_task_listener import (
+from devlab.claudecode.cc_task_listener import (
     TaskListener,
     _parse_dispatch_msg,
 )
@@ -52,16 +52,16 @@ class TestTaskListenerPollOnce:
 
         with (
             patch(
-                "lab.claudecode.cc_task_listener._fetch_new_messages",
+                "devlab.claudecode.cc_task_listener._fetch_new_messages",
                 return_value=messages,
             ),
-            patch("lab.claudecode.cc_task_listener._read_hwm", return_value=0),
-            patch("lab.claudecode.cc_task_listener._write_hwm"),
+            patch("devlab.claudecode.cc_task_listener._read_hwm", return_value=0),
+            patch("devlab.claudecode.cc_task_listener._write_hwm"),
             patch(
-                "lab.claudecode.cc_task_listener._dispatch_ticket",
+                "devlab.claudecode.cc_task_listener._dispatch_ticket",
                 side_effect=fake_dispatch,
             ),
-            patch("lab.claudecode.cc_task_listener._post_ack"),
+            patch("devlab.claudecode.cc_task_listener._post_ack"),
         ):
             count = self._listener().poll_once()
 
@@ -76,16 +76,16 @@ class TestTaskListenerPollOnce:
 
         with (
             patch(
-                "lab.claudecode.cc_task_listener._fetch_new_messages",
+                "devlab.claudecode.cc_task_listener._fetch_new_messages",
                 return_value=messages,
             ),
-            patch("lab.claudecode.cc_task_listener._read_hwm", return_value=0),
-            patch("lab.claudecode.cc_task_listener._write_hwm"),
+            patch("devlab.claudecode.cc_task_listener._read_hwm", return_value=0),
+            patch("devlab.claudecode.cc_task_listener._write_hwm"),
             patch(
-                "lab.claudecode.cc_task_listener._dispatch_ticket", return_value=True
+                "devlab.claudecode.cc_task_listener._dispatch_ticket", return_value=True
             ),
             patch(
-                "lab.claudecode.cc_task_listener._post_ack",
+                "devlab.claudecode.cc_task_listener._post_ack",
                 side_effect=lambda tid, status: acked.append((tid, status)),
             ),
         ):
@@ -103,18 +103,18 @@ class TestTaskListenerPollOnce:
 
         with (
             patch(
-                "lab.claudecode.cc_task_listener._fetch_new_messages",
+                "devlab.claudecode.cc_task_listener._fetch_new_messages",
                 return_value=messages,
             ),
-            patch("lab.claudecode.cc_task_listener._read_hwm", return_value=5),
+            patch("devlab.claudecode.cc_task_listener._read_hwm", return_value=5),
             patch(
-                "lab.claudecode.cc_task_listener._write_hwm",
+                "devlab.claudecode.cc_task_listener._write_hwm",
                 side_effect=hwm_written.append,
             ),
             patch(
-                "lab.claudecode.cc_task_listener._dispatch_ticket", return_value=True
+                "devlab.claudecode.cc_task_listener._dispatch_ticket", return_value=True
             ),
-            patch("lab.claudecode.cc_task_listener._post_ack"),
+            patch("devlab.claudecode.cc_task_listener._post_ack"),
         ):
             self._listener().poll_once()
 
@@ -128,13 +128,13 @@ class TestTaskListenerPollOnce:
 
         with (
             patch(
-                "lab.claudecode.cc_task_listener._fetch_new_messages",
+                "devlab.claudecode.cc_task_listener._fetch_new_messages",
                 return_value=messages,
             ),
-            patch("lab.claudecode.cc_task_listener._read_hwm", return_value=0),
-            patch("lab.claudecode.cc_task_listener._write_hwm"),
-            patch("lab.claudecode.cc_task_listener._dispatch_ticket") as mock_dispatch,
-            patch("lab.claudecode.cc_task_listener._post_ack"),
+            patch("devlab.claudecode.cc_task_listener._read_hwm", return_value=0),
+            patch("devlab.claudecode.cc_task_listener._write_hwm"),
+            patch("devlab.claudecode.cc_task_listener._dispatch_ticket") as mock_dispatch,
+            patch("devlab.claudecode.cc_task_listener._post_ack"),
         ):
             count = self._listener().poll_once()
 
@@ -149,16 +149,16 @@ class TestTaskListenerPollOnce:
 
         with (
             patch(
-                "lab.claudecode.cc_task_listener._fetch_new_messages",
+                "devlab.claudecode.cc_task_listener._fetch_new_messages",
                 return_value=messages,
             ),
-            patch("lab.claudecode.cc_task_listener._read_hwm", return_value=0),
-            patch("lab.claudecode.cc_task_listener._write_hwm"),
+            patch("devlab.claudecode.cc_task_listener._read_hwm", return_value=0),
+            patch("devlab.claudecode.cc_task_listener._write_hwm"),
             patch(
-                "lab.claudecode.cc_task_listener._dispatch_ticket", return_value=False
+                "devlab.claudecode.cc_task_listener._dispatch_ticket", return_value=False
             ),
             patch(
-                "lab.claudecode.cc_task_listener._post_ack",
+                "devlab.claudecode.cc_task_listener._post_ack",
                 side_effect=lambda tid, status: acked.append((tid, status)),
             ),
         ):

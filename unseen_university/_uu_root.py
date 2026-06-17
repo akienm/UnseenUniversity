@@ -9,7 +9,7 @@ Returns the absolute path to the UnseenUniversity repo root. Call order:
 
 Usage:
     from unseen_university._uu_root import uu_root
-    tools = Path(uu_root()) / "lab" / "claudecode"
+    tools = Path(uu_root()) / "devlab" / "claudecode"
 
 D-uu-root-env-var-2026-06-09
 """

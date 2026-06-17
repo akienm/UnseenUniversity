@@ -11,7 +11,7 @@ import pytest
 
 # Allow importing from lab/claudecode without installing
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from lab.claudecode.skill_telemetry import (
+from devlab.claudecode.skill_telemetry import (
     append_outcome,
     append_violation,
     monthly_rollup,

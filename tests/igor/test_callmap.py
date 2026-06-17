@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.callmap import (
+from devlab.claudecode.callmap import (
     NOISE_NAMES,
     attach_callers,
     discover_apis,

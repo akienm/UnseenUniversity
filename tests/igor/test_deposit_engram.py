@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from lab.claudecode.engram_tools.deposit_engram import (
+from devlab.claudecode.engram_tools.deposit_engram import (
     GroundingEngram,
     ValidationError,
     _validate,

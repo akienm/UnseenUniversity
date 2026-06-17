@@ -215,7 +215,7 @@ def cc_inbox_test_tag():
     # Covers the case where CC_INBOX_TAG was set but the session died mid-run.
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-        from lab.claudecode.cc_inbox import delete_by_prefix as _dbp
+        from devlab.claudecode.cc_inbox import delete_by_prefix as _dbp
 
         stale = _dbp("[test:")
         if stale:
@@ -239,7 +239,7 @@ def cc_inbox_test_tag():
 
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-        from lab.claudecode.cc_inbox import delete_by_prefix
+        from devlab.claudecode.cc_inbox import delete_by_prefix
 
         removed = delete_by_prefix(f"[{tag}]")
         if removed:

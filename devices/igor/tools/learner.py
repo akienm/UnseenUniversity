@@ -53,8 +53,8 @@ def _local_db_proxy() -> DatabaseProxy:
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 _REPO = Path(__file__).parent.parent.parent.parent
-_BOOK_LEARNER = _REPO / "lab" / "claudecode" / "book_learner.py"
-_DRAIN_SCRIPT = _REPO / "lab" / "claudecode" / "drain_learn_queue.py"
+_BOOK_LEARNER = _REPO / "devlab" / "claudecode" / "book_learner.py"
+_DRAIN_SCRIPT = _REPO / "devlab" / "claudecode" / "drain_learn_queue.py"
 _VENV_PYTHON = _REPO / "venv" / "bin" / "python"
 _QUEUE_FILE = paths().learn_queue
 _DRAIN_PID = paths().drain_pid

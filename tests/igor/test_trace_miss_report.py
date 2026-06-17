@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from lab.claudecode.engram_tools.trace_miss_report import (
+from devlab.claudecode.engram_tools.trace_miss_report import (
     STALE_ACTIVATION_DAYS,
     ActivatedMemory,
     TraceMissAnalyzer,

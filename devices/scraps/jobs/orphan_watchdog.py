@@ -28,7 +28,7 @@ from typing import Optional
 log = logging.getLogger(__name__)
 
 _UU_ROOT = Path(__file__).parent.parent.parent.parent.resolve()
-_CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
+_CC_QUEUE = _UU_ROOT / "devlab" / "claudecode" / "cc_queue.py"
 _PYTHON = sys.executable
 
 # Minutes before a ticket is considered orphaned by size class

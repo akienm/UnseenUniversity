@@ -27,7 +27,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 _UU_ROOT = Path(__file__).resolve().parents[2]
-_CC_QUEUE_DEFAULT = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
+_CC_QUEUE_DEFAULT = _UU_ROOT / "devlab" / "claudecode" / "cc_queue.py"
 
 
 class ObserveLearnImproveLoop:

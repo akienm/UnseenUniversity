@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.wiring_check import (
+from devlab.claudecode.wiring_check import (
     _check_stubs_near_gate,
     _find_enabled_switches,
     _find_references,

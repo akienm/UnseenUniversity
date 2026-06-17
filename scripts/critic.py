@@ -29,10 +29,10 @@ import os
 import sys
 from pathlib import Path
 
-# Ensure lab/claudecode is importable
+# Ensure devlab/claudecode is importable
 _HERE = Path(__file__).resolve().parent
 _REPO = _HERE.parent
-sys.path.insert(0, str(_REPO / "lab" / "claudecode"))
+sys.path.insert(0, str(_REPO / "devlab" / "claudecode"))
 
 from critic_core import (  # noqa: E402
     build_prompt,

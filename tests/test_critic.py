@@ -12,7 +12,7 @@ import pytest
 
 
 # Make lab/claudecode importable
-sys.path.insert(0, str(Path(__file__).parent.parent / "lab" / "claudecode"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "devlab" / "claudecode"))
 import critic_core as cc
 
 

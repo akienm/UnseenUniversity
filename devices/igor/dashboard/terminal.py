@@ -363,7 +363,7 @@ def _get_interpretive_edge_count(cortex: Cortex) -> int:
 def _get_active_cc_ticket() -> dict | None:
     """Return the first in_progress ticket from Postgres via cc_queue."""
     try:
-        from lab.claudecode.cc_queue import load_tasks
+        from devlab.claudecode.cc_queue import load_tasks
 
         tasks = load_tasks()
         for t in tasks:

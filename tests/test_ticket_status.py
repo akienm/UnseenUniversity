@@ -146,7 +146,7 @@ class TestNoSilentDrop:
 
 
 def _load_bare(name):
-    cc = str(_REPO_ROOT / "lab" / "claudecode")
+    cc = str(_REPO_ROOT / "devlab" / "claudecode")
     if cc not in sys.path:
         sys.path.insert(0, cc)
     spec = importlib.util.spec_from_file_location(name, os.path.join(cc, f"{name}.py"))

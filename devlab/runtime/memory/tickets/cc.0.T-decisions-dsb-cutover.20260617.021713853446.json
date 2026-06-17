@@ -18,8 +18,8 @@
   },
   "body": {
     "id": "T-decisions-dsb-cutover",
-    "title": "[awaiting_validation] Retire decisions_log.dsb — repoint /sorted write path to JSON, swap readers, drop guard",
-    "status": "awaiting_validation",
+    "title": "Retire decisions_log.dsb — repoint /sorted write path to JSON, swap readers, drop guard",
+    "status": "closed",
     "worker": "claude",
     "size": "M",
     "tags": [
@@ -32,8 +32,8 @@
     "decision_id": null,
     "created_at": "2026-06-17T02:17:13.853446+00:00",
     "updated_at": "2026-06-16T20:17:13.864879-06:00",
-    "completed_at": "2026-06-17T17:52:24.954793+00:00",
-    "result": "Retired decisions_log.dsb: decision_manager.py rewired to memory_emit.emit, sorted Step 7 removed, readers updated, DSB deleted, 7 tests added",
+    "completed_at": "2026-06-17T20:45:01.915573+00:00",
+    "result": "Validated by CC — tests pass, artifacts verified. Closed 2026-06-17.",
     "role": "master",
     "priority": 0.45,
     "gate": null,

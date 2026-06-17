@@ -10,7 +10,7 @@ import math
 
 import pytest
 
-from lab.claudecode.ticket_detail_eval import (
+from devlab.claudecode.ticket_detail_eval import (
     _has_concrete_affected_files,
     _has_real_criteria,
     approx_p_value,

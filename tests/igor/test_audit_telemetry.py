@@ -29,7 +29,7 @@ class TestAuditRunRecordYaml(unittest.TestCase):
     """AuditRunRecord.to_yaml() — unit tests, no DB."""
 
     def setUp(self):
-        from lab.claudecode.audit_telemetry import AuditRunRecord, AuditFinding
+        from devlab.claudecode.audit_telemetry import AuditRunRecord, AuditFinding
         self.Record = AuditRunRecord
         self.Finding = AuditFinding
 
@@ -63,7 +63,7 @@ class TestAuditRunRecordYaml(unittest.TestCase):
         self.assertIn("file_or_target: devices/igor/tools/foo.py", yaml)
 
     def test_overridden_finding(self):
-        from lab.claudecode.audit_telemetry import AuditFinding
+        from devlab.claudecode.audit_telemetry import AuditFinding
         f = AuditFinding(check="x", severity="med", overridden=True)
         r = self.Record(level="day", ran_at="2026-04-29T00:00:00Z", findings=[f])
         yaml = r.to_yaml()
@@ -80,18 +80,18 @@ class TestAuditTelemetryValidation(unittest.TestCase):
     """Level validation — no DB needed."""
 
     def test_invalid_level_emit_raises(self):
-        from lab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord
+        from devlab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord
         r = AuditRunRecord(level="invalid")
         with self.assertRaises(ValueError):
             emit_run_record("invalid", r)
 
     def test_invalid_level_read_raises(self):
-        from lab.claudecode.audit_telemetry import read_runs
+        from devlab.claudecode.audit_telemetry import read_runs
         with self.assertRaises(ValueError):
             read_runs("nonexistent")
 
     def test_valid_levels_accepted(self):
-        from lab.claudecode.audit_telemetry import VALID_LEVELS
+        from devlab.claudecode.audit_telemetry import VALID_LEVELS
         self.assertIn("smell", VALID_LEVELS)
         self.assertIn("design", VALID_LEVELS)
         self.assertIn("audits", VALID_LEVELS)
@@ -108,7 +108,7 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
             raise unittest.SkipTest("UU_HOME_DB_URL not set")
 
     def test_emit_then_read_round_trip(self):
-        from lab.claudecode.audit_telemetry import AuditRunRecord, AuditFinding, emit_run_record, read_runs
+        from devlab.claudecode.audit_telemetry import AuditRunRecord, AuditFinding, emit_run_record, read_runs
         record = AuditRunRecord(
             level="smell",
             ran_at="2026-04-29T12:00:00Z",
@@ -130,7 +130,7 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
         self.assertIn("prefer-mcp", run["content"])
 
     def test_watch_next_emit_and_read(self):
-        from lab.claudecode.audit_telemetry import emit_watch_next, read_watch_next
+        from devlab.claudecode.audit_telemetry import emit_watch_next, read_watch_next
         path = emit_watch_next("day", "Watch for partial signature changes in tool_x", ttl_days=7, watch_id="test-w1")
         self.assertIn("unseenuniversity/audits/day/watch_next/test-w1", path)
         notes = read_watch_next("day")
@@ -141,7 +141,7 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
         self.assertFalse(entry.get("expired", False))
 
     def test_expired_watch_next_excluded_by_default(self):
-        from lab.claudecode.audit_telemetry import emit_watch_next, read_watch_next
+        from devlab.claudecode.audit_telemetry import emit_watch_next, read_watch_next
         import psycopg2, os
         # Write a note with ttl_days=0 directly
         db_url = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")

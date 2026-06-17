@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from lab.claudecode import cc_inbox
+from devlab.claudecode import cc_inbox
 
 
 @pytest.fixture

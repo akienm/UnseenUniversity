@@ -113,7 +113,7 @@ def test_detect_cc_workflow_tools_respects_fake_repo(
     # Build a fake repo tree: tmp/skills/ and tmp/lab/claudecode/cc_queue.py
     fake_skills = tmp_path / "skills"
     fake_skills.mkdir()
-    fake_claudecode = tmp_path / "lab" / "claudecode"
+    fake_claudecode = tmp_path / "devlab" / "claudecode"
     fake_claudecode.mkdir(parents=True)
     (fake_claudecode / "cc_queue.py").write_text("# fake cc_queue\n")
 
@@ -131,7 +131,7 @@ def test_detect_cc_workflow_tools_missing_cc_queue_returns_none(
 
     fake_skills = tmp_path / "skills"
     fake_skills.mkdir()
-    fake_claudecode = tmp_path / "lab" / "claudecode"
+    fake_claudecode = tmp_path / "devlab" / "claudecode"
     fake_claudecode.mkdir(parents=True)
     # cc_queue.py deliberately NOT created
 

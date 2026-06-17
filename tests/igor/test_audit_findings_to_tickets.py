@@ -5,7 +5,7 @@ import tempfile
 
 import pytest
 
-from lab.claudecode.audit_findings_to_tickets import (
+from devlab.claudecode.audit_findings_to_tickets import (
     AuditFinding,
     FindingMatcher,
     parse_findings,

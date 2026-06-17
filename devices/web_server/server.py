@@ -1302,7 +1302,7 @@ async def _api_circuit_set(request: Request):
         try:
             import subprocess as _sp
             _sp.run(
-                ["python3", str(Path(__file__).resolve().parents[2] / "lab" / "claudecode" / "stop_cc_minions.py")],
+                ["python3", str(Path(__file__).resolve().parents[2] / "devlab" / "claudecode" / "stop_cc_minions.py")],
                 check=False, timeout=15,
             )
             log.info("circuit: CC.0 OPEN — stop_cc_minions called")

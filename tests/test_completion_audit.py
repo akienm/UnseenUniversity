@@ -6,7 +6,7 @@ import pytest
 
 
 def test_extract_criteria_present():
-    from lab.claudecode.completion_audit import extract_criteria
+    from devlab.claudecode.completion_audit import extract_criteria
 
     desc = (
         "Some description.\n\n"
@@ -21,21 +21,21 @@ def test_extract_criteria_present():
 
 
 def test_extract_criteria_absent():
-    from lab.claudecode.completion_audit import extract_criteria
+    from devlab.claudecode.completion_audit import extract_criteria
 
     desc = "A description with no completion criteria section."
     assert extract_criteria(desc) is None
 
 
 def test_extract_criteria_empty_section():
-    from lab.claudecode.completion_audit import extract_criteria
+    from devlab.claudecode.completion_audit import extract_criteria
 
     desc = "**Completion criteria:**\n\n**Design rules:** something"
     assert extract_criteria(desc) is None
 
 
 def test_extract_criteria_multiline():
-    from lab.claudecode.completion_audit import extract_criteria
+    from devlab.claudecode.completion_audit import extract_criteria
 
     desc = (
         "**Completion criteria:** Line one;\n"
@@ -51,7 +51,7 @@ def test_extract_criteria_multiline():
 
 
 def test_log_result_creates_file(tmp_path, monkeypatch):
-    from lab.claudecode import completion_audit as ca
+    from devlab.claudecode import completion_audit as ca
 
     monkeypatch.setattr(ca, "AUDIT_LOG", tmp_path / "completion_audit.log")
     ca.log_result("T-test-ticket", "pass", "all criteria met in repo")
@@ -65,7 +65,7 @@ def test_log_result_creates_file(tmp_path, monkeypatch):
 
 
 def test_log_result_appends(tmp_path, monkeypatch):
-    from lab.claudecode import completion_audit as ca
+    from devlab.claudecode import completion_audit as ca
 
     monkeypatch.setattr(ca, "AUDIT_LOG", tmp_path / "completion_audit.log")
     ca.log_result("T-aaa", "pass", "ok")
@@ -79,7 +79,7 @@ def test_log_result_appends(tmp_path, monkeypatch):
 
 
 def test_read_results_empty(tmp_path, monkeypatch):
-    from lab.claudecode import completion_audit as ca
+    from devlab.claudecode import completion_audit as ca
 
     monkeypatch.setattr(ca, "AUDIT_LOG", tmp_path / "no_log.log")
     assert ca.read_results(days=7) == []
@@ -87,7 +87,7 @@ def test_read_results_empty(tmp_path, monkeypatch):
 
 def test_read_results_filters_old(tmp_path, monkeypatch):
     from datetime import datetime, timedelta, timezone
-    from lab.claudecode import completion_audit as ca
+    from devlab.claudecode import completion_audit as ca
 
     monkeypatch.setattr(ca, "AUDIT_LOG", tmp_path / "completion_audit.log")
     now = datetime.now(timezone.utc)

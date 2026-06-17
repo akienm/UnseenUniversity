@@ -176,11 +176,11 @@ def _seed_rows() -> list[tuple]:
             "palace.shared.audits.registry",
             "Registered audit checks",
             (
-                "Audit checks run at day-close via lab/claudecode/audit_runner.py --drain.\n"
+                "Audit checks run at day-close via devlab/claudecode/audit_runner.py --drain.\n"
                 "Persistent (forever) checks: no-sqlite-imports, no-bare-except-pass,\n"
                 "primary-classes-must-inherit-igorbase.\n"
                 "One-shot (next_sweep) checks: added at moment of insight, drain on next run.\n\n"
-                "To add: python3 lab/claudecode/audit_add.py add forever|next <name> ...\n"
+                "To add: python3 devlab/claudecode/audit_add.py add forever|next <name> ...\n"
                 "Authoritative source: audit_runner.py registered check list."
             ),
             tags=["shared", "audits"],

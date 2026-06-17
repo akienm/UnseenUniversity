@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from lab.claudecode import export_chat as mod
+from devlab.claudecode import export_chat as mod
 
 
 def _write_jsonl(path: Path, records: list[dict]) -> None:

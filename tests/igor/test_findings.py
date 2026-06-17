@@ -77,7 +77,7 @@ class TestFindingsAPI:
         conn.close()
 
     def test_add_and_get(self):
-        from lab.claudecode.findings import add_finding, get_finding
+        from devlab.claudecode.findings import add_finding, get_finding
 
         fid = add_finding(
             title="TEST_add_and_get",
@@ -90,7 +90,7 @@ class TestFindingsAPI:
         assert f["result"] == "it worked"
 
     def test_add_with_all_fields(self):
-        from lab.claudecode.findings import add_finding, get_finding
+        from devlab.claudecode.findings import add_finding, get_finding
 
         fid = add_finding(
             title="TEST_full_fields",
@@ -109,7 +109,7 @@ class TestFindingsAPI:
         assert "reading" in f["tags"]
 
     def test_list_findings(self):
-        from lab.claudecode.findings import add_finding, list_findings
+        from devlab.claudecode.findings import add_finding, list_findings
 
         add_finding(title="TEST_list_1", result="r1", created_by="test")
         add_finding(title="TEST_list_2", result="r2", created_by="test")
@@ -119,7 +119,7 @@ class TestFindingsAPI:
         assert "TEST_list_2" in titles
 
     def test_list_by_tag(self):
-        from lab.claudecode.findings import add_finding, list_findings
+        from devlab.claudecode.findings import add_finding, list_findings
 
         add_finding(
             title="TEST_tagged",
@@ -139,7 +139,7 @@ class TestFindingsAPI:
         assert "TEST_untagged" not in titles
 
     def test_search(self):
-        from lab.claudecode.findings import add_finding, search_findings
+        from devlab.claudecode.findings import add_finding, search_findings
 
         add_finding(
             title="TEST_search_target",
@@ -150,7 +150,7 @@ class TestFindingsAPI:
         assert any(f["title"] == "TEST_search_target" for f in results)
 
     def test_get_nonexistent(self):
-        from lab.claudecode.findings import get_finding
+        from devlab.claudecode.findings import get_finding
 
         f = get_finding(999999)
         assert f == {}

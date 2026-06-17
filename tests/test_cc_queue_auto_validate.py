@@ -6,7 +6,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import lab.claudecode.cc_queue as q
+import devlab.claudecode.cc_queue as q
 
 
 def _ticket(**overrides):

@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-lab-to-devlab-rename.20260617.203237909543",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-lab-to-devlab-rename"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T20:32:37.909543",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-filesystem-memory-store-2026-06-16"
+    ],
+    "tickets": [
+      "T-lab-migration-to-agent-datacenter",
+      "T-lab-to-devlab-rename"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-lab-to-devlab-rename",
+    "title": "[in_progress] Rename lab/ → devlab/ in UU repo",
+    "status": "in_progress",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Refactor"
+    ],
+    "description": "lab/ is provisional. The intent (SPEC.md in devlab/runtime/memory/) is that lab/ moves when lab/→devlab/ completes. All writes already route through memory_emit.py (one-line MEMORY_ROOT change). Rename lab/ → devlab/ (or devlab/lab/) and update all import paths.\n\n**Affected files:** lab/claudecode/* (CC workflow tools), lab/design_docs/, lab/spikes/, lab/competition/, memory_emit.py (MEMORY_ROOT), any import of 'lab.claudecode', CC_WORKFLOW_TOOLS env var references in .bashrc/cc_env.sh, CLAUDE.md.\n**Design rules:** migrate-not-delete (git mv, not cp), no-sqlite, test-all-paths after rename.\n**Scope boundary:** IN — rename lab/ to devlab/ in UU repo, update all internal imports and env var references. OUT — TheIgors references (already migrated per T-lab-migration-to-agent-datacenter).\n**Test plan:** After rename: pip install -e . succeeds; cc_queue.py list works; full pytest suite passes; CC_WORKFLOW_TOOLS points to new path.\n\nDo AFTER /savestate + /autocompact (context gate — filed at 10% context).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-filesystem-memory-store-2026-06-16",
+    "created_at": "2026-06-17T20:32:37.909543+00:00",
+    "updated_at": "2026-06-17T14:32:38.088855-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.55,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T20:32:37.970118+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c2f8d4ea-d1fe-4f11-b499-6323174ce34c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

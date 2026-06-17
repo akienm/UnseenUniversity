@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.audit_logging import (  # noqa: E402
+from devlab.claudecode.audit_logging import (  # noqa: E402
     PATTERN_GET_LOGGER,
     PATTERN_LEGACY_LOG,
     PATTERN_LOG_ERROR,
@@ -33,7 +33,7 @@ from lab.claudecode.audit_logging import (  # noqa: E402
 
 
 def _walk(source: str, in_test: bool = False) -> list:
-    from lab.claudecode.audit_logging import _scan_logger_assignments
+    from devlab.claudecode.audit_logging import _scan_logger_assignments
 
     tree = ast.parse(source)
     assignments = _scan_logger_assignments(tree)
@@ -108,14 +108,14 @@ class TestClassifyCall:
 
 class TestScanLoggerAssignments:
     def test_get_logger_assignment_recognized(self):
-        from lab.claudecode.audit_logging import _scan_logger_assignments
+        from devlab.claudecode.audit_logging import _scan_logger_assignments
 
         tree = ast.parse("_log = get_logger(__name__)\n")
         out = _scan_logger_assignments(tree)
         assert out == {"_log": "get_logger"}
 
     def test_logging_getlogger_assignment_recognized(self):
-        from lab.claudecode.audit_logging import _scan_logger_assignments
+        from devlab.claudecode.audit_logging import _scan_logger_assignments
 
         tree = ast.parse("logger = logging.getLogger(__name__)\n")
         out = _scan_logger_assignments(tree)
@@ -269,7 +269,7 @@ class TestCollectClasses:
 
 class TestAggregate:
     def _file_result(self, callsites=None, classes=None, parse_error=None):
-        from lab.claudecode.audit_logging import FileResult
+        from devlab.claudecode.audit_logging import FileResult
 
         return FileResult(
             path="test.py",
@@ -284,7 +284,7 @@ class TestAggregate:
         assert agg["pattern_counts"] == {}
 
     def test_pattern_counts(self):
-        from lab.claudecode.audit_logging import Callsite
+        from devlab.claudecode.audit_logging import Callsite
 
         cs = [
             Callsite("a", 1, PATTERN_PRINT, SEV_SMELL, None, None, False),
@@ -297,7 +297,7 @@ class TestAggregate:
         assert agg["severity_counts"][SEV_SMELL] == 2
 
     def test_classes_missing_inh_excludes_tests(self):
-        from lab.claudecode.audit_logging import ClassFinding
+        from devlab.claudecode.audit_logging import ClassFinding
 
         classes = [
             ClassFinding("a.py", 1, "Prod", [], False, False),
@@ -315,7 +315,7 @@ class TestAggregate:
 
 class TestGroupForMigration:
     def test_groups_by_pattern(self):
-        from lab.claudecode.audit_logging import Callsite, ClassFinding
+        from devlab.claudecode.audit_logging import Callsite, ClassFinding
 
         cs = [
             Callsite("a.py", 1, PATTERN_PRINT, SEV_SMELL, None, None, False),
@@ -354,10 +354,10 @@ class TestAuditFileCliExemption:
                 main()
         """))
         # Move file under REPO_ROOT for relative_to to work
-        import lab.claudecode.audit_logging as al
+        import devlab.claudecode.audit_logging as al
 
         repo = al.REPO_ROOT
-        target = repo / "lab" / "claudecode" / "_test_cli_tmp.py"
+        target = repo / "devlab" / "claudecode" / "_test_cli_tmp.py"
         target.write_text(f.read_text())
         try:
             result = al.audit_file(target)
@@ -368,10 +368,10 @@ class TestAuditFileCliExemption:
             target.unlink()
 
     def test_non_cli_print_kept(self, tmp_path):
-        import lab.claudecode.audit_logging as al
+        import devlab.claudecode.audit_logging as al
 
         repo = al.REPO_ROOT
-        target = repo / "lab" / "claudecode" / "_test_noncli_tmp.py"
+        target = repo / "devlab" / "claudecode" / "_test_noncli_tmp.py"
         target.write_text("def helper():\n    print('debris')\n")
         try:
             result = al.audit_file(target)

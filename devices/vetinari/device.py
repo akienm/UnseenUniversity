@@ -99,7 +99,7 @@ _OR_BASE = "https://openrouter.ai/api/v1"
 _OR_REFERER = "https://github.com/akienm/TheIgors"
 _OR_MODEL = os.environ.get("VETINARI_LLM_MODEL", "openai/gpt-4o-mini")
 _DECOMPOSE_PROMPT_PATH = Path(__file__).parent / "decompose_prompt.txt"
-_CC_QUEUE = Path(__file__).resolve().parents[2] / "lab" / "claudecode" / "cc_queue.py"
+_CC_QUEUE = Path(__file__).resolve().parents[2] / "devlab" / "claudecode" / "cc_queue.py"
 
 
 def _call_llm_or(directive_text: str) -> str:

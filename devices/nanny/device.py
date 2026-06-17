@@ -759,7 +759,7 @@ class NannyOggDevice(BaseDevice):
         """Run nightly palace update: decision nodes + session brief."""
         try:
             from datetime import timezone as _tz
-            from lab.claudecode.cc_nightly_palace_updates import run as _palace_run
+            from devlab.claudecode.cc_nightly_palace_updates import run as _palace_run
 
             date = datetime.now(_tz.utc).strftime("%Y-%m-%d")
             summary = _palace_run(date=date, dry_run=False, all_docs=False)
@@ -781,7 +781,7 @@ class NannyOggDevice(BaseDevice):
         """Run nightly context prep: write tomorrow's palace.sessions.DATE+1.brief."""
         try:
             from datetime import timezone as _tz
-            from lab.claudecode.cc_nightly_context_prep import run as _ctx_run
+            from devlab.claudecode.cc_nightly_context_prep import run as _ctx_run
 
             date = datetime.now(_tz.utc).strftime("%Y-%m-%d")
             summary = _ctx_run(date=date, dry_run=False)

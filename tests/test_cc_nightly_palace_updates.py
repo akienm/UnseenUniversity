@@ -26,7 +26,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.cc_nightly_palace_updates import (
+from devlab.claudecode.cc_nightly_palace_updates import (
     _parse_decision_doc,
     _read_slate_done,
     run,
@@ -147,7 +147,7 @@ def test_scan_filters_by_date(tmp_path):
     _write_decision(tmp_path, "D-today-2026-06-13.md", _SAMPLE_DOC)
     _write_decision(tmp_path, "D-old-2026-06-10.md", _MINIMAL_DOC)
 
-    with patch("lab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", tmp_path):
         docs = scan_decision_docs(date_filter="2026-06-13")
 
     assert len(docs) == 1
@@ -158,7 +158,7 @@ def test_scan_returns_all_when_all_docs_true(tmp_path):
     _write_decision(tmp_path, "D-today-2026-06-13.md", _SAMPLE_DOC)
     _write_decision(tmp_path, "D-old-2026-06-10.md", _MINIMAL_DOC)
 
-    with patch("lab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", tmp_path):
         docs = scan_decision_docs(all_docs=True)
 
     assert len(docs) == 2
@@ -166,7 +166,7 @@ def test_scan_returns_all_when_all_docs_true(tmp_path):
 
 def test_scan_returns_empty_when_directory_missing(tmp_path):
     missing = tmp_path / "nonexistent"
-    with patch("lab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", missing):
+    with patch("devlab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", missing):
         docs = scan_decision_docs()
     assert docs == []
 
@@ -175,7 +175,7 @@ def test_scan_skips_unparseable_docs(tmp_path):
     _write_decision(tmp_path, "D-valid-2026-06-13.md", _SAMPLE_DOC)
     _write_decision(tmp_path, "D-invalid.md", _INVALID_DOC)
 
-    with patch("lab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", tmp_path):
         docs = scan_decision_docs(date_filter="2026-06-13")
 
     assert len(docs) == 1
@@ -243,7 +243,7 @@ def test_write_session_brief_reads_slate_done(tmp_path):
         encoding="utf-8",
     )
 
-    with patch("lab.claudecode.cc_nightly_palace_updates._IGOR_HOME", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_palace_updates._IGOR_HOME", tmp_path):
         done = _read_slate_done("2026-06-13")
 
     assert "T-x: did something" in done
@@ -255,7 +255,7 @@ def test_write_session_brief_calls_db(tmp_path):
     mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
 
     with patch("psycopg2.connect", return_value=mock_conn), \
-         patch("lab.claudecode.cc_nightly_palace_updates._IGOR_HOME", tmp_path):
+         patch("devlab.claudecode.cc_nightly_palace_updates._IGOR_HOME", tmp_path):
         result = write_session_brief("2026-06-13", decision_count=2, dry_run=False)
 
     assert result is True
@@ -267,8 +267,8 @@ def test_write_session_brief_calls_db(tmp_path):
 def test_run_dry_run_returns_summary(tmp_path):
     _write_decision(tmp_path, "D-sample-2026-06-13.md", _SAMPLE_DOC)
 
-    with patch("lab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", tmp_path), \
-         patch("lab.claudecode.cc_nightly_palace_updates._IGOR_HOME", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_palace_updates._DECISIONS_DIR", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_palace_updates._IGOR_HOME", tmp_path):
         summary = run(date="2026-06-13", dry_run=True)
 
     assert "decisions_found" in summary

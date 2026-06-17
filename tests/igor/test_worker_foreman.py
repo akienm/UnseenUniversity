@@ -39,7 +39,7 @@ def _add_repo_to_path() -> None:
 
 _add_repo_to_path()
 
-from lab.claudecode import cc_queue  # noqa: E402
+from devlab.claudecode import cc_queue  # noqa: E402
 
 # ─────────────────────────────────────────────────────────────────────────────
 # _infer_worker — auto-default routing rule
@@ -157,7 +157,7 @@ class TestCmdAddWorkerDefault(unittest.TestCase):
                 "os",
                 MagicMock(path=MagicMock(exists=lambda _p: False)),
             ),
-            patch("lab.claudecode.cc_queue.json.loads", return_value=[new_ticket]),
+            patch("devlab.claudecode.cc_queue.json.loads", return_value=[new_ticket]),
             # _scraps_validate calls ScrapsDevice → InferenceDevice → live
             # OpenRouter API call. These tests cover worker routing, not ticket
             # validation, so mock it out to keep tests fast and offline-safe.
@@ -367,7 +367,7 @@ class TestAdoptNextTicketStrictFlag(unittest.TestCase):
 
     def test_adopt_next_ticket_raises_legacy_error(self):
         """adopt_next_ticket always raises — autonomous pickup is removed."""
-        from lab.claudecode.cc_queue import LegacyDirectClaimError
+        from devlab.claudecode.cc_queue import LegacyDirectClaimError
         from devices.igor.tools import worker_foreman as wf
 
         with self.assertRaises(LegacyDirectClaimError) as ctx:
@@ -467,7 +467,7 @@ class TestDaemonDeadRaceCondition(unittest.TestCase):
                 create=True,
             ),
             patch(
-                "lab.claudecode.cc_queue.reset_stale_in_progress",
+                "devlab.claudecode.cc_queue.reset_stale_in_progress",
                 mock_reset,
             ),
             patch(_CORTEX_PATH, return_value=mock_cortex),
@@ -475,9 +475,9 @@ class TestDaemonDeadRaceCondition(unittest.TestCase):
             patch.object(wf.subprocess, "Popen", mock_popen),
         ):
             # Patch reset and set_status_in_progress on the live module
-            # so the local `from lab.claudecode import cc_queue` inside the
+            # so the local `from devlab.claudecode import cc_queue` inside the
             # function body sees both mocks.
-            import lab.claudecode.cc_queue as ccq
+            import devlab.claudecode.cc_queue as ccq
 
             orig_reset = ccq.reset_stale_in_progress
             orig_set = ccq.set_status_in_progress

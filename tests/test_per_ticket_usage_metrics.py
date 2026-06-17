@@ -27,9 +27,9 @@ import pytest
 
 _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
-sys.path.insert(0, str(_REPO / "lab" / "claudecode"))
+sys.path.insert(0, str(_REPO / "devlab" / "claudecode"))
 
-from lab.claudecode.usage_store import (
+from devlab.claudecode.usage_store import (
     _read_sprint_log_entries,
     _aggregate_entries,
     UsageStore,
@@ -331,16 +331,16 @@ class TestCCQueueRecordTicketUsage:
     def test_record_ticket_usage_nonfatal_on_failure(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location(
-            "cc_queue", _REPO / "lab" / "claudecode" / "cc_queue.py"
+            "cc_queue", _REPO / "devlab" / "claudecode" / "cc_queue.py"
         )
         mod = importlib.util.module_from_spec(spec)
         # Don't exec_module — just test the helper in isolation
         ticket = {"worker": "claude", "dispatched_at": None, "completed_at": None}
 
-        with patch("lab.claudecode.usage_store.UsageStore") as MockStore:
+        with patch("devlab.claudecode.usage_store.UsageStore") as MockStore:
             MockStore.return_value.record.side_effect = RuntimeError("DB down")
             # Should not raise
-            from lab.claudecode import cc_queue as cq
+            from devlab.claudecode import cc_queue as cq
             cq._record_ticket_usage("T-test", ticket, cost_usd=0.01)
 
 
@@ -349,7 +349,7 @@ class TestCCQueueRecordTicketUsage:
 
 class TestCCQueueCmdCloseCallsRecord:
     def test_cmd_close_calls_record_ticket_usage(self, tmp_path, monkeypatch):
-        from lab.claudecode import cc_queue as cq
+        from devlab.claudecode import cc_queue as cq
 
         ticket = {
             "id": "T-closetest",

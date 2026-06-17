@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-import lab.claudecode.repo_map as rm
+import devlab.claudecode.repo_map as rm
 
 SAMPLE_PY = textwrap.dedent("""\
     \"\"\"Sample module — testing repo_map.\"\"\"

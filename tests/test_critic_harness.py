@@ -27,7 +27,7 @@ import pytest
 
 # Make lab/claudecode importable
 _REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_REPO / "lab" / "claudecode"))
+sys.path.insert(0, str(_REPO / "devlab" / "claudecode"))
 import critic_core as cc
 
 _FIXTURES = _REPO / "tests" / "fixtures" / "critic_test_cases"

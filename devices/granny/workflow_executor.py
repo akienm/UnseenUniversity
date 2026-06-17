@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 _GRANNY_HOME = Path.home() / ".granny"
 _WORKFLOWS_DIR = _GRANNY_HOME / "workflows"
 _UU_ROOT = Path(__file__).resolve().parents[2]
-_CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
+_CC_QUEUE = _UU_ROOT / "devlab" / "claudecode" / "cc_queue.py"
 _PYTHON = sys.executable
 _DB_URL = os.environ.get(
     "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"

@@ -25,7 +25,7 @@ REPO = Path(__file__).resolve().parent.parent
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-import lab.claudecode.cc_queue as cc_queue
+import devlab.claudecode.cc_queue as cc_queue
 
 
 def _db_url() -> str | None:

@@ -27,13 +27,13 @@ REPO = Path(__file__).resolve().parent.parent
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-CC_DIR = REPO / "lab" / "claudecode"
+CC_DIR = REPO / "devlab" / "claudecode"
 IGOR_ADMIN = CC_DIR / "igor_admin.py"
 
 # cc_queue.py is now canonical in unseen_university; resolve via __path__ extension
 import importlib.util as _ilu
 
-_spec = _ilu.find_spec("lab.claudecode.cc_queue")
+_spec = _ilu.find_spec("devlab.claudecode.cc_queue")
 CC_QUEUE = Path(_spec.origin) if (_spec and _spec.origin) else CC_DIR / "cc_queue.py"
 del _ilu, _spec
 

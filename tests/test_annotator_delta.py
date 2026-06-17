@@ -59,7 +59,7 @@ def test_run_annotator_file_paths_empty():
 
 def test_annotator_delta_update_calls_annotator():
     """_annotator_delta_update gets git diff and passes touched files to run_annotator."""
-    from lab.claudecode.cc_queue import _annotator_delta_update
+    from devlab.claudecode.cc_queue import _annotator_delta_update
 
     mock_git_result = MagicMock()
     mock_git_result.returncode = 0
@@ -77,7 +77,7 @@ def test_annotator_delta_update_calls_annotator():
 
 def test_annotator_delta_update_nonfatal_on_git_error():
     """_annotator_delta_update does not raise when git fails."""
-    from lab.claudecode.cc_queue import _annotator_delta_update
+    from devlab.claudecode.cc_queue import _annotator_delta_update
 
     with patch("subprocess.run", side_effect=Exception("git not found")):
         _annotator_delta_update("T-test")  # must not raise
@@ -85,7 +85,7 @@ def test_annotator_delta_update_nonfatal_on_git_error():
 
 def test_annotator_delta_update_nonfatal_on_annotator_error():
     """_annotator_delta_update does not raise when annotator fails."""
-    from lab.claudecode.cc_queue import _annotator_delta_update
+    from devlab.claudecode.cc_queue import _annotator_delta_update
 
     mock_git = MagicMock()
     mock_git.returncode = 0
@@ -99,7 +99,7 @@ def test_annotator_delta_update_nonfatal_on_annotator_error():
 
 def test_annotator_delta_update_skips_empty_git_diff():
     """_annotator_delta_update exits early when git diff is empty."""
-    from lab.claudecode.cc_queue import _annotator_delta_update
+    from devlab.claudecode.cc_queue import _annotator_delta_update
 
     mock_git = MagicMock()
     mock_git.returncode = 0

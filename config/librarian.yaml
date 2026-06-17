@@ -6,4 +6,4 @@ indexer_paths:
   - ~/dev/src/UnseenUniversity/devices
   - ~/dev/src/UnseenUniversity/unseen_university
   - ~/dev/src/UnseenUniversity/docs
-  - ~/dev/src/UnseenUniversity/lab/design_docs
+  - ~/dev/src/UnseenUniversity/devlab/design_docs

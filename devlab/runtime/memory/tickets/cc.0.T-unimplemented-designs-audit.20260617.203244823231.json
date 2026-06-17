@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-unimplemented-designs-audit.20260617.203244823231",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-unimplemented-designs-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T20:32:44.823231",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-unimplemented-designs-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-unimplemented-designs-audit",
+    "title": "[sprint] Audit design docs for unimplemented or abandoned designs",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Observability"
+    ],
+    "description": "lab/design_docs/ and devlab/runtime/memory/decisions/ contain designs that may never have been implemented or were superseded. Surface the gap: which designs have no corresponding ticket, no commit, or whose ticket closed with a different scope than the design intended.\n\n**Affected files:** lab/design_docs/decisions/*.md, devlab/runtime/memory/decisions/*.json — read-only audit; output is a doc.\n**Design rules:** docs-live-in-code (output lands in docs/), test-plan-or-why-not (no tests — audit deliverable).\n**Scope boundary:** IN — enumerate design docs, cross-reference against ticket history and git commits, classify each as: implemented / partial / abandoned / superseded / never-ticketed. OUT — actually implementing anything found (each gap becomes its own ticket).\n**Test plan:** no tests because: audit deliverable. Each gap it surfaces carries its own test plan when ticketed.\n\nDo AFTER /savestate + /autocompact (context gate — filed at 10% context).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "created_at": "2026-06-17T20:32:44.823231+00:00",
+    "updated_at": "2026-06-17T14:32:44.982837-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.54,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T20:32:44.877474+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "19eea61e-760b-49ed-926c-ab1f1124f5fb",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

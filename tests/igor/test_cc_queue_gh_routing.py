@@ -7,7 +7,7 @@ _REPO = os.path.join(os.path.dirname(__file__), "..")
 if _REPO not in sys.path:
     sys.path.insert(0, _REPO)
 
-from lab.claudecode.cc_queue import _gh_repo_for, _IGOR_REPO, _ADC_REPO
+from devlab.claudecode.cc_queue import _gh_repo_for, _IGOR_REPO, _ADC_REPO
 
 
 def _ticket(**kwargs) -> dict:

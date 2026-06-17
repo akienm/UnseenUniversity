@@ -379,7 +379,7 @@ def queue_graph_integrator(content_id: str) -> bool:
     try:
         # Import queue module
         sys.path.insert(
-            0, str(Path(__file__).parent.parent.parent.parent / "lab" / "claudecode")
+            0, str(Path(__file__).parent.parent.parent.parent / "devlab" / "claudecode")
         )
         from cc_queue import mark_pending
 

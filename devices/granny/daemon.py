@@ -51,7 +51,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 _UU_ROOT = Path(__file__).resolve().parents[2]
-_CC_QUEUE = _UU_ROOT / "lab" / "claudecode" / "cc_queue.py"
+_CC_QUEUE = _UU_ROOT / "devlab" / "claudecode" / "cc_queue.py"
 _DB_URL = os.environ.get(
     "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )

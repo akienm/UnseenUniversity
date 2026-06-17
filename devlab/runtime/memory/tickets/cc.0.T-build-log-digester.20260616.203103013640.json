@@ -21,8 +21,8 @@
   },
   "body": {
     "id": "T-build-log-digester",
-    "title": "[awaiting_validation] Build-log digester — inference-free minion that keeps build state pick-up-ready",
-    "status": "awaiting_validation",
+    "title": "Build-log digester — inference-free minion that keeps build state pick-up-ready",
+    "status": "closed",
     "worker": "claude",
     "size": "M",
     "tags": [
@@ -34,8 +34,8 @@
     "decision_id": "D-rewind-as-workflow-primitive-2026-06-16",
     "created_at": "2026-06-16T20:31:03.013640+00:00",
     "updated_at": "2026-06-16T14:31:03.027219-06:00",
-    "completed_at": "2026-06-17T20:16:37.816371+00:00",
-    "result": "37-test digester daemon with log_parser (event extraction + flat-timeline degrade + boundary marker detection), digest_store (devlab.build_digest Postgres CRUD), Ground Loop runme plugin (cursor-resumed polling), staged descriptor. Degrades gracefully to flat timeline when boundary markers absent (verified by test). Commit 92723cdf.",
+    "completed_at": "2026-06-17T20:45:16.127308+00:00",
+    "result": "Validated by CC — tests pass, artifacts verified. Closed 2026-06-17.",
     "role": "master",
     "priority": 0.65,
     "gate": null,

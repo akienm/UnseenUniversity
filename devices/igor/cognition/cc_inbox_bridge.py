@@ -45,7 +45,7 @@ def post_to_cc_inbox(
         )
         urgency = "normal"
     try:
-        from lab.claudecode.cc_inbox import append as _append
+        from devlab.claudecode.cc_inbox import append as _append
 
         _append(
             kind=kind,

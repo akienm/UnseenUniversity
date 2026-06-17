@@ -83,7 +83,7 @@ def _cc_queue_recently_modified(window_sec: int = _EVIDENCE_WINDOW_SEC) -> bool:
     Queries MAX(updated_at) from clan.memories WHERE parent_id='TICKETS_ROOT'.
     """
     try:
-        from lab.claudecode.cc_queue import _db_conn, TICKETS_ROOT_ID
+        from devlab.claudecode.cc_queue import _db_conn, TICKETS_ROOT_ID
 
         conn = _db_conn()
         try:

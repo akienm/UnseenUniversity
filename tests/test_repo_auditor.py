@@ -196,7 +196,7 @@ def test_run_structural_audit_skips_tracking_tagged_tickets(tmp_path):
     ]
 
     with patch("devices.hubert.repo_auditor._FLAGS_FILE", tmp_path / "flags.jsonl"), \
-         patch("lab.claudecode.completion_audit.get_closed_tickets", return_value=tickets), \
+         patch("devlab.claudecode.completion_audit.get_closed_tickets", return_value=tickets), \
          patch("devices.hubert.repo_auditor._audit_ticket") as mock_audit:
         run_structural_audit(str(tmp_path))
 
@@ -209,7 +209,7 @@ def test_run_structural_audit_skips_non_t_prefix_tickets(tmp_path):
     ]
 
     with patch("devices.hubert.repo_auditor._FLAGS_FILE", tmp_path / "flags.jsonl"), \
-         patch("lab.claudecode.completion_audit.get_closed_tickets", return_value=tickets), \
+         patch("devlab.claudecode.completion_audit.get_closed_tickets", return_value=tickets), \
          patch("devices.hubert.repo_auditor._audit_ticket") as mock_audit:
         run_structural_audit(str(tmp_path))
 
@@ -222,7 +222,7 @@ def test_run_structural_audit_skips_s_tickets_by_default(tmp_path):
     ]
 
     with patch("devices.hubert.repo_auditor._FLAGS_FILE", tmp_path / "flags.jsonl"), \
-         patch("lab.claudecode.completion_audit.get_closed_tickets", return_value=tickets), \
+         patch("devlab.claudecode.completion_audit.get_closed_tickets", return_value=tickets), \
          patch("devices.hubert.repo_auditor._audit_ticket") as mock_audit:
         run_structural_audit(str(tmp_path))
 

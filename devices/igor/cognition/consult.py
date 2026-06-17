@@ -422,7 +422,7 @@ class ConsultSession(IgorBase):
         confab_flags: list = []
         try:
             # Scanner lives in lab.claudecode.engram_tools (CC-side toolkit)
-            from lab.claudecode.engram_tools.confab_scanner import scan_turns
+            from devlab.claudecode.engram_tools.confab_scanner import scan_turns
 
             confab_flags = scan_turns(
                 [

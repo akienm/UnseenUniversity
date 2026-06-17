@@ -20,7 +20,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.code_indexer import (
+from devlab.claudecode.code_indexer import (
     _INTENT_SYMBOL,
     file_hash,
     inject_intent_comment,
@@ -170,7 +170,7 @@ def test_sweep_inserts_new_shell_file(tmp_path):
     mock_conn.cursor.return_value = mock_cursor
     mock_cursor.fetchone.return_value = None  # no existing row
 
-    with patch("lab.claudecode.code_indexer._haiku_intent", return_value="test script echoes test"), \
+    with patch("devlab.claudecode.code_indexer._haiku_intent", return_value="test script echoes test"), \
          patch("psycopg2.connect", return_value=mock_conn):
         result = sweep_shell_files(repo, db_url="postgresql://test/db")
 

@@ -22,13 +22,13 @@ def dm(tmp_path, monkeypatch):
     mem_root = str(tmp_path / "memory")
     monkeypatch.setenv("UU_MEMORY_ROOT", mem_root)
 
-    import lab.claudecode.memory_emit as _mem_emit
+    import devlab.claudecode.memory_emit as _mem_emit
     importlib.reload(_mem_emit)
     # Make sure the short-name alias resolves to the same (reloaded) module
     sys.modules.setdefault("memory_emit", _mem_emit)
     sys.modules["memory_emit"] = _mem_emit  # always sync
 
-    import lab.claudecode.decision_manager as _dm_mod
+    import devlab.claudecode.decision_manager as _dm_mod
     importlib.reload(_dm_mod)
     _dm_mod._MEMORY_ROOT = mem_root
     _mem_emit.MEMORY_ROOT = mem_root
@@ -119,6 +119,6 @@ class TestImportClean:
         """Importing the module must not create or read decisions_log.dsb."""
         dsb_path = tmp_path / "decisions_log.dsb"
         monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path / "memory"))
-        import lab.claudecode.decision_manager
-        importlib.reload(lab.claudecode.decision_manager)
+        import devlab.claudecode.decision_manager
+        importlib.reload(devlab.claudecode.decision_manager)
         assert not dsb_path.exists(), "Module import must not touch decisions_log.dsb"

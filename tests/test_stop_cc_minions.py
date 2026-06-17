@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-import lab.claudecode.stop_cc_minions as sut
+import devlab.claudecode.stop_cc_minions as sut
 
 
 def _run_result(stdout=""):

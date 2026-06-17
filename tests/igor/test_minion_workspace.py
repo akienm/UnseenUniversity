@@ -15,7 +15,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.minion_workspace import MinionWorkspace, _WORKSPACE_BASE
+from devlab.claudecode.minion_workspace import MinionWorkspace, _WORKSPACE_BASE
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ def origin_repo(tmp_path) -> Path:
 def workspace(tmp_path, origin_repo, monkeypatch) -> MinionWorkspace:
     """MinionWorkspace pointed at a tmp origin with workspace root in tmp_path."""
     monkeypatch.setattr(
-        "lab.claudecode.minion_workspace._WORKSPACE_BASE", tmp_path / "dc"
+        "devlab.claudecode.minion_workspace._WORKSPACE_BASE", tmp_path / "dc"
     )
     return MinionWorkspace("cc1", repo_origin=str(origin_repo))
 

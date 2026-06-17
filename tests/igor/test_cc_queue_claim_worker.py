@@ -17,15 +17,15 @@ if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
 import importlib.util as _ilu
-_spec = _ilu.find_spec("lab.claudecode.cc_queue")
+_spec = _ilu.find_spec("devlab.claudecode.cc_queue")
 CC_QUEUE = (
     Path(_spec.origin)
     if (_spec and _spec.origin)
-    else REPO / "lab" / "claudecode" / "cc_queue.py"
+    else REPO / "devlab" / "claudecode" / "cc_queue.py"
 )
 del _ilu, _spec
 
-from lab.claudecode.cc_queue import LegacyDirectClaimError
+from devlab.claudecode.cc_queue import LegacyDirectClaimError
 
 
 class TestClaimCommandRemoved:
@@ -38,7 +38,7 @@ class TestClaimCommandRemoved:
     def test_cmd_claim_not_importable(self):
         """cmd_claim was removed — importing it should raise ImportError."""
         with pytest.raises(ImportError):
-            from lab.claudecode.cc_queue import cmd_claim  # noqa: F401
+            from devlab.claudecode.cc_queue import cmd_claim  # noqa: F401
 
     def test_claim_subprocess_exits_nonzero(self):
         """cc_queue.py claim via subprocess exits non-zero (unknown command)."""

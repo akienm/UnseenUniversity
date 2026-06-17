@@ -33,7 +33,7 @@ from .shim import DickSimnelShim
 log = logging.getLogger(__name__)
 
 _START_TIME = time.time()
-_CC_QUEUE = Path(__file__).resolve().parents[2] / "lab" / "claudecode" / "cc_queue.py"
+_CC_QUEUE = Path(__file__).resolve().parents[2] / "devlab" / "claudecode" / "cc_queue.py"
 _DB_URL = os.environ.get(
     "UU_HOME_DB_URL",
     "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",

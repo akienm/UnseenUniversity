@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from lab.claudecode import stale_slate_check as mod
+from devlab.claudecode import stale_slate_check as mod
 
 
 @pytest.fixture

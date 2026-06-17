@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.cert_worker_freeze import freeze, status, unfreeze  # noqa: E402
+from devlab.claudecode.cert_worker_freeze import freeze, status, unfreeze  # noqa: E402
 
 
 def _t(tid: str, worker: str = "igor", st: str = "pending", **extra) -> dict:

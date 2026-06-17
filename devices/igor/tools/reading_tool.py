@@ -548,7 +548,7 @@ def _start_run(run_id: str = "", mode: str = "background", **_kw) -> str:
     else:
         # Background: spawn worker subprocess
         repo = Path(__file__).parent.parent.parent.parent
-        worker = repo / "lab" / "claudecode" / "reading_worker.py"
+        worker = repo / "devlab" / "claudecode" / "reading_worker.py"
         if not worker.exists():
             _ensure_worker_script(worker, repo)
 

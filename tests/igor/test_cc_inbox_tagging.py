@@ -15,7 +15,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from lab.claudecode.cc_inbox import (
+from devlab.claudecode.cc_inbox import (
     _load_all,
     append,
     delete_by_prefix,

@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 _START_TIME = time.time()
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CHECKS_PATH = REPO_ROOT / "lab" / "claudecode" / "audit_checks.json"
+CHECKS_PATH = REPO_ROOT / "devlab" / "claudecode" / "audit_checks.json"
 CHECKS_CONFIG_DIR = REPO_ROOT / "config" / "audit_checks"
 
 _SEVERITY_ORDER: dict[str, int] = {"high": 0, "med": 1, "low": 2}

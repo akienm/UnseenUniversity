@@ -10041,7 +10041,7 @@ def main():
 
     # T-sqlite-config-hunt: gated debug trace — remove after caller identified
     if os.getenv("IGOR_TRACE_SQLITE_CALLERS") == "1":
-        from lab.claudecode.sqlite_caller_trace import install as _sqlite_trace_install
+        from devlab.claudecode.sqlite_caller_trace import install as _sqlite_trace_install
 
         _sqlite_trace_install()
 

@@ -106,7 +106,7 @@ class TestScanIsNonFatal:
             def __getattr__(self, name):
                 raise ImportError("simulated scanner outage")
 
-        monkey_path = "lab.claudecode.engram_tools.confab_scanner"
+        monkey_path = "devlab.claudecode.engram_tools.confab_scanner"
         original = sys.modules.get(monkey_path)
         sys.modules[monkey_path] = _Blocker()
         try:

@@ -10,7 +10,7 @@ Covers:
 
 from __future__ import annotations
 
-from lab.claudecode.engram_tools.confab_scanner import (
+from devlab.claudecode.engram_tools.confab_scanner import (
     ConfabScanner,
     Match,
     scan_turns,

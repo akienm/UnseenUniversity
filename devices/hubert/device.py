@@ -1,7 +1,7 @@
 """
 HubertDevice — Development Process Controller and Infrastructure Owner.
 
-Hubert owns: lab/, tickets, decisions, outcomes, palace browser, goals,
+Hubert owns: devlab/, tickets, decisions, outcomes, palace browser, goals,
 racks, and rack infrastructure. His fascia page in the web UI exposes all
 dev-process tooling (Goals, Decisions, Hypotheses, Outcomes, Palace Browser).
 """
@@ -31,7 +31,7 @@ class HubertDevice(BaseDevice):
             "version": "0.1.0",
             "purpose": (
                 "Development process controller and infrastructure owner. "
-                "Owns lab/, tickets, decisions, outcomes, palace browser, "
+                "Owns devlab/, tickets, decisions, outcomes, palace browser, "
                 "goals, racks, and rack infrastructure."
             ),
         }
@@ -45,7 +45,7 @@ class HubertDevice(BaseDevice):
             "can_receive": False,
             "emitted_keywords": [],
             "mcp_tools": ["constraints_get", "constraints_ingest"],
-            "owns": ["lab/", "tickets", "decisions", "outcomes", "palace", "goals", "racks"],
+            "owns": ["devlab/", "tickets", "decisions", "outcomes", "palace", "goals", "racks"],
         }
 
     def comms(self) -> dict:

@@ -22,7 +22,7 @@ def _add_repo_to_path():
     repo = Path(__file__).parent.parent
     if str(repo) not in sys.path:
         sys.path.insert(0, str(repo))
-    cc = repo / "lab" / "claudecode"
+    cc = repo / "devlab" / "claudecode"
     if str(cc) not in sys.path:
         sys.path.insert(0, str(cc))
 

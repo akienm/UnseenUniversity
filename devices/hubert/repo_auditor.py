@@ -256,7 +256,7 @@ def run_structural_audit(
         repo_path: git repo root (default: current directory)
         size_filter: ticket sizes to include (default: M, L, XL)
     """
-    from lab.claudecode.completion_audit import get_closed_tickets
+    from devlab.claudecode.completion_audit import get_closed_tickets
 
     if size_filter is None:
         size_filter = ["M", "L", "XL"]

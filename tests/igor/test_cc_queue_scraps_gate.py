@@ -23,7 +23,7 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from lab.claudecode.cc_queue import (
+from devlab.claudecode.cc_queue import (
     LegacyDirectClaimError,
     _scraps_validate,
     cmd_add,
@@ -96,9 +96,9 @@ class TestCmdAddScrapsGate:
 
         buf = StringIO()
         with (
-            patch("lab.claudecode.cc_queue._load", mock_load),
-            patch("lab.claudecode.cc_queue._save", mock_save),
-            patch("lab.claudecode.cc_queue._log"),
+            patch("devlab.claudecode.cc_queue._load", mock_load),
+            patch("devlab.claudecode.cc_queue._save", mock_save),
+            patch("devlab.claudecode.cc_queue._log"),
             patch("sys.stdout", buf),
             _NO_CHANNEL,
         ):

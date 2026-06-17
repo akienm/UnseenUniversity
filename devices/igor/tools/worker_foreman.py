@@ -31,7 +31,7 @@ _WORKER_PAUSED_FLAG = paths().instance / "worker_paused.flag"
 
 def _load_queue() -> list:
     # T-cc-queue-drop-json-stage-b: canonical Postgres source (queue.json deleted)
-    from lab.claudecode import cc_queue as _cc_queue
+    from devlab.claudecode import cc_queue as _cc_queue
 
     return _cc_queue.load_tasks()
 
@@ -144,7 +144,7 @@ def launch_next_worker() -> str:
             # Targeted single-row UPDATE guards against concurrent terminal-status
             # writes: WHERE status='in_progress' prevents overwriting a ticket
             # that was cancelled/closed between load and save (T-worker-foreman-race).
-            from lab.claudecode import cc_queue as _cc_queue
+            from devlab.claudecode import cc_queue as _cc_queue
 
             for t in in_progress:
                 if _cc_queue.reset_stale_in_progress(t["id"]):
@@ -291,7 +291,7 @@ def adopt_next_ticket() -> str:
     That violated the design principle: workers must not pull from the queue
     on their own initiative. CC dispatches; Igor works.
     """
-    from lab.claudecode.cc_queue import LegacyDirectClaimError
+    from devlab.claudecode.cc_queue import LegacyDirectClaimError
 
     raise LegacyDirectClaimError(
         "adopt_next_ticket is no longer supported. "

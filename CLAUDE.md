@@ -86,7 +86,7 @@ Two canonical env vars. Everything else derives from them.
 | `UU_ROOT` | auto-detected via `unseen_university._uu_root.uu_root()` | Repo root. Set explicitly only when auto-detection fails. |
 | `IGOR_HOME` | `~/.unseen_university` | Runtime data dir (logs, slate, flags). Override for non-default installs. |
 
-`CC_WORKFLOW_TOOLS` is a **derived alias** — `${UU_ROOT}/lab/claudecode`. Keep it in `.bashrc` for one deprecation cycle; new code uses `uu_root()` directly.
+`CC_WORKFLOW_TOOLS` is a **derived alias** — `${UU_ROOT}/devlab/claudecode`. Keep it in `.bashrc` for one deprecation cycle; new code uses `uu_root()` directly.
 
 Auto-detection order for `UU_ROOT`: (1) env var, (2) `unseen_university.__file__` parent chain, (3) `pip show unseen-university` Location, (4) `cwd`.
 

@@ -19,7 +19,7 @@ from datetime import datetime
 from pathlib import Path
 
 try:
-    from lab.claudecode.ts_format import format_display, parse_iso
+    from devlab.claudecode.ts_format import format_display, parse_iso
 except ImportError:
 
     def parse_iso(ts: str) -> datetime:  # type: ignore[misc]

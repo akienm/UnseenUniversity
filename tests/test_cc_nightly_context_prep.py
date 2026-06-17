@@ -25,7 +25,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.cc_nightly_context_prep import (
+from devlab.claudecode.cc_nightly_context_prep import (
     _read_slate_section,
     build_briefing,
     run,
@@ -64,27 +64,27 @@ T-foo: working on the widget
 
 def test_read_slate_section_returns_in_flight(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path):
         result = _read_slate_section("2026-06-13", "In-flight")
     assert "T-foo" in result
 
 
 def test_read_slate_section_returns_done_today(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path):
         result = _read_slate_section("2026-06-13", "Done today")
     assert "T-baz" in result
 
 
 def test_read_slate_section_missing_returns_empty(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path):
         result = _read_slate_section("2026-06-13", "Nonexistent Section")
     assert result == ""
 
 
 def test_read_slate_section_missing_file_returns_empty(tmp_path):
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path):
         result = _read_slate_section("2026-06-13", "In-flight")
     assert result == ""
 
@@ -93,33 +93,33 @@ def test_read_slate_section_missing_file_returns_empty(tmp_path):
 
 def test_build_briefing_contains_tomorrow_header(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         brief = build_briefing("2026-06-13")
     assert "2026-06-14" in brief
 
 
 def test_build_briefing_includes_in_flight(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         brief = build_briefing("2026-06-13")
     assert "T-foo" in brief
 
 
 def test_build_briefing_includes_done_today(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         brief = build_briefing("2026-06-13")
     assert "T-baz" in brief
 
@@ -127,11 +127,11 @@ def test_build_briefing_includes_done_today(tmp_path):
 def test_build_briefing_includes_high_priority_tickets(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
     hp = [{"id": "T-urgent", "title": "Do the thing", "status": "sprint", "size": "M", "priority": 0.9}]
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=hp), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=hp), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         brief = build_briefing("2026-06-13")
     assert "T-urgent" in brief
     assert "Do the thing" in brief
@@ -140,11 +140,11 @@ def test_build_briefing_includes_high_priority_tickets(tmp_path):
 def test_build_briefing_includes_design_tickets(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
     design = [{"id": "T-design-me", "title": "Needs design"}]
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=design), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=design), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         brief = build_briefing("2026-06-13")
     assert "T-design-me" in brief
 
@@ -152,11 +152,11 @@ def test_build_briefing_includes_design_tickets(tmp_path):
 def test_build_briefing_includes_pending_approvals(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
     approvals = [{"id": "T-approve-me", "title": "Awaiting sign-off"}]
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=approvals), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=approvals), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         brief = build_briefing("2026-06-13")
     assert "T-approve-me" in brief
 
@@ -164,11 +164,11 @@ def test_build_briefing_includes_pending_approvals(tmp_path):
 def test_build_briefing_includes_patterns(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
     patterns = [{"path": "palace.patterns.observability-first", "title": "Observability-first design"}]
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=patterns):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=patterns):
         brief = build_briefing("2026-06-13")
     assert "Observability-first design" in brief
 
@@ -177,11 +177,11 @@ def test_build_briefing_includes_patterns(tmp_path):
 
 def test_write_context_brief_dry_run(tmp_path, capsys):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         result = write_context_brief("2026-06-13", dry_run=True)
     out = capsys.readouterr().out
     assert result is True
@@ -197,11 +197,11 @@ def test_write_context_brief_calls_db(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
 
     with patch("psycopg2.connect", return_value=mock_conn), \
-         patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+         patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         result = write_context_brief("2026-06-13", dry_run=False)
 
     assert result is True
@@ -211,11 +211,11 @@ def test_write_context_brief_calls_db(tmp_path):
 def test_write_context_brief_db_failure_returns_false(tmp_path, capsys):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
     with patch("psycopg2.connect", side_effect=Exception("DB down")), \
-         patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+         patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         result = write_context_brief("2026-06-13", dry_run=False)
     assert result is False
     err = capsys.readouterr().err
@@ -226,11 +226,11 @@ def test_write_context_brief_db_failure_returns_false(tmp_path, capsys):
 
 def test_run_dry_run_returns_summary(tmp_path):
     _write_slate(tmp_path, "2026-06-13", _SLATE_CONTENT)
-    with patch("lab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
-         patch("lab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
+    with patch("devlab.claudecode.cc_nightly_context_prep._IGOR_HOME", tmp_path), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_high_priority_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_design_tickets", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_pending_approvals", return_value=[]), \
+         patch("devlab.claudecode.cc_nightly_context_prep._read_recent_patterns", return_value=[]):
         summary = run(date="2026-06-13", dry_run=True)
 
     assert "date" in summary

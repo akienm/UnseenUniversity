@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from lab.claudecode.engram_tools.verify_retrieval import (
+from devlab.claudecode.engram_tools.verify_retrieval import (
     DEFAULT_TOP_K,
     VerifyResult,
     all_pass,

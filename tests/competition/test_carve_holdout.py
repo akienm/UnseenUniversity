@@ -20,7 +20,7 @@ _REPO = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_REPO))
 sys.path.insert(0, str(_REPO / "lab"))
 
-from lab.competition.carve_holdout import carve  # noqa: E402
+from devlab.competition.carve_holdout import carve  # noqa: E402
 
 
 def _conn():

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # intent: shell script: test_pre_commit_guard.sh
-# test_pre_commit_guard.sh — exercises lab/claudecode/hooks/pre-commit rules.
+# test_pre_commit_guard.sh — exercises devlab/claudecode/hooks/pre-commit rules.
 #
 # Creates a temp git repo, installs the hook, stages files that should be
 # rejected, and asserts the hook exits nonzero with the expected reason.
@@ -11,7 +11,7 @@
 set -u
 
 REPO_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")/../.." rev-parse --show-toplevel)"
-HOOK="$REPO_ROOT/lab/claudecode/hooks/pre-commit"
+HOOK="$REPO_ROOT/devlab/claudecode/hooks/pre-commit"
 
 if [ ! -x "$HOOK" ]; then
     echo "FAIL: hook not executable at $HOOK" >&2

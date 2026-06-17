@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lab.claudecode.blame_with_model import (  # noqa: E402
+from devlab.claudecode.blame_with_model import (  # noqa: E402
     BlameLine,
     blame_file,
     extract_coauthor_model,
@@ -148,7 +148,7 @@ class TestBlameFile:
             return _R()
 
         with patch(
-            "lab.claudecode.blame_with_model.subprocess.run", side_effect=fake_run
+            "devlab.claudecode.blame_with_model.subprocess.run", side_effect=fake_run
         ):
             blames = blame_file(Path("foo.py"))
         assert len(blames) == 1
@@ -180,7 +180,7 @@ class TestBlameFile:
             return _R()
 
         with patch(
-            "lab.claudecode.blame_with_model.subprocess.run", side_effect=fake_run
+            "devlab.claudecode.blame_with_model.subprocess.run", side_effect=fake_run
         ):
             blames = blame_file(Path("foo.py"))
         assert len(blames) == 2

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from lab.claudecode.bootstrap_learning import (
+from devlab.claudecode.bootstrap_learning import (
     _classify_message,
     extract_pairs_from_session,
     load_processed,
@@ -123,20 +123,20 @@ class TestExtractPairs:
 
 class TestProcessedTracking:
     def test_load_empty_when_file_missing(self, tmp_path):
-        with patch("lab.claudecode.bootstrap_learning._PROCESSED_FILE", tmp_path / "nonexistent.txt"):
+        with patch("devlab.claudecode.bootstrap_learning._PROCESSED_FILE", tmp_path / "nonexistent.txt"):
             result = load_processed()
         assert result == set()
 
     def test_roundtrip_mark_and_load(self, tmp_path):
         pfile = tmp_path / "processed.txt"
-        with patch("lab.claudecode.bootstrap_learning._PROCESSED_FILE", pfile):
+        with patch("devlab.claudecode.bootstrap_learning._PROCESSED_FILE", pfile):
             mark_processed(["session-a", "session-b"])
             loaded = load_processed()
         assert loaded == {"session-a", "session-b"}
 
     def test_mark_processed_is_additive(self, tmp_path):
         pfile = tmp_path / "processed.txt"
-        with patch("lab.claudecode.bootstrap_learning._PROCESSED_FILE", pfile):
+        with patch("devlab.claudecode.bootstrap_learning._PROCESSED_FILE", pfile):
             mark_processed(["session-a"])
             mark_processed(["session-b"])
             loaded = load_processed()

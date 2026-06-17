@@ -191,7 +191,7 @@ class CCWorkerListener:
     def _cc_queue_path(self) -> str:
         tools = os.environ.get(
             "CC_WORKFLOW_TOOLS",
-            str(Path.home() / "TheIgors" / "lab" / "claudecode"),
+            str(Path.home() / "TheIgors" / "devlab" / "claudecode"),
         )
         return str(Path(tools) / "cc_queue.py")
 

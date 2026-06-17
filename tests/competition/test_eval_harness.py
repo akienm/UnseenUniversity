@@ -26,7 +26,7 @@ _REPO = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_REPO))
 sys.path.insert(0, str(_REPO / "lab"))
 
-from lab.competition.eval_harness import _fetch_holdout, _run_classifier, run_race  # noqa: E402
+from devlab.competition.eval_harness import _fetch_holdout, _run_classifier, run_race  # noqa: E402
 
 
 def _conn():
@@ -114,8 +114,8 @@ class TestRunRaceWithDb(unittest.TestCase):
         knn_fn = lambda text: ("FACTUAL", 0)
         llm_fn = lambda text: ("FACTUAL", 1)
 
-        with patch("lab.competition.classifiers.knn_classifier.classify", side_effect=knn_fn), \
-             patch("lab.competition.classifiers.llm_classifier.classify", side_effect=llm_fn):
+        with patch("devlab.competition.classifiers.knn_classifier.classify", side_effect=knn_fn), \
+             patch("devlab.competition.classifiers.llm_classifier.classify", side_effect=llm_fn):
             result = run_race()
 
         self.assertIn("holdout_rows", result)
@@ -131,13 +131,13 @@ class TestRunRaceWithDb(unittest.TestCase):
         knn_fn = lambda text: ("FACTUAL", 0)
         llm_fn = lambda text: ("FACTUAL", 1)
 
-        with patch("lab.competition.classifiers.knn_classifier.classify", side_effect=knn_fn), \
-             patch("lab.competition.classifiers.llm_classifier.classify", side_effect=llm_fn):
+        with patch("devlab.competition.classifiers.knn_classifier.classify", side_effect=knn_fn), \
+             patch("devlab.competition.classifiers.llm_classifier.classify", side_effect=llm_fn):
             r1 = run_race()
 
         # Reset side_effect call counters by re-patching
-        with patch("lab.competition.classifiers.knn_classifier.classify", side_effect=knn_fn), \
-             patch("lab.competition.classifiers.llm_classifier.classify", side_effect=llm_fn):
+        with patch("devlab.competition.classifiers.knn_classifier.classify", side_effect=knn_fn), \
+             patch("devlab.competition.classifiers.llm_classifier.classify", side_effect=llm_fn):
             r2 = run_race()
 
         self.assertEqual(r1["knn"]["accuracy_pct"], r2["knn"]["accuracy_pct"])
@@ -147,8 +147,8 @@ class TestRunRaceWithDb(unittest.TestCase):
         knn_fn = lambda text: ("FACTUAL", 0)  # no cloud calls
         llm_fn = lambda text: ("FACTUAL", 1)  # 1 cloud call each
 
-        with patch("lab.competition.classifiers.knn_classifier.classify", side_effect=knn_fn), \
-             patch("lab.competition.classifiers.llm_classifier.classify", side_effect=llm_fn):
+        with patch("devlab.competition.classifiers.knn_classifier.classify", side_effect=knn_fn), \
+             patch("devlab.competition.classifiers.llm_classifier.classify", side_effect=llm_fn):
             result = run_race()
 
         n = result["holdout_rows"]
@@ -158,7 +158,7 @@ class TestRunRaceWithDb(unittest.TestCase):
 
 class TestRunRaceEmptyHoldout(unittest.TestCase):
     def test_empty_holdout_returns_error(self):
-        with patch("lab.competition.eval_harness._fetch_holdout", return_value=[]):
+        with patch("devlab.competition.eval_harness._fetch_holdout", return_value=[]):
             result = run_race()
         self.assertIn("error", result)
         self.assertEqual(result["holdout_rows"], 0)

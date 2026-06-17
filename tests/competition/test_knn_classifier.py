@@ -26,7 +26,7 @@ _REPO = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_REPO))
 sys.path.insert(0, str(_REPO / "lab"))
 
-from lab.competition.classifiers.knn_classifier import FALLBACK_TYPE, build_index, classify  # noqa: E402
+from devlab.competition.classifiers.knn_classifier import FALLBACK_TYPE, build_index, classify  # noqa: E402
 
 
 def _conn():
@@ -116,7 +116,7 @@ class TestKnnClassifierWithEmbeddings(unittest.TestCase):
     def test_classify_routes_to_most_similar_type(self):
         # Query vector closest to PROCEDURAL ([1,0,0,0])
         proc_query = [0.9, 0.1, 0.0, 0.0]
-        with patch("lab.competition.classifiers.knn_classifier._embed", return_value=proc_query):
+        with patch("devlab.competition.classifiers.knn_classifier._embed", return_value=proc_query):
             mtype, cloud = classify("some procedure text", k=1)
         self.assertEqual(mtype, "PROCEDURAL")
         self.assertEqual(cloud, 0)
@@ -131,7 +131,7 @@ class TestKnnClassifierWithEmbeddings(unittest.TestCase):
 
         # Query towards PROCEDURAL — FACTUAL holdout should be excluded
         proc_query = [0.9, 0.0, 0.0, 0.0]
-        with patch("lab.competition.classifiers.knn_classifier._embed", return_value=proc_query):
+        with patch("devlab.competition.classifiers.knn_classifier._embed", return_value=proc_query):
             mtype, cloud = classify("procedure text", k=1)
         self.assertEqual(mtype, "PROCEDURAL")
         self.assertEqual(cloud, 0)
@@ -151,7 +151,7 @@ class TestBuildIndex(unittest.TestCase):
 
     def test_build_index_populates_embeddings(self):
         fake_vec = [0.1, 0.2, 0.3, 0.4]
-        with patch("lab.competition.classifiers.knn_classifier._embed", return_value=fake_vec):
+        with patch("devlab.competition.classifiers.knn_classifier._embed", return_value=fake_vec):
             result = build_index()
         self.assertGreaterEqual(result["embedded"], 3)
         self.assertEqual(result["failed"], 0)

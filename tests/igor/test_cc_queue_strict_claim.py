@@ -15,7 +15,7 @@ REPO = Path(__file__).resolve().parent.parent
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-from lab.claudecode.cc_queue import LegacyDirectClaimError
+from devlab.claudecode.cc_queue import LegacyDirectClaimError
 
 
 class TestStrictClaimModel:
@@ -25,10 +25,10 @@ class TestStrictClaimModel:
 
     def test_cmd_claim_not_in_module(self):
         """cmd_claim must not exist on the cc_queue module."""
-        import lab.claudecode.cc_queue as q
+        import devlab.claudecode.cc_queue as q
         assert not hasattr(q, "cmd_claim"), "cmd_claim was re-added — must stay removed"
 
     def test_claim_not_in_commands_dict(self):
         """'claim' must not be a key in the COMMANDS dispatch dict."""
-        import lab.claudecode.cc_queue as q
+        import devlab.claudecode.cc_queue as q
         assert "claim" not in q.COMMANDS, "'claim' command was re-added — must stay removed"

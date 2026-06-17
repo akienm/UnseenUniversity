@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lab" / "claudecode"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "devlab" / "claudecode"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from cc_hook_pending import (  # noqa: E402

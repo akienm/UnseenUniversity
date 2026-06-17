@@ -46,7 +46,7 @@ _CC_QUEUE = (
         os.environ.get(
             "CC_WORKFLOW_TOOLS",
             str(
-                Path.home() / "dev" / "src" / "UnseenUniversity" / "lab" / "claudecode"
+                Path.home() / "dev" / "src" / "UnseenUniversity" / "devlab" / "claudecode"
             ),
         )
     )
@@ -126,7 +126,7 @@ class GoalContinuation(IgorBase):
     def _load_ticket(self, ticket_id: str) -> dict | None:
         """Read ticket from Postgres via cc_queue."""
         try:
-            from lab.claudecode.cc_queue import load_tasks
+            from devlab.claudecode.cc_queue import load_tasks
 
             tasks = load_tasks()
             for t in tasks:

@@ -26,10 +26,10 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["unseen_university*", "bus*", "diagnostic_base*", "skeleton*", "devices*", "config*", "lab*"]
+include = ["unseen_university*", "bus*", "diagnostic_base*", "skeleton*", "devices*", "config*", "devlab*"]
 
 [tool.pytest.ini_options]
-pythonpath = [".", "tests", "lab"]
+pythonpath = [".", "tests", "devlab"]
 addopts = "--import-mode=importlib"
 markers = [
     "docker: tests that require Docker installed and running (deselect with -m 'not docker')",

@@ -34,7 +34,7 @@ if str(_REPO) not in sys.path:
 _CORTEX_PATH = "devices.igor.memory.cortex.Cortex"
 _MT_PATH = "devices.igor.memory.models.MemoryType"
 # read_queue_top and adopt_top_queue_ticket now use cc_queue.load_tasks (Postgres)
-_LOAD_TASKS_PATH = "lab.claudecode.cc_queue.load_tasks"
+_LOAD_TASKS_PATH = "devlab.claudecode.cc_queue.load_tasks"
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -147,7 +147,7 @@ class TestAdoptTopQueueTicket(unittest.TestCase):
 
     def test_raises_legacy_direct_claim_error(self):
         """adopt_top_queue_ticket always raises — PROC_QUEUE_DRAIN autonomous pickup is gone."""
-        from lab.claudecode.cc_queue import LegacyDirectClaimError
+        from devlab.claudecode.cc_queue import LegacyDirectClaimError
         from devices.igor.tools.ops import adopt_top_queue_ticket
 
         with self.assertRaises(LegacyDirectClaimError) as ctx:

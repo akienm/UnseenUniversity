@@ -26,14 +26,14 @@ def _make_ticket(
 
 class TestExtractAffectedFiles:
     def test_single_file(self):
-        from lab.claudecode.pre_inference_assemble import _extract_affected_files
+        from devlab.claudecode.pre_inference_assemble import _extract_affected_files
 
         desc = "Fix stuff.\n\n**Affected files:** devices/granny/shim.py\n**Design rules:** none"
         result = _extract_affected_files(desc)
         assert result == ["devices/granny/shim.py"]
 
     def test_multiple_files_comma_separated(self):
-        from lab.claudecode.pre_inference_assemble import _extract_affected_files
+        from devlab.claudecode.pre_inference_assemble import _extract_affected_files
 
         desc = "**Affected files:** devices/granny/shim.py, devices/granny/daemon.py\n**Scope:** ..."
         result = _extract_affected_files(desc)
@@ -41,28 +41,28 @@ class TestExtractAffectedFiles:
         assert "devices/granny/daemon.py" in result
 
     def test_tbd_excluded(self):
-        from lab.claudecode.pre_inference_assemble import _extract_affected_files
+        from devlab.claudecode.pre_inference_assemble import _extract_affected_files
 
         desc = "**Affected files:** TBD — discovery step\n**Scope:** ..."
         result = _extract_affected_files(desc)
         assert result == []
 
     def test_parenthetical_notes_stripped(self):
-        from lab.claudecode.pre_inference_assemble import _extract_affected_files
+        from devlab.claudecode.pre_inference_assemble import _extract_affected_files
 
         desc = "**Affected files:** devices/granny/shim.py (new file)\n**Scope:** ..."
         result = _extract_affected_files(desc)
         assert result == ["devices/granny/shim.py"]
 
     def test_no_affected_files_section(self):
-        from lab.claudecode.pre_inference_assemble import _extract_affected_files
+        from devlab.claudecode.pre_inference_assemble import _extract_affected_files
 
         assert _extract_affected_files("Just some description.") == []
 
 
 class TestLoadPatterns:
     def test_loads_patterns_from_doc(self, tmp_path, monkeypatch):
-        from lab.claudecode import pre_inference_assemble
+        from devlab.claudecode import pre_inference_assemble
 
         doc = tmp_path / "design_patterns_inventory.md"
         doc.write_text(textwrap.dedent("""\
@@ -84,7 +84,7 @@ class TestLoadPatterns:
         assert "lifecycle" in patterns[0]["keywords"] or "baseshim" in patterns[0]["keywords"]
 
     def test_empty_when_doc_missing(self, tmp_path, monkeypatch):
-        from lab.claudecode import pre_inference_assemble
+        from devlab.claudecode import pre_inference_assemble
 
         monkeypatch.setattr(pre_inference_assemble, "_PATTERNS_DOC", tmp_path / "nope.md")
         assert pre_inference_assemble._load_patterns() == []
@@ -92,7 +92,7 @@ class TestLoadPatterns:
 
 class TestMatchPatterns:
     def test_higher_overlap_ranks_first(self):
-        from lab.claudecode.pre_inference_assemble import _match_patterns
+        from devlab.claudecode.pre_inference_assemble import _match_patterns
 
         patterns = [
             {"id": "P-001", "title": "Alpha", "keywords": {"daemon", "pid", "shim"}, "examples": [], "block": ""},
@@ -104,7 +104,7 @@ class TestMatchPatterns:
         assert results[0][0] == 3
 
     def test_no_overlap_excluded(self):
-        from lab.claudecode.pre_inference_assemble import _match_patterns
+        from devlab.claudecode.pre_inference_assemble import _match_patterns
 
         patterns = [{"id": "P-001", "title": "X", "keywords": {"unrelated"}, "examples": [], "block": ""}]
         results = _match_patterns(patterns, {"completely", "different", "words"})
@@ -128,14 +128,14 @@ class TestAssemble:
         return MagicMock(returncode=0, stdout="", stderr="")
 
     def test_produces_non_empty_output(self, tmp_path, monkeypatch):
-        from lab.claudecode import pre_inference_assemble
+        from devlab.claudecode import pre_inference_assemble
 
         # Point to real patterns doc
         real_doc = Path(__file__).parents[1] / "docs" / "design_patterns_inventory.md"
         if real_doc.exists():
             monkeypatch.setattr(pre_inference_assemble, "_PATTERNS_DOC", real_doc)
 
-        with patch("lab.claudecode.pre_inference_assemble.subprocess.run", side_effect=self._mock_subprocess_run):
+        with patch("devlab.claudecode.pre_inference_assemble.subprocess.run", side_effect=self._mock_subprocess_run):
             ctx = pre_inference_assemble.assemble("T-test-ticket")
 
         assert ctx["ticket_id"] == "T-test-ticket"
@@ -143,9 +143,9 @@ class TestAssemble:
         assert len(ctx["matched_patterns"]) > 0
 
     def test_json_output_is_valid(self, tmp_path, monkeypatch):
-        from lab.claudecode import pre_inference_assemble
+        from devlab.claudecode import pre_inference_assemble
 
-        with patch("lab.claudecode.pre_inference_assemble.subprocess.run", side_effect=self._mock_subprocess_run):
+        with patch("devlab.claudecode.pre_inference_assemble.subprocess.run", side_effect=self._mock_subprocess_run):
             ctx = pre_inference_assemble.assemble("T-test-ticket")
 
         # Verify JSON-serializable
@@ -154,7 +154,7 @@ class TestAssemble:
         assert loaded["ticket_id"] == "T-test-ticket"
 
     def test_format_text_contains_key_sections(self, monkeypatch):
-        from lab.claudecode.pre_inference_assemble import _format_text
+        from devlab.claudecode.pre_inference_assemble import _format_text
 
         ctx = {
             "ticket_id": "T-foo",

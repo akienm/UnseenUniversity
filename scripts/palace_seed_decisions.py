@@ -29,7 +29,7 @@ _PG_URL = os.environ.get(
 )
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_DEFAULT_DECISIONS_DIR = _REPO_ROOT / "lab" / "design_docs" / "decisions"
+_DEFAULT_DECISIONS_DIR = _REPO_ROOT / "devlab" / "design_docs" / "decisions"
 
 _UPSERT = """
 INSERT INTO {schema}.palace (path, title, content, node_type, updated_at, metadata)
