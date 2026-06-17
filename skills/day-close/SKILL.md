@@ -68,6 +68,18 @@ the debris-and-hygiene check.)
 
 Log to: `${IGOR_HOME:-~/.unseen_university}/claudecode/logs/$(date +%Y%m%d).code_maintenance_reviews.log`
 
+### 4.5. Gate sweep (T-day-close-gate-sweep)
+
+Clear elapsed date-only gates — removes the `[gate: <past-date>]` cosmetic
+noise from READY tickets. Safe and idempotent. Skips id-token gates (those
+are handled live by gate_clear on ticket close).
+
+```bash
+python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py sweep-gates
+```
+
+Log the count from the output. No action needed when count is 0.
+
 ### 5. Fix small day-close-audit findings + commit
 
 Always triage each finding:

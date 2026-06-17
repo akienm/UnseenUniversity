@@ -1346,6 +1346,60 @@ def cmd_block(args):
     print(f"Hold {args[0]}: {args[1]}")
 
 
+def cmd_sweep_gates(args):
+    """T-day-close-gate-sweep: clear elapsed pure-date gates.
+
+    Scans every open ticket's ``gate`` field. When the gate contains ONLY
+    date tokens (``YYYY-MM-DD``) and every token has elapsed (date ≤ today),
+    clears the field. Tickets with any unmet id token (``T-...``) are skipped —
+    id-gate resolution is live (gate_clear) and they get ungated on ticket close.
+
+    Logs one AR-009 line per cleared gate. Idempotent: already-cleared gates
+    and future-dated gates produce no output and no writes.
+
+    Usage: sweep-gates [--dry-run]
+    """
+    import re as _re
+    from datetime import date as _date
+    from unseen_university.gate_logic import GATE_DATE_RE, GATE_ID_RE
+
+    dry_run = "--dry-run" in (args or [])
+    tasks = _load()
+    cleared = 0
+    for t in tasks:
+        if t.get("status") in ("closed", "done", "cancelled", "discarded"):
+            continue
+        gate = (t.get("gate") or "").strip()
+        if not gate:
+            continue
+        # Skip if any id-token present — live gate_clear handles those.
+        if GATE_ID_RE.search(gate):
+            continue
+        dates = GATE_DATE_RE.findall(gate)
+        if not dates:
+            continue
+        # All date tokens must be elapsed for the gate to be stale.
+        try:
+            all_elapsed = all(_date.fromisoformat(d) <= _date.today() for d in dates)
+        except ValueError:
+            continue  # malformed date — leave it
+        if not all_elapsed:
+            continue
+        tid = t.get("id", "?")
+        if dry_run:
+            print(f"[dry-run] would clear gate on {tid}: {gate!r}")
+        else:
+            t["gate"] = None
+            _log({
+                "action": "sweep_gate_cleared",
+                "id": tid,
+                "gate_was": gate,
+            })
+            print(f"Cleared gate on {tid}: {gate!r}")
+        cleared += 1
+    if not dry_run and cleared:
+        _save(tasks)
+    print(f"sweep-gates: {cleared} gate(s) {'would be ' if dry_run else ''}cleared.")
 
 
 def cmd_log(args):
@@ -2231,6 +2285,7 @@ def cmd_set_role(args):
 
 
 COMMANDS["set-role"] = cmd_set_role
+COMMANDS["sweep-gates"] = cmd_sweep_gates
 
 
 def cmd_needs_review(args):
