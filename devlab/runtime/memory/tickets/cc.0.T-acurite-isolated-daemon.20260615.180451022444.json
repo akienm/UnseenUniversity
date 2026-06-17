@@ -27,9 +27,9 @@
       "AcuRite",
       "Daemon"
     ],
-    "title": "[sprint] Daemon on isolated network — capture WU format, write CSV",
+    "title": "[akien] Daemon on isolated network — capture WU format, write CSV",
     "result": null,
-    "status": "sprint",
+    "status": "akien",
     "worker": "claude",
     "priority": 0.5,
     "intention": "I intend that the daemon captures WU format weather data from the isolated device and persists it to CSV for dashboard consumption.",

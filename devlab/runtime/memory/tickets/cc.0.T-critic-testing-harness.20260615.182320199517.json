@@ -27,9 +27,9 @@
       "Critic",
       "Test"
     ],
-    "title": "[sprint] Testing harness — verify /critic and scripts/critic.py work and find real issues",
+    "title": "[in_progress] Testing harness — verify /critic and scripts/critic.py work and find real issues",
     "result": null,
-    "status": "sprint",
+    "status": "in_progress",
     "worker": "claude",
     "priority": 0.5,
     "intention": "I intend that /critic and scripts/critic.py produce useful, actionable critique before wiring them into the build system.",

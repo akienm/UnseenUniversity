@@ -15,20 +15,38 @@ Nag state is persisted to ~/.granny/nag_state/ so restarts resume cleanly.
 """
 
 import logging
-import os
+import threading
 
 log = logging.getLogger(__name__)
+
+_RETRY_DELAY_S = int(__import__("os").environ.get("CC_LISTENER_RETRY_DELAY", "30"))
+_stop_evt = threading.Event()
 
 
 def start() -> None:
     from devices.granny.cc_worker_listener import run_forever
+    _stop_evt.clear()
     log.info("cc/groundloop/runme: starting CCWorkerListener")
-    run_forever()
+    while not _stop_evt.is_set():
+        try:
+            run_forever()
+            # run_forever() returns only when stop() signals it via SIGTERM/SIGINT
+            log.info("cc/groundloop/runme: CCWorkerListener exited normally")
+            break
+        except Exception as exc:
+            # IMAP/bus connection failures are transient — retry rather than crash.
+            # Crashing here would cause RunmeSupervisor to rename us to .borkedpy.
+            log.error(
+                "cc/groundloop/runme: CCWorkerListener error: %s — retry in %ds",
+                exc, _RETRY_DELAY_S,
+            )
+            _stop_evt.wait(_RETRY_DELAY_S)
+    log.info("cc/groundloop/runme: stopped")
 
 
 def stop() -> None:
-    # run_forever() handles SIGTERM itself; stop() is a no-op here
-    log.info("cc/groundloop/runme: stop called (SIGTERM handles cleanup)")
+    log.info("cc/groundloop/runme: stop called")
+    _stop_evt.set()
 
 
 if __name__ == "__main__":

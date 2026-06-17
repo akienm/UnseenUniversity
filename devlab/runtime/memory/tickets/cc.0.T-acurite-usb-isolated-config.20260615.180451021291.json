@@ -27,9 +27,9 @@
       "AcuRite",
       "Network"
     ],
-    "title": "[sprint] Configure USB Ethernet port for AcuRite isolated network",
+    "title": "[akien] Configure USB Ethernet port for AcuRite isolated network",
     "result": null,
-    "status": "sprint",
+    "status": "akien",
     "worker": "claude",
     "priority": 0.5,
     "intention": "I intend that the AcuRite device has an isolated, local network segment with DNS redirection so it can be captured without touching the main network.",

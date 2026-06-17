@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "description": "Ground truth for critic harness tests. Each fixture lists planted defects (for buggy targets) or a max-findings ceiling (for clean targets). The harness checks that prompts expose the defect context and that a mock critic response finds the right categories.",
+  "fixtures": [
+    {
+      "file": "buggy_code.py",
+      "kind": "buggy",
+      "description": "Intentionally broken Python module with 5 planted defects",
+      "bugs": [
+        {
+          "id": "B1",
+          "location": "read_config:19-20",
+          "keyword": "except:",
+          "kind": "silent_exception",
+          "description": "bare 'except: pass' swallows ALL errors — caller never knows config load failed"
+        },
+        {
+          "id": "B2",
+          "location": "module:12",
+          "keyword": "/home/user/data/output.csv",
+          "kind": "hardcoded_path",
+          "description": "DEFAULT_OUTPUT is a hardcoded absolute path — breaks on any other machine"
+        },
+        {
+          "id": "B3",
+          "location": "upload_file:26",
+          "keyword": "while True:",
+          "kind": "unbounded_loop",
+          "description": "retry loop has no maximum — hangs indefinitely on persistent network failure"
+        },
+        {
+          "id": "B4",
+          "location": "parse_tag:23",
+          "keyword": "raw_tag.strip()",
+          "kind": "missing_none_check",
+          "description": "raw_tag.strip() raises AttributeError when raw_tag is None"
+        },
+        {
+          "id": "B5",
+          "location": "upload_file:30",
+          "keyword": "unreachable",
+          "kind": "silent_none_return",
+          "description": "return True is unreachable after while True; function implicitly returns None"
+        }
+      ],
+      "expected_categories": ["gaps", "risks"],
+      "hit_threshold": 3,
+      "note": "At least 3 of 5 bugs must appear in the critic prompt context for the test to pass"
+    },
+    {
+      "file": "clean_code.py",
+      "kind": "clean",
+      "description": "Well-written Python module with no intentional defects",
+      "bugs": [],
+      "expected_categories": [],
+      "max_findings_in_prompt": 0,
+      "note": "Prompt should contain none of the buggy patterns. Hallucination guard: a critic response claiming >2 severity risks should be treated as suspicious."
+    }
+  ]
+}

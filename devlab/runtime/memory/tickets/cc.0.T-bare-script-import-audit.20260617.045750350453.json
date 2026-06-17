@@ -18,8 +18,8 @@
   },
   "body": {
     "id": "T-bare-script-import-audit",
-    "title": "[sprint] Audit residual bare-script package-import fragility in lab/claudecode",
-    "status": "sprint",
+    "title": "Audit residual bare-script package-import fragility in lab/claudecode",
+    "status": "closed",
     "worker": "claude",
     "size": "S",
     "tags": [
@@ -31,8 +31,8 @@
     "decision_id": null,
     "created_at": "2026-06-17T04:57:50.350453+00:00",
     "updated_at": "2026-06-16T22:57:50.395035-06:00",
-    "completed_at": null,
-    "result": null,
+    "completed_at": "2026-06-17T17:36:15.222432+00:00",
+    "result": "Fixed 4 bare-swallow AR-009 violations in channel.py + cc_inbox.py (IMAP init + send; bare pass → print stderr). Removed dead legacy sys.path insert in channel.py. Added missing sys import in cc_inbox. book_learner/cc_task_listener/reading_campaign noted as not-bare-invoked (no action). code_indexer verified self-healing (no action). Commit f46908ac.",
     "role": "master",
     "priority": 0.25,
     "gate": null,
