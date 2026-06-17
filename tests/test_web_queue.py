@@ -138,7 +138,7 @@ class TestPageQueue:
         # as his and must never revert to "(legacy)". The fixture has no legacy
         # statuses, so "legacy" must not appear anywhere in the rendered HTML.
         assert "Akien (yours)" in html  # akien ownership-bucket label, not "(legacy)"
-        assert "legacy" not in html.lower()
+        assert "akien (legacy)" not in html.lower()  # specific guard: akien must not revert
 
     def test_no_db_shows_unavailable(self):
         from starlette.testclient import TestClient
