@@ -1,0 +1,1 @@
+2026-06-18T13:13:57 | D-shims-are-listeners-2026-06-18 | Shims are listeners — device shim owns IDLE loop as background thread; rack supervisor; web toggle; Granny event wakeup | tickets: T-shim-rack-supervisor, T-ccworker-shim-listener-thread, T-web-device-controls, T-granny-ticket-event-wakeup, T-consequence-shims-are-listeners
