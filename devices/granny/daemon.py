@@ -7,15 +7,15 @@ Poll the queue for sprint tickets, match each ticket against a YAML rule list
 Rule format (config/granny.yaml):
   rules:
     - when: {tags_any: [Security, ...]}
-      route_to: CC.0
+      route_to: CC.1
     - when: {role_in: [master, guru]}
-      route_to: CC.0
-    - route_to: CC.0          # no 'when' = default/fallback
+      route_to: CC.1
+    - route_to: CC.1          # no 'when' = default/fallback
 
   workers:
-    CC.0:
+    CC.1:
       dispatch: bus
-      mailbox: cc.0          # worker's IMAP mailbox — replies return to granny.0
+      mailbox: cc.1          # worker's IMAP mailbox — replies return to granny.0
       one_at_a_time: true
     DickSimnel.0:
       dispatch: set_worker
@@ -122,17 +122,17 @@ def _load_config() -> dict:
 
 
 def _default_config() -> dict:
+    # CC workers self-announce; only DickSimnel.0 is static (needs launch_cmd).
+    # Routing rules mirror config/granny.yaml — no worker_id hardcoded as fallback.
     return {
         "workers": {
-            "CC.0": {"dispatch": "bus", "mailbox": "cc.0", "one_at_a_time": True, "cascade_if_idle": True},
             "DickSimnel.0": {"dispatch": "bus", "mailbox": "dicksimnel.0"},
         },
         "rules": [
-            {"when": {"tags_any": ["Security", "Provenance", "Auth", "Brainstem", "Database"]}, "route_to": "CC.0"},
             {"when": {"role_in": ["guru"]}, "route_to": "akien"},
-            {"when": {"role_in": ["master"]}, "route_to": "CC.0"},
+            {"when": {"role_in": ["master"]}, "route_to": "CC.1"},
             {"when": {"role_in": ["builder", "creator"]}, "route_to": "DickSimnel.0"},
-            {"route_to": "CC.0"},
+            {"route_to": "CC.1"},
         ],
     }
 
@@ -423,9 +423,10 @@ def match_rule(ticket: dict, rules: list[dict], exact_match: bool = False) -> st
       {when: {role: str},       route_to: X}   — exact role match
       {route_to: X}                             — default (no 'when' = always matches)
 
-    exact_match=True: default fallback rules (no 'when') and the last-resort CC.0
-    fallback are both skipped. Returns None when no role rule matched — caller
-    logs a warning and defers the ticket.
+    exact_match=True: default fallback rules (no 'when') are skipped. Returns None
+    when no role rule matched — caller logs a warning and defers the ticket.
+    exact_match=False: a catch-all `- route_to: <worker>` rule handles the default;
+    returns None only if the rules list has no catch-all (misconfiguration).
     """
     tags = set(ticket.get("tags") or [])
     role = (ticket.get("role") or "").lower()
@@ -451,7 +452,10 @@ def match_rule(ticket: dict, rules: list[dict], exact_match: bool = False) -> st
 
     if exact_match:
         return None  # no match in exact mode — caller defers the ticket
-    return "CC.0"  # last-resort default
+    # No last-resort hardcode: if rules are configured correctly there is always
+    # a catch-all `- route_to: <worker>` entry. Returning None here lets the
+    # caller log a warning and defer rather than blindly firing to a hardcoded worker.
+    return None
 
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────
@@ -926,10 +930,14 @@ def run_once(config: dict, *, imap=None) -> None:
         status = ticket.get("status", "sprint")
         ticket_role = _infer_role(ticket)
 
-        # Escalated tickets: always route to CC.0 — never back to builder tier.
-        # DickSimnel already tried and failed; only master+ should handle them.
+        # Escalated tickets need a master-tier worker — re-run rules as if role=master
+        # so the active sprint worker handles them. Never hardcode a specific worker_id.
         if status == "escalated":
-            target = "CC.0"
+            escalated_ticket = {**ticket, "role": "master"}
+            target = match_rule(escalated_ticket, rules, exact_match=False)
+            if target is None:
+                log.warning("Granny: no route for escalated ticket %s — deferring", tid)
+                continue
         else:
             target = match_rule(ticket, rules, exact_match=exact_match)
             if target is None:

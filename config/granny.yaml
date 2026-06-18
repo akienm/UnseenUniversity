@@ -3,7 +3,7 @@
 # Edit this file; the daemon reloads it every poll cycle.
 
 # exact_match: when true, tickets with no matching role rule are deferred (logged
-# and skipped) rather than falling through to the default CC.0 catch-all.
+# and skipped) rather than falling through to the default catch-all.
 # Set to true to prevent any cross-tier dispatch.
 exact_match: false
 
@@ -18,10 +18,11 @@ workers:
     launch_cmd: "cd /home/akien/dev/src/UnseenUniversity && .venv/bin/python3 -m devices.dicksimnel"
 
 rules:
-  # HIGH-inertia tags always go to CC.0 (discuss session) — not dispatched to sprint worker
+  # HIGH-inertia tags go to the active sprint worker (CC.1) for careful handling.
+  # No hardcoded worker_id — availability check gates the actual dispatch.
   - when:
       tags_any: [Security, Provenance, Auth, Brainstem, Database]
-    route_to: CC.0
+    route_to: CC.1
 
   # Role ladder: guru=Akien, master=CC.1 (active sprint), builder=DickSimnel
   - when:
