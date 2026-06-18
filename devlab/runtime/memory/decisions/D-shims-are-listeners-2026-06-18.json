@@ -1,0 +1,18 @@
+{
+  "id": "D-shims-are-listeners-2026-06-18",
+  "type": "decision",
+  "title": "Shims are listeners \u2014 device shim owns the IDLE loop as a background thread",
+  "date": "2026-06-18",
+  "status": "open",
+  "spawned_tickets": [
+    "T-shim-rack-supervisor",
+    "T-ccworker-shim-listener-thread",
+    "T-web-device-controls",
+    "T-granny-ticket-event-wakeup",
+    "T-consequence-shims-are-listeners"
+  ],
+  "hypothesis": "After closing a device circuit breaker, the shim starts its listener as a background thread; the device self-announces to Granny within one poll cycle without shell commands.",
+  "measurement_signal": "No cc_worker_listener in ps aux; self_test() thread alive; Granny DISPATCH ack within one poll; DS.0 online in web UI. Outcome: /outcome by 2026-07-02.",
+  "goal": "none \u2014 factory of factories not yet encoded as G-xxx palace goal",
+  "created_at": "2026-06-18T19:14:10.071952+00:00"
+}

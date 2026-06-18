@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-cleanup-runtime-artifacts.20260618.191200297689",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cleanup-runtime-artifacts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T19:12:00.297689",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-regression-violations-2026-06-18"
+    ],
+    "tickets": [
+      "T-cleanup-runtime-artifacts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cleanup-runtime-artifacts",
+    "title": "[triage] Clarify purpose of ~/.unseen_university/blobs and boot-smoke-test",
+    "status": "triage",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Workspace"
+    ],
+    "description": "**Problem:** Two runtime artifact dirs exist but purpose is unclear: ~/.unseen_university/blobs (15 MB, 1 ref) and ~/.unseen_university/boot-smoke-test (8 MB, 0 refs).\n**Action:** Ask Akien: what are these for? Are they still needed? If not, mark for deletion.\n**Scope:** Clarification only.\n**Completion criteria:** Purpose documented or marked for deletion.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-audit-regression-violations-2026-06-18",
+    "created_at": "2026-06-18T19:12:00.297689+00:00",
+    "updated_at": "2026-06-18T13:12:00.372212-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.2,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-18T19:12:00.297741+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a5445029-e3b2-4773-a4d4-c2c6dfc1515d",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

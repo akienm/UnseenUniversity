@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-cleanup-audit-old-projects.20260618.191200238483",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cleanup-audit-old-projects"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T19:12:00.238483",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-audit-regression-violations-2026-06-18"
+    ],
+    "tickets": [
+      "T-cleanup-audit-old-projects"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cleanup-audit-old-projects",
+    "title": "[triage] Audit: ~/TheIgors, ~/TheIgorsProject for safe deletion after ref cleanup",
+    "status": "triage",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Workspace"
+    ],
+    "description": "**Problem:** ~/TheIgors and ~/TheIgorsProject still have codebase references (4 and 1 refs each), blocking deletion.\n**Action:** (1) Identify what code/config references these old projects. (2) Migrate refs to UU or remove. (3) Once refs cleared, mark for deletion.\n**Scope:** Analysis + ref migration (not deletion).\n**Completion criteria:** Zero codebase references remain for both directories.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-audit-regression-violations-2026-06-18",
+    "created_at": "2026-06-18T19:12:00.238483+00:00",
+    "updated_at": "2026-06-18T13:12:00.372212-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.3,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-18T19:12:00.238550+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "053719e4-74eb-4c26-a6ad-27da3521de84",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

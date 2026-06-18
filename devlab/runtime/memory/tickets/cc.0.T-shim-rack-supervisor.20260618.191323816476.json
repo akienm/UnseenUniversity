@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-shim-rack-supervisor.20260618.191323816476",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-shim-rack-supervisor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T19:13:23.816476",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-shims-are-listeners-2026-06-18"
+    ],
+    "tickets": [
+      "T-ccworker-shim-listener-thread",
+      "T-shim-rack-supervisor",
+      "T-web-device-controls"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-shim-rack-supervisor",
+    "title": "[sprint] Create rack supervisor: holds shim instances + ticks watchdog",
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Dispatch"
+    ],
+    "description": "Shims need a long-lived host process — a thread inside CCWorkerShim.start() dies with its parent. The rack supervisor is that host: it instantiates CCWorkerShim for each configured slot, calls ensure_daemon_running() every 30s, and runs under Ground Loop supervision so it restarts on crash.\n\nCreate devices/claude/rack_supervisor.py:\n- Reads slot config from env/yaml (CC.0, CC.1 enabled; DS.0 disabled by default)\n- Instantiates one CCWorkerShim per enabled slot\n- Runs a poll loop: for each shim, calls ensure_daemon_running()\n- Handles SIGTERM gracefully: calls shim.stop() for each slot, exits cleanly\n- Deposits a Ground Loop descriptor at startup: ~/.unseen_university/ground_loop/rack_supervisor.json\n\nGround Loop descriptor shape:\n  {\"id\": \"rack_supervisor\", \"start_cmd\": \"<venv python> -m devices.claude.rack_supervisor\", \"health_check\": null}\n\n**Affected files:**\ndevices/claude/rack_supervisor.py (new),\n~/.unseen_university/ground_loop/rack_supervisor.json (runtime — not committed)\n\n**Design rules:** log-every-state-change (INFO for start/stop per slot, DEBUG for watchdog ticks); BaseDevice lifecycle (if applicable — can be a plain module with _main block); no-sqlite; no TheIgors imports\n\n**Scope boundary:** Supervision + watchdog only. Does not implement the listener thread (T-ccworker-shim-listener-thread). Does not add web UI controls (T-web-device-controls). Does not touch Granny routing. Out of scope: DickSimnel shim (separate device/shim pair to be created later).\n\n**Test plan:** Unit test that all configured slots get a CCWorkerShim instance; test poll loop calls ensure_daemon_running() per slot; test SIGTERM causes stop() on all slots; test Ground Loop descriptor is written on startup.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-shims-are-listeners-2026-06-18",
+    "gate": null,
+    "priority": 0.65,
+    "status": "sprint",
+    "created_at": "2026-06-18T19:13:23.816476+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-18T19:13:23.869886+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2dd1b8b5-7649-4993-ae41-0fa48ad3ab7e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

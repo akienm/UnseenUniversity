@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-ccworker-shim-listener-thread.20260618.191323960646",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ccworker-shim-listener-thread"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T19:13:23.960646",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-shims-are-listeners-2026-06-18"
+    ],
+    "tickets": [
+      "T-ccworker-shim-listener-thread",
+      "T-shim-rack-supervisor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ccworker-shim-listener-thread",
+    "title": "[sprint] CCWorkerShim: listener as background thread, not subprocess",
+    "size": "M",
+    "tags": [
+      "Infrastructure",
+      "Dispatch"
+    ],
+    "description": "CCWorkerShim.start() currently spawns cc_worker_listener as a subprocess (subprocess.Popen). Move the listener loop into a background thread owned by the shim. This eliminates per-slot pid files and subprocess lifecycle gaps, and makes ensure_daemon_running() bidirectional (OPEN+alive → stop; CLOSED+dead → start).\n\nChanges to devices/claude/worker_shim.py:\n1. Add threading.Event self._stop_event and Thread self._thread\n2. start(): instead of Popen, instantiate CCWorkerListener(imap=make_bus_connection(), ...) and call listener.start() — which already runs its poll as a thread (see cc_worker_listener.py line 81)\n3. stop(): call listener.stop() + self._stop_event.set() + thread.join(timeout=5)\n4. ensure_daemon_running(): make bidirectional — if circuit OPEN and thread alive → call self.stop(); if circuit CLOSED and thread dead → call self.start()\n5. self_test(): check self._thread.is_alive() instead of reading a pid file\n6. Remove _read_pid_file(), _listener_pid_file() pid-file machinery (no longer needed once thread-hosted)\n\nChanges to devices/granny/cc_worker_listener.py:\n- run_forever() docstring update: this is the standalone entry point for direct invocation or testing; not called by the shim any more.\n- No logic changes — the CCWorkerListener class is already thread-safe and correct.\n\n**Affected files:**\ndevices/claude/worker_shim.py (primary — thread replace Popen, bidirectional ensure_daemon_running),\ndevices/granny/cc_worker_listener.py (docstring only),\ntests/claude/test_cc_worker_shim.py (replace subprocess mocks with thread/CCWorkerListener mocks)\n\n**Design rules:** log-every-state-change; bus/ owns IMAP (thread calls bus connection, doesn't own the transport layer); no-sqlite\n\n**Scope boundary:** CCWorkerShim only. DickSimnel shim is a separate ticket. Does not touch Granny routing, web UI, or the announce protocol. Out of scope: moving announce/withdraw into shim constructor (separate refactor).\n\n**Test plan:** Replace all `patch('subprocess.Popen')` in test_cc_worker_shim.py with thread mocks; test start() creates a live thread; test stop() joins the thread; test ensure_daemon_running() calls stop() when circuit OPEN + thread alive; test self_test() reads thread.is_alive(); 15 existing tests must all pass with new behavior.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-shims-are-listeners-2026-06-18",
+    "gate": "T-shim-rack-supervisor",
+    "priority": 0.6,
+    "status": "sprint",
+    "created_at": "2026-06-18T19:13:23.960646+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-18T19:13:23.960732+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8b0e5695-c9bf-4f6a-9802-f16978e71840",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}
