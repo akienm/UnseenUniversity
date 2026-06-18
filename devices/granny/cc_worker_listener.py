@@ -47,7 +47,13 @@ _NAG_INTERVAL_S = int(os.environ.get("CC_SHIM_NAG_INTERVAL", "600"))
 _NAG_MSG = "\r\r\rcheck messages when possible\n"
 _NAG_STATE_DIR = Path.home() / ".granny" / "nag_state"
 _NAG_TERMINAL_STATUSES = frozenset({"in_progress", "done", "closed", "cancelled", "discarded"})
-_PID_FILE = Path.home() / ".granny" / "cc_worker_listener.pid"
+# Per-slot pid file: CCWorkerShim passes CC_LISTENER_PID_FILE so CC.0 and CC.1 never collide.
+_PID_FILE = Path(
+    os.environ.get(
+        "CC_LISTENER_PID_FILE",
+        str(Path.home() / ".granny" / "cc_worker_listener.pid"),
+    )
+)
 
 
 class CCWorkerListener:
