@@ -42,6 +42,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import select as _select_module
 import signal
 import subprocess
 import sys
@@ -1060,6 +1061,71 @@ def _make_imap_if_bus_configured(config: dict):
         return None
 
 
+def _setup_listen_notify():
+    """Open a persistent autocommit connection and LISTEN for ticket inserts.
+
+    Also installs (idempotently) the trigger that fires NOTIFY on devlab.tickets
+    INSERT. Returns the connection on success, None on failure — callers fall
+    back to pure time.sleep polling when this returns None.
+    """
+    try:
+        import psycopg2  # type: ignore
+
+        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        conn.set_isolation_level(0)  # autocommit required for LISTEN
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION notify_ticket_queue_insert()
+                RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN
+                    PERFORM pg_notify('ticket_queue_insert', NEW.id);
+                    RETURN NEW;
+                END;
+                $$
+            """)
+            cur.execute("DROP TRIGGER IF EXISTS trigger_ticket_queue_insert_notify ON devlab.tickets")
+            cur.execute("""
+                CREATE TRIGGER trigger_ticket_queue_insert_notify
+                AFTER INSERT ON devlab.tickets
+                FOR EACH ROW EXECUTE FUNCTION notify_ticket_queue_insert()
+            """)
+            cur.execute("LISTEN ticket_queue_insert")
+        log.info("Granny: LISTEN/NOTIFY active (channel=ticket_queue_insert)")
+        return conn
+    except Exception as exc:
+        log.warning(
+            "Granny: LISTEN setup failed — falling back to %ds polling: %s",
+            POLL_INTERVAL_S, exc,
+        )
+        return None
+
+
+def _wait_for_notify(listen_conn, timeout: float) -> None:
+    """Wait up to `timeout` seconds for a NOTIFY, then return.
+
+    Preempts early when a notification arrives on the listen connection.
+    Falls back to time.sleep when listen_conn is None (LISTEN unavailable).
+    """
+    if listen_conn is None:
+        time.sleep(timeout)
+        return
+
+    try:
+        ready = _select_module.select([listen_conn], [], [], timeout)
+        if ready[0]:
+            listen_conn.poll()
+            if listen_conn.notifies:
+                notify = listen_conn.notifies.pop(0)
+                listen_conn.notifies.clear()
+                log.info(
+                    "Granny: NOTIFY wakeup channel=%s payload=%r — running cycle immediately",
+                    notify.channel, notify.payload,
+                )
+    except Exception as exc:
+        log.warning("Granny: notify wait failed — sleeping %ds: %s", timeout, exc)
+        time.sleep(timeout)
+
+
 def run_loop() -> None:
     log.info("Granny: rules-engine daemon starting (poll=%ds)", POLL_INTERVAL_S)
     _GRANNY_HOME.mkdir(parents=True, exist_ok=True)
@@ -1071,6 +1137,8 @@ def run_loop() -> None:
         log.info("Granny: bus dispatch enabled (reply mailbox=%s)",
                  config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT))
 
+    listen_conn = _setup_listen_notify()
+
     while True:
         cycle += 1
         config = _load_config()
@@ -1079,7 +1147,7 @@ def run_loop() -> None:
             run_once(config, imap=imap)
         except Exception as e:
             log.error("Granny: poll cycle %d error: %s", cycle, e)
-        time.sleep(POLL_INTERVAL_S)
+        _wait_for_notify(listen_conn, POLL_INTERVAL_S)
 
 
 if __name__ == "__main__":
