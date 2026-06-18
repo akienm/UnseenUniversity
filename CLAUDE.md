@@ -127,6 +127,22 @@ touch ~/.granny/available/CC.0.available.true
 
 ---
 
+## Design workflow: /sorted → /migrate-decisions
+
+**After filing decisions with `/sorted`**, decisions are written to `lab/design_docs/decisions/D-*.md` but not yet visible to `/context-load` or other tools that read the filesystem memory store. 
+
+**Next step: run `/migrate-decisions`** to project the decision markdown into `devlab/runtime/memory/decisions/` as JSON:
+
+```
+/sorted <summary>                    # File decision + tickets
+/migrate-decisions                   # Project decision to memory store
+/context-load                        # Now sees the new decision
+```
+
+The projection is fail-open (migration errors never block `/sorted`). Run it immediately after `/sorted` completes so recent decisions appear in the next `/context-load`.
+
+---
+
 ## Environment variables
 
 Two canonical env vars. Everything else derives from them.
