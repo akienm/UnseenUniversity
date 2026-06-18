@@ -1255,8 +1255,18 @@ def _read_circuit_state() -> dict:
 
 def _write_circuit_state(state: dict) -> None:
     try:
+        import tempfile as _tmpfile
         _CIRCUIT_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        _CIRCUIT_STATE_FILE.write_text(json.dumps(state, indent=2))
+        with _tmpfile.NamedTemporaryFile(
+            mode="w",
+            dir=_CIRCUIT_STATE_FILE.parent,
+            suffix=".tmp",
+            delete=False,
+            encoding="utf-8",
+        ) as f:
+            json.dump(state, f, indent=2)
+            tmp_path = f.name
+        os.replace(tmp_path, _CIRCUIT_STATE_FILE)
     except Exception as exc:
         log.warning("circuit: write failed: %s", exc)
 
@@ -1310,6 +1320,131 @@ async def _api_circuit_set(request: Request):
             log.warning("circuit: stop_cc_minions failed: %s", exc)
 
     return JSONResponse({"device": device_id, "state": new_state, "previous": old_state})
+
+
+_GRANNY_HOME = Path.home() / ".granny"
+_SHIM_SLOTS = ["CC.0", "CC.1", "DS.0"]
+
+
+def _get_slot_status(worker_id: str) -> dict:
+    """Read circuit + announced + available state for one shim-managed slot."""
+    circuit_state = _read_circuit_state()
+    circuit = circuit_state.get(worker_id, "CLOSED")
+
+    announced = (_GRANNY_HOME / "announced" / f"{worker_id}.json").exists()
+
+    avail_dir = _GRANNY_HOME / "available"
+    avail_true = (avail_dir / f"{worker_id}.available.true").exists()
+    avail_false = (avail_dir / f"{worker_id}.available.false").exists()
+    available = avail_true and not avail_false
+
+    return {
+        "worker_id": worker_id,
+        "circuit": circuit,
+        "announced": announced,
+        "available": available,
+    }
+
+
+async def _api_devices_list(request: Request):
+    """GET /api/devices — status for all shim-managed dispatch slots."""
+    slots = [_get_slot_status(wid) for wid in _SHIM_SLOTS]
+    return JSONResponse({"slots": slots, "ts": _ts()})
+
+
+async def _api_devices_toggle(request: Request):
+    """POST /api/devices/{worker_id}/toggle — flip circuit breaker OPEN↔CLOSED.
+
+    Writes circuit_state.json atomically (tmp+rename). The rack supervisor's
+    ensure_daemon_running() reconciles within one poll cycle (~30s).
+    """
+    worker_id = request.path_params.get("worker_id", "")
+    if worker_id not in _SHIM_SLOTS:
+        return JSONResponse({"error": f"unknown slot {worker_id!r}"}, status_code=404)
+
+    state = _read_circuit_state()
+    current = state.get(worker_id, "CLOSED")
+    new_state = "OPEN" if current == "CLOSED" else "CLOSED"
+    state[worker_id] = new_state
+    _write_circuit_state(state)
+
+    log.info(
+        "DEVICE_TOGGLE worker_id=%s circuit %s → %s", worker_id, current, new_state
+    )
+    try:
+        from unseen_university.channel import post_to_channel
+        kind = "CIRCUIT_OPEN" if new_state == "OPEN" else "CIRCUIT_CLOSE"
+        post_to_channel(
+            f"{kind}|device={worker_id}",
+            author="granny-weatherwax",
+            channel="shared",
+            push_ws=False,
+        )
+    except Exception as exc:
+        log.debug("device_toggle: channel post failed: %s", exc)
+
+    return JSONResponse({
+        "worker_id": worker_id,
+        "previous": current,
+        "circuit": new_state,
+        "ts": _ts(),
+    })
+
+
+_DEVICES_PAGE_BODY = """
+<h2>Dispatch Slots</h2>
+<p style="color:#666;font-size:0.82rem;margin:0 0 0.5rem">
+  Shim-managed worker slots (CC.0, CC.1, DS.0). Toggle flips the circuit breaker;
+  the rack supervisor reconciles within one poll cycle (~30s).</p>
+<div id="slots-wrap" style="color:#888">Loading...</div>
+<p style="margin-top:1rem;font-size:0.75rem;color:#555">Auto-refreshes every 5s</p>
+
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function slotCard(slot){
+  var cb=slot.circuit==='OPEN'
+    ?'<span class="err">OPEN (disabled)</span>'
+    :'<span class="ok">CLOSED (enabled)</span>';
+  var ann=slot.announced
+    ?'<span class="ok">announced</span>'
+    :'<span style="color:#555">not announced</span>';
+  var avail=slot.available
+    ?'<span class="ok">available</span>'
+    :'<span style="color:#888">unavailable</span>';
+  var btnLabel=slot.circuit==='OPEN'?'Enable':'Disable';
+  return '<div style="margin:0.4rem 0;padding:0.6rem 0.8rem;background:#141425;border:1px solid #333;border-radius:4px">'+
+    '<strong style="color:#7ec8e3">'+esc(slot.worker_id)+'</strong> '+
+    'circuit: '+cb+' &nbsp; '+ann+' &nbsp; '+avail+
+    ' <button onclick="toggleSlot(\''+esc(slot.worker_id)+'\')"+
+    ' style="float:right;font-size:0.8rem;cursor:pointer;padding:0.1rem 0.5rem">'+btnLabel+'</button>'+
+    '</div>';
+}
+async function refreshSlots(){
+  try{
+    var r=await fetch('/api/devices');
+    var data=await r.json();
+    var el=document.getElementById('slots-wrap');
+    if(el) el.innerHTML=(data.slots||[]).map(slotCard).join('');
+  }catch(e){
+    var el=document.getElementById('slots-wrap');
+    if(el) el.textContent='Error: '+e;
+  }
+}
+async function toggleSlot(workerId){
+  try{
+    await fetch('/api/devices/'+encodeURIComponent(workerId)+'/toggle',{method:'POST'});
+    refreshSlots();
+  }catch(e){alert('Toggle failed: '+e);}
+}
+refreshSlots();
+setInterval(refreshSlots,5000);
+</script>
+"""
+
+
+async def _page_devices(request: Request):
+    """GET /devices — dispatch slot on/off toggle page."""
+    return HTMLResponse(_html_wrap("Dispatch Slots", _DEVICES_PAGE_BODY))
 
 
 async def _api_granny_health(request: Request):
@@ -1428,6 +1563,7 @@ _NAV = (
     '<nav style="margin-bottom:1.5rem;font-size:0.85rem">'
     '<a href="/">Chat</a> · '
     '<a href="/rack">Rack</a> · '
+    '<a href="/devices">Devices</a> · '
     '<a href="/palace">Palace</a> · '
     '<a href="/decisions">Decisions</a> · '
     '<a href="/goals">Goals</a> · '
@@ -3322,6 +3458,10 @@ def _make_app() -> Starlette:
         # Circuit breakers
         Route("/api/circuit", _api_circuit_get),
         Route("/api/circuit/{device_id}", _api_circuit_set, methods=["POST"]),
+        # Shim-managed dispatch slots (CC.0, CC.1, DS.0)
+        Route("/api/devices", _api_devices_list),
+        Route("/api/devices/{worker_id}/toggle", _api_devices_toggle, methods=["POST"]),
+        Route("/devices", _page_devices),
         # Rack health API + page
         Route("/api/rack/health", _api_rack_health),
         Route("/rack", _page_rack),
