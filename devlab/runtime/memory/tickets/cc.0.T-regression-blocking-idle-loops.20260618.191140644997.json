@@ -21,8 +21,8 @@
   "body": {
     "id": "T-regression-blocking-idle-loops",
     "title": "[sprint] Fix: IDLE loops must never block (sleep, join, subprocess.wait)",
-    "status": "sprint",
-    "worker": null,
+    "status": "escalated",
+    "worker": "cc.1",
     "size": "L",
     "tags": [
       "Regression",

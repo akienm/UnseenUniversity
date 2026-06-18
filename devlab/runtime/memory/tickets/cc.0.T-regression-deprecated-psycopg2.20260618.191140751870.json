@@ -22,7 +22,7 @@
     "id": "T-regression-deprecated-psycopg2",
     "title": "[sprint] Fix: Use memory_get MCP instead of psycopg2.connect()",
     "status": "sprint",
-    "worker": null,
+    "worker": "cc.1",
     "size": "S",
     "tags": [
       "Regression",

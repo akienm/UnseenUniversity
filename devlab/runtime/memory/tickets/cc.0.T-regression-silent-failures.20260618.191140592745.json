@@ -21,8 +21,8 @@
   "body": {
     "id": "T-regression-silent-failures",
     "title": "[sprint] Fix: Remove bare except clauses, log all errors",
-    "status": "sprint",
-    "worker": null,
+    "status": "escalated",
+    "worker": "cc.1",
     "size": "M",
     "tags": [
       "Regression",

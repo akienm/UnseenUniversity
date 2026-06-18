@@ -21,8 +21,8 @@
   "body": {
     "id": "T-regression-device-boundaries",
     "title": "[sprint] Fix: Device boundaries — no cross-interface imports",
-    "status": "sprint",
-    "worker": null,
+    "status": "escalated",
+    "worker": "cc.1",
     "size": "M",
     "tags": [
       "Regression",

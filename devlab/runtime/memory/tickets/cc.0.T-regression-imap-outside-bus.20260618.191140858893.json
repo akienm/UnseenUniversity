@@ -22,7 +22,7 @@
     "id": "T-regression-imap-outside-bus",
     "title": "[sprint] Fix: IMAPServer access must be isolated to bus/, not spread across devices",
     "status": "sprint",
-    "worker": null,
+    "worker": "cc.1",
     "size": "M",
     "tags": [
       "Regression",

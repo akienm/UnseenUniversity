@@ -21,8 +21,8 @@
   "body": {
     "id": "T-regression-device-inheritance",
     "title": "[sprint] Fix: Devices not inheriting BaseDevice/BaseShim",
-    "status": "sprint",
-    "worker": null,
+    "status": "escalated",
+    "worker": "cc.1",
     "size": "M",
     "tags": [
       "Regression",

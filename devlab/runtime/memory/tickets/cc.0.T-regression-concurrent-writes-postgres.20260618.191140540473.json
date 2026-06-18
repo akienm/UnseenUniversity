@@ -21,8 +21,8 @@
   "body": {
     "id": "T-regression-concurrent-writes-postgres",
     "title": "[sprint] Fix: Concurrent writes must go through Postgres, not direct file writes",
-    "status": "sprint",
-    "worker": null,
+    "status": "escalated",
+    "worker": "cc.1",
     "size": "M",
     "tags": [
       "Regression",

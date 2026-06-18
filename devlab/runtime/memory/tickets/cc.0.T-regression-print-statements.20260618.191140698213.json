@@ -22,7 +22,7 @@
     "id": "T-regression-print-statements",
     "title": "[sprint] Fix: Remove print() from devices/, use self.log.*",
     "status": "sprint",
-    "worker": null,
+    "worker": "cc.1",
     "size": "S",
     "tags": [
       "Regression",

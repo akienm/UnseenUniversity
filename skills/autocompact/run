@@ -1,0 +1,25 @@
+#!/bin/bash
+# /autocompact — Fire compact (script only, all housekeeping moved to /savestate)
+# Emit preserve block, then fire self-compact via tmux send-keys.
+
+IGOR_HOME="${IGOR_HOME:-$HOME/.unseen_university}"
+UU_ROOT="${UU_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+CC_WORKFLOW_TOOLS="${CC_WORKFLOW_TOOLS:-${UU_ROOT}/devlab/claudecode}"
+
+SLATE_DATE=$(date +%Y%m%d)
+
+# Preserve string (fixed — no per-session customization)
+cat << 'PRESERVE'
+
+── COMPACT PRESERVE STRING (in case the auto-fire below failed) ──
+preserve: Read today's slate: ${IGOR_HOME:-$HOME/.unseen_university}/claudecode/${SLATE_DATE}.slate.txt. In-flight and Next: see slate.
+───────────────────────────────────────────────────────────────
+
+PRESERVE
+
+# Fire self-compact via tmux (nohup + & so it runs outside this tool's blocking context)
+nohup "${CC_WORKFLOW_TOOLS}/uucompactclaude" &
+
+echo ""
+echo "✓ Autocompact fired (PID $!). Compact will proceed via tmux."
+echo "✓ After compaction, run: /context-load"

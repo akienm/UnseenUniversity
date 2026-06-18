@@ -23,7 +23,7 @@
     "id": "T-cleanup-investigate-cert-walks",
     "title": "[sprint] Investigate: ~/TheIgors-cert-walks — safe to delete?",
     "status": "sprint",
-    "worker": null,
+    "worker": "cc.1",
     "size": "S",
     "tags": [
       "Cleanup",
