@@ -2,3 +2,5 @@
 2026-06-17T17:32:21 | D-token-tracking-per-ticket-2026-06-17 | Token tracking per ticket — routing guard + efficiency metric | tickets: T-ticket-token-capture, T-token-routing-guard, T-token-efficiency-metric
 2026-06-17T17:32:21 | D-quality-3layer-assessment-2026-06-17 | 3-layer output quality assessment | tickets: T-quality-judge-at-close, T-quality-classifier-output-scoring, T-quality-disagreement-signal
 2026-06-17T17:32:21 | D-facia-index-tree-2026-06-17 | Facia index tree + tree manager | tickets: T-facia-index-tree, T-tree-manager-object, T-librarian-facia-second-pass
+2026-06-18T09:42:03 | D-leading-digest-pattern-2026-06-18 | outcome/as-built summary at head of terminal artifacts | tickets: T-ticket-outcome-header, T-decision-asbuilt-summary, T-consequence-leading-digest
+2026-06-18T09:42:03 | D-slate-as-narrative-2026-06-18 | slate becomes JSON; narrative section = small read-first summary | tickets: T-slate-narrative-log, T-consequence-slate-as-narrative

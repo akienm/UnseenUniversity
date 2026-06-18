@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-ticket-outcome-header.20260618.153625561282",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-outcome-header"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T15:36:25.561282",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-leading-digest-pattern-2026-06-18"
+    ],
+    "tickets": [
+      "T-ticket-outcome-header"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-outcome-header",
+    "title": "[sprint] Outcome summary at top of closed tickets (populate result, render first)",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Observability"
+    ],
+    "description": "**Problem:** A ticket's outcome — what actually got built, what diverged, the gotcha — is invisible at read time. The `result` field exists but sits at the bottom and is usually null, so a fresh reader sees intent (description) not reality. This is the stale-first-read class of bug (cf. the Hubert/Auditor mislabel that propagated from a ticket head).\n\n**Proposed shape:** On ticket close, populate `result` with a 1-3 sentence outcome summary and render it at the TOP of the rendered ticket, above the description, clearly labeled (e.g. `## Outcome (as-closed)`). The head digest is written at the done-moment; a closed ticket is terminal, so the digest stays true.\n\n**Affected files:** devlab/claudecode/cc_queue.py (close path + ticket renderer).\n**Design rules:** Log the close state change + result write (CLAUDE.md structural rules). Leading digest is safe only on terminal artifacts — a closed ticket qualifies.\n**Scope boundary:** IN — populate result on close, render at top. OUT — backfilling result on already-closed tickets; schema changes beyond using the existing result field.\n**Completion criteria:** Closing a ticket with a result string renders that result as a labeled head section above the description in `cc_queue.py show`; a ticket closed without a result is flagged. Verified by closing a test ticket and inspecting `show` output.\n**Test plan:** Close a ticket with a result string; re-render via `show`; the outcome appears at the top and matches the body.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-leading-digest-pattern-2026-06-18",
+    "created_at": "2026-06-18T15:36:25.561282+00:00",
+    "updated_at": "2026-06-18T09:36:25.821541-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that a fresh reader of any closed ticket sees its true outcome first, without reading the body.",
+    "created_by": null,
+    "scraps_validated": "2026-06-18T15:36:25.618176+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "26a1c0f8-1e0d-4733-9a89-d0651b8861ab",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

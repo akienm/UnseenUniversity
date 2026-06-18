@@ -157,3 +157,7 @@ the load. (Decompose under workstream 1 once the contract table exists.)
 - OUT (this pass): executing the contract table, executing the state inventory,
   building the rewind-cadence driver. Those are gated on the precondition and on
   the contract table existing first.
+
+
+## Deferred thread: rewind-as-step-reset wiring (added 2026-06-18)
+The rewind-per-step mechanism (use /rewind as the per-step context reset instead of /compact) is deferred here, NOT ticketed. It is blocked on defining **what is a step boundary** — an automatic boundary detector. The slate-narrative half shipped separately as D-slate-as-narrative-2026-06-18 (it rides savestate's already-defined boundaries and needs no auto-detector). Open this thread when the step-boundary definition is settled.

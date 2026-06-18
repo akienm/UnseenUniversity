@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-consequence-slate-as-narrative.20260618.153630849139",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-slate-as-narrative"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T15:36:30.849139",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-slate-as-narrative-2026-06-18"
+    ],
+    "tickets": [
+      "T-consequence-slate-as-narrative",
+      "T-slate-narrative-log"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-slate-as-narrative",
+    "title": "[sprint] Consequence check: slate as structured JSON with narrative summary section",
+    "status": "sprint",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** The slate moves from flat .txt to structured JSON with sections; `narrative` is a small append-only read-first summary; savestate appends one narrative entry per existing boundary.\n**Predicted unintended effects:** (1) Reader breakage — every current slate consumer assumed flat .txt and line-grep (/sorted scope regex, /autocompact preserve string); a missed reader silently fails or reads stale .txt. (2) Append-only narrative growth — unbounded entries make the JSON large, taxing the very context-reload this was meant to cheapen; the narrative-section must stay SMALL or reload cost regresses. (3) Narrative entries may duplicate the in-flight section — redundancy/noise, ironic given the anti-noise goal. (4) Fresh cutover orphans today's .txt slate mid-session — a resume could read the wrong file.\n**Signals to watch:** any slate reader erroring or reading stale data; narrative-section size growth (entries/day, bytes); duplicate narrative vs in-flight content; a resume reading .txt after cutover.\n**Gate condition:** Check when T-slate-narrative-log ships, or when a slate reader misbehaves.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Completion criteria:** Each predicted effect annotated occurred/clear/partial; confirm every known slate reader handles JSON; ticket closed with that annotation.\n**Test plan:** no tests — observation ticket.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-slate-as-narrative-2026-06-18",
+    "created_at": "2026-06-18T15:36:30.849139+00:00",
+    "updated_at": "2026-06-18T09:36:30.918009-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.3,
+    "gate": "T-slate-narrative-log",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": "I intend that the slate-JSON migration's reader-breakage and growth risks are observed before the format is trusted.",
+    "created_by": null,
+    "scraps_validated": "2026-06-18T15:36:30.849191+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b8d6014d-e205-4695-8e86-d88444807d7f",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}
