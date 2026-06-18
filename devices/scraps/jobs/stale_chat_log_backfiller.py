@@ -1,14 +1,17 @@
-from pathlib import Path
 """
 StaleChatLogBackfiller — keep today's CC chat mirror fresh under ~/.unseen_university/logs/CC.0/.
 
 Runs cc_log_stop_hook.py every 5min — scans all project dirs so ADC sessions are included.
 Historical files are not rebuilt here; that's a /day-close concern.
 
-This module is a standalone maintenance job for the Claude device and should not be part of Igor's cognition.
+This is a Scraps maintenance job (non-inference). It is scheduled by the Scraps
+job-runner daemon (devices/scraps/daemon.py), which the Ground Loop supervises —
+so it runs independently of whether Igor's cognition is up. Relocated out of
+Igor's push_sources by T-stale-chat-backfiller-relocate (for real this time).
 """
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 
@@ -42,25 +45,22 @@ class StaleChatLogBackfiller:
 
         try:
             import subprocess
-            from devices.igor.paths import paths
+
+            from unseen_university._uu_root import uu_root
 
             # Use cc_log_stop_hook.py — scans all project dirs (not just TheIgors),
             # so ADC-project CC sessions are included. export_chat.py only scanned
             # the TheIgors project and smashed the log when ADC became primary.
+            root = Path(uu_root())
             result = subprocess.run(
                 [
                     "python3",
-                    str(
-                        paths().source_root
-                        / "devlab"
-                        / "claudecode"
-                        / "cc_log_stop_hook.py"
-                    ),
+                    str(root / "devlab" / "claudecode" / "cc_log_stop_hook.py"),
                 ],
                 capture_output=True,
                 text=True,
                 timeout=60,
-                cwd=str(Path.home() / "dev/src/UnseenUniversity"),
+                cwd=str(root),
             )
 
             if result.returncode == 0:
@@ -80,5 +80,4 @@ def main():
 
 
 if __name__ == "__main__":
-    from pathlib import Path
     main()

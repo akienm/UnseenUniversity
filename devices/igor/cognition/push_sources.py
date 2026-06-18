@@ -2916,7 +2916,6 @@ def run_background_sources(cortex) -> int:
         proprioception_source,
         capability_awareness_source,
         self_test_source,
-        stale_chat_log_backfiller,
         scheduler_source,
         thread_coherence_source,
         consolidation_replay,

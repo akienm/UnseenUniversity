@@ -1,0 +1,33 @@
+# Ground Loop plugin: scraps (daemon mode)
+#
+# Supervises the Scraps job-runner daemon (devices/scraps/daemon.py), which ticks
+# the registered Scraps maintenance jobs — currently the StaleChatLogBackfiller
+# that keeps ~/.unseen_university/logs/CC.0/<today>.md fresh every 5 min.
+#
+# This is the "one daemon loop" wiring: the Ground Loop is the single supervised
+# loop; Scraps runs under it; Igor up/down no longer affects the chat-log mirror.
+#
+# To disable auto-start: touch ~/.unseen_university/flags/scraps.breaker
+# To re-enable:          rm  ~/.unseen_university/flags/scraps.breaker
+
+name: scraps
+mode: daemon
+
+# Command to spawn the long-running Scraps job-runner.
+# MUST use the venv interpreter — the daemon imports the package and (via the
+# backfiller) shells cc_log_stop_hook.py; a bare system python3 risks a silent
+# ImportError since plugin_daemon spawns with stderr to a log file only.
+start_cmd:
+  - /home/akien/dev/src/UnseenUniversity/.venv/bin/python3
+  - -m
+  - devices.scraps.daemon
+
+# Ensure the package resolves regardless of the daemon's cwd.
+start_env:
+  PYTHONPATH: /home/akien/dev/src/UnseenUniversity
+
+# Poll/restart cadence for the supervisor's liveness check (PluginDaemon default 30s).
+poll_interval: 30
+
+# on_failure hook — null means log only; "cc_recovery" invokes CC fixer.
+on_failure: null
