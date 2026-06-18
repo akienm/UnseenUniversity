@@ -8,33 +8,31 @@
 exact_match: false
 
 workers:
-  CC.0:
-    dispatch: bus
-    mailbox: cc.0
-    one_at_a_time: true        # defer if a claude ticket is already in_progress
-    launch_cmd: null           # CC is launched manually / via tmux
-    cascade_if_idle: true      # absorb creator/builder tickets when master queue empty
+  # CC workers self-announce via ~/.granny/announced/<worker_id>.json when
+  # cc_worker_listener starts. No static entries needed — they'd become debris.
+  # DickSimnel.0 stays here because Granny needs launch_cmd to auto-start it.
   DickSimnel.0:
     dispatch: bus
     mailbox: dicksimnel.0
+    worker_name: dicksimnel
     launch_cmd: "cd /home/akien/dev/src/UnseenUniversity && .venv/bin/python3 -m devices.dicksimnel"
 
 rules:
-  # HIGH-inertia tags always go to CC — no exceptions, no silent routing
+  # HIGH-inertia tags always go to CC.0 (discuss session) — not dispatched to sprint worker
   - when:
       tags_any: [Security, Provenance, Auth, Brainstem, Database]
     route_to: CC.0
 
-  # Role ladder: guru=Akien, master=CC.0, builder=DickSimnel
+  # Role ladder: guru=Akien, master=CC.1 (active sprint), builder=DickSimnel
   - when:
       role_in: [guru]
     route_to: akien       # post NEEDS_AKIEN channel nudge, set worker=akien, do not dispatch
   - when:
       role_in: [master]
-    route_to: CC.0
+    route_to: CC.1
   - when:
       role_in: [builder, creator]
     route_to: DickSimnel.0
 
-  # Default fallback — no role = conservative, goes to CC
-  - route_to: CC.0
+  # Default fallback — no role = conservative, goes to CC.1 (sprint worker)
+  - route_to: CC.1

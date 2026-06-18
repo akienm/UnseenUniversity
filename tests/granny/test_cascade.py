@@ -121,11 +121,13 @@ def _run_once_with_mocks(tickets: list[dict], cascade: bool = True):
     dispatched = []
     mock_imap = MagicMock()
 
-    def fake_dispatch_bus(ticket, imap_, mailbox, granny_mailbox):
+    def fake_dispatch_bus(ticket, imap_, mailbox, granny_mailbox, *, worker_name=None):
         dispatched.append((ticket["id"], mailbox))
         return True
 
     with patch("devices.granny.daemon._sprint_tickets", return_value=tickets), \
+         patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+         patch("devices.granny.daemon._load_announced_workers", return_value={}), \
          patch("devices.granny.availability.is_available", return_value=True), \
          patch("devices.granny.daemon._cc0_busy", return_value=False), \
          patch("devices.granny.daemon._dispatch_bus", side_effect=fake_dispatch_bus), \
@@ -188,6 +190,8 @@ def test_cascade_worker_field_updated():
         return True
 
     with patch("devices.granny.daemon._sprint_tickets", return_value=tickets), \
+         patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+         patch("devices.granny.daemon._load_announced_workers", return_value={}), \
          patch("devices.granny.availability.is_available", return_value=True), \
          patch("devices.granny.daemon._cc0_busy", return_value=False), \
          patch("devices.granny.daemon._dispatch_bus", return_value=True), \

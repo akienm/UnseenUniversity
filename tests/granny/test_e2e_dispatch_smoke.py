@@ -74,6 +74,8 @@ _CONFIG = {
 
 _PATCHES = dict(
     sprint_tickets="devices.granny.daemon._sprint_tickets",
+    cleared_gated="devices.granny.daemon._cleared_gated_tickets",
+    load_announced="devices.granny.daemon._load_announced_workers",
     setstatus="devices.granny.daemon._setstatus_direct",
     cc0_busy="devices.granny.daemon._cc0_busy",
     escalate="devices.granny.daemon._escalate_stale_dispatched",
@@ -92,6 +94,8 @@ def _run(imap, tickets, replies=None, available=True):
 
     with (
         patch(_PATCHES["sprint_tickets"], return_value=tickets),
+        patch(_PATCHES["cleared_gated"], return_value=[]),
+        patch(_PATCHES["load_announced"], return_value={}),
         patch(_PATCHES["setstatus"], side_effect=lambda *a, **kw: transitions.append(a[:2]) or True),
         patch(_PATCHES["cc0_busy"], return_value=False),
         patch(_PATCHES["escalate"]),

@@ -69,6 +69,46 @@ _CIRCUIT_STATE_FILE = Path(
 # ── Config ────────────────────────────────────────────────────────────────────
 
 
+def _load_announced_workers() -> dict:
+    """Scan ~/.granny/announced/*.json and return a workers dict.
+
+    Reaps stale files from crashed workers via pid liveness check.
+    Returns a dict in the same shape as config['workers'] so callers can
+    merge: workers_cfg = {**static_cfg, **_load_announced_workers()}.
+    Announced entries take precedence over static config — the announce
+    file is the canonical source for self-announcing workers.
+    """
+    from devices.granny.announce_worker import is_alive
+
+    announce_dir = Path.home() / ".granny" / "announced"
+    if not announce_dir.exists():
+        return {}
+
+    workers: dict = {}
+    for path in sorted(announce_dir.glob("*.json")):
+        try:
+            rec = json.loads(path.read_text())
+            pid = rec.get("pid", 0)
+            if pid and not is_alive(pid):
+                log.info(
+                    "Granny: reaping stale announce %s (pid=%d dead)", path.name, pid
+                )
+                path.unlink(missing_ok=True)
+                continue
+            worker_id = rec["worker_id"]
+            workers[worker_id] = {
+                "dispatch": rec.get("dispatch", "bus"),
+                "mailbox": rec.get("mailbox", ""),
+                "worker_name": rec.get("worker_name", worker_id.lower()),
+                "one_at_a_time": rec.get("one_at_a_time", False),
+                "cascade_if_idle": rec.get("cascade_if_idle", False),
+            }
+        except Exception as exc:
+            log.warning("Granny: failed to load announcement %s: %s", path.name, exc)
+
+    return workers
+
+
 def _load_config() -> dict:
     for path in (_CONFIG_PATH, Path.home() / ".granny" / "granny.yaml"):
         if path.exists():
@@ -336,30 +376,38 @@ def _cleared_gated_tickets() -> list[dict]:
     return cleared
 
 
-def _cc0_busy() -> bool:
-    """True when a worker=claude ticket is in dispatched, acked, or in_progress.
+def _worker_busy(worker_names: list[str]) -> bool:
+    """True when any named worker has a ticket in dispatched, acked, or in_progress.
 
     Includes dispatched/acked so that bus-dispatched tickets prevent a second
-    dispatch before the handshake completes. Without this, the 60s poll would
-    fire a second ticket while the first is still in the ack window.
+    dispatch before the handshake completes.
     """
+    if not worker_names:
+        return False
     try:
         import psycopg2
 
         conn = psycopg2.connect(_DB_URL, connect_timeout=5)
         with conn.cursor() as cur:
+            placeholders = ",".join(["%s"] * len(worker_names))
             cur.execute(
-                """SELECT 1 FROM clan.memories
+                f"""SELECT 1 FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
                    AND metadata->>'status' IN ('dispatched', 'acked', 'in_progress')
-                   AND metadata->>'worker' IN ('claude', 'cc')
-                   LIMIT 1"""
+                   AND metadata->>'worker' IN ({placeholders})
+                   LIMIT 1""",
+                worker_names,
             )
             busy = cur.fetchone() is not None
         conn.close()
         return busy
     except Exception:
-        return False  # fail open — don't block CC when DB is unreachable
+        return False  # fail open — don't block workers when DB is unreachable
+
+
+def _cc0_busy() -> bool:
+    """True when CC.0 (worker=claude/cc) has a ticket in dispatched/acked/in_progress."""
+    return _worker_busy(["claude", "cc"])
 
 
 # ── Rules engine ──────────────────────────────────────────────────────────────
@@ -446,8 +494,18 @@ _GRANNY_MAILBOX_DEFAULT = "granny.0"
 _last_launch_attempt: dict[str, float] = {}
 
 
-def _dispatch_bus(ticket: dict, imap, worker_mailbox: str, granny_mailbox: str) -> bool:
+def _dispatch_bus(
+    ticket: dict,
+    imap,
+    worker_mailbox: str,
+    granny_mailbox: str,
+    *,
+    worker_name: str | None = None,
+) -> bool:
     """Send a dispatch envelope to the worker's bus mailbox and mark dispatched.
+
+    worker_name — when provided, also updates the ticket's worker field so that
+    per-worker busy checks (_worker_busy) work across poll cycles.
 
     The handshake is async — Granny does not wait for ack here. Replies arrive
     in granny_mailbox and are processed by _process_handshake_replies on the
@@ -470,10 +528,10 @@ def _dispatch_bus(ticket: dict, imap, worker_mailbox: str, granny_mailbox: str) 
         log.warning("Granny: bus send failed for %s → %s: %s", tid, worker_mailbox, exc)
         return False
 
-    _setstatus_direct(tid, "dispatched")
+    _setstatus_direct(tid, "dispatched", worker=worker_name)
     log.info(
-        "Granny: dispatched %s → %s via bus (granny_mailbox=%s)",
-        tid, worker_mailbox, granny_mailbox,
+        "Granny: dispatched %s → %s via bus (granny_mailbox=%s worker=%s)",
+        tid, worker_mailbox, granny_mailbox, worker_name,
     )
     return True
 
@@ -560,12 +618,18 @@ def _escalate_stale_dispatched() -> int:
         log.warning("Granny: stale-dispatched query failed: %s", exc)
         return 0
 
-    # Map worker name → Granny worker_id for cooldown lookup
-    _WORKER_NAME_TO_ID = {
-        "dicksimnel": "DickSimnel.0",
-        "claude": "CC.0",
-        "cc": "CC.0",
-    }
+    # Build worker name → worker_id map dynamically from announcements + static defaults.
+    _WORKER_NAME_TO_ID: dict[str, str] = {"dicksimnel": "DickSimnel.0", "claude": "CC.0", "cc": "CC.0"}
+    announced_dir = Path.home() / ".granny" / "announced"
+    if announced_dir.exists():
+        for _p in announced_dir.glob("*.json"):
+            try:
+                _r = json.loads(_p.read_text())
+                wname = _r.get("worker_name", "")
+                if wname:
+                    _WORKER_NAME_TO_ID[wname] = _r["worker_id"]
+            except Exception:
+                pass
 
     count = 0
     for tid, worker_name in stale:
@@ -594,25 +658,42 @@ _STALE_INPROGRESS_TIMEOUT_S = int(os.environ.get("GRANNY_STALE_INPROGRESS_TIMEOU
 
 
 def _reset_stale_inprogress() -> int:
-    """Reset claude/cc tickets stuck in 'in_progress' past _STALE_INPROGRESS_TIMEOUT_S.
+    """Reset CC-worker tickets stuck in 'in_progress' past _STALE_INPROGRESS_TIMEOUT_S.
+
+    Covers CC.0 defaults ('claude', 'cc') plus any worker_name from announced workers
+    so CC.1 and future CC workers are included automatically.
 
     Uses cc_queue.py reset --timeout so each reset increments a counter that
     automatically holds the ticket after 3 resets, capping retry-loop token spend.
     Returns the number of tickets reset.
     """
+    # Collect CC worker names from static defaults + announcements.
+    cc_worker_names = ["claude", "cc"]
+    _ann_dir = Path.home() / ".granny" / "announced"
+    if _ann_dir.exists():
+        for _p in _ann_dir.glob("*.json"):
+            try:
+                _r = json.loads(_p.read_text())
+                wname = _r.get("worker_name", "")
+                if wname and wname not in cc_worker_names:
+                    cc_worker_names.append(wname)
+            except Exception:
+                pass
+
     try:
         import psycopg2
         import psycopg2.extras
 
         conn = psycopg2.connect(_DB_URL, connect_timeout=5)
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            placeholders = ",".join(["%s"] * len(cc_worker_names))
             cur.execute(
-                """SELECT metadata->>'id' AS tid FROM clan.memories
+                f"""SELECT metadata->>'id' AS tid FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
                    AND metadata->>'status' = 'in_progress'
-                   AND metadata->>'worker' IN ('claude', 'cc')
+                   AND metadata->>'worker' IN ({placeholders})
                    AND updated_at::timestamptz < now() - interval '%s seconds'""",
-                (_STALE_INPROGRESS_TIMEOUT_S,),
+                (*cc_worker_names, _STALE_INPROGRESS_TIMEOUT_S),
             )
             stale = [row["tid"] for row in cur.fetchall() if row["tid"]]
         conn.close()
@@ -787,7 +868,9 @@ def run_once(config: dict, *, imap=None) -> None:
     from devices.granny.availability import check_and_expire_cooldowns, is_available
 
     granny_mailbox = config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT)
-    workers_cfg = config.get("workers", {})
+    # Merge static config + self-announced workers; announced workers take precedence.
+    # This replaces the static 'workers:' YAML block for self-announcing workers.
+    workers_cfg = {**config.get("workers", {}), **_load_announced_workers()}
 
     # Expire any builder cooldowns before making dispatch decisions.
     check_and_expire_cooldowns(list(workers_cfg.keys()))
@@ -893,8 +976,17 @@ def run_once(config: dict, *, imap=None) -> None:
             except Exception as exc:
                 log.debug("Granny: circuit check failed (non-fatal): %s", exc)
 
+            # Per-worker busy check: route through _cc0_busy for CC.0 worker names
+            # so that existing mocks and observability stay consistent. Non-CC
+            # workers (e.g. CC.1 with worker_name="cc.1") use the generic path.
+            _wname = wcfg.get("worker_name", "")
+            _is_busy = (
+                _cc0_busy()
+                if not _wname or _wname in {"claude", "cc"}
+                else _worker_busy([_wname])
+            )
             if wcfg.get("one_at_a_time") and (
-                target in dispatched_this_cycle or _cc0_busy()
+                target in dispatched_this_cycle or _is_busy
             ):
                 log.debug("Granny: %s one-at-a-time — deferring %s", target, tid)
                 continue
@@ -913,6 +1005,7 @@ def run_once(config: dict, *, imap=None) -> None:
                     imap,
                     wcfg.get("mailbox", f"{target.lower().replace('.', '-')}"),
                     granny_mailbox,
+                    worker_name=wcfg.get("worker_name"),
                 )
             else:
                 log.warning(
@@ -923,11 +1016,15 @@ def run_once(config: dict, *, imap=None) -> None:
 
         if ok:
             dispatched_this_cycle.add(target)
-            # Cascade: update the ticket's worker field so _cc0_busy() detects it
+            # Cascade: update the ticket's worker field — prefer workers_cfg worker_name,
+            # fall back to the legacy _WORKER_ID_TO_NAME dict.
             if is_cascade:
-                worker_name = _WORKER_ID_TO_NAME.get(target)
-                if worker_name:
-                    _setstatus_direct(tid, "dispatched", worker=worker_name)
+                _cascade_wname = (
+                    workers_cfg.get(target, {}).get("worker_name")
+                    or _WORKER_ID_TO_NAME.get(target)
+                )
+                if _cascade_wname:
+                    _setstatus_direct(tid, "dispatched", worker=_cascade_wname)
             _post_channel(
                 f"GRANNY_DISPATCH|ticket={tid}|worker={target}"
                 f"|title={ticket.get('title','?')[:60]}"
@@ -941,7 +1038,7 @@ def run_once(config: dict, *, imap=None) -> None:
 
 def _make_imap_if_bus_configured(config: dict):
     """Return a connected IMAPServer when any worker uses dispatch=bus; else None."""
-    workers_cfg = config.get("workers", {})
+    workers_cfg = {**config.get("workers", {}), **_load_announced_workers()}
     needs_bus = any(
         v.get("dispatch") == "bus" for v in workers_cfg.values() if isinstance(v, dict)
     )

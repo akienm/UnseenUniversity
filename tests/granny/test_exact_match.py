@@ -127,6 +127,9 @@ def test_run_once_exact_match_defers_unmatched_ticket(caplog):
     }
 
     with patch("devices.granny.daemon._sprint_tickets", return_value=[apprentice_ticket]), \
+         patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+         patch("devices.granny.daemon._load_announced_workers", return_value={}), \
+         patch("devices.granny.daemon._process_handshake_replies", return_value=0), \
          patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
          patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
          patch("devices.granny.daemon._post_channel"), \
@@ -155,6 +158,9 @@ def test_run_once_exact_match_false_dispatches_unmatched_to_cc():
     }
 
     with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+         patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+         patch("devices.granny.daemon._load_announced_workers", return_value={}), \
+         patch("devices.granny.daemon._process_handshake_replies", return_value=0), \
          patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
          patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
          patch("devices.granny.daemon._post_channel"), \

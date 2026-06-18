@@ -64,4 +64,4 @@ budget_limits:
   overall_limit_usd: null
 
 # CC concurrency mode: cc0_only, cc0_plus_cc1, max_n
-cc_concurrency_mode: cc0_only
+cc_concurrency_mode: cc0_plus_cc1

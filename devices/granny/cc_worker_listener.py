@@ -310,11 +310,21 @@ def _make_imap():
     return make_bus_connection()
 
 
+def _mailbox_to_worker_id(mailbox: str) -> str:
+    """Derive Granny worker_id from mailbox name. cc.0 → CC.0, cc.1 → CC.1."""
+    parts = mailbox.split(".")
+    if len(parts) == 2:
+        return f"{parts[0].upper()}.{parts[1]}"
+    return mailbox.upper()
+
+
 def run_forever(
     cc_mailbox: str = _CC_MAILBOX_DEFAULT,
     granny_mailbox: str = _GRANNY_MAILBOX_DEFAULT,
     tmux_session: str = _CC_SESSION_DEFAULT,
 ) -> None:
+    from devices.granny.announce_worker import announce, withdraw
+
     imap = _make_imap()
     listener = CCWorkerListener(
         imap=imap,
@@ -323,9 +333,13 @@ def run_forever(
         tmux_session=tmux_session,
     )
 
+    worker_id = _mailbox_to_worker_id(cc_mailbox)
+    is_cc0 = cc_mailbox == "cc.0"
+
     def _handle_sig(sig, _frame):
         log.info("CCWorkerListener: signal %s — stopping", sig)
         listener.stop()
+        withdraw(worker_id)
         _PID_FILE.unlink(missing_ok=True)
         sys.exit(0)
 
@@ -335,14 +349,27 @@ def run_forever(
     _PID_FILE.parent.mkdir(parents=True, exist_ok=True)
     _PID_FILE.write_text(str(os.getpid()))
 
+    # Announce to Granny's dynamic dispatch registry.
+    announce(
+        worker_id,
+        mailbox=cc_mailbox,
+        worker_name="claude" if is_cc0 else cc_mailbox,  # "claude" matches legacy ticket worker field
+        one_at_a_time=True,
+        cascade_if_idle=is_cc0,  # only CC.0 cascade-absorbs builder tickets
+    )
+
     listener.start()
-    log.info("CCWorkerListener: running (pid=%d, mailbox=%s)", os.getpid(), cc_mailbox)
+    log.info(
+        "CCWorkerListener: running (pid=%d, worker=%s, mailbox=%s)",
+        os.getpid(), worker_id, cc_mailbox,
+    )
 
     try:
         while True:
             time.sleep(60)
     finally:
         listener.stop()
+        withdraw(worker_id)
         _PID_FILE.unlink(missing_ok=True)
 
 
