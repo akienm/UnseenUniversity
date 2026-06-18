@@ -84,7 +84,9 @@ class CCWorkerShim(BaseShim):
     def _default_tmux_session(self) -> str:
         import socket
         host = socket.gethostname().split(".")[0].lower()
-        return f"{host}.{self._mailbox}"
+        # tmux converts dots to underscores in session names — match convention.
+        mailbox_safe = self._mailbox.replace(".", "_")
+        return f"{host}_{mailbox_safe}"
 
     @property
     def device_id(self) -> str:
