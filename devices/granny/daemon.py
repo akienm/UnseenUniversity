@@ -174,13 +174,16 @@ def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
 
 
 def _sprint_tickets() -> list[dict]:
-    """Load ungated sprint tickets directly from Postgres. Returns [] on error."""
+    """Load ungated sprint tickets from clan.memories and devlab.tickets. Returns [] on error."""
     try:
         import psycopg2
         import psycopg2.extras
 
         conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        tickets: dict[str, dict] = {}
+
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # clan.memories — legacy tickets (metadata JSONB, gate inside metadata)
             cur.execute(
                 """SELECT metadata FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
@@ -189,9 +192,40 @@ def _sprint_tickets() -> list[dict]:
                    ORDER BY (metadata->>'priority')::float DESC NULLS LAST
                    LIMIT 50"""
             )
-            rows = cur.fetchall()
+            for row in cur.fetchall():
+                t = dict(row["metadata"])
+                if t.get("id"):
+                    tickets[t["id"]] = t
+
+            # devlab.tickets — new tickets (dedicated columns + metadata JSONB for extras)
+            cur.execute(
+                """SELECT id, title, status, worker, size, tags, description, decision_id, metadata
+                   FROM devlab.tickets
+                   WHERE status = 'sprint'
+                   AND (metadata->>'gate' IS NULL OR metadata->>'gate' = '')
+                   ORDER BY (metadata->>'priority')::float DESC NULLS LAST
+                   LIMIT 50"""
+            )
+            for row in cur.fetchall():
+                md = row["metadata"] or {}
+                t = {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "status": row["status"],
+                    "worker": row["worker"] or "claude",
+                    "size": row["size"],
+                    "tags": row["tags"] or [],
+                    "description": row["description"],
+                    "decision_id": row["decision_id"],
+                    "role": md.get("role", "master"),
+                    "priority": md.get("priority", 0.5),
+                    "gate": md.get("gate"),
+                }
+                if row["id"]:
+                    tickets[row["id"]] = t  # devlab overrides clan on conflict
+
         conn.close()
-        return [dict(r["metadata"]) for r in rows]
+        return sorted(tickets.values(), key=lambda t: -(t.get("priority") or 0.5))
     except Exception as e:
         log.warning("Granny: ticket query failed: %s", e)
         return []
@@ -212,6 +246,7 @@ def _cleared_gated_tickets() -> list[dict]:
 
         conn = psycopg2.connect(_DB_URL, connect_timeout=5)
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # Gated sprint tickets from clan.memories
             cur.execute(
                 """SELECT metadata FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'
@@ -221,18 +256,49 @@ def _cleared_gated_tickets() -> list[dict]:
                    ORDER BY (metadata->>'priority')::float DESC NULLS LAST
                    LIMIT 50"""
             )
-            gated = [dict(r["metadata"]) for r in cur.fetchall()]
+            gated_clan = [dict(r["metadata"]) for r in cur.fetchall()]
 
+            # Gated sprint tickets from devlab.tickets
+            cur.execute(
+                """SELECT id, title, status, worker, size, tags, description, decision_id, metadata
+                   FROM devlab.tickets
+                   WHERE status = 'sprint'
+                   AND metadata->>'gate' IS NOT NULL
+                   AND metadata->>'gate' != ''
+                   ORDER BY (metadata->>'priority')::float DESC NULLS LAST
+                   LIMIT 50"""
+            )
+            gated_devlab = []
+            for row in cur.fetchall():
+                md = row["metadata"] or {}
+                gated_devlab.append({
+                    "id": row["id"],
+                    "title": row["title"],
+                    "status": row["status"],
+                    "worker": row["worker"] or "claude",
+                    "role": md.get("role", "master"),
+                    "priority": md.get("priority", 0.5),
+                    "gate": md.get("gate"),
+                })
+
+            gated = gated_clan + gated_devlab
             if not gated:
                 conn.close()
                 return []
 
+            # Status index from clan.memories (legacy)
             cur.execute(
                 """SELECT metadata->>'id' AS id, metadata->>'status' AS status
                    FROM clan.memories
                    WHERE metadata->>'kind' = 'ticket'"""
             )
             all_statuses = [{"id": r["id"], "status": r["status"]} for r in cur.fetchall()]
+
+            # Add devlab.tickets statuses (deduplicated by id, devlab wins)
+            cur.execute("SELECT id, status FROM devlab.tickets")
+            devlab_statuses = {r["id"]: r["status"] for r in cur.fetchall()}
+            all_statuses = [s for s in all_statuses if s["id"] not in devlab_statuses]
+            all_statuses += [{"id": k, "status": v} for k, v in devlab_statuses.items()]
         conn.close()
     except Exception as e:
         log.warning("Granny: gated ticket query failed: %s", e)
