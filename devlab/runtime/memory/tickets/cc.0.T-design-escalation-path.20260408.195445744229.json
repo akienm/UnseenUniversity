@@ -21,7 +21,7 @@
     "epic": "Cognition",
     "size": "M",
     "title": "D331: Design escalation — Igor proposes, CC approves, Igor resumes",
-    "result": "D331 live: propose/approve commands in cc_queue.py. _pe_escalate composes design proposals for HIGH inertia instead of blocking. context-load surfaces 🟠 awaiting_approval tickets. Full flow verified: propose→awaiting_approval→approve→pending with approved_plan. Arbiter deletion deferred (separate ticket). 1880 tests pass.",
+    "result": "D331 live: propose/approve commands in cc_queue.py. _pe_escalate composes design proposals for HIGH inertia instead of blocking. Full flow verified. Arbiter deletion deferred (separate ticket). 1880 tests pass. [DEPRECATED 2026-06-18: D331 superseded by no-Igor-programming rule; propose/approve commands removed.]",
     "status": "done",
     "worker": "claude",
     "priority": 1,

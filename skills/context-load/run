@@ -217,9 +217,9 @@ def step_4_channel() -> None:
         print("✓ Step 4: Channel (offline)")
 
 
-# ─── Step 5: Queue status (pending approvals) ───
+# ─── Step 5: Queue status (pending approvals — filter out closed) ───
 def step_5_pending_approvals() -> None:
-    """Check queue for approval-pending tickets with titles."""
+    """Check queue for approval-pending tickets, excluding closed ones."""
     try:
         result = subprocess.run(
             [sys.executable, str(CC_WORKFLOW_TOOLS / "cc_queue.py"), "list"],
@@ -227,11 +227,11 @@ def step_5_pending_approvals() -> None:
         )
         if result.returncode == 0:
             lines = result.stdout.split("\n")
-            pending_tickets = [l for l in lines if "🟠" in l]
+            # Filter: 🟠 approval pending AND NOT [done/closed]
+            pending_tickets = [l for l in lines if "🟠" in l and "[done]" not in l and "[closed]" not in l]
             if pending_tickets:
                 print(f"✓ Step 5: Approval pending ({len(pending_tickets)}):")
                 for line in pending_tickets[:5]:  # show top 5
-                    # Extract ticket ID and title
                     print(f"  {line.strip()}")
             else:
                 print("✓ Step 5: No pending approvals")
