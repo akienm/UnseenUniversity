@@ -136,11 +136,9 @@ def _infer_role(t: dict) -> str:
 def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
     """Set ticket status (and optionally worker) via direct Postgres UPDATE.
 
-    Replaces the cc_queue.py setstatus subprocess calls in _dispatch_cc0 and
-    _process_handshake_replies. Direct DB write avoids Python startup + Postgres
-    connection overhead that caused intermittent 10s timeouts in those paths.
-    When worker is provided, also sets metadata.worker so _cc0_busy() detects
-    the ticket on the next poll cycle.
+    Writes to both clan.memories (legacy) and devlab.tickets (new) so that
+    handshake status transitions (dispatched/acked/in_progress/sprint) land
+    regardless of which table the ticket lives in.
     Returns True on success, False on error (logs warning, never raises).
     """
     try:
@@ -148,6 +146,7 @@ def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
         conn = psycopg2.connect(_DB_URL, connect_timeout=5)
         with conn:
             with conn.cursor() as cur:
+                # clan.memories — metadata JSONB, status inside metadata
                 if worker:
                     cur.execute(
                         """UPDATE clan.memories
@@ -164,6 +163,22 @@ def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
                            SET metadata = jsonb_set(metadata, '{status}', %s::jsonb)
                            WHERE id = %s""",
                         (f'"{status}"', tid),
+                    )
+                # devlab.tickets — dedicated status column + metadata JSONB for worker
+                if worker:
+                    cur.execute(
+                        """UPDATE devlab.tickets
+                           SET status = %s,
+                               metadata = jsonb_set(
+                                   COALESCE(metadata, '{}'), '{worker}', %s::jsonb
+                               )
+                           WHERE id = %s""",
+                        (status, f'"{worker}"', tid),
+                    )
+                else:
+                    cur.execute(
+                        "UPDATE devlab.tickets SET status = %s WHERE id = %s",
+                        (status, tid),
                     )
         conn.close()
         log.debug("Granny: _setstatus_direct %s → %s (worker=%s)", tid, status, worker)
