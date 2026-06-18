@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-quality-disagreement-signal.20260617.233205546147",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-quality-disagreement-signal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T23:32:05.546147",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-quality-3layer-assessment-2026-06-17"
+    ],
+    "tickets": [
+      "T-quality-classifier-output-scoring",
+      "T-quality-disagreement-signal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-quality-disagreement-signal",
+    "title": "[sprint] Surface judge/classifier disagreement for human review + training",
+    "status": "sprint",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "Quality",
+      "Classifier"
+    ],
+    "description": "When judge (layer 2) says FAIL but classifier (layer 3) says PASS, flag the ticket for human review and mark it as a high-value training example. Post a channel nudge. Track disagreement count as a metric that should trend toward zero as classifier trains.\n\n**Affected files:** devlab/claudecode/cc_queue.py close path (disagreement check after both verdicts), devices/classifier/annotator.py (high-value label flag)\n**Design rules:** log every state change at INFO\n**Scope boundary:** IN — disagreement detection, channel nudge, training label. OUT — retraining pipeline itself (future).\n**Completion criteria:** when judge=FAIL and classifier=PASS, ticket gets needs_review flag + channel post QUALITY_DISAGREEMENT|ticket=...\n**Test plan:** mock judge returning FAIL and classifier returning PASS; verify channel post fires and ticket flagged.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-quality-3layer-assessment-2026-06-17",
+    "created_at": "2026-06-17T23:32:05.546147+00:00",
+    "updated_at": "2026-06-17T17:32:05.879205-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.5,
+    "gate": "T-quality-classifier-output-scoring",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T23:32:05.546182+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0ebbc6ae-0699-4fb9-82e7-7a01c4d4a225",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

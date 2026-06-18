@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-quality-3layer.20260617.233205600785",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-quality-3layer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T23:32:05.600785",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-quality-3layer-assessment-2026-06-17"
+    ],
+    "tickets": [
+      "T-consequence-quality-3layer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-quality-3layer",
+    "title": "[sprint] Consequence check: quality layers don't add unacceptable close latency",
+    "status": "sprint",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** Two additional calls at ticket close (Haiku judge + classifier score_output).\n**Predicted unintended effects:** Close path latency increases significantly if Haiku call is slow or times out; classifier LLM fallback adds further latency; judge false-negative rate sends good tickets to human review unnecessarily.\n**Signals to watch:** ticket close time (target: under 10s including judge); human review queue size (should not grow unboundedly); false-negative rate of judge (judge=FAIL on actually-good outputs).\n**Gate condition:** Check by 2026-07-01.\n**Affected files:** None — observation only\n**Scope boundary:** Observe; annotate and close\n**Test plan:** no tests — observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-quality-3layer-assessment-2026-06-17",
+    "created_at": "2026-06-17T23:32:05.600785+00:00",
+    "updated_at": "2026-06-17T17:32:05.879205-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.3,
+    "gate": "2026-07-01",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T23:32:05.600829+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "af8f114f-f8d8-403b-b2f2-e732b368028c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

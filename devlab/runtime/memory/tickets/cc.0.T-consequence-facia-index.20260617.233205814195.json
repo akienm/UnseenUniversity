@@ -1,0 +1,52 @@
+{
+  "id": "cc.0.T-consequence-facia-index.20260617.233205814195",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-facia-index"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T23:32:05.814195",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-facia-index-tree-2026-06-17"
+    ],
+    "tickets": [
+      "T-consequence-facia-index"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-facia-index",
+    "title": "[sprint] Consequence check: facia index tree stays current + improves recall",
+    "status": "sprint",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** A facia index tree exists and Librarian uses it as second-pass fallback.\n**Predicted unintended effects:** Facia index grows stale if calving doesn't update it; second-pass adds latency to every failed first-pass query; facia index returns too-broad results (low precision), sending Librarian down wrong paths.\n**Signals to watch:** facia_index_hit rate vs facia_index_miss rate; staleness (facia count in index vs facia count in clan.memories); Librarian query latency on second-pass.\n**Gate condition:** Check by 2026-07-01.\n**Affected files:** None — observation only\n**Scope boundary:** Observe; annotate and close\n**Test plan:** no tests — observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-facia-index-tree-2026-06-17",
+    "created_at": "2026-06-17T23:32:05.814195+00:00",
+    "updated_at": "2026-06-17T17:32:05.879205-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.3,
+    "gate": "2026-07-01",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T23:32:05.814239+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "40cd9a6f-4ce2-480e-8af1-a762b3bdb534",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

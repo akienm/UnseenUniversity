@@ -15,10 +15,14 @@ This is the portable agent runtime substrate. It is **not** TheIgors.
 
 ## What to read first
 
+Canonical memory is now the **filesystem store** at `devlab/runtime/memory/` (grep-able JSON;
+decisions in `devlab/runtime/memory/decisions/`). Search it with `grep -r`.
+
 ```bash
-# Spec decisions (in TheIgors palace, not this repo):
-# memory_get(path="unseenuniversity/decisions/D-agent-datacenter-spec-2026-04-27")
-# memory_get(path="unseenuniversity/decisions/D-adc-phase-0-2026-04-27")  ... phase-5
+# The original ADC spec/phase decisions PRE-DATE the filesystem migration and are NOT in
+# the store — they live in the (now-archived) TheIgors palace. Treat as historical spec:
+#   D-agent-datacenter-spec-2026-04-27, D-adc-phase-0..5-2026-04-27
+# All NEW decisions go to devlab/runtime/memory/decisions/ via memory_emit.py.
 ```
 
 ---
@@ -71,9 +75,21 @@ transparently switch to the ADC queue rack device when that ships.
 - `/sprint` (no args) → calls `/query-ticket` logic internally
 - Never call `cc_queue.py next` or `cc_queue.py list` directly to pick work
 
-Autonomous CC sprinting is handled by **Granny**: when she routes a ticket to
-`worker=cc`, she spawns `claude --dangerously-skip-permissions /sprint-ticket T-xxx`
-directly. The old `worker_daemon.sh` is retired — Granny is the dispatcher.
+<!-- REGRESSION GUARD (re-rotted twice): Granny does NOT spawn/launch claude for CC
+     dispatch. It is a HANDSHAKE, no claim, no launch. Do not "simplify" this back to
+     "Granny spawns claude --dangerously-skip-permissions". Verified against daemon.py
+     2026-06-18: the subprocess.Popen in _launch_builder is the gated, rate-limited
+     BUILDER-launch path (workers with a launch_cmd); CC.0 has none. -->
+
+Autonomous CC sprinting is handled by **Granny**, and it is a **handshake — never a spawn or a claim**:
+
+1. A worker (e.g. CC.0) emits an **availability flag** — `~/.granny/available/<name>.available.true`.
+2. Granny **routes the ticket over the bus** to an available worker. She does **not** launch or spawn claude.
+3. The worker's **shim picks up the ticket and ACKs `assigned`**, then alerts the running session via tmux that work is waiting.
+4. CC may be mid-task — it **finishes current work first**, then picks up the ticket → status `INPROGRESS`.
+5. On completion, Granny re-checks **gates** to see whether that close frees any dependency-blocked ticket for the next worker.
+
+No claim, no launch — pure handshake. **Builder auto-launch** (`launch_cmd` via `_launch_builder`, rate-limited) is a separate, *later* path for workers not already running; it does not apply to CC.0. The old `worker_daemon.sh` is retired.
 
 ---
 
@@ -114,4 +130,4 @@ Auto-detection order for `UU_ROOT`: (1) env var, (2) `unseen_university.__file__
 | 2 | `decision:D-adc-phase-2-2026-04-27` | complete |
 | 3 | `decision:D-adc-phase-3-2026-04-27` | complete |
 | 4 | `decision:D-adc-phase-4-2026-04-27` | complete |
-| 5 | `decision:D-adc-phase-5-2026-04-27` | partial — discord relocated; cc_mcp_server.py deprecation not yet ticketed |
+| 5 | `decision:D-adc-phase-5-2026-04-27` | partial — discord relocated; cc_mcp_server.py deprecation **done** (T-adc-cc-mcp-server-deprecation, commit 88369599) |

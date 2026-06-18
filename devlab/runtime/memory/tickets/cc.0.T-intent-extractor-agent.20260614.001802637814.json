@@ -26,9 +26,9 @@
       "CompiledInference",
       "Factory"
     ],
-    "title": "Intent extractor: auto-populate intention field from ticket + code context",
+    "title": "[sprint] Intent extractor: auto-populate intention field from ticket + code context",
     "result": null,
-    "status": "cancelled",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.25,
     "intention": "I intend that the intention field on tickets is populated by inference from existing ticket prose + affected file symbols, not by manual authoring.",

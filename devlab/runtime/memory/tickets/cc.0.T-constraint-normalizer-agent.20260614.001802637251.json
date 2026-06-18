@@ -29,9 +29,9 @@
       "CompiledInference",
       "Factory"
     ],
-    "title": "Constraint normalizer: unify design rules + completion criteria into queryable schema",
+    "title": "[sprint] Constraint normalizer: unify design rules + completion criteria into queryable schema",
     "result": null,
-    "status": "cancelled",
+    "status": "sprint",
     "worker": "claude",
     "priority": 0.25,
     "intention": "I intend that constraints from palace rules, design rules, safeguards, and completion criteria are normalized into a single schema other agents can reason against without re-parsing prose.",

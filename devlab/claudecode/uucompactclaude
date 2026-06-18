@@ -2,13 +2,17 @@
 # Haiku-dance compact: switch to Haiku, fire /compact, wait, return to Sonnet.
 # Called by /autocompact (Step 2). Canonical script — edit here, not in the skill.
 
+# SESSION is load-bearing — every send-keys below targets it (NOT an unused var).
+# Resolve from CC_TMUX_SESSION; an empty -t target sends keys nowhere / to the wrong pane.
 SESSION="${CC_TMUX_SESSION:-claude-main}"
-DATESTAMP=$(date +%Y%m%d)
-SLATE_PATH="${IGOR_HOME:-$HOME/.unseen_university}/claudecode/${DATESTAMP}.slate.txt"
 
+# Heads-up to Akien + interrupt so the keystrokes below aren't swallowed mid-generation.
+# The stop line MUST name the exception: a capable CC obeys a bare "STOP EVERYTHING" by
+# killing the nearest process — which is THIS script — aborting its own compaction
+# (happened 2026-06-18). Carving out uucompactclaude keeps the month-proven behavior.
 tmux send-keys -t "$SESSION" "/comment COMPACTION COMING!"
 tmux send-keys -t "$SESSION" Enter
-tmux send-keys -t "$SESSION" "STOP EVERYTHING FOR COMPACTION"
+tmux send-keys -t "$SESSION" "STOP EVERYTHING IN THIS WINDOW EXCEPT THE ALREADY LAUNCHED uucompactclaude"
 tmux send-keys -t "$SESSION" Enter
 sleep 10
 tmux send-keys -t "$SESSION" Enter

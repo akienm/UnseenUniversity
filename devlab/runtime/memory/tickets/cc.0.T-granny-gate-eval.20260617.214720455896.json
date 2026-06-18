@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.T-granny-gate-eval.20260617.214720455896",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-gate-eval"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T21:47:20.455896",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-depends-on-gate-automation-2026-06-17"
+    ],
+    "tickets": [
+      "T-dep-test-a",
+      "T-dep-test-b",
+      "T-depends-on-validation-test",
+      "T-granny-gate-eval",
+      "T-skill-capture-depends-on"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-gate-eval",
+    "title": "Granny dispatch: evaluate gate_logic.gate_clear() instead of skipping all gated tickets",
+    "status": "closed",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Granny",
+      "Orchestration",
+      "Architecture"
+    ],
+    "description": "Granny's daemon dispatch query filters `gate IS NULL OR gate = ''`, so gated tickets are never evaluated — they stay invisible until someone manually runs `cc_queue.py ungate`. `gate_logic.gate_clear()` already has the full semantics (ticket-ID + date tokens, multi-predecessor, fail-closed). Granny should call it.\n\nThe fix: after fetching the candidate dispatch set (ungated tickets), also fetch gated tickets from the queue and run `gate_logic.gate_clear(ticket['gate'], all_tasks)` on each. Those that return True become eligible for dispatch on this cycle. Log skipped gated tickets with reason at DEBUG.\n\n**Affected files:** devices/granny/daemon.py (dispatch query + eligibility loop), possibly devices/granny/dispatch.py\n**Design rules:** log-every-state-change (log gate-cleared transitions at INFO)\n**Scope boundary:** IN — evaluate gated tickets at dispatch time using gate_logic; make cleared ones eligible. OUT — changing the gate schema, changing how gates are written (T-skill-capture-depends-on), building a separate gate-sweep device.\n**Test plan:** Validated by T-depends-on-validation-test — file T-dep-test-a and T-dep-test-b (gate: T-dep-test-a), run Granny, verify B is not dispatched; close A, run Granny again, verify B dispatches.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-depends-on-gate-automation-2026-06-17",
+    "created_at": "2026-06-17T21:47:20.455896+00:00",
+    "updated_at": "2026-06-17T15:47:20.624595-06:00",
+    "completed_at": "2026-06-17T22:01:29.628884+00:00",
+    "result": "Granny now evaluates gate_logic.gate_clear() at dispatch time via _cleared_gated_tickets(). Previously skipped all gated tickets; now gated sprint tickets auto-promote when every predecessor reaches terminal status. 27 tests pass. Commit dbb1b10d.",
+    "role": "master",
+    "priority": 0.6,
+    "gate": "T-skill-capture-depends-on",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T21:47:20.455940+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3aa5726a-27c6-412c-b85d-09f983e9596e",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

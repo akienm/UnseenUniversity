@@ -1,0 +1,55 @@
+{
+  "id": "cc.0.T-facia-index-tree.20260617.233205653774",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-facia-index-tree"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T23:32:05.653774",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-facia-index-tree-2026-06-17"
+    ],
+    "tickets": [
+      "T-facia-index-tree",
+      "T-librarian-facia-second-pass",
+      "T-tree-manager-object"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-facia-index-tree",
+    "title": "[sprint] Create facia index tree — all facia memories as second-pass search target",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Librarian",
+      "Architecture"
+    ],
+    "description": "Create a new tree in TreeIndex whose nodes are the facia memories from all other trees. This is the 'filing cabinet tabs' view — a meta-index of what's findable. Infrastructure exists: blob_facia.py + tree_index.py + trees table. New work: (1) seed the index tree by querying all nodes with facia_role set; (2) wire each tree's calving operation to update the facia index when a new tree facia is created.\n\n**Affected files:** devices/igor/memory/tree_index.py (seed_facia_index()), devices/igor/memory/blob_facia.py (post-create hook to register in facia index)\n**Design rules:** log every state change at INFO\n**Scope boundary:** IN — create the index tree, seed it, wire calving update. OUT — librarian search integration (T-librarian-facia-second-pass), tree manager object (T-tree-manager-object).\n**Completion criteria:** facia_index tree exists in trees table; querying it returns one node per existing facia memory.\n**Test plan:** after seeding, count nodes in facia_index tree == count of facia_role nodes in clan.memories.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-facia-index-tree-2026-06-17",
+    "created_at": "2026-06-17T23:32:05.653774+00:00",
+    "updated_at": "2026-06-17T17:32:05.879205-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.55,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T23:32:05.653810+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "2ecab780-db7a-46af-a41e-a493dca9ca62",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

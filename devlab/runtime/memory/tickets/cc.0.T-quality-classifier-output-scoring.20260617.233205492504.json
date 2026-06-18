@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-quality-classifier-output-scoring.20260617.233205492504",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-quality-classifier-output-scoring"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T23:32:05.492504",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-quality-3layer-assessment-2026-06-17"
+    ],
+    "tickets": [
+      "T-quality-classifier-output-scoring",
+      "T-quality-disagreement-signal",
+      "T-quality-judge-at-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-quality-classifier-output-scoring",
+    "title": "[sprint] Add output-quality scoring path to devices/classifier",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "M",
+    "tags": [
+      "Quality",
+      "Classifier"
+    ],
+    "description": "devices/classifier/ exists as a rule-based + LLM-fallback rack device. Add an output-quality scoring path: given (ticket, output), return quality_score 0-1 and pass/fail verdict. Train on labeled (ticket, output, pass/fail) pairs accumulated from validated closes. Initially rule-based; LLM fallback when confidence < threshold.\n\n**Affected files:** devices/classifier/device.py (new score_output() method), devices/classifier/meta_classifier.py (output-quality rules), devices/classifier/annotator.py (label ingestion from validated closes)\n**Design rules:** log every interface crossing at INFO\n**Scope boundary:** IN — score_output() method + label ingestion from ticket close. OUT — judge call (T-quality-judge-at-close), disagreement logic (T-quality-disagreement-signal).\n**Completion criteria:** devices/classifier/device.py has score_output(ticket_id, output_summary) → QualityVerdict; annotator ingests pass/fail from validated closes.\n**Test plan:** unit test score_output with a known-good and known-bad output; verify rule-based path fires before LLM fallback.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-quality-3layer-assessment-2026-06-17",
+    "created_at": "2026-06-17T23:32:05.492504+00:00",
+    "updated_at": "2026-06-17T17:32:05.879205-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.55,
+    "gate": "T-quality-judge-at-close",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T23:32:05.492543+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a0e045c0-44cb-4482-a952-a84d0931386c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

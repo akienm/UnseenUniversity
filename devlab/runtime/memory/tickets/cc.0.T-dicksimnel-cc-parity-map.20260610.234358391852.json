@@ -28,10 +28,10 @@
       "DickSimnel",
       "Observability"
     ],
-    "title": "[escalated] DickSimnel: track CC parity gaps as living document",
+    "title": "[sprint] DickSimnel: track CC parity gaps as living document",
     "result": "Created docs/dicksimnel_parity.md with PARITY/PARTIAL/GAP mapping for all sprint-ticket steps and tools",
-    "status": "escalated",
-    "worker": "dicksimnel",
+    "status": "acked",
+    "worker": "claude",
     "purpose": "",
     "priority": 0.4,
     "intention": "I intend that we always know exactly what CC can do that Dick cannot yet, so the gap is visible and shrinks intentionally.",

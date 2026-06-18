@@ -18,8 +18,8 @@
   },
   "body": {
     "id": "T-unimplemented-designs-audit",
-    "title": "[sprint] Audit design docs for unimplemented or abandoned designs",
-    "status": "sprint",
+    "title": "Audit design docs for unimplemented or abandoned designs",
+    "status": "closed",
     "worker": "claude",
     "size": "M",
     "tags": [
@@ -30,8 +30,8 @@
     "decision_id": null,
     "created_at": "2026-06-17T20:32:44.823231+00:00",
     "updated_at": "2026-06-17T14:32:44.982837-06:00",
-    "completed_at": null,
-    "result": null,
+    "completed_at": "2026-06-17T21:48:17.596203+00:00",
+    "result": "docs/design_audit_2026-06-17.md written (156 lines, commit 31228ec7). 82 decision docs audited: ~55 fully implemented, 5 partial, 2 genuine gaps (T-archivist-inference-pipeline, T-clan-template-wiring). Agent completed before CC process crash; doc was already on disk.",
     "role": "master",
     "priority": 0.54,
     "gate": null,

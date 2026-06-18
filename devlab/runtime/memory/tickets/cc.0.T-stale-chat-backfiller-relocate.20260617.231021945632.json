@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-stale-chat-backfiller-relocate.20260617.231021945632",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stale-chat-backfiller-relocate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-17T23:10:21.945632",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-depends-on-gate-automation-2026-06-17"
+    ],
+    "tickets": [
+      "T-stale-chat-backfiller-relocate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stale-chat-backfiller-relocate",
+    "title": "[sprint] Move StaleChatLogBackfiller out of Igor into claude device",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Igor",
+      "Refactor"
+    ],
+    "description": "StaleChatLogBackfiller is in devices/igor/cognition/push_sources.py (~line 2805). It is a CC session log maintenance job — nothing to do with Igor's cognition. Igor is cognition/memory only; maintenance tasks for other devices must not live in his push pipeline.\n\nThe path fix (lab/→devlab/) landed in commit 925b4d00 but the location violation is still present.\n\n**Correct home:** devices/claude/ as a standalone module (alongside chat_log_handler.py), wired into either:\n  - Nanny Ogg cron (5min interval, already has TIMING_TIER=slow equivalent)\n  - The claude groundloop runme.py as a background thread\n  - Or a dedicated cron descriptor in devices/claude/groundloop/\n\n**Affected files:** devices/igor/cognition/push_sources.py (remove class + registration), devices/claude/ or nanny device (add new home)\n**Design rules:** Igor is cognition/memory only — no hosting of other devices' maintenance work\n**Scope boundary:** IN — move the class, wire it to a new host, remove from Igor. OUT — changing the logic (it works, just wrong location).\n**Test plan:** After move: cc_log_stop_hook.py runs periodically and ~/.unseen_university/logs/CC.0/YYYY-MM-DD.md updates mid-session without manual export-chat.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-depends-on-gate-automation-2026-06-17",
+    "created_at": "2026-06-17T23:10:21.945632+00:00",
+    "updated_at": "2026-06-17T17:10:22.110331-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-17T23:10:22.005029+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "82162946-6467-4b63-82fe-067c93907814",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}
