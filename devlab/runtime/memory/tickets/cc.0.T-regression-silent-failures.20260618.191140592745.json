@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-regression-silent-failures",
-    "title": "[triage] Fix: Remove bare except clauses, log all errors",
-    "status": "triage",
+    "title": "[sprint] Fix: Remove bare except clauses, log all errors",
+    "status": "sprint",
     "worker": null,
     "size": "M",
     "tags": [

@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-regression-device-boundaries",
-    "title": "[triage] Fix: Device boundaries — no cross-interface imports",
-    "status": "triage",
+    "title": "[sprint] Fix: Device boundaries — no cross-interface imports",
+    "status": "sprint",
     "worker": null,
     "size": "M",
     "tags": [

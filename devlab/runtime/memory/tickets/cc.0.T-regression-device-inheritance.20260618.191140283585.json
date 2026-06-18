@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-regression-device-inheritance",
-    "title": "[triage] Fix: Devices not inheriting BaseDevice/BaseShim",
-    "status": "triage",
+    "title": "[sprint] Fix: Devices not inheriting BaseDevice/BaseShim",
+    "status": "sprint",
     "worker": null,
     "size": "M",
     "tags": [

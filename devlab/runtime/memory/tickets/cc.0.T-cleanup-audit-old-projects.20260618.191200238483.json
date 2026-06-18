@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-cleanup-audit-old-projects",
-    "title": "[triage] Audit: ~/TheIgors, ~/TheIgorsProject for safe deletion after ref cleanup",
-    "status": "triage",
+    "title": "[sprint] Audit: ~/TheIgors, ~/TheIgorsProject for safe deletion after ref cleanup",
+    "status": "sprint",
     "worker": null,
     "size": "S",
     "tags": [

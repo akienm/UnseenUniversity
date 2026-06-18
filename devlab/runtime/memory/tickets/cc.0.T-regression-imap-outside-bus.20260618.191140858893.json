@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-regression-imap-outside-bus",
-    "title": "[triage] Fix: IMAPServer access must be isolated to bus/, not spread across devices",
-    "status": "triage",
+    "title": "[sprint] Fix: IMAPServer access must be isolated to bus/, not spread across devices",
+    "status": "sprint",
     "worker": null,
     "size": "M",
     "tags": [

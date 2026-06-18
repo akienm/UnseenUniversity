@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-regression-concurrent-writes-postgres",
-    "title": "[triage] Fix: Concurrent writes must go through Postgres, not direct file writes",
-    "status": "triage",
+    "title": "[sprint] Fix: Concurrent writes must go through Postgres, not direct file writes",
+    "status": "sprint",
     "worker": null,
     "size": "M",
     "tags": [

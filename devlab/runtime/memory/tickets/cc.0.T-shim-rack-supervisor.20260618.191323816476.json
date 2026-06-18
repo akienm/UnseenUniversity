@@ -22,8 +22,8 @@
   },
   "body": {
     "id": "T-shim-rack-supervisor",
-    "title": "[in_progress] Create rack supervisor: holds shim instances + ticks watchdog",
-    "status": "in_progress",
+    "title": "Create rack supervisor: holds shim instances + ticks watchdog",
+    "status": "closed",
     "worker": null,
     "size": "M",
     "tags": [
@@ -34,8 +34,8 @@
     "decision_id": "D-shims-are-listeners-2026-06-18",
     "created_at": "2026-06-18T19:13:23.816476+00:00",
     "updated_at": "2026-06-18T13:13:24.203092-06:00",
-    "completed_at": null,
-    "result": null,
+    "completed_at": "2026-06-18T19:33:08.217365+00:00",
+    "result": "rack_supervisor.py: RackSupervisor holds CCWorkerShim slots, ticks ensure_daemon_running() every 30s, deposits Ground Loop YAML descriptor on start(); 11 tests",
     "role": "apprentice",
     "priority": 0.65,
     "gate": null,
@@ -46,7 +46,11 @@
     "target_difficulty": 1,
     "intention": null,
     "created_by": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
     "scraps_validated": "2026-06-18T19:13:23.869886+00:00",
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
     "inferred_intention": "unknown",
     "inferred_intention_id": "2dd1b8b5-7649-4993-ae41-0fa48ad3ab7e",
     "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"

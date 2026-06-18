@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-cleanup-runtime-artifacts",
-    "title": "[triage] Clarify purpose of ~/.unseen_university/blobs and boot-smoke-test",
-    "status": "triage",
+    "title": "[sprint] Clarify purpose of ~/.unseen_university/blobs and boot-smoke-test",
+    "status": "sprint",
     "worker": null,
     "size": "S",
     "tags": [

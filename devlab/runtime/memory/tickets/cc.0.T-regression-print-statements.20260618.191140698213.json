@@ -20,8 +20,8 @@
   },
   "body": {
     "id": "T-regression-print-statements",
-    "title": "[triage] Fix: Remove print() from devices/, use self.log.*",
-    "status": "triage",
+    "title": "[sprint] Fix: Remove print() from devices/, use self.log.*",
+    "status": "sprint",
     "worker": null,
     "size": "S",
     "tags": [
