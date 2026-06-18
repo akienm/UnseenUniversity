@@ -16,32 +16,41 @@ UU_ROOT = Path(os.environ.get("UU_ROOT", "."))
 CC_WORKFLOW_TOOLS = Path(os.environ.get("CC_WORKFLOW_TOOLS", UU_ROOT / "devlab" / "claudecode"))
 
 
-# ─── Step 0: Restore CC.0 availability (from cachedstate) ───
+# ─── Step 0: Restore CC.x availability (from cachedstate) ───
 def step_0_restore_availability() -> None:
-    """Restore CC.0 availability from cachedstate (file semaphore pattern).
+    """Restore CC.x availability from cachedstate (file semaphore pattern).
 
+    Extract CC instance from CC_TMUX_SESSION env var (e.g., 'claude-cc.1' → CC.1).
     /savestate moved the flag from ~/.granny/available/ to cachedstate before compact.
-    Now restore it if it exists. If cachedstate is empty, CC.0 stays unavailable
-    (no file in active folder = implicitly unavailable).
+    Now restore it if it exists. If cachedstate is empty, CC.x stays unavailable.
     """
+    # Detect which CC instance from CC_TMUX_SESSION
+    cc_session = os.environ.get("CC_TMUX_SESSION", "claude-main")
+    cc_instance = "CC.0"  # default
+    if "cc." in cc_session.lower():
+        parts = cc_session.lower().split("cc.")
+        if len(parts) > 1:
+            cc_instance = f"CC.{parts[1].split('.')[0]}"  # e.g., 'cc.1' → 'CC.1'
+
     granny_avail = Path(os.environ.get("GRANNY_AVAIL_DIR", Path.home() / ".granny" / "available"))
-    cachedstate = IGOR_HOME / "devices" / "cc.0" / "cachedstate"
+    device_id = cc_instance.lower().replace(".", "_")  # 'CC.1' → 'cc_1'
+    cachedstate = IGOR_HOME / "devices" / device_id / "cachedstate"
 
     granny_avail.mkdir(parents=True, exist_ok=True)
 
     # Restore from cachedstate if it exists
     if cachedstate.exists():
-        for flag_file in cachedstate.glob("CC.0.available.*"):
+        for flag_file in cachedstate.glob(f"{cc_instance}.available.*"):
             dest = granny_avail / flag_file.name
             try:
                 flag_file.rename(dest)
-                print(f"✓ Step 0: CC.0 availability restored ({flag_file.name})")
+                print(f"✓ Step 0: {cc_instance} availability restored ({flag_file.name})")
                 return
             except Exception:
                 pass
 
-    # If no cachedstate file, CC.0 stays unavailable (no file = not available)
-    print("✓ Step 0: CC.0 availability (none cached, unavailable)")
+    # If no cachedstate file, CC.x stays unavailable (no file = not available)
+    print(f"✓ Step 0: {cc_instance} availability (none cached, unavailable)")
 
 
 # ─── Step 0.25: Stale slate check ───

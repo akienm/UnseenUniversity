@@ -26,6 +26,41 @@ def _cc_tools() -> Path:
 CC_TOOLS = _cc_tools()
 
 
+def _save_availability_state() -> None:
+    """Move CC.x availability flag from active to cachedstate (file semaphore pattern).
+
+    Extract CC instance from CC_TMUX_SESSION env var (e.g., 'claude-cc.1' → CC.1).
+    Before compact/rewind: move ~/.granny/available/CC.x.available.{true|false}
+    to ~/.unseen_university/devices/cc_x/cachedstate/
+
+    No file in active folder = implicitly unavailable during compaction.
+    On next cycle, context-load will restore from cachedstate if it exists.
+    """
+    # Detect which CC instance from CC_TMUX_SESSION
+    cc_session = os.environ.get("CC_TMUX_SESSION", "claude-main")
+    cc_instance = "CC.0"  # default
+    if "cc." in cc_session.lower():
+        parts = cc_session.lower().split("cc.")
+        if len(parts) > 1:
+            cc_instance = f"CC.{parts[1].split('.')[0]}"
+
+    granny_avail = Path.home() / ".granny" / "available"
+    if not granny_avail.exists():
+        return
+
+    device_id = cc_instance.lower().replace(".", "_")  # 'CC.1' → 'cc_1'
+    cachedstate = IGOR_HOME / "devices" / device_id / "cachedstate"
+    cachedstate.mkdir(parents=True, exist_ok=True)
+
+    # Move whichever file exists (.true or .false) to cachedstate
+    for flag_file in granny_avail.glob(f"{cc_instance}.available.*"):
+        dest = cachedstate / flag_file.name
+        try:
+            flag_file.rename(dest)
+        except Exception:
+            pass
+
+
 def _slate_path() -> Path:
     date_str = datetime.now().strftime("%Y%m%d")
     return IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
@@ -55,6 +90,10 @@ def main() -> None:
     mode       = sys.argv[1] if len(sys.argv) > 1 else "midstream"
     hypothesis = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else "NONE"
 
+    # Step 1: Save CC.x availability state (file semaphore → cachedstate)
+    _save_availability_state()
+
+    # Step 2: Flush in-flight to slate
     _update_in_flight(hypothesis)
     print(f"savestate ({mode}): {hypothesis}")
 
