@@ -144,9 +144,13 @@ def step_2a_rules() -> None:
     for dec_file in reversed(recent):
         try:
             data = json.loads(dec_file.read_text(encoding="utf-8"))
-            title = data.get("title", "untitled")
-            date = data.get("date", "unknown")
-            print(f"  • {title} ({date})")
+            # Extract D-id from namespace
+            namespace = data.get("namespace", [])
+            dec_id = namespace[0] if namespace else dec_file.stem
+            # Extract date from emitted_at (YYYY-MM-DD format)
+            emitted = data.get("emitted_at", "unknown")
+            date_str = emitted.split("T")[0] if emitted != "unknown" else "unknown"
+            print(f"  • {dec_id} ({date_str})")
         except Exception:
             pass
 
@@ -179,11 +183,16 @@ def step_3_decisions() -> None:
     for dec_file in reversed(recent):
         try:
             data = json.loads(dec_file.read_text(encoding="utf-8"))
-            title = data.get("title", "untitled")
-            status = data.get("status", "unknown")
-            tags = data.get("tags", [])
+            # Extract D-id from namespace
+            namespace = data.get("namespace", [])
+            dec_id = namespace[0] if namespace else dec_file.stem
+            # Extract kind/status from data
+            kind = data.get("kind", "unknown")
+            # Extract tags if present in body
+            body = data.get("body", {})
+            tags = body.get("tags", []) if isinstance(body, dict) else []
             tag_str = f" [{', '.join(tags[:2])}]" if tags else ""
-            print(f"  • {title} — {status}{tag_str}")
+            print(f"  • {dec_id} — {kind}{tag_str}")
         except Exception:
             pass
 
