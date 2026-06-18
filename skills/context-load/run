@@ -81,14 +81,16 @@ def step_0_5_debug_flag() -> None:
 
 # ─── Step 1: Today's slate ───
 def step_1_today_slate() -> None:
-    """Ensure today's slate exists."""
+    """Ensure today's slate exists, then read and surface its summary."""
     date_str = datetime.now().strftime("%Y%m%d")
     date_fmt = datetime.now().strftime("%Y-%m-%d")
     slate = IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
     slate.parent.mkdir(parents=True, exist_ok=True)
+
     if not slate.exists():
         slate.write_text(
             f"# Slate — {date_fmt}\n\n"
+            "## Summary\n(empty — session just started)\n\n"
             "## Notes\n\n"
             "## In-flight\nNONE\n\n"
             "## Planned\n\n"
@@ -96,62 +98,132 @@ def step_1_today_slate() -> None:
             "## Done today\n",
             encoding="utf-8"
         )
-    print(f"✓ Step 1: Slate ready")
+        print(f"✓ Step 1: Slate created")
+    else:
+        # Read and surface the summary for orientation
+        content = slate.read_text(encoding="utf-8")
+        lines = content.split("\n")
+        in_summary = False
+        summary_lines = []
+        for line in lines:
+            if line.startswith("## Summary"):
+                in_summary = True
+                continue
+            if line.startswith("##") and in_summary:
+                break
+            if in_summary and line.strip():
+                summary_lines.append(line.rstrip())
+
+        if summary_lines:
+            print(f"✓ Step 1: Slate (today's summary):")
+            for line in summary_lines[:5]:  # cap at 5 lines
+                print(f"  {line}")
+        else:
+            print(f"✓ Step 1: Slate ready")
 
 
 # ─── Step 2a: Rules from filesystem ───
 def step_2a_rules() -> None:
-    """Verify filesystem memory store is accessible (not DB palace)."""
+    """Load recent decision titles for orientation."""
     memory_root = UU_ROOT / "devlab" / "runtime" / "memory"
-    if memory_root.exists():
-        count = len(list(memory_root.glob("decisions/*.json")))
-        print(f"✓ Step 2a: Rules ({count} decisions in filesystem store)")
+    if not memory_root.exists():
+        return
+
+    decisions_dir = memory_root / "decisions"
+    if not decisions_dir.exists():
+        return
+
+    all_decisions = sorted(decisions_dir.glob("*.json"))
+    if not all_decisions:
+        print(f"✓ Step 2a: Decisions (none yet)")
+        return
+
+    # Show last 3 decisions with titles
+    recent = all_decisions[-3:]
+    print(f"✓ Step 2a: Recent decisions:")
+    for dec_file in reversed(recent):
+        try:
+            data = json.loads(dec_file.read_text(encoding="utf-8"))
+            title = data.get("title", "untitled")
+            date = data.get("date", "unknown")
+            print(f"  • {title} ({date})")
+        except Exception:
+            pass
 
 
-# ─── Step 2b: Memory tree ───
+# ─── Step 2b: Memory structure ───
 def step_2b_memory_palace() -> None:
-    """Verify filesystem palace structure."""
+    """Verify filesystem memory structure is accessible."""
     memory_root = UU_ROOT / "devlab" / "runtime" / "memory"
     if memory_root.exists():
-        subdirs = len([d for d in memory_root.iterdir() if d.is_dir()])
-        print(f"✓ Step 2b: Memory tree ({subdirs} categories)")
+        subdirs = [d.name for d in memory_root.iterdir() if d.is_dir()]
+        if subdirs:
+            print(f"✓ Step 2b: Memory ({', '.join(sorted(subdirs))})")
+        else:
+            print(f"✓ Step 2b: Memory structure (empty)")
 
 
-# ─── Step 3: Recent decisions ───
+# ─── Step 3: Active decisions (last 5 with status) ───
 def step_3_decisions() -> None:
-    """Load recent decisions from filesystem."""
+    """Show recent decisions with status for quick orientation."""
     decisions_dir = UU_ROOT / "devlab" / "runtime" / "memory" / "decisions"
-    if decisions_dir.exists():
-        all_decisions = list(decisions_dir.glob("*.json"))
-        recent = all_decisions[-5:] if len(all_decisions) > 5 else all_decisions
-        print(f"✓ Step 3: Decisions ({len(recent)}/{len(all_decisions)} recent)")
+    if not decisions_dir.exists():
+        return
+
+    all_decisions = sorted(decisions_dir.glob("*.json"))
+    if not all_decisions:
+        return
+
+    recent = all_decisions[-5:] if len(all_decisions) > 5 else all_decisions
+    print(f"✓ Step 3: Active decisions:")
+    for dec_file in reversed(recent):
+        try:
+            data = json.loads(dec_file.read_text(encoding="utf-8"))
+            title = data.get("title", "untitled")
+            status = data.get("status", "unknown")
+            tags = data.get("tags", [])
+            tag_str = f" [{', '.join(tags[:2])}]" if tags else ""
+            print(f"  • {title} — {status}{tag_str}")
+        except Exception:
+            pass
 
 
-# ─── Step 4: Channel ───
+# ─── Step 4: Channel (recent posts for context) ───
 def step_4_channel() -> None:
-    """Attempt channel briefing (last 5 posts)."""
+    """Load recent channel posts for continuity."""
     try:
         result = subprocess.run(
-            [sys.executable, "-c", "from unseen_university.channel import read_recent; read_recent(5)"],
-            capture_output=True, timeout=2
+            [sys.executable, "-c", "from unseen_university.channel import read_recent; read_recent(3)"],
+            capture_output=True, text=True, timeout=2
         )
-        print("✓ Step 4: Channel briefing ready")
+        if result.returncode == 0 and result.stdout.strip():
+            print("✓ Step 4: Channel (recent):")
+            lines = result.stdout.strip().split("\n")
+            for line in lines[:5]:
+                if line.strip():
+                    print(f"  {line}")
+        else:
+            print("✓ Step 4: Channel (quiet)")
     except Exception:
-        print("✓ Step 4: Channel (on-demand)")
+        print("✓ Step 4: Channel (offline)")
 
 
-# ─── Step 5: Pending approvals ───
+# ─── Step 5: Queue status (pending approvals) ───
 def step_5_pending_approvals() -> None:
-    """Check queue for approval-pending tickets."""
+    """Check queue for approval-pending tickets with titles."""
     try:
         result = subprocess.run(
             [sys.executable, str(CC_WORKFLOW_TOOLS / "cc_queue.py"), "list"],
             capture_output=True, text=True, timeout=5
         )
         if result.returncode == 0:
-            pending = result.stdout.count("🟠")
-            if pending:
-                print(f"✓ Step 5: {pending} ticket(s) await approval")
+            lines = result.stdout.split("\n")
+            pending_tickets = [l for l in lines if "🟠" in l]
+            if pending_tickets:
+                print(f"✓ Step 5: Approval pending ({len(pending_tickets)}):")
+                for line in pending_tickets[:5]:  # show top 5
+                    # Extract ticket ID and title
+                    print(f"  {line.strip()}")
             else:
                 print("✓ Step 5: No pending approvals")
     except Exception:
@@ -172,15 +244,41 @@ def step_5_5_stall_check() -> None:
         pass
 
 
-# ─── Step 5.6: Unread inbox ───
+# ─── Step 5.6: Unread inbox (urgent/important only) ───
 def step_5_6_inbox() -> None:
-    """Check CC inbox for unread messages."""
+    """Check CC inbox for unread messages with urgency."""
     try:
         inbox_file = IGOR_HOME / "cc_channel" / "inbox.jsonl"
-        if inbox_file.exists():
-            unread = sum(1 for line in inbox_file.read_text().split("\n") if '"read": false' in line)
-            if unread:
-                print(f"⚠️  Inbox: {unread} unread")
+        if not inbox_file.exists():
+            return
+
+        unread = []
+        for line in inbox_file.read_text(encoding="utf-8").split("\n"):
+            if line.strip() and '"read": false' in line:
+                try:
+                    entry = json.loads(line)
+                    unread.append(entry)
+                except Exception:
+                    pass
+
+        if not unread:
+            return
+
+        # Show unread with urgency flags
+        print(f"⚠️  Inbox: {len(unread)} unread")
+        high_urgency = [e for e in unread if e.get("urgency") == "high"]
+        if high_urgency:
+            print(f"  ⚡ URGENT ({len(high_urgency)}):")
+            for entry in high_urgency[:3]:
+                summary = entry.get("summary", "no subject")
+                print(f"    • {summary}")
+
+        granny_posts = [e for e in unread if "granny" in e.get("from", "").lower()]
+        if granny_posts:
+            print(f"  📮 From Granny ({len(granny_posts)}):")
+            for entry in granny_posts[:2]:
+                summary = entry.get("summary", "no subject")
+                print(f"    • {summary}")
     except Exception:
         pass
 
