@@ -396,8 +396,12 @@ def _worker_busy(worker_names: list[str]) -> bool:
                    WHERE metadata->>'kind' = 'ticket'
                    AND metadata->>'status' IN ('dispatched', 'acked', 'in_progress')
                    AND metadata->>'worker' IN ({placeholders})
-                   LIMIT 1""",
-                worker_names,
+                UNION ALL
+                   SELECT 1 FROM devlab.tickets
+                   WHERE status IN ('dispatched', 'acked', 'in_progress')
+                   AND metadata->>'worker' IN ({placeholders})
+                LIMIT 1""",
+                worker_names * 2,
             )
             busy = cur.fetchone() is not None
         conn.close()
