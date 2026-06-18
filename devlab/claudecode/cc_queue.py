@@ -908,6 +908,61 @@ def _annotator_delta_update(ticket_id: str) -> None:
         print(f"annotator delta: {exc}", file=sys.stderr)
 
 
+def _log_sprint_tokens(ticket_id: str, sprint_start: str | None) -> None:
+    """Call sprint_token_log.py to write token counts to sprint_tokens.log.
+    
+    Non-fatal if it fails (e.g., no transcript found for DS tickets).
+    """
+    if not sprint_start:
+        return
+    try:
+        import subprocess
+        from devlab.claudecode.sprint_token_log import main as sprint_token_log_main
+        # Call sprint_token_log.py as a subprocess to avoid import issues
+        result = subprocess.run(
+            [sys.executable, "-m", "devlab.claudecode.sprint_token_log", ticket_id, sprint_start],
+            capture_output=True,
+            text=True,
+            cwd=str(Path(__file__).parent.parent),
+        )
+        if result.returncode != 0:
+            print(f"sprint_token_log failed for {ticket_id}: {result.stderr}", file=sys.stderr)
+    except Exception as exc:
+        print(f"sprint_token_log error for {ticket_id}: {exc}", file=sys.stderr)
+
+
+def _read_token_counts_from_log(ticket_id: str) -> dict[str, int]:
+    """Read token counts from sprint_tokens.log for a ticket.
+    
+    Returns dict with keys: input_tokens, cache_write_tokens, cache_read_tokens, output_tokens.
+    All values are 0 if no entries found.
+    """
+    try:
+        from devlab.claudecode.usage_store import _read_sprint_log_entries, _aggregate_entries
+        from pathlib import Path
+        
+        igor_home = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+        log_path = igor_home / "claudecode" / "sprint_tokens.log"
+        
+        if not log_path.exists():
+            return {"input_tokens": 0, "cache_write_tokens": 0, "cache_read_tokens": 0, "output_tokens": 0}
+        
+        entries = _read_sprint_log_entries(ticket_id, log_path=log_path)
+        if not entries:
+            return {"input_tokens": 0, "cache_write_tokens": 0, "cache_read_tokens": 0, "output_tokens": 0}
+        
+        agg = _aggregate_entries(entries)
+        return {
+            "input_tokens": agg["input_tokens"],
+            "cache_write_tokens": agg["cache_write_tokens"],
+            "cache_read_tokens": agg["cache_read_tokens"],
+            "output_tokens": agg["output_tokens"],
+        }
+    except Exception as exc:
+        print(f"read_token_counts error for {ticket_id}: {exc}", file=sys.stderr)
+        return {"input_tokens": 0, "cache_write_tokens": 0, "cache_read_tokens": 0, "output_tokens": 0}
+
+
 def _record_ticket_usage(ticket_id: str, ticket: dict, cost_usd: float | None = None) -> None:
     """Write per-ticket usage actuals to devlab.ticket_usage. Non-fatal.
 
@@ -1334,6 +1389,15 @@ def cmd_close(args):
     cost_usd = _compute_cost_usd(args[0])
     if cost_usd is not None:
         t["cost_usd"] = round(cost_usd, 4)
+    
+    # Capture token counts from API response / transcript
+    _log_sprint_tokens(args[0], t.get("dispatched_at"))
+    token_counts = _read_token_counts_from_log(args[0])
+    t["input_tokens"] = token_counts["input_tokens"]
+    t["cache_write_tokens"] = token_counts["cache_write_tokens"]
+    t["cache_read_tokens"] = token_counts["cache_read_tokens"]
+    t["output_tokens"] = token_counts["output_tokens"]
+    
     decision_id = t.get("decision_id")
     _decision_rollup(tasks, decision_id)
     _ungate_dependents(tasks, t["id"])
@@ -1346,7 +1410,8 @@ def cmd_close(args):
     _record_ticket_usage(args[0], t, cost_usd=cost_usd)
     _append_to_todays_slate(t)
     cost_str = f"  cost=${t['cost_usd']:.4f}" if t.get("cost_usd") is not None else ""
-    print(f"Closed {args[0]}: {t['title']}{cost_str}")
+    token_str = f"  tokens: in={t['input_tokens']} cache_w={t['cache_write_tokens']} cache_r={t['cache_read_tokens']} out={t['output_tokens']}"
+    print(f"Closed {args[0]}: {t['title']}{cost_str}\n{token_str}")
 
 
 def cmd_block(args):

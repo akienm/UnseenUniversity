@@ -2802,86 +2802,6 @@ class SelfTestSource(BasePushSource):
             return []
 
 
-class StaleChatLogBackfiller(BasePushSource):
-    """
-    Keep today's CC chat mirror fresh under ~/.unseen_university/logs/CC.0/.
-
-    Runs cc_log_stop_hook.py every 5min — scans all project dirs so ADC
-    sessions are included. Historical files are not rebuilt here; that's
-    a /day-close concern.
-    """
-
-    name = "stale_chat_log_backfiller"
-    TIMING_TIER = "slow"
-    REFRESH_INTERVAL_SEC = 300  # T-cc-mirror-5min-today
-
-    def __init__(self):
-        self._last_run: Optional[datetime] = None
-
-    def push(self, cortex) -> list[int]:
-        now = datetime.now(timezone.utc)
-        if (
-            self._last_run is not None
-            and (now - self._last_run).total_seconds() < self.REFRESH_INTERVAL_SEC
-        ):
-            return []
-        self._last_run = now
-
-        ids: list[int] = []
-        try:
-            import subprocess
-
-            # Use cc_log_stop_hook.py — scans all project dirs (not just TheIgors),
-            # so ADC-project CC sessions are included. export_chat.py only scanned
-            # the TheIgors project and smashed the log when ADC became primary.
-            result = subprocess.run(
-                [
-                    "python3",
-                    str(
-                        paths().source_root
-                        / "devlab"
-                        / "claudecode"
-                        / "cc_log_stop_hook.py"
-                    ),
-                ],
-                capture_output=True,
-                text=True,
-                timeout=60,
-                cwd=str(Path.home() / "dev/src/UnseenUniversity"),
-            )
-
-            if result.returncode == 0:
-                obs_id = cortex.twm_push(
-                    source=self.name,
-                    content_csb=(
-                        f"CHAT_LOG_EXPORT|status=success|timestamp={now.isoformat()}"
-                    ),
-                    salience=0.3,
-                    category="maintenance",
-                    ttl_seconds=3600,
-                )
-                if obs_id:
-                    ids.append(obs_id)
-                cortex.write_ring(
-                    f"CHAT_LOG_EXPORT|status=success|ts={now.strftime('%Y-%m-%dT%H:%M')}",
-                    category="maintenance",
-                )
-            else:
-                log_error(
-                    kind="CHAT_LOG_EXPORT_FAIL",
-                    detail=f"cc_log_stop_hook.py failed: {result.stderr[:200]}",
-                )
-
-        except Exception as _e:
-            log_error(kind="CHAT_LOG_BACKFILLER_FAIL", detail=str(_e))
-
-        return ids
-
-
-proprioception_source = ProprioceptionSource()
-capability_awareness_source = CapabilityAwarenessSource()
-self_test_source = SelfTestSource()
-stale_chat_log_backfiller = StaleChatLogBackfiller()
 user_input_source = UserInputSource()
 machines_watcher = MachinesWatcher()
 inbox_watcher = InboxWatcher()
@@ -2957,11 +2877,6 @@ def run_background_sources(cortex) -> int:
 
         relationship_drift_source = RelationshipDriftSource()
     if sleep_clock_source is None:
-        from .sleep_clock import SleepClockSource
-
-        sleep_clock_source = SleepClockSource()
-    if state_coherence_source is None:
-        from .state_coherence_check import StateCoherenceSource
 
         state_coherence_source = StateCoherenceSource()
     if approach_frame_audit_source is None:
