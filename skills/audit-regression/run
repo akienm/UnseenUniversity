@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""audit-regression/run — Execute regression checks against core invariants."""
+
+import subprocess
+import sys
+import json
+from pathlib import Path
+from datetime import datetime
+
+def run_check(name, cmd, check_type="grep"):
+    """Run a check, return (passed, details)."""
+    try:
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, text=True, cwd=Path.cwd()
+        )
+
+        if check_type == "grep":
+            # grep returns 0 if matches found (FAIL), 1 if no matches (PASS)
+            passed = result.returncode == 1
+            details = result.stdout if not passed else ""
+        else:  # check_type == "exists"
+            # Command succeeded, assume PASS
+            passed = result.returncode == 0
+            details = result.stdout
+
+        return passed, details
+    except Exception as e:
+        return False, str(e)
+
+def main():
+    section = None
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--section" and len(sys.argv) > 2:
+            section = sys.argv[2]
+
+    checks = {
+        "core-invariants": [
+            ("1.1 No SQLite",
+             "grep -r 'import sqlite\\|from sqlite\\|sqlite3' --include='*.py' --exclude-dir=.git --exclude-dir=venv unseen_university/ devices/ lab/ 2>/dev/null",
+             "grep"),
+            ("1.2 All devices inherit Base*",
+             "! find devices/ -name '*.py' -type f -exec grep -l '^class.*Device\\|^class.*Shim' {} \\; 2>/dev/null | xargs grep -L 'BaseDevice\\|BaseShim' 2>/dev/null | grep .",
+             "exists"),
+            ("1.3 No concurrent writes without Postgres",
+             "! grep -r '\\.write\\|f\\.write\\|open(.*, .w' --include='*.py' devices/ 2>/dev/null | grep -v '\\.log\\|log_file\\|\\.md\\|\\.txt' | grep .",
+             "exists"),
+            ("1.5 No silent failures (bare except)",
+             "grep -r 'except:\\|except Exception:' --include='*.py' devices/ lab/claudecode/ 2>/dev/null | grep -v 'except.*as\\|# log\\|self.log' | head -5",
+             "grep"),
+        ],
+        "idle-loops": [
+            ("2.1 No blocking in IDLE loops",
+             "! grep -r 'def idle_wait\\|def run_forever' --include='*.py' devices/ 2>/dev/null | cut -d: -f1 | xargs grep -l 'time\\.sleep\\|join()\\|subprocess\\.' 2>/dev/null | grep .",
+             "exists"),
+        ],
+        "known-debt": [
+            ("3.1 dispatch.py CC-spawn deleted",
+             "! grep -q 'def.*cc.*spawn\\|_launch_cc' devices/granny/dispatch.py 2>/dev/null",
+             "exists"),
+            ("3.2 No print() in devices/",
+             "grep -r '^[[:space:]]*print(' --include='*.py' devices/ 2>/dev/null",
+             "grep"),
+            ("3.3 No speculative ENABLE flags",
+             "grep -r 'ENABLE_\\|EXPERIMENTAL_' --include='*.py' unseen_university/ devices/ 2>/dev/null | grep -v 'go.live\\|gated'",
+             "grep"),
+            ("3.4 Deprecated paths removed",
+             "grep -r 'psycopg2\\.connect' --include='*.py' devices/ unseen_university/ 2>/dev/null",
+             "grep"),
+        ],
+        "external-state": [
+            ("4.1 Work-state checkpointed (manual)",
+             "echo 'Manual: verify tickets/slate/palace have work context'",
+             "exists"),
+            ("4.2 No orphaned files after compaction",
+             "! find . -maxdepth 1 \\( -name '*.tmp' -o -name '*.bak' -o -name '*~' \\) 2>/dev/null | grep .",
+             "exists"),
+        ],
+        "architecture": [
+            ("5.1 Device boundaries maintained",
+             "grep -r 'from.*devices\\.[a-z_]*\\.' --include='*.py' devices/ 2>/dev/null | grep -v 'from.*bus\\|from.*skeleton'",
+             "grep"),
+            ("5.2 Inter-device comms via bus",
+             "grep -r 'IMAPServer\\|imap_client\\|idle_wait' --include='*.py' devices/ 2>/dev/null | grep -v 'devices/bus\\|devices/skeleton'",
+             "grep"),
+        ],
+    }
+
+    results = {"timestamp": datetime.now().isoformat(), "checks": [], "passed": 0, "failed": 0}
+
+    sections_to_run = [section] if section else list(checks.keys())
+
+    for sec in sections_to_run:
+        if sec not in checks:
+            print(f"Unknown section: {sec}")
+            sys.exit(1)
+
+        for check_name, cmd, check_type in checks[sec]:
+            passed, details = run_check(check_name, cmd, check_type)
+            results["checks"].append({
+                "name": check_name,
+                "passed": passed,
+                "section": sec,
+                "details": details[:200] if details else ""
+            })
+            if passed:
+                results["passed"] += 1
+                print(f"✓ {check_name}")
+            else:
+                results["failed"] += 1
+                print(f"✗ {check_name}")
+                if details:
+                    print(f"  → {details[:100]}")
+
+    print(f"\nResult: {results['passed']}/{results['passed'] + results['failed']} passed")
+
+    if results["failed"] > 0:
+        print("\nAMEND? (file tickets for failed checks)")
+        sys.exit(1)  # Non-zero exit = AMEND/failure
+
+if __name__ == "__main__":
+    main()

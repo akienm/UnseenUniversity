@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.T-token-verify-20260618163735..20260618.163736089769",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-token-verify-20260618163735."
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T16:37:36.089769",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-token-verify-20260618163735."
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-token-verify-20260618163735.",
+    "body": "Verify token capture works",
+    "title": "Verify token capture",
+    "status": "closed",
+    "worker": "claude",
+    "dispatched_at": "2026-01-01T00:00:00+00:00",
+    "result": "Verification complete",
+    "completed_at": "2026-06-18T16:37:36.089769+00:00",
+    "input_tokens": 96466,
+    "cache_write_tokens": 4248725,
+    "cache_read_tokens": 76172438,
+    "output_tokens": 817464,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

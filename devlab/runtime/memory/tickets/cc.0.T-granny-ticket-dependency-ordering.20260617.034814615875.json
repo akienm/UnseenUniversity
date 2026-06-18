@@ -23,7 +23,7 @@
   "body": {
     "id": "T-granny-ticket-dependency-ordering",
     "title": "[sprint] Granny: real ticket→ticket dependency ordering in the general queue (not just binary gate)",
-    "status": "sprint",
+    "status": "dispatched",
     "worker": "claude",
     "size": "L",
     "tags": [

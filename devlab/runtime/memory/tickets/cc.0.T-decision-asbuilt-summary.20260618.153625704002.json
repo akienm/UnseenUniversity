@@ -21,7 +21,7 @@
   "body": {
     "id": "T-decision-asbuilt-summary",
     "title": "[sprint] As-built summary required at head of decision before close",
-    "status": "sprint",
+    "status": "dispatched",
     "worker": "claude",
     "size": "S",
     "tags": [

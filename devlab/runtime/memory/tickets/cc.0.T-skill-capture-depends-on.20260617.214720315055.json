@@ -24,7 +24,7 @@
   "body": {
     "id": "T-skill-capture-depends-on",
     "title": "[sprint] Update /ticket and /sorted skills to write gate: T-xxx for dependencies",
-    "status": "sprint",
+    "status": "dispatched",
     "worker": "claude",
     "size": "S",
     "tags": [

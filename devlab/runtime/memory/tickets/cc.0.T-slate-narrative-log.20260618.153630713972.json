@@ -22,7 +22,7 @@
   "body": {
     "id": "T-slate-narrative-log",
     "title": "[sprint] Slate becomes structured JSON; narrative section is the small read-first summary",
-    "status": "sprint",
+    "status": "dispatched",
     "worker": "claude",
     "size": "M",
     "tags": [

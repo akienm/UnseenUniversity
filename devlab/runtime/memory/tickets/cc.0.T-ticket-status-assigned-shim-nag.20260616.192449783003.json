@@ -21,7 +21,7 @@
   "body": {
     "id": "T-ticket-status-assigned-shim-nag",
     "title": "[sprint] ASSIGNED status + 10-min shim-nag/back-off loop (status model step 3, net-new)",
-    "status": "sprint",
+    "status": "dispatched",
     "worker": "claude",
     "size": "L",
     "tags": [

@@ -23,7 +23,7 @@
   "body": {
     "id": "T-quality-judge-at-close",
     "title": "[sprint] Small model judge at ticket close: did output satisfy completion criteria?",
-    "status": "sprint",
+    "status": "dispatched",
     "worker": "claude",
     "size": "S",
     "tags": [

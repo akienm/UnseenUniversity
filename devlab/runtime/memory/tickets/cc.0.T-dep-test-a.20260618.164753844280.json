@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-dep-test-a.20260618.164753844280",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-dep-test-a"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T16:47:53.844280",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-dep-test-a"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-dep-test-a",
+    "title": "Test ticket A (no gate)",
+    "status": "closed",
+    "worker": "dicksimnel",
+    "size": null,
+    "tags": [
+      "Testing"
+    ],
+    "description": "Throwaway test ticket A — no dependencies\n\n**Test plan:** this ticket IS the test; pass = B dispatches only after A closes without manual ungate.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "created_at": "2026-06-18T16:47:53.844280+00:00",
+    "updated_at": "2026-06-18T10:47:54.231633-06:00",
+    "completed_at": "2026-06-18T16:52:10.411225+00:00",
+    "result": "throwaway validation test — passed",
+    "role": "builder",
+    "priority": 0.5,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "scraps_validated": "2026-06-18T16:47:53.982849+00:00",
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8791af22-47df-466d-a0f3-dda48e3aac38",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

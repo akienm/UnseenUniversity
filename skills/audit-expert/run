@@ -20,111 +20,97 @@ from pathlib import Path
 
 DEFAULT_EXPERTS: list[dict] = [
     {
-        "name": "Cognitive Scientist",
-        "lens": "Is Igor's reasoning architecture consistent with human cognition models?",
-        "key_questions": [
-            "Does salience gating and attention mechanism align with predictive coding / anticipation models?",
-            "Are working memory limits respected across the narrative engine's context budget?",
-            "Does the activate → focus → proposal cycle reflect coherent goal-directed behavior?",
-        ],
-    },
-    {
         "name": "Systems Architect",
-        "lens": "Is the subsystem decomposition clean with enforced contract boundaries?",
+        "lens": "Is the datacenter subsystem decomposition clean with enforced contract boundaries?",
         "key_questions": [
             "Are device boundaries and bus interfaces well-defined and not bypassed by shortcuts?",
             "What is the blast radius if a single minion, device, or bus segment fails?",
             "Is the skeleton/workspace abstraction sufficient for the workload it must support?",
-        ],
-    },
-    {
-        "name": "Safety Engineer",
-        "lens": "What are the failure modes and how bad can they cascade?",
-        "key_questions": [
-            "What runaway processes are possible and what stops them short of human intervention?",
-            "Which states are unrecoverable, and do guards prevent entering them?",
-            "Are correlated failures isolated or can one subsystem cascade into others?",
-        ],
-    },
-    {
-        "name": "Human-Computer Interaction",
-        "lens": "Is Igor legible and trustworthy to its users?",
-        "key_questions": [
-            "Are error messages and status signals interpretable without reading source code?",
-            "Does Igor's channel output give Akien the right signal-to-noise ratio for oversight?",
-            "What trust signals are missing when Igor makes high-stakes or irreversible decisions?",
-        ],
-    },
-    {
-        "name": "Distributed Systems",
-        "lens": "Is the multi-instance, multi-machine design sound under realistic failure conditions?",
-        "key_questions": [
-            "Are clock-drift and partition-tolerance assumptions explicit and tested?",
-            "Where do idempotency guarantees break down under concurrent writes to shared state?",
-            "Is the OR routing layer's consistency model correct for the failure modes it must survive?",
-        ],
-    },
-    {
-        "name": "Machine Learning Engineer",
-        "lens": "Is the learning architecture coherent and are the feedback loops healthy?",
-        "key_questions": [
-            "Is training data quality sufficient and distribution shift being tracked?",
-            "Are feedback loops closing cleanly without introducing systematic bias?",
-            "Does cold-start behavior produce safe, recoverable initial states?",
-        ],
-    },
-    {
-        "name": "Process / Meta Engineer",
-        "lens": "Is the development process self-improving?",
-        "key_questions": [
-            "Is the audit → ticket → sprint cycle closing tickets faster than it opens them?",
-            "Where is tech debt accumulating silently without a corresponding ticket?",
-            "Are skill and workflow changes compound-positive or creating downstream friction?",
+            "Are there components reaching across interfaces they shouldn't — knowing another device's internals when a dispatcher or service would suffice? What could be extracted into a named service?",
         ],
     },
     {
         "name": "Security Engineer",
-        "lens": "What can break from adversarial or unexpected inputs?",
+        "lens": "What can go wrong from adversarial inputs or trust boundary violations?",
         "key_questions": [
-            "What trust boundaries exist and are they enforced at the right layer?",
-            "Where could injection paths (prompt injection, SQL) reach privileged operations?",
+            "Are inter-device channels authenticated and replay-protected?",
+            "Where could a compromised minion escalate privileges or exfiltrate secrets?",
             "Is the audit trail complete enough to reconstruct any incident post-hoc?",
         ],
     },
     {
-        "name": "Reliability Engineer",
-        "lens": "What does the on-call story look like when something goes wrong at 3 a.m.?",
+        "name": "Process / Meta Engineer",
+        "lens": "Is the development and deployment process self-improving?",
         "key_questions": [
-            "What alerting gaps would leave an incident undiscovered for hours?",
-            "Which degradation paths have no graceful fallback and no runbook entry?",
-            "Is MTTR improving sprint over sprint, or are the same failure modes recurring?",
-        ],
-    },
-    {
-        "name": "Data Engineer",
-        "lens": "Is the persistence layer sound and defensible over time?",
-        "key_questions": [
-            "Are schema migrations safe under concurrent reads and writes to clan.memories?",
-            "Is data lineage traceable from palace nodes back to their originating decisions?",
-            "What retention policy gaps could cause the DB to grow unbounded or lose working state?",
+            "Is the skill library accumulating ROI or becoming a maintenance burden?",
+            "Are test coverage and documentation keeping pace with new device integrations?",
+            "What does the ticket velocity trend say about the factory's actual throughput?",
+            "Is the development process itself encapsulated — are design decisions being made at the right layer, or are implementation details leaking into the design conversation?",
         ],
     },
     {
         "name": "Product Manager",
-        "lens": "Is Igor actually making measurable progress toward its stated goal?",
+        "lens": "Is UnseenUniversity delivering value toward its stated factory goal?",
         "key_questions": [
-            "What is the ticket velocity trend and what pattern of blocker is driving it?",
-            "Are capabilities expanding toward the endgame goal or drifting into infrastructure?",
-            "Is scope creep absorbing cycles that should go toward the autonomy roadmap?",
+            "Which capabilities on the roadmap are blocked, and what is the root cause?",
+            "Is scope creep from infrastructure work absorbing time meant for product features?",
+            "Does the current device map match what the actual workload demands?",
+        ],
+    },
+    {
+        "name": "Reliability Engineer",
+        "lens": "What is the operational story when things break in production?",
+        "key_questions": [
+            "Which device failures have no graceful degradation path?",
+            "Are runbook and alerting gaps likely to extend incident duration materially?",
+            "Is MTTR improving as the fleet grows, or are failure modes compounding?",
+        ],
+    },
+    {
+        "name": "Human-Computer Interaction",
+        "lens": "Is the datacenter legible and observable to its operators?",
+        "key_questions": [
+            "Can an operator understand system state without reading source code?",
+            "Are error messages and status signals sufficient to diagnose common failure modes?",
+            "Does the developer experience for adding a new device match the stated simplicity goal?",
+        ],
+    },
+    {
+        "name": "Self-Improving Systems (Schmidhuber / Gödel Machine)",
+        "lens": "Does every autonomous self-modification path have a provable improvement condition?",
+        "key_questions": [
+            "Does any path that writes habits, palace nodes, or skill changes require measured outcome improvement — not just 'seems correct'?",
+            "Is there a bounded blast radius on self-modification? Can a bad habit update be detected and reverted?",
+            "Can the system search its own structure for improvement candidates, or does it only react to human-filed tickets?",
+            "What is the feedback loop from measured outcome back to the habit or rule that drove the decision?",
+        ],
+    },
+    {
+        "name": "Evaluator Quality (Shankar)",
+        "lens": "Is the audit and evaluation layer itself trustworthy and calibrated?",
+        "key_questions": [
+            "Are evaluators (audit checks, pe_evaluate, palace rules) validated against known-good examples, not just self-consistent?",
+            "Do palace nodes and habits carry confidence signals reflecting how often they led to correct outcomes?",
+            "When evaluator and executor disagree, is that disagreement tracked and fed back into calibration?",
+            "Are there behavioral evals for skills — not just unit tests — that confirm a skill produces correct behavior end to end?",
+        ],
+    },
+    {
+        "name": "Observability-First (Willison)",
+        "lens": "Is everything the system does observable, queryable, and lineage-tracked?",
+        "key_questions": [
+            "Is every LLM call logged with prompt hash, model, tokens, and outcome — not just pe_chain calls?",
+            "Can any artifact (palace node, habit, skill change) be traced to the decision that created it?",
+            "Is observability itself resilient — does it fail gracefully rather than corrupting the data path?",
+            "Can an operator answer 'what did the system do and why?' for any decision without reading source code?",
         ],
     },
 ]
 
 _AREA_MAP: dict[str, list[str]] = {
-    "cognition": ["Cognitive Scientist", "Machine Learning Engineer", "Safety Engineer"],
-    "memory": ["Data Engineer", "Systems Architect", "Reliability Engineer"],
-    "network": ["Distributed Systems", "Security Engineer"],
-    "tools": ["Human-Computer Interaction", "Process / Meta Engineer", "Product Manager"],
+    "architecture": ["Systems Architect", "Security Engineer", "Self-Improving Systems (Schmidhuber / Gödel Machine)"],
+    "process": ["Process / Meta Engineer", "Product Manager", "Reliability Engineer"],
+    "observability": ["Human-Computer Interaction", "Evaluator Quality (Shankar)", "Observability-First (Willison)"],
 }
 
 

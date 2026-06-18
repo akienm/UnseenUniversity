@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-token-test-20260618163641.71453.20260618.163641897115",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-token-test-20260618163641.71453"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T16:36:41.897115",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-token-test-20260618163641.71453"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-token-test-20260618163641.71453",
+    "body": "Test ticket to verify token capture",
+    "title": "Test token capture on close",
+    "status": "closed",
+    "worker": "claude",
+    "dispatched_at": "2026-01-01T00:00:00+00:00",
+    "result": "Test result for token capture",
+    "completed_at": "2026-06-18T16:36:41.897115+00:00",
+    "cost_usd": 0.0036,
+    "input_tokens": 96682,
+    "cache_write_tokens": 4040217,
+    "cache_read_tokens": 75598544,
+    "output_tokens": 811346,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

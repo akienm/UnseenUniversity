@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-gate-timeout-test.20260101.215554643862",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gate-timeout-test"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-01-01T21:55:54.643862",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gate-timeout-test"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gate-timeout-test",
+    "gate": null,
+    "size": "S",
+    "tags": [
+      "test"
+    ],
+    "title": "Test ticket T-gate-timeout-test",
+    "status": "sprint",
+    "worker": null,
+    "priority": 0.8,
+    "scraps_validated": "2026-01-01T00:00:00+00:00",
+    "dispatched_at": null,
+    "blocked_at": null,
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

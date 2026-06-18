@@ -21,7 +21,7 @@
   "body": {
     "id": "T-per-ticket-checkpoint",
     "title": "[sprint] Clear-to-base context between tickets via native /rewind (keep base + commits, excise ticket delta)",
-    "status": "sprint",
+    "status": "dispatched",
     "worker": "claude",
     "size": "L",
     "tags": [

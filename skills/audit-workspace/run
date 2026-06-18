@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""audit-workspace/run — Find orphaned directories and debris."""
+
+import subprocess
+import sys
+from pathlib import Path
+from datetime import datetime, timedelta
+import json
+
+def get_directory_age(path):
+    """Return days since last modification."""
+    try:
+        stat = Path(path).stat()
+        age_days = (datetime.now() - datetime.fromtimestamp(stat.st_mtime)).days
+        return age_days
+    except:
+        return None
+
+def get_directory_size_mb(path):
+    """Return directory size in MB."""
+    try:
+        result = subprocess.run(
+            f"du -sm '{path}'", shell=True, capture_output=True, text=True
+        )
+        return int(result.stdout.split()[0])
+    except:
+        return None
+
+def get_git_last_commit(path):
+    """Return date of last git commit, or None."""
+    try:
+        result = subprocess.run(
+            f"git -C '{path}' log -1 --format=%ai 2>/dev/null | cut -d' ' -f1",
+            shell=True, capture_output=True, text=True
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+    except:
+        return None
+
+def get_codebase_references(dirname):
+    """Count how many times dirname is referenced in UU codebase."""
+    try:
+        result = subprocess.run(
+            f"grep -r 'from.*{dirname}\\|import.*{dirname}' --include='*.py' /home/akien/dev/src/UnseenUniversity/ 2>/dev/null | wc -l",
+            shell=True, capture_output=True, text=True
+        )
+        return int(result.stdout.strip())
+    except:
+        return 0
+
+def matches_debris_pattern(name):
+    """Check if directory name matches known debris patterns."""
+    patterns = [".archive", "-old", "-backup", "~bak", "test-", "tmp-", "TheIgors", "cert-walks"]
+    return any(p in name for p in patterns)
+
+def analyze_directory(path):
+    """Analyze a directory and return verdict."""
+    name = Path(path).name
+
+    age = get_directory_age(path)
+    size_mb = get_directory_size_mb(path)
+    git_last = get_git_last_commit(path)
+    refs = get_codebase_references(name)
+    matches_pattern = matches_debris_pattern(name)
+
+    # Verdict logic
+    tier = "unknown"
+    reason = []
+
+    if age and age > 120 and refs == 0 and matches_pattern:
+        tier = 1
+        reason.append(f"Old ({age} days) + unused + debris pattern")
+    elif age and age > 90 and refs == 0 and (size_mb or 0) > 100:
+        tier = 1
+        reason.append(f"Old ({age} days) + unused + large ({size_mb}MB)")
+    elif age and age > 90 and refs == 0:
+        tier = 2
+        reason.append(f"Old ({age} days) + no references")
+    elif refs == 0 and matches_pattern:
+        tier = 2
+        reason.append("Debris pattern + no references")
+    elif refs > 0:
+        tier = 3
+        reason.append(f"In use ({refs} references)")
+    else:
+        tier = 3
+        reason.append("Keep for now")
+
+    return {
+        "path": path,
+        "name": name,
+        "tier": tier,
+        "age_days": age,
+        "size_mb": size_mb,
+        "git_last_commit": git_last,
+        "references": refs,
+        "debris_pattern": matches_pattern,
+        "reason": "; ".join(reason),
+    }
+
+def main():
+    tier_filter = None
+    if len(sys.argv) > 1 and sys.argv[1] == "--tier":
+        tier_filter = int(sys.argv[2])
+
+    candidates = [
+        "/home/akien/TheIgors",
+        "/home/akien/TheIgors.archive",
+        "/home/akien/TheIgors-cert-walks",
+        "/home/akien/TheIgorsProject",
+        "/home/akien/AcuRite",
+        "/home/akien/agent_datacenter",
+        "/home/akien/dev/src/UnseenUniversity/lab",
+    ]
+
+    runtime_artifacts = [
+        "/home/akien/.unseen_university/blobs",
+        "/home/akien/.unseen_university/boot-smoke-test",
+        "/home/akien/.TheIgors",
+    ]
+
+    results = []
+
+    for path in candidates + runtime_artifacts:
+        if Path(path).exists():
+            analysis = analyze_directory(path)
+            if tier_filter is None or analysis["tier"] == tier_filter:
+                results.append(analysis)
+
+    # Group by tier
+    by_tier = {1: [], 2: [], 3: []}
+    for r in results:
+        by_tier[r["tier"]].append(r)
+
+    print("=" * 80)
+    print("WORKSPACE DEBRIS AUDIT")
+    print("=" * 80)
+
+    if by_tier[1]:
+        print("\nTIER 1: DEFINITELY DELETE")
+        print("-" * 80)
+        for item in by_tier[1]:
+            print(f"\n{item['path']}")
+            print(f"  Age: {item['age_days']} days (git: {item['git_last_commit']})")
+            print(f"  Size: {item['size_mb']} MB")
+            print(f"  References: {item['references']}")
+            print(f"  → {item['reason']}")
+
+    if by_tier[2]:
+        print("\n\nTIER 2: INVESTIGATE FIRST")
+        print("-" * 80)
+        for item in by_tier[2]:
+            print(f"\n{item['path']}")
+            print(f"  Age: {item['age_days']} days")
+            print(f"  Size: {item['size_mb']} MB")
+            print(f"  References: {item['references']}")
+            print(f"  → {item['reason']}")
+
+    if by_tier[3]:
+        print("\n\nTIER 3: PROBABLY IN USE")
+        print("-" * 80)
+        for item in by_tier[3]:
+            print(f"\n{item['path']}")
+            print(f"  References: {item['references']}")
+            print(f"  → {item['reason']}")
+
+    print("\n" + "=" * 80)
+    print(f"Summary: {len(by_tier[1])} tier-1, {len(by_tier[2])} tier-2, {len(by_tier[3])} tier-3")
+    print("=" * 80)
+
+    # Exit with non-zero if tier 1 or 2 found (needs action)
+    if by_tier[1] or by_tier[2]:
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
