@@ -93,6 +93,10 @@ class CCWorkerListener:
             t.join(timeout=2)
         log.info("CCWorkerListener: stopped")
 
+    def is_alive(self) -> bool:
+        """True when the listener poll thread is running."""
+        return self._thread is not None and self._thread.is_alive()
+
     def _run(self) -> None:
         while not self._stop.is_set():
             try:
