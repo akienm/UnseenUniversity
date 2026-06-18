@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-filesystem-memory-hook-rewire.20260618.195556688765",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-filesystem-memory-hook-rewire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T19:55:56.688765",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-architecture-as-code-cognition-pipeline-2026-06-16",
+      "D-filesystem-memory-store-2026-06-16"
+    ],
+    "tickets": [
+      "T-filesystem-memory-hook-rewire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-filesystem-memory-hook-rewire",
+    "title": "[triage] Wire all MCP hooks to filesystem memory store (not DB palace)",
+    "status": "triage",
+    "worker": null,
+    "size": "L",
+    "tags": [
+      "Filesystem-Memory",
+      "Infrastructure"
+    ],
+    "description": "**Problem:** MCP tools (db_dispatch, palace_read, palace_write, memory_get, memory_search) still read/write DB palace, not the new filesystem store. Dual-write from /sorted + cc_queue.py is partial; full migration requires rewriting all read paths.\n\n**Affected files:**\n- devlab/claudecode/db_dispatch.py — read/write hooks\n- devices/librarian/mcp_server.py — palace_read, palace_write, memory_get, memory_search (or wherever these are)\n- Any other tool that calls psql directly for palace reads\n\n**Scope boundary:** All MCP read paths (palace_read, memory_get, memory_search) route to `devlab/runtime/memory/` filesystem. All MCP write paths call memory_emit.py chokepoint. DB palace becomes read-only (no direct writes from new code). Projection stays dual-write until cutover.\n\n**Completion criteria:**\n1. memory_get, memory_search, memory_list_by_type all read from devlab/runtime/memory/ JSON files, not DB\n2. palace_read returns filesystem records with same envelope shape\n3. palace_write calls memory_emit.py (projection)\n4. All four MCP tools have tests confirming filesystem roundtrip\n5. Grep for 'psycopg2' in librarian/mcp_server.py → zero direct DB connections\n\n**Acceptance test:** mcp__igor__memory_get(path=\"D-architecture-as-code-cognition-pipeline-2026-06-16\") returns correct record from filesystem, not DB.\n\n**Design rules:** Single chokepoint (memory_emit.py); semantic ids only, never filenames; reserved names respected.\n\n**Test plan:** Unit tests: memory_get, memory_search on existing records from devlab/runtime/memory/; integration test: /sorted files a decision, MCP retrieves it from filesystem.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-filesystem-memory-store-2026-06-16",
+    "created_at": "2026-06-18T19:55:56.688765+00:00",
+    "updated_at": "2026-06-18T13:55:57.593553-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.8,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-18T19:55:56.848366+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7b9084e3-ff4b-4f94-aca9-680390eb49f5",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

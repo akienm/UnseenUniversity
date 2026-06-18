@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.T-filesystem-memory-bulk-migrate.20260618.195557251169",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-filesystem-memory-bulk-migrate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T19:55:57.251169",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-filesystem-memory-store-2026-06-16"
+    ],
+    "tickets": [
+      "T-filesystem-memory-bulk-migrate",
+      "T-filesystem-memory-hook-rewire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-filesystem-memory-bulk-migrate",
+    "title": "[triage] Bulk migrate goals, decisions, slates, sessions to filesystem (projection mode)",
+    "status": "triage",
+    "worker": null,
+    "size": "L",
+    "tags": [
+      "Filesystem-Memory",
+      "Migration"
+    ],
+    "description": "**Problem:** Old records (decisions before D-filesystem-memory-store-2026-06-16, goals, slates, sessions) still live in DB palace only. Full picture of \"decisions → tickets → commits\" can't be built until all records exist in devlab/runtime/memory/.\n\n**Affected files:**\n- devlab/claudecode/migrate_decisions.py (exists, used for 36 decisions pilot)\n- devlab/claudecode/migrate_goals.py (new)\n- devlab/claudecode/migrate_slates.py (new, or integrated)\n- devlab/claudecode/migrate_sessions.py (new, or integrated)\n\n**Scope boundary:** Idempotent projection of all existing DB palace records into `devlab/runtime/memory/` JSON files with original timestamps. No deletions. Source stays authoritative (dual-write continues). If a record already exists in filesystem (same semantic id), atomic overwrite with same timestamp (no new file).\n\n**Completion criteria:**\n1. All goals from DB palace → goals/*.json in filesystem (retain original created_at timestamp)\n2. All decisions from DB palace → decisions/*.json (pilot migrated 36/36; this completes the backlog)\n3. All slates from DB palace → slates/*.json (or decline as non-canonical, document reason)\n4. All sessions → sessions/*.json (or decline, document reason)\n5. Run migrate scripts on fresh DB copy; verify idempotence (second run = zero new files)\n6. Grep for all semantic-ids in devlab/runtime/memory/ — should have every goal/decision from DB\n\n**Acceptance test:** \n```bash\npsql \"$UU_HOME_DB_URL\" -c \"SELECT COUNT(*) FROM memory_palace WHERE path LIKE 'D-%'\" \\\n  | grep -oE '[0-9]+' > /tmp/db_count.txt\nfind devlab/runtime/memory/decisions -name '*.json' | wc -l > /tmp/fs_count.txt\n# Both counts should match within rounding error (DB might have dupes)\n```\n\n**Design rules:** Projection not relocation; idempotent via original timestamp; semantic ids only; chokepoint=memory_emit.py\n\n**Test plan:** Haiku migration script (low-cost); verify counts match; spot-check 10 random records (compare DB vs filesystem JSON).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-filesystem-memory-store-2026-06-16",
+    "created_at": "2026-06-18T19:55:57.251169+00:00",
+    "updated_at": "2026-06-18T13:55:57.593553-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.7,
+    "gate": "T-filesystem-memory-hook-rewire",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-18T19:55:57.251382+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b50d4e84-d534-4932-927b-ecf5fa249576",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-filesystem-memory-cutover.20260618.195557400587",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-filesystem-memory-cutover"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-18T19:55:57.400587",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-filesystem-memory-store",
+      "D-filesystem-memory-store-2026-06-16"
+    ],
+    "tickets": [
+      "T-filesystem-memory-bulk-migrate",
+      "T-filesystem-memory-cutover"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-filesystem-memory-cutover",
+    "title": "[triage] Cutover: make filesystem authoritative, retire DB palace (requires Akien approval)",
+    "status": "triage",
+    "worker": null,
+    "size": "M",
+    "tags": [
+      "Filesystem-Memory",
+      "Migration"
+    ],
+    "description": "**Problem:** Projection is dual-write for safety, but dual-write is overhead. Once filesystem has all records and all readers route through it, cutover can flip authoritative source from DB to filesystem.\n\n**Affected files:**\n- devlab/claudecode/memory_emit.py — remove projection to DB palace\n- Any remaining hooks that write to memory_palace DB table\n- Database: drop/archive memory_palace table (after verification)\n\n**Scope boundary:** Cutover is ONE-WAY and REQUIRES AKIEN APPROVAL before proceeding. Steps: (1) verify all readers work on filesystem only, (2) stop all writes to DB palace (remove projection), (3) archive/drop DB palace table, (4) document cutover date in decision.\n\n**Completion criteria:**\n1. Akien confirms: \"All dev process runs through filesystem now. Ready to cutover.\" (or similar approval stamp)\n2. Remove dual-write projection from memory_emit.py and all hook paths\n3. All tests passing (now reading from filesystem only)\n4. DB palace table archived or dropped (document what was kept for audit trail)\n5. Decision D-filesystem-memory-store status changed to `closed` with as-built summary\n\n**Acceptance test:** psql check: memory_palace table no longer exists or is marked read-only. All memory operations succeed via filesystem.\n\n**Design rules:** Projection→authoritative transition is the cutover; gated on verification + Akien approval.\n\n**Test plan:** Full integration test suite runs against filesystem-only backend; spot-check /sorted + /query-ticket workflows end-to-end.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-filesystem-memory-store-2026-06-16",
+    "created_at": "2026-06-18T19:55:57.400587+00:00",
+    "updated_at": "2026-06-18T13:55:57.593553-06:00",
+    "completed_at": null,
+    "result": null,
+    "role": "apprentice",
+    "priority": 0.5,
+    "gate": "T-filesystem-memory-bulk-migrate",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 1,
+    "intention": null,
+    "created_by": null,
+    "scraps_validated": "2026-06-18T19:55:57.400750+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "e5eb93d8-5d3d-432d-aa8a-77779956ae0c",
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+  }
+}

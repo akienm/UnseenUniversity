@@ -32,6 +32,7 @@
     "worker": "cc.1",
     "priority": 0.25,
     "intention": "I intend that the intention field on tickets is populated by inference from existing ticket prose + affected file symbols, not by manual authoring.",
+    "blocked_at": null,
     "created_at": "2026-06-14T00:18:02.637814+00:00",
     "created_by": null,
     "related_to": null,
