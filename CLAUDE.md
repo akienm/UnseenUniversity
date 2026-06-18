@@ -93,6 +93,40 @@ No claim, no launch — pure handshake. **Builder auto-launch** (`launch_cmd` vi
 
 ---
 
+## Session startup: /context-load
+
+**Entry point after compaction.** When CC.0 (or any CC.x builder) resumes after `/autocompact`, the **first command is `/context-load`**. This loads the briefing post-compaction.
+
+**Before running /context-load:**
+
+1. **Compact cycle must have completed:** `/savestate` → `/autocompact` (done by prior session or manually).
+2. **CC_TMUX_SESSION must be exported** — used by Step 0 to detect the CC instance (CC.0, CC.1, etc.) and restore the right availability flag from cachedstate. If not set, defaults to "CC.0".
+
+**What /context-load does (10 steps):**
+
+| Step | Purpose | Orients on |
+|------|---------|-----------|
+| 0 | Restore CC.x availability from cachedstate | "Am I available for Granny to route tickets?" |
+| 0.25 | Check if prior day's slate closed cleanly | Soft prompt if prior day has open items |
+| 0.5 | Set debug flag | Session observability |
+| 1 | Load today's slate + summary | Current day's in-flight/planned/notes |
+| 2a | Show recent decision titles + dates | Last 3 decisions (what was decided recently?) |
+| 2b | List memory structure categories | (Memory store status) |
+| 3 | Show active decisions with status | Last 5 decisions in what state? |
+| 4 | Channel recent posts | What's been posted since last session? |
+| 5 | Pending approvals queue | Which tickets await approval? |
+| 5.5 | Stall check | Any tickets stuck >2 hours? |
+| 5.6 | Unread inbox (urgency flagged) | Any high-urgency or Granny posts? |
+
+**Availability edge case:**
+
+If Step 0 finds no cached availability file, CC.x stays unavailable (no file = implicitly unavailable by design). CC.x will not receive tickets from Granny. To manually restore:
+```bash
+touch ~/.granny/available/CC.0.available.true
+```
+
+---
+
 ## Environment variables
 
 Two canonical env vars. Everything else derives from them.
