@@ -16,14 +16,32 @@ UU_ROOT = Path(os.environ.get("UU_ROOT", "."))
 CC_WORKFLOW_TOOLS = Path(os.environ.get("CC_WORKFLOW_TOOLS", UU_ROOT / "devlab" / "claudecode"))
 
 
-# ─── Step 0: Restore CC.0 availability ───
+# ─── Step 0: Restore CC.0 availability (from cachedstate) ───
 def step_0_restore_availability() -> None:
-    """Clear .false flag, set .true (was cleared by /autocompact gate)."""
+    """Restore CC.0 availability from cachedstate (file semaphore pattern).
+
+    /savestate moved the flag from ~/.granny/available/ to cachedstate before compact.
+    Now restore it if it exists. If cachedstate is empty, CC.0 stays unavailable
+    (no file in active folder = implicitly unavailable).
+    """
     granny_avail = Path(os.environ.get("GRANNY_AVAIL_DIR", Path.home() / ".granny" / "available"))
+    cachedstate = IGOR_HOME / "devices" / "cc.0" / "cachedstate"
+
     granny_avail.mkdir(parents=True, exist_ok=True)
-    (granny_avail / "CC.0.available.false").unlink(missing_ok=True)
-    (granny_avail / "CC.0.available.true").touch()
-    print("✓ Step 0: CC.0 availability restored")
+
+    # Restore from cachedstate if it exists
+    if cachedstate.exists():
+        for flag_file in cachedstate.glob("CC.0.available.*"):
+            dest = granny_avail / flag_file.name
+            try:
+                flag_file.rename(dest)
+                print(f"✓ Step 0: CC.0 availability restored ({flag_file.name})")
+                return
+            except Exception:
+                pass
+
+    # If no cachedstate file, CC.0 stays unavailable (no file = not available)
+    print("✓ Step 0: CC.0 availability (none cached, unavailable)")
 
 
 # ─── Step 0.25: Stale slate check ───

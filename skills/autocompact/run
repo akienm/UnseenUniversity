@@ -1,5 +1,7 @@
 #!/bin/bash
-# /autocompact — Fire compact (script only, all housekeeping moved to /savestate)
+# /autocompact — Fire compact ONLY (script only, all housekeeping moved to /savestate)
+# NO STATE SAVING IN THIS SCRIPT. State is saved by /savestate BEFORE we run.
+# /autocompact only fires the compact script via tmux. Nothing else.
 # Emit preserve block, then fire self-compact via tmux send-keys.
 
 IGOR_HOME="${IGOR_HOME:-$HOME/.unseen_university}"
