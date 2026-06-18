@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.D-shims-are-listeners-2026-06-18.20260618.023047592656",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-shims-are-listeners-2026-06-18"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-18T02:30:47.592656",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-shims-are-listeners-2026-06-18"
+    ],
+    "tickets": [
+      "T-ccworker-shim-listener-thread",
+      "T-consequence-shims-are-listeners",
+      "T-granny-ticket-event-wakeup",
+      "T-shim-rack-supervisor",
+      "T-web-device-controls"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-shims-are-listeners-2026-06-18",
+    "title": "Shims are listeners — device shim owns the IDLE loop as a background thread",
+    "status": "open",
+    "date": "2026-06-18",
+    "source": "lab/design_docs/decisions/D-shims-are-listeners-2026-06-18.md",
+    "text": "# D-shims-are-listeners-2026-06-18\n**title:** Shims are listeners — device shim owns the IDLE loop as a background thread\n**date:** 2026-06-18\n**status:** open\n**spawned_tickets:** T-shim-rack-supervisor, T-ccworker-shim-listener-thread, T-web-device-controls, T-granny-ticket-event-wakeup, T-consequence-shims-are-listeners\n\n## Decision narrative\nThe shim is everything a device needs to operate and appear in the environment. Instead of spawning cc_worker_listener as a subprocess and babysitting its pid, CCWorkerShim.start() owns the listener loop as a background thread — the shim IS the device's presence. A rack supervisor process (under Ground Loop supervision) holds the shim instances and ticks their watchdogs. The web UI toggles circuit state (flat-file); the supervisor reconciles within one poll. Granny wakes on Postgres LISTEN/NOTIFY instead of sleeping 60s. Together these remove all manual shell steps from the \"enable a device\" flow: state an intent → it happens.\n\n## Hypothesis\nAfter closing a device's circuit breaker (via web UI toggle or code), the device's shim starts its listener loop as a background thread; the device self-announces to Granny within one poll cycle without any shell commands required.\n\n## Measurement Signal\nNo cc_worker_listener process in ps aux; shim.self_test() reports 'thread: alive'; Granny channel shows GRANNY_DISPATCH ack within one poll cycle of circuit close; DS.0 visible as 'online' in web UI after toggling. Outcome check: run /outcome when T-consequence-shims-are-listeners gates open (2026-07-02).\n\n## Goal Link\ngoal: none — factory of factories is an informal north star not yet encoded as a G-xxx palace goal node.\n\n## Context\nRoot cause was Granny dispatching T-intent-extractor-agent to CC.0 in a loop (5+ times), bypassing availability routing. Fix removed all hardcoded CC.0 routing targets. While auditing, identified that CCWorkerShim used subprocess babysitting — this decision generalizes the fix to the architectural pattern that prevents the same class of issue.\n"
+  }
+}
