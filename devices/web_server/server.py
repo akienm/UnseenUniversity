@@ -2766,64 +2766,45 @@ from unseen_university.ticket_status import (  # noqa: E402
 
 
 def _load_queue_tickets() -> list[dict]:
-    """Load open tickets from clan.memories. Returns [] when DB unavailable.
+    """Load in-flight tickets from the filesystem ticket store. Returns [] on error.
 
-    NOTE: this loads OPEN tickets only, so `effective_status`' gate resolution
-    here cannot see a gate that references a *closed* predecessor (it would read
-    as still-gated). In practice every live gate is either a date or an open
-    predecessor — closing a ticket nulls its dependents' id-gates (cmd_done →
-    _ungate_dependents) — so the gap is latent. (uuopentickets resolves this via
-    a separate _closed_ids query; this renderer deliberately stays simpler.)
+    Filesystem-first (D-build-queue-filesystem-first-2026-06-19). ``list`` is
+    active-only — the in-flight queue dir — so terminal tickets (closed/done/
+    cancelled, now in tickets/closed/) are excluded by construction; this view
+    shows only work still moving through the pipeline (Akien's call 2026-06-19,
+    over the old "everything except closed/cancelled" which surfaced ~1089 done
+    awaiting-validation tickets — those live on the validation surfaces instead).
+    Sort mirrors the old SQL: in_progress, then sprint, then everything else;
+    priority desc; id.
     """
-    conn = _db_conn()
-    if not conn:
-        return []
     try:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT
-                    name,
-                    narrative,
-                    metadata->>'status'   AS status,
-                    metadata->>'size'     AS size,
-                    metadata->>'worker'   AS worker,
-                    metadata->>'gate'     AS gate,
-                    (metadata->>'priority')::float AS priority,
-                    metadata->>'role'     AS role
-                FROM clan.memories
-                WHERE parent_id = 'TICKETS_ROOT'
-                  AND metadata->>'kind' = 'ticket'
-                  AND metadata->>'status' NOT IN ('closed', 'cancelled')
-                ORDER BY
-                    CASE metadata->>'status'
-                        WHEN 'in_progress' THEN 0
-                        WHEN 'sprint'      THEN 1
-                        ELSE 2
-                    END,
-                    (metadata->>'priority')::float DESC NULLS LAST,
-                    name
-                """
-            )
-            rows = cur.fetchall()
+        from unseen_university import ticket_store
+
+        def _bucket(status: str) -> int:
+            return {"in_progress": 0, "sprint": 1}.get(status, 2)
+
+        tickets = ticket_store.list()  # active dir = in-flight only
+        tickets.sort(key=lambda t: (
+            _bucket(t.get("status") or ""),
+            -(t.get("priority") if t.get("priority") is not None else 0.5),
+            t.get("id") or "",
+        ))
         return [
             {
-                "id": r[0] or "",
-                "title": r[1] or "",
-                "status": r[2] or "unknown",
-                "size": r[3] or "?",
-                "worker": r[4] or "",
-                "gate": r[5] or "",
-                "priority": float(r[6]) if r[6] is not None else 0.5,
-                "role": r[7] or "",
+                "id": t.get("id") or "",
+                "title": t.get("title") or "",
+                "status": t.get("status") or "unknown",
+                "size": t.get("size") or "?",
+                "worker": t.get("worker") or "",
+                "gate": t.get("gate") or "",
+                "priority": float(t["priority"]) if t.get("priority") is not None else 0.5,
+                "role": t.get("role") or "",
             }
-            for r in rows
+            for t in tickets
         ]
     except Exception as exc:
-        log.debug("queue: DB query failed — %s", exc)
+        log.debug("queue: ticket store query failed — %s", exc)
         return []
-    finally:
-        conn.close()
 
 
 async def _api_queue(request: Request):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from unittest.mock import MagicMock, patch
 
 
@@ -77,16 +78,6 @@ def _make_app():
         return _srv._make_app()
 
 
-def _mock_conn(rows: list[tuple]):
-    cur = MagicMock()
-    cur.fetchall.return_value = rows
-    cur.__enter__ = lambda s: s
-    cur.__exit__ = MagicMock(return_value=False)
-    conn = MagicMock()
-    conn.cursor.return_value = cur
-    return conn
-
-
 _TICKET_ROWS = [
     ("T-web-ui-queue-view", "Web UI: show open ticket queue", "sprint", "M", "claude", "", 0.7, "master"),
     ("T-cpu-peg-notify", "Scraps: notify CC when CPU pegged", "sprint", "S", "claude", "", 0.6, "master"),
@@ -95,6 +86,29 @@ _TICKET_ROWS = [
     ("T-akien-setup", "Akien: install something", "akien", "S", "akien", "", 0.5, "guru"),
 ]
 
+_BODY_KEYS = ("id", "title", "status", "size", "worker", "gate", "priority", "role")
+
+
+def _rows_to_bodies(rows: list[tuple]) -> list[dict]:
+    return [dict(zip(_BODY_KEYS, r)) for r in rows]
+
+
+@contextlib.contextmanager
+def _serving(rows: list[tuple]):
+    """Serve fixture tickets from the filesystem store the queue routes now read.
+
+    The /queue page still calls _db_conn() for its generic 'DB unavailable'
+    banner, so we hand it a truthy conn; the ticket data itself comes from
+    ticket_store.list (D-build-queue-filesystem-first).
+    """
+    bodies = _rows_to_bodies(rows)
+    conn = MagicMock()  # truthy — clears the page's _db_conn banner check
+    with (
+        patch("devices.web_server.server._db_conn", return_value=conn),
+        patch("unseen_university.ticket_store.list", return_value=bodies),
+    ):
+        yield
+
 
 # ── /api/queue ────────────────────────────────────────────────────────────────
 
@@ -102,18 +116,16 @@ _TICKET_ROWS = [
 class TestApiQueue:
     def test_returns_200(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 resp = client.get("/api/queue")
         assert resp.status_code == 200
 
     def test_returns_tickets_list(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 data = client.get("/api/queue").json()
         assert "tickets" in data
@@ -121,9 +133,8 @@ class TestApiQueue:
 
     def test_tickets_include_role_field(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 data = client.get("/api/queue").json()
         roles = {t["role"] for t in data["tickets"]}
@@ -132,9 +143,8 @@ class TestApiQueue:
 
     def test_grouped_by_status(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 data = client.get("/api/queue").json()
         assert "sprint" in data["grouped"]
@@ -145,7 +155,8 @@ class TestApiQueue:
     def test_no_db_returns_empty(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=None):
+        # /api/queue reads the store directly — an empty store yields an empty list.
+        with patch("unseen_university.ticket_store.list", return_value=[]):
             with TestClient(app) as client:
                 data = client.get("/api/queue").json()
         assert data["count"] == 0
@@ -153,9 +164,8 @@ class TestApiQueue:
 
     def test_ticket_fields_present(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 data = client.get("/api/queue").json()
         t = data["tickets"][0]
@@ -169,9 +179,8 @@ class TestApiQueue:
 class TestPageQueue:
     def test_returns_200(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 resp = client.get("/queue")
         assert resp.status_code == 200
@@ -179,9 +188,8 @@ class TestPageQueue:
 
     def test_renders_ticket_ids(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 html = client.get("/queue").text
         assert "T-web-ui-queue-view" in html
@@ -189,9 +197,8 @@ class TestPageQueue:
 
     def test_renders_status_groups(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 html = client.get("/queue").text
         # Assert canonical display labels (from _STATUS_LABEL) appear in rendered HTML
@@ -216,27 +223,24 @@ class TestPageQueue:
 
     def test_queue_link_in_nav(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 html = client.get("/queue").text
         assert 'href="/queue"' in html
 
     def test_auto_refresh_script_present(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 html = client.get("/queue").text
         assert "30000" in html or "reload" in html
 
     def test_role_column_in_table(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 html = client.get("/queue").text
         assert "Role" in html
@@ -244,9 +248,8 @@ class TestPageQueue:
 
     def test_my_tickets_filter_shows_guru_only(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 html = client.get("/queue?view=mine").text
         assert "T-akien-setup" in html
@@ -254,9 +257,8 @@ class TestPageQueue:
 
     def test_my_tickets_tab_links_present(self):
         from starlette.testclient import TestClient
-        conn = _mock_conn(_TICKET_ROWS)
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=conn):
+        with _serving(_TICKET_ROWS):
             with TestClient(app) as client:
                 html = client.get("/queue").text
         assert "view=mine" in html
