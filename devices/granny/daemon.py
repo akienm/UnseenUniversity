@@ -47,6 +47,7 @@ import signal
 import subprocess
 import sys
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -174,13 +175,34 @@ def _infer_role(t: dict) -> str:
 # ── Queue ─────────────────────────────────────────────────────────────────────
 
 
-def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
-    """Set ticket status (and optionally worker) via direct Postgres UPDATE.
+def _is_stale(body: dict, timeout_s: int) -> bool:
+    """True when a ticket's last update is older than ``timeout_s`` seconds.
 
-    Writes to both clan.memories (legacy) and devlab.tickets (new) so that
-    handshake status transitions (dispatched/acked/in_progress/sprint) land
-    regardless of which table the ticket lives in.
-    Returns True on success, False on error (logs warning, never raises).
+    Filesystem analogue of the old ``updated_at::timestamptz < now() - interval``
+    SQL. The DB column compared was ``clan.memories.updated_at``; on the FS that is
+    ``body.updated_at`` (stamped by every ticket_store mutator). TZ-aware
+    comparison (stored stamps carry ``+00:00``); falls back to ``created_at`` and
+    treats a missing/unparseable stamp as NOT stale — never reset on bad data.
+    """
+    ts = body.get("updated_at") or body.get("created_at")
+    if not ts:
+        return False
+    try:
+        dt = datetime.fromisoformat(ts)
+    except Exception:
+        return False
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt < datetime.now(timezone.utc) - timedelta(seconds=timeout_s)
+
+
+def _pg_mirror_setstatus(tid: str, status: str, worker: str | None) -> None:
+    """Transitional loud-on-failure PG mirror for _setstatus_direct.
+
+    The filesystem store is authoritative (D-build-queue-filesystem-first); this
+    keeps not-yet-migrated PG readers (web_server, stall_check, etc. — Phases 2-3)
+    in sync during the cutover window. Removed by T-ticket-pg-drop (#5). Non-fatal:
+    a mirror failure never blocks dispatch, but it logs LOUD (not DEBUG-swallowed).
     """
     try:
         import psycopg2
@@ -222,66 +244,64 @@ def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
                         (status, tid),
                     )
         conn.close()
-        log.debug("Granny: _setstatus_direct %s → %s (worker=%s)", tid, status, worker)
-        return True
     except Exception as exc:
-        log.warning("Granny: _setstatus_direct %s → %s failed: %s", tid, status, exc)
-        return False
+        log.warning("Granny: _setstatus_direct PG mirror %s → %s failed "
+                    "(non-fatal, FS authoritative): %s", tid, status, exc)
+
+
+def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
+    """Set ticket status (and optionally worker), filesystem-first.
+
+    The filesystem ticket store is the cutover authority
+    (D-build-queue-filesystem-first-2026-06-19): the FS write determines success;
+    Postgres is a transitional loud mirror (removed by #5). Handshake transitions
+    (dispatched/acked/in_progress/sprint) are non-terminal; passing ``worker=""``
+    clears the assignment (stale-dispatched reset). Returns True on FS success,
+    False on FS error (logs warning, never raises).
+    """
+    from unseen_university import ticket_store
+
+    ok = False
+    try:
+        ticket_store.set_status(tid, status)        # FS authority; stamps updated_at, routes
+        if worker is not None:
+            ticket_store.set_worker(tid, worker)
+        log.debug("Granny: _setstatus_direct %s → %s (worker=%s)", tid, status, worker)
+        ok = True
+    except Exception as exc:
+        log.warning("Granny: _setstatus_direct FS write %s → %s failed: %s", tid, status, exc)
+    # transitional loud PG mirror (removed by T-ticket-pg-drop, #5)
+    _pg_mirror_setstatus(tid, status, worker)
+    return ok
 
 
 def _sprint_tickets() -> list[dict]:
-    """Load ungated sprint tickets from clan.memories and devlab.tickets. Returns [] on error."""
+    """Load ungated sprint tickets from the filesystem store. Returns [] on error.
+
+    Filesystem-first (D-build-queue-filesystem-first-2026-06-19). ``list`` is
+    active-only (in-flight), so terminal tickets are already excluded; we keep
+    only ungated ones (empty/absent gate), backfill the worker/role/priority
+    defaults the old SQL synthesized, sort by priority desc, and preserve the
+    legacy LIMIT 50 cap (immaterial at current volume, kept for parity).
+    """
     try:
-        import psycopg2
-        import psycopg2.extras
+        from unseen_university import ticket_store
 
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
         tickets: dict[str, dict] = {}
-
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            # clan.memories — legacy tickets (metadata JSONB, gate inside metadata)
-            cur.execute(
-                """SELECT metadata FROM clan.memories
-                   WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'status' IN ('sprint')
-                   AND (metadata->>'gate' IS NULL OR metadata->>'gate' = '')
-                   ORDER BY (metadata->>'priority')::float DESC NULLS LAST
-                   LIMIT 50"""
-            )
-            for row in cur.fetchall():
-                t = dict(row["metadata"])
-                if t.get("id"):
-                    tickets[t["id"]] = t
-
-            # devlab.tickets — new tickets (dedicated columns + metadata JSONB for extras)
-            cur.execute(
-                """SELECT id, title, status, worker, size, tags, description, decision_id, metadata
-                   FROM devlab.tickets
-                   WHERE status = 'sprint'
-                   AND (metadata->>'gate' IS NULL OR metadata->>'gate' = '')
-                   ORDER BY (metadata->>'priority')::float DESC NULLS LAST
-                   LIMIT 50"""
-            )
-            for row in cur.fetchall():
-                md = row["metadata"] or {}
-                t = {
-                    "id": row["id"],
-                    "title": row["title"],
-                    "status": row["status"],
-                    "worker": row["worker"] or "claude",
-                    "size": row["size"],
-                    "tags": row["tags"] or [],
-                    "description": row["description"],
-                    "decision_id": row["decision_id"],
-                    "role": md.get("role", "master"),
-                    "priority": md.get("priority", 0.5),
-                    "gate": md.get("gate"),
-                }
-                if row["id"]:
-                    tickets[row["id"]] = t  # devlab overrides clan on conflict
-
-        conn.close()
-        return sorted(tickets.values(), key=lambda t: -(t.get("priority") or 0.5))
+        for raw in ticket_store.list(status_filter="sprint"):
+            if (raw.get("gate") or "") != "":
+                continue  # ungated only
+            tid = raw.get("id")
+            if not tid:
+                continue
+            t = dict(raw)
+            t["worker"] = t.get("worker") or "claude"
+            t.setdefault("role", "master")
+            if t.get("priority") is None:
+                t["priority"] = 0.5
+            tickets[tid] = t
+        ordered = sorted(tickets.values(), key=lambda t: -(t.get("priority") or 0.5))
+        return ordered[:50]
     except Exception as e:
         log.warning("Granny: ticket query failed: %s", e)
         return []
@@ -296,66 +316,32 @@ def _cleared_gated_tickets() -> list[dict]:
     Returns [] on any DB error (fail open — never blocks the dispatch cycle).
     """
     try:
-        import psycopg2
-        import psycopg2.extras
+        from unseen_university import ticket_store
         from unseen_university.gate_logic import gate_clear
 
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            # Gated sprint tickets from clan.memories
-            cur.execute(
-                """SELECT metadata FROM clan.memories
-                   WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'status' = 'sprint'
-                   AND metadata->>'gate' IS NOT NULL
-                   AND metadata->>'gate' != ''
-                   ORDER BY (metadata->>'priority')::float DESC NULLS LAST
-                   LIMIT 50"""
-            )
-            gated_clan = [dict(r["metadata"]) for r in cur.fetchall()]
+        # Gated sprint tickets — active-only (gated tickets are status=sprint).
+        gated = []
+        for raw in ticket_store.list(status_filter="sprint"):
+            if (raw.get("gate") or "") == "":
+                continue  # gated only
+            t = dict(raw)
+            t["worker"] = t.get("worker") or "claude"
+            t.setdefault("role", "master")
+            if t.get("priority") is None:
+                t["priority"] = 0.5
+            gated.append(t)
+        gated.sort(key=lambda t: -(t.get("priority") or 0.5))
+        if not gated:
+            return []
 
-            # Gated sprint tickets from devlab.tickets
-            cur.execute(
-                """SELECT id, title, status, worker, size, tags, description, decision_id, metadata
-                   FROM devlab.tickets
-                   WHERE status = 'sprint'
-                   AND metadata->>'gate' IS NOT NULL
-                   AND metadata->>'gate' != ''
-                   ORDER BY (metadata->>'priority')::float DESC NULLS LAST
-                   LIMIT 50"""
-            )
-            gated_devlab = []
-            for row in cur.fetchall():
-                md = row["metadata"] or {}
-                gated_devlab.append({
-                    "id": row["id"],
-                    "title": row["title"],
-                    "status": row["status"],
-                    "worker": row["worker"] or "claude",
-                    "role": md.get("role", "master"),
-                    "priority": md.get("priority", 0.5),
-                    "gate": md.get("gate"),
-                })
-
-            gated = gated_clan + gated_devlab
-            if not gated:
-                conn.close()
-                return []
-
-            # Status index from clan.memories (legacy)
-            cur.execute(
-                """SELECT metadata->>'id' AS id, metadata->>'status' AS status
-                   FROM clan.memories
-                   WHERE metadata->>'kind' = 'ticket'"""
-            )
-            all_statuses = [{"id": r["id"], "status": r["status"]} for r in cur.fetchall()]
-
-            # Add devlab.tickets statuses (deduplicated by id, devlab wins)
-            cur.execute("SELECT id, status FROM devlab.tickets")
-            devlab_statuses = {r["id"]: r["status"] for r in cur.fetchall()}
-            all_statuses = [s for s in all_statuses if s["id"] not in devlab_statuses]
-            all_statuses += [{"id": k, "status": v} for k, v in devlab_statuses.items()]
-        conn.close()
+        # Status index MUST include closed/ — gate_clear() clears a gate only when
+        # its predecessors are TERMINAL, and terminal tickets live in tickets/closed/.
+        # An active-only index would never see a closed predecessor → gates never
+        # clear → the wave silently hangs (the exact failure this cutover prevents).
+        all_statuses = [
+            {"id": b.get("id"), "status": b.get("status")}
+            for b in ticket_store.list(include_closed=True)
+        ]
     except Exception as e:
         log.warning("Granny: gated ticket query failed: %s", e)
         return []
@@ -386,28 +372,19 @@ def _worker_busy(worker_names: list[str]) -> bool:
     if not worker_names:
         return False
     try:
-        import psycopg2
+        from unseen_university import ticket_store
 
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
-        with conn.cursor() as cur:
-            placeholders = ",".join(["%s"] * len(worker_names))
-            cur.execute(
-                f"""SELECT 1 FROM clan.memories
-                   WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'status' IN ('dispatched', 'acked', 'in_progress')
-                   AND metadata->>'worker' IN ({placeholders})
-                UNION ALL
-                   SELECT 1 FROM devlab.tickets
-                   WHERE status IN ('dispatched', 'acked', 'in_progress')
-                   AND metadata->>'worker' IN ({placeholders})
-                LIMIT 1""",
-                worker_names * 2,
-            )
-            busy = cur.fetchone() is not None
-        conn.close()
-        return busy
+        # Active-only: dispatched/acked/in_progress are non-terminal, so a busy
+        # ticket is always in tickets/ (never closed/). Match on worker NAME
+        # (body.worker), parity with the old metadata->>'worker' IN (...) filter.
+        wanted = set(worker_names)
+        for t in ticket_store.list():
+            if t.get("status") in ("dispatched", "acked", "in_progress") \
+                    and t.get("worker") in wanted:
+                return True
+        return False
     except Exception:
-        return False  # fail open — don't block workers when DB is unreachable
+        return False  # fail open — don't block workers when store is unreachable
 
 
 def _cc0_busy() -> bool:
@@ -608,21 +585,15 @@ def _escalate_stale_dispatched() -> int:
     from devices.granny.availability import mark_unavailable
 
     try:
-        import psycopg2
-        import psycopg2.extras
+        from unseen_university import ticket_store
 
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                """SELECT metadata->>'id' AS tid, metadata->>'worker' AS worker
-                   FROM clan.memories
-                   WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'status' = 'dispatched'
-                   AND updated_at::timestamptz < now() - interval '%s seconds'""",
-                (DISPATCH_ACK_TIMEOUT_S,),
-            )
-            stale = [(row["tid"], row.get("worker") or "") for row in cur.fetchall() if row["tid"]]
-        conn.close()
+        # Filesystem-first: dispatched tickets whose updated_at is older than the
+        # ack timeout (the FS analogue of updated_at::timestamptz < now()-interval).
+        stale = [
+            (t.get("id"), t.get("worker") or "")
+            for t in ticket_store.list(status_filter="dispatched")
+            if t.get("id") and _is_stale(t, DISPATCH_ACK_TIMEOUT_S)
+        ]
     except Exception as exc:
         log.warning("Granny: stale-dispatched query failed: %s", exc)
         return 0
@@ -690,22 +661,18 @@ def _reset_stale_inprogress() -> int:
                 pass
 
     try:
-        import psycopg2
-        import psycopg2.extras
+        from unseen_university import ticket_store
 
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            placeholders = ",".join(["%s"] * len(cc_worker_names))
-            cur.execute(
-                f"""SELECT metadata->>'id' AS tid FROM clan.memories
-                   WHERE metadata->>'kind' = 'ticket'
-                   AND metadata->>'status' = 'in_progress'
-                   AND metadata->>'worker' IN ({placeholders})
-                   AND updated_at::timestamptz < now() - interval '%s seconds'""",
-                (*cc_worker_names, _STALE_INPROGRESS_TIMEOUT_S),
-            )
-            stale = [row["tid"] for row in cur.fetchall() if row["tid"]]
-        conn.close()
+        # Filesystem-first: in_progress CC-worker tickets stale past the timeout.
+        # (The reset write still delegates to `cc_queue reset --timeout`, which is
+        # already FS-first via T-cc-queue-fs-first; only this query migrates.)
+        wanted = set(cc_worker_names)
+        stale = [
+            t.get("id")
+            for t in ticket_store.list(status_filter="in_progress")
+            if t.get("id") and t.get("worker") in wanted
+            and _is_stale(t, _STALE_INPROGRESS_TIMEOUT_S)
+        ]
     except Exception as exc:
         log.warning("Granny: stale-inprogress query failed: %s", exc)
         return 0
@@ -1071,6 +1038,13 @@ def _setup_listen_notify():
     Also installs (idempotently) the trigger that fires NOTIFY on devlab.tickets
     INSERT. Returns the connection on success, None on failure — callers fall
     back to pure time.sleep polling when this returns None.
+
+    TRANSITIONAL (D-build-queue-filesystem-first): this is the only ticket-state
+    Postgres dependency left in the daemon — it's a wakeup OPTIMISATION, not a
+    reader. Once tickets are FS-only nothing INSERTs to devlab.tickets, so the
+    NOTIFY simply stops firing and the daemon degrades to its poll interval (the
+    None-return fallback path) — correct, just not instant. Rewiring the wakeup to
+    a filesystem signal is owned by T-ticket-pg-drop (#5); deliberately left here.
     """
     try:
         import psycopg2  # type: ignore
