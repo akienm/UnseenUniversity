@@ -298,39 +298,48 @@ Respond ONLY with valid JSON array (may be empty):
 # ── Schema extraction helpers ─────────────────────────────────────────────────
 
 
-def _closed_tickets_by_tag(conn) -> dict[str, dict]:
-    """Return tag → {count, titles, descriptions} for tags with 3+ closed tickets
-    in the last 60 days. Only tags with a non-null string value are included."""
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT
-              metadata->'tags'->0 AS first_tag,
-              COUNT(*) AS closed_count,
-              jsonb_agg(metadata->>'title') AS titles,
-              jsonb_agg(metadata->>'description') AS descriptions
-            FROM clan.memories
-            WHERE parent_id = 'TICKETS_ROOT'
-              AND metadata->>'status' IN ('done', 'awaiting_validation', 'closed')
-              AND (metadata->>'completed_at') IS NOT NULL
-              AND metadata->'tags'->0 IS NOT NULL
-              AND metadata->'tags'->0 != 'null'
-            GROUP BY first_tag
-            HAVING COUNT(*) >= 3
-            ORDER BY closed_count DESC
-            LIMIT 20
-            """,
-        )
-        result = {}
-        for row in cur.fetchall():
-            tag = str(row[0]).strip('"')
-            if tag and tag != "null":
-                result[tag] = {
-                    "count": row[1],
-                    "titles": [t for t in (row[2] or []) if t],
-                    "descriptions": [d for d in (row[3] or []) if d],
-                }
-        return result
+_SCHEMA_CLOSED_STATUSES = {"done", "awaiting_validation", "closed"}
+
+
+def _closed_tickets_by_tag() -> dict[str, dict]:
+    """Return tag → {count, titles, descriptions} for first-tags with 3+ closed
+    tickets (top 20 by count). Only tags with a non-null string value are included.
+
+    Filesystem-first (D-build-queue-filesystem-first-2026-06-19): closed tickets
+    live in the filesystem store's ``closed/`` bin, not clan.memories. Reproduces
+    the old GROUP BY first_tag / HAVING COUNT>=3 / ORDER BY count DESC LIMIT 20
+    aggregation in Python over ``ticket_store``. (The old SQL's docstring mentioned
+    a 60-day window but the query never filtered on it — behaviour preserved: no
+    date filter.)
+    """
+    from collections import defaultdict
+
+    from unseen_university import ticket_store
+
+    buckets: dict[str, dict] = defaultdict(
+        lambda: {"count": 0, "titles": [], "descriptions": []}
+    )
+    for body in ticket_store.list(include_closed=True):
+        if body.get("status") not in _SCHEMA_CLOSED_STATUSES:
+            continue
+        if not body.get("completed_at"):
+            continue
+        tags = body.get("tags") or []
+        if not tags:
+            continue
+        first_tag = tags[0]
+        if not first_tag or not isinstance(first_tag, str) or first_tag == "null":
+            continue
+        b = buckets[first_tag]
+        b["count"] += 1
+        if body.get("title"):
+            b["titles"].append(body["title"])
+        if body.get("description"):
+            b["descriptions"].append(body["description"])
+
+    qualifying = [(tag, info) for tag, info in buckets.items() if info["count"] >= 3]
+    qualifying.sort(key=lambda kv: kv[1]["count"], reverse=True)
+    return {tag: info for tag, info in qualifying[:20]}
 
 
 def _palace_path_exists(conn, path: str) -> bool:
@@ -400,7 +409,7 @@ def _schema_extraction_pass(conn) -> int:
     Returns count of palace nodes written.
     """
     try:
-        tags = _closed_tickets_by_tag(conn)
+        tags = _closed_tickets_by_tag()
         if not tags:
             return 0
         written = 0
