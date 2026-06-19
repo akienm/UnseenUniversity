@@ -16,7 +16,7 @@ def test_status_label_single_canonical_source():
     import sys
 
     sys.path.insert(
-        0, os.path.join(os.path.dirname(__file__), "..", "lab", "claudecode")
+        0, os.path.join(os.path.dirname(__file__), "..", "devlab", "claudecode")
     )
     canonical = importlib.import_module("unseen_university.ticket_status")
     server = importlib.import_module("devices.web_server.server")
@@ -42,7 +42,7 @@ def test_queue_view_runs_as_bare_script_under_system_python():
     import sys
 
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    script = os.path.join(repo_root, "lab", "claudecode", "queue_view.py")
+    script = os.path.join(repo_root, "devlab", "claudecode", "queue_view.py")
     # Run from /tmp with a clean PYTHONPATH so only the script's own bootstrap can
     # make unseen_university importable — mirrors the skill's bare invocation.
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
@@ -203,7 +203,7 @@ class TestPageQueue:
         # ownership bucket, NOT a deprecated gate — its rendered label must read
         # as his and must never revert to "(legacy)". The fixture has no legacy
         # statuses, so "legacy" must not appear anywhere in the rendered HTML.
-        assert "Akien (yours)" in html  # akien ownership-bucket label, not "(legacy)"
+        assert "Akien (needs your action)" in html  # canonical akien label (_STATUS_LABEL), not "(legacy)"
         assert "akien (legacy)" not in html.lower()  # specific guard: akien must not revert
 
     def test_no_db_shows_unavailable(self):

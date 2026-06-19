@@ -19,7 +19,7 @@ import os
 import sys
 from unittest.mock import patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lab", "claudecode"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "devlab", "claudecode"))
 
 import cc_queue  # noqa: E402
 
