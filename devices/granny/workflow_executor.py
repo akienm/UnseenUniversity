@@ -137,21 +137,19 @@ def start_workflow(script_path: str | Path) -> dict:
 
 
 def get_ticket_status(ticket_id: str) -> str | None:
-    """Return the current status of a ticket, or None on error."""
-    try:
-        import psycopg2
-        import psycopg2.extras
+    """Return the current status of a ticket, or None on error.
 
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT metadata->>'status' FROM clan.memories "
-                "WHERE metadata->>'id' = %s AND metadata->>'kind' = 'ticket' LIMIT 1",
-                (ticket_id,),
-            )
-            row = cur.fetchone()
-        conn.close()
-        return row[0] if row else None
+    Reads the filesystem ticket store (the cutover authority,
+    D-build-queue-filesystem-first-2026-06-19). ``ticket_store.read`` searches
+    BOTH ``tickets/`` and ``tickets/closed/``, so a completed step's ticket — moved
+    to ``closed/`` with status ``"closed"`` (in ``_DONE_STATUSES``) — is still found;
+    an active-only lookup here would silently hang the wave.
+    """
+    try:
+        from unseen_university import ticket_store
+
+        body = ticket_store.read(ticket_id)
+        return body.get("status") if body else None
     except Exception as exc:
         log.debug("Workflow: ticket status query failed for %s: %s", ticket_id, exc)
         return None
