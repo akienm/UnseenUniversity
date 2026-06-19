@@ -211,6 +211,14 @@ def _body_eq_ignoring_updated_at(a: dict, b: dict) -> bool:
     return aa == bb
 
 
+# Public alias: cc_queue._save reuses this so the "what counts as unchanged"
+# definition lives in exactly ONE place (the chokepoint), not duplicated per
+# caller — the load-bearing equality must not drift between modules.
+def body_eq_ignoring_updated_at(a: dict, b: dict) -> bool:
+    """Whether two ticket bodies are equal ignoring ``updated_at`` (churn check)."""
+    return _body_eq_ignoring_updated_at(a, b)
+
+
 def _put(body: dict) -> str:
     """Lock-free status-aware upsert + route. CALLER MUST HOLD ``_mutation_lock``.
 

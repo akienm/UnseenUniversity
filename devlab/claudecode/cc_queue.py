@@ -359,15 +359,73 @@ def _load_pg():
 
 
 def _save(tasks):
-    """Canonical write: UPSERT each ticket.
+    """Canonical write — FILESYSTEM-FIRST (D-build-queue-filesystem-first-2026-06-19).
 
-    Strategy during transition:
-    - NEW tickets: write to devlab.tickets
-    - EXISTING tickets (in clan): update clan.memories in-place
+    The filesystem store (via the ticket_store chokepoint) is authoritative. Each
+    task is written through ticket_store ONLY when it genuinely differs from its
+    on-disk body. The comparison normalizes the disk body with
+    ``_apply_load_defaults`` first, so the load-time default backfill (role/priority/
+    gate/... materialized in-memory by _load) does NOT masquerade as a change and
+    rewrite all ~66 default-missing tickets on every save — the churn bomb the
+    completeness gate guards against.
+
+    Disk is snapshotted ONCE (a single O(N) ticket_store.list) rather than read
+    per-task: _find globs+parses every file, so a per-task read() would make
+    _save(full_list) O(N²) on every CLI invocation (each cc_queue command is a
+    fresh load-all→mutate→save-all subprocess) — minutes per add/close on the live
+    2088-ticket store. The snapshot keeps a save O(N), same order as the PG batch
+    it replaces.
+
+    Postgres is a TRANSITIONAL mirror: still written so the ~20 unmigrated readers
+    (Granny et al.) keep seeing live state, but a mirror failure is LOUD (logged at
+    WARNING, never DEBUG-swallowed) and NON-FATAL — the FS write already succeeded.
+    Removed entirely by T-ticket-pg-drop once T-ticket-readers-migrate lands.
     """
     if not tasks:
         return
 
+    import logging
+    log = logging.getLogger(__name__)
+
+    # ── Authoritative write: filesystem store, change-detected ──
+    # One O(N) scan; compare each task against its normalized on-disk body.
+    disk_by_id = {b["id"]: b for b in ticket_store.list(include_closed=True)
+                  if b.get("id")}
+    written = 0
+    for t in tasks:
+        tid = t.get("id")
+        if not tid:
+            continue
+        disk = disk_by_id.get(tid)
+        if disk is not None and ticket_store.body_eq_ignoring_updated_at(
+                _apply_load_defaults(dict(disk)), t):
+            continue  # unchanged vs disk (modulo defaults + updated_at) — no churn
+        ticket_store.write(t)
+        written += 1
+    # AR-009 interface crossing: record the FS write volume.
+    log.info("cc_queue._save: %d/%d tickets written to filesystem store",
+             written, len(tasks))
+
+    # ── Transitional PG mirror (LOUD on failure, non-fatal) ──
+    try:
+        _save_pg_mirror(tasks)
+    except Exception as e:
+        log.warning("cc_queue._save: Postgres mirror failed (%s) — filesystem store "
+                    "is authoritative and already durable; unmigrated PG readers "
+                    "(Granny et al.) may see stale state until T-ticket-readers-"
+                    "migrate. NOT fatal.", e)
+
+
+def _save_pg_mirror(tasks):
+    """Transitional Postgres mirror of the filesystem write (see _save).
+
+    Mirrors live ticket state into clan.memories / devlab.tickets so the ~20
+    unmigrated PG readers keep working during the cutover window. Removed by
+    T-ticket-pg-drop. NOTE: the old fail-open ``_project_to_memory`` dual-write is
+    intentionally NOT called here — ticket_store.write() in _save IS now the
+    filesystem write; re-adding migrate_one would create a second, divergent
+    FS-write path (different envelope). Leave it dead until T-ticket-pg-drop.
+    """
     conn = _db_conn()
     try:
         cur = conn.cursor()
@@ -451,15 +509,15 @@ def _save(tasks):
     finally:
         conn.close()
 
-    # Fail-open dual-write: project every persisted ticket into the filesystem
-    # memory store (devlab/runtime/memory/tickets/). Runs ONLY after a successful
-    # commit above — if commit raised, the exception propagates before we get here
-    # and no unpersisted ticket is projected.
-    _project_to_memory(tasks)
-
 
 def _project_to_memory(tasks):
     """Additive projection of tickets into the filesystem memory store.
+
+    DEAD as of D-build-queue-filesystem-first-2026-06-19: _save now writes the
+    filesystem directly through ticket_store, so this migrate_one-based projection
+    is no longer called (it would be a second, divergent FS-write path). Retained
+    only for the bulk migrator; removed with the rest of the PG path by
+    T-ticket-pg-drop. Do NOT re-wire into _save.
 
     D-filesystem-memory-store-2026-06-16. The Postgres tables stay authoritative;
     this is a dual-write so the grep-able store tracks live ticket state (creation
