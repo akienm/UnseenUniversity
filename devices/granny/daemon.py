@@ -42,7 +42,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import select as _select_module
 import signal
 import subprocess
 import sys
@@ -196,68 +195,14 @@ def _is_stale(body: dict, timeout_s: int) -> bool:
     return dt < datetime.now(timezone.utc) - timedelta(seconds=timeout_s)
 
 
-def _pg_mirror_setstatus(tid: str, status: str, worker: str | None) -> None:
-    """Transitional loud-on-failure PG mirror for _setstatus_direct.
-
-    The filesystem store is authoritative (D-build-queue-filesystem-first); this
-    keeps not-yet-migrated PG readers (web_server, stall_check, etc. — Phases 2-3)
-    in sync during the cutover window. Removed by T-ticket-pg-drop (#5). Non-fatal:
-    a mirror failure never blocks dispatch, but it logs LOUD (not DEBUG-swallowed).
-    """
-    try:
-        import psycopg2
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
-        with conn:
-            with conn.cursor() as cur:
-                # clan.memories — metadata JSONB, status inside metadata
-                if worker:
-                    cur.execute(
-                        """UPDATE clan.memories
-                           SET metadata = jsonb_set(
-                               jsonb_set(metadata, '{status}', %s::jsonb),
-                               '{worker}', %s::jsonb
-                           )
-                           WHERE id = %s""",
-                        (f'"{status}"', f'"{worker}"', tid),
-                    )
-                else:
-                    cur.execute(
-                        """UPDATE clan.memories
-                           SET metadata = jsonb_set(metadata, '{status}', %s::jsonb)
-                           WHERE id = %s""",
-                        (f'"{status}"', tid),
-                    )
-                # devlab.tickets — dedicated status column + metadata JSONB for worker
-                if worker:
-                    cur.execute(
-                        """UPDATE devlab.tickets
-                           SET status = %s,
-                               metadata = jsonb_set(
-                                   COALESCE(metadata, '{}'), '{worker}', %s::jsonb
-                               )
-                           WHERE id = %s""",
-                        (status, f'"{worker}"', tid),
-                    )
-                else:
-                    cur.execute(
-                        "UPDATE devlab.tickets SET status = %s WHERE id = %s",
-                        (status, tid),
-                    )
-        conn.close()
-    except Exception as exc:
-        log.warning("Granny: _setstatus_direct PG mirror %s → %s failed "
-                    "(non-fatal, FS authoritative): %s", tid, status, exc)
-
-
 def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
-    """Set ticket status (and optionally worker), filesystem-first.
+    """Set ticket status (and optionally worker) in the filesystem ticket store.
 
-    The filesystem ticket store is the cutover authority
-    (D-build-queue-filesystem-first-2026-06-19): the FS write determines success;
-    Postgres is a transitional loud mirror (removed by #5). Handshake transitions
-    (dispatched/acked/in_progress/sprint) are non-terminal; passing ``worker=""``
-    clears the assignment (stale-dispatched reset). Returns True on FS success,
-    False on FS error (logs warning, never raises).
+    The filesystem ticket store is the sole authority
+    (D-build-queue-filesystem-first-2026-06-19): the FS write determines success.
+    Handshake transitions (dispatched/acked/in_progress/sprint) are non-terminal;
+    passing ``worker=""`` clears the assignment (stale-dispatched reset). Returns
+    True on FS success, False on FS error (logs warning, never raises).
     """
     from unseen_university import ticket_store
 
@@ -270,8 +215,6 @@ def _setstatus_direct(tid: str, status: str, worker: str | None = None) -> bool:
         ok = True
     except Exception as exc:
         log.warning("Granny: _setstatus_direct FS write %s → %s failed: %s", tid, status, exc)
-    # transitional loud PG mirror (removed by T-ticket-pg-drop, #5)
-    _pg_mirror_setstatus(tid, status, worker)
     return ok
 
 
@@ -1032,76 +975,16 @@ def _make_imap_if_bus_configured(config: dict):
         return None
 
 
-def _setup_listen_notify():
-    """Open a persistent autocommit connection and LISTEN for ticket inserts.
+def _wait_for_work(timeout: float) -> None:
+    """Sleep until the next poll cycle.
 
-    Also installs (idempotently) the trigger that fires NOTIFY on devlab.tickets
-    INSERT. Returns the connection on success, None on failure — callers fall
-    back to pure time.sleep polling when this returns None.
-
-    TRANSITIONAL (D-build-queue-filesystem-first): this is the only ticket-state
-    Postgres dependency left in the daemon — it's a wakeup OPTIMISATION, not a
-    reader. Once tickets are FS-only nothing INSERTs to devlab.tickets, so the
-    NOTIFY simply stops firing and the daemon degrades to its poll interval (the
-    None-return fallback path) — correct, just not instant. Rewiring the wakeup to
-    a filesystem signal is owned by T-ticket-pg-drop (#5); deliberately left here.
+    The daemon reads ticket state from the filesystem store (the cutover
+    authority, D-build-queue-filesystem-first), so the wakeup is pure interval
+    polling — no Postgres LISTEN/NOTIFY. Restoring instant wake via a filesystem
+    signal (so a newly-filed ticket dispatches without waiting out the poll
+    interval) is a follow-up: T-granny-fs-wake-signal.
     """
-    try:
-        import psycopg2  # type: ignore
-
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
-        conn.set_isolation_level(0)  # autocommit required for LISTEN
-        with conn.cursor() as cur:
-            cur.execute("""
-                CREATE OR REPLACE FUNCTION notify_ticket_queue_insert()
-                RETURNS trigger LANGUAGE plpgsql AS $$
-                BEGIN
-                    PERFORM pg_notify('ticket_queue_insert', NEW.id);
-                    RETURN NEW;
-                END;
-                $$
-            """)
-            cur.execute("DROP TRIGGER IF EXISTS trigger_ticket_queue_insert_notify ON devlab.tickets")
-            cur.execute("""
-                CREATE TRIGGER trigger_ticket_queue_insert_notify
-                AFTER INSERT ON devlab.tickets
-                FOR EACH ROW EXECUTE FUNCTION notify_ticket_queue_insert()
-            """)
-            cur.execute("LISTEN ticket_queue_insert")
-        log.info("Granny: LISTEN/NOTIFY active (channel=ticket_queue_insert)")
-        return conn
-    except Exception as exc:
-        log.warning(
-            "Granny: LISTEN setup failed — falling back to %ds polling: %s",
-            POLL_INTERVAL_S, exc,
-        )
-        return None
-
-
-def _wait_for_notify(listen_conn, timeout: float) -> None:
-    """Wait up to `timeout` seconds for a NOTIFY, then return.
-
-    Preempts early when a notification arrives on the listen connection.
-    Falls back to time.sleep when listen_conn is None (LISTEN unavailable).
-    """
-    if listen_conn is None:
-        time.sleep(timeout)
-        return
-
-    try:
-        ready = _select_module.select([listen_conn], [], [], timeout)
-        if ready[0]:
-            listen_conn.poll()
-            if listen_conn.notifies:
-                notify = listen_conn.notifies.pop(0)
-                listen_conn.notifies.clear()
-                log.info(
-                    "Granny: NOTIFY wakeup channel=%s payload=%r — running cycle immediately",
-                    notify.channel, notify.payload,
-                )
-    except Exception as exc:
-        log.warning("Granny: notify wait failed — sleeping %ds: %s", timeout, exc)
-        time.sleep(timeout)
+    time.sleep(timeout)
 
 
 def run_loop() -> None:
@@ -1115,8 +998,6 @@ def run_loop() -> None:
         log.info("Granny: bus dispatch enabled (reply mailbox=%s)",
                  config.get("granny_mailbox", _GRANNY_MAILBOX_DEFAULT))
 
-    listen_conn = _setup_listen_notify()
-
     while True:
         cycle += 1
         config = _load_config()
@@ -1125,7 +1006,7 @@ def run_loop() -> None:
             run_once(config, imap=imap)
         except Exception as e:
             log.error("Granny: poll cycle %d error: %s", cycle, e)
-        _wait_for_notify(listen_conn, POLL_INTERVAL_S)
+        _wait_for_work(POLL_INTERVAL_S)
 
 
 if __name__ == "__main__":
