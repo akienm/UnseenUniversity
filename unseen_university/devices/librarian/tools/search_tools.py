@@ -77,7 +77,11 @@ def _search_memories(query: str, limit: int) -> list[dict]:
     """Fulltext over the clan.memories knowledge-store (NOT ticket-state).
 
     Ticket-state moved to the filesystem store (see ``_search_tickets``); this
-    path stays on Postgres because it searches the general memory corpus.
+    path stays on Postgres because it searches the general memory corpus. Rows
+    with ``kind='ticket'`` are EXCLUDED here — tickets are filesystem-only now
+    (D-build-queue-filesystem-first-2026-06-19), so they must surface solely
+    from ``_search_tickets``, never from the DB, even while vestigial ticket
+    rows linger in clan.memories until #5 (T-ticket-pg-drop) removes them.
     """
     hits: list[dict] = []
     try:
@@ -89,21 +93,20 @@ def _search_memories(query: str, limit: int) -> list[dict]:
                        ts_rank(
                            to_tsvector('english', coalesce(narrative,'')),
                            plainto_tsquery('english', %s)
-                       ) AS rank,
-                       metadata->>'kind'
+                       ) AS rank
                 FROM clan.memories
                 WHERE to_tsvector('english', coalesce(narrative,''))
                       @@ plainto_tsquery('english', %s)
+                  AND metadata->>'kind' IS DISTINCT FROM 'ticket'
                 ORDER BY rank DESC
                 LIMIT %s
                 """,
                 (query, query, limit),
             )
-            for name, narrative, rank, kind in cur.fetchall():
-                src = "ticket" if kind == "ticket" else "memory"
+            for name, narrative, rank in cur.fetchall():
                 hits.append(
                     {
-                        "source": src,
+                        "source": "memory",
                         "key": name or "?",
                         "rank": float(rank),
                         "snippet": _snip(narrative or ""),

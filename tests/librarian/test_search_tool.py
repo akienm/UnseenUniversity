@@ -96,7 +96,7 @@ class TestSearchPalace:
 
 class TestSearchMemories:
     def test_memory_hit_included(self):
-        rows = [("GOAL_MURDERBOT", "Igor reads Murderbot for cultural context about agents", 0.68, "GOAL")]
+        rows = [("GOAL_MURDERBOT", "Igor reads Murderbot for cultural context about agents", 0.68)]
         conn = _mock_conn(rows)
         with patch.object(search_tools, "_conn", return_value=conn):
             result = search_tools.search("murderbot", source="memories")
