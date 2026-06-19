@@ -165,23 +165,15 @@ class GrannyShim(BaseShim):
             log.error("GrannyShim: _restart_daemon failed: %s", exc)
 
     def _has_pending_tickets(self) -> bool:
-        """Return True when at least one sprint-status ticket exists in the queue."""
+        """Return True when at least one sprint-status ticket exists in the queue.
+
+        Reads the filesystem ticket store (the cutover authority,
+        D-build-queue-filesystem-first-2026-06-19), not Postgres.
+        """
         try:
-            import psycopg2  # type: ignore[import-untyped]
-            db_url = os.environ.get(
-                "UU_HOME_DB_URL",
-                "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-            )
-            conn = psycopg2.connect(db_url, connect_timeout=5)
-            with conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        """SELECT 1 FROM clan.memories
-                           WHERE metadata->>'status' = 'sprint'
-                             AND metadata->>'kind' = 'ticket'
-                           LIMIT 1"""
-                    )
-                    return cur.fetchone() is not None
+            from unseen_university import ticket_store
+
+            return bool(ticket_store.list(status_filter="sprint"))
         except Exception as exc:
             log.debug("GrannyShim: _has_pending_tickets failed: %s", exc)
             return False  # fail-safe: don't restart if we can't confirm there's work
