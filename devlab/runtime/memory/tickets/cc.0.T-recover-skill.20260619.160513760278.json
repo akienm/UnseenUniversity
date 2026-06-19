@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-recover-skill.20260619.160513760278",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-recover-skill"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T22:05:13.760278+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-build-queue-filesystem-first-2026-06-19"
+    ],
+    "tickets": [
+      "T-recover-skill"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-recover-skill",
+    "title": "[sprint] Skill: /recover — rewind safeguard message",
+    "size": "S",
+    "tags": [
+      "Skill",
+      "Rewind",
+      "Session-lifecycle"
+    ],
+    "description": "Create a tiny skill `/recover` that outputs the proven rewind safeguard message, callable after a rewind so CC has an explicit command to emit and the user knows orientation was checked. The message: 'Rewound. Read today's slate and git log --oneline -10, reconcile against them, and trust slate+git over your memory before doing anything.' Verified to work perfectly during the rewind test as a cognitive reset signal.\n\n**Affected files:** skills/recover/ (new skill directory + run script)\n\n**Design rules:** Skills live in repo root skills/, not ~/.claude/skills/ (latter is NOT source of truth). No dependencies, no state. Idempotent: can be called multiple times.\n\n**Scope boundary:** IN: the skill command, message output, registration. OUT: changes to rewind infrastructure itself (/context-load, /autocompact, Rewound? header behavior).\n\n**Test plan:** Invoke `/recover`, verify output matches the safeguard message exactly. Verify callable multiple times without side effects or state mutation.",
+    "decision_id": "D-build-queue-filesystem-first-2026-06-19",
+    "worker": "cc.0",
+    "priority": 0.7,
+    "gate": null,
+    "status": "sprint",
+    "created_at": "2026-06-19T22:05:13.464865+00:00",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-19T22:05:13.511421+00:00"
+  }
+}

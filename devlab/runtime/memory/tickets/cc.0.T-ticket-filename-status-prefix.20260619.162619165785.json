@@ -1,0 +1,38 @@
+{
+  "id": "cc.0.T-ticket-filename-status-prefix.20260619.162619165785",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-filename-status-prefix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T22:26:19.165785+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-build-queue-filesystem-first-2026-06-19"
+    ],
+    "tickets": [
+      "T-ticket-filename-status-prefix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-filename-status-prefix",
+    "title": "Ticket filenames lead with status for ls-by-status (post-cutover)",
+    "status": "sprint",
+    "worker": null,
+    "role": "master",
+    "size": "M",
+    "priority": 0.4,
+    "tags": [
+      "Workflow",
+      "TicketStore"
+    ],
+    "decision_id": "D-build-queue-filesystem-first-2026-06-19",
+    "gate": "T-ticket-pg-drop",
+    "created_by": "cc.0",
+    "description": "**Akien's ask (2026-06-19):** ticket filenames should lead with status (status--title--createdatetime) so the active queue is filterable by a plain `ls`/directory search, and the original creation date is visible without extended file properties.\n\n**Current:** `cc.0.T-<slug>.<YYYYMMDD.HHMMSSffffff>.json` — already carries the created datestamp AND the title-slug; only the leading status is missing.\n\n**Proposed shape:** `<status>.cc.0.T-<slug>.<created-stamp>.json` (status FIRST). Keep the `T-<slug>` so `_find` keeps globbing by id fast (dropping it for free text forces a scan+parse of every file on the 2000+ store).\n\n**Consequences to handle:**\n- Status-in-name = rename on EVERY status transition (today only the terminal ->closed/ move renames). ticket_store already does atomic os.replace for the closed move; extend that single mover (_put) to rename within tickets/ when the status component changes. Atomic-rename + flock invariants must hold.\n- Does NOT replace the closed/ bin: the subdir keeps the active dir holding only in-flight work (hard requirement); the status prefix makes `ls` within each dir filterable. Keep both.\n- One-time migration: rename ~2088 existing files to the new scheme.\n\n**Affected files:** unseen_university/ticket_store.py (_envelope filename, _put rename-on-status-change, _find/_iter_files glob), a one-shot migration script.\n**Design rules:** filesystem-first build queue (D-build-queue-filesystem-first); atomic write+rename (PATTERN-004); closed/ bin keeps active dir clean.\n**Scope boundary:** filename scheme + rename-on-transition + one-time migration; does NOT change the envelope body schema or the closed/ bin decision.\n**Test plan:** ls-by-status returns the right set; rename-on-transition leaves a single copy with the new name; _find still resolves by id; migration is idempotent.\n\n**Sequencing (CC recommendation, Akien approved 'when you think best'):** GATED on T-ticket-pg-drop — do the filename rename AFTER the authority flip lands, so we are not migrating 2088 filenames while also flipping the source of truth. One big change at a time, per the decision's no-big-bang rule.\n**HIGH-inertia:** ticket_store.py chokepoint + bulk file migration. Approval pre-stamped (Akien, 2026-06-19, this design conversation)."
+  }
+}
