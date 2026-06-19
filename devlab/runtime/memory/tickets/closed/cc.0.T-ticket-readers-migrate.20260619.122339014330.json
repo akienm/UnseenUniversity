@@ -21,7 +21,7 @@
   "body": {
     "id": "T-ticket-readers-migrate",
     "title": "[sprint] Migrate the ~21 Postgres ticket-state readers to the ticket-store module (phased)",
-    "status": "sprint",
+    "status": "closed",
     "worker": null,
     "size": "L",
     "tags": [
@@ -32,9 +32,9 @@
     "description": "**Problem:** ~21 files read ticket state from clan.memories/devlab.tickets. If they aren't migrated before PG is dropped, dispatch silently hangs (Granny workflow_executor.get_ticket_status returns None → steps never reach 'done'), dashboards blank, search returns nothing. This is the fix-one-leave-many boundary of the cutover.\n\n**Proposed shape:** Swap each reader's SQL for a ticket_store import. PHASED, dispatch-critical first, each phase independently committable & reversible:\n  Phase 1 (dispatch-critical, do first): devices/granny/{daemon,shim,workflow_executor}.py, devices/queue/device.py.\n  Phase 2 (surfaces): devices/web_server/server.py, unseen_university/devices/librarian/tools/{search_tools,ticket_tools}.py, devices/librarian/node_registry.py, devices/scraps/jobs/orphan_watchdog.py, devices/igor/cognition/{action_claim_verifier,dreaming}.py.\n  Phase 3 (dev tools): devlab/claudecode/{stall_check,completion_audit,ticket_detail_eval,uuquestions,uushowticket,uuticketadd,cc_nightly_context_prep}.py.\n  LEAVE (migration/archival): migrate_tickets.py, migrate_wg_to_memories.py, unseen_university/migrations/m_devlab.py.\n**Affected files:** the ~18 readers above (Phases 1-3); imports ticket_store. (May SPLIT into 3 child tickets by phase at audit-ticket — acceptable.)\n**Design rules:** NO SQLITE. Each reader uses the store module, no direct ticket SQL. Log nothing new unless adding a crossing. Verify each phase keeps its subsystem working before the next.\n**Scope boundary:** IN — migrate Phase 1-3 readers to the store module. OUT — building the store (T-ticket-store-module); cc_queue.py itself (T-cc-queue-fs-first); dropping PG tables (T-ticket-pg-drop).\n**Completion criteria:** `grep -rl 'clan\\.memories\\|devlab\\.tickets' --include=*.py` over non-migration source shows zero TICKET-STATE readers; Granny wave advances steps reading FS; web_server shows tickets with PG stopped.\n**Test plan:** Per phase: run that subsystem's tests + a smoke check (Granny tick advances a dispatched step to done from an FS status; web_server ticket list renders; stall_check runs) with PG down.",
     "decision_id": "D-build-queue-filesystem-first-2026-06-19",
     "created_at": "2026-06-19T18:23:39.007171+00:00",
-    "updated_at": "2026-06-19T18:23:39.007171+00:00",
-    "completed_at": null,
-    "result": null,
+    "updated_at": "2026-06-19T23:51:08.250299+00:00",
+    "completed_at": "2026-06-19T23:51:08.250299+00:00",
+    "result": "#4 COMPLETE. Phase 1 (workflow_executor, granny shim+daemon, queue device), Phase 2 (web_server, librarian search/file_ticket, scraps orphan_watchdog, igor action_claim_verifier/dreaming), Phase 3 (7 devlab dev tools: stall_check, completion_audit, uuticketadd, uushowticket, uuquestions, ticket_detail_eval, cc_nightly_context_prep — commit 137b7110). All ticket-state PG readers off clan.memories onto ticket_store. node_registry carved out -> folds into T-ticket-tools-to-hubert (D-ticket-query-api-hubert). Verified: zero ticket-state PG readers remain; only #5's mirror/trigger/dual-read fallback left. 56 tests pass.",
     "role": "master",
     "priority": 0.88,
     "gate": "T-ticket-store-module",

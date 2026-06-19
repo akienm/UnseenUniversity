@@ -21,7 +21,7 @@
   "body": {
     "id": "T-cc-queue-fs-first",
     "title": "[sprint] cc_queue.py reads/writes via ticket-store module; drop PG from its path (dual-read transitional)",
-    "status": "sprint",
+    "status": "closed",
     "worker": null,
     "size": "L",
     "tags": [
@@ -32,9 +32,9 @@
     "description": "**Problem:** cc_queue.py (2630 lines) is Postgres-first: `_load` merges clan.memories+devlab.tickets as authoritative (line 214), `_save` writes PG then fail-open-projects to FS (line 378 'Postgres tables stay authoritative'), and close/set-worker/next_ticket_id_for_worker all hit PG. This is the inversion this decision fixes and the exact failure that bit the 2026-06-18 session.\n\n**Proposed shape:** Route cc_queue's _load/_save/close/set-worker/next through the T-ticket-store-module API. TRANSITIONAL dual-read: read filesystem first, fall back to PG for any ID not yet in FS — until T-ticket-fs-completeness-audit confirms parity, then remove the PG fallback. New tickets write to the filesystem only. close() moves to tickets/closed/. The queue is LIVE (DS.0+Granny) — this must not break dispatch mid-flight; keep each commit reversible.\n**Affected files:** devlab/claudecode/cc_queue.py (_load, _save, _project_to_memory, close path ~431/495, set-worker, next_ticket_id_for_worker ~1947); imports ticket_store.\n**Design rules:** NO SQLITE. Filesystem-first; PG read only as transitional fallback, removed once completeness-gate passes. Log the read source during dual-read window (interface crossing). HIGH-inertia file (cc_queue.py is load-bearing for all dispatch) — see Akien pre-approval note.\n**Scope boundary:** IN — cc_queue.py queue operations move to the store module + transitional dual-read. OUT — the other ~20 readers (T-ticket-readers-migrate); final PG removal (T-ticket-pg-drop).\n**Completion criteria:** cc_queue.py add/list/next/close/set-worker all operate filesystem-first; with PG stopped, list/next/close still succeed (dual-read fallback off or PG-down-tolerant); closed tickets land in tickets/closed/; Granny's wave continues advancing across the change.\n**Test plan:** Existing cc_queue tests pass; add a ticket → appears in tickets/ not requiring PG; close it → moves to closed/; run `cc_queue.py list` with PG down → succeeds. Verify Granny dispatch loop still routes (one-at-a-time guard intact).\n\n## HIGH-inertia pre-approval\nAkien approved modifying cc_queue.py (load-bearing for all dispatch) on 2026-06-19. Incremental, reversible sequencing across the batch is the safeguard.",
     "decision_id": "D-build-queue-filesystem-first-2026-06-19",
     "created_at": "2026-06-19T18:23:39.007171+00:00",
-    "updated_at": "2026-06-19T18:23:39.007171+00:00",
-    "completed_at": null,
-    "result": null,
+    "updated_at": "2026-06-19T23:51:08.409312+00:00",
+    "completed_at": "2026-06-19T23:51:08.409312+00:00",
+    "result": "#3 COMPLETE. cc_queue._load FS-first (a56f1cba), _save FS-first churn-gated (1d5de71c), status mutators routed through ticket_store.conditional_update + forensic chokepoint (626d352e), live FS/PG drift reconciled (e41c58d8). PG demoted to transitional loud-on-failure mirror + dual-read fallback, both owned by #5 T-ticket-pg-drop. Filesystem is authoritative.",
     "role": "master",
     "priority": 0.9,
     "gate": "T-ticket-store-module",

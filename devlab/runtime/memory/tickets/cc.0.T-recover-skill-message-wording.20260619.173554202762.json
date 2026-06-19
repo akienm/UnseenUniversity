@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-recover-skill-message-wording.20260619.173554202762",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-recover-skill-message-wording"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T23:35:54.202762+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-recover-skill-message-wording"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-recover-skill-message-wording",
+    "title": "[sprint] Improve /recover skill message — emphasize time divergence",
+    "size": "S",
+    "tags": [
+      "Skill",
+      "UX",
+      "Recovery"
+    ],
+    "description": "Refine the safeguard message in /recover to be more explicit about the time divergence that can occur across a rewind. The current message 'Rewound. Read today's slate and git log...' works but doesn't emphasize that 'a lot of time may have passed' between when CC was rewound and when it resumes, leading to significant git divergence.\n\nProposed wording:\n> **Rewound. A lot of time may have passed from what you remember — significant divergence. Git will be far ahead of my memory. Read today's slate and git log --oneline -10, reconcile against them, and trust slate+git over your memory before doing anything.**\n\nThe new message makes it clearer upfront that git divergence is expected and why (time passage), which helps CC orient faster.\n\n**Affected files:** /home/akien/.claude/skills/recover/SKILL.md\n**Design rules:** none apply\n**Scope boundary:** Only the safeguard message text in Step 1; no changes to reconcile logic or hard rules.\n**Test plan:** no tests — manual verification: run /recover after a rewind, confirm the new message displays correctly.",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-06-19T23:35:53.901995+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-19T23:35:53.949703+00:00"
+  }
+}
