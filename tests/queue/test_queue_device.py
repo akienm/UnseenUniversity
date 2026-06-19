@@ -11,8 +11,6 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -24,16 +22,16 @@ _skip_no_db = pytest.mark.skipif(not _DB_URL, reason="UU_HOME_DB_URL not set")
 
 
 @pytest.fixture
-def device(tmp_path):
+def device(tmp_path, monkeypatch):
+    # Filesystem ticket store (D-build-queue-filesystem-first) pointed at a tmp dir.
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
     gate = tmp_path / "gate.json"
     gate.write_text(json.dumps({"tripped": False}))
     import devices.queue.device as dev_mod
 
     original = dev_mod.GATE_FILE
     dev_mod.GATE_FILE = gate
-    with patch("devices.queue.device._db_conn") as mock_conn:
-        mock_conn.return_value.close = MagicMock()
-        dev = QueueDevice()
+    dev = QueueDevice()
     dev_mod.GATE_FILE = original
     return dev
 
@@ -48,9 +46,9 @@ def test_who_am_i_required_keys(device):
     assert "version" in info
 
 
-def test_requirements_has_psycopg2(device):
+def test_requirements_lists_ticket_store(device):
     reqs = device.requirements()
-    assert "psycopg2" in reqs.get("deps", [])
+    assert "unseen_university.ticket_store" in reqs.get("deps", [])
 
 
 def test_capabilities_has_mcp_tools(device):
@@ -154,7 +152,8 @@ def test_gate_tripped_true_when_set(tmp_path):
 # ── queue_next gated ─────────────────────────────────────────────────────────
 
 
-def test_queue_next_returns_none_when_gate_tripped(tmp_path):
+def test_queue_next_returns_none_when_gate_tripped(tmp_path, monkeypatch):
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
     gate = tmp_path / "gate.json"
     gate.write_text(json.dumps({"tripped": True}))
     import devices.queue.device as dev_mod
@@ -162,14 +161,13 @@ def test_queue_next_returns_none_when_gate_tripped(tmp_path):
     orig = dev_mod.GATE_FILE
     dev_mod.GATE_FILE = gate
     try:
-        with patch("devices.queue.device._db_conn"):
-            dev = QueueDevice()
-            assert dev.queue_next("claude") is None
+        dev = QueueDevice()
+        assert dev.queue_next("claude") is None
     finally:
         dev_mod.GATE_FILE = orig
 
 
-# ── Integration (real Postgres) ───────────────────────────────────────────────
+# ── Integration (live filesystem ticket store) ─────────────────────────────────
 
 
 @_skip_no_db

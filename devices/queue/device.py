@@ -3,12 +3,15 @@
 All consumers (CC, Igor, Librarian) call queue_next(worker) → ticket | None
 via MCP instead of calling cc_queue.py directly.
 
-Backend: clan.memories WHERE parent_id='TICKETS_ROOT' in UU_HOME_DB_URL.
-This device is stateless — all durable state lives in Postgres.
+Backend: the filesystem ticket store (D-build-queue-filesystem-first-2026-06-19)
+via unseen_university.ticket_store — no Postgres. This device is stateless; all
+durable state lives in tickets/ + tickets/closed/.
 
-There is no claim operation. queue_next() is atomic: it reads the next
-eligible ticket and marks it in_progress in a single serializable transaction.
-Any code that calls queue_claim() raises LegacyDirectClaimError.
+There is no claim operation. queue_next() is atomic: it reads the next eligible
+ticket and marks it in_progress via ticket_store.conditional_update (a race-safe
+check-and-set under the store's mutation lock — the filesystem analogue of the
+old SELECT ... FOR UPDATE). Any code that calls queue_claim() raises
+LegacyDirectClaimError.
 """
 
 from __future__ import annotations
@@ -24,7 +27,6 @@ from unseen_university.device import BaseDevice, INTERFACE_VERSION
 
 _START_TIME = time.time()
 
-TICKETS_ROOT_ID = "TICKETS_ROOT"
 GATE_FILE = Path(
     os.environ.get(
         "QUEUE_GATE_FILE", Path.home() / ".unseen_university/cc_channel/queue_gate.json"
@@ -38,21 +40,6 @@ class LegacyDirectClaimError(Exception):
     Claiming is removed. The only way to receive a ticket is via queue_next(),
     which is atomic (returns ticket + marks in_progress in one transaction).
     """
-
-
-def _db_url() -> str:
-    url = os.environ.get("UU_HOME_DB_URL", "")
-    if not url:
-        raise RuntimeError(
-            "UU_HOME_DB_URL not set — queue device cannot connect to ticket storage"
-        )
-    return url
-
-
-def _db_conn():
-    import psycopg2
-
-    return psycopg2.connect(_db_url())
 
 
 def _gate_tripped() -> bool:
@@ -91,13 +78,14 @@ class QueueDevice(BaseDevice):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(device_id=self.DEVICE_ID, **kwargs)
         self._startup_errors: list[str] = []
-        # Verify connection at startup (soft — device stays live on failure)
+        # Verify the filesystem ticket store is readable (soft — device stays live).
         try:
-            conn = _db_conn()
-            conn.close()
+            from unseen_university import ticket_store
+
+            ticket_store.list()
         except Exception as exc:
-            self._startup_errors.append(f"DB connect failed at startup: {exc}")
-            self.warning(f"startup: DB not reachable — {exc}")
+            self._startup_errors.append(f"ticket store not readable at startup: {exc}")
+            self.warning(f"startup: ticket store not readable — {exc}")
 
     # ── Queue operations ──────────────────────────────────────────────────────
 
@@ -112,66 +100,41 @@ class QueueDevice(BaseDevice):
             self.info(f"queue_next: gate tripped — returning None (worker={worker!r})")
             return None
 
-        conn = _db_conn()
+        from unseen_university import ticket_store
+
+        # Candidate set: sprint, ungated, assigned to this worker (active only).
+        candidates = [
+            t
+            for t in ticket_store.list(status_filter="sprint")
+            if not t.get("gate") and t.get("worker") == worker
+        ]
+        if not candidates:
+            return None
+
+        best = min(candidates, key=_priority_key)
+        ticket_id = best["id"]
+
+        # Race-safe claim: conditional_update only writes if status is STILL 'sprint'
+        # under the store's mutation lock (the FS analogue of SELECT ... FOR UPDATE).
+        # None => another caller claimed it between our read and the lock — parity
+        # with the old "return None" on a lost race.
+        def _mark_in_progress(body: dict) -> dict:
+            body["status"] = "in_progress"
+            body["dispatched_at"] = datetime.now(timezone.utc).isoformat()
+            return body
+
         try:
-            with conn:
-                cur = conn.cursor()
-                # Load all sprint tickets for this worker with no gate
-                cur.execute(
-                    "SELECT metadata FROM clan.memories WHERE parent_id = %s",
-                    (TICKETS_ROOT_ID,),
-                )
-                rows = cur.fetchall()
+            path = ticket_store.conditional_update(
+                ticket_id, expect_current="sprint", mutate=_mark_in_progress
+            )
+        except KeyError:
+            return None  # vanished between list and claim
+        if path is None:
+            return None  # lost the race — status no longer 'sprint'
 
-            candidates = []
-            for (md,) in rows:
-                if not md:
-                    continue
-                t = dict(md)
-                t.pop("kind", None)
-                if (
-                    t.get("status") == "sprint"
-                    and not t.get("gate")
-                    and t.get("worker") == worker
-                ):
-                    candidates.append(t)
-
-            if not candidates:
-                return None
-
-            best = min(candidates, key=_priority_key)
-            ticket_id = best["id"]
-
-            # Atomic in_progress mark with SELECT FOR UPDATE
-            with conn:
-                cur = conn.cursor()
-                cur.execute(
-                    "SELECT metadata FROM clan.memories WHERE id = %s FOR UPDATE",
-                    (ticket_id,),
-                )
-                row = cur.fetchone()
-                if not row or not row[0]:
-                    return None
-                t = dict(row[0])
-                if t.get("status") != "sprint":
-                    # Another caller claimed it between our read and the lock
-                    return None
-                now = datetime.now(timezone.utc).isoformat()
-                t["status"] = "in_progress"
-                t["dispatched_at"] = now
-                import psycopg2.extras
-
-                cur.execute(
-                    "UPDATE clan.memories SET metadata = %s WHERE id = %s",
-                    (psycopg2.extras.Json(t), ticket_id),
-                )
-
-            t.pop("kind", None)
-            self.trace_record("queue_next", {"worker": worker, "ticket_id": ticket_id})
-            self.info(f"queue_next: dispatched {ticket_id!r} to worker={worker!r}")
-            return t
-        finally:
-            conn.close()
+        self.trace_record("queue_next", {"worker": worker, "ticket_id": ticket_id})
+        self.info(f"queue_next: dispatched {ticket_id!r} to worker={worker!r}")
+        return ticket_store.read(ticket_id)
 
     def queue_peek(self, worker: str) -> dict | None:
         """Return the next eligible ticket without marking it in_progress.
@@ -182,52 +145,22 @@ class QueueDevice(BaseDevice):
         if _gate_tripped():
             return None
 
-        conn = _db_conn()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT metadata FROM clan.memories WHERE parent_id = %s",
-                (TICKETS_ROOT_ID,),
-            )
-            rows = cur.fetchall()
-        finally:
-            conn.close()
+        from unseen_university import ticket_store
 
-        candidates = []
-        for (md,) in rows:
-            if not md:
-                continue
-            t = dict(md)
-            t.pop("kind", None)
-            if (
-                t.get("status") == "sprint"
-                and not t.get("gate")
-                and t.get("worker") == worker
-            ):
-                candidates.append(t)
-
+        candidates = [
+            t
+            for t in ticket_store.list(status_filter="sprint")
+            if not t.get("gate") and t.get("worker") == worker
+        ]
         if not candidates:
             return None
         return min(candidates, key=_priority_key)
 
     def queue_show(self, ticket_id: str) -> dict | None:
-        """Return a single ticket by ID, or None if not found."""
-        conn = _db_conn()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT metadata FROM clan.memories WHERE id = %s AND parent_id = %s",
-                (ticket_id, TICKETS_ROOT_ID),
-            )
-            row = cur.fetchone()
-        finally:
-            conn.close()
+        """Return a single ticket by ID (active or closed), or None if not found."""
+        from unseen_university import ticket_store
 
-        if not row or not row[0]:
-            return None
-        t = dict(row[0])
-        t.pop("kind", None)
-        return t
+        return ticket_store.read(ticket_id)
 
     def queue_list(
         self, worker: str | None = None, status: str = "sprint"
@@ -237,29 +170,13 @@ class QueueDevice(BaseDevice):
         worker=None returns tickets for all workers.
         status defaults to 'sprint' (ready-to-work tickets).
         """
-        conn = _db_conn()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT metadata FROM clan.memories WHERE parent_id = %s",
-                (TICKETS_ROOT_ID,),
-            )
-            rows = cur.fetchall()
-        finally:
-            conn.close()
+        from unseen_university import ticket_store
 
-        results = []
-        for (md,) in rows:
-            if not md:
-                continue
-            t = dict(md)
-            t.pop("kind", None)
-            if t.get("status") != status:
-                continue
-            if worker is not None and t.get("worker") != worker:
-                continue
-            results.append(t)
-
+        results = [
+            t
+            for t in ticket_store.list(status_filter=status, include_closed=True)
+            if worker is None or t.get("worker") == worker
+        ]
         results.sort(key=_priority_key)
         return results
 
@@ -286,7 +203,7 @@ class QueueDevice(BaseDevice):
         }
 
     def requirements(self) -> dict:
-        return {"deps": ["psycopg2", "UU_HOME_DB_URL"]}
+        return {"deps": ["unseen_university.ticket_store"]}
 
     def capabilities(self) -> dict:
         return {
@@ -311,14 +228,9 @@ class QueueDevice(BaseDevice):
     def health(self) -> dict:
         checked_at = datetime.now(timezone.utc).isoformat()
         try:
-            conn = _db_conn()
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT COUNT(*) FROM clan.memories WHERE parent_id = %s AND metadata->>'status' = 'sprint'",
-                (TICKETS_ROOT_ID,),
-            )
-            sprint_count = cur.fetchone()[0]
-            conn.close()
+            from unseen_university import ticket_store
+
+            sprint_count = len(ticket_store.list(status_filter="sprint"))
             gate = _gate_tripped()
             return {
                 "status": "healthy",

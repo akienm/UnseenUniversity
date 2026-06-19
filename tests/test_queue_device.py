@@ -1,14 +1,14 @@
 """Tests for QueueDevice.
 
-Integration tests use real Postgres via UU_HOME_DB_URL. Unit tests mock the
-DB connection to stay fast and isolated.
+Backend is the filesystem ticket store (D-build-queue-filesystem-first); unit
+tests point UU_MEMORY_ROOT at a tmp dir and seed tickets via ticket_store.write.
+Integration tests run against the live store when UU_HOME_DB_URL is set.
 """
 
 from __future__ import annotations
 
 import json
 import os
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -18,6 +18,7 @@ from devices.queue.device import (
     _gate_tripped,
     _priority_key,
 )
+from unseen_university import ticket_store
 
 # ── Unit tests (no DB) ────────────────────────────────────────────────────────
 
@@ -85,10 +86,9 @@ class TestQueueDeviceContract:
     """Test BaseDevice contract methods (no DB)."""
 
     @pytest.fixture
-    def device(self):
-        with patch("devices.queue.device._db_conn") as mock_conn:
-            mock_conn.return_value.close = MagicMock()
-            yield QueueDevice()
+    def device(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
+        yield QueueDevice()
 
     def test_who_am_i(self, device):
         info = device.who_am_i()
@@ -106,7 +106,7 @@ class TestQueueDeviceContract:
 
     def test_requirements(self, device):
         reqs = device.requirements()
-        assert "psycopg2" in reqs["deps"]
+        assert "unseen_university.ticket_store" in reqs["deps"]
 
     def test_uptime_positive(self, device):
         import time
@@ -116,7 +116,8 @@ class TestQueueDeviceContract:
 
 
 class TestQueueNextGateTripped:
-    def test_returns_none_when_gate_tripped(self, tmp_path):
+    def test_returns_none_when_gate_tripped(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
         gate_file = tmp_path / "queue_gate.json"
         gate_file.write_text(json.dumps({"tripped": True}))
         from devices.queue import device as dev_mod
@@ -124,16 +125,15 @@ class TestQueueNextGateTripped:
         original = dev_mod.GATE_FILE
         dev_mod.GATE_FILE = gate_file
         try:
-            with patch("devices.queue.device._db_conn"):
-                dev = QueueDevice()
-                result = dev.queue_next("claude")
-                assert result is None
+            dev = QueueDevice()
+            result = dev.queue_next("claude")
+            assert result is None
         finally:
             dev_mod.GATE_FILE = original
 
 
-class TestQueueNextMocked:
-    """queue_next with a mocked DB cursor."""
+class TestQueueNextFS:
+    """queue_next over a tmp filesystem ticket store."""
 
     def _make_ticket(self, id_, worker, status="sprint", gate=None, priority=0.5):
         return {
@@ -147,51 +147,43 @@ class TestQueueNextMocked:
         }
 
     @pytest.fixture
-    def device_no_gate(self, tmp_path):
+    def device_no_gate(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
         gate_file = tmp_path / "gate.json"
         gate_file.write_text(json.dumps({"tripped": False}))
         from devices.queue import device as dev_mod
 
         original = dev_mod.GATE_FILE
         dev_mod.GATE_FILE = gate_file
-        with patch("devices.queue.device._db_conn") as mock_conn_fn:
-            conn = MagicMock()
-            mock_conn_fn.return_value = conn
-            conn.__enter__ = lambda s: s
-            conn.__exit__ = MagicMock(return_value=False)
-            yield dev_mod.QueueDevice(), conn, mock_conn_fn
+        yield QueueDevice()
         dev_mod.GATE_FILE = original
 
     def test_returns_none_when_no_sprint_tickets(self, device_no_gate):
-        dev, conn, mock_conn_fn = device_no_gate
-        cursor = MagicMock()
-        conn.cursor.return_value = cursor
-        cursor.fetchall.return_value = []
-
-        result = dev.queue_next("claude")
-        assert result is None
+        assert device_no_gate.queue_next("claude") is None
 
     def test_returns_none_when_no_tickets_for_worker(self, device_no_gate):
-        dev, conn, mock_conn_fn = device_no_gate
-        cursor = MagicMock()
-        conn.cursor.return_value = cursor
-        igor_ticket = self._make_ticket("T-igor-1", "igor")
-        cursor.fetchall.return_value = [({"kind": "ticket", **igor_ticket},)]
-        cursor.fetchone.return_value = None
-
-        result = dev.queue_next("claude")
-        assert result is None
+        ticket_store.write(self._make_ticket("T-igor-1", "igor"))
+        assert device_no_gate.queue_next("claude") is None
 
     def test_skips_gated_tickets(self, device_no_gate):
-        dev, conn, mock_conn_fn = device_no_gate
-        cursor = MagicMock()
-        conn.cursor.return_value = cursor
-        gated = self._make_ticket("T-gated", "claude", gate="T-other")
-        cursor.fetchall.return_value = [({"kind": "ticket", **gated},)]
-        cursor.fetchone.return_value = None
+        ticket_store.write(self._make_ticket("T-gated", "claude", gate="T-other"))
+        assert device_no_gate.queue_next("claude") is None
 
-        result = dev.queue_next("claude")
-        assert result is None
+    def test_returns_and_marks_in_progress(self, device_no_gate):
+        ticket_store.write(self._make_ticket("T-go", "claude", priority=0.9))
+        result = device_no_gate.queue_next("claude")
+        assert result is not None and result["id"] == "T-go"
+        assert result["status"] == "in_progress"
+        assert result.get("dispatched_at")
+        # persisted: the store now reflects in_progress (race-safe claim landed)
+        assert ticket_store.read("T-go")["status"] == "in_progress"
+        # and it is no longer offered
+        assert device_no_gate.queue_next("claude") is None
+
+    def test_highest_priority_first(self, device_no_gate):
+        ticket_store.write(self._make_ticket("T-lo", "claude", priority=0.3))
+        ticket_store.write(self._make_ticket("T-hi", "claude", priority=0.9))
+        assert device_no_gate.queue_next("claude")["id"] == "T-hi"
 
 
 # ── Integration tests (real Postgres) ────────────────────────────────────────
