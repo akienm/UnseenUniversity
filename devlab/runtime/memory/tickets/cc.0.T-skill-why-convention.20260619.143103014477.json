@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-skill-why-convention.20260619.143103014477",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-why-convention"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T20:31:03.014477+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-why-observation-2026-06-19"
+    ],
+    "tickets": [
+      "T-skill-why-convention"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-why-convention",
+    "title": "[sprint] Skills carry an explicit greppable Why: (the format the auditor keys on)",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "IntentionWhyObservation",
+      "Skills",
+      "Convention"
+    ],
+    "description": "**Problem:** Skills (and their MANDATORY steps) don't uniformly carry an explicit why. The why is what turns a brittle lookup into a generative rule, is the conflict tiebreaker, and is the only lever that rescues unprompted recognition. Without it, skill instructions are followed only when salient and cannot be drift-checked.\n**Proposed shape:** Document the contract in the skill-authoring location (CLAUDE.md skill section / skills authoring guide): every skill carries a top-level why, and each step marked MANDATORY carries a one-line why. Define a MACHINE-DETECTABLE format (a `Why:` line) so the auditor (T-skill-why-auditor) can key on presence/structure.\n**Affected files:** skill-authoring doc (convention text); a sample skill annotated to the convention. No code-behavior change.\n**Design rules:** Theory-of-Operation (every rule carries its why); External State Principle (the why is durable, not in-context).\n**Scope boundary:** IN — the documented convention + the greppable `Why:` format. OUT — backfilling existing skills (that is the auditor's first run); enforcement tooling.\n**Completion criteria:** A discoverable written convention stating skills + MANDATORY steps carry an explicit `Why:`; the format is greppable; it is referenced from the skill-authoring location.\n**Test plan:** No tests (convention/docs). Verify a sample skill annotated to the convention is matched by a grep for the `Why:` format.",
+    "decision_id": "D-intention-why-observation-2026-06-19",
+    "gate": null,
+    "priority": 0.5,
+    "role": "master",
+    "created_by": "cc.0",
+    "created_at": "2026-06-19T20:31:02.898487+00:00",
+    "updated_at": "2026-06-19T20:31:02.898487+00:00",
+    "completed_at": null,
+    "result": null,
+    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)"
+  }
+}

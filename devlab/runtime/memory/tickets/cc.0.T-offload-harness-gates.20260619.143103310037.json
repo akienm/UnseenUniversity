@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-offload-harness-gates.20260619.143103310037",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-offload-harness-gates"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T20:31:03.310037+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-why-observation-2026-06-19"
+    ],
+    "tickets": [
+      "T-offload-harness-gates"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-offload-harness-gates",
+    "title": "[sprint] Reliable CC.0->CC.1 offload: verification gates + harness-driven step injection",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "L",
+    "tags": [
+      "IntentionWhyObservation",
+      "Dispatch",
+      "Reliability"
+    ],
+    "description": "**Problem:** Reliable CC.0->CC.1 offload hits the reliability ceiling: latent capability is unreliable, procedural-injection checklists work 'most of the time', and CC is currently the orchestrator of its own reliability, so missed steps pass silently.\n**Proposed shape:** Move control flow into the harness (LLM = a called function): (a) verification GATES between checklist steps so a missed/failed step is CAUGHT and retried, not silently passed; (b) harness-driven step INJECTION — the driver (Granny/CCWorkerShim) re-injects the next step at decision time rather than relying on CC recall. Builds on the existing Granny handshake + CCWorkerShim.\n**Affected files:** devices/granny/* (step sequencing) + CCWorkerShim + the offload checklist/orchestrator definition.\n**Design rules:** Don't make CC the orchestrator of its own reliability; Granny send-keys ONLY, never spawn; one-CC-at-a-time; calm signals (no spurious urgency).\n**Inertia:** MEDIUM+ — touches devices/granny/* and CCWorkerShim. Pre-approval gate applies at BUILD time, not filing time. (This is the separable 'could be its own decision' ticket; default is to keep it in D-intention-why-observation unless Akien spins it out.)\n**Scope boundary:** IN — gates (catch+retry) + harness step-injection for the ONE CC.0->CC.1 flow. OUT — generalizing to all skills; rebuilding dispatch; any CC-spawn path.\n**Completion criteria:** A CC.0->CC.1 offload flow where (1) a deliberately skipped/failed step is caught by a gate and retried (asserted in a test), not silently passed; (2) the next step is injected by the driver — verified by a NAMED injection log line — rather than CC-recalled; runs within the existing handshake + one-at-a-time guards; no CC spawn (send-keys only).\n**Test plan:** Simulate a skipped step -> assert gate retry fires. Assert the named step-injection log line is emitted by the driver. Assert no subprocess/CC-spawn occurs (send-keys path only).",
+    "decision_id": "D-intention-why-observation-2026-06-19",
+    "gate": null,
+    "priority": 0.5,
+    "role": "master",
+    "created_by": "cc.0",
+    "created_at": "2026-06-19T20:31:02.898487+00:00",
+    "updated_at": "2026-06-19T20:31:02.898487+00:00",
+    "completed_at": null,
+    "result": null,
+    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)"
+  }
+}

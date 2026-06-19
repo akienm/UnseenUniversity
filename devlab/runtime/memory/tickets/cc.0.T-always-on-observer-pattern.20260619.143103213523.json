@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-always-on-observer-pattern.20260619.143103213523",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-always-on-observer-pattern"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T20:31:03.213523+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-why-observation-2026-06-19"
+    ],
+    "tickets": [
+      "T-always-on-observer-pattern"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-always-on-observer-pattern",
+    "title": "[sprint] Distill the always-on observer contract from its built instances",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "L",
+    "tags": [
+      "IntentionWhyObservation",
+      "Observer",
+      "Architecture"
+    ],
+    "description": "**Problem:** Observations that close the intention+why loop come in two modes: one-shot (consequence-check, built) and always-on/standing (for properties that can regress). The always-on half exists only as concrete instances (T-build-log-digester [closed]; soon T-skill-why-auditor) with no generalized contract, so each standing observer is rebuilt ad hoc and risks putting expensive inference on watch duty.\n**Proposed shape:** DISTILL (not design top-down) a reusable always-on observer contract FROM the >=2 BUILT instances: standing property -> continuous CHEAP filter (inference-free / free-cloud) -> escalate to judgment ONLY on a flagged candidate -> maintained pickup-ready projection + drift signal. Then retrofit the two instances to conform (or document conformance). Grow-from-seams: do NOT bless a schema before the instances exist.\n**Affected files:** NEW observer-pattern contract module; conform/adapt devices/scraps build-log digester + skills-why auditor. Relates: T-build-log-digester, T-skill-why-auditor, T-why-sorter (a future conforming instance, not rewritten here).\n**Design rules:** Inference-Proxy-only; three-tier cost (cheap filter; escalate on hit; never expensive brain on watch); External State Principle (projection durable); grow-from-seams (distill from instances).\n**Scope boundary:** IN — the documented+importable contract + conform the 2 built instances. OUT — converting ALL standing checks; rewriting T-why-sorter; incoherent-rationale judging beyond the candidate-escalation hook.\n**Completion criteria:** A documented, importable always-on observer contract; both built instances (digester + skills-why auditor) conform to it (or carry a documented adapter); a conformance test shows the cheap-filter / escalate-on-hit boundary (zero inference on clean inputs).\n**Test plan:** Both instances expose the contract surface; a clean-input run logs zero inference calls; a flagged-candidate run invokes the escalation hook exactly once.\n**Sequencing:** GATED on >=2 BUILT instances — T-skill-why-auditor (this batch) + T-build-log-digester (closed). Cannot distill from unbuilt instances.",
+    "decision_id": "D-intention-why-observation-2026-06-19",
+    "gate": "T-skill-why-auditor",
+    "priority": 0.4,
+    "role": "master",
+    "created_by": "cc.0",
+    "created_at": "2026-06-19T20:31:02.898487+00:00",
+    "updated_at": "2026-06-19T20:31:02.898487+00:00",
+    "completed_at": null,
+    "result": null,
+    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)"
+  }
+}

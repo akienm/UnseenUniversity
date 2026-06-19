@@ -2,14 +2,16 @@
 
 **title:** The atomic unit of work is intention + why + observation (a closed loop, not a record); reliability of action follows a ladder with Why as an orthogonal multiplier
 **date:** 2026-06-19
-**status:** open — tickets DRAFTED below, formal filing + audits DEFERRED (sprinting the D-build-queue-filesystem-first cutover; pick this up after)
-**drafted_tickets:** T-skill-why-convention, T-why-completeness-auditor, T-always-on-observer-pattern, T-offload-harness-gates, T-consequence-intention-why-observation
+**status:** open
+**spawned_tickets:** T-skill-why-convention, T-skill-why-auditor, T-always-on-observer-pattern, T-offload-harness-gates, T-consequence-intention-why-observation
 
-> ⚠️ This decision was cohered in conversation and captured durably mid-session, but
-> NOT run through the full /sorted pipeline (audit-design, advisor for L/XL,
-> /audit-ticket per draft, formal filing to the store). When picked up: run those
-> steps before the tickets are real queue items. The narrative + drafts below are the
-> predigested durable artifact — recover from here, not from the raw transcript.
+> ✅ Filed 2026-06-19 via the full /sorted pipeline (audit-design → advisor → audit-ticket
+> → filed through `unseen_university.ticket_store.write`). Audit-design de-dup catch:
+> `T-why-sorter` (constraints/patterns, dispatched) and `T-build-log-digester` (closed)
+> already exist — so the why-check was NOT re-filed; it folds into the observer-pattern
+> work. Advisor split catch: cannot distill the pattern from unbuilt instances, so the
+> skills-why auditor became its own ticket (the 2nd built instance, after the closed
+> digester) and the pattern ticket gates on it.
 
 ## Leading digest
 
@@ -100,25 +102,26 @@ the expensive brain **only on a hit**. You cannot put the expensive brain on wat
 > how good judgment is when it rides; gates catch the residual misses. One substrate, both
 > Akien and CC inside it.
 
-## Drafted tickets (NOT yet filed — run /sorted steps 3.5–5.5 when picked up)
+## Spawned tickets (filed 2026-06-19 via ticket_store)
 
-- **T-skill-why-convention** (S) — Document the contract: every skill, and each mandatory
-  step within it, carries an explicit why. The rule the auditor enforces.
-- **T-why-completeness-auditor** (L) — The standing why-sorter. First run inventories
-  existing skills for missing/incoherent whys (subsumes the one-shot backfill); runs
-  continuously; emits "no coherent why = drift signal." Cheap mechanical presence/structure
-  filter → escalate to inference for coherence ONLY on flagged candidates. First concrete
-  instance of the always-on observer.
-- **T-always-on-observer-pattern** (L) — Generalize the always-on observer + cheap processor
-  as the standing half of intention+why+observation: contract = standing property →
-  continuous cheap filter → escalate-on-hit → maintained pickup-ready projection. Distilled
-  from two seed instances (build-log digester + why-auditor), not top-down. **Gate:
-  T-why-completeness-auditor** (need ≥2 real instances to generalize from).
-- **T-offload-harness-gates** (L) — Reliable CC.0→CC.1 offload via the ladder: verification
-  gates between checklist steps (catch + retry the "not always" misses) + harness-driven
-  step injection (driver re-injects the next step at decision time vs. relying on CC recall).
-  Builds on Granny/shim/CCWorkerShim. *(Most separable — could spin out to its own decision.)*
-- **T-consequence-intention-why-observation** (S) — Consequence check; gate 2026-07-03.
+- **T-skill-why-convention** (S, gate: none) — Document the contract: every skill, and each
+  MANDATORY step, carries an explicit greppable `Why:`. The format the auditor keys on.
+- **T-skill-why-auditor** (L, gate: T-skill-why-convention) — Standing why-completeness check
+  over the skills corpus. First run inventories existing skills (subsumes the one-shot
+  backfill); runs continuously; "no `Why:` = drift signal." Cheap presence-check filter →
+  escalate to inference for coherence ONLY on flagged candidates (zero inference on clean
+  skills). The 2nd *built* always-on instance (after the closed T-build-log-digester) —
+  split out from the pattern ticket per advisor (can't distill from unbuilt instances).
+- **T-always-on-observer-pattern** (L, gate: T-skill-why-auditor) — Distill the reusable
+  always-on observer contract (standing property → cheap filter → escalate-on-hit → durable
+  projection) FROM the ≥2 built instances (T-build-log-digester [closed] + T-skill-why-auditor),
+  then conform them. Grow-from-seams, not top-down. T-why-sorter (constraints/patterns) is a
+  future conforming instance, not rewritten here.
+- **T-offload-harness-gates** (L, gate: none) — Reliable CC.0→CC.1 offload via the ladder:
+  verification gates between steps (catch + retry the "not always" misses) + harness-driven
+  step injection (driver re-injects the next step vs. CC recall). Builds on Granny/CCWorkerShim.
+  MEDIUM+ inertia — build-time approval. *(Separable; kept in this decision by default.)*
+- **T-consequence-intention-why-observation** (S, gate: 2026-07-03) — Consequence check.
 
 ## Hypothesis
 A skill (or rule) added without a coherent why gets flagged automatically by a standing

@@ -1,0 +1,44 @@
+{
+  "id": "cc.0.T-skill-why-auditor.20260619.143103115424",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-why-auditor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T20:31:03.115424+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-intention-why-observation-2026-06-19"
+    ],
+    "tickets": [
+      "T-skill-why-auditor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-why-auditor",
+    "title": "[sprint] Skills-why auditor — standing why-completeness check (cheap filter, escalate on hit)",
+    "status": "sprint",
+    "worker": "claude",
+    "size": "L",
+    "tags": [
+      "IntentionWhyObservation",
+      "Skills",
+      "Observer"
+    ],
+    "description": "**Problem:** 'Every skill carries a coherent why' is a STANDING property that drifts every time a skill is added/edited — so it needs a continuous observer, not a one-shot backfill. It is the second built instance needed to distill the always-on observer pattern (T-always-on-observer-pattern); T-build-log-digester (closed) is the first.\n**Proposed shape:** A standing auditor over the skills corpus that flags any skill missing the `Why:` format (per T-skill-why-convention) as a drift/debris signal. CHEAP filter first — presence/structure check is inference-free; escalate to an LLM coherence judgment ONLY on flagged candidates (never run inference on clean skills). First run inventories the corpus (subsumes the one-shot backfill); thereafter runs continuously. Home in Scraps (non-inference maintenance) per the device roster.\n**Affected files:** NEW skills-why auditor (devices/scraps/jobs/ or similar); reads skills/; emits a queryable drift signal. Inference via the Inference Proxy ONLY, on the escalation path.\n**Design rules:** Inference-Proxy-only; three-tier cost (cheap filter; escalate on hit; NEVER expensive brain on watch); External State Principle (drift projection durable); free cloud LLM stays on 'where to look', a captured/flagged why is confirmed by Akien or a judge, never auto-blessed.\n**Scope boundary:** IN — presence-check filter over skills + drift-signal emission + the escalation hook (one candidate path). OUT — auto-writing whys without review; the generalized cross-corpus contract (that is T-always-on-observer-pattern); rewriting T-why-sorter.\n**Completion criteria:** A why-less test skill produces a queryable drift signal; clean skills produce ZERO inference calls (assert via a stubbed inference-client call-count == 0); the escalation-on-candidate path is exercised at least once; first run inventories the existing skills corpus.\n**Test plan:** Drop a why-less fixture skill -> drift signal emitted + queryable. Annotate it -> signal clears. Run over a clean set with a stubbed inference client -> call-count is 0. Force one candidate -> escalation path invoked.",
+    "decision_id": "D-intention-why-observation-2026-06-19",
+    "gate": "T-skill-why-convention",
+    "priority": 0.5,
+    "role": "master",
+    "created_by": "cc.0",
+    "created_at": "2026-06-19T20:31:02.898487+00:00",
+    "updated_at": "2026-06-19T20:31:02.898487+00:00",
+    "completed_at": null,
+    "result": null,
+    "source": "ticket_store.write (filesystem-first; D-intention-why-observation-2026-06-19)"
+  }
+}
