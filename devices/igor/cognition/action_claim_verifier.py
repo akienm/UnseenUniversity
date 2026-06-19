@@ -77,29 +77,28 @@ _REFRACTORY_TURNS = int(os.getenv("IGOR_CONFAB_REFRACTORY_TURNS", "3"))
 
 
 def _cc_queue_recently_modified(window_sec: int = _EVIDENCE_WINDOW_SEC) -> bool:
-    """Check if any ticket was saved to Postgres within the window.
+    """Check if any ticket was written to the build queue within the window.
 
-    Replaces queue.json mtime check (T-cc-queue-drop-json-stage-b).
-    Queries MAX(updated_at) from clan.memories WHERE parent_id='TICKETS_ROOT'.
+    Replaces queue.json mtime check (T-cc-queue-drop-json-stage-b). Filesystem-
+    first (D-build-queue-filesystem-first-2026-06-19): ticket state lives in the
+    filesystem queue, not clan.memories — take MAX(body.updated_at) over all
+    tickets (active + closed) as the "most recent queue activity" anchor.
     """
     try:
-        from devlab.claudecode.cc_queue import _db_conn, TICKETS_ROOT_ID
-
-        conn = _db_conn()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT MAX(updated_at) FROM clan.memories WHERE parent_id = %s",
-                (TICKETS_ROOT_ID,),
-            )
-            row = cur.fetchone()
-        finally:
-            conn.close()
-        if not row or not row[0]:
-            return False
         from datetime import datetime, timezone
 
-        latest = datetime.fromisoformat(row[0]).replace(tzinfo=timezone.utc)
+        from unseen_university import ticket_store
+
+        latest_iso = None
+        for body in ticket_store.list(include_closed=True):
+            ts = body.get("updated_at")
+            if ts and (latest_iso is None or ts > latest_iso):
+                latest_iso = ts
+        if not latest_iso:
+            return False
+        latest = datetime.fromisoformat(latest_iso)
+        if latest.tzinfo is None:
+            latest = latest.replace(tzinfo=timezone.utc)
         age = (datetime.now(timezone.utc) - latest).total_seconds()
         return age <= window_sec
     except Exception:
