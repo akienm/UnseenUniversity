@@ -18,7 +18,6 @@ Run: python -m devices.scraps.jobs.orphan_watchdog
 from __future__ import annotations
 
 import logging
-import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -47,33 +46,28 @@ class OrphanWatchdog:
     def __init__(
         self,
         timeout_overrides: Optional[dict[str, int]] = None,
-        db_url: Optional[str] = None,
+        db_url: Optional[str] = None,  # vestigial: ticket-state now reads the FS store
         p90_fn: Optional[callable] = None,
     ) -> None:
         self._timeouts = dict(_TIMEOUT_MINUTES)
         if timeout_overrides:
             self._timeouts.update(timeout_overrides)
         self._p90_fn = p90_fn  # callable(size) -> float|None
-        self._db_url = db_url or os.environ.get(
-            "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
 
     def _load_in_progress(self) -> list[dict]:
-        """Load all in_progress tickets from Postgres."""
-        try:
-            import psycopg2
-            import psycopg2.extras
+        """Load all in_progress tickets from the filesystem ticket store.
 
-            conn = psycopg2.connect(self._db_url, connect_timeout=5)
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute("""SELECT metadata FROM clan.memories
-                       WHERE metadata->>'kind' = 'ticket'
-                         AND metadata->>'status' = 'in_progress'
-                       ORDER BY metadata->>'dispatched_at' ASC""")
-                rows = cur.fetchall()
-            conn.close()
-            return [dict(r["metadata"]) for r in rows]
+        Filesystem-first (D-build-queue-filesystem-first-2026-06-19): ticket state
+        is the filesystem queue, not clan.memories. ``list`` is lock-free (atomic
+        files are always valid). Sort by dispatched_at ASC to match the old query
+        (oldest-dispatched first), tolerating tickets that lack the field.
+        """
+        try:
+            from unseen_university import ticket_store
+
+            tickets = ticket_store.list(status_filter="in_progress")
+            tickets.sort(key=lambda t: t.get("dispatched_at") or "")
+            return tickets
         except Exception as e:
             log.warning("orphan_watchdog: failed to load in_progress tickets: %s", e)
             return []
