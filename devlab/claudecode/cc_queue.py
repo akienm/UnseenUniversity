@@ -47,6 +47,7 @@ Usage:
 """
 
 import json
+import logging
 import os
 import re
 import ssl
@@ -559,96 +560,132 @@ def save_tasks(tasks: list[dict]) -> None:
     _save(tasks)
 
 
+def _pg_mirror(label: str, ticket_id: str, do_update) -> None:
+    """Transitional PG mirror for a single-ticket status mutation.
+
+    D-build-queue-filesystem-first-2026-06-19, cutover slice (d): the filesystem
+    store is authoritative; the four targeted mutators write it via
+    ``ticket_store.conditional_update`` and then call THIS to mirror the same
+    transition into Postgres so the ~20 unmigrated readers (Granny et al.) keep
+    seeing live state until T-ticket-readers-migrate. Removed by T-ticket-pg-drop.
+
+    ``do_update(cur)`` runs the mirror UPDATE(s) and returns the affected rowcount.
+    A failure is LOUD (WARNING) and NON-FATAL — the FS write already succeeded and
+    is durable. A 0-rowcount means the FS changed but PG's WHERE-gate did not match:
+    that is live FS/PG divergence (the clobber hazard the slate flagged), so it is
+    logged loudly rather than swallowed.
+
+    Only call this AFTER the FS ``conditional_update`` returned a path (i.e. the FS
+    transition actually happened) — never mirror a no-op.
+    """
+    log = logging.getLogger(__name__)
+    try:
+        conn = _db_conn()
+        try:
+            cur = conn.cursor()
+            rows = do_update(cur)
+            conn.commit()
+            if rows == 0:
+                log.warning(
+                    "PG mirror %s for %s changed 0 rows — FS/PG DIVERGENCE: the "
+                    "filesystem store was updated but Postgres' WHERE-gate did not "
+                    "match. Reconcile FS←PG before the next bulk save. (transitional "
+                    "mirror; removed by T-ticket-pg-drop)", label, ticket_id)
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(
+            "PG mirror %s for %s failed (%s) — filesystem store is authoritative and "
+            "already durable; unmigrated PG readers (Granny et al.) may see stale "
+            "state until T-ticket-readers-migrate. NOT fatal.", label, ticket_id, e)
+
+
 def set_status_in_progress(ticket_id: str) -> bool:
     """Targeted single-ticket status flip sprint→in_progress. Returns True if updated.
 
-    Updates whichever table the ticket is in (devlab.tickets or clan.memories).
+    Filesystem-first (D-build-queue-filesystem-first-2026-06-19 slice d): the
+    filesystem store is authoritative via ticket_store; Postgres is a transitional
+    loud mirror. The status precondition (must be 'sprint') is enforced atomically
+    under ticket_store's mutation lock, preserving the race-safety the old
+    WHERE-gated UPDATE provided.
     """
-    conn = _db_conn()
+    def _mut(body):
+        body["status"] = "in_progress"
+        return body
+
     try:
-        cur = conn.cursor()
-        now = datetime.now(timezone.utc).isoformat()
-        now_ts = datetime.now(timezone.utc)
+        path = ticket_store.conditional_update(
+            ticket_id, expect_current="sprint", mutate=_mut)
+    except KeyError:
+        return False  # unknown ticket — same as the old 0-rowcount outcome
+    if path is None:
+        return False  # not in 'sprint' — precondition unmet
 
-        # Try updating devlab.tickets first (new tickets)
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+
+    def _do(cur):
         cur.execute(
-            """
-            UPDATE devlab.tickets
-            SET status = 'in_progress',
-                updated_at = %s
-            WHERE id = %s
-              AND status = 'sprint'
-            """,
-            (now_ts, ticket_id),
+            "UPDATE devlab.tickets SET status='in_progress', updated_at=%s "
+            "WHERE id=%s AND status='sprint'",
+            (now, ticket_id),
         )
-        updated = cur.rowcount > 0
-
-        # If not found in devlab, try clan.memories (existing tickets)
-        if not updated:
+        rows = cur.rowcount
+        if rows == 0:
             cur.execute(
-                """
-                UPDATE clan.memories
-                SET metadata = jsonb_set(
-                        jsonb_set(metadata, '{status}', '"in_progress"'),
-                        '{dispatched_at}', to_jsonb(%s::text)
-                    ),
-                    updated_at = %s
-                WHERE id = %s
-                  AND metadata->>'status' = 'sprint'
-                  AND parent_id = %s
-                """,
-                (now, now, ticket_id, TICKETS_ROOT_ID),
+                "UPDATE clan.memories "
+                "SET metadata = jsonb_set(metadata, '{status}', '\"in_progress\"'), "
+                "    updated_at = %s "
+                "WHERE id=%s AND metadata->>'status'='sprint' AND parent_id=%s",
+                (now_iso, ticket_id, TICKETS_ROOT_ID),
             )
-            updated = cur.rowcount > 0
+            rows = cur.rowcount
+        return rows
 
-        conn.commit()
-        if updated:
-            import logging
-
-            logging.getLogger(__name__).info(
-                f"QUEUE_DRAIN: reconciled {ticket_id} → in_progress"
-            )
-        return updated
-    finally:
-        conn.close()
+    _pg_mirror("in_progress", ticket_id, _do)
+    logging.getLogger(__name__).info(
+        f"QUEUE_DRAIN: reconciled {ticket_id} → in_progress")
+    return True
 
 
 def reset_stale_in_progress(ticket_id: str) -> bool:
-    """Reset a stale in_progress ticket to sprint, ONLY if still in_progress in DB.
+    """Reset a stale in_progress ticket to sprint, ONLY if still in_progress.
 
-    Race-safe: the WHERE clause gates on current DB status, so a concurrent
-    setstatus/close that already made the ticket terminal is never overwritten.
-    Returns True if the reset happened, False if the ticket was already terminal.
+    Filesystem-first (slice d): ticket_store is authoritative, PG is a loud mirror.
+    Race-safe via the conditional_update precondition (must be 'in_progress'), so a
+    concurrent setstatus/close that already terminalized the ticket is never
+    overwritten. Returns True if the reset happened, False otherwise.
     """
-    conn = _db_conn()
-    try:
-        cur = conn.cursor()
-        now = datetime.now(timezone.utc).isoformat()
-        cur.execute(
-            """
-            UPDATE clan.memories
-            SET metadata = jsonb_set(
-                    metadata #- '{dispatched_at}',
-                    '{status}', '"sprint"'
-                ),
-                updated_at = %s
-            WHERE id = %s
-              AND metadata->>'status' = 'in_progress'
-              AND parent_id = %s
-            """,
-            (now, ticket_id, TICKETS_ROOT_ID),
-        )
-        updated = cur.rowcount > 0
-        conn.commit()
-        if updated:
-            import logging
+    def _mut(body):
+        body["status"] = "sprint"
+        body["dispatched_at"] = None  # clear the stale dispatch stamp
+        return body
 
-            logging.getLogger(__name__).info(
-                f"QUEUE_DRAIN: reset stale dispatch {ticket_id} → sprint"
-            )
-        return updated
-    finally:
-        conn.close()
+    try:
+        path = ticket_store.conditional_update(
+            ticket_id, expect_current="in_progress", mutate=_mut)
+    except KeyError:
+        return False
+    if path is None:
+        return False  # already terminal / not in_progress — precondition unmet
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    def _do(cur):
+        cur.execute(
+            "UPDATE clan.memories "
+            "SET metadata = jsonb_set(metadata #- '{dispatched_at}', "
+            "        '{status}', '\"sprint\"'), "
+            "    updated_at = %s "
+            "WHERE id=%s AND metadata->>'status'='in_progress' AND parent_id=%s",
+            (now_iso, ticket_id, TICKETS_ROOT_ID),
+        )
+        return cur.rowcount
+
+    _pg_mirror("reset→sprint", ticket_id, _do)
+    logging.getLogger(__name__).info(
+        f"QUEUE_DRAIN: reset stale dispatch {ticket_id} → sprint")
+    return True
 
 
 def _log(entry: dict):
@@ -946,53 +983,52 @@ def cmd_dispatch(args):
         print("Usage: dispatch <ticket-id> [--by <dispatcher>]", file=sys.stderr)
         sys.exit(1)
 
-    conn = _db_conn()
+    # Filesystem-first (slice d): the FS store is authoritative. The status
+    # precondition (sprint|in_progress) is enforced atomically under ticket_store's
+    # mutation lock; PG is a transitional loud mirror. The mutate callback captures
+    # the new body so the classifier + PG mirror see exactly what was persisted.
+    now = _now()
+    captured: dict = {}
+
+    def _mut(body):
+        body["status"] = "in_progress"
+        body["dispatched_by"] = dispatched_by
+        body["dispatched_at"] = now
+        captured.update(body)
+        return body
+
     try:
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT metadata FROM clan.memories WHERE id = %s FOR UPDATE",
-            (ticket_id,),
+        path = ticket_store.conditional_update(
+            ticket_id, expect_current={"sprint", "in_progress"}, mutate=_mut)
+    except KeyError:
+        print(f"Ticket {ticket_id} not found.", file=sys.stderr)
+        sys.exit(1)
+    if path is None:
+        cur = ticket_store.read(ticket_id) or {}
+        print(
+            f"Ticket {ticket_id} is not in sprint status (current: {cur.get('status')}).",
+            file=sys.stderr,
         )
-        row = cur.fetchone()
-        if not row or not row[0]:
-            print(f"Ticket {ticket_id} not found.", file=sys.stderr)
-            conn.rollback()
-            sys.exit(1)
-        t = dict(row[0])
-        t.pop("kind", None)
-        if t.get("status") not in ("sprint", "in_progress"):
-            print(
-                f"Ticket {ticket_id} is not in sprint status (current: {t.get('status')}).",
-                file=sys.stderr,
-            )
-            conn.rollback()
-            sys.exit(1)
-        now = _now()
-        t["status"] = "in_progress"
-        t["title"] = _with_status_prefix("in_progress", t["title"])
-        t["dispatched_by"] = dispatched_by
-        t["dispatched_at"] = now
-        metadata = dict(t)
+        sys.exit(1)
+
+    def _do(cur):
+        metadata = dict(captured)
         metadata["kind"] = "ticket"
         cur.execute(
             """UPDATE clan.memories SET
                 metadata = %s::jsonb,
                 narrative = %s,
                 updated_at = %s
-            WHERE id = %s""",
-            (json.dumps(metadata), _narrative_for(t), now, ticket_id),
+            WHERE id = %s
+              AND metadata->>'status' IN ('sprint', 'in_progress')""",
+            (json.dumps(metadata), _narrative_for(captured), now, ticket_id),
         )
-        conn.commit()
-    except SystemExit:
-        raise
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+        return cur.rowcount
+
+    _pg_mirror("dispatch", ticket_id, _do)
 
     _log({"action": "dispatch", "id": ticket_id, "dispatched_by": dispatched_by})
-    _classifier_stamp_in_flight(ticket_id, t.get("required_files", []))
+    _classifier_stamp_in_flight(ticket_id, captured.get("required_files", []))
     print(f"dispatched {ticket_id} → {dispatched_by}")
 
 
@@ -2158,48 +2194,44 @@ def cmd_next(args):
     if not ticket_id:
         return
 
-    # Atomically mark in_progress so no other worker can race for this ticket.
-    import psycopg2
+    # Atomically claim in the authoritative FS store (slice d) so no other worker
+    # races for this ticket; the conditional_update precondition (status='sprint')
+    # replaces the old SELECT ... FOR UPDATE gate. PG is a transitional loud mirror.
+    now = _now()
+    captured: dict = {}
 
-    conn = _db_conn()
+    def _mut(body):
+        body["status"] = "in_progress"
+        body["dispatched_at"] = now
+        captured.update(body)
+        return body
+
     try:
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT metadata FROM clan.memories WHERE id = %s FOR UPDATE",
-            (ticket_id,),
-        )
-        row = cur.fetchone()
-        if not row or not row[0]:
-            conn.rollback()
-            return
-        t = dict(row[0])
-        t.pop("kind", None)
-        if t.get("status") != "sprint":
-            conn.rollback()
-            return  # another worker claimed it between our read and lock
-        now = _now()
-        t["status"] = "in_progress"
-        t["title"] = _with_status_prefix("in_progress", t["title"])
-        t["dispatched_at"] = now
-        metadata = dict(t)
+        path = ticket_store.conditional_update(
+            ticket_id, expect_current="sprint", mutate=_mut)
+    except KeyError:
+        return  # vanished between selection and claim
+    if path is None:
+        return  # another worker claimed it between our selection and this claim
+
+    def _do(cur):
+        metadata = dict(captured)
         metadata["kind"] = "ticket"
         cur.execute(
             """UPDATE clan.memories SET
                 metadata = %s::jsonb,
                 narrative = %s,
                 updated_at = %s
-            WHERE id = %s""",
-            (json.dumps(metadata), _narrative_for(t), now, ticket_id),
+            WHERE id = %s
+              AND metadata->>'status' = 'sprint'""",
+            (json.dumps(metadata), _narrative_for(captured), now, ticket_id),
         )
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+        return cur.rowcount
+
+    _pg_mirror("dispatch_via_next", ticket_id, _do)
 
     _log({"action": "dispatch_via_next", "id": ticket_id, "worker": worker_filter})
-    _classifier_stamp_in_flight(ticket_id, t.get("required_files", []))
+    _classifier_stamp_in_flight(ticket_id, captured.get("required_files", []))
     print(ticket_id)
 
 

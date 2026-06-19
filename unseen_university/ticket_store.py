@@ -92,6 +92,43 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+# Forensic device id for the build queue. The queue's eventual home is a rack
+# device (devices/queue/device.py) that inherits DiagnosticBase; until then this
+# module IS the queue chokepoint, so it owns the forensic log here. The record
+# schema ({ts, device, event, data}) and the datacenter_logs/<device>/trace/
+# location are IDENTICAL to DiagnosticBase.trace_record, so when the queue
+# becomes a device the call swaps to self.trace_record with zero schema change
+# and existing readers (last_traces) keep working.
+_FORENSIC_DEVICE = "queue"
+
+
+def _forensic(event: str, data: Optional[dict] = None) -> None:
+    """Append one forensic trace record for a queue state-change / interface
+    crossing (CLAUDE.md: log every state change and interface crossing; AR-009).
+
+    Single forensic owner for the queue: every caller (cc_queue, Granny, the
+    future rack device) that mutates through this chokepoint gets a device_id-
+    stamped JSONL trace for free — the queue analogue of memory_emit owning the
+    write. Never raises (forensics must not break a queue mutation).
+    """
+    try:
+        env = os.environ.get("UU_QUEUE_TRACE_DIR")
+        trace_dir = Path(env) if env else (
+            Path.home() / ".unseen_university" / "datacenter_logs"
+            / _FORENSIC_DEVICE / "trace"
+        )
+        trace_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now(timezone.utc)
+        record = {"ts": ts.isoformat(), "device": _FORENSIC_DEVICE, "event": event}
+        if data is not None:
+            record["data"] = data
+        day_file = trace_dir / f"{ts.strftime('%Y%m%d')}.jsonl"
+        with day_file.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, default=str) + "\n")
+    except Exception:
+        pass
+
+
 def _atomic_write(path: Path, record: dict) -> None:
     """Write JSON to a temp sibling then atomically replace — never a torn file."""
     tmp = str(path) + ".tmp"
@@ -253,6 +290,8 @@ def _put(body: dict) -> str:
             os.replace(path, dest)                 # 2) atomic move across dirs
             log.info("ticket_store: %s -> %s/%s (status=%s)",
                      tid, target_dir.name, dest.name, body.get("status"))
+            _forensic("ticket_moved", {"id": tid, "to_dir": target_dir.name,
+                                       "status": body.get("status")})
             return str(dest)
         return str(path)
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -260,6 +299,8 @@ def _put(body: dict) -> str:
     newpath = target_dir / (record["id"] + ".json")
     _atomic_write(newpath, record)
     log.info("ticket_store: %s created -> %s/%s", tid, target_dir.name, newpath.name)
+    _forensic("ticket_created", {"id": tid, "status": body.get("status"),
+                                 "dir": target_dir.name})
     return str(newpath)
 
 
@@ -288,6 +329,7 @@ def set_worker(ticket_id: str, worker: Optional[str]) -> str:
         body["worker"] = worker
         body["updated_at"] = _now_iso()
         log.info("ticket_store: %s worker %s -> %s", ticket_id, old, worker)
+        _forensic("worker_assigned", {"id": ticket_id, "from": old, "to": worker})
         return _put(body)
 
 
@@ -308,6 +350,8 @@ def set_status(ticket_id: str, status: str) -> str:
         body["status"] = status
         body["updated_at"] = _now_iso()
         log.info("ticket_store: %s status %s -> %s", ticket_id, old, status)
+        _forensic("status_transition", {"id": ticket_id, "from": old, "to": status,
+                                        "via": "set_status"})
         return _put(body)
 
 
@@ -326,13 +370,52 @@ def close(ticket_id: str, result: Optional[str] = None, status: str = "closed") 
         if rec is None:
             raise KeyError(ticket_id)
         body = rec["body"]
+        old = body.get("status")
         body["status"] = status
         if result is not None:
             body["result"] = result
         body["completed_at"] = _now_iso()
         body["updated_at"] = body["completed_at"]
         log.info("ticket_store: %s closing (status=%s)", ticket_id, status)
+        _forensic("ticket_closed", {"id": ticket_id, "from": old, "to": status,
+                                    "has_result": result is not None})
         return _put(body)
+
+
+def conditional_update(ticket_id: str, *, expect_current, mutate) -> Optional[str]:
+    """Race-safe check-and-set: the filesystem analogue of an atomic
+    ``UPDATE ... WHERE status = expect_current``.
+
+    Acquires ``_mutation_lock``, reads the LIVE on-disk body, and proceeds only
+    if its status matches ``expect_current`` (a single status string, or a
+    set/tuple/list of acceptable statuses). When it matches, ``mutate(body)`` is
+    applied UNDER THE LOCK and the result persisted via the single mover (_put),
+    stamping ``updated_at``.
+
+    Because the callback receives the live body inside the lock, there is no
+    read-then-write TOCTOU: callers never pre-read to compute fields, so a
+    concurrent transition can't slip between a caller's read and this write.
+
+    Returns the file path on success; ``None`` if the status precondition was not
+    met (no write performed). Raises ``KeyError`` if the ticket does not exist —
+    callers that need to distinguish "missing" from "wrong status" rely on this
+    split (e.g. cc_queue.cmd_dispatch's two distinct errors).
+    """
+    with _mutation_lock():
+        path, rec = _find(ticket_id)
+        if rec is None:
+            raise KeyError(ticket_id)
+        current = rec["body"].get("status")
+        ok = (current == expect_current if isinstance(expect_current, str)
+              else current in expect_current)
+        if not ok:
+            return None
+        new_body = mutate(dict(rec["body"]))
+        new_body["updated_at"] = _now_iso()
+        _forensic("status_transition", {"id": ticket_id, "from": current,
+                                        "to": new_body.get("status"),
+                                        "via": "conditional_update"})
+        return _put(new_body)
 
 
 def next_for_worker(worker: Optional[str] = None) -> Optional[dict]:

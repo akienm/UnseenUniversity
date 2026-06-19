@@ -267,3 +267,111 @@ def test_concurrent_set_worker_and_close_invariant(_tmp_root):
         assert len(closed) == 1, f"{tid}: expected single closed copy, got {len(closed)}"
         body = json.loads(closed[0].read_text())["body"]
         assert body["status"] in ts.TERMINAL_STATUSES
+
+
+# ── conditional_update (slice d: race-safe check-and-set) ──────────────────────
+
+
+def test_conditional_update_path_on_match(_tmp_root):
+    ts.write(_mk("T-cu", status="sprint"))
+
+    def _mut(b):
+        b["status"] = "in_progress"
+        b["dispatched_at"] = "now"
+        return b
+
+    p = ts.conditional_update("T-cu", expect_current="sprint", mutate=_mut)
+    assert p is not None
+    got = ts.read("T-cu")
+    assert got["status"] == "in_progress"
+    assert got["dispatched_at"] == "now"
+
+
+def test_conditional_update_none_on_mismatch_no_write(_tmp_root):
+    ts.write(_mk("T-cu2", status="in_progress"))
+    before = _files_for(_tmp_root, "T-cu2")[0].read_text()
+
+    called = {"n": 0}
+
+    def _mut(b):
+        called["n"] += 1   # must NOT run when precondition fails
+        b["status"] = "sprint"
+        return b
+
+    out = ts.conditional_update("T-cu2", expect_current="sprint", mutate=_mut)
+    assert out is None
+    assert called["n"] == 0
+    # body unchanged on disk (modulo nothing — no write happened at all)
+    assert _files_for(_tmp_root, "T-cu2")[0].read_text() == before
+
+
+def test_conditional_update_keyerror_on_missing(_tmp_root):
+    with pytest.raises(KeyError):
+        ts.conditional_update("T-nope", expect_current="sprint", mutate=lambda b: b)
+
+
+def test_conditional_update_accepts_status_set(_tmp_root):
+    ts.write(_mk("T-cu3", status="in_progress"))
+    p = ts.conditional_update(
+        "T-cu3", expect_current={"sprint", "in_progress"},
+        mutate=lambda b: {**b, "worker": "ds.0"})
+    assert p is not None
+    assert ts.read("T-cu3")["worker"] == "ds.0"
+
+
+def test_conditional_update_only_one_wins(_tmp_root):
+    """Two sequential claims with the same precondition: the first transitions
+    sprint->in_progress, the second sees in_progress != sprint and returns None.
+    This is the claim-race gate (only one worker wins) made deterministic."""
+    ts.write(_mk("T-claim", status="sprint"))
+    claim = lambda: ts.conditional_update(
+        "T-claim", expect_current="sprint",
+        mutate=lambda b: {**b, "status": "in_progress"})
+    first = claim()
+    second = claim()
+    assert first is not None and second is None
+
+
+# ── forensic trace (slice: chokepoint owns queue forensics) ───────────────────
+
+
+def _traces(trace_dir):
+    recs = []
+    for p in Path(trace_dir).glob("*.jsonl"):
+        for line in p.read_text().splitlines():
+            if line.strip():
+                recs.append(json.loads(line))
+    return recs
+
+
+def test_forensic_trace_on_transitions(tmp_path, monkeypatch):
+    trace_dir = tmp_path / "trace"
+    monkeypatch.setenv("UU_QUEUE_TRACE_DIR", str(trace_dir))
+    ts.write(_mk("T-fx", status="sprint"))             # ticket_created
+    ts.set_status("T-fx", "assigned")                  # status_transition
+    ts.conditional_update("T-fx", expect_current="assigned",
+                          mutate=lambda b: {**b, "status": "in_progress"})  # transition
+    ts.close("T-fx", result="done")                    # ticket_closed + ticket_moved
+
+    recs = _traces(trace_dir)
+    events = [r["event"] for r in recs]
+    assert "ticket_created" in events
+    assert "status_transition" in events
+    assert "ticket_closed" in events
+    assert "ticket_moved" in events
+    # schema parity with DiagnosticBase.trace_record
+    for r in recs:
+        assert set(r) >= {"ts", "device", "event"}
+        assert r["device"] == "queue"
+
+
+def test_forensic_never_raises_on_bad_dir(tmp_path, monkeypatch):
+    # point trace at a path that can't be created (a file, not a dir) → swallowed
+    bad = tmp_path / "afile"
+    bad.write_text("x")
+    monkeypatch.setenv("UU_QUEUE_TRACE_DIR", str(bad / "sub"))
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
+    (tmp_path / "tickets").mkdir(exist_ok=True)
+    # must not raise even though the trace write fails
+    ts.write(_mk("T-safe"))
+    assert ts.read("T-safe") is not None
