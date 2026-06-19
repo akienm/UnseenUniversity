@@ -81,6 +81,43 @@ def test_update_in_place_no_duplicate_file(_tmp_root):
     assert got["updated_at"]
 
 
+def test_write_is_churn_free_noop(_tmp_root):
+    import os as _os
+    p1 = ts.write(_mk("T-noop"))
+    mtime1 = _os.path.getmtime(p1)
+    # writing the identical body back is a no-op: no rewrite, no stamp, file untouched
+    p2 = ts.write(ts.read("T-noop"))
+    assert p2 == p1
+    assert _os.path.getmtime(p2) == mtime1
+
+
+def test_write_does_not_stamp_updated_at(_tmp_root):
+    # write() is a pure persist; only the granular mutators stamp updated_at
+    ts.write(_mk("T-nostamp"))  # body has no updated_at
+    assert "updated_at" not in ts.read("T-nostamp")
+    ts.set_worker("T-nostamp", "CC.1")  # this one stamps
+    assert ts.read("T-nostamp")["updated_at"]
+
+
+def test_write_terminal_status_routes_to_closed(_tmp_root):
+    ts.write(_mk("T-term", status="done"))
+    assert len(_files_for(_tmp_root, "T-term")) == 0                 # not in active
+    assert len(_files_for(_tmp_root, "T-term", closed=True)) == 1    # routed to closed/
+    body = ts.read("T-term")
+    assert body["status"] == "done"
+    assert body["completed_at"]                                       # stamped on terminalize
+
+
+def test_write_terminalizing_existing_moves_to_closed(_tmp_root):
+    ts.write(_mk("T-mv", status="sprint"))
+    assert len(_files_for(_tmp_root, "T-mv")) == 1
+    body = ts.read("T-mv")
+    body["status"] = "done"
+    ts.write(body)
+    assert len(_files_for(_tmp_root, "T-mv")) == 0
+    assert len(_files_for(_tmp_root, "T-mv", closed=True)) == 1
+
+
 def test_list_filters_by_status_and_excludes_closed(_tmp_root):
     ts.write(_mk("T-1", "sprint"))
     ts.write(_mk("T-2", "in_progress"))

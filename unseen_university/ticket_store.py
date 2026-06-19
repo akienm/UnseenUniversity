@@ -204,31 +204,66 @@ def list(status_filter: Optional[str] = None, include_closed: bool = False) -> "
     return out
 
 
-def write(ticket: dict) -> str:
-    """Create or update a ticket. Returns the file path.
+def _body_eq_ignoring_updated_at(a: dict, b: dict) -> bool:
+    """Equal modulo ``updated_at`` — lets _put skip churn-free writes."""
+    aa = {k: v for k, v in a.items() if k != "updated_at"}
+    bb = {k: v for k, v in b.items() if k != "updated_at"}
+    return aa == bb
 
-    Existing ticket (by ``body.id``) → in-place atomic rewrite of the SAME file
-    (envelope preserved, only ``body`` swapped + ``updated_at`` bumped), so the
-    active dir never accumulates duplicate envelopes per id. New ticket → a fresh
-    envelope file in ``tickets/``.
+
+def _put(body: dict) -> str:
+    """Lock-free status-aware upsert + route. CALLER MUST HOLD ``_mutation_lock``.
+
+    The SINGLE mover. A terminal-status body lives in ``closed/``, non-terminal in
+    ``tickets/``. Existing ticket → rewrite in place, then (only if status now implies
+    a different dir) atomically ``os.replace`` it across — never in two dirs at once.
+    NO-OP when the on-disk body is byte-identical ignoring ``updated_at`` AND already
+    in the right dir, so ``_save(all_tasks)`` rewrites only genuinely-changed tickets
+    (no 2088-file churn). Does NOT stamp ``updated_at`` — the granular mutators do
+    that (they know they changed something); write() is a pure persist.
     """
-    if not ticket.get("id"):
+    if not body.get("id"):
         raise ValueError("ticket must have an 'id'")
-    tid = ticket["id"]
+    tid = body["id"]
+    terminal = body.get("status") in TERMINAL_STATUSES
+    if terminal and not body.get("completed_at"):
+        # any path that terminalizes a ticket stamps completed_at (advisor: one
+        # invariant regardless of whether it arrived via close/set_status/write)
+        body["completed_at"] = _now_iso()
+    target_dir = _closed_dir() if terminal else _tickets_dir()
+    path, rec = _find(tid)
+    if rec is not None:
+        in_right_dir = path.parent.resolve() == target_dir.resolve()
+        if in_right_dir and _body_eq_ignoring_updated_at(rec["body"], body):
+            return str(path)  # churn-free no-op
+        new_rec = dict(rec)
+        new_rec["body"] = body
+        _atomic_write(path, new_rec)               # 1) durable in place
+        if not in_right_dir:
+            target_dir.mkdir(parents=True, exist_ok=True)
+            dest = target_dir / path.name
+            os.replace(path, dest)                 # 2) atomic move across dirs
+            log.info("ticket_store: %s -> %s/%s (status=%s)",
+                     tid, target_dir.name, dest.name, body.get("status"))
+            return str(dest)
+        return str(path)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    record = _envelope(body)
+    newpath = target_dir / (record["id"] + ".json")
+    _atomic_write(newpath, record)
+    log.info("ticket_store: %s created -> %s/%s", tid, target_dir.name, newpath.name)
+    return str(newpath)
+
+
+def write(ticket: dict) -> str:
+    """Create or update a ticket (status-aware routing, churn-free). Returns path.
+
+    A pure persist — does NOT stamp ``updated_at`` (the granular mutators do, since
+    they know a change occurred). A terminal-status body routes to ``closed/``;
+    non-terminal to ``tickets/``. Writing an unchanged body is a no-op.
+    """
     with _mutation_lock():
-        path, rec = _find(tid)
-        if rec is not None:
-            rec["body"] = dict(ticket)
-            rec["body"]["updated_at"] = _now_iso()
-            _atomic_write(path, rec)
-            log.info("ticket_store: %s updated (status=%s)", tid, ticket.get("status"))
-            return str(path)
-        record = _envelope(dict(ticket))
-        _tickets_dir().mkdir(parents=True, exist_ok=True)
-        newpath = _tickets_dir() / (record["id"] + ".json")
-        _atomic_write(newpath, record)
-        log.info("ticket_store: %s created -> %s", tid, newpath.name)
-        return str(newpath)
+        return _put(dict(ticket))
 
 
 def set_worker(ticket_id: str, worker: Optional[str]) -> str:
@@ -244,14 +279,13 @@ def set_worker(ticket_id: str, worker: Optional[str]) -> str:
         old = body.get("worker")
         body["worker"] = worker
         body["updated_at"] = _now_iso()
-        _atomic_write(path, rec)
         log.info("ticket_store: %s worker %s -> %s", ticket_id, old, worker)
-        return str(path)
+        return _put(body)
 
 
 def set_status(ticket_id: str, status: str) -> str:
-    """Transition status. Terminal statuses delegate to ``close`` (so the
-    active-dir-holds-only-in-flight invariant holds regardless of entry point)."""
+    """Transition status. Terminal statuses delegate to ``close`` so the close-move +
+    completed_at stamping happen on one path."""
     if status in TERMINAL_STATUSES:
         return close(ticket_id, result=None, status=status)
     with _mutation_lock():
@@ -265,18 +299,17 @@ def set_status(ticket_id: str, status: str) -> str:
         old = body.get("status")
         body["status"] = status
         body["updated_at"] = _now_iso()
-        _atomic_write(path, rec)
         log.info("ticket_store: %s status %s -> %s", ticket_id, old, status)
-        return str(path)
+        return _put(body)
 
 
 def close(ticket_id: str, result: Optional[str] = None, status: str = "closed") -> str:
-    """Terminate a ticket and move it to ``tickets/closed/``. Returns dest path.
+    """Terminate a ticket: stamp completed_at/result, then route to ``closed/`` via
+    the single mover (_put). Returns dest path.
 
-    Crash-safe: the body is rewritten in place with the terminal status FIRST, then
-    the file is moved with a single atomic ``os.replace``. The file is never in both
-    dirs; a crash before the move leaves a closed-status file in ``tickets/``, which
-    callers exclude via status, not location.
+    ONE terminal-move path — a terminal status reached through ANY entry (close,
+    set_status, or a terminal-status write) lands in ``closed/`` with completed_at
+    set, via _put's atomic cross-dir move (never in two dirs at once).
     """
     if status not in TERMINAL_STATUSES:
         raise ValueError(f"close status must be terminal {sorted(TERMINAL_STATUSES)}, got {status!r}")
@@ -290,15 +323,8 @@ def close(ticket_id: str, result: Optional[str] = None, status: str = "closed") 
             body["result"] = result
         body["completed_at"] = _now_iso()
         body["updated_at"] = body["completed_at"]
-        # 1) durable in place — even if the rename never happens, status is terminal
-        _atomic_write(path, rec)
-        # 2) atomic move into closed/ (single rename; never in two places at once)
-        _closed_dir().mkdir(parents=True, exist_ok=True)
-        dest = _closed_dir() / path.name
-        if path.resolve() != dest.resolve():
-            os.replace(path, dest)
-        log.info("ticket_store: %s closed (status=%s) -> closed/%s", ticket_id, status, dest.name)
-        return str(dest)
+        log.info("ticket_store: %s closing (status=%s)", ticket_id, status)
+        return _put(body)
 
 
 def next_for_worker(worker: Optional[str] = None) -> Optional[dict]:
