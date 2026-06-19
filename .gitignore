@@ -21,3 +21,6 @@ test_env/
 .coverage
 coverage.xml
 *.cover
+
+# ticket_store flock artifact (runtime, never tracked)
+devlab/runtime/memory/tickets/.queue.lock

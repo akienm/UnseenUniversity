@@ -78,6 +78,12 @@ from unseen_university.gate_logic import (  # noqa: E402
     gate_clear as _gate_clear,
 )
 
+# Filesystem queue chokepoint (T-ticket-store-module). The build queue is a
+# dynamic pipeline whose source of truth is the grep-able filesystem store, NOT
+# Postgres (D-build-queue-filesystem-first-2026-06-19). cc_queue reads through
+# this; Postgres is a transitional read-fallback only, removed by T-ticket-pg-drop.
+from unseen_university import ticket_store  # noqa: E402
+
 IGOR_FLUSH_URL = "https://localhost:8080/api/cc_send"
 
 TICKETS_ROOT_ID = "TICKETS_ROOT"
@@ -211,13 +217,83 @@ def _tickets_in_clan(ticket_ids: list[str]) -> set:
         conn.close()
 
 
-def _load():
-    """Canonical read: SELECT from clan.memories and devlab.tickets (merged).
+# Default keys every caller assumes present. FS ticket bodies written by older
+# code (or hand-emitted) may lack some of these; backfilling on load prevents
+# KeyError downstream. (66 of 124 active tickets miss ≥1 of these — measured
+# 2026-06-19.) Mutable defaults are copied per-ticket so they are never shared.
+_LOAD_DEFAULTS = {
+    "result": None,
+    "role": "master",
+    "priority": 0.5,
+    "gate": None,
+    "related_to": None,
+    "github_issue": None,
+    "dispatched_at": None,
+    "required_files": (),  # tuple sentinel → materialized to a fresh list per ticket
+    "target_difficulty": 1,
+}
 
-    During transition, read from both tables:
+
+def _apply_load_defaults(t: dict) -> dict:
+    """Backfill the keys every caller assumes present, without clobbering values."""
+    for k, v in _LOAD_DEFAULTS.items():
+        if k not in t:
+            t[k] = list(v) if isinstance(v, tuple) else v
+    return t
+
+
+def _load():
+    """Canonical read — FILESYSTEM-FIRST (D-build-queue-filesystem-first-2026-06-19).
+
+    The build queue's source of truth is the grep-able filesystem store
+    (devlab/runtime/memory/tickets/{,closed/}), read via the ticket_store
+    chokepoint. Postgres is a TRANSITIONAL read-fallback only: any ticket id
+    present in PG but not yet in the filesystem is folded in, so the cutover
+    can't lose a ticket while the other ~20 readers still write PG
+    (T-ticket-readers-migrate). The fallback is PG-down-tolerant — with Postgres
+    stopped, the filesystem store stands alone. T-ticket-pg-drop removes it.
+    """
+    import logging
+
+    log = logging.getLogger(__name__)
+    tasks = {}
+
+    # Primary: filesystem store (include closed so the read contract is unchanged
+    # from the PG era, which returned terminal tickets too).
+    for body in ticket_store.list(include_closed=True):
+        tid = body.get("id")
+        if tid:
+            tasks[tid] = _apply_load_defaults(dict(body))
+    fs_count = len(tasks)
+
+    # Transitional fallback: fold in PG-only ids. Tolerate Postgres being down —
+    # the filesystem store is authoritative, so a missing DB is non-fatal.
+    pg_only = 0
+    try:
+        for t in _load_pg():
+            tid = t.get("id")
+            if tid and tid not in tasks:
+                tasks[tid] = _apply_load_defaults(t)
+                pg_only += 1
+    except Exception as e:  # PG unreachable / mid-cutover — FS stands alone
+        log.warning("cc_queue._load: Postgres fallback unavailable (%s) — "
+                    "serving %d tickets from filesystem store only", e, fs_count)
+    else:
+        # AR-009 interface crossing: record where the tickets came from.
+        log.info("cc_queue._load: %d from filesystem store, %d PG-only fallback",
+                 fs_count, pg_only)
+
+    return list(tasks.values())
+
+
+def _load_pg():
+    """Transitional Postgres read: SELECT from clan.memories and devlab.tickets.
+
+    Retained ONLY as the fallback inside the filesystem-first _load() during the
+    cutover window. Removed by T-ticket-pg-drop once no reader needs Postgres.
+
     - clan.memories: existing tickets (old format with metadata JSONB)
     - devlab.tickets: new tickets (new format with explicit columns)
-
     Merge results, preferring devlab if a ticket appears in both.
     """
     conn = _db_conn()
