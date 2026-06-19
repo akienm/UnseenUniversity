@@ -6,7 +6,7 @@ callers read specific items only if they want depth.
 Sources:
   palace   — adc.palace nodes (concepts, decisions, summaries, day rollups)
   memories — clan.memories (all memory types)
-  tickets  — clan.memories where metadata.kind='ticket'
+  tickets  — filesystem ticket store (D-build-queue-filesystem-first-2026-06-19)
   files    — repo files via ripgrep (no DB)
   all      — palace + memories + tickets + files (default)
 """
@@ -73,14 +73,18 @@ def _search_palace(query: str, limit: int) -> list[dict]:
     return hits
 
 
-def _search_memories(query: str, limit: int, tickets_only: bool = False) -> list[dict]:
+def _search_memories(query: str, limit: int) -> list[dict]:
+    """Fulltext over the clan.memories knowledge-store (NOT ticket-state).
+
+    Ticket-state moved to the filesystem store (see ``_search_tickets``); this
+    path stays on Postgres because it searches the general memory corpus.
+    """
     hits: list[dict] = []
     try:
         conn = _conn()
         with conn.cursor() as cur:
-            kind_clause = "AND metadata->>'kind' = 'ticket'" if tickets_only else ""
             cur.execute(
-                f"""
+                """
                 SELECT name, narrative,
                        ts_rank(
                            to_tsvector('english', coalesce(narrative,'')),
@@ -90,7 +94,6 @@ def _search_memories(query: str, limit: int, tickets_only: bool = False) -> list
                 FROM clan.memories
                 WHERE to_tsvector('english', coalesce(narrative,''))
                       @@ plainto_tsquery('english', %s)
-                      {kind_clause}
                 ORDER BY rank DESC
                 LIMIT %s
                 """,
@@ -110,6 +113,49 @@ def _search_memories(query: str, limit: int, tickets_only: bool = False) -> list
     except Exception:
         pass
     return hits
+
+
+def _search_tickets(query: str, limit: int) -> list[dict]:
+    """Ticket-state search over the filesystem ticket store (no Postgres).
+
+    Filesystem-first (D-build-queue-filesystem-first-2026-06-19): ticket state
+    lives in ``devlab/runtime/memory/tickets/`` (+ ``closed/``), not clan.memories.
+    Postgres has no fulltext index out here, so this is a case-insensitive
+    term-presence match over id/title/description/tags — the honest filesystem
+    equivalent of the old ts_rank ticket query. Rank = fraction of query terms
+    present (0..1), scaled modestly so tickets interleave with ts_rank hits rather
+    than always dominating. Reads are lock-free (atomic files are always valid).
+    """
+    hits: list[dict] = []
+    terms = [t for t in query.lower().split() if t]
+    if not terms:
+        return hits
+    try:
+        from unseen_university import ticket_store
+
+        for body in ticket_store.list(include_closed=True):
+            tags = body.get("tags") or []
+            blob = " ".join([
+                str(body.get("id") or ""),
+                str(body.get("title") or ""),
+                str(body.get("description") or ""),
+                " ".join(str(t) for t in tags),
+            ]).lower()
+            matched = sum(1 for t in terms if t in blob)
+            if not matched:
+                continue
+            hits.append(
+                {
+                    "source": "ticket",
+                    "key": body.get("id") or "?",
+                    "rank": 0.5 * (matched / len(terms)),
+                    "snippet": _snip(body.get("title") or body.get("description") or ""),
+                }
+            )
+    except Exception:
+        return []
+    hits.sort(key=lambda h: h["rank"], reverse=True)
+    return hits[:limit]
 
 
 def _search_files(query: str, limit: int) -> list[dict]:
@@ -184,7 +230,7 @@ def search(query: str, source: str = "all", limit: int = 10) -> str:
     if source in ("all", "memories"):
         hits.extend(_search_memories(query, per_src))
     if source in ("all", "tickets"):
-        hits.extend(_search_memories(query, per_src, tickets_only=True))
+        hits.extend(_search_tickets(query, per_src))
     if source in ("all", "files"):
         hits.extend(_search_files(query, per_src))
 

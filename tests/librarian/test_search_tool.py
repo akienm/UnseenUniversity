@@ -104,9 +104,15 @@ class TestSearchMemories:
         assert "GOAL_MURDERBOT" in result
 
     def test_ticket_hit_labelled_ticket(self):
-        rows = [("T-granny-dispatch-role-map", "Workers self-register roles via register_worker", 0.78, "ticket")]
-        conn = _mock_conn(rows)
-        with patch.object(search_tools, "_conn", return_value=conn):
+        # Tickets now come from the filesystem ticket store, not clan.memories
+        # (D-build-queue-filesystem-first-2026-06-19). Patch ticket_store.list.
+        from unseen_university import ticket_store
+        fake = [{
+            "id": "T-granny-dispatch-role-map",
+            "title": "Workers self-register roles via register_worker",
+            "description": "", "tags": [], "status": "sprint",
+        }]
+        with patch.object(ticket_store, "list", return_value=fake):
             result = search_tools.search("register_worker", source="tickets")
         assert "ticket" in result
         assert "T-granny-dispatch-role-map" in result
@@ -163,8 +169,10 @@ class TestSourceFilter:
         mock_conn_fn.assert_not_called()
 
     def test_unknown_source_treated_as_all(self):
+        from unseen_university import ticket_store
         conn = _mock_conn([])
         with patch.object(search_tools, "_conn", return_value=conn), \
+             patch.object(ticket_store, "list", return_value=[]), \
              patch("subprocess.run", return_value=MagicMock(stdout="", returncode=0)):
             result = search_tools.search("test", source="bogus")
         assert "No results" in result
