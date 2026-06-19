@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-ticket-tools-to-hubert.20260619.172406229972",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-tools-to-hubert"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T23:24:06.229972+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ticket-query-api-hubert-2026-06-19"
+    ],
+    "tickets": [
+      "T-ticket-tools-to-hubert"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-tools-to-hubert",
+    "title": "[triage] Relocate ticket-query MCP tools Librarian→Hubert; drop node_registry ticket entry",
+    "size": "M",
+    "tags": [
+      "Hubert",
+      "Librarian",
+      "BuildProcess",
+      "QueryAPI"
+    ],
+    "priority": 0.65,
+    "decision_id": "D-ticket-query-api-hubert-2026-06-19",
+    "gate": "T-ticket-store-query-api",
+    "description": "**Problem:** Ticket-query MCP tools live in the Librarian device. They lived there because tickets used to be in clan.memories (the knowledge corpus the Librarian owns). Tickets are no longer in the DB — they're in devlab/runtime/memory/tickets/ (the filesystem queue). The Librarian's entire reason for owning ticket-search is gone. Hubert owns the dev process; the queue IS the dev process; ticket-query tools belong to Hubert.\n\nSecondary: node_registry.py in the Librarian still declares a dormant 'ticket' SQL-table entry (the fork confirmed nothing executes it — its only caller continue-skips every clan.memories table at line 325). This is architectural rot: a DB-table declaration for a thing that no longer lives in a DB.\n\n**Proposed shape:**\n1. Create devices/hubert/tools/ticket_tools.py (create tools/ dir + __init__.py if not present): MCP-exposed wrappers over ticket_store query helpers (text, next, by_status, by_worker, by_gate, by_decision). Thin wrappers — they call ticket_store, they don't reimplement.\n2. Remove _search_tickets() from unseen_university/devices/librarian/tools/search_tools.py — ticket source moves to Hubert. Librarian's federated search() drops the 'tickets' source or routes to Hubert's MCP tool for it. Simplest correct behavior: drop the ticket source from Librarian search; callers that want tickets call Hubert's tool explicitly.\n3. Drop the 'ticket' entry from unseen_university/devices/librarian/node_registry.py (dormant, nothing executes it, confirmed by fork).\n\n**Pre-existing condition check:** If devices/hubert/tools/ does not exist, create it. Check with ls before writing.\n\n**Affected files:**\n- devices/hubert/tools/ticket_tools.py (new)\n- devices/hubert/tools/__init__.py (new if needed)\n- unseen_university/devices/librarian/tools/search_tools.py (drop _search_tickets, drop 'tickets' source from search())\n- unseen_university/devices/librarian/node_registry.py (drop ticket entry)\n- tests/librarian/test_search_tool.py (update: search() no longer returns ticket source)\n- tests/hubert/ (new: ticket_tools tests)\n\n**Design rules:** Hubert owns dev-process tooling (CLAUDE.md device roster: 'Hubert=dev-process tooling'). Librarian owns knowledge corpus search. No Postgres in ticket path.\n\n**Scope boundary:** ONLY the ticket-source components move. Librarian's palace search, memory search, file search — untouched. Hubert's existing cognition — untouched. No other device is touched.\n\n**Test plan:**\n- Hubert ticket_tools: ts.text delegate test; ts.next delegate test; MCP schema valid\n- Librarian search_tools: search() with source='tickets' returns empty or raises clean error (not stale PG result, not FS result that belongs to Hubert)\n- node_registry: 'ticket' key absent from registry; get_canonical_query('ticket') raises KeyError\n- All existing Librarian + Hubert tests still green",
+    "status": "triage",
+    "created_at": "2026-06-19T23:24:05.856281+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-19T23:24:05.856342+00:00"
+  }
+}

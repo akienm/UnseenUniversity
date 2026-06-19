@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-ticket-store-query-api.20260619.172406124113",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-store-query-api"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T23:24:06.124113+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-ticket-query-api-hubert-2026-06-19"
+    ],
+    "tickets": [
+      "T-ticket-store-query-api"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-store-query-api",
+    "title": "[triage] ticket_store: named query helpers — next/text/by_status/by_worker/by_gate/by_decision",
+    "size": "M",
+    "tags": [
+      "TicketStore",
+      "BuildProcess",
+      "QueryAPI"
+    ],
+    "priority": 0.75,
+    "decision_id": "D-ticket-query-api-hubert-2026-06-19",
+    "gate": null,
+    "description": "**Problem:** ticket_store.py is the filesystem queue chokepoint for reads/writes but exposes no named query surface — every caller reimplements the same inline list-comprehensions (filter by status, by worker, by gate, text search). That makes it impossible to build new skills on top without re-deriving the query. Akien's framing (2026-06-19): 'that lets us build new skills on top of that.'\n\n**Proposed shape:** Add to unseen_university/ticket_store.py:\n- `by_status(*statuses, include_closed=False)` → list[dict]: filter on body.status, priority-sorted\n- `by_worker(name, include_closed=False)` → list[dict]: filter on body.worker\n- `by_gate(gate_id)` → list[dict]: filter on body.gate (active only, for Granny)\n- `by_decision(decision_id)` → list[dict]: filter on body.decision_id\n- `text(query, limit=20, include_closed=True)` → list[dict]: term-presence match over id/title/description/tags (extract from search_tools._search_tickets which duplicates this logic)\n- `next(worker=None)` → dict | None: by_status(sprint,ready,assigned) optionally filtered by worker, priority-sorted, first result — THIS IS THE CANONICAL IMPLEMENTATION; cmd_next in cc_queue.py must delegate to ts.next() after this ships (small follow-on in same PR or immediate follow)\n\nNamed in cognition terms (intent→structured-intent discipline): these are record-queries, not just ticket-filters — when Igor's cognition rides the same model the names survive without renaming.\n\n**Affected files:**\n- unseen_university/ticket_store.py (primary)\n- tests/test_ticket_store.py (unit tests for each helper)\n- devlab/claudecode/cc_queue.py (cmd_next delegation — small, ~5 lines)\n\n**Design rules:** No Postgres anywhere. All reads are lock-free (atomic files). Single chokepoint — no caller reimplements these filters after this ships.\n\n**Scope boundary:** ticket_store.py + tests + cmd_next delegation ONLY. Does NOT remove _search_tickets from search_tools.py — that belongs to T-ticket-tools-to-hubert (gated on this ticket).\n\n**Test plan:**\n- Unit: by_status(['sprint']) returns only sprint tickets; by_worker('DS.0') returns only DS.0's; text('granny') returns tickets with 'granny' in id/title/desc/tags; next() returns highest-priority sprint/ready ticket; by_gate/by_decision filter correctly\n- Integration: cc_queue.py cmd_next result agrees with ts.next() on same store\n- Regression: all existing ticket_store tests still green",
+    "status": "triage",
+    "created_at": "2026-06-19T23:24:05.786821+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-19T23:24:05.831366+00:00"
+  }
+}
