@@ -1,20 +1,14 @@
 """ticket_tools.py — file_ticket MCP tool for Librarian.
 
-Writes a cc_queue-compatible ticket directly to clan.memories so any
-device can file tickets without importing TheIgors.
+Writes a ticket to the filesystem ticket store (the build queue) so any device
+can file tickets without importing TheIgors and without touching Postgres
+(D-build-queue-filesystem-first-2026-06-19).
 """
 
 from __future__ import annotations
 
 import json
-import os
 import re
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
-_TICKETS_ROOT = "TICKETS_ROOT"
 
 
 def _slug(title: str) -> str:
@@ -22,12 +16,6 @@ def _slug(title: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", s)
     s = s.strip("-")
     return s[:40]
-
-
-def _conn():
-    import psycopg2
-
-    return psycopg2.connect(_PG_URL)
 
 
 def file_ticket(
@@ -39,16 +27,21 @@ def file_ticket(
     priority: float = 0.5,
     status: str = "triage",
 ) -> dict:
-    """File a new ticket in cc_queue via direct clan.memories insert."""
+    """File a new ticket in the build queue via the filesystem ticket store.
+
+    Filesystem-first (D-build-queue-filesystem-first-2026-06-19): ticket state is
+    the dynamic queue, owned by ``ticket_store`` (atomic write+rename), not
+    clan.memories. ``write`` is an upsert on ``body.id``, so re-filing the same
+    title updates in place (matching the old ON CONFLICT DO UPDATE semantics).
+    """
     from datetime import datetime, timezone
 
+    from unseen_university import ticket_store
     from unseen_university.action_log import append_action
 
     ticket_id = f"T-{_slug(title)}"
     now = datetime.now(timezone.utc).isoformat()
-    narrative = f"{title}\n\n{description}" if description else title
-    metadata = {
-        "kind": "ticket",
+    body = {
         "id": ticket_id,
         "title": title,
         "description": description,
@@ -57,35 +50,11 @@ def file_ticket(
         "status": status,
         "priority": priority,
         "decision_id": decision_id,
+        "created_by": "librarian",
+        "created_at": now,
+        "updated_at": now,
     }
-
-    conn = _conn()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO clan.memories
-                  (id, narrative, memory_type, parent_id, metadata, timestamp,
-                   source, scope, confidence, updated_at)
-                VALUES (%s, %s, 'FACTUAL', %s, %s::jsonb, %s,
-                        'cc_queue', 'class', 1.0, %s)
-                ON CONFLICT (id) DO UPDATE SET
-                  narrative = EXCLUDED.narrative,
-                  metadata  = EXCLUDED.metadata,
-                  updated_at = EXCLUDED.updated_at
-                """,
-                (
-                    ticket_id,
-                    narrative,
-                    _TICKETS_ROOT,
-                    json.dumps(metadata),
-                    now,
-                    now,
-                ),
-            )
-        conn.commit()
-    finally:
-        conn.close()
+    ticket_store.write(body)
 
     append_action(
         "librarian",
@@ -102,8 +71,8 @@ SCHEMAS: list[dict] = [
     {
         "name": "file_ticket",
         "description": (
-            "File a new ticket in cc_queue. "
-            "Writes directly to clan.memories (cc_queue's storage). "
+            "File a new ticket in the build queue. "
+            "Writes to the filesystem ticket store (the queue's storage). "
             "Returns {ticket_id, title, status}."
         ),
         "inputSchema": {

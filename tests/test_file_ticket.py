@@ -1,80 +1,32 @@
-"""Tests for file_ticket MCP tool — T-adc-file-ticket-tool."""
+"""Tests for file_ticket MCP tool — T-adc-file-ticket-tool.
+
+Filesystem-first (D-build-queue-filesystem-first-2026-06-19): file_ticket writes
+to the ticket_store (the build queue), not clan.memories — so these tests run
+against a tmp UU_MEMORY_ROOT store with no DB dependency. The action_log write
+(adc.action_log) is fail-open and is NOT ticket-state; the log test patches it.
+"""
 
 from __future__ import annotations
 
-import os
+from unittest.mock import patch
 
 import pytest
 
-os.environ.setdefault(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+from unseen_university import ticket_store
 
 
-def _db_reachable() -> bool:
-    try:
-        import psycopg2
-
-        conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"], connect_timeout=2)
-        conn.close()
-        return True
-    except Exception:
-        return False
-
-
-pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Igor DB not reachable")
+@pytest.fixture(autouse=True)
+def _tmp_root(tmp_path, monkeypatch):
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
+    (tmp_path / "tickets").mkdir(parents=True, exist_ok=True)
+    # action_log writes to PG and is fail-open; stub it so tests need no DB.
+    # file_ticket imports append_action lazily, so patch it at its source module.
+    with patch("unseen_university.action_log.append_action"):
+        yield tmp_path
 
 
 def _read_ticket(ticket_id: str) -> dict:
-    import psycopg2
-
-    conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT metadata FROM clan.memories WHERE id = %s AND parent_id = 'TICKETS_ROOT'",
-                (ticket_id,),
-            )
-            row = cur.fetchone()
-            # psycopg2 auto-deserializes JSONB to dict
-            return row[0] if row else {}
-    finally:
-        conn.close()
-
-
-def _last_action_log(tool_name: str) -> dict:
-    import psycopg2
-    import psycopg2.extras
-
-    conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
-    try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                "SELECT * FROM adc.action_log WHERE tool_name = %s AND device_id = 'librarian' "
-                "ORDER BY id DESC LIMIT 1",
-                (tool_name,),
-            )
-            row = cur.fetchone()
-            return dict(row) if row else {}
-    finally:
-        conn.close()
-
-
-def _delete_ticket(ticket_id: str) -> None:
-    """Remove a test-created ticket from clan.memories so it doesn't pollute the live queue."""
-    import psycopg2
-
-    conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "DELETE FROM clan.memories WHERE id = %s AND parent_id = 'TICKETS_ROOT'",
-                    (ticket_id,),
-                )
-    finally:
-        conn.close()
+    return ticket_store.read(ticket_id) or {}
 
 
 class TestFileTicket:
@@ -86,13 +38,9 @@ class TestFileTicket:
             description="automated test ticket",
         )
         ticket_id = result["ticket_id"]
-        try:
-            row = _read_ticket(ticket_id)
-            assert row["kind"] == "ticket"
-            assert row["id"] == ticket_id
-            assert row["title"] == "test file ticket inserts row"
-        finally:
-            _delete_ticket(ticket_id)
+        body = _read_ticket(ticket_id)
+        assert body["id"] == ticket_id
+        assert body["title"] == "test file ticket inserts row"
 
     def test_metadata_fields(self):
         from unseen_university.devices.librarian.tools.ticket_tools import file_ticket
@@ -106,32 +54,27 @@ class TestFileTicket:
             priority=0.8,
             status="sprint",
         )
-        ticket_id = result["ticket_id"]
-        try:
-            row = _read_ticket(ticket_id)
-            assert row["description"] == "checks all fields"
-            assert row["size"] == "M"
-            assert row["tags"] == ["ADC", "Test"]
-            assert row["decision_id"] == "D-test-2026-01-01"
-            assert row["priority"] == 0.8
-            assert row["status"] == "sprint"
-        finally:
-            _delete_ticket(ticket_id)
+        body = _read_ticket(result["ticket_id"])
+        assert body["description"] == "checks all fields"
+        assert body["size"] == "M"
+        assert body["tags"] == ["ADC", "Test"]
+        assert body["decision_id"] == "D-test-2026-01-01"
+        assert body["priority"] == 0.8
+        assert body["status"] == "sprint"
 
     def test_action_log_entry(self):
-        from unseen_university.devices.librarian.tools.ticket_tools import file_ticket
+        from unseen_university.devices.librarian.tools import ticket_tools
 
-        result = file_ticket(
-            title="test file ticket action log",
-            description="verify action log entry",
-        )
-        try:
-            log_row = _last_action_log("file_ticket")
-            assert log_row
-            assert log_row["device_id"] == "librarian"
-            assert "T-test-file-ticket-action-log" in str(log_row["args_json"])
-        finally:
-            _delete_ticket(result["ticket_id"])
+        with patch("unseen_university.action_log.append_action") as mock_log:
+            result = ticket_tools.file_ticket(
+                title="test file ticket action log",
+                description="verify action log entry",
+            )
+        mock_log.assert_called_once()
+        call_args = mock_log.call_args
+        assert call_args.args[0] == "librarian"
+        assert call_args.args[1] == "file_ticket"
+        assert result["ticket_id"] == "T-test-file-ticket-action-log"
 
     def test_upsert_on_conflict(self):
         """Second call with same title updates rather than errors."""
@@ -139,9 +82,5 @@ class TestFileTicket:
 
         file_ticket(title="test upsert ticket", description="first")
         result = file_ticket(title="test upsert ticket", description="second")
-        ticket_id = result["ticket_id"]
-        try:
-            row = _read_ticket(ticket_id)
-            assert row["description"] == "second"
-        finally:
-            _delete_ticket(ticket_id)
+        body = _read_ticket(result["ticket_id"])
+        assert body["description"] == "second"
