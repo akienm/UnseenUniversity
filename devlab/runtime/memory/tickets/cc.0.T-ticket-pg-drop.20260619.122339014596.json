@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-ticket-pg-drop.20260619.122339014596",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-pg-drop"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T12:23:39.014596",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-build-queue-filesystem-first-2026-06-19"
+    ],
+    "tickets": [
+      "T-ticket-pg-drop"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-pg-drop",
+    "title": "[sprint] Remove Postgres from the ticket path entirely (final cutover step)",
+    "status": "sprint",
+    "worker": null,
+    "size": "M",
+    "tags": [
+      "Queue",
+      "Migration",
+      "Cleanup"
+    ],
+    "description": "**Problem:** Final step — once the store module exists (T-ticket-store-module), cc_queue is FS-first (T-cc-queue-fs-first), readers are migrated (T-ticket-readers-migrate), and FS completeness is verified (T-ticket-fs-completeness-audit), Postgres must be removed from the ticket WRITE path and the transitional dual-read fallback so the filesystem is unambiguously the single source of truth.\n\n**Proposed shape:** Remove ticket writes to clan.memories/devlab.tickets from cc_queue.py; remove the dual-read PG fallback; stop creating the devlab.tickets table dependency for the queue. Keep migration scripts intact for history. Verify the whole system (dispatch wave, dashboards, search, dev tools) runs with the Postgres ticket tables empty/absent.\n**Affected files:** devlab/claudecode/cc_queue.py (remove PG write/read remnants), possibly unseen_university/migrations/m_devlab.py (mark devlab.tickets deprecated/unused for queue). HIGH-inertia.\n**Design rules:** NO SQLITE. After this, NO active code path reads/writes ticket state to Postgres. Log the removal in the decision record.\n**Scope boundary:** IN — remove PG from cc_queue ticket path + dual-read fallback; verify PG-free operation. OUT — dropping the actual DB tables (leave as archival/empty unless Akien says otherwise); non-ticket clan.memories usage (palace, learning — untouched).\n**Completion criteria:** `grep` shows zero active ticket-state PG readers/writers; full dispatch + dashboard + search smoke test passes with PG ticket tables empty; cc_queue operates entirely on devlab/runtime/memory/tickets/.\n**Test plan:** Stop/empty PG ticket tables; run a full mini-wave: add ticket → Granny dispatches → status transitions → close → moves to closed/; web_server + stall_check + search all read correctly. GATED on T-ticket-readers-migrate, T-cc-queue-fs-first, and T-ticket-fs-completeness-audit all closed.\n\n## HIGH-inertia pre-approval\nAkien approved modifying cc_queue.py (load-bearing for all dispatch) on 2026-06-19. Incremental, reversible sequencing across the batch is the safeguard.",
+    "decision_id": "D-build-queue-filesystem-first-2026-06-19",
+    "created_at": "2026-06-19T18:23:39.007171+00:00",
+    "updated_at": "2026-06-19T18:23:39.007171+00:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.85,
+    "gate": "T-ticket-readers-migrate",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 2,
+    "intention": "",
+    "created_by": "cc.0",
+    "source": "memory_emit (filesystem-first; D-build-queue-filesystem-first-2026-06-19)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-ticket-fs-completeness-audit.20260619.122339007193",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-fs-completeness-audit"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T12:23:39.007193",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-build-queue-filesystem-first-2026-06-19"
+    ],
+    "tickets": [
+      "T-ticket-fs-completeness-audit"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-fs-completeness-audit",
+    "title": "[sprint] Verify filesystem ticket store is complete vs Postgres (per-ID, gate cutover)",
+    "status": "closed",
+    "worker": "claude",
+    "size": "S",
+    "tags": [
+      "Queue",
+      "Migration",
+      "Reliability"
+    ],
+    "description": "**Problem:** cc_queue.py's `_project_to_memory` (line 378) is fail-open \u2014 when projection fails the error is swallowed, so the filesystem store may be SILENTLY MISSING exactly the tickets where projection broke. Count parity (2077 FS vs ~2073 PG) does NOT prove per-ID completeness. Before any code trusts the filesystem as authoritative, every PG ticket must have a verified filesystem counterpart.\n\n**Proposed shape:** A one-shot audit script: read all ticket IDs from clan.memories (parent_id=TICKETS_ROOT) + devlab.tickets; read all ticket IDs from devlab/runtime/memory/tickets/ (+ closed/); diff per-ID. Report PG-only IDs (the silent-drop risk) and FS-only IDs (newer, expected). Backfill any PG-only ticket into the filesystem store via the canonical emit path. Exit non-zero if any PG ticket lacks an FS counterpart after backfill.\n\n**Affected files:** NEW devlab/claudecode/ticket_fs_completeness_audit.py (read-only + backfill); reads cc_queue.py storage constants (TICKETS_ROOT_ID).\n**Design rules:** NO SQLITE. Postgres read is allowed here (this is the migration bridge). Log the per-ID diff counts (interface crossing).\n**Scope boundary:** IN \u2014 per-ID diff PG vs FS, backfill PG-only tickets, fail if incomplete. OUT \u2014 changing cc_queue.py read/write path (that's T-cc-queue-fs-first); deleting PG (that's T-ticket-pg-drop).\n**Completion criteria:** Script run reports 0 PG-only ticket IDs after backfill; output committed as evidence. This ticket GATES T-cc-queue-fs-first's flip-to-FS-authoritative and T-ticket-pg-drop.\n**Test plan:** Run the audit; assert exit 0 and 0 PG-only IDs. Spot-check 3 backfilled tickets (if any) load correctly from the filesystem.",
+    "decision_id": "D-build-queue-filesystem-first-2026-06-19",
+    "created_at": "2026-06-19T18:23:39.007171+00:00",
+    "updated_at": "2026-06-19T18:27:06.320844+00:00",
+    "completed_at": "2026-06-19T18:27:06.320844+00:00",
+    "result": "Gate PASSED. Audit (devlab/claudecode/ticket_fs_completeness_audit.py): PG=2073, FS=2083, PG-only=0 (no silent drops), FS-only=10 (newer FS-native). Filesystem store is complete vs Postgres; cutover may proceed.",
+    "role": "master",
+    "priority": 0.95,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 2,
+    "intention": "",
+    "created_by": "cc.0",
+    "source": "memory_emit (filesystem-first; D-build-queue-filesystem-first-2026-06-19)"
+  }
+}

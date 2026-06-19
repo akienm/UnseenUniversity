@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-build-queue-filesystem-first.20260619.122339014841",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-build-queue-filesystem-first"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T12:23:39.014841",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-build-queue-filesystem-first-2026-06-19"
+    ],
+    "tickets": [
+      "T-consequence-build-queue-filesystem-first"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-build-queue-filesystem-first",
+    "title": "Consequence check: build queue cutover to filesystem-first, Postgres dropped",
+    "status": "sprint",
+    "worker": null,
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Queue"
+    ],
+    "description": "**What changed:** The build queue cut over to a filesystem-first dynamic pipeline; Postgres dropped from the ticket path; closed tickets move to devlab/runtime/memory/tickets/closed/.\n**Predicted unintended effects:** (1) Granny workflow_executor.get_ticket_status returns None for FS-only tickets if not migrated → autonomous workflow steps never reach 'done' → waves hang silently. (2) web_server dashboards / librarian ticket search blank or go stale if their PG queries aren't migrated. (3) Concurrent writes (Granny set_worker + CC close on the same ticket) corrupt JSON if atomic write+rename isn't used — the very silent-data-loss failure mode that banned SQLite, now reintroduced on the filesystem if discipline slips. (4) Tools that glob tickets/*.json non-recursively now correctly exclude closed/, but any code that expected closed tickets in the active dir breaks. (5) stall_check/completion_audit/nightly_context_prep silently report zero or stale if left on PG. (6) Granny role/availability handshake unaffected (separate ~/.granny files) — verify.\n**Signals to watch:** Granny wave continues advancing dispatched→done across cutover (channel/logs); web_server ticket count non-zero with PG down; `grep` active PG ticket readers == 0; no JSON-parse/corruption errors in queue logs; closed/ populates as tickets close.\n**Gate condition:** Check by 2026-07-03 or when T-ticket-pg-drop closes, whichever first.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket",
+    "decision_id": "D-build-queue-filesystem-first-2026-06-19",
+    "created_at": "2026-06-19T18:23:39.007171+00:00",
+    "updated_at": "2026-06-19T18:23:39.007171+00:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.3,
+    "gate": "2026-07-03",
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 2,
+    "intention": "",
+    "created_by": "cc.0",
+    "source": "memory_emit (filesystem-first; D-build-queue-filesystem-first-2026-06-19)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-ticket-store-module.20260619.122339013635",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-store-module"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-19T12:23:39.013635",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-build-queue-filesystem-first-2026-06-19"
+    ],
+    "tickets": [
+      "T-ticket-store-module"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-store-module",
+    "title": "[sprint] Filesystem ticket-store module — the single queue chokepoint (no Postgres)",
+    "status": "sprint",
+    "worker": null,
+    "size": "L",
+    "tags": [
+      "Queue",
+      "Architecture",
+      "Filesystem"
+    ],
+    "description": "**Problem:** Ticket state is read/written from Postgres in ~21 places. To cut over to filesystem-first WITHOUT scattering 21 ad-hoc JSON-parsing reimplementations (fix-one-leave-many), we need ONE chokepoint module — the queue analogue of memory_emit.py — that owns the filesystem ticket store.\n\n**Proposed shape:** NEW module (e.g. unseen_university/ticket_store.py or devlab/runtime/ticket_store.py) exposing: read(ticket_id), list(status_filter=None), write(ticket_dict), set_worker(id, worker), set_status(id, status), close(id, result) [→ moves the JSON file from tickets/ to tickets/closed/], next_for_worker(...). Storage: devlab/runtime/memory/tickets/*.json for in-flight, tickets/closed/*.json for terminal. ALL writes use atomic write-to-temp + rename (PATTERN-004 flat-file registry) — this is what replaces Postgres's lock-safety and avoids the silent-data-loss failure mode that banned SQLite. Match the existing memory_emit envelope schema (id/emitter/namespace/category/kind/emitted_at/links/body). Concurrency: Granny set_worker and CC close may race — atomic rename + read-modify-write with retry.\n**Affected files:** NEW ticket_store.py; NEW devlab/runtime/memory/tickets/closed/ dir (create on first close). Unit tests NEW tests for the store.\n**Design rules:** NO SQLITE EVER. Atomic write+rename (PATTERN-004). Log every status transition + the close-move (state changes). No Postgres import in this module.\n**Scope boundary:** IN — the filesystem store API + atomic-write + closed-bin move + tests. OUT — migrating callers (T-cc-queue-fs-first, T-ticket-readers-migrate); deleting PG (T-ticket-pg-drop).\n**Completion criteria:** Module reads/writes/lists/closes tickets purely on the filesystem with Postgres stopped; close() moves the file to closed/; concurrent set_worker+close test passes without corruption; constraint-stamping parity with current add path preserved (or explicitly deferred with a note).\n**Test plan:** Unit tests: write→read roundtrip; list filters by status; close moves file to closed/ and removes from active list; two threads (set_worker + close) leave a valid single JSON. Run with PG unreachable to prove no DB dependency.",
+    "decision_id": "D-build-queue-filesystem-first-2026-06-19",
+    "created_at": "2026-06-19T18:23:39.007171+00:00",
+    "updated_at": "2026-06-19T18:23:39.007171+00:00",
+    "completed_at": null,
+    "result": null,
+    "role": "master",
+    "priority": 0.92,
+    "gate": null,
+    "related_to": null,
+    "github_issue": null,
+    "dispatched_at": null,
+    "required_files": [],
+    "target_difficulty": 2,
+    "intention": "",
+    "created_by": "cc.0",
+    "source": "memory_emit (filesystem-first; D-build-queue-filesystem-first-2026-06-19)"
+  }
+}
