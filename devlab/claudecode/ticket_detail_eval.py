@@ -29,6 +29,8 @@ import re
 import sys
 from pathlib import Path
 
+from unseen_university import ticket_store
+
 IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 SPRINT_LOG = IGOR_HOME / "claudecode" / "sprint_tokens.log"
 
@@ -66,43 +68,22 @@ def _read_sprint_log() -> list[dict]:
 
 
 def _fetch_ticket_meta(ticket_ids: list[str]) -> dict[str, dict]:
-    """Fetch description + reset_count for each ticket from the DB.
+    """Fetch description + reset_count for each ticket from the filesystem store.
 
-    Returns {ticket_id: {description, reset_count}} for found tickets.
+    Returns {ticket_id: {description, reset_count}} for found tickets. Includes
+    closed tickets — the eval correlates against the sprint log, which is
+    dominated by completed work.
     """
-    try:
-        import psycopg2
-    except ImportError:
-        return {}
-
-    url = os.environ.get("UU_HOME_DB_URL") or os.environ.get(
-        "IGOR_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-    )
-    try:
-        conn = psycopg2.connect(url)
-    except Exception:
-        return {}
-
+    wanted = set(ticket_ids)
     result = {}
-    try:
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT metadata FROM clan.memories WHERE parent_id = %s",
-            ("TICKETS_ROOT",),
-        )
-        for (md,) in cur.fetchall():
-            if not md:
-                continue
-            t = dict(md)
-            tid = t.get("id", "")
-            if tid in ticket_ids:
-                result[tid] = {
-                    "description": t.get("description") or "",
-                    "reset_count": int(t.get("reset_count") or 0),
-                    "size": t.get("size") or "?",
-                }
-    finally:
-        conn.close()
+    for t in ticket_store.list(include_closed=True):
+        tid = t.get("id", "")
+        if tid in wanted:
+            result[tid] = {
+                "description": t.get("description") or "",
+                "reset_count": int(t.get("reset_count") or 0),
+                "size": t.get("size") or "?",
+            }
     return result
 
 

@@ -30,6 +30,8 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from unseen_university import ticket_store
+
 _IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 _DB_URL = os.environ.get(
     "UU_HOME_DB_URL",
@@ -58,31 +60,23 @@ def _read_slate_section(date: str, section: str) -> str:
 def _read_high_priority_tickets(min_priority: float = 0.6) -> list[dict]:
     """Return sprint/triage tickets with priority > min_priority, sorted descending."""
     try:
-        import psycopg2
-        import psycopg2.extras
-        conn = psycopg2.connect(_DB_URL)
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                """
-                SELECT
-                    metadata->>'id'       AS id,
-                    metadata->>'title'    AS title,
-                    metadata->>'status'   AS status,
-                    metadata->>'size'     AS size,
-                    COALESCE((metadata->>'priority')::float, 0.5) AS priority
-                FROM clan.memories
-                WHERE parent_id = 'TICKETS_ROOT'
-                  AND kind = 'FACTUAL'
-                  AND metadata->>'status' IN ('sprint', 'triage', 'in_progress')
-                  AND COALESCE((metadata->>'priority')::float, 0.5) > %s
-                ORDER BY COALESCE((metadata->>'priority')::float, 0.5) DESC
-                LIMIT 20
-                """,
-                (min_priority,),
-            )
-            rows = [dict(r) for r in cur.fetchall()]
-        conn.close()
-        return rows
+        wanted = {"sprint", "triage", "in_progress"}
+        rows = []
+        for t in ticket_store.list():
+            if t.get("status") not in wanted:
+                continue
+            pri = float(t.get("priority") or 0.5)
+            if pri <= min_priority:
+                continue
+            rows.append({
+                "id": t.get("id"),
+                "title": t.get("title"),
+                "status": t.get("status"),
+                "size": t.get("size"),
+                "priority": pri,
+            })
+        rows.sort(key=lambda r: r["priority"], reverse=True)
+        return rows[:20]
     except Exception:
         return []
 
@@ -90,26 +84,9 @@ def _read_high_priority_tickets(min_priority: float = 0.6) -> list[dict]:
 def _read_design_tickets() -> list[dict]:
     """Return tickets in 'design' status."""
     try:
-        import psycopg2
-        import psycopg2.extras
-        conn = psycopg2.connect(_DB_URL)
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                """
-                SELECT
-                    metadata->>'id'    AS id,
-                    metadata->>'title' AS title
-                FROM clan.memories
-                WHERE parent_id = 'TICKETS_ROOT'
-                  AND kind = 'FACTUAL'
-                  AND metadata->>'status' = 'design'
-                ORDER BY updated_at DESC
-                LIMIT 10
-                """
-            )
-            rows = [dict(r) for r in cur.fetchall()]
-        conn.close()
-        return rows
+        rows = [{"id": t.get("id"), "title": t.get("title")}
+                for t in ticket_store.list(status_filter="design")]
+        return rows[:10]
     except Exception:
         return []
 
@@ -117,26 +94,9 @@ def _read_design_tickets() -> list[dict]:
 def _read_pending_approvals() -> list[dict]:
     """Return tickets in 'approval' status."""
     try:
-        import psycopg2
-        import psycopg2.extras
-        conn = psycopg2.connect(_DB_URL)
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                """
-                SELECT
-                    metadata->>'id'    AS id,
-                    metadata->>'title' AS title
-                FROM clan.memories
-                WHERE parent_id = 'TICKETS_ROOT'
-                  AND kind = 'FACTUAL'
-                  AND metadata->>'status' = 'approval'
-                ORDER BY updated_at DESC
-                LIMIT 10
-                """
-            )
-            rows = [dict(r) for r in cur.fetchall()]
-        conn.close()
-        return rows
+        rows = [{"id": t.get("id"), "title": t.get("title")}
+                for t in ticket_store.list(status_filter="approval")]
+        return rows[:10]
     except Exception:
         return []
 

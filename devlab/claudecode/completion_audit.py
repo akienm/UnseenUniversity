@@ -21,15 +21,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
-TICKETS_ROOT_ID = "TICKETS_ROOT"
 AUDIT_LOG = IGOR_HOME / "completion_audit.log"
 _TERMINAL = {"closed", "done"}
-
-
-def _db_conn():
-    import psycopg2
-    url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL")
-    return psycopg2.connect(url)
 
 
 def extract_criteria(description: str) -> str | None:
@@ -46,24 +39,23 @@ def extract_criteria(description: str) -> str | None:
 
 
 def get_closed_tickets(days: int = 1, ticket_id: str = None) -> list[dict]:
-    """Fetch recently closed tickets from clan.memories."""
-    conn = _db_conn()
-    try:
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT metadata FROM clan.memories WHERE parent_id = %s",
-            (TICKETS_ROOT_ID,),
-        )
-        rows = cur.fetchall()
-    finally:
-        conn.close()
+    """Fetch recently closed tickets from the filesystem ticket store.
+
+    Closed tickets live in ``tickets/closed/`` so ``include_closed=True`` is
+    REQUIRED — without it ``list()`` scans only the active dir and a completion
+    audit silently finds nothing (reads as "all clear"). We keep our own
+    ``_TERMINAL`` filter ({closed, done}) rather than ``status_filter="closed"``
+    so ``done`` tickets are not dropped.
+    """
+    from unseen_university import ticket_store
+
+    rows = ticket_store.list(include_closed=True)
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     results = []
-    for (md,) in rows:
-        if not md:
+    for t in rows:
+        if not t:
             continue
-        t = dict(md)
         if t.get("status") not in _TERMINAL:
             continue
         if ticket_id and t.get("id") != ticket_id:

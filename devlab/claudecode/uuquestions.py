@@ -14,17 +14,10 @@ Usage: uuquestions [--questions-only | --design-only]
 from __future__ import annotations
 
 import argparse
-import os
 import re
 import sys
 
-import psycopg2
-import psycopg2.extras
-
-PG = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+from unseen_university import ticket_store
 
 
 def _open_questions(description: str) -> list[str]:
@@ -45,27 +38,8 @@ def main(argv=None):
     p.add_argument("--questions-only", action="store_true")
     args = p.parse_args(argv)
 
-    try:
-        conn = psycopg2.connect(PG)
-    except Exception as e:
-        print(f"DB unavailable: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute(
-            """
-            SELECT metadata
-            FROM clan.memories
-            WHERE parent_id = 'TICKETS_ROOT'
-              AND metadata->>'kind' = 'ticket'
-              AND metadata->>'status' = 'triage'
-            ORDER BY
-              (metadata->>'priority')::float DESC NULLS LAST,
-              metadata->>'id'
-            """,
-        )
-        rows = [r["metadata"] for r in cur.fetchall()]
-    conn.close()
+    rows = ticket_store.list(status_filter="triage")
+    rows.sort(key=lambda t: (-(float(t.get("priority") or 0)), t.get("id") or ""))
 
     # Split TRIAGE into "has open questions" vs "no open questions".
     with_q: list[tuple[dict, list[str]]] = []

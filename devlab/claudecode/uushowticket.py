@@ -5,16 +5,9 @@ Usage: uushowticket <ticket-id>
 """
 from __future__ import annotations
 
-import os
 import sys
 
-import psycopg2
-import psycopg2.extras
-
-PG = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
+from unseen_university import ticket_store
 
 # D-ticket-status-model-2026-06-16: design / open_questions fold into triage.
 STATUS_ICON = {
@@ -35,29 +28,11 @@ STATUS_ICON = {
 
 
 def show(ticket_id: str) -> None:
-    try:
-        conn = psycopg2.connect(PG)
-    except Exception as e:
-        print(f"DB unavailable: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute(
-            """SELECT metadata FROM clan.memories
-               WHERE parent_id = 'TICKETS_ROOT'
-                 AND metadata->>'kind' = 'ticket'
-                 AND metadata->>'id' = %s
-               LIMIT 1""",
-            (ticket_id,),
-        )
-        row = cur.fetchone()
-    conn.close()
-
-    if not row:
+    t = ticket_store.read(ticket_id)
+    if not t:
         print(f"Ticket not found: {ticket_id}", file=sys.stderr)
         sys.exit(1)
 
-    t = row["metadata"]
     status = t.get("status", "?")
     icon = STATUS_ICON.get(status, "·")
     title = t.get("title", "")

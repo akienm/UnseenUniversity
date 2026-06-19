@@ -22,10 +22,8 @@ Called by /stall-check skill and by context-load Step 5.5.
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
 
 
 _DEFAULT_THRESHOLD_HOURS = 2.0
@@ -105,27 +103,18 @@ def find_stalls(
 
 
 def _load_in_progress_tickets() -> list[dict]:
-    """Query clan.memories for in_progress tickets. Returns [] on any error."""
-    db_url = os.environ.get("UU_HOME_DB_URL")
-    if not db_url:
-        print("[stall-check] UU_HOME_DB_URL not set — skipping", file=sys.stderr)
-        return []
-    try:
-        import psycopg2
+    """Return in_progress tickets from the filesystem ticket store. [] on error.
 
-        conn = psycopg2.connect(db_url)
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                """SELECT metadata FROM clan.memories
-                   WHERE parent_id = 'TICKETS_ROOT'
-                     AND metadata->>'status' = 'in_progress'""",
-            )
-            return [dict(row[0]) for row in cur.fetchall() if row[0]]
-        finally:
-            conn.close()
+    Staleness math keys on ``dispatched_at``/``updated_at`` via ``_parse_ts``,
+    which already normalizes naive timestamps to UTC — so FS bodies (same field
+    shape the PG metadata carried) need no extra TZ handling here.
+    """
+    try:
+        from unseen_university import ticket_store
+
+        return list(ticket_store.list(status_filter="in_progress"))
     except Exception as exc:
-        print(f"[stall-check] DB error: {exc}", file=sys.stderr)
+        print(f"[stall-check] ticket_store error: {exc}", file=sys.stderr)
         return []
 
 
