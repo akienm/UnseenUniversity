@@ -29,12 +29,9 @@ from unseen_university import ticket_store as ts  # noqa: E402
 
 @pytest.fixture(autouse=True)
 def _tmp_root(tmp_path, monkeypatch):
-    """Temp filesystem store; PG fully isolated so only the FS path is tested."""
+    """Temp filesystem store — the sole ticket authority (Postgres dropped)."""
     monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
     (tmp_path / "tickets").mkdir(parents=True, exist_ok=True)
-    # Isolate Postgres: no PG-only fold-in on load, no mirror on save.
-    monkeypatch.setattr(cc_queue, "_load_pg", lambda: [])
-    monkeypatch.setattr(cc_queue, "_save_pg_mirror", lambda tasks: None)
     yield tmp_path
 
 

@@ -2,8 +2,9 @@
 """
 cc_queue.py — Designer/Worker Claude task queue manager.
 
-Canonical storage: clan.memories where parent_id='TICKETS_ROOT' (FACTUAL rows,
-metadata.kind='ticket').
+Canonical storage: the filesystem ticket store (devlab/runtime/memory/tickets/
+{,closed/}) via the ticket_store chokepoint. Postgres has been dropped from the
+ticket path (D-build-queue-filesystem-first-2026-06-19 / T-ticket-pg-drop).
 
 Log file:  ~/.unseen_university/cc_channel/log.jsonl
 
@@ -80,14 +81,11 @@ from unseen_university.gate_logic import (  # noqa: E402
 )
 
 # Filesystem queue chokepoint (T-ticket-store-module). The build queue is a
-# dynamic pipeline whose source of truth is the grep-able filesystem store, NOT
-# Postgres (D-build-queue-filesystem-first-2026-06-19). cc_queue reads through
-# this; Postgres is a transitional read-fallback only, removed by T-ticket-pg-drop.
+# dynamic pipeline whose sole source of truth is the grep-able filesystem store,
+# NOT Postgres (D-build-queue-filesystem-first-2026-06-19 / T-ticket-pg-drop).
 from unseen_university import ticket_store  # noqa: E402
 
 IGOR_FLUSH_URL = "https://localhost:8080/api/cc_send"
-
-TICKETS_ROOT_ID = "TICKETS_ROOT"
 
 
 def _ssl_ctx() -> ssl.SSLContext:
@@ -184,40 +182,6 @@ def _with_status_prefix(status: str, title: str) -> str:
     return f"[{status}] {bare}"
 
 
-def _db_conn():
-    """Connect to clan.memories storage."""
-    import psycopg2
-
-    url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL")
-    if not url:
-        raise RuntimeError("UU_HOME_DB_URL not set")
-    return psycopg2.connect(url)
-
-
-def _narrative_for(t: dict) -> str:
-    """Narrative = title + description (both GIN-searchable)."""
-    title = (t.get("title") or "").strip()
-    desc = (t.get("description") or t.get("body") or "").strip()
-    return f"{title}\n\n{desc}" if desc else title
-
-
-def _tickets_in_clan(ticket_ids: list[str]) -> set:
-    """Return set of ticket IDs that exist in clan.memories."""
-    if not ticket_ids:
-        return set()
-    conn = _db_conn()
-    try:
-        cur = conn.cursor()
-        placeholders = ",".join(["%s"] * len(ticket_ids))
-        cur.execute(
-            f"SELECT id FROM clan.memories WHERE id IN ({placeholders}) AND parent_id = %s",
-            ticket_ids + [TICKETS_ROOT_ID],
-        )
-        return {row[0] for row in cur.fetchall()}
-    finally:
-        conn.close()
-
-
 # Default keys every caller assumes present. FS ticket bodies written by older
 # code (or hand-emitted) may lack some of these; backfilling on load prevents
 # KeyError downstream. (66 of 124 active tickets miss ≥1 of these — measured
@@ -244,119 +208,28 @@ def _apply_load_defaults(t: dict) -> dict:
 
 
 def _load():
-    """Canonical read — FILESYSTEM-FIRST (D-build-queue-filesystem-first-2026-06-19).
+    """Canonical read — FILESYSTEM-ONLY (D-build-queue-filesystem-first-2026-06-19).
 
     The build queue's source of truth is the grep-able filesystem store
     (devlab/runtime/memory/tickets/{,closed/}), read via the ticket_store
-    chokepoint. Postgres is a TRANSITIONAL read-fallback only: any ticket id
-    present in PG but not yet in the filesystem is folded in, so the cutover
-    can't lose a ticket while the other ~20 readers still write PG
-    (T-ticket-readers-migrate). The fallback is PG-down-tolerant — with Postgres
-    stopped, the filesystem store stands alone. T-ticket-pg-drop removes it.
+    chokepoint. Postgres has been dropped from the ticket path entirely
+    (T-ticket-pg-drop) — there is no DB fallback.
     """
     import logging
 
     log = logging.getLogger(__name__)
     tasks = {}
 
-    # Primary: filesystem store (include closed so the read contract is unchanged
-    # from the PG era, which returned terminal tickets too).
+    # Filesystem store (include closed so the read contract returns terminal
+    # tickets too, as the PG era did).
     for body in ticket_store.list(include_closed=True):
         tid = body.get("id")
         if tid:
             tasks[tid] = _apply_load_defaults(dict(body))
-    fs_count = len(tasks)
 
-    # Transitional fallback: fold in PG-only ids. Tolerate Postgres being down —
-    # the filesystem store is authoritative, so a missing DB is non-fatal.
-    pg_only = 0
-    try:
-        for t in _load_pg():
-            tid = t.get("id")
-            if tid and tid not in tasks:
-                tasks[tid] = _apply_load_defaults(t)
-                pg_only += 1
-    except Exception as e:  # PG unreachable / mid-cutover — FS stands alone
-        log.warning("cc_queue._load: Postgres fallback unavailable (%s) — "
-                    "serving %d tickets from filesystem store only", e, fs_count)
-    else:
-        # AR-009 interface crossing: record where the tickets came from.
-        log.info("cc_queue._load: %d from filesystem store, %d PG-only fallback",
-                 fs_count, pg_only)
-
+    # AR-009 interface crossing: record the read volume + source.
+    log.info("cc_queue._load: %d tickets from filesystem store", len(tasks))
     return list(tasks.values())
-
-
-def _load_pg():
-    """Transitional Postgres read: SELECT from clan.memories and devlab.tickets.
-
-    Retained ONLY as the fallback inside the filesystem-first _load() during the
-    cutover window. Removed by T-ticket-pg-drop once no reader needs Postgres.
-
-    - clan.memories: existing tickets (old format with metadata JSONB)
-    - devlab.tickets: new tickets (new format with explicit columns)
-    Merge results, preferring devlab if a ticket appears in both.
-    """
-    conn = _db_conn()
-    try:
-        cur = conn.cursor()
-        tasks = {}
-
-        # Read from clan.memories (existing tickets)
-        cur.execute(
-            "SELECT metadata FROM clan.memories WHERE parent_id = %s",
-            (TICKETS_ROOT_ID,),
-        )
-        for (md,) in cur.fetchall():
-            if not md:
-                continue
-            t = dict(md)
-            t.pop("kind", None)
-            tasks[t.get("id")] = t
-
-        # Read from devlab.tickets (new tickets) — these override clan if present
-        cur.execute(
-            """SELECT id, title, status, worker, size, tags, description,
-                      decision_id, metadata, created_at, updated_at, completed_at
-               FROM devlab.tickets
-               ORDER BY created_at DESC"""
-        )
-        for row in cur.fetchall():
-            (ticket_id, title, status, worker, size, tags, description,
-             decision_id, metadata, created_at, updated_at, completed_at) = row
-
-            t = {
-                "id": ticket_id,
-                "title": title,
-                "status": status,
-                "worker": worker,
-                "size": size,
-                "tags": tags or [],
-                "description": description,
-                "decision_id": decision_id,
-                "created_at": created_at.isoformat() if created_at else None,
-                "updated_at": updated_at.isoformat() if updated_at else None,
-                "completed_at": completed_at.isoformat() if completed_at else None,
-                "result": None,
-                "role": "master",  # default role
-                "priority": 0.5,  # default priority
-                "gate": None,
-                "related_to": None,
-                "github_issue": None,
-                "dispatched_at": None,
-                "required_files": [],
-                "target_difficulty": 1,
-            }
-
-            # Merge metadata fields if present
-            if metadata:
-                t.update(metadata)
-
-            tasks[ticket_id] = t
-
-        return list(tasks.values())
-    finally:
-        conn.close()
 
 
 def _save(tasks):
@@ -374,13 +247,10 @@ def _save(tasks):
     per-task: _find globs+parses every file, so a per-task read() would make
     _save(full_list) O(N²) on every CLI invocation (each cc_queue command is a
     fresh load-all→mutate→save-all subprocess) — minutes per add/close on the live
-    2088-ticket store. The snapshot keeps a save O(N), same order as the PG batch
-    it replaces.
+    2088-ticket store. The snapshot keeps a save O(N).
 
-    Postgres is a TRANSITIONAL mirror: still written so the ~20 unmigrated readers
-    (Granny et al.) keep seeing live state, but a mirror failure is LOUD (logged at
-    WARNING, never DEBUG-swallowed) and NON-FATAL — the FS write already succeeded.
-    Removed entirely by T-ticket-pg-drop once T-ticket-readers-migrate lands.
+    Postgres has been dropped from the ticket path (T-ticket-pg-drop): the
+    filesystem write is the only write.
     """
     if not tasks:
         return
@@ -407,207 +277,27 @@ def _save(tasks):
     log.info("cc_queue._save: %d/%d tickets written to filesystem store",
              written, len(tasks))
 
-    # ── Transitional PG mirror (LOUD on failure, non-fatal) ──
-    try:
-        _save_pg_mirror(tasks)
-    except Exception as e:
-        log.warning("cc_queue._save: Postgres mirror failed (%s) — filesystem store "
-                    "is authoritative and already durable; unmigrated PG readers "
-                    "(Granny et al.) may see stale state until T-ticket-readers-"
-                    "migrate. NOT fatal.", e)
-
-
-def _save_pg_mirror(tasks):
-    """Transitional Postgres mirror of the filesystem write (see _save).
-
-    Mirrors live ticket state into clan.memories / devlab.tickets so the ~20
-    unmigrated PG readers keep working during the cutover window. Removed by
-    T-ticket-pg-drop. NOTE: the old fail-open ``_project_to_memory`` dual-write is
-    intentionally NOT called here — ticket_store.write() in _save IS now the
-    filesystem write; re-adding migrate_one would create a second, divergent
-    FS-write path (different envelope). Leave it dead until T-ticket-pg-drop.
-    """
-    conn = _db_conn()
-    try:
-        cur = conn.cursor()
-        now = datetime.now(timezone.utc).isoformat()
-        now_ts = datetime.now(timezone.utc)
-
-        # Batch-check which tickets exist in clan
-        ticket_ids = [t.get("id") for t in tasks if t.get("id")]
-        existing_in_clan = _tickets_in_clan(ticket_ids)
-
-        for t in tasks:
-            if not t.get("id"):
-                continue
-
-            ticket_id = t["id"]
-            exists_in_clan = ticket_id in existing_in_clan
-
-            if exists_in_clan:
-                # Update existing clan ticket in-place
-                metadata = dict(t)
-                metadata["kind"] = "ticket"
-                cur.execute(
-                    """
-                    INSERT INTO clan.memories
-                      (id, narrative, memory_type, parent_id, metadata, timestamp,
-                       source, scope, certainty, updated_at)
-                    VALUES (%s, %s, 'FACTUAL', %s, %s::jsonb, %s, 'cc_queue',
-                            'class', 1.0, %s)
-                    ON CONFLICT (id) DO UPDATE SET
-                      narrative = EXCLUDED.narrative,
-                      metadata = EXCLUDED.metadata,
-                      updated_at = EXCLUDED.updated_at
-                    """,
-                    (
-                        ticket_id,
-                        _narrative_for(t),
-                        TICKETS_ROOT_ID,
-                        json.dumps(metadata),
-                        now,
-                        now,
-                    ),
-                )
-            else:
-                # Write new ticket to devlab.tickets
-                cur.execute(
-                    """
-                    INSERT INTO devlab.tickets
-                      (id, title, status, worker, size, tags, description,
-                       decision_id, metadata, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s::jsonb, %s, %s)
-                    ON CONFLICT (id) DO UPDATE SET
-                      title = EXCLUDED.title,
-                      status = EXCLUDED.status,
-                      worker = EXCLUDED.worker,
-                      size = EXCLUDED.size,
-                      tags = EXCLUDED.tags,
-                      description = EXCLUDED.description,
-                      decision_id = EXCLUDED.decision_id,
-                      metadata = EXCLUDED.metadata,
-                      updated_at = EXCLUDED.updated_at,
-                      completed_at = EXCLUDED.completed_at
-                    """,
-                    (
-                        ticket_id,
-                        t.get("title"),
-                        t.get("status", "triage"),
-                        t.get("worker"),
-                        t.get("size"),
-                        json.dumps(t.get("tags", [])),
-                        t.get("description"),
-                        t.get("decision_id"),
-                        json.dumps({k: v for k, v in t.items()
-                                   if k not in ("id", "title", "status", "worker", "size",
-                                               "tags", "description", "decision_id")}),
-                        now_ts,
-                        now_ts,
-                    ),
-                )
-
-        conn.commit()
-    finally:
-        conn.close()
-
-
-def _project_to_memory(tasks):
-    """Additive projection of tickets into the filesystem memory store.
-
-    DEAD as of D-build-queue-filesystem-first-2026-06-19: _save now writes the
-    filesystem directly through ticket_store, so this migrate_one-based projection
-    is no longer called (it would be a second, divergent FS-write path). Retained
-    only for the bulk migrator; removed with the rest of the PG path by
-    T-ticket-pg-drop. Do NOT re-wire into _save.
-
-    D-filesystem-memory-store-2026-06-16. The Postgres tables stay authoritative;
-    this is a dual-write so the grep-able store tracks live ticket state (creation
-    AND every status transition that flows through _save → AR-009 interface
-    crossing). Reuses migrate_tickets.migrate_one so a freshly-written ticket and
-    a re-migration produce the IDENTICAL filename + envelope (idempotent by
-    construction — no drift between the live hook and the bulk migrator).
-
-    FAIL-OPEN: a projection failure must never break the DB write path, so every
-    error is swallowed and logged at DEBUG. Lazy import dodges the
-    migrate_tickets→cc_queue circular import (and keeps the store optional).
-    """
-    import logging
-    try:
-        import migrate_tickets
-    except Exception as e:  # store/migrator unavailable — DB write already durable
-        logging.getLogger(__name__).debug("memory projection unavailable: %s", e)
-        return
-    for t in tasks:
-        if not t.get("id"):
-            continue
-        try:
-            migrate_tickets.migrate_one(t)
-        except Exception as e:
-            logging.getLogger(__name__).debug(
-                "memory projection failed for %s: %s", t.get("id"), e)
-
 
 # ── Public API ────────────────────────────────────────────────────────────
 
 
 def load_tasks() -> list[dict]:
-    """Load all tickets from canonical Postgres."""
+    """Load all tickets from the canonical filesystem store."""
     return _load()
 
 
 def save_tasks(tasks: list[dict]) -> None:
-    """Save tickets via canonical Postgres UPSERT."""
+    """Save tickets to the canonical filesystem store via ticket_store."""
     _save(tasks)
-
-
-def _pg_mirror(label: str, ticket_id: str, do_update) -> None:
-    """Transitional PG mirror for a single-ticket status mutation.
-
-    D-build-queue-filesystem-first-2026-06-19, cutover slice (d): the filesystem
-    store is authoritative; the four targeted mutators write it via
-    ``ticket_store.conditional_update`` and then call THIS to mirror the same
-    transition into Postgres so the ~20 unmigrated readers (Granny et al.) keep
-    seeing live state until T-ticket-readers-migrate. Removed by T-ticket-pg-drop.
-
-    ``do_update(cur)`` runs the mirror UPDATE(s) and returns the affected rowcount.
-    A failure is LOUD (WARNING) and NON-FATAL — the FS write already succeeded and
-    is durable. A 0-rowcount means the FS changed but PG's WHERE-gate did not match:
-    that is live FS/PG divergence (the clobber hazard the slate flagged), so it is
-    logged loudly rather than swallowed.
-
-    Only call this AFTER the FS ``conditional_update`` returned a path (i.e. the FS
-    transition actually happened) — never mirror a no-op.
-    """
-    log = logging.getLogger(__name__)
-    try:
-        conn = _db_conn()
-        try:
-            cur = conn.cursor()
-            rows = do_update(cur)
-            conn.commit()
-            if rows == 0:
-                log.warning(
-                    "PG mirror %s for %s changed 0 rows — FS/PG DIVERGENCE: the "
-                    "filesystem store was updated but Postgres' WHERE-gate did not "
-                    "match. Reconcile FS←PG before the next bulk save. (transitional "
-                    "mirror; removed by T-ticket-pg-drop)", label, ticket_id)
-        finally:
-            conn.close()
-    except Exception as e:
-        log.warning(
-            "PG mirror %s for %s failed (%s) — filesystem store is authoritative and "
-            "already durable; unmigrated PG readers (Granny et al.) may see stale "
-            "state until T-ticket-readers-migrate. NOT fatal.", label, ticket_id, e)
 
 
 def set_status_in_progress(ticket_id: str) -> bool:
     """Targeted single-ticket status flip sprint→in_progress. Returns True if updated.
 
-    Filesystem-first (D-build-queue-filesystem-first-2026-06-19 slice d): the
-    filesystem store is authoritative via ticket_store; Postgres is a transitional
-    loud mirror. The status precondition (must be 'sprint') is enforced atomically
-    under ticket_store's mutation lock, preserving the race-safety the old
-    WHERE-gated UPDATE provided.
+    Filesystem-only (D-build-queue-filesystem-first-2026-06-19): the filesystem
+    store is the sole authority via ticket_store. The status precondition (must be
+    'sprint') is enforced atomically under ticket_store's mutation lock, preserving
+    the race-safety the old WHERE-gated PG UPDATE provided.
     """
     def _mut(body):
         body["status"] = "in_progress"
@@ -621,28 +311,6 @@ def set_status_in_progress(ticket_id: str) -> bool:
     if path is None:
         return False  # not in 'sprint' — precondition unmet
 
-    now = datetime.now(timezone.utc)
-    now_iso = now.isoformat()
-
-    def _do(cur):
-        cur.execute(
-            "UPDATE devlab.tickets SET status='in_progress', updated_at=%s "
-            "WHERE id=%s AND status='sprint'",
-            (now, ticket_id),
-        )
-        rows = cur.rowcount
-        if rows == 0:
-            cur.execute(
-                "UPDATE clan.memories "
-                "SET metadata = jsonb_set(metadata, '{status}', '\"in_progress\"'), "
-                "    updated_at = %s "
-                "WHERE id=%s AND metadata->>'status'='sprint' AND parent_id=%s",
-                (now_iso, ticket_id, TICKETS_ROOT_ID),
-            )
-            rows = cur.rowcount
-        return rows
-
-    _pg_mirror("in_progress", ticket_id, _do)
     logging.getLogger(__name__).info(
         f"QUEUE_DRAIN: reconciled {ticket_id} → in_progress")
     return True
@@ -651,10 +319,10 @@ def set_status_in_progress(ticket_id: str) -> bool:
 def reset_stale_in_progress(ticket_id: str) -> bool:
     """Reset a stale in_progress ticket to sprint, ONLY if still in_progress.
 
-    Filesystem-first (slice d): ticket_store is authoritative, PG is a loud mirror.
-    Race-safe via the conditional_update precondition (must be 'in_progress'), so a
-    concurrent setstatus/close that already terminalized the ticket is never
-    overwritten. Returns True if the reset happened, False otherwise.
+    Filesystem-only: ticket_store is the sole authority. Race-safe via the
+    conditional_update precondition (must be 'in_progress'), so a concurrent
+    setstatus/close that already terminalized the ticket is never overwritten.
+    Returns True if the reset happened, False otherwise.
     """
     def _mut(body):
         body["status"] = "sprint"
@@ -669,20 +337,6 @@ def reset_stale_in_progress(ticket_id: str) -> bool:
     if path is None:
         return False  # already terminal / not in_progress — precondition unmet
 
-    now_iso = datetime.now(timezone.utc).isoformat()
-
-    def _do(cur):
-        cur.execute(
-            "UPDATE clan.memories "
-            "SET metadata = jsonb_set(metadata #- '{dispatched_at}', "
-            "        '{status}', '\"sprint\"'), "
-            "    updated_at = %s "
-            "WHERE id=%s AND metadata->>'status'='in_progress' AND parent_id=%s",
-            (now_iso, ticket_id, TICKETS_ROOT_ID),
-        )
-        return cur.rowcount
-
-    _pg_mirror("reset→sprint", ticket_id, _do)
     logging.getLogger(__name__).info(
         f"QUEUE_DRAIN: reset stale dispatch {ticket_id} → sprint")
     return True
@@ -1010,22 +664,6 @@ def cmd_dispatch(args):
             file=sys.stderr,
         )
         sys.exit(1)
-
-    def _do(cur):
-        metadata = dict(captured)
-        metadata["kind"] = "ticket"
-        cur.execute(
-            """UPDATE clan.memories SET
-                metadata = %s::jsonb,
-                narrative = %s,
-                updated_at = %s
-            WHERE id = %s
-              AND metadata->>'status' IN ('sprint', 'in_progress')""",
-            (json.dumps(metadata), _narrative_for(captured), now, ticket_id),
-        )
-        return cur.rowcount
-
-    _pg_mirror("dispatch", ticket_id, _do)
 
     _log({"action": "dispatch", "id": ticket_id, "dispatched_by": dispatched_by})
     _classifier_stamp_in_flight(ticket_id, captured.get("required_files", []))
@@ -2213,22 +1851,6 @@ def cmd_next(args):
         return  # vanished between selection and claim
     if path is None:
         return  # another worker claimed it between our selection and this claim
-
-    def _do(cur):
-        metadata = dict(captured)
-        metadata["kind"] = "ticket"
-        cur.execute(
-            """UPDATE clan.memories SET
-                metadata = %s::jsonb,
-                narrative = %s,
-                updated_at = %s
-            WHERE id = %s
-              AND metadata->>'status' = 'sprint'""",
-            (json.dumps(metadata), _narrative_for(captured), now, ticket_id),
-        )
-        return cur.rowcount
-
-    _pg_mirror("dispatch_via_next", ticket_id, _do)
 
     _log({"action": "dispatch_via_next", "id": ticket_id, "worker": worker_filter})
     _classifier_stamp_in_flight(ticket_id, captured.get("required_files", []))
