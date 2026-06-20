@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-gemini-paid-suffix-unstripped.20260620.093112498300",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-gemini-paid-suffix-unstripped"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-20T15:31:12.498300+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-gemini-paid-suffix-unstripped"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-gemini-paid-suffix-unstripped",
+    "status": "sprint",
+    "size": "S",
+    "priority": 0.3,
+    "worker": null,
+    "tags": [
+      "Inference",
+      "Gemini",
+      "Bug"
+    ],
+    "created_by": "cc.0",
+    "decision_id": null,
+    "title": "GoogleSource paid model_id 'gemini-*-paid' not stripped before API call",
+    "description": "Pre-existing latent bug found 2026-06-19. The paid Google designer entry has model_id 'gemini-2.0-flash-paid' (registry) / routed via the 'google' source. GoogleSource._model_name only does removeprefix('google/') — it does NOT strip the '-paid' suffix, so a paid dispatch would call API model 'gemini-2.0-flash-paid' which is invalid (404). The '-paid' is a registry convention to distinguish the billing variant; the source must map it to the bare Google model name. NOT on the free path DS uses (google_free), so it didn't block the free-inference work — but the paid Gemini path is broken if ever selected. (Also bump the slug: 2.0-flash is retired → 2.5-flash, like the free entry.)\n\n**Affected files:** devices/inference/sources.py (GoogleSource._model_name), devices/inference/models_registry.py\n**Design rules:** none apply\n**Scope boundary:** IN: strip '-paid' (and bump to a live slug) so the paid Gemini path resolves a valid model. OUT: deciding whether the paid path should be enabled at all (Akien prefers free).\n**Completion criteria:** a designer dispatch routed to the paid 'google' source calls a valid Google model and completes.\n**Test plan:** unit — _model_name('gemini-2.5-flash-paid') == 'gemini-2.5-flash'."
+  }
+}

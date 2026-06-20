@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.T-web-kill-all-button-broken.20260620.093112289081",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-web-kill-all-button-broken"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-20T15:31:12.289081+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-web-kill-all-button-broken"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-web-kill-all-button-broken",
+    "status": "sprint",
+    "size": "M",
+    "priority": 0.7,
+    "worker": null,
+    "tags": [
+      "WebServer",
+      "Bug",
+      "Lifecycle"
+    ],
+    "created_by": "cc.0",
+    "decision_id": null,
+    "title": "Web server 'kill everything' button does not kill the fleet",
+    "description": "Akien hit the web UI 'kill everything' button (2026-06-19) expecting a full fleet teardown. It did NOT work: left alive THREE orphan dicksimnel processes (pids 680410 Jun15, 3246273 + 3305146 Jun18, each with an sh -c wrapper), the granny daemon (running in tmux session 'granny'), the scraps daemon, and ground_loop itself (systemd --user service — survived; Akien thought the button killed it but it stayed active on :8078). Net: the button under-kills badly. CC had to kill the fleet manually (systemctl stop ground_loop.service + tmux kill-session granny + SIGTERM the dicksimnel pids + wrappers).\n\nRoot-cause hypotheses to check: the button likely only kills processes the web server itself tracks/spawned, missing (a) detached orphans launched via sh -c wrappers outside its registry, (b) tmux-hosted daemons (granny), (c) systemd --user services (ground_loop — needs `systemctl --user stop`, not SIGTERM to a pid systemd will respawn). A real kill-all must enumerate via process scan (pgrep -f 'devices\\.') AND stop systemd units AND kill tmux sessions, not just its own child registry.\n\n**Affected files:** devices/web_server/server.py (the kill-everything endpoint/handler)\n**Design rules:** external-state-principle, log-state-changes (lifecycle events)\n**Scope boundary:** IN: make kill-all actually reap the full fleet (orphans, tmux, systemd units) + report what it killed/failed. OUT: redesigning device supervision.\n**Completion criteria:** after pressing kill-all with the fleet up (incl. an orphan + a tmux daemon + ground_loop), a process scan shows zero `devices.*` daemons; the button reports each unit's kill result.\n**Test plan:** integration — launch a decoy orphan + tmux daemon, invoke the handler, assert all gone."
+  }
+}
