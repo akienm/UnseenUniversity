@@ -28,14 +28,15 @@ if str(REPO) not in sys.path:
 import devlab.claudecode.cc_queue as cc_queue
 
 
-def _db_url() -> str | None:
-    return os.environ.get("UU_HOME_DB_URL")
-
-
 def _seed_ticket(ticket_id: str, priority, worker: str | None = None) -> None:
-    import psycopg2
+    """Write a ticket into the (test-isolated) filesystem ticket_store.
 
-    metadata = {
+    Postgres was dropped from the ticket path (T-ticket-pg-drop); seeding goes to
+    the FS store. Callers isolate the store with a tmp UU_MEMORY_ROOT in setUp.
+    """
+    from unseen_university import ticket_store
+
+    ticket_store.write({
         "id": ticket_id,
         "title": f"Test ticket {ticket_id}",
         "size": "S",
@@ -43,70 +44,37 @@ def _seed_ticket(ticket_id: str, priority, worker: str | None = None) -> None:
         "worker": worker,
         "priority": priority,
         "tags": ["test"],
-        "kind": "ticket",
         "gate": None,
         "scraps_validated": "2026-01-01T00:00:00+00:00",
-    }
-    conn = psycopg2.connect(_db_url())
-    try:
-        cur = conn.cursor()
-        cur.execute("DELETE FROM clan.memories WHERE id = %s", (ticket_id,))
-        cur.execute(
-            """
-            INSERT INTO clan.memories
-              (id, narrative, memory_type, parent_id, metadata, timestamp,
-               source, scope, certainty, updated_at)
-            VALUES (%s, %s, 'FACTUAL', %s, %s::jsonb, NOW(), 'cc_queue_test',
-                    'class', 1.0, NOW())
-            """,
-            (
-                ticket_id,
-                metadata["title"],
-                cc_queue.TICKETS_ROOT_ID,
-                json.dumps(metadata),
-            ),
-        )
-        conn.commit()
-    finally:
-        conn.close()
+    })
 
 
-def _cleanup_ticket(ticket_id: str) -> None:
-    import psycopg2
+class _IsolatedStoreCase(unittest.TestCase):
+    """Base: each test gets a fresh tmp filesystem ticket_store (no real store touched)."""
 
-    conn = psycopg2.connect(_db_url())
-    try:
-        cur = conn.cursor()
-        cur.execute("DELETE FROM clan.memories WHERE id = %s", (ticket_id,))
-        conn.commit()
-    finally:
-        conn.close()
+    def _start_store(self):
+        self._store_dir = tempfile.TemporaryDirectory()
+        (Path(self._store_dir.name) / "tickets").mkdir(parents=True, exist_ok=True)
+        self._store_env = mock.patch.dict(
+            os.environ, {"UU_MEMORY_ROOT": self._store_dir.name})
+        self._store_env.start()
 
-
-def _make_mock_db_conn(ticket_id: str, metadata: dict):
-    """Return a mock psycopg2 connection that simulates the atomic claim SELECT+UPDATE."""
-    import json as _json
-
-    mock_conn = mock.MagicMock()
-    mock_cur = mock.MagicMock()
-    mock_conn.cursor.return_value = mock_cur
-    # Simulate SELECT ... FOR UPDATE returning the ticket metadata
-    mock_cur.fetchone.return_value = (dict(metadata),)
-    return mock_conn
+    def _stop_store(self):
+        self._store_env.stop()
+        self._store_dir.cleanup()
 
 
-@unittest.skipUnless(_db_url(), "UU_HOME_DB_URL not set")
-class TestCmdNextDB(unittest.TestCase):
-    """cmd_next returns correct ticket from real DB."""
+class TestCmdNextDB(_IsolatedStoreCase):
+    """cmd_next returns the correct ticket from the filesystem store."""
 
     def setUp(self):
+        self._start_store()
         self._ids = ["T-gate-test-hi", "T-gate-test-lo"]
         _seed_ticket("T-gate-test-hi", priority=0.95, worker="igor")
         _seed_ticket("T-gate-test-lo", priority=0.5, worker="igor")
 
     def tearDown(self):
-        for tid in self._ids:
-            _cleanup_ticket(tid)
+        self._stop_store()
 
     def test_next_returns_highest_priority(self):
         """cmd_next --worker igor returns the higher-importance ticket and claims it."""
@@ -136,22 +104,30 @@ class TestCmdNextGateFile(unittest.TestCase):
             }
         ]
 
-    def _mock_db_conn(self):
-        """Mock psycopg2 connection for the atomic claim step."""
-        conn = mock.MagicMock()
-        cur = mock.MagicMock()
-        conn.cursor.return_value = cur
-        cur.fetchone.return_value = (
-            {
-                "id": "T-a",
-                "title": "Test ticket T-a",
-                "status": "sprint",
-                "priority": 0.9,
-                "gate": None,
-                "worker": "igor",
-            },
-        )
-        return conn
+    @staticmethod
+    def _run_next_with_store(tasks, args, gate_file):
+        """Seed a tmp filesystem ticket_store with `tasks` and run cmd_next.
+
+        cmd_next claims via ticket_store.conditional_update reading the LIVE store
+        (Postgres dropped, T-ticket-pg-drop), so the tickets must exist on disk —
+        mocking _load is no longer enough for the claim to succeed. Returns the
+        list of printed lines.
+        """
+        from unseen_university import ticket_store
+
+        output = []
+        with tempfile.TemporaryDirectory() as store_root:
+            (Path(store_root) / "tickets").mkdir(parents=True, exist_ok=True)
+            with mock.patch.dict(os.environ, {"UU_MEMORY_ROOT": store_root}):
+                for t in tasks:
+                    ticket_store.write(t)
+                with mock.patch.object(cc_queue, "GATE_FILE", gate_file), \
+                        mock.patch.object(cc_queue, "_classifier_stamp_in_flight",
+                                          lambda *a, **k: None), \
+                        mock.patch("builtins.print",
+                                   side_effect=lambda *a: output.append(str(a[0]))):
+                    cc_queue.cmd_next(args)
+        return output
 
     def test_returns_nothing_when_gate_tripped(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -166,32 +142,17 @@ class TestCmdNextGateFile(unittest.TestCase):
                     },
                     f,
                 )
-
-            output = []
-            with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
-                cc_queue, "_load", self._fake_load
-            ), mock.patch(
-                "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
-            ):
-                cc_queue.cmd_next(["--worker", "igor"])
-
+            output = self._run_next_with_store(
+                self._fake_load(), ["--worker", "igor"], gate_file)
             self.assertEqual(
                 output, [], "cmd_next should print nothing when gate is tripped"
             )
 
     def test_returns_ticket_when_no_gate_file(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            gate_file = os.path.join(tmpdir, "queue_gate.json")
-            # gate file does NOT exist
-
-            output = []
-            with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
-                cc_queue, "_load", self._fake_load
-            ), mock.patch.object(cc_queue, "_db_conn", self._mock_db_conn), mock.patch(
-                "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
-            ):
-                cc_queue.cmd_next(["--worker", "igor"])
-
+            gate_file = os.path.join(tmpdir, "queue_gate.json")  # does NOT exist
+            output = self._run_next_with_store(
+                self._fake_load(), ["--worker", "igor"], gate_file)
             self.assertEqual(output, ["T-a"])
 
     def test_corrupt_gate_file_treated_as_not_tripped(self):
@@ -199,99 +160,34 @@ class TestCmdNextGateFile(unittest.TestCase):
             gate_file = os.path.join(tmpdir, "queue_gate.json")
             with open(gate_file, "w") as f:
                 f.write("not json {{{")
-
-            output = []
-            with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
-                cc_queue, "_load", self._fake_load
-            ), mock.patch.object(cc_queue, "_db_conn", self._mock_db_conn), mock.patch(
-                "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
-            ):
-                cc_queue.cmd_next(["--worker", "igor"])
-
+            output = self._run_next_with_store(
+                self._fake_load(), ["--worker", "igor"], gate_file)
             self.assertEqual(output, ["T-a"], "corrupt gate file should not block next")
 
     def test_worker_igor_only_returns_igor_tickets(self):
         """--worker igor only returns tickets with worker=igor."""
         tasks = [
-            {
-                "id": "T-igor",
-                "status": "sprint",
-                "priority": 0.99,
-                "gate": None,
-                "worker": "igor",
-            },
-            {
-                "id": "T-claude",
-                "status": "sprint",
-                "priority": 0.9,
-                "gate": None,
-                "worker": "claude",
-            },
+            {"id": "T-igor", "status": "sprint", "priority": 0.99,
+             "gate": None, "worker": "igor"},
+            {"id": "T-claude", "status": "sprint", "priority": 0.9,
+             "gate": None, "worker": "claude"},
         ]
-        mock_conn = mock.MagicMock()
-        mock_cur = mock.MagicMock()
-        mock_conn.cursor.return_value = mock_cur
-        mock_cur.fetchone.return_value = (
-            {
-                "id": "T-igor",
-                "title": "Test igor ticket",
-                "status": "sprint",
-                "priority": 0.99,
-                "gate": None,
-                "worker": "igor",
-            },
-        )
         with tempfile.TemporaryDirectory() as tmpdir:
             gate_file = os.path.join(tmpdir, "queue_gate.json")
-            output = []
-            with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
-                cc_queue, "_load", lambda: tasks
-            ), mock.patch.object(cc_queue, "_db_conn", lambda: mock_conn), mock.patch(
-                "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
-            ):
-                cc_queue.cmd_next(["--worker", "igor"])
+            output = self._run_next_with_store(tasks, ["--worker", "igor"], gate_file)
             self.assertEqual(output, ["T-igor"])
 
     def test_worker_claude_only_returns_claude_tickets(self):
         """--worker claude only returns tickets with worker=claude."""
         tasks = [
-            {
-                "id": "T-igor",
-                "status": "sprint",
-                "priority": 0.99,
-                "gate": None,
-                "worker": "igor",
-            },
-            {
-                "id": "T-claude",
-                "status": "sprint",
-                "priority": 0.9,
-                "gate": None,
-                "worker": "claude",
-            },
+            {"id": "T-igor", "status": "sprint", "priority": 0.99,
+             "gate": None, "worker": "igor"},
+            {"id": "T-claude", "status": "sprint", "priority": 0.9,
+             "gate": None, "worker": "claude"},
         ]
-        mock_conn = mock.MagicMock()
-        mock_cur = mock.MagicMock()
-        mock_conn.cursor.return_value = mock_cur
-        mock_cur.fetchone.return_value = (
-            {
-                "id": "T-claude",
-                "title": "Test claude ticket",
-                "status": "sprint",
-                "priority": 0.9,
-                "gate": None,
-                "worker": "claude",
-            },
-        )
         with tempfile.TemporaryDirectory() as tmpdir:
             gate_file = os.path.join(tmpdir, "queue_gate.json")
-            output = []
-            with mock.patch.object(cc_queue, "GATE_FILE", gate_file), mock.patch.object(
-                cc_queue, "_load", lambda: tasks
-            ), mock.patch.object(cc_queue, "_db_conn", lambda: mock_conn), mock.patch(
-                "builtins.print", side_effect=lambda *a: output.append(str(a[0]))
-            ):
-                cc_queue.cmd_next(["--worker", "claude"])
+            output = self._run_next_with_store(tasks, ["--worker", "claude"], gate_file)
             self.assertEqual(output, ["T-claude"])
 
     def test_missing_worker_flag_exits_with_error(self):
@@ -301,17 +197,17 @@ class TestCmdNextGateFile(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1)
 
 
-@unittest.skipUnless(_db_url(), "UU_HOME_DB_URL not set")
-class TestCmdResetTimeoutDB(unittest.TestCase):
+class TestCmdResetTimeoutDB(_IsolatedStoreCase):
     """cmd_reset --timeout increments counter and trips gate at 3."""
 
     TID = "T-gate-timeout-test"
 
     def setUp(self):
+        self._start_store()
         _seed_ticket(self.TID, priority=0.8)
 
     def tearDown(self):
-        _cleanup_ticket(self.TID)
+        self._stop_store()
 
     def test_auto_trip_after_3_timeouts(self):
         with tempfile.TemporaryDirectory() as tmpdir:
