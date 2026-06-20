@@ -21,7 +21,7 @@
   "body": {
     "id": "T-ticket-pg-drop",
     "title": "[sprint] Remove Postgres from the ticket path entirely (final cutover step)",
-    "status": "sprint",
+    "status": "closed",
     "worker": null,
     "size": "M",
     "tags": [
@@ -32,9 +32,9 @@
     "description": "**Problem:** Final step — once the store module exists (T-ticket-store-module), cc_queue is FS-first (T-cc-queue-fs-first), readers are migrated (T-ticket-readers-migrate), and FS completeness is verified (T-ticket-fs-completeness-audit), Postgres must be removed from the ticket WRITE path and the transitional dual-read fallback so the filesystem is unambiguously the single source of truth.\n\n**Proposed shape:** Remove ticket writes to clan.memories/devlab.tickets from cc_queue.py; remove the dual-read PG fallback; stop creating the devlab.tickets table dependency for the queue. Keep migration scripts intact for history. Verify the whole system (dispatch wave, dashboards, search, dev tools) runs with the Postgres ticket tables empty/absent.\n**Affected files:** devlab/claudecode/cc_queue.py (remove PG write/read remnants), possibly unseen_university/migrations/m_devlab.py (mark devlab.tickets deprecated/unused for queue). HIGH-inertia.\n**Design rules:** NO SQLITE. After this, NO active code path reads/writes ticket state to Postgres. Log the removal in the decision record.\n**Scope boundary:** IN — remove PG from cc_queue ticket path + dual-read fallback; verify PG-free operation. OUT — dropping the actual DB tables (leave as archival/empty unless Akien says otherwise); non-ticket clan.memories usage (palace, learning — untouched).\n**Completion criteria:** `grep` shows zero active ticket-state PG readers/writers; full dispatch + dashboard + search smoke test passes with PG ticket tables empty; cc_queue operates entirely on devlab/runtime/memory/tickets/.\n**Test plan:** Stop/empty PG ticket tables; run a full mini-wave: add ticket → Granny dispatches → status transitions → close → moves to closed/; web_server + stall_check + search all read correctly. GATED on T-ticket-readers-migrate, T-cc-queue-fs-first, and T-ticket-fs-completeness-audit all closed.\n\n## HIGH-inertia pre-approval\nAkien approved modifying cc_queue.py (load-bearing for all dispatch) on 2026-06-19. Incremental, reversible sequencing across the batch is the safeguard.",
     "decision_id": "D-build-queue-filesystem-first-2026-06-19",
     "created_at": "2026-06-19T18:23:39.007171+00:00",
-    "updated_at": "2026-06-19T18:23:39.007171+00:00",
-    "completed_at": null,
-    "result": null,
+    "updated_at": "2026-06-20T00:07:14.556034+00:00",
+    "completed_at": "2026-06-20T00:07:14.556034+00:00",
+    "result": "#5 DONE. Postgres dropped from the ticket path entirely (2 commits): daemon side 2848b52e (removed _pg_mirror_setstatus + LISTEN/NOTIFY trigger/_setup_listen_notify/_wait_for_notify -> _wait_for_work pure poll), cc_queue side 409a5ebd (removed _load_pg/_save_pg_mirror/_project_to_memory/_pg_mirror/_db_conn/_tickets_in_clan/_narrative_for/TICKETS_ROOT_ID + the 4 mutator PG closures). Repo-wide grep for ticket-state PG (parent_id=TICKETS_ROOT / devlab.tickets / ticket_queue_insert) over non-migration, non-test source = ZERO live readers/writers. cc_queue list/next green with UU_HOME_DB_URL unset; 280 queue/store/web/granny tests pass (3 pre-existing DB-env failures unrelated). LEFT per discriminator: _close_igor_goal (cognition GOAL, not ticket state). DEFERRED to follow-ups: instant FS-wake -> T-granny-fs-wake-signal; physically DROP the inert devlab.tickets NOTIFY trigger row from the live DB (code gone; UU_HOME_DB_URL not reachable from cutover session) -> folds into devlab.tickets table drop.",
     "role": "master",
     "priority": 0.85,
     "gate": "T-ticket-readers-migrate",

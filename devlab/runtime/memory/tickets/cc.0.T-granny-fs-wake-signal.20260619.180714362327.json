@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-granny-fs-wake-signal.20260619.180714362327",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-granny-fs-wake-signal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-20T00:07:14.362327+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-build-queue-filesystem-first-2026-06-19"
+    ],
+    "tickets": [
+      "T-granny-fs-wake-signal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-granny-fs-wake-signal",
+    "title": "Granny instant-wake via filesystem signal (restore sub-poll dispatch)",
+    "status": "sprint",
+    "size": "S",
+    "tags": [
+      "Granny",
+      "Dispatch",
+      "Performance"
+    ],
+    "priority": 0.4,
+    "worker": null,
+    "decision_id": "D-build-queue-filesystem-first-2026-06-19",
+    "created_by": "cc.0",
+    "description": "Granny's daemon lost its instant wake when #5 (T-ticket-pg-drop) removed the Postgres LISTEN/NOTIFY on devlab.tickets INSERT. It now waits out POLL_INTERVAL_S (default 60s) between cycles, so a newly-filed/freed ticket can sit up to ~60s before dispatch. (Note: this latency was already live pre-#5 — NOTIFY stopped firing the moment filing moved to the FS store, since nothing INSERTs to devlab.tickets anymore. #5 just made it explicit.) Restore near-instant wake with a FILESYSTEM signal so there is no Postgres dependency.\n\nProposed shape: have ticket_store.write/_put bump a well-known signal file's mtime (or write to a wake FIFO) on every ticket mutation; the daemon's _wait_for_work watches that mtime (cheap stat at a short sub-interval, or inotify via the existing watchdog dep if present) and preempts the sleep when it changes. No new hard dependency — a directory-mtime stat-poll is sufficient and matches the no-SQLite/flat-file discipline.\n\n**Affected files:** devices/granny/daemon.py (_wait_for_work), unseen_university/ticket_store.py (emit wake signal on _put)\n**Design rules:** no-sqlite (flat-file signal only), external-state-principle\n**Scope boundary:** IN: FS wake signal + daemon preempt. OUT: changing the poll interval default, any Postgres path (already removed).\n**Completion criteria:** a ticket written to the store while the daemon is sleeping preempts the sleep and dispatches within ~1-2s (not the full poll interval), with Postgres stopped; covered by a daemon wake test.\n**Test plan:** unit test that _wait_for_work returns early when the signal mtime/FIFO changes mid-sleep; integration check that a fresh sprint ticket dispatches sub-poll-interval."
+  }
+}
