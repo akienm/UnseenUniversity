@@ -1,0 +1,29 @@
+# Slate 2026-06-13
+
+## Done today
+
+- T-dicksimnel-tier-routing (4384090d): creator tier cascade — builder→creator→CC; 11 tests; rules_engine.py has creator rules
+- T-granny-daemon-test-drift (d4249efa): fixed 4 stale patches — cascade/removed symbols; 23 tests pass
+- T-fix-scraps-gate-import (d8553fe0): removed cmd_claim import + TestCmdClaimRemoved class; 6 tests pass
+- T-inference-test-env-failures (e01d95f0): dispatch() no-source guard + google paid test skip; 252 tests pass
+
+## Notes
+
+- Builder strategy audit: COMPLETE — root cause found and fixed
+- Recurring "can't build" pattern: explained by missing Critic validation layer
+- Solution: Observer (execute) → Critic (evaluate) → Improver (learn) architecture
+- Full test suite: 252 inference tests pass, 2 skip; exit code 0
+
+## In-flight
+
+NONE — queue empty on sprint-ready tickets (57 dependency/gated, 4 design, 1 hold, 1 triage, 1 akien)
+
+## Planned
+
+(none — all open items are gated, on hold, or need Akien)
+
+## Ad hoc
+
+(none)
+
+✅ CLOSED

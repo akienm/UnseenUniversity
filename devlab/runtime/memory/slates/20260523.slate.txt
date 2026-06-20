@@ -1,0 +1,32 @@
+# Slate 2026-05-23
+
+## Done today
+- done: T-remove-emit-wiring — removed all emit() call sites; emit.py deprecated (db2a0100)
+- done: T-failover-tool-channel-pollution — tests posting to real Postgres; patched _comms=None + MemoryTransport (1c6d53af, c63e0462)
+- done: T-igor-diagnose-skill — /igor-diagnose skill written for emission-log-first stuck-state diagnosis
+- done: T-pe-chain-max-rounds-budget — closed as obsolete; pe_chain deleted entirely (76509a73)
+- done: pe_chain removal — 6 source files, 22 test files deleted; 9 files cleaned; 19 DB engrams removed; IGOR_CLOUD_PROGRAMMING retired (76509a73)
+- done: channel leak fix — test_utility_closet_server IGOR_HOME_DB_URL not patched; test messages leaked to live channel on every pytest run; fixed (2ecbf14d)
+
+## Notes
+- pe_chain completely gone — Igor no longer has ticket-execution machinery
+- Ticket execution is now exclusively via CC /sprint-ticket
+- Igor's focus: NE / cognition / dreaming / memory (reasoning substrate only)
+- 15 in-flight reasoning/cognition tickets remain (dispatched to Igor queue)
+- T-remove-utility-closet-all open — 171 UC import refs across 120 files (L-size)
+
+## In-flight
+- All CC work complete.
+- 15 reasoning/cognition tickets remain in Igor's queue (in_progress, autonomous)
+
+## Planned
+- Move Igor into ADC (next session)
+- Work 15 remaining reasoning/cognition tickets via /sprint-ticket
+
+## ADC commits (same day)
+- feat: fold diagnostic_base into agent_datacenter (83ca62c)
+- feat: emission-log standard — one file per operational event (dd0d5f3)
+- feat: BaseDevice inherits DiagnosticBase (ed92752)
+- docs: mark emit.py deprecated (fe58738)
+
+✅ CLOSED

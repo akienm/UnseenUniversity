@@ -1,0 +1,42 @@
+
+## In-flight: T-fix-adc-shim-stop-test closed — fix was already committed in ef7a6e72 (stop/rollback tests aligned with device delegation design); ticket queue was just behind the code.
+
+## In-flight: T-shim-output-validation closed — BaseShim.validate_output() + devices/policy/ OutputValidator shipped; 13 tests passing; retroactive T-baseshim-dispatch-trace filed and closed for incidental dispatch() work; session clean
+
+## In-flight: T-factory-template in_progress — factory YAML spec + FactoryInstantiator + GrannyPatternOrchestrator + factory-create skill; 39 factory tests passing
+
+- done: T-factory-template — factory YAML spec + FactoryInstantiator + GrannyPatternOrchestrator + factory-create skill; 39 tests
+
+## In-flight: T-factory-template closed (factory YAML + FactoryInstantiator + GrannyPatternOrchestrator + /factory-create skill, 39 tests passing); working tree carries unrelated multi-concern changes (daemon.py psycopg2, test updates, igor memory, web_server, announce provenance, policy/, workspace/, evaluator/) from prior in-flight work — needs incidental ticket sweep before full suite can merge.
+- T-runtime-self-healing-tests: Runtime self-healing test automation (design w/ Akien)
+
+## In-flight: T-shim-policy-gate closed: PolicyGate+AgentContext in BaseShim.dispatch(), 3-check gate (provenance/allowed_actions/budget), governance JSONL log, 26 tests; T-provenance-identity in-progress in working tree
+
+## In-flight: T-provenance-identity + T-provenance-write-attribution both committed; tokens issued/stored on memory writes; DB saturated (101/100 conns from leak), tickets can't close via queue
+
+## In-flight: T-audit-check-missing-traces closed — AR-008 (basedevice-must-emit-traces) registered in audit_checks.json; audit_check_missing_traces.py committed; granny/device.py fixed with trace_record at 4 decision points (audit_fail, route, escalate, dispatch_cc). Pending: retroactive ticket for hook-added AR-009/audit_check_interface_logging (workspace_run_bash violates AR-009 — needs log before subprocess.run). Pre-existing failure: tests/test_granny_daemon.py::test_returns_sprint_tickets broken by daemon.py rewrite (test mocks subprocess but daemon now uses direct Postgres).
+
+## In-flight: T-container-shim + T-container-shim-network-spec committed (ContainerShim --network=none+unix socket, 25 unit tests, TheoryOfOperation §2.3); DB connection exhaustion blocking ticket close — retrying in background
+- T-swadl-bpa-platform: SWADL BPA platform vision + roadmap (design w/ Akien)
+- T-inference-proxy-mini-rack
+- T-aider-rack-device
+- T-model-eval-harness
+- T-cheap-model-minions
+- T-runtime-model-selection
+- T-publish-strategy: Publishing/positioning design session
+
+- done: T-repo-map-context — repo_map.py: AST symbol index + sprint-ticket integration
+
+## In-flight: T-repo-map-context closed — repo_map.py AST symbol index shipped, sprint-ticket skill wired, levers doc updated; queue clean
+- D-minion-worker-escalation-2026-05-31: Non-Claude worker + tiered escalation — T-minion-worker-device, T-granny-worker-dispatch, T-consequence-D-minion-escalation
+
+## In-flight: T-shim-auto-launch-device closed — work was already shipped in fb42f3bb (BaseShim.ensure_daemon_running hook + GrannyShim watchdog loop); 48 tests pass; ticket was in_progress but never closed after prior sprint
+
+## In-flight: NONE — T-validate-web-installer closed; 15/15 web_server smoke tests green, session clean
+
+## In-flight: T-container-shim closed: ContainerShim tier-2 execution (--network=none + Unix socket, docker.sock denied, all tests passing)
+
+## In-flight: T-audit-hardcoded-instance-refs closed — AR-004 exits 0; replaced Igor-wild-0001 literals in safe_mode.py and machine_manager.py, updated sudo_relay paths, added 7 regression tests for bootstrap env var fallback
+- D-granny-no-cc-spawn-2026-05-31: Granny ESCALATE → block — T-granny-escalate-hold
+- D-constraints-first-class-2026-05-31: C-system-availability root + burn-rate + audit check — T-constraint-availability-root, T-burn-rate-monitor, T-audit-constraint-check, T-sorted-cost-question
+## In-flight: Two decisions filed: D-granny-no-cc-spawn (ESCALATE→block, T-granny-escalate-hold ready to commit) + D-constraints-first-class (C-system-availability root, 4 tickets to wire constraints into audit-design/sorted); foundation set to keep CC running via constraint-aware dispatch. Next: commit hold fix, restart Granny OR routing under new constraint system.

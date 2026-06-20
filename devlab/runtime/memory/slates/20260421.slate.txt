@@ -1,0 +1,69 @@
+# Slate 2026-04-21
+
+## Next up
+
+- T-epic-fix-all-pass2-findings (~154 Pass-2 proposals to file per-area via /decided)
+- db_proxy SQLite shim — needs design call (5th-attempt removal tag)
+
+## Blocked
+
+- T-igor-self-audit-approach-frame — dispatched to Igor via shared channel; awaiting Igor's worker_foreman pickup (status=pending, worker=igor)
+
+## After that
+
+- T-epic-fix-all-pass2-findings (~154 Pass-2 proposals to file per-area via /decided, then work through)
+- db_proxy SQLite shim — needs design call (5th-attempt removal tag)
+- T-hanging-tests-surfaced-by-timeout (tests showing +++ Timeout +++ after pytest-timeout added)
+- T-intent-decay-test-fail (pre-existing test failure surfaced during earlier sprint)
+- installer.py path mismatch fix: claudecode/cc_skills → lab/claudecode/cc_skills
+
+## Decided
+
+- D-worker-mode-routing-2026-04-21 ✅ closed (6 tickets)
+- D-cc-workflow-optimizations-2026-04-21 ✅ closed (6 tickets)
+- D-scaffold-not-correct-2026-04-21 ✅ closed (4 tickets) — filing-time scaffold loop complete
+
+## Done this session (16 tickets, 12 commits) ✅ CLOSED
+
+### CC scaffold (D-scaffold-not-correct-2026-04-21 ✅ closed, 4/4)
+- T-palace-ticket-design-rules (07b1c6cf) — 5 check-shape palace nodes under theigors/rules/ticket_design_checks/ + narrative backlinks
+- T-review-loads-palace-rules (b11ea1fa) — /review Mode A Check 7 loads palace checks + positive verification; subsumes old Test-plan check
+- T-ticket-template-structured (0a38873c) — /ticket description template: Affected files / Design rules / Scope boundary / Test plan. Haiku dispatch for the SKILL.md rewrite.
+- T-review-build-tightness-grade (032ec98a) — /review Check 8 grades ticket tightness (tight/medium/loose); loose forces AMEND. Closes D-scaffold.
+
+
+### Engram chain + worker routing
+- T-engram-trigger-cell-name-mismatch (c1409e0c) — seed triggers match "cells" key + run_engram_cursor wrapper
+- T-engram-mcpcall-register-pe-steps (5410ea6f) — 12 pe_* functions registered as MCPCALL tools
+- T-verify-pe-chain-qwen-tier (fa8f6f95) — forensic_logger captures model id; Qwen routing verified
+- T-worker-dispatch-routing (11b1a586) — cc_queue auto-defaults worker field; worker_foreman dispatches by metadata
+- T-validation-adopt-goal-kwarg (8c1caa09) — dropped invalid source_message kwarg
+- T-worker-dispatch-validation (744157fa) — end-to-end dispatch verified; pe_chain guardrail fires correctly
+- T-igor-validation-probe — test-data probe; served its purpose
+- T-fix-memory-scope-portable-test (1e25cf1b) — cortex tolerates non-JSON payloads (SKILL-* memories)
+
+### CC workflow optimizations
+- T-cc-env-split-startup-check — context-load step 0 env key check
+- T-skill-model-audit-haiku — 9 skills annotated (7 Haiku, 2 Sonnet)
+- T-context-load-rule-hash — hash-cache rules + palace tree (~1500 tokens/session saved)
+- T-cc-admin-consolidation (a2efb00e) — api.py + igor-admin CLI; fixed decision_manager.py:75
+- T-cc-hook-autonomics — SessionStart hook wired
+- T-cc-pre-commit-guards (7f27583d) — pre-commit guards + prepare-commit-msg amend-block
+- T-savestate-preserve-pointer-shape — savestateauto Step 6 rewritten pointer-shape
+- T-audit-immobile-observe-tickets: pre-Pass-3 queue hygiene, sweep for observe-no-trigger tickets
+- D-scaffold-not-correct-2026-04-21: scaffold design rules explicit-at-filing — T-palace-ticket-design-rules, T-ticket-template-structured (gated), T-review-loads-palace-rules (gated), T-review-build-tightness-grade (gated)
+- T-decision-rollup-preserves-narrative — Decision rollup preserves original narrative (don't overwrite) (cc_queue.py:_decision_rollup now preserves existing narrative (appends ## Rollup section, flips status open→closed) or w)
+- T-fix-skills-sync-rsync-path — Fix skills-sync rsync path in pre-commit hook (pre-commit hook SKILLS_DST fixed (added lab/). First commit after fix auto-synced ~/.claude/skills → lab/claudecode/cc_s)
+- T-pytest-runner-pipe-hang — Investigate pytest runner hanging with no pipe output (pytest.ini timeout=30 + pytest-timeout dep. Root cause was hanging tests, not pipe buffering. /sprint test step now prod)
+- T-fix-installer-claudecode-path — Fix claudecode/ → lab/claudecode/ path refs in installer + Igor internals (Fixed 11 path refs across installer.py + install_igor_linux.sh + 7 wild_igor/igor files. Grep check clean. Same-shape sw)
+- T-strengthen-no-sqlite-filter — Strengthen filing-time no-sqlite check — no SQLite anywhere, no fallbacks, DISCARD not AMEND (palace no-sqlite check: applies_when unconditional, verdict DISCARD, intent-based red-flag scan. Narrative at theigors/r)
+
+- T-palace-approach-frame-rule — Add approach-frame as top-level palace rule (above persona) (Palace node theigors/rules/approach-frame written. States the positive-target principle, cites Elliot+Janoff-Bulman, car)
+- T-palace-rules-versioned — Add revision/updated affordance to palace rules (versioned memory) (Every theigors/rules/* palace node carries 'revision: 2026-04-21 — initial versioned tag' line. Pattern established: fut)
+- T-approach-frame-sensor-node — SensorTree node for approach-frame audit metric (versioned history, text sparkline) (Palace subtree theigors/metrics/approach_frame_audit/ created (7 nodes). Helpers in wild_igor/igor/tools/palace_metric.p)
+- T-audit-igor-cp-approach-frame — Score Igor CP1-6 against approach-frame; propose CP6 reframe for Akien review (CP1-6 scored. 5 already approach-framed. CP6 mixed-shape flagged, 5 reframe options proposed (A-E); Igor's direct call: )
+## Epic
+- T-epic-fix-all-pass2-findings — fix-ALL epic for ~154 remaining Pass-2 findings
+- T-audit-design-thread-pass2 — Akien+Claude design-call thread (companion)
+- D-approach-frame-principle-2026-04-21: approach-frame as first-class rule principle — T-palace-approach-frame-rule, T-palace-rules-versioned, T-audit-cc-rules-approach-frame, T-audit-igor-cp-approach-frame, T-igor-self-audit-approach-frame, T-approach-frame-sensor-node, T-slow-metrics-sensor-tree-pattern, T-sweep-avoidance-frame-docs
+In-flight: T-audit-constraint-check CLOSED — Check 11 (cc-blackout-path) added to audit-design skill; levers doc updated to 11 checks; T-sorted-cost-question unblocked

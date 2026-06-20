@@ -1,0 +1,1 @@
+- T-wg-cooccur-tree-restructure: Restructure wg_cooccur: flat table → adjacency/cluster tree (gated: after Igor stable)

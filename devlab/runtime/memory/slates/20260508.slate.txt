@@ -1,0 +1,69 @@
+# Slate 2026-05-08 (Friday) — Massive sprint: DiagnosticBase, Librarian, Igor walk batch, ADC palace wiring, capability extraction
+
+## Done today
+
+- T-cc-walk-14 — refractory window for coherence+confab detectors (d3c91429, TheIgors)
+- T-python-diagnostic-base-class-repo — DiagnosticBase micro-package: loguru+TaggedLogger+Stopwatch+CSV, 36 tests (dd981ed)
+- T-librarian-device — Librarian skeleton: rack contract + MCP stub (6b6a31e)
+- T-bus-imap-idle-client — idle_wait() + run_forever(), 6 tests (ca0077b)
+- T-swadl-add-pyautogui — pyautogui driver added to SWADL (756f742)
+- T-swadl-add-dogtail — dogtail AT-SPI2 driver added (756f742)
+- T-swadl-add-playwright — Playwright driver added (756f742)
+- T-adc-performance-points — BaseDevice.stopwatch() wired (bd7fa43)
+- T-bus-heartbeat — start_heartbeat() on BaseDevice (bd7fa43)
+- T-swadl-readme-interface-libs — interface lib comparison table + prose (3283028)
+- T-swadl-performance-points — ADC stopwatch wired into SWADL base
+- T-librarian-mcp-tools — Librarian MCP tool surface wired
+- T-librarian-health-aggregator — health aggregator fan-out
+- T-librarian-inference-routing — inference routing layer
+- T-claude-json-mcp-update — librarian mcpServers entry in ADC project config
+- T-cc-walk-15 — deleted dead _send_webhook branch from DiscordTransport
+- T-cc-walk-16 — fcntl lock on training_corpus _save_index/_load_index
+- T-cc-walk-17 — retired 4 wild_igor shims; 127 files rewritten to lab.utility_closet.*
+- T-cc-walk-18 — scan_ebooks OUTPUT path uses paths().source_root
+- T-cc-walk-19 — DRM sentinel + BOOK_DRM_BLOCKED memory path
+- T-cc-walk-20 — NE stew-salience invariant guard + ValueError at init
+- T-adc-routing-manifest — datacenter_manifest MCP tool + routing map (f30794f)
+- T-librarian-db-proxy — psycopg2 ThreadedConnectionPool + get_conn() (147a7e4)
+- T-librarian-model-selection-skill — model_selection.md skill guide (bdfd349)
+- T-librarian-research-capability — ResearchEngine + 3 MCP tools (8f6411c)
+- T-igor-mcp-deprecate — deprecation header added (b644904f)
+- T-adc-palace-bootstrap — adc.palace table + 11 seed nodes incl. goals tree (36e454d)
+- T-igor-console-logging — paths().logs → ~/.agent_datacenter/logs/Igor-wild-0001/ (dd444d14)
+- T-igor-web-message-receive — web_server.incoming wired into _drain_network (de4c9ddb)
+- T-skill-capability-check-dynamic — manifest-driven capability check in sprint-ticket
+- T-adc-help-skill — /ADCHelp skill shipped
+- T-igor-mcp-delete — deleted igor_mcp.py; Librarian is now the Igor MCP server
+- T-adc-palace-seed-decisions — 61 decisions seeded into palace
+- T-adc-palace-day-writer — day-close writes palace.days.* rollup
+- T-adc-palace-session-writer — session_capture.py + savestate wired
+- T-adc-context-load-palace — context-load reads ADC palace instead of flat files
+- T-adc-database-review-tools — design doc + T-librarian-palace-mcp-tools + T-palace-cli filed
+- T-librarian-palace-mcp-tools — palace tools wired into Librarian
+- T-palace-cli — palace CLI script shipped
+- T-igor-programs-himself-2 — tracker closed (walks 11-20 all verified)
+- T-sleep-consolidation-honesty — Hebbian pass docstrings fixed (already existed)
+- T-coa-object-wrap — COA extraction from main.py into coa.py (7557a93b)
+- T-coa-spawn-primitive — COA spawn + CPU gate + dissolve (1dc0255a)
+- T-concurrent-ne-spawn — epic closed (both children shipped)
+- T-lab-migration-to-agent-datacenter — cc_queue.py+engram_tools migrated to ADC via __path__ shim (05eec28a + 7bc777d)
+- T-workflow-documentation-to-md — lab/docs/workflow_reference.md 621 lines (eca5e84)
+- T-adc-sensor-device — devices/sensor/ SensorDevice+Shim; 703 ADC tests pass (e9bfc53)
+- T-capability-extraction-from-igor — XL epic closed; all children done
+
+## Notes
+
+- D-diagnostic-base-class-2026-05-08: python_diagnostic_base_class micro-package + SWADL drivers + PyPI pipeline
+- D-librarian-rack-agent-2026-05-08: The Librarian — MCP, inference, DB proxy, research
+- D-imap-idle-heartbeat-2026-05-08: IMAP IDLE client + heartbeat health monitoring
+- D-adc-shared-agent-substrate-2026-05-08: ADC routing manifest + capability extraction
+- PyPI tickets (T-igor-pypi-tagged-release, T-adc-pypi-tagged-release, T-swadl-pypi-tagged-release) still pending — require Akien GitHub Actions involvement
+
+## Session close: 2026-05-08 (day-close filed 2026-05-10)
+Done: 47 tickets closed across 4 repos (TheIgors, agent_datacenter, SWADL, python_diagnostic_base_class). DiagnosticBase micro-package, full Librarian phase 1-3, Igor walk batch (cc-walks 14-20), ADC palace wiring (bootstrap, seed, day-writer, session-writer, context-load), COA extraction+spawn, capability extraction epic, lab migration to ADC.
+Next: T-swadl-performance-points ungated; T-cc-walk-21+ (next Igor walk batch); PyPI publish tickets (akien worker)
+
+## In-flight
+NONE
+
+✅ CLOSED

@@ -1,0 +1,3 @@
+
+## In-flight: NONE — devlab memory-store leg complete: dual-write hooks shipped+verified idempotent (zero churn), probe cleaned, status-model steps 1-2 + view tools done, step-5 ledger written. Remainder gated/design/large per slate ledger, awaiting Akien.
+- T-decisions-dsb-cutover: Retire decisions_log.dsb (write-path repoint + reader swap + drop guard)

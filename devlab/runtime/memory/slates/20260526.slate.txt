@@ -1,0 +1,19 @@
+# Slate 2026-05-26
+
+## Done today
+(Design and ticketing completed; no code shipped)
+
+## Notes
+- D-concept-layer-and-tags-2026-05-26: palace.concepts.* layer as peer to goals; tags as connective tissue; /concept skill for collaborative concept authoring
+
+## In-flight
+NONE — concept layer design completed, 5 tickets filed to queue
+
+## Planned
+- T-concept-skill (M): Create /concept skill for collaborative concept authoring
+- T-concept-palace-seed (M): Seed foundational concepts [GATE: T-concept-skill]
+- T-sorted-concept-links (S): Add concept_links field to /sorted decisions
+- T-tag-vocabulary-connective-tissue (M): Standardize tags across palace nodes [GATE: T-concept-skill]
+- T-consequence-concept-layer-and-tags (S): Consequence check for concept layer + tags [GATE: 2026-06-09]
+
+✅ CLOSED

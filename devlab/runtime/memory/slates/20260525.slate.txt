@@ -1,0 +1,18 @@
+
+## In-flight: T-igor-subtree-import closed: devices/igor/ + tests/igor/ imported with full history, tests/igor/ gated by pytest_ignore_collect; T-igor-import-rewrite now ungated and is next
+- done: T-igor-subtree-import — devices/igor/ merged with full history
+- done: T-igor-import-rewrite — rewrote all wild_igor.igor.* imports to devices.igor.*, removed 298 duplicate test files from tests/, 935 UU-native tests pass
+- done: T-igor-theigers-archive — wild_igor/ deleted, ARCHIVE.md added, all imports updated, TheIgors pushed
+- D-worker-daemon-retired-2026-05-25: retire worker_daemon.sh + claim — T-retire-worker-daemon-sh, T-consequence-worker-daemon-retired
+- D-adc-queue-device-2026-05-25: ADC queue rack device — T-adc-queue-device, T-adc-queue-no-claiming, T-query-ticket-mcp-switch, T-consequence-adc-queue-device
+- D-rack-diagnostic-trace-2026-05-25: DiagnosticBase trace + /diagnose skill — T-diagnosticbase-trace, T-diagnose-skill, T-consequence-rack-diagnostic-trace
+- done: T-retire-worker-daemon-sh — worker_daemon.sh retired sentinel added; cc_queue.py claim already raises LegacyDirectClaimError
+- done: T-diagnosticbase-trace — trace_record/debug_mode/last_traces added to DiagnosticBase; 31 tests passing
+- done: T-diagnose-skill — /diagnose skill created; debug-pe-chain/igor-diagnose/cognition-debug deprecated
+- done: T-adc-queue-device — QueueDevice rack device + 21 tests (d2230e4d)
+- done: T-adc-queue-no-claiming — sprint-ticket no-claim update
+- done: T-query-ticket-mcp-switch — MCP path is canonical for queue queries
+- done: T-consequence-worker-daemon-retired — observations verified, partial
+- done: T-remove-utility-closet-all — registry migrated (4076a0ad)
+
+## In-flight: NONE — all claude sprint tickets closed (T-adc-queue-device, T-adc-queue-no-claiming, T-query-ticket-mcp-switch, T-consequence-worker-daemon-retired, T-remove-utility-closet-all)

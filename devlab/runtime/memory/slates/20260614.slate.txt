@@ -1,0 +1,25 @@
+# Slate 2026-06-14
+
+## Done today
+- D-storage-layer-formalization-2026-06-14: storage layer formalization — T-devlab-schema-create, T-library-schema-create, T-clan-data-audit, T-ccqueue-devlab-writer, T-consequence-storage-layer-formalization
+- T-constraint-normalizer-agent cancelled (split into T-constraint-normalizer-store + T-constraint-normalizer-decorator)
+- D-intent-extractor-learning-substrate-2026-06-14: intent extractor as canonical learning substrate — T-intent-extractor-device, T-intent-extractor-backfill, T-intent-extractor-librarian, T-consequence-intent-extractor
+- D-evaluator-consolidation-2026-06-14: Critic/Improver/Judge unified around EvaluatorCore — T-evaluator-core, T-critic-to-evaluator-core, T-improver-device, T-judge-wire-post-sprint, T-consequence-evaluator-consolidation
+- Sprint-batch: T-devlab-schema-create, T-library-schema-create, T-uurecall-db-url-fallback, T-recall-skill, T-evaluator-core — 5 closed (def49ff area)
+- fix: completion_audit get_closed_tickets — size+status fields (26381452)
+- docs: D-acurite-free-2026-06-14 decision record committed (1f4f54a0)
+- AcuRite: hub HTTP listener + weather.html + config.ini.example [hub] section (acurite-free def49ff)
+- AcuRite: dnsmasq + capture daemon running overnight on port 80; hub reconnected this morning
+
+## Notes
+- T-repo-auditor-semantic-eval on hold — was blocked by get_closed_tickets size=None (now fixed); ready to resume
+- T-ccqueue-devlab-writer still needs Akien pre-approval
+
+## In-flight
+AcuRite hub listener live, DNS ready (10.0.0.229:53). Hub needs router at http://10.0.0.1 → DNS primary = 10.0.0.229. Akien has new ideas to ticket this session.
+
+## Session close: 2026-06-14 / 2026-06-15 morning
+Done: 5 UU tickets closed; AcuRite hub listener + dashboard shipped; fix get_closed_tickets
+Next: AcuRite DNS redirect + new ideas from Akien → /sorted
+
+✅ CLOSED

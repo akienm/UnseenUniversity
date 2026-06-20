@@ -1,0 +1,34 @@
+# Slate 2026-06-08 — words-as-memories + recall overhaul + observability tooling
+
+## Done today
+
+- T-uuhelp-cmd — uuhelp lists all uu* commands with descriptions (212174b9)
+- uuresearch.py path fix — port to devices/librarian/tools/search_tool (e9db2475)
+- T-uuquestions-cmd — uuquestions CLI: open_questions + design tickets (5116f70b)
+- T-uushowticket-cmd — uushowticket + uuticketadd terminal ticket tools (e48dbfcf)
+- T-igor-rack-tool-migration — run_bash + read_source_file → WorkspaceDevice MCP tools (e20ae4d0)
+- T-inference-proxy-mini-rack — GoogleSource free-tier routes worker to $0 (f79b4130)
+- T-uurecall-fulltext — multi-source recall: CC.0 logs + tickets + git grep + semantic (4cba1a6e)
+- T-scraps-embed-rack-tool — embed_text MCP tool via ScrapsDevice (b7708a26)
+- T-wg-calving-time-threshold — traversal_timing table + instrumentation in cortex.py (58869795)
+- T-wg-words-as-memories — WORD_GRAPH memory type + 57K word migration (bcc7ec29)
+- T-wg-spread-via-cortex — spread_from_words/predict_next via WORD_GRAPH nodes (abdcfeee)
+- T-wg-cooccur-retire — archive wg_cooccur/wg_edges, retire graph_cache (7273afb0)
+- T-igor-deferred-node-state — deferred-resolution node state + watchlist pattern (f8321d4a)
+- T-test-coherence-inhibitor-missing-file + T-test-cortex-delete-missing-file — stale path fixes (8113400f)
+- fix: queue_view gated sprint tickets show as Dependency (f5fcfba0)
+- T-uurecall-search-gaps — palace search + semantic noise suppression (score < 0.4) (7ec9e952)
+- T-wg-cooccur-tree-restructure — closed as superseded by D-wg-node-tree-architecture-2026-06-08
+- D-wg-node-tree-architecture-2026-06-08 — words-as-memories arch decision filed
+- T-inference-learning-pipeline — Librarian overnight learning pipeline (234adc3a)
+
+## Notes
+
+- T-igor-deferred-node-state: watchlist pattern non-obvious — candidate palace deposit (deferred state design)
+- D-wg-node-tree-architecture-2026-06-08 spawned 6 tickets; consequence checks gated Jun 19-22
+
+## In-flight
+
+NONE — all ungated sprint tickets closed. Gated consequence checks (Jun 19-22) + dependency-blocked tickets remain.
+
+✅ CLOSED

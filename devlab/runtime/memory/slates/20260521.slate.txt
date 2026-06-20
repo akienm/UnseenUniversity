@@ -1,0 +1,38 @@
+# Slate 2026-05-21
+
+## Done today
+- T-consequence-skill-telemetry-repair — queue state repair
+- T-gate-date-parsing — fix _gate_clear date parsing (ADC 85bb967)
+- T-dispatch-is-assignment — sprint-ticket Step 2 rewrite (64098b07)
+- T-goal-37-task-service — Goal 3.7 written to palace
+- T-audit-design-check-encapsulation — audit-design Check 10 added
+- T-audit-expert-encapsulation-lens — EXPERTS.md both repos (ADC 4b6bcf2, TheIgors 2116b8d3)
+- T-levers-doc-update-rule — levers-doc rule in sprint-ticket + audit check registered
+- T-pe-chain-executor-evaluator-split — pe_evaluate phase added, evaluator in pe_close_loop
+- T-skill-contract-checker — ticket field lint (ADC 5e23e3a)
+- T-html-planning-artifacts — HTML levers doc + spec template (ADC 29cc1df)
+- T-html-interactive-specs — interactive levers spec (ADC 877ae87)
+- T-rebuild-skill-telemetry-py-upstream-spri — skill_telemetry.py + tests (7876a619)
+- Igor unblock: fixed 4 bugs (86b47a6c, cffe07cc, 50c61e95) — pe_chain pipeline unblocked
+- T-confidence-schema — closed (column already existed)
+- test isolation: fixed T-test-ticket debris (save_tasks leak) + channel noise (_post_to_channel mock) — 4 commits (a135f66b, c3845195, e8566313, 2711531b)
+
+## Notes
+- T-consequence-igor-request-not-claim: 72h gate, pending observation window
+- T-igor-recurring-old-string-not-found: in_progress, SCOPE_GUARD correctly blocking thalamus.py
+- test isolation still in flight: ops.py _channel_append + integration test patches → carried to 2026-05-22
+
+## In-flight
+NONE (all CC work closed; Igor pe_chain batch running autonomously)
+
+## Planned
+- D-articles-synthesis: 9 igor tickets queued (pe_chain picks up automatically)
+- D-expert-lenses-confidence: T-pe-evaluate-confidence, T-habit-telemetry-gate, T-universal-llm-lineage queued
+- D-cognition-proof-tooling: T-cognition-proof-spec, T-pe-eval-trace-review
+
+## Done (session close)
+- D-queue-encapsulation: all tickets closed
+- D-encapsulation-audit: all CC tickets closed
+- D-expert-lenses-confidence: CC tickets closed; igor tickets running
+
+✅ CLOSED

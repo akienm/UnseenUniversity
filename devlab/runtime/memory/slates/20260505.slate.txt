@@ -1,0 +1,152 @@
+# Slate 2026-05-05
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+- T-usage-hook-output-fix — DESIGNED: Fix update-usage.sh hook output generation (Fixed shell-to-Python variable passing: export USAGE_RESPONSE/PLAN_TYPE/CACHE_FILE, read via os.environ in heredoc. Here)
+- T-gmail-pages-build-to-flow-spec — DESIGNED: Gmail Page objects — InboxPage + ComposePage built to GmailFlow spec (Built InboxPage, ComposePage, MessageRef page objects to GmailFlow spec; 24 unit tests with mock driver, all green. Sele)
+- T-swarm-port-audit — DESIGNED: Swarm port-use audit — enumerate and rationalize bindings under unified bus (Audit doc at lab/design_docs/swarm-port-audit-20260505.md. All bindings mapped: 5432/PG, 6379/Redis, 8080/8082/UC, 10143)
+- T-process-inner-dismantle — DESIGNED: Map and plan _process_inner dismantle — 3445-line method in main.py (Design doc at lab/design_docs/_process_inner_dismantle.md. 11-phase map (LOC ranges), data handoffs, 8-module split prop)
+- T-swarm-visibility-rules — DESIGNED: Swarm visibility rules — primary-everywhere, secondary-opt-in, shared always present (visibility field + shared guarantee; 10 tests; commit 4ae3bfd)
+- T-swarm-notification-rule — DESIGNED: Swarm notification rule — intent-to-address-only, not ambient stream (has_intent predicate + ygm_check integration; 16 tests; commit 11782bf)
+- T-swarm-channel-mechanism — DESIGNED: Swarm channel mechanism — multi-party rooms as mirrored inboxes (ChannelRegistry + fan_out + Skeleton wiring; 17 tests; commit b9a783c)
+- T-swarm-tmux-face — DESIGNED: Swarm tmux face — capture-pane to bus envelopes; bus envelopes to send-keys with attribution (JSONL transcript reader + capture-pane + send-keys attribution; 21 tests; commit 397de34)
+- T-swarm-identity-layer — DESIGNED: Swarm identity layer — box.n addressing with surface aliases for comms:// lineage (resolve() on DeviceRegistry; box.agent.n/surface → comms:// mapping; 21 tests; commit 9a1825e)
+- T-cc-log-handler-class — DESIGNED: CC chat log Handler+Formatter class in agent_datacenter (ChatLogHandler+CCEventFormatter in devices/claude/chat_log_handler.py; ClaudeDevice.logs() returns CC.0 path; 27 tests; )
+- T-palace-search-sprint-plan — DESIGNED: Semantic palace search at sprint-ticket plan step (added memory_search step at Step 4 of sprint-ticket skill before inertia check)
+- T-palace-search-audit-conflicts — DESIGNED: Semantic conflict detection in /decided and /audit-ticket (added memory_search to /decided Step 2.5 (before audit-design) and /audit-ticket Step 0 (semantic duplicate check))
+- T-palace-search-context-load — DESIGNED: Semantic palace retrieval in /context-load Step 2b (added Step 2c conditional in-flight semantic search to /context-load)
+- T-cc-plus-minus-slate — DESIGNED: CC+/CC- causal rework tally in slate + context-load injection (CC tally added to context-load Step 5.8; working_together.md updated with CC+/CC- mechanism; pushed to agent_datacenter)
+- T-cc-plus-minus-fixit-tag — DESIGNED: CC+/CC- tagging prompt in /fixit (added CC+/CC- tagging Step 0 to /fixit — asks classification before /decided fires, appends to slate ## CC score)
+- T-db-proxy-sqlite-shim-retire — DESIGNED: Retire db_proxy SQLite-compat translation layer; keep pool + metrics (Phase A complete: callsite inventory at lab/design_docs/db-proxy-sqlite-callsites-20260505.md — 6 files enumerated, all )
+- T-sqlite-out-main-pragma — DESIGNED: Remove PRAGMA wal_checkpoint block from main.py (Removed PRAGMA wal_checkpoint try/except block from main.py — was a shim no-op; commit 44b5d500)
+- T-sqlite-out-small-callers — DESIGNED: Migrate budget.py + notebook.py + pending_replies.py to native Postgres (budget.py + notebook.py + pending_replies.py fully migrated to native Postgres; test class updated to Postgres; 4483 tes)
+- T-sqlite-out-word-graph — DESIGNED: Migrate word_graph.py to native Postgres SQL (word_graph.py fully migrated: INSTR→strpos, INSERT OR REPLACE/IGNORE→ON CONFLICT, ?→%s, SELECT changes()→RETURNING; 4483)
+- T-sqlite-out-cortex — APPROVED: Migrate cortex.py 129 SQLite sites to native Postgres (HIGH-INERTIA) (cortex.py fully migrated: INSERT OR REPLACE→ON CONFLICT, lastrowid→RETURNING, dead SQLite branches removed, 129 ?→%s. 41)
+- T-sqlite-out-learner — DESIGNED: Migrate learner.py ? placeholders + SELECT changes() to native Postgres (learner.py migrated: 9 ?→%s sites, SELECT changes()→rowcount; Calibre SQLite queries left intentionally. 20 tests pass. )
+## In-flight: NONE
+
+## In-flight: NONE — day-close for 2026-05-04 complete
+
+Notes:
+- Day-close audit: clean (4164 tests, 1 pre-existing failure)
+- Tickets pushed to GitHub (6 pending tickets created as GH issues)
+- Docs synced to DB (2060 entries)
+- Day-close commit pushed (9cec3d7b)
+- Next: verify P1 bug (pe_chain HIGH-inertia proposal hallucinization)
+
+## Session close: 2026-05-05a
+Done: Day-close for 2026-05-04 complete. 28 tickets closed, audit clean (4164 tests), 6 tickets pushed to GH, docs synced (2060 entries), commit 9cec3d7b pushed.
+Next: Verify P1 bug (pe_chain HIGH-inertia hallucination). Then migrate _background_reason()/LLMPeerAdvisor away from interactive prompt.
+
+## In-flight: NONE — session clean, rebooting.
+- T-usage-hook-output-fix: Fix update-usage.sh hook output generation
+
+## In-flight: DESIGNED:T-usage-hook-output-fix filed — update-usage.sh hook variable interpolation fix.
+- T-test-inbox-cleanup: Tests must clear their inbox messages on completion
+
+## In-flight: DESIGNED:T-test-inbox-cleanup filed; inbox cleanup logic needed in pe_chain test runners.
+- done: T-usage-hook-output-fix — fixed shell var interpolation bug in update-usage.sh
+- done: T-gmail-pages-build-to-flow-spec — Gmail pages + 24 tests, commit ccf09137
+- T-swarm-port-audit
+- T-swarm-identity-layer
+- T-swarm-channel-mechanism
+- T-swarm-visibility-rules
+- T-swarm-notification-rule
+- T-swarm-tmux-face
+- T-swarm-web-tab-ui
+- T-gmail-pages-build-to-flow-spec: CLOSED — profile guard added, 25 tests, commit 6956b990
+- T-swarm-port-audit: CLOSED — audit doc, commit f7df1ab3
+- T-process-inner-dismantle: CLOSED — design doc, commit f7df1ab3
+- T-swarm-visibility-rules: CLOSED — visibility field, manifest, shared guarantee, commit 4ae3bfd
+- T-swarm-notification-rule: CLOSED — intent gate, 16 tests, commit 11782bf
+- T-swarm-channel-mechanism: CLOSED — 17 tests, commit b9a783c
+- T-swarm-tmux-face: CLOSED — 21 tests, commit 397de34
+
+## Session close: 2026-05-05b
+Done: Closed 4 swarm tickets (visibility-rules, notification-rule, channel-mechanism, tmux-face) — 64 new tests, all committed and pushed to agent_datacenter (commits 4ae3bfd..397de34). Earlier session closed gmail-pages, port-audit, process-inner-dismantle.
+Next: Remaining tickets all need Akien input (identity-layer alias design, web-tab-ui browser, domain purchase, throwaway Gmail). Consider day-close.
+
+## In-flight: NONE — all swarm work closed, session clean.
+- T-swarm-identity-layer: CLOSED — 21 tests, commit 9a1825e
+- D-cc-log-logcontrol-conformance-2026-05-05: CC log via logcontrol — T-cc-log-handler-class, T-cc-log-stop-hook-wire
+- T-cc-log-handler-class (claimed)
+- done: T-cc-log-handler-class — ChatLogHandler+Formatter, ClaudeDevice.logs(), 27 tests, abc6398
+
+## In-flight: T-cc-log-handler-class CLOSED (abc6398); T-cc-log-stop-hook-wire ungated, pending next sprint
+- D-semantic-palace-search-injection-2026-05-05: semantic search injection — T-palace-search-sprint-plan, T-palace-search-audit-conflicts, T-palace-search-context-load
+- D-cc-plus-minus-scoring-2026-05-05: CC+/CC- causal scoring — T-cc-plus-minus-slate, T-cc-plus-minus-fixit-tag
+- T-palace-search-sprint-plan (claimed)
+- done: T-palace-search-sprint-plan — added memory_search step at Step 4 of sprint-ticket skill before inertia check
+
+## In-flight: sprint-batch D-semantic-palace-search-injection + D-cc-plus-minus-scoring; T-palace-search-sprint-plan CLOSED, next T-palace-search-audit-conflicts
+- done: T-palace-search-audit-conflicts — semantic search added to /decided Step 2.5 and /audit-ticket Step 0
+- done: T-palace-search-context-load — Step 2c added to context-load for in-flight semantic search
+- done: T-cc-plus-minus-slate — CC tally step added to context-load, working_together.md updated
+- done: T-cc-plus-minus-fixit-tag — CC classification step added to /fixit
+
+## In-flight: sprint-batch D-semantic-palace-search-injection + D-cc-plus-minus-scoring COMPLETE — 5 tickets closed, both decisions rolled up
+- done: T-db-proxy-sqlite-shim-retire — Phase A callsite inventory at lab/design_docs/db-proxy-sqlite-callsites-20260505.md
+- D-sqlite-migration-phase-bc-2026-05-05: Migrate SQLite-ism callers to native Postgres + delete shim — T-sqlite-out-main-pragma, T-sqlite-out-small-callers, T-sqlite-out-word-graph, T-sqlite-out-cortex, T-db-proxy-shim-delete
+- T-sqlite-out-main-pragma
+- done: T-sqlite-out-main-pragma — removed PRAGMA block from main.py, commit 44b5d500
+- done: T-sqlite-out-small-callers — budget.py+notebook.py+pending_replies.py native Postgres, commit 7ad45110
+
+## In-flight: T-sqlite-out-main-pragma CLOSED (44b5d500); T-sqlite-out-small-callers CLOSED (7ad45110); T-sqlite-out-word-graph next
+- done: T-sqlite-out-word-graph — word_graph.py native Postgres, commit 8cf0af9a
+- DESIGNED:T-lab-migration-to-agent-datacenter — move non-Igor lab code to agent_datacenter
+
+## In-flight: New ticket DESIGNED:T-lab-migration-to-agent-datacenter filed for lab code separation (Igor-specific stays, non-Igor moves to agent_datacenter/lab).
+- T-sqlite-out-cortex (claimed, APPROVED by Akien 2026-05-05 — HIGH-INERTIA pre-approval granted)
+- done: T-sqlite-out-cortex — cortex.py fully Postgres-native, commit bc7f65f6
+- T-sqlite-out-learner — migrate learner.py SQLite-isms (missed in Phase A)
+- done: T-sqlite-out-learner — learner.py native Postgres, commit b16f9389
+- D-datacenter-agent-infra-2026-05-05: datacenter own DB + CC minion pattern — T-adc-db-provision, T-adc-db-proxy-wire, T-cc-minion-palace-rule, T-coding-subagent-igor-path
+- done: T-cc-minion-palace-rule — palace node theigors/rules/cc-minion written
+- done: T-adc-db-provision — provisioning script shipped, commit 3b2801da
+- done: T-db-proxy-shim-delete — 207 lines of SQLite shim deleted, commit 5cf77cf8
+- done: test_budget_postgres fix — ?→%s in test SQL
+- done: T-adc-db-provision — agent-datacenter-0001 live, datacenter role, memory_palace + memories tables
+- done: T-adc-db-proxy-wire — make_dc_proxy() in agent_datacenter/db.py, commit dc33966
+- D-skills-portability-2026-05-05: Skills path portability + sync + reference agent — T-cc-workflow-tools-env-var, T-skills-sync-skill, T-agentctl-env-and-skills, T-reference-chat-agent
+
+## In-flight: NONE — D-skills-portability-2026-05-05 complete (4 tickets closed, decision rolled up)
+- done: T-cc-workflow-tools-env-var — CC_WORKFLOW_TOOLS env var, 29 skill files updated (7bbcc26)
+- done: T-reference-chat-agent — examples/chat_agent/agent.py in agent_datacenter (ff13324)
+- done: T-skills-sync-skill — /skills-sync skill live, bidirectional (fea2166)
+- done: T-agentctl-env-and-skills — agentctl init writes CC_WORKFLOW_TOOLS to profile, deploys skills (47f8f65)
+
+## Session close: 2026-05-05b
+Done: D-skills-portability-2026-05-05 fully closed — CC_WORKFLOW_TOOLS env var in ~/.bashrc, all 29 skill files updated in both ~/.claude/skills/ and agent_datacenter/skills/, /skills-sync skill live, agentctl init now writes CC_WORKFLOW_TOOLS and deploys skills on first install. Reference chat agent skeleton at agent_datacenter/examples/chat_agent/agent.py.
+Next: fresh-start test (verify CC_WORKFLOW_TOOLS loads, skills work), then T-superclaude-migration — move superclaude/.bat/.ps1 to agent_datacenter/bin/ and have agentctl init symlink to ~/.local/bin/
+
+## In-flight: NONE — session clean; superclaude migration discussed but not yet ticketed (pending fresh-start test)
+- T-datacenter-agent-on-reference-design: Datacenter agent helper on reference design (decision gate)
+- T-test-inbox-cleanup: Tests must clear inbox on exit (bug back — 127 unread)
+- done: T-test-inbox-cleanup — conftest start-sweep fix, commit 6323f53f
+
+## In-flight: T-test-inbox-cleanup CLOSED (6323f53f); sprint-batch continuing with T-cc-log-stop-hook-wire next
+- done: T-cc-log-stop-hook-wire — cc_log_stop_hook.py, commit 8a097f2c
+
+## In-flight: T-cc-log-stop-hook-wire CLOSED (8a097f2c); D-cc-log-logcontrol auto-rolled up; sprint-batch continuing with T-datacenter-agent-on-reference-design next
+- done: T-datacenter-agent-on-reference-design — no-op/by-design; two separate concerns
+
+## In-flight: T-datacenter-agent-on-reference-design CLOSED (by-design, no code); sprint-batch continuing with T-lab-migration-to-agent-datacenter (L) next
+
+## Session close: 2026-05-05c
+Done: Closed 3 sprint-batch tickets (T-test-inbox-cleanup conftest start-sweep fix 6323f53f; T-cc-log-stop-hook-wire cc_log_stop_hook.py 8a097f2c; T-datacenter-agent-on-reference-design by-design no-code). Committed decision rollups for D-cc-log-logcontrol + D-skills-portability. T-lab-migration phase 1: 13 non-Igor modules copied to agent_datacenter/lab/claudecode/, pyproject.toml updated, 374 tests pass, pushed bbb3aa8.
+Next: T-lab-migration phase 2 — create importlib shims in TheIgors/lab/claudecode/ for the 13 moved modules; update CC_WORKFLOW_TOOLS in .bashrc to agent_datacenter/lab/claudecode/; verify TheIgors tests pass with new shims.
+
+## In-flight: T-lab-migration phase 1 DONE (bbb3aa8) — phase 2 (shim cutover) pending next session.
+
+✅ CLOSED
+Closed: 2026-05-06T09:54:42-06:00
+

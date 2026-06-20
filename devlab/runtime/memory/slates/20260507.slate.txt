@@ -1,0 +1,32 @@
+# Slate 2026-05-07
+
+## Done today
+- T-swarm-web-tab-ui — tmux attribution delivery from channel tabs (286e7bc, ADC)
+- T-swarm-via-home-web-server — epic closed, all 7 areas shipped
+- T-closed-ticket-commit-audit — 322/1062 flagged, pre-T-id convention, report in slate
+- T-migrate-gh-discussions-to-datacenter — Discussions enabled on ADC, day-close skill updated
+- T-gh-issue-routing-by-repo — _gh_repo_for() + --repo flag + 14 tests (4b5a09c5, TheIgors)
+- T-cc-palace-schema-design — palace_schema.md written, gates T-adc-summarizer-device
+- T-cc-skills-triage — manifest updated; 27 cross-machine, 4 igor-internal recorded
+- T-slate-done-first-ordering — day-close step 3 updated, Done section first on close
+- T-adc-summarizer-device — SummarizerDevice built, 21 tests, commit 57d7f01
+- T-db-proxy-igor-canonical — db_proxy canonical in agent_datacenter.db; UC + Igor are shims
+- T-slow-query-dedicated-log — lazy RotatingFileHandler → slow_queries.log on first slow query
+- T-adc-db-module-rename — renamed db.py→db_proxy.py, both shims point to agent_datacenter.db_proxy
+- T-console-log-filehandler — DailyConsoleFileHandler replaces tmux pipe-pane
+- T-twm-context-timeout — TCP probe + per-test timeout overrides
+- T-silent-excepts-logging — 50 silent excepts fixed across 22 files
+- T-ticket-title-prefix-and-dates — [status] prefix in all titles; backfill-dates 272 tickets
+
+## Notes for next session
+- agent_datacenter is the portable erector set; Igor now only has cognition+memory
+- Three test files re-enabled (60 tests green) after module relocations
+- T-igor-channels-relocate is the final cleanup from network/ deletion
+- Phase 5 ADC work: cc_mcp_server.py deprecated (closed 2026-05-07)
+- Two design decisions filed 2026-05-07 late: D-palace-session-memory, D-palace-flat-tags (5 tickets spawned, pending sprint)
+
+## Session close: 2026-05-07 evening
+**Done:** 16 tickets closed (9 infrastructure + 7 audit/doc/skills); Phase 5 ADC marked complete; palace schema finalized; SummarizerDevice shipped.
+**Next:** T-cc-walk-11 through T-cc-walk-20 Igor second walk batch (filing pending); palace bootstrapping (T-adc-palace-bootstrap, etc.); T-adc-summarizer-device gates cleared.
+
+✅ CLOSED

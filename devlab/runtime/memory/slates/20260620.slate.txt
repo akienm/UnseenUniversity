@@ -1,0 +1,4 @@
+
+## In-flight: Session done, at 100% ctx. Fleet KILLED clean (web kill-all button under-killed; ticketed T-web-kill-all-button-broken). All durable: cutover #1-5 + DS free inference (6659e275) committed; 4 tickets committed (f9b59cdc). NEXT: relaunch fleet clean on new code (ground_loop+granny+1 DS) — see slate FLEET DOWN section.
+- T-slate-location-canonical-devlab: BUG slates write to ~/.unseen_university/claudecode not devlab/runtime/memory/slates (filed 06-20)
+- T-slate-location-canonical-devlab filed; lab/claudecode path-sweep COMPLETE (0 refs, awaiting_validation); day-close 06-19 done (Discussion #18, palace rollup). NOT deleting old slates: target dir empty (0 imported) + skills still write old path → deletion would lose live non-git-backed data.

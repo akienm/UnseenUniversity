@@ -1,0 +1,80 @@
+# Slate 2026-05-06
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+- T-sqlite-guard-igor — SQLite import guard for wild_igor/igor — raise on any sqlite3 use (Guard installed in wild_igor/igor/__init__.py — raises on sqlite3.connect(); ebook_reader + learner fixed to use real_sq)
+- T-capability-map-refresh — Re-verify and update capability_map.md — stale 8+ days (§1/§2/§3/§4 re-verified; P1 fixed, distillation fixed, all prior in_progress items closed, sprint-ready list updated)
+- T-word-graph-boot-unbound — Fix UnboundLocalError on _boot_habits in word graph init (_boot_habits=[] init before conditional — ba32e754)
+- T-sqlite-placeholder-sweep — Replace SQLite ? params with %s across 11 igor files (51 ? → %s replacements across 11 files — 0236d93a)
+- T-pipeline-cloud-routing-fix — CLOSED: pipeline LLM calls missing is_user_turn — Ollama stall on web turns (Fixed: is_user_turn=True in LLMPeerAdvisor (interactive level) and LLMVoiceActor; MSG|ch= CSB filter added. Commit b0404)
+- T-pipeline-console-visibility — pipeline inference: cursor indicator + prompt/response on console (on_tier threaded through pipeline to LLMPeerAdvisor and LLMVoiceActor; dim console prints show prompt+response head in t)
+- T-twm-leap-sql-placeholder — twm_leap: ? placeholder syntax caused Postgres errors on boot (Fixed in 0236d93a: replaced ? with %s at twm_leap.py:89,109. Part of 11-file SQLite placeholder sweep.)
+- T-discord-uc-routing-verify — Make Discord go — bidirectional, 20-message no-drop acceptance (Discord reply delivery wired: main.py delivers LLM responses back to originating Discord channel_id; emit_channels.Disco)
+- T-sql-placeholder-sweep-2 — CLOSED: ? placeholder sweep — 10 files missed by 0236d93a (Fixed in 5ffd2fb3: goal_graph, persistent_relationships, pr_accretion, self_inspect, sleep_consolidation, replay, termin)
+- T-rackmount-test-object — Rackmount test object — simulated/real rack for shim+tool unit testing (RackTestDevice+RackTestShim: SIMULATED/REAL modes, call recording, failure injection, assertion helpers, 127 contract+un)
+- T-on-tier-unbound — fix _on_tier UnboundLocalError silently breaking all turns (moved _on_tier def before pipeline usage; fixes all-turns error fallback)
+- T-igor-narrative-turn-log — Narrative turn log — per-turn human-readable cognition record (narrative_turn.log + log_cascade_event/log_memory_retrieval in forensic_logger, wired into cascade/cortex/pipeline)
+- T-igor-twm-salience-gate — TWM salience gate in cortex.search — filter subthreshold observations (salience gate added in _get_context_anchors(); TWM obs with salience < max(0.3, attractor_weight*0.5) excluded from BFS )
+## Day-close summary 2026-05-05
+
+Audit: 1363 tests pass (1 pre-existing SQLite failure); 59 silent excepts pre-existing; wiring OK; cap-map stale (8d). GitHub sync: 2/5 tickets pushed (3 transient errors).
+
+Moved forward: T-lab-migration phase 1 complete — 13 non-Igor modules (cc_queue, cc_inbox, session_manager, ts_format, etc.) copied to agent_datacenter/lab/claudecode/, pyproject.toml updated, 374 agent_datacenter tests pass, committed bbb3aa8. T-test-inbox-cleanup, T-cc-log-stop-hook-wire, T-datacenter-agent-on-reference-design all closed. Decision rollups committed and pushed (f10e9dfe).
+
+Next session: T-lab-migration phase 2 — create importlib shims in TheIgors/lab/claudecode/ for the 13 moved modules; update CC_WORKFLOW_TOOLS to agent_datacenter/lab/claudecode/; verify TheIgors tests pass with new shims.
+
+✅ CLOSED — 2026-05-05
+
+## Notes
+2026-05-06: No work parked. All tickets are fair game including Igor coding. Blocked items are blocked on Akien only (remote access, domain purchase). Igor coding is cleared to proceed.
+- T-sqlite-guard-igor: SQLite import guard
+- done: T-sqlite-guard-igor — SQLite guard installed, 2 callers fixed
+
+## In-flight: T-sqlite-guard-igor CLOSED — now continuing sprint-batch (17 tickets, starting T-capability-map-refresh)
+- T-capability-map-refresh: Re-verify capability_map.md
+- done: T-capability-map-refresh — capability_map.md re-verified and updated
+- done: T-pipeline-cloud-routing-fix — is_user_turn fix in LLMPeerAdvisor+LLMVoiceActor; CSB echo filter (b0404ad4)
+- ad hoc: T-pipeline-console-visibility — filed, pending
+- T-pipeline-console-visibility: cursor indicator + prompt/response on console
+- done: T-pipeline-console-visibility — 5a8e195b
+- T-twm-leap-sql-placeholder: CLOSED: twm_leap ? placeholder (retroactive)
+- T-discord-uc-routing-verify: Make Discord go — bidirectional, 20-msg no-drop
+- T-rackmount-test-object: Rackmount test object — simulated/real rack for shim+tool unit testing
+- done: T-discord-uc-routing-verify — Discord reply delivery + ? sweep
+- done: T-rackmount-test-object — RackTestDevice+RackTestShim with SIMULATED/REAL modes and instrumentation
+- D-igor-cognition-noise-2026-05-06: Igor cognition noise + narrative visibility — T-igor-narrative-turn-log, T-igor-twm-salience-gate, T-igor-attractor-first-traversal, T-igor-task-set-short-ttl
+- T-igor-narrative-turn-log (in progress)
+- done: T-igor-narrative-turn-log — narrative_turn.log: per-turn RETRIEVED/CASCADE/VOICE/SNAPSHOT trace
+
+## In-flight: T-igor-twm-salience-gate next (T-igor-narrative-turn-log closed, T-igor-task-set-short-ttl also unblocked)
+- done: T-igor-twm-salience-gate — salience gate in _get_context_anchors()
+- done: T-igor-task-set-short-ttl — TASK_SET upsert + 600s TTL in main.py
+- done: T-igor-attractor-first-traversal — BFS seeds from TWM attractor, not CP/ID roots
+- D-adc-migration-2026-05-06: Igor infrastructure migration — T-adc-web-server-build, T-igor-uc-launch-remove, T-igor-web-dir-remove, T-adc-discord-phase5, T-igor-network-remove, T-igor-config-paths-audit
+- D-adc-migration-2026-05-06: Igor infrastructure migration — T-adc-web-server-build, T-igor-uc-launch-remove, T-igor-web-dir-remove, T-adc-discord-phase5, T-igor-network-remove, T-igor-config-paths-audit
+- done: T-adc-web-server-build — web server live in agent_datacenter, old stopped
+- done: T-igor-uc-launch-remove — Igor no longer launches UC server
+- done: T-igor-web-dir-remove — uc_client admin wiring removed; web_server send path stays
+
+## In-flight: Migration sprint — T-adc-discord-phase5 next (Discord bot relocation to agent_datacenter device); T-igor-network-remove + T-igor-config-paths-audit gated behind it
+- done: T-adc-discord-phase5 — discord bot relocated to agent_datacenter (bot.py, device Phase 5)
+- done: T-igor-network-remove — network/ deleted, Discord/Gmail inbound disabled pending ADC IPC
+- T-igor-channels-relocate: relocate network/channels+proxy+system_proxy
+- done: T-igor-config-paths-audit — all 7 config/paths files stay in Igor; logging_setup.py cleaned
+- T-igor-channels-relocate claimed
+- done: T-igor-channels-relocate — all 3 modules relocated; 60 tests re-enabled
+
+## In-flight: Migration sprint D-adc-migration-2026-05-06 COMPLETE — all 8 tickets closed; 4476 TheIgors tests green
+
+✅ CLOSED — 2026-05-06
+
+**Summary:** Infrastructure migration sprint complete. Moved Discord bot, channels, proxy, system_proxy from Igor to agent_datacenter. Removed 1856-line network/ directory. Completed cognition noise fixes (narrative log, TWM salience gate, task TTL, attractor-first BFS). All 12 tickets (4 cognition + 8 infrastructure) closed. TheIgors tests passing (60 previously-skipped tests re-enabled).

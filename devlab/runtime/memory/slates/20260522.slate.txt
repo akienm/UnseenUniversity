@@ -1,0 +1,36 @@
+# Slate 2026-05-22
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+- T-boredom-window-shrink — BoredomDetector WINDOW_MINS 20→5 min (BoredomDetector WINDOW_MINS 20→5 in push_sources.py; boredom fires 4x faster when idle)
+- T-igor-recurring-old-string-not-found — Recurring pe_chain failure: old_string_not_found (pattern was test pollution — infra.pe_failure_log count inflated by test_pe_chain_inertia_gate.py calling _pe_escalate w)
+- T-pe-failure-log-test-isolation — Mock infra.pe_failure_log in escalate tests to prevent DB contamination (added autouse fixture to TestEscalateGateIntegration that stubs psycopg2.connect; DB counts no longer change during test)
+- T-complete-dsn-hardcode-migration-50-remai — Complete DSN hardcode migration: ~50 remaining choose_a_password refs in wild_igor/ and lab/ (replaced all choose_a_password fallbacks with os.environ['IGOR_HOME_DB_URL']/paths().home_db_url; 52 files in wild_igor/)
+- T-consequence-igor-request-not-claim — Consequence check: Igor request model — no more direct claiming (outcome: clear. LegacyDirectClaimError appeared 2026-05-21 as predicted (old engrams hitting new path); no instances tod)
+- GH-241 — BG meta-habits: basal ganglia rules should be the habit graph tree, not Python (design-pointer-not-build-now: ticket body explicitly says NOT NOW. Closing to prevent repeated spurious adoption. Re-ope)
+- T-igor-explicit-task-assignment — Igor only works tickets explicitly dispatched by CC (adopt_next_ticket + adopt_top_queue_ticket raise LegacyDirectClaimError; launch_next_worker returns dispatch hint; PROC_)
+## Day-close for 2026-05-21: complete 15:48 UTC
+
+## Session close: 2026-05-22a
+Done: day-close 2026-05-21 — audit, callmap regen, Discussion #6, palace node, docs pushed
+Next: T-igor-recurring-old-string-not-found (Igor SCOPE_GUARD loop on thalamus.py), T-watch-problems-test-isolation, T-boredom-window-shrink
+
+## In-flight: day-close 2026-05-21 complete; today's sprint TBD — in-progress tickets carried forward
+- done: T-boredom-window-shrink — WINDOW_MINS 20→5 min in push_sources.py
+- done: T-igor-recurring-old-string-not-found — root cause: test contamination; infra.pe_failure_log writes in tests without DB mock
+- T-pe-failure-log-test-isolation: Mock infra.pe_failure_log in escalate tests
+- done: T-pe-failure-log-test-isolation — psycopg2 mock in escalate tests; 417c6fa7
+- done: T-complete-dsn-hardcode-migration-50-remai — DSN fallback removed from 52 files; d3716e3b
+- done: T-consequence-igor-request-not-claim — LegacyDirectClaimError transient, cleared by 2026-05-22
+- T-igor-explicit-task-assignment: Igor only works tickets explicitly dispatched by CC
+
+## In-flight: T-igor-explicit-task-assignment closed — dispatch gate complete: adopt_next_ticket + adopt_top_queue_ticket raise LegacyDirectClaimError, launch_next_worker returns dispatch hint, PROC_QUEUE_DRAIN removed, 46 tests green, pushed

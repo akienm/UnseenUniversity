@@ -1,0 +1,127 @@
+# Slate 2026-05-03
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+- T-cc-queue-claim-as-flag — cc_queue.py claim — add --as <worker> flag for explicit claim-worker selection (Shipped commit bc3cbfd5. cc_queue.py claim now accepts --as <worker> flag (default 'igor' preserves cert_worker_freeze s)
+- T-callmap-tool — callmap.py — reverse callgraph for designated API functions; audit-check-wired (Shipped commit ee03c1a5. callmap.py + lab/docs/callmap.md (10458 lines, 741 APIs, 6410 caller refs) + 13 unit tests + au)
+- T-anticipation-slice2-pursuit-emit — Anticipation slice 2 — Pursuit adoption emits anticipation onto bus (Slice 2 shipped (commit pending). pursuits.py spawn pushes Anticipation onto bus + stashes id; evaluate_completion settl)
+- T-anticipation-slice3-action-selection-read — Anticipation slice 3 — basal_ganglia / action selection reads bus.top_k to bias toward high-want (Slice 3 shipped. anticipator.anticipation_bias_for_referent helper + basal_ganglia step 2c bias-application for pursuit_)
+- T-cc-queue-write-race — queue.json writes — atomic-rename + advisory lock; one observed loss 2026-05-02 (Stage A shipped. Public load_tasks/save_tasks API + 3 bypass-writers refactored (cert_worker_freeze, worker_foreman, ops)
+- T-planning-as-waypoint-graph — Planning as graph construction — intermediate waypoint nodes with gap-closing structure (Shipped. wild_igor/igor/cognition/planning.py with plan_construct (DAG-validated bulk creation, completion_predicate req)
+- T-gmail-flow-layer — Gmail flow objects — send, read, archive (Workflow-first flow layer shipped. swadl_flows/gmail.py with send_email/read_inbox/archive routing; injected pages allow)
+- T-ticket-status-prefix-system — DESIGNED: Ticket status prefixes — CLOSED: / NEEDS DESIGN: / DESIGNED: / NEW: in skill workflows (retitle cmd in cc_queue.py + ticket_prefix_refit.py one-shot script; 30 open tickets refitted; /ticket + /sprint-batch s)
+## Notes
+
+- filed: T-cc-queue-write-race (S, must-land-before-audit-review) — atomic-rename + fcntl.flock advisory lock for cc_queue.py load-modify-save. Surfaced from one observed loss 2026-05-02 (T-datacenter-readme-build-your-own-igor disappeared mid-sprint). Akien call: complete before audit-review starts so the audit isn't writing to a clobber-prone queue.
+- done: T-audit-fixes-anticipator-igorbase-envsync-exempt (XS) — 76aac67f. 2 audit findings: Anticipator/AnticipationBus inherit IgorBase + super().__init__(); env_sync.py added to no-hardcoded-instance-refs exempt list (mirrors config.py rationale). All 5 registered audits PASS.
+- done: T-cc-queue-claim-as-flag (S) — bc3cbfd5. `cc_queue.py claim --as <worker>` flag. Default 'igor' preserves cert_worker_freeze. CC uses --as claude. 4 subprocess behavior tests replace source-line literals. Suite 4325 → 4326.
+
+## Long sprint — final tally
+
+| # | Ticket | Result | Commit |
+|---|---|---|---|
+| 1 | T-callmap-tool (M) | done | ee03c1a5 |
+| 2 | T-anticipation-slice2-pursuit-emit (S) | done | e8a8e417 |
+| 3 | T-anticipation-slice3-action-selection-read (M) | done | e9a39844 |
+| 4 | T-cc-queue-write-race stage A (L) | done | d88aa343 |
+| 5 | T-planning-as-waypoint-graph (M) | done | 70026a24 |
+| 6 | T-gmail-flow-layer (M, with SWADL pre-req) | done | 59931ffc + swadl@2347aa2 |
+
+**Suite:** 4326 → 4384 passing (+58 net tests; 6 new test files)
+**Filed downstream:** T-cc-queue-drop-json-stage-b (L,P2), T-gmail-pages-build-to-flow-spec (M,P3), T-gmail-flow-integration-test (S,P3)
+
+**Surfaced (need Akien call before sprinting):**
+- T-inference-migrate-igor-to-datacenter-device — re-sized M → L; staged 3-stage migration plan added to ticket; HIGH-inertia (Igor cognition path) deferred per slate strategic shift
+- T-uc-cert-domain-migration (M) — needs Akien to register theigors.dev + provide registrar API creds before CC scripting
+- T-uc-gmail-google (L) — large; not yet read deeply
+- T-retire-legacy-direct-reasoner-path (L, P1) — large migration; not yet read deeply
+- T-concurrent-ne-spawn (L, P1) — multi-COA design heavy
+
+**Skipped (explicit Akien instruction):**
+- All XL epics (T-capability-extraction-from-igor P1, T-igor-programs-himself P2, T-igor-as-user-epic P3) — umbrellas
+
+**Phase 1 (pre-audit) state:** 6 P-tier P1+P2+P3 tickets remain (mostly L/XL), all shapes that need Akien input or HIGH-inertia stamps. Audit-review (Phase 2) can begin against the cleaner queue.
+
+- T-agent-datacenter-workspaces (M): workspace dirs for Claude + Igor
+- T-ticket-status-prefix-system (S): explore status prefix visibility in skills
+
+## In-flight
+Two ad-hoc tickets filed (workspace + status prefixes); awaiting next direction.
+- done: T-ticket-status-prefix-system — status prefix system + refit 30 open tickets (d5060dd7)
+- T-minion-feature-branch-workspaces (M, P2): per-minion clone+branch+merge-back
+
+## D-capability-protocol-2026-05-03 — capability-protocol family (Akien: "this is a big lever")
+- Palace rules written: theigors/rules/capability-protocol{,/vocabulary,/two-sided-build}
+- T-cc1-test-minion (M, P1): haiku skill executor for CC-side regression
+- T-mcp-db-query-capability (M, P1): db query/dispatch via MCP + skill consumer migration
+- T-mcp-igor-cognition-debug-capability (M, P2): cognition debug claim/status/release via MCP + skill consumer
+- T-sprint-step0-capability-delegate (S, P2): sprint Step 0 — surface delegate option from manifest
+- T-sprint-stepn-teach-igor (S, P2): sprint Step N — teach-Igor palace deposit (default skip)
+- T-audit-ticket-two-sided-build-check (S, P2): enforce two-sided-build at filing time
+
+## In-flight
+Capability-protocol family filed (rules + 6 tickets, decision D-capability-protocol-2026-05-03). Awaiting next direction — likely sprint T-cc1-test-minion first as foundation.
+
+## Discovery: self-compact via tmux send-keys (two-step)
+Akien cracked the self-compact technique:
+  tmux send-keys -t claude-main "/compact preserve: ..."
+  tmux send-keys -t claude-main ENTER
+Must be TWO calls — single-call variants do not fire /compact reliably.
+Saved to feedback_self_compact_via_tmux.md. Big lever — unlocks autonomous compact at clean boundaries.
+
+## In-flight: self-compact technique captured to memory + slate. Capability-protocol family awaiting sprint direction (CC.1 first natural).
+- done: T-audit-ticket-two-sided-build-check — Check 16 added (skill master 3bc3b30)
+- done: T-sprint-stepn-teach-igor — Step 7.5/6.5 added (master 2334236)
+- done: T-sprint-step0-capability-delegate — Step 1.5/0.5 added (master cbc6ac3)
+
+## Decision: D-inference-routing-fix-2026-05-03
+Akien diagnosed Igor's "Both cloud and local inference are unavailable" misreport. Real underlying issues:
+- Ollama timed out at 90s (rule violation: NO timeouts on local — repeated 5+ times now, finally palace-ruled)
+- Cloud failed with sqlite3 "no such table: config" — caller hidden, real bug
+- User turn went local-first (D254 says cloud-first) — routing inversion
+- "Both unavailable" message hides all of the above
+
+Palace rule written: theigors/rules/local-inference-no-timeouts (load-bearing brain-modeled goal).
+Memory file: feedback_no_local_inference_timeouts.md (READ EARLY flag).
+
+Tickets filed (all P1):
+- T-no-local-inference-timeouts (M) — remove sub-hour timeouts, inline rule pointers
+- T-user-turn-cloud-first-routing (M) — route user turns cloud-first per D254
+- T-inference-misreport-fix (S) — fix misleading message + diagnostic format bugs
+- T-sqlite-config-hunt (M) — debug-trace the bare 'config' SQLite caller, then file migration follow-up
+
+## In-flight: Igor batch (CC.1, MCP db-query, MCP cognition-debug) paused at orient stage. New inference-routing-fix decision (4 tickets) takes precedence per Akien diagnosis. Awaiting direction on order: (a) sprint inference fixes first, (b) finish igor batch first, (c) interleave.
+
+
+## MCP transport broken (CC ↔ Igor)
+Discovered while delegating per minions-first rule. Local channel_send → conn reset; yoga9i → timeout. utility_closet up (PID 2197379, ports 8080+8082) so it's transport-side. T-mcp-igor-unreachable-from-cc filed (P2). Sprint falls back to inline for all inference + igor batch tickets — minions-first applied where possible (here: not possible, evidenced by attempt + failure).
+- done: T-inference-misreport-fix — gateway misreport fixed, distinct failure modes (ed3ae6bb)
+- done: T-incidental-get-logger-typo — retroactive 1-char typo fix in inference_gateway.py:553 (ed3ae6bb)
+- done: T-no-local-inference-timeouts — 5 sites updated to hour-scale (c112e23f)
+- done: T-user-turn-cloud-first-routing — verified routing correct, contract locked (430d0ce2). Filed T-is-user-turn-flag-coverage for the upstream gap.
+- T-savestate-skill-consolidation: Consolidate /savestate and /savestateauto skills
+
+## In-flight: Auditing is_user_turn flag coverage for gateway.reason() call sites; gap found at impulse path (main.py:5879 doesn't pass author). Design phase in progress.
+
+---
+
+## Day-close summary — 2026-05-03
+
+**Shipped (13 tickets):** T-callmap-tool, T-anticipation-slice2-pursuit-emit, T-anticipation-slice3-action-selection-read, T-cc-queue-write-race (stage A), T-planning-as-waypoint-graph, T-gmail-flow-layer, T-cc-queue-claim-as-flag, T-audit-fixes-anticipator-igorbase-envsync-exempt, T-ticket-status-prefix-system, T-inference-misreport-fix, T-incidental-get-logger-typo, T-no-local-inference-timeouts, T-user-turn-cloud-first-routing.
+
+**Decisions logged:** D-capability-protocol-2026-05-03 (capability-protocol family — 6 tickets), D-inference-routing-fix-2026-05-03 (inference routing — 4 tickets).
+
+**Discovery:** self-compact via tmux send-keys (two-step). Locked into feedback_self_compact_via_tmux.md.
+
+**Filed (still open):** T-cc-queue-drop-json-stage-b, T-gmail-pages-build-to-flow-spec, T-gmail-flow-integration-test, T-agent-datacenter-workspaces, T-minion-feature-branch-workspaces, T-cc1-test-minion, T-mcp-db-query-capability, T-mcp-igor-cognition-debug-capability, T-sprint-step0-capability-delegate (DONE), T-sprint-stepn-teach-igor (DONE), T-audit-ticket-two-sided-build-check (DONE), T-sqlite-config-hunt (already done — found in queue), T-is-user-turn-flag-coverage, T-mcp-igor-unreachable-from-cc, T-savestate-skill-consolidation.
+
+**In-flight at close:** Audit of `is_user_turn` flag coverage for `gateway.reason()` call sites — gap identified at main.py:5879 (impulse path doesn't pass author). Design phase complete; awaiting Akien approval to implement Option 1 (thread author through impulse call chain).
+
+✅ CLOSED 2026-05-04 09:30

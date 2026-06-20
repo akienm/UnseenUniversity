@@ -1,0 +1,47 @@
+# Slate 2026-05-20
+
+## Done today
+- T-igor-queue-next-model — Enforce cmd_next model for Igor: no direct ticket picking (superseded by D-igor-request-not-claim-2026-05-20 — scope split into adopt_next_ticket migration + legacy-claim-error)
+- T-legacy-direct-claim-error — LegacyDirectClaimError: cmd_claim raises when called without cmd_next context (LegacyDirectClaimError env-flag arm in adopt_next_ticket + 3 tests (strict-claim, channel-post, env-flag-before-chain); incidental Cortex isolation fix retroactively closed as T-test-launch-cortex-isolation)
+- T-test-launch-cortex-isolation — TestLaunchNextWorkerDispatch: mock Cortex in _run_launch to avoid live-DB sensitivity (Added Cortex+MemoryType mocks to _run_launch in commit 679e771f — routing tests now hermetic to DB state)
+- T-decided-always-verify — /decided skill: always file verification ticket when behavioral hypothesis present (updated Step 5.5 skip condition + gate logic; S-only+hypothesis batches now get a consequence-check ticket gated on last)
+- T-ticket-difficulty-schema — Add target_difficulty field to ticket schema (1-5 Apprentice→Teacher) (DIFFICULTY_TIERS constant + target_difficulty field (1-5 Apprentice→Teacher): default=1, validates on add, displays tier)
+- T-queue-next-difficulty — cc_queue.py next --max-difficulty=N filters by target_difficulty (next_ticket_id_for_worker gains max_difficulty param; cmd_next parses --max-difficulty=N. 9 tests. Commits ffbe2c6 + 6b2)
+- T-adopt-next-uses-cmd-next — adopt_next_ticket delegates to cmd_next --max-difficulty=1 (adopt_next_ticket now calls cmd_next --worker igor --max-difficulty=1 via subprocess. Empty result → early return. 3 tests)
+- T-igor-difficulty-cap — Wire IGOR_MAX_DIFFICULTY=1 into daemon and igor.switches.cfg (IGOR_MAX_DIFFICULTY=1 in switches.cfg; worker_daemon.sh reads flag and passes --max-difficulty to cc_queue.py next)
+- T-consequence-difficulty-tiers — Consequence check: difficulty tier routing (retroactive — D-target-difficulty-tiers) (Observed all 3 effects. Effect 1 OCCURRED — T-test-ticket picked up; Effect 2 CLEAR — T-adopt-next-uses-cmd-next shipped; Effect 3 STRUCTURAL — no auto higher-tier consumer, CC manual)
+- T-claude-1 — zombie ghost ticket permanently closed (no description, no work ever defined, cancelled 5+ times since May 4; resurrection root cause: worker_foreman/save_tasks race overwrites concurrent setstatus; bug filed as T-worker-foreman-save-tasks-race-stale-bul)
+- T-test-scraps-gate — Wire Scraps gate into queue transitions (already shipped; closing sprint)
+- T-test-ticket — smoke test of done-slate action
+- T-skill-telemetry-schema — TypedDict schema (SkillContract, ForgotFlag, ImprovementMetric, ViolationRecord, OutcomeRecord) + palace node at theigors/skill-telemetry/schema
+- T-goal-factory-factory-edit — factory-factory palace node written at palace.shared.akien.goals.factory-factory; ADC summary updated with factory-factory framing
+- T-experts-md-spec — EXPERTS.md written for ADC (6 experts) and TheIgors (11 experts including Igor-specific cognitive/ML/safety roles)
+- T-audit-feedback-build — /audit-feedback skill: 5-property heuristic checker (self-verification, observability, failure-surface, context-feedback, learning-preservation); run check <name> + check-all
+- T-skill-telemetry-contracts — 15 skill contracts written to adc.palace (decided, sprint-ticket, sprint-batch, audit-ticket, audit-design, context-load, day-close, savestate, autocompact, ticket, audit-expert, audit-feedback, audit-day, readinbox, note)
+- T-skill-telemetry-logger — append_violation/append_outcome/rollup functions in skill_telemetry.py; top_violations/skill_outcome_trend/monthly_rollup; 6 logger tests green
+- T-audit-expert-load-experts-md — audit-expert/run: load_experts(project_root) + select_experts(); falls back to default 11-expert list when EXPERTS.md absent; 9 tests; SKILL.md Step 2 updated
+- T-skill-telemetry-rollup — context-load violation-summary action: reads top forget-flag violations from JSONL, surfaces at session start; graceful degradation; 4 tests; SKILL.md Step 5.9 added
+- T-audit-ticket-integrate-feedback — audit-ticket SKILL.md Check 17: skill feedback-loop check; scans Affected files for skills/<name>/ and runs audit-feedback; advisory (not auto-blocking); [feedback-loop] finding tag
+
+## Notes
+
+## In-flight
+NONE — sprint-batch complete (21 tickets across 4 decisions); day-close complete
+
+## Decisions filed
+- D-igor-request-not-claim-2026-05-20: Igor request model — T-adopt-next-uses-cmd-next, T-legacy-direct-claim-error, T-decided-always-verify, T-consequence-difficulty-tiers, T-consequence-igor-request-not-claim
+- D-skill-telemetry-2026-05-20: Skill telemetry (forget-flags + metrics) — T-skill-telemetry-schema, T-skill-telemetry-contracts, T-skill-telemetry-logger, T-skill-telemetry-rollup, T-consequence-skill-telemetry
+- D-goal-factory-factory-2026-05-20: factory-factory goal edit — T-goal-factory-factory-edit
+- D-experts-per-project-2026-05-20: per-project EXPERTS.md — T-experts-md-spec, T-audit-expert-load-experts-md, T-consequence-experts-per-project
+
+✅ CLOSED
+
+## In-flight: T-consequence-skill-telemetry closed BLOCKED/ABSENT: upstream skill_telemetry.py never committed; recovery ticket T-rebuild-skill-telemetry-py filed at sprint priority
+
+## Day-close for 2026-05-20: complete 03:02 UTC
+
+## Session close: 2026-05-20b
+Done: sprint-batch completed 9 tickets (skill telemetry system, difficulty tiers, per-project EXPERTS.md, audit-feedback, factory-factory). Day-close complete: slate closed, audit run, docs committed, GitHub Discussion #5, palace.days.20260520 written, tickets pushed GH#767-770.
+Next: T-consequence-skill-telemetry (gated 2026-06-19), T-consequence-experts-per-project (gated 2026-06-03), T-consequence-igor-request-not-claim (review Igor autonomous operation)
+
+## In-flight: NONE — day-close complete, all commits pushed

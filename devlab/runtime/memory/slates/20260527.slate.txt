@@ -1,0 +1,45 @@
+# Slate 2026-05-27
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+- T-concept-skill — Create /concept skill — collaborative reference material authoring (Created /concept skill at lab/claudecode/cc_skills/concept/SKILL.md + ~/.claude/skills/concept/SKILL.md. Supports /conce)
+- T-sorted-concept-links — Add concept_links field to /sorted decisions and palace nodes (Added concept_links as Q4 in step 2.6 of /sorted and /decided. Decision record template updated with ## Concept Links se)
+- T-concept-palace-seed — Seed palace.concepts.* with foundational architecture concepts (Seeded 4 foundational concepts to adc.palace via /concept flow: C-graph-trees-small-compute, C-consult-session, C-goals-)
+- T-tag-vocabulary-connective-tissue — Standardize tags across palace nodes and file headers (Defined C-tag-vocabulary concept (palace.concepts.tag-vocabulary). Updated 14 palace.goals.* nodes and 5 palace.concepts)
+## In-flight: NONE — concept layer design completed, 5 tickets filed to queue
+
+## Session close: 2026-05-26—2026-05-27
+Done: Design completed for palace.concepts.* layer as peer to goals, with tags as connective tissue replacing explicit links. /concept skill designed (collaborative accord-based concept authoring). 5 tickets filed: T-concept-skill (M), T-concept-palace-seed (M, gated), T-sorted-concept-links (S), T-tag-vocabulary-connective-tissue (M, gated), T-consequence-concept-layer-and-tags (S, gated 2026-06-09). All synced to GitHub (#797-801) and palace.
+Next: Sprint T-concept-skill to unblock palace.concepts seeding and tag vocabulary work.
+- done: T-concept-skill — /concept skill written, ungates T-sorted-concept-links + T-concept-palace-seed + T-tag-vocabulary
+- done: T-sorted-concept-links — Q4 added to /sorted + /decided
+- done: T-concept-palace-seed — 4 concepts written to palace.concepts.*
+- done: T-tag-vocabulary-connective-tissue — tag vocab defined + all nodes tagged + source files tagged
+
+## In-flight: NONE — all concept layer tickets completed; GH-209 and GH-210 blocked on prerequisites or design
+- done: T-scheduler-result-logging — log_anomaly on error-shaped scheduler results + stale-reset warning + NE-empty tick context
+- done: T-cognition-health-metrics — record_metric() on Cortex; ne_cycle_result/ltm_surfaced_count/arousal_gate_suppression
+- done: T-ne-desperation-pull-ltm — force_push() on MemorySurfacer; NE-empty desperation pull
+- done: T-confidence-surface-audit — SQL audit check for confidence < 0 memories registered in audit_checks.json
+- done: T-igor-consolidation-theme-palace — upsert theigors/themes/* nodes for importance >= 0.75
+- done: T-igor-memory-decay-dreaming — _archive_stale_memories() in dreaming.py; soft-prune stale low-activation memories
+- done: T-watch-problems-test-isolation — test_data stamp + teardown cleanup for watch_problems rows
+- done: T-retrieval-cost-accounting — memory_search latency_ms + node_age_days; pe_chain deferred (file not in UU)
+
+## Session close: autonomous sprint 2026-05-27 → 05-28
+Done: Autonomous sprint shipped 9 tickets across cognition pipeline, observability, and search. Concept layer (4 tickets) + 8 sprint tickets: scheduler logging, cognition metrics, NE desperation pull, confidence audit, theme palace, memory decay, watch_problems test isolation, retrieval telemetry, palace decay detection, alignment guard, memory RRF search.
+Next: T-universal-llm-lineage (in-flight), T-igor-degrade-safe, T-igor-uncertainty-gated-recall, T-dreaming-wg-hebbian
+- done: T-palace-decay-detection — palace staleness SQL audit check registered (forever)
+- done: T-long-horizon-alignment-guard — alignment_guard.py + tests + wired into COA + UserInputSource
+- done: T-memory-search-rrf — RRF fusion in memory_search; _rrf_merge + _fts_search; 21 tests green
+
+✅ CLOSED

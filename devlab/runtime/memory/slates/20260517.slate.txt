@@ -1,0 +1,14 @@
+# Slate 2026-05-17
+
+## Done today
+- D-igor-cognition-research-improvements-2026-05-17: Research-driven Igor cognition improvements (9/9 tickets closed)
+  - T-igor-ne-impasse-handler, T-igor-stuck-triggers-dreaming, T-igor-twm-salience-competition, T-igor-twm-age-decay, T-igor-pec-confidence-gate, T-igor-failure-accumulator, T-igor-ne-grader-to-action, T-igor-dreaming-schema-extraction, T-igor-dreaming-outputs-actionable
+- D-librarian-peer-agent-architecture-2026-05-17: Librarian peer agent architecture (4/4 tickets closed)
+  - T-librarian-behavioral-emit (b49eecf), T-dreaming-librarian-input (8b35a19f), T-librarian-palace-confidence-gate, T-librarian-trust-hierarchy-config
+- T-librarian-igor-growth-loop — Design Librarian→Igor behavioral observation (design spec written)
+- T-test-file-ticket-metadata — Verified all 4 file_ticket metadata tests pass
+
+## In-flight
+NONE
+
+✅ CLOSED

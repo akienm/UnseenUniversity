@@ -1,0 +1,51 @@
+# Slate 2026-05-28
+
+## Done today
+- T-universal-llm-lineage — m054_llm_calls migration + dual-write log_inference_io + log_llm_io; 5 tests green
+- T-igor-degrade-safe — safe_mode.py watchdog, 15 tests green
+- T-igor-uncertainty-gated-recall — recall() + episode expansion in activate.py, 4 tests
+- T-dreaming-wg-hebbian — Hebbian edge strengthening in dreaming.py, 4 tests
+- T-deprecate-easy-repos — Archived python_diagnostic_base_class + ClaudeAndAkien on GitHub
+- T-utility-closet-string-sweep — Replaced all utility closet string refs with rack server
+- T-worker-daemon-retire-cleanup — Removed retired worker_daemon.sh launch from cc_queue.py
+- T-fix-broken-test-imports — Fixed 4 broken test files, 0 collection errors
+- T-memory-agent-write-api — Superseded by T-memory-write-path (closed)
+- T-adc-scheduling-primitive — Superseded by T-nanny-ogg-device (closed)
+- T-book-ch3-recall — recall-first process lever added to Chapter 3
+- T-book-ch4-debug — /debug skill section added to Chapter 4
+- T-book-ch5-launcher — config layout + configurable frontend shim added to Chapter 5
+- T-recall-in-skills — recall(X) gate added to sprint-ticket, context-load, sorted skills
+- T-uu-config-layout — uu.cfg.template + Igor config.cfg.template; Chapter 5 documented
+- T-memory-schema-v2 — m055 migrations: payloads JSONB + source_agent + edge_type
+- T-scraps-debug-extractor — debug_extractor.py: log window, state snapshot, stack trace
+- T-consequence-recall-tools — recall wired; empty until retrieval service ships (expected)
+- T-fix-after-action-registry-test — correct registry singleton; 9/9 green
+- T-superclaude-named-chats — named sessions hostname+yymmdd.HHMMSS + remote control
+- T-debug-skill — /debug skill: pointer resolution + Scraps + Haiku/Sonnet → structured report
+- T-uu-librarian-chat — ./uu launcher: bootstrap + Librarian channel routing + config shim
+- T-scraps-embedding-engine — embed()/embed_batch() OpenAI primary + SHA-256 fallback
+- T-granny-weatherwax-device — GrannyWeatherwaxDevice: intake + routing graph + Hebbian + escalation
+- T-librarian-edge-maintenance — edge_maintenance.py: Hebbian + backfill + EdgeMaintenanceWorker
+- T-librarian-retrieval-service — recall(X): FTS + vector + graph → RRF → Haiku synthesis; 21 tests
+- T-reader-uri-resolver — fetch_uri() + BlobCache: https/file/calibre/blob; 29 tests
+- T-levers-book-copy-edit-20260528 — minor book copy edit (ce81dfe4)
+- T-reader-summary-mode — ReaderDevice chunk_text + summary mode; 17 tests
+- T-reader-node-mode — node_extractor.py LLM extraction → node dicts; format=nodes wired
+- T-uu-root-launchers — ./igor + ./superclaude Python launchers at root; instance discovery
+- T-log-parsing-out-of-igor — ANSI codes stripped; DailyConsoleFileHandler no_color=True
+- T-context-load-path-fix — Stale palace path fixed (agent_datacenter → unseen_university); ethos node added
+
+## Notes
+- Akien back from St. Louis trip. Autonomous sprint ran 2026-05-25 → 05-28.
+- Igor coding paused for strip-down — all sprint tickets go to CC (worker=claude)
+- T-theigors-to-uu-migration (XL) deferred — scope too large; tackle incrementally
+
+## Session close: 2026-05-28
+Done: Filed 4 decisions, 18 tickets total. Book ch3/ch4/ch5 updated. Recall-in-skills wired. Memory schema v2. Granny+Nanny devices. Sprint batch 8/8 completed.
+Next: Sprint Igor-health tickets (fallback goals, NE parse fix), Granny web registration, day-close audit items.
+
+## Planned (carried forward)
+- T-igor-deferred-node-state (L) — deferred-resolution node state in inference engine
+- T-theigors-to-uu-migration (XL) — consolidate TheIgors runtime into ~/.UnseenUniversity
+
+✅ CLOSED

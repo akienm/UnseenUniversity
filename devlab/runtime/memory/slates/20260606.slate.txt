@@ -1,0 +1,91 @@
+# Slate 2026-06-06
+
+## Notes
+- T-inference-proxy-mini-rack design questions answered; ready for update + sprint
+- T-igor-deferred-node-state keep for mini-rack (Akien: ship within 24h)
+- 1M context disabled (CLAUDE_CODE_DISABLE_1M_CONTEXT=1 in bashrc — needs shell restart)
+
+## In-flight: Autonomous sprint wrap (2026-06-07 02:36 UTC)
+**Status:** 1 sprint complete.
+**Closed:** T-runtime-model-selection (L, 1080 LOC) — three-stack inference proxy with auto-selection
+**Pending:** T-unified-node-rollout in_progress (token budget low; ready for morning continuation)
+**Builder tickets ready:** 3× DickSimnel S-tier docstrings/tests (token-light work for morning)
+**Architecture:** Inference becomes invisible; metrics drive learning. No mini-rack dependency.
+## Session close (2026-06-07 02:40 UTC)
+**Done (1 ticket):** T-runtime-model-selection — Three-stack inference proxy. Protocol defined (inference_call with semantics). Stack 1: Providers (OR, Ollama, Google AI Studio, Graph Trees). Stack 2: ModelOptions with metrics. Stack 3: Rules engine (heuristic routing). Auto-selection by human/background/coding/caching flags. Return packet echoes calling context. Metrics accumulate for learning. No mini-rack dependency — works independently.
+
+**In-flight:** T-unified-node-rollout in_progress (token budget low; ready for continuation morning). Unified node schema rollout to tickets/palace/channel/reading/eval tables. Backward-compat views. Query registry deferred.
+
+**Next priority:** T-unified-node-rollout (L) OR 3× DickSimnel S-tier builder tickets (token-light).
+
+---
+
+## Planned
+- Igor safe mode recovery (urgent)
+- T-shim-foreground-spawn (S) — next sprint ticket
+- T-opus-ticket-eval (M)
+- T-igor-ne-tick-interval (M)
+
+## Ad hoc
+(none yet)
+
+## Done today
+- T-igor-ne-tick-interval — COA._ne_tick_should_yield: 30s floor breaks NARRATIVE_GAP loop; 6 tests
+- T-opus-ticket-eval — Phase 1 correlation: r=+0.362 (size confound); STOP recommendation; 18 tests
+- T-shim-foreground-spawn — BaseShim.spawn_foreground_session; sudo_relay refactored; 5 tests
+- T-shim-foreground-spawn — BaseShim: foreground-attach helper for visible terminal sessions (BaseShim.spawn_foreground_session static helper; sudo_relay refactored to use it; 5 tests)
+- T-opus-ticket-eval — Measure-first: does ticket detail correlate with build cost? Then eval Opus-written tickets (Phase 1 analysis: r=+0.362 (wrong direction, size confound); STOP — no Opus ticket pipeline until N>50 + reset data pres)
+- T-igor-ne-tick-interval — Igor NE: structural polling tick replaces unbounded spin (COA._ne_tick_should_yield: 30s hard floor via IGOR_NE_TICK_INTERVAL; breaks NARRATIVE_GAP re-fire loop; 6 tests)
+- T-consequence-hold-gate — Consequence check: /audit-ticket hold-gate enforcement (CLEAR: Check 18 in place; only pre-existing hold passes on AKIEN DECISION note; no AMENDs or bypasses in 1-day observati)
+- T-consequence-sorted-advisor — Consequence check: proactive advisor() in /sorted for L/XL tickets (PARTIAL: advisor() wired at /sorted step 3.5; gate not met (0/3 L/XL tickets post-change); no AMEND loops or cost signal)
+- T-cc-session-hostname-naming — CC session name: <hostname>.cc.0 (and .cc.1 for second instance) (constants._detect_session_name() for N-detection; granny uses hostname.cc.0 default; stop_cc_minions protects .cc.0+.cc.)
+- D-granny-dicksimnel-priority-2026-06-06: Granny first, DickSimnel second, Igor off — 8 tickets
+- D-cc-shim-assignment-model-2026-06-06: Granny bus-only; CC shim owns ack+nag+HALT — T-granny-transport-agnostic, T-cc-shim-ack-nag, T-cc-shim-priority-halt
+- T-or-balance-investigation — OR balance drain: investigate why balance is declining despite free alternatives (Root cause: GOOGLE_AI_STUDIO_API_KEY + OLLAMA_PRO_API_KEY not set — all inference falls to paid OR. Free infra fully cod)
+- T-superclaude-session-name-sync — bin/superclaude: sync tmux session name with hostname.cc.0 naming (bin/superclaude: hostname-based N-detection replaces hardcoded 'claude-main'; exports CC_TMUX_SESSION explicitly into bo)
+- T-credentials-split-structure: Split credentials by scope
+- T-superclaude-load-credentials: superclaude load credentials.cfg
+- T-superclaude-load-credentials ✅ sources igor.credentials.cfg
+- T-inference-sources-key-aliases: sources.py key name aliases
+- T-inference-sources-key-aliases ✅ key aliases added
+- T-granny-workflow-scripts: Design — Granny workflow scripts (low pri)
+- T-cc-shim-ack-nag: CC shim ack receipt + nag loop
+- T-cc-shim-ack-nag ✅ ack note + nag loop shipped
+- T-granny-e2e-dispatch-smoke: Granny e2e dispatch smoke test
+- T-granny-e2e-dispatch-smoke ✅ 8 smoke tests shipped
+- T-compact-cadence-session-resolution — Compact cadence hook: robust session name resolution (4-level session resolution (env→file→scan→slot-find); superclaude writes cc_session.txt; 9 tests)
+- T-cc-shim-priority-halt ✅ priority/HALT envelopes → _fire_interrupt(); 3x Enter + message body; 4 tests
+- T-dicksimnel-reliability-audit ✅ audit complete: 5 gaps found; 4 fix tickets filed (e2e-smoke, role-seed, double-close, max-turns-reason)
+- T-dicksimnel-e2e-smoke: DickSimnel e2e smoke test (sprint)
+- T-dicksimnel-role-seed: seed builder-role tickets (sprint)
+- T-dicksimnel-double-close: double-close bug fix (sprint)
+- T-dicksimnel-max-turns-reason: max-turns escalation reason (sprint)
+- T-dicksimnel-or-cost-gate — DickSimnel: gate on OR balance — prefer free-tier Gemini/Ollama models for worker-class work (google-free worker routing rule added; OR balance floor () in _poll_and_work(); 5 tests)
+- T-dicksimnel-or-cost-gate ✅ google-free worker routing + OR balance floor; 5 tests
+- D-dicksimnel-idle-dispatch-redesign-2026-06-06: DickSimnel bus dispatch redesign — T-dicksimnel-worker-listener, T-dicksimnel-granny-dispatch-wire, T-consequence-dicksimnel-idle-dispatch
+## In-flight
+T-dicksimnel-granny-dispatch-wire CLOSED — Granny now dispatches DickSimnel via bus envelope to dicksimnel.0; 3 pre-existing test failure tickets filed at priority 0.2 (T-granny-bus-setstatus-test-fix, T-granny-rules-engine-test-fix, T-dicksimnel-channel-test-fix)
+- T-igor-curiosity-recognition: Igor curiosity from recognition not idle
+- T-librarian-persistent-inquiry: Librarian become_knowledgeable_about
+- T-dicksimnel-role-seed: seed builder tickets for DickSimnel
+## In-flight: T-dicksimnel-role-seed closed — 3 builder-role tickets seeded (T-dicksimnel-toolloop-docstrings, T-dicksimnel-worker-listener-tests, T-shim-docstring-pass); next is T-dicksimnel-max-turns-reason (0.55)
+## In-flight: T-dicksimnel-max-turns-reason closed; continuing to next S ticket
+## In-flight: NONE — all 3 pre-existing test fix tickets closed; T-cc-queue-cmd-next-test-fix (0.2) remains; full suite pending
+- T-web-thread-context-scope CLOSED: context_session field; per-channel thread isolation; 4 tests
+- T-cc-queue-cmd-next-test-fix CLOSED: was already passing
+## Queue cleanup (2026-06-07 Akien review)
+- Hold→sprint: T-inference-learning-pipeline, T-pe-chain-via-uc-proxy, T-chat-log-learning-bootstrap
+- Closed noise: T-swadl-bpa-platform, T-publish-strategy, T-inference-copilot, T-igor-as-user-epic
+- Triage→sprint (HIGH PRI): T-unified-memory-node-pilot, T-igor-rack-tool-migration, T-unified-node-rollout, T-runtime-model-selection
+- Questions file created: ~/.unseen_university/akien/inbox/20260606193652.CCQuestionsForAkien.md (T-inference-proxy-mini-rack + T-igor-deferred-node-state)
+## Post-compact sprint (2026-06-07)
+- T-cc-queue-cmd-next-test-fix CLOSED: was already passing
+- T-web-thread-context-scope CLOSED: context_session field; per-channel thread isolation; 4 tests
+- T-remove-igor-safe-mode CLOSED: 405 lines deleted; watchdog was wrong fix
+- T-dicksimnel-e2e-smoke CLOSED: turn_log + integration test class; integration mark
+- T-dicksimnel-double-close CLOSED: _post_result show-before-escalate; 2 tests
+- T-unified-memory-node-pilot CLOSED: tags+triggers cols; m058; 2921 rows backfilled; 4 tests
+- T-unified-node-rollout unblocked (was gated on pilot)
+## In-flight: NONE — queue cleanup done, 6 tickets closed post-compact
+
+✅ CLOSED

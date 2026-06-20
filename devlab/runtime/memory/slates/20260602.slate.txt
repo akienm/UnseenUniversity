@@ -1,0 +1,104 @@
+# Slate 2026-06-02
+
+## Done today
+- T-granny-availability-semaphore: availability.py semaphore protocol; killed subprocess.Popen spawn; removed GRANNY_THROTTLED false positive (d86f3f0)
+- T-granny-dispatch-config: config-driven worker gates in granny.yaml; pure gate evaluator; 28 tests (12d1234f)
+- T-granny-cc0-dispatch: tmux send-keys dispatch to claude-main; gated on semaphore+usage+in_progress (03c9a610)
+- Security: removed Security from _CC_ESCALATION_TAGS; unblocked approved security tickets (e46a347d)
+- T-migration-phases-6-7: phase 6 env vars already optional + uu.cfg template; phase 7 ~/TheIgors→TheIgors.archive (b00696f9)
+- T-global-kb-git-repo: unseen-university-kb repo created + published; uu bootstrap --global-kb; 5 seed patterns (127206a6 + 016ebd2f)
+- T-theigors-path-cleanup: .TheIgors→.unseen_university across 10 device/lab files (2a5f381d)
+- T-audit-hardcoded-instance-refs: AR-004 already passes clean; closed immediately
+- T-ticket-build-time: dispatched_at field; wall_minutes in corpus; p90_minutes watchdog calibration (1d19effd)
+- T-granny-audit-fail-to-cc: already implemented; closed immediately
+- T-provenance-write-enforce: verify_source_token() in provenance.py; cortex.py nullifies invalid tokens (624b338f)
+- T-palace-rules-stale-paths: 8 palace nodes unseenuniversity corrected via psql
+- T-consequence-runaway-prevention / orphan-watchdog / granny-worker-registry: all clear
+- T-skills-in-repo: 16 skill files cleaned of TheIgors refs; uu bootstrap --skills (76494a12)
+- T-palace-namespace-rename: 1007 palace nodes theigors/*→unseenuniversity/*; 34 source files updated (028ae67d)
+- T-validate-migration-phases-2-5 + T-theigors-to-uu-migration: migration confirmed complete
+- T-consequence-igor-migration / adc-queue-device / rack-diagnostic-trace: clear
+- T-sec-killswitch-authz: _rack_admin_agents() set; agent_halt/resume deny non-admin callers (ac7a444f)
+- T-sec-shim-coldstart-failclosed: shim fails closed when policy gate not ready (f0df59e0)
+- T-announce-proof-validation: resolve_announce() rejects igor/cc/skeleton with empty proof (9e6f67c4)
+- T-goal-support-burden: "Minimize support burden through good design" goal filed
+- T-shim-common-skills: base shim 4 panes + common skill verbs ticket filed
+- T-granny-external-state: KnightlyBuilder external state principle ticket filed
+- Published: https://github.com/akienm/unseen-university-kb (5 baseline patterns)
+
+- T-cc-concurrency-shim-setting — CC shim: cc_mode setting (CC.0 only / CC.0+CC.1 / max=n) (cc_concurrency_mode in cc.yaml; Granny checks it; cc0_only blocks second dispatch; 8 new tests)
+- T-granny-escalation-patterns — GrannyDaemon: escalation pattern tracker (PA2.0 Layer 1→2) (VALIDATED: PatternTracker ships with PATTERN_REPORT + per-tag DONE/ESCALATE rates; 22+ tests pass)
+- T-minion-model-upgrade — Upgrade inference model lineup to coding-benchmark-validated models (VALIDATED: models upgraded to qwen3/deepseek-v4; 45 inference tests pass)
+- T-pa20-palace-foundation — Palace: G-factory-of-factories goal + C-prescient-agents-pa20 concept (VALIDATED: palace.goals.factory-of-factories, palace.goals.factory-factory, palace.concepts.prescient-agents-pa20 all pr)
+- T-tool-loop-advisor — Redesign ToolLoop: round-based iterations + advisor meta-layer (VALIDATED: 49 minion tests pass; round-based ToolLoop with advisor signals CONTINUE/REPROMPT/UPGRADE/BLOCKED/CONFUSED/ES)
+- T-vetinari-pa20-spec — Update T-vetinari-device: PA2.0 Layer 3 + Alejandro's tasks pipeline (T-vetinari-device updated with PA2.0 Layer 3 framing (Alejandro pattern) + T-pa20-palace-foundation dependency note; sta)
+- T-halt-caller-auth-token — Kill switch: authenticate halt/block/resume caller via provenance token, not self-reported string (provenance token required for agent_halt/resume + device_halt/block; 7 tests cover proof rejection)
+- T-archivist-global-contrib — Archivist: propose proven local patterns to global KB (scan/list/submit CLI; CONTRIB_CANDIDATE channel post; context stripping; 17 tests)
+- T-sec-hmac-key-isolation — Security: specify HMAC signing key storage and access control (rack.secret 0o600 enforced on load/create; broker.py documents key access restriction)
+## In-flight
+NONE
+
+## Notes
+- ~/TheIgors.archive — safe, no refs remain in hot paths
+- Granny running correct code (Security removed from escalation tags ~10h ago)
+- All palace paths now unseenuniversity/* (1007 nodes renamed)
+- T-consequence-experts-per-project + T-consequence-audit-feedback gate 2026-06-03
+- T-consequence-skill-telemetry gates 2026-06-19 (needs 30 days data)
+- T-dicksimnel-device (L) in_progress in OR
+
+✅ CLOSED
+
+## Session resumed 2026-06-02 (post-compact)
+
+## Done (this session)
+- T-cc-concurrency-shim-setting: cc_concurrency_mode in cc.yaml drives Granny max-concurrent; 8 new tests (05658f65)
+- T-granny-external-state: dispatched_ids persist to file; GRANNY_STATS on start/stop (05658f65)
+- Validated: T-granny-escalation-patterns, T-minion-model-upgrade, T-pa20-palace-foundation, T-tool-loop-advisor — all closed
+- T-vetinari-pa20-spec: T-vetinari-device updated with PA2.0 Layer 3 (Alejandro pattern) + dependency + sprint status — closed
+- T-halt-caller-auth-token: provenance token required for halt/resume/device_halt/block; 7 new tests (e0943b1a)
+
+## Notes (updated)
+- 904 tests pass (3 pre-existing failures: e2e rack boot, cc1_minion, cc_inbox_producer)
+- Granny running cleanly — no false-positive escalation loop
+- Spend rate: good per Akien
+- T-inference-copilot: Copilot UI for DickSimnel (lower priority, discovery phase)
+- T-dicksimnel-skill-load: DickSimnel loads SKILL.md as procedural context for ToolLoop
+
+## Session close: 2026-06-02 late night
+Done: DickSimnel suite: toolloop, chat, escalation, skill-load, channel assignment. 10 tickets closed (4 pre-implemented security tickets + 6 new DickSimnel capabilities). Granny re-escalation bug fixed (|= not =). cc_queue.py extended for dicksimnel worker. All tests green.
+Next: Review DS's work on T-dicksimnel-channel when he finishes. Continue DickSimnel training loop. Tomorrow Akien reviews spend + decides pace.
+
+## Done this session (2026-06-02 late)
+- T-nanny-nightly-test-run: Nanny fires pytest at 02:00 with CC-active guard
+- T-shim-common-skills: BaseShim /help /health /stop /resume /feed; ScrapsShim barks; NannyShim talks schedule
+- T-dicksimnel-skill-load: skill_load() + _build_system_prompt(); sprint-ticket SKILL.md injected (2f1a741d)
+- T-dicksimnel-escalate: _escalate_ticket() + _should_escalate(); pre/post-inference paths; 9 tests (00689e0c)
+- T-dicksimnel-chat: POST/GET /api/dicksimnel/chat + device.chat(); 12 tests (79bd5c3a)
+- T-dicksimnel-toolloop: ToolLoop class; Bash/Read/Edit/Write with denylist; 19 tests (3276a199)
+- T-sec-shim-coldstart-failclosed: pre-implemented; verified + closed
+- T-announce-proof-validation: pre-implemented; verified + closed
+- T-provenance-write-enforce: pre-implemented; verified + closed
+- T-sec-killswitch-authz: pre-implemented; verified + closed
+- fix: Granny re-escalation loop (|= not = on _dispatched_ids)
+- fix: cc0_dispatch_fn added to dispatch.py (send-keys, never spawn)
+- fix: cc_queue.py set-worker extended to accept dicksimnel worker
+- T-dicksimnel-channel: assigned to DS (worker=dicksimnel, sprint) — his first real test
+- T-day-close-2026-06-02: filed as low-priority EOD ticket
+
+✅ CLOSED
+- T-dicksimnel-channel: WORKING/DONE/DECLINE/ESCALATE channel events; _channel_event() helper; 12 tests (c2f228a5)
+
+## Done this sprint (T-bad session)
+- T-dicksimnel-channel: WORKING/DONE/DECLINE/ESCALATE channel events; _channel_event() helper; 12 tests (c2f228a5)
+- T-granny-test-isolation: Granny tests mock _cc0_available=False; autouse fixture prevents nightly tmux leaks (24411898)
+- Root cause found: Nanny's pytest fired /sprint-ticket T-ok and T-bad to live session via unmocked _cc0_available
+
+## Session close: 2026-06-02 late-night (2nd session)
+Done: T-dicksimnel-channel (WORKING/DONE/DECLINE/ESCALATE channel events, c2f228a5) + T-granny-test-isolation (autouse fixture prevents nightly test runs from firing /sprint-ticket T-ok/bad/noway to live session, 24411898). Root cause of fake ticket dispatches fully diagnosed and fixed.
+Next: T-consequence-audit-feedback and T-consequence-experts-per-project gate 2026-06-03. Remaining fake tickets in tmux buffer (T-a, T-b, T-bad-desc, T-high, T-route-fail, T-repeat) will arrive — all non-existent, skip gracefully.
+
+## In-flight
+NONE — queue empty for CC until 2026-06-03.
+
+## Buffer drain note
+Two full test runs generated fake tickets (Nanny + CC background run). Second batch now arriving: T-ok, T-bad, T-noway, T-a×3, T-b×2, T-bad-desc, T-high, T-bad, T-route-fail, T-repeat → then /compact fires. Skip all gracefully — autouse fix (24411898) prevents recurrence.

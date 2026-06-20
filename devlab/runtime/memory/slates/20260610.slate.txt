@@ -1,0 +1,41 @@
+# Slate 2026-06-10
+
+## Notes
+
+
+## Session close: 2026-06-10 (16:10)
+Done: fixed migration DEBUG spam (1-line delete); T-bus-reconnect-watchdog shipped — DickSimnel counts failures, reconnects in-place, faults cleanly after 3 attempts; D-lever-memory-confidence filed (LEVER type + inertia→confidence rename + source-seeded confidence, 4 tickets + consequence); T-bus-shim-autostart filed (M, sprint — shared stub bus singleton, shim auto-starts if not running).
+Next: T-bus-shim-autostart — make_bus_connection() starts stub on 10143 if port closed; DickSimnel stops logging Connection refused.
+
+## Session close: 2026-06-10
+Done: T-bus-postgres-transport — PgBus replaces IMAP stub; Postgres LISTEN/NOTIFY transport, 20 tests pass, make_bus_connection() updated, IMAPServer deprecated. D-bus-postgres-transport-2026-06-10 /sorted + T-bus-shim-autostart cancelled as superseded.
+Next: /query-ticket — T-memory-confidence-rename (inertia→confidence) or next queue item
+
+## In-flight
+NONE — T-bus-postgres-transport closed; next sprint ticket at /query-ticket
+
+## Session close: 2026-06-10 (19:50)
+Done: web UI device discovery (all 34 devices seed in nav); fascia layout fixed (feed box grows, Status box metrics + Igor uptime/memory); feed messages now newest-at-bottom; repo-auditor device batch (5 tickets filed, DickSimnel on schema). Closed T-fascia-feed-newest-bottom.
+
+Next: Await DickSimnel's work on T-repo-auditor-schema; CC picks up T-repo-auditor-structural when schema lands.
+
+✅ CLOSED
+- T-spreading-activation-test-stale-path: Fix stale mock path in test_word_graph_layer_calls_spread_from_words
+- D-lever-memory-confidence-2026-06-10: LEVER type + inertia→confidence rename — T-memory-confidence-rename, T-lever-memory-type, T-memory-source-seed
+- T-bus-reconnect-watchdog: Shim bus watchdog reconnect
+- T-goal-consolidation-review: consolidate goals under compiling-inference
+- T-bus-shim-autostart: Shim auto-starts bus server if not running
+- D-bus-postgres-transport-2026-06-10: Replace IMAP bus with Postgres LISTEN/NOTIFY — T-bus-postgres-transport, T-consequence-bus-postgres-transport
+- T-bus-postgres-transport: DONE — PgBus ships, 20 tests pass, IMAPServer deprecated
+- D-granny-tier-dispatch-2026-06-10: Granny tier cascade + exact-match — T-granny-tier-cascade, T-granny-exact-match-mode, T-consequence-granny-tier-dispatch
+- D-dicksimnel-escalation-chain-2026-06-10: Dick escalation chain + tier routing — T-dicksimnel-tier-routing, T-dicksimnel-cc-parity-map
+
+## In-flight (updated 18:52)
+DickSimnel tier cascade (haiku→sonnet→opus) running on T-repo-auditor-schema.
+Fixes landed this session:
+- Granny no longer redispatches escalated tickets (was causing loop)
+- Dick uses compact SYSTEM_PROMPT (sprint-ticket skill too long for OR models)
+- explicit model_override bypasses rules engine selection
+- MAX_TURNS cascades to next tier (not CC escalation)
+- haiku→sonnet→opus cascade, all via OpenRouter
+Watching for first successful DONE: from Dick on T-repo-auditor-schema.

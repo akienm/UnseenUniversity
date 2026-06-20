@@ -1,0 +1,43 @@
+- D-engram-engineering-toolkit-2026-04-23: engram engineering toolkit — T-trace-to-miss-report, T-deposit-grounding-engram, T-verify-retrieval, T-confabulation-scanner
+- T-uc-restart-endpoint (M): UC internal restart endpoint so CC + Igor both get a clean reconnect point
+- D-web-reply-coherence-inhibitor-fix-2026-04-23: LLM reply suppression root-cause fix — T-coherence-inhibitor-llm-gate, T-main-logger-hierarchy, T-openrouter-model-attr-typo, T-replay-log-error-positional
+- D-consult-primitive-2026-04-23: unified consult primitive — T-consult-primitive, T-consult-prompts, T-consult-confab-scan, T-consult-pe-chain-wire, T-consult-reasoning-wire, T-consult-observe-and-tune
+- D-cc-inbox-2026-04-23: CC inbox push path — T-cc-inbox-storage, T-cc-inbox-producer, T-cc-inbox-consumer
+- T-post-inventory (M): POST inventory — centralize existing boot-time self-checks (sequence: after current batch)
+- T-list-primitive (L): List primitive — formalize append+cursor+index+observer over existing graph (sequence: after current batch, maybe after T-post-inventory)
+- T-uc-session-id-canonical (S): UC session_id canonicalization — fix dropping all Igor replies
+- ~~T-twm-self-eviction-policy~~ (S, blocked superseded): rolled into T-twm-salience-time-decay
+- ~~T-twm-sleep-eviction~~ (M, blocked superseded): rolled into T-twm-leap-on-lever
+- T-twm-salience-time-decay (S): salience decays with time — big topics fade to background (Akien 2026-04-23)
+- T-twm-leap-on-lever (M): new observations spread-activate and leap latent items to foreground (Christmas-present-in-June + Claude-as-Igor-lever)
+
+## In-flight: NONE (day closed)
+- done: T-channel-post-strict-flags — channel.py CLI rejects unknown flags (d71bd3e6)
+- done: T-memory-tag-metadata — tag:<name> metadata layer + tag_tree module (e09e1b0b)
+- done: T-high-inertia-shared-state — table-level inertia policy + machines wiring (443d00da)
+- done: T-kernel-debris-db-cleanup — removed tier2 kernel.py attractor (3227df8f)
+- done: T-audit-immobile-observe-tickets — queue audit tool + report (23910757)
+- done: T-hanging-tests-surfaced-by-timeout — verified 0 timeouts in full-suite run
+- done: T-compact-actually-fires — resolved in-code (tmux send-keys path live)
+- done: T-igor-self-introspection — self_inspect tool with 7 aspect readers (74d1c59e)
+- done: T-consult-observe-and-tune — tuning memo from 104 sessions (9f904ef0)
+- D-unstick-2026-04-23: reset 5 CC in_progress + cleared 6 Igor false-positive awaiting_approvals (all stamped with hallucinated brainstem/core_patterns.py gate). Root cause T-pe-chain-inertia-gate-hallucinated-target.
+- done: T-pe-chain-inertia-gate-hallucinated-target — scope cross-check in gate (6f6a49fc)
+- done: T-pe-chain-single-step-debugger — stepped execution + per-engram snapshot (be11ff4d)
+- done: T-inference-transport-make-context-signature — Pass-2 Area 5 Gap 1 critical fix (598c5424)
+- done: T-cc-script-dead-code-sweep — -440 LOC dead-code cleanup (7eab3704)
+- done: T-toolstats-sample-semantics-fix — newest-N samples via deque (e6b0539d)
+- done: T-machine-manager-lazy-db-url-check — defer DB guard to first-connect (4c444981)
+- done: T-situate-accepts-declared-new-files — new-file tickets unstuck at SITUATE (58d7b4da)
+- done: T-ring-memory-docstring-fix — truth-repair (78803953)
+- done: T-safety-gates-above-env-sync — safety perimeter closed against graph-poisoning (7d1d5ec9)
+- done: T-boredom-lock-and-enable-audit — thread-safe traversal log (b0059caf)
+- done: T-daemon-supervisor-backoff-and-one-shot-audit — runaway-restart guard + one_shot fix (86033984)
+- done: T-glossary-de-sqlite — scrub SQLite drift (4e5e9099)
+- done: T-inhibitor-escalate-guard — N=3 per-thread fire guard (edf2bf1c)
+- done: T-reasoning-cache-sweep — disk hygiene for reasoning_cache (640d0438)
+- done: T-word-graph-docstring-sqlite — docstring truth-repair (2aab7616)
+- done: T-scan-ebooks-use-paths-abstraction — use paths() for calibre (f996b30b)
+
+✅ CLOSED 2026-04-24T07:00:00 — 26 tickets shipped + 11 unstuck + 2 decision rollups closed.
+Theme: pe_chain gate false-positive root-fix + Pass-2 SHIP harvest + Igor-completes-one levers (single-step debugger, SITUATE new-file paths, inference transport).

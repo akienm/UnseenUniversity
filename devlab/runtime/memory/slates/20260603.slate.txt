@@ -1,0 +1,74 @@
+- D-role-ladder-2026-06-03: role-based ticketing (apprentice/builder/creator/master/guru) — T-role-ladder-schema, T-audit-role-fit, T-granny-dispatch-role-map, T-granny-escalate-closed, T-consequence-role-ladder
+- T-granny-escalate-closed: persist alerted_ids; dedup channel posts in hold methods; 5 tests (1ce24aaf)
+- D-murderbot-feed-metaphor-2026-06-03: web UI naming follows Murderbot feeds — Shared Comms=Public feed; device feeds; instance-qualified agent IDs
+- T-dsimnel-launcher: dsimnel short name + repo-root launcher with semaphore wiring
+- T-librarian-fulltext-search: Librarian search(query) across palace+memories+files, no-inference hot path
+- T-librarian-index-paths: folder indexer + git history search (gates on T-librarian-fulltext-search)
+- T-calibre-shim: Calibre device shim — MCP bus interface to Calibre content server
+- T-repo-root-on-path: Installer — repo root on PATH + all device launchers present
+- [done] Granny deferral fix: worker=claude tickets deferred when no worker; commit 77fcc941
+## Session close: 2026-06-03 (Granny + launchers)
+Done: Granny deferral fix (commit 77fcc941), T-dsimnel-launcher (5b7b1af2), T-repo-root-on-path (26232234), T-calibre-shim filed.
+Next: Sprint T-role-ladder-schema or start queue work.
+- T-role-ladder-schema: role field, worker inference, 23 tests, 8e051307
+
+- T-audit-role-fit: AuditResult.warnings + size/arch advisory checks; 13 tests; b6479af1
+
+## In-flight
+T-granny-dispatch-role-map (M, sprint) — next after compact; role→worker config-driven dispatch in daemon.py + granny.yaml role_map section
+
+## Next up
+T-granny-dispatch-role-map (M): role-based dispatch routing in daemon.py + granny.yaml
+- T-registered-dispatcher-pattern: Doc: Registered Dispatcher — rack's recurring orchestration pattern
+- T-rack-simplification-goal: Goal: rack devices follow consistent patterns — no bespoke orchestration [gated on T-registered-dispatcher-pattern]
+
+## In-flight
+NONE — T-granny-dispatch-role-map shipped (6e37cccd). Awaiting Granny demo with both workers available.
+- [done] T-registered-dispatcher-pattern: §3.10 Registered Dispatcher in ToO; palace node written; follow-on T-google-secretary-registered-dispatcher filed — 5da7c21f
+- T-google-secretary-registered-dispatcher: Refactor GoogleSecretary to Registered Dispatcher pattern [gated on T-google-secretary-device]
+- [done] T-fix-announce-e2e-proof: e2e + dispatch-chain tests aligned with proof validation — 15ddf029
+- [done] T-web-channel-naming: Shared → Public in web UI — 949b4773
+- [done] T-librarian-fulltext-search: search() tool shipped — 21 tests, palace+memories+tickets+files — 4d85f878
+
+## Session close: 2026-06-03 (pattern + search + DS diagnosis)
+Done: T-registered-dispatcher-pattern (§3.10 ToO + C-registered-dispatcher palace node + T-google-secretary-registered-dispatcher filed), T-fix-announce-e2e-proof (e2e + dispatch-chain tests aligned), T-web-channel-naming (Shared→Public), T-rack-simplification-goal, T-librarian-fulltext-search (search_tools.py, 21 tests). T-theigors-archive blocked (gated on T-igor-into-adc-device). T-theigors-path-cleanup closed (was stuck completed_at but sprint status).
+Next: DickSimnel tool protocol fix — OR models need function-calling format or simplified framing, not the XML tag protocol. Also: T-librarian-index-paths now unblocked.
+
+## In-flight
+NONE — all tickets closed or blocked. DickSimnel OR cascade diagnosis complete; fix not yet ticketed.
+- T-dicksimnel-native-tool-use: DickSimnel ToolLoop native OR tool calling
+- T-dicksimnel-native-tool-use: done — native OR tool calling
+- T-cpu-peg-notify: Scraps CPU peg notifier >30s
+- T-inference-provider-priority: route local Ollama → cloud → Google free → OR
+- T-google-appscript-research: AppScript as GoogleSecretary substrate
+- T-rack-chat-ticket-cmd: /ticket command in all rack device chat windows
+- T-inference-models-versioned: versioned model entries with creation dates
+- T-inference-models-autoversion: auto-version rotation (gated T-inference-models-versioned)
+- T-inference-models-version-ui: model history in web UI (gated T-inference-models-versioned)
+- T-rules-engine-audit: audit sweep for bespoke routing that should be rules engines
+- T-web-ui-queue-view: open ticket queue in web UI
+
+## Session close: 2026-06-03 DickSimnel + queue
+
+**Done:** T-dicksimnel-native-tool-use (native OR tool calling + 19 tests), T-web-ui-queue-view (web queue UI + 11 tests). Filed 9 tickets: cpu monitor, inference priority routing, GoogleSecretary research, rack /ticket command, versioned models (3 tickets), rules engine audit, queue view.
+
+**Next:** HIGH-inertia tickets (sec-killswitch-authz, provenance-write-enforce, sec-shim-coldstart-failclosed, announce-proof-validation) — route to CC+DickSimnel for approval + OR cascade.
+- T-scraps-fallback-channel-noise: suppress 'fallback on error' channel spam
+
+## Session close: 2026-06-03 (role ladder + visibility)
+Done: Granny role ladder (guru=Akien, master=CC.0, builder=DickSimnel), CPU peg monitor (15 tests), web queue My Tickets tab + role column, /mytickets + /opentickets skills, stale channel cursor advanced, 3 stale akien tickets closed (Google key + Ollama done, OAuth cancelled — design: caller-provided creds).
+Next: T-scraps-fallback-channel-noise; DickSimnel sprint queue.
+
+## In-flight
+NONE — session clean. GoogleSecretary design decision: callers pass their own credentials per-call (no service-level creds), enabling multi-owner support.
+- [done] T-scraps-fallback-channel-noise: _ws_push moved inside pg_ok=True + Scraps silent=True from cc_queue + test mocks on both; 2 commits (3c4b3470, f7e5fe7f)
+- [done] T-inference-models-versioned: created_at on ModelSpec, update_model()/list_model_history(), 8 tests; fb7ec20f
+- [done] T-inference-models-version-ui: /api/inference/models/{id}/history + /inference/models page, 8 tests; c3b7d26b
+- [done] T-inference-models-autoversion: ModelVersionChecker OR-vs-registry detector, 7 tests; 64567988
+
+## Session close: 2026-06-03T20:07:13
+**Done:** Closed all sprint work: 7 tickets shipped across channel fixes (ws_only double-post), 
+Granny handshake (same-cycle + cross-cycle), inference model versioning (created_at, history, autodetect), 
+DickSimnel reliability (planning-text guard, close-failure surface). Zero actionable sprint items remain.
+**Next:** Investigate async signal: DickSimnel posted DICKSIMNEL_WORKING twice for T-abc <1s apart 
+(2026-06-04T01:29:08-09); verify Granny same-cycle handshake fires correctly; review 3 triage tickets for promotion.

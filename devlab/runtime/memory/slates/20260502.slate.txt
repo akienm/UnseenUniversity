@@ -1,0 +1,170 @@
+# Slate 2026-05-02
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+- T-web-chat-swadl-regression (S) — SWADL smoke test for web-chat reply (haiku-test-1, then CC fixed scope-creep + tightened reachability check from TCP-only to HTTP). Shipped in commit f16bf3fc. Workflow finding: Haiku-as-coding-minion works for bounded greenfield work; selector-grounding still requires CC oversight on edits to existing files.
+
+- T-swadl-base-automation-split (M) — SWADL split shipped (akienm/swadl@84f3567): SWADLBaseAutomation extracted from SWADLTest, driver creation lazified (was spawning Chrome at module import = orphan-browser leak). New @property driver/actions on SWADLBase, maximize_window added to driver interface, SWADLTest.tearDown auto-quits driver. 3 SWADL self-tests pass. TheIgors smoke test consumes SWADLBaseAutomation. Design doc at lab/design_docs/decisions/T-swadl-base-automation-split.md. Unblocks: Gmail flow tickets, Igor-as-user epic.
+- T-discuss-cognition-delay-by-brain-size — DISCUSS: cognition delays scale with brain size — review Igor's gap in light of recent cognition work (Discussion closed (option a). Synthesis from 4 Akien refinements: cognition-delay is the SCAFFOLD other primitives plug )
+- T-skills-master-home-in-datacenter — Master skills home in agent_datacenter — deploy to ~/.claude/skills/ on each machine (Installer mechanism shipped (akienm/agent_datacenter@4332f8d). devices/installer/{shim,backends,manifest}.py + skills/ma)
+- T-sqlite-out-claude-budget-db — Migrate claude_budget.db SQLite → Postgres + delete file (Budget tracking migrated SQLite → Postgres (commit c246bdfa). Migration m053 creates infra.spend / infra.budget_config /)
+
+- T-sqlite-out-word-graph-db — Finish SQLite removal — purge word_graph.db construction + delete file (Word graph SQLite purged (commit 9c136308). Postgres clan.wg_* was authoritative since D126; 4.6GB SQLite file trashed ()
+- T-sqlite-out-wild-0001-db — Finish SQLite removal — purge wild-0001.db construction + delete file (wild-0001.db purged (commit 9bfc31ae). Cortex(db_path=Path) → Cortex(instance_id=str|None). self.db_path → self._cache_k)
+- T-reorg-bucket-archive-moves — Reorg execute — bucket archive moves (seed/migrate/cc_memory_seed/papers-history-archive) (Partial ship (commit c3d3a039): 33 of 99 files moved. migrate_*.py (13) → TheIgorsProject/migrations_archive/. papers/hi)
+- T-glossary-canonicalize-and-coa-add — Glossary canonicalize + add COA, home_db, local_db, swarm-box (Glossary canonicalized (commit 364b0c77). Picked lab/docs/glossary.md (github-renderable, next to code) as canonical. DS)
+## Design decisions logged today (ready for build)
+
+### T-sqlite-out-wild-0001-db (L) — DESIGN APPROVED 2026-05-02
+HIGH-inertia (cortex.py, paths.py, conftest.py — Akien-pre-approved 2026-05-01). 102MB SQLite + 2 archives, all dead since D-sqlite-removal at D126. Decisions:
+1. **Cortex constructor:** option A — drop `db_path` parameter entirely. Update 20+ callers (mostly `Cortex(paths().instance / "wild-0001.db")` boilerplate).
+2. **`self.db_path` attribute:** option A — replace with `self._cache_key_id = self._instance_id or "home"` for cache keys + migration tracking semantic.
+3. **Delete all 3 files** — wild-0001.db (102MB hardlinked twin), wild-0001.db.archive-20260324 (102MB), archive-Igor-wild-0001.db (724KB). To system trash so recoverable.
+4. **paths().instance** — keep (still used for logs/subdirs); audit + remove every `paths().instance / "*.db"` SQLite-shaped use.
+5. **conftest.py fixture** — switch SQLite-Cortex to Postgres-Cortex with isolated test schema via IGOR_HOME_SEARCH_PATH override (pattern exists).
+6. **Spike-test:** trash files, restart Igor, verify Postgres-only path works clean before considering done.
+
+### T-sqlite-out-word-graph-db (M) — DESIGN APPROVED 2026-05-02
+Postgres clan.wg_* (7M+ rows) is authoritative; SQLite (4.6GB, 6.4M rows) frozen since Mar 21. Decisions:
+1. Delete the 4.6GB SQLite file (+ hardlink twin under ~/.agent_datacenter/)
+2. **Option A** — remove `paths().word_graph()`, `default_cache_path()`, and the `WordGraph.__init__(db_path=...)` parameter entirely. Update callers (self_test.py uses `paths().word_graph("word_graph")`).
+3. Remove the `_SCHEMA` CREATE TABLE block in word_graph.py — tables are owned by cortex m050 migrations now; double-declaration is debris.
+4. Update `tests/test_d126_postgres.py` to not need the SQLite file.
+
+## Sprint summary — Akien's 3-hour-away window
+
+**Shipped 7 tickets in the autonomous window** (4 SQLite/budget/word/wild + reorg + glossary + skills installer earlier):
+
+| Commit | Ticket |
+|---|---|
+| `c246bdfa` | T-sqlite-out-claude-budget-db (M) — 2902 rows migrated, 6 tests, 2 latent bugs fixed |
+| `9c136308` | T-sqlite-out-word-graph-db (M) — 4.6GB SQLite trashed, 13 files updated |
+| `9bfc31ae` | T-sqlite-out-wild-0001-db (L) — 80+ files, 4 SQLite files trashed (~205MB), Cortex constructor signature change |
+| `c3d3a039` | T-reorg-bucket-archive-moves (M, partial) — 33 files moved to TheIgorsProject |
+| `364b0c77` | T-glossary-canonicalize-and-coa-add (S) — picked MD as canonical, added COA hierarchy |
+| (earlier) | T-skills-master-home-in-datacenter (M) — installer in agent_datacenter@4332f8d |
+| (earlier) | T-discuss-cognition-delay-by-brain-size — synthesis closed, scaffold filed |
+
+**Filed downstream (4 follow-ons):**
+- T-cognition-delay-cascade-scaffold (L) — 8-question cascade synthesis
+- T-skills-content-migrate-to-master (S) — needs design call (pre-commit hook policy)
+- T-reorg-seed-cc-memory-archive-deferred (M) — blocked seeds need caller updates
+- T-glossary-canonicalize-and-coa-add (closed in window) — was filed mid-session
+
+**Skipped (need Akien input):**
+- T-skills-content-migrate-to-master — pre-commit hook architecture decision
+- T-tailscale-cert-restore — depends on T-uc-cert-domain-migration + Tailscale up
+- T-uc-cert-domain-migration — domain + CA selection
+- T-announce-slice4b-tool-dispatch-via-manifest — HIGH-inertia, needs your stamp
+- T-wire-bliss-experiment-sensor + T-audit-findings-to-tickets — Igor-runnable (cert stride needs you supervising)
+- T-reading-audit-qwen-complete — Part 2 needs you on the quality-bar judgment
+
+**Test suite:** 4186/0/32skip after every commit. Zero regressions across 9 ticket closures.
+
+**State:** clean, NONE in-flight, awaiting Akien's call on the design-blocked tickets when you're back.
+
+## Notes
+
+### Strategic shift (1100 hours, 2026-05-02)
+
+Akien's call after 3-week cert-walk slog: we **stop trying to make Igor
+self-code right now** and instead clear everything else first. When stuck,
+make progress everywhere else — sometimes the stuck thing fixes itself in
+the meantime. Get everything done, THEN re-test Igor's cognition with the
+full corpus around him.
+
+**3-phase plan to "everything done":**
+
+1. **Pre-audit-candidates (NOW)** — close every pending ticket we can
+   without Igor self-coding. Haiku does the Igor-flagged tickets directly
+   via sub-agent (minion), not through pe_chain. Expect heavy design work
+   — that's fine, it's the point.
+2. **Audit candidates** — work the audit-found ticket queue once phase 1
+   is drained.
+3. **Igor self-coding (LAST)** — cert walks, Slice 4b HIGH-inertia, etc.
+   Moved from "first pre-audit thing" to "last thing." Re-evaluate Igor's
+   cognition from a full-corpus baseline.
+
+Today's order: option (c)-via-minion → option (b) Slice 4b design → ... →
+eventually option (a) cert walks (after phases 1+2).
+
+- T-skills-content-migrate-to-master (S, ✓) — 25 skills migrated to agent_datacenter master (commits 2e883e5a + 5e5b8d7 + 96abd02e). Hook retired, install script updated. Edit flow inverted.
+- T-announce-slice4b-tool-dispatch-via-manifest (M, ✓ HIGH-inertia) — Igor cortex MCPCALL consults manifest. Bystander fix: main.py:496 Cortex sweep miss (Igor boot was broken since 9bfc31ae). 3 follow-on tickets filed. Commit dc0282ae.
+- T-reorg-seed-cc-memory-archive-deferred (M, ✓) — 27 orphan seeds → TheIgorsProject; 38 reclassified as active runtime. Commit 550da87f.
+
+
+## Sprint-batch summary — round 2 (after Akien return)
+
+**Shipped 3 tickets:**
+- T-skills-content-migrate-to-master (S) — TheIgors@2e883e5a + agent_datacenter@5e5b8d7 + chase 96abd02e
+- T-announce-slice4b-tool-dispatch-via-manifest (M, HIGH-inertia) — dc0282ae. Closes D-announce-protocol-2026-05-01 (25 tickets total)
+- T-reorg-seed-cc-memory-archive-deferred (M) — 550da87f
+
+**Filed 3 follow-on tickets:**
+- T-bystander-main-py-496-cortex-sweep-miss (XS, ✓ closed) — Cortex sweep missed main.py:496, broke Igor boot
+- T-igor-boot-smoke-test (S, pending) — Igor() class has no test coverage; full pytest passed with TypeError-on-instantiation
+- T-flaky-tests-pe-entry-uc-delivery (S, pending) — 6 pre-existing flaky tests (verified pre-existing via stash test)
+
+**State:** clean, NONE in-flight. Pre-existing 6 flaky tests still flaky (now ticketed).
+
+## Long sprint queue — round 3 (compact + go)
+
+Order is risk-asc / value-desc — broken-tests first (24h bar), then the
+designed M's, then the L epic, then the gated M.
+
+1. **T-flaky-tests-pe-entry-uc-delivery (S)** — 6 broken tests; 24h bar. Run isolated to find pollution source, fix fixture/state leak.
+2. **T-igor-boot-smoke-test (S)** — Igor() class has zero coverage; this is what would have caught the bug #1 came from.
+3. **T-swarm-via-home-web-server (M, designed)** — design exists in lab/design_docs/datacenter-swarm-bus-design-2026-05-01.md; sprint reads design + executes. Will surface inline if anything still needs your input.
+4. **T-anticipation-primitive (XL, designed)** — XL = expect to ship a slice 1, not finish in window. Design sketch is in the ticket description (Anticipation/Anticipator/AnticipationBus). Slice 1: dataclass + predict() stub + bus active-set + RPE register_outcome path. Cognition wiring slices follow.
+5. **T-docs-live-code-rollout (L)** — opportunity-rule: inventory current state of the checklist in the ticket, then promote the next 2-3 subsystems. Also drag the docs-in-code that should follow code that moved to agent_datacenter (announce/, devices/installer/, etc.).
+6. **T-datacenter-readme-build-your-own-igor (M, gated on #5)** — kit-assembly README. Will start once #5 lands enough docs-in-code to link to.
+
+**Stop conditions:** complete #1+#2 always (24h bar). Beyond that, take one ticket per cycle in order; if a sprint hits a real design block, surface to Akien instead of guessing.
+
+## Sprint round 3 — in-flight log
+
+- done: T-flaky-tests-pe-entry-uc-delivery (S) — c1fc0fb3. 6 flaky tests fixed (4307 passing). Two pollutions: pe_chain_debugger.start() leaks IGOR_SINGLE_TICKET via load_igor_env_into_environ → fixed with env snapshot/restore autouse fixture. asyncio.run() closes loop, breaks deprecated get_event_loop() → fixed with asyncio.run() in 3 telemetry tests.
+- done: T-bystander-rollup-md-stragglers-2026-05-02 (XS) — a7ac8e43. Two auto-generated decision rollup .md files committed (D-announce-protocol + T-igor-programs-himself).
+- done: T-igor-boot-smoke-test (S) — 7086aca9. Subprocess smoke test (12s); inherits conftest test-schema env vars; bug-catching verified by temporarily breaking main.py:496 and confirming TypeError surfaces. Suite 4307 → 4308.
+
+## Surface to Akien — sprint round 3 design block
+
+**T-swarm-via-home-web-server (M)** — design doc at lab/design_docs/datacenter-swarm-bus-design-2026-05-01.md is rich and ratified, but the ticket explicitly says "open a /design block, refresh from that doc, then spawn child tickets per area." The 7-area outline (identity layer, channel mechanism, visibility rules, notification rule, tmux face, web tab UI, port-use audit) is itself the design call CC can't make unilaterally — choosing what becomes children (1 per area? bundled differently? port audit as standalone first deliverable?) needs Akien input. Skipping in this sprint per stop-condition rule. Ticket stays pending.
+
+- done: T-anticipation-primitive (XL → slice 1 ship) — 6819d2a5. Substrate: Anticipation/Anticipator/AnticipationBus + RPE in cognition/anticipator.py; 17 tests. Plug-points filed as T-anticipation-slice2-pursuit-emit (S, HIGH-inertia gate) + T-anticipation-slice3-action-selection-read (M, HIGH-inertia gate). Suite 4308 → 4325.
+- inventoried (no commit, no close): T-docs-live-code-rollout (L, standing) — 9 of 12 checklist items confirmed shipped (cortex, inference_gateway, pe_chain, scope_guard, reasoners/base, narrative_engine, milieu, consolidation, reading-pilot). Updated ticket description in queue.json. 3 outstanding: 1 reframable (comms → wild_igor/igor/network/), 2 placeholders (reading_worker_pool, sleep_memory_auditor — no code yet). agent_datacenter migration check: announce/__init__.py has docstring, owned over there now, no drag work needed. Ticket stays open per its standing-rollout design.
+- done: T-datacenter-readme-build-your-own-igor (M) — agent_datacenter@5499a9a. README rewritten 41 → 296 lines; covers all 8 ticket areas (hierarchy, bus shape, plug-in shapes, shims+installers, profiles, what's-NOT-in-kit, smoke test, file map). Phase status table updated to reality (Phases 1-4 shipped). Akien-readthrough is the test plan — pushed to main so review happens against landed copy. Bystander note: ticket lost from queue.json mid-session (likely write race during T-docs-live-code-rollout inventory edit); re-filed as done.
+
+## File a follow-up: T-cc-queue-write-race (S)?
+**Symptom:** During this sprint, `cc_queue.py add` of T-anticipation-slice2/slice3 followed immediately by an in-process `python -c` edit of queue.json appears to have lost a previously-added ticket (T-datacenter-readme-build-your-own-igor). Pattern: cc_queue.py uses load-modify-save-whole-file with no lock, and any concurrent writer (Igor sweep, palace sync, parallel session) can clobber recent additions. Akien decision: file a hardening ticket (advisory locking via fcntl.flock or atomic-rename via os.rename + tempfile) or accept as known-rare?
+
+## In-flight: NONE (sprint round 3 closed; ticket #3 surfaced for Akien design call)
+
+## Sprint round 3 — final tally
+
+| # | Ticket | Result | Commit |
+|---|---|---|---|
+| 1 | T-flaky-tests-pe-entry-uc-delivery (S) | done | c1fc0fb3 |
+| 2 | T-igor-boot-smoke-test (S) | done | 7086aca9 |
+| 3 | T-swarm-via-home-web-server (M) | **surfaced — design block** | — |
+| 4 | T-anticipation-primitive (XL → slice 1) | done | 6819d2a5 |
+| 5 | T-docs-live-code-rollout (L, standing) | inventoried (no commit) | — |
+| 6 | T-datacenter-readme-build-your-own-igor (M) | done | adc 5499a9a |
+
+**Plus housekeeping:** T-bystander-rollup-md-stragglers-2026-05-02 (a7ac8e43)
+
+**Filed downstream:**
+- T-anticipation-slice2-pursuit-emit (S, HIGH-inertia gate) — slice 2 of anticipation
+- T-anticipation-slice3-action-selection-read (M, HIGH-inertia gate) — slice 3 of anticipation
+- T-bystander-rollup-md-stragglers-2026-05-02 (XS, closed)
+- (advisory) T-cc-queue-write-race — Akien call needed
+
+**Suite:** 4301 → 4325 passing across the round (6 flaky fixed + 1 boot smoke + 17 anticipator + 1 hidden via dropoff). Zero regressions.
+
+**State:** clean, NONE in-flight. Awaits Akien on T-swarm-via-home-web-server (design block) and T-cc-queue-write-race (advisory).

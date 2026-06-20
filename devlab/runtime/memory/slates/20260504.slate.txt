@@ -1,0 +1,102 @@
+# Slate 2026-05-04
+
+## In-flight
+Day-close for 2026-05-03 in progress.
+
+## Planned
+
+## Ad hoc
+- T-day-close-audit-script-schema-aware: Update audit script Steps 8/9/12 (renamed helper + schema-aware tables)
+
+## Done today
+
+- T-is-user-turn-flag-coverage — NEEDS DESIGN: Trace + verify is_user_turn=True for human-Akien input reaching gateway.reason() (Audit complete: all call sites correct. Added DEBUG log at gateway.reason() entry + 4 tests documenting the audit table.)
+- T-savestate-skill-consolidation — NEEDS DESIGN: Consolidate /savestate and /savestateauto skills (Consolidated: /savestateauto deleted, all steps absorbed into /savestate Step 2–5. Callers (ticket, sprint, sprint-batch)
+- T-mcp-igor-cognition-debug-capability — DESIGNED: Igor cognition-debug as MCP capability — claim/status/release verbs + skill consumer (debug_session.py (claim/status/release/query/log_line) + debug_session_cli.py + 10 tests. Skills updated. Commit 32b2d90)
+- T-debug-pe-chain-skill — DESIGNED: /debug-pe-chain skill — realtime single-step of Igor's programming pipeline (Skill file written: /debug-pe-chain — full phase stepping (ORIENT→HYPOTHESIZE→IMPLEMENT→VERIFY→CLOSE) with pause gates a)
+- T-cognition-debug-skill — DESIGNED: /cognition-debug skill — realtime single-step of Igor's cognition cycle (Skill file written: /cognition-debug — replay + realtime modes, MCP tool wrappers, diagnosis table, engram note.)
+- T-test-ordering-flakes — DESIGNED: Test-suite flakes from test-ordering/shared-state — pr_accretion, pe_chain_qwen_tier (added per-test fixtures to clear shared state in both flaky test files)
+- T-wire-graph-preparse-pipeline — DESIGNED: Wire graph_integrator and preparse_router into reading pipeline (wired graph_integrator into reading pipeline after chunk indexing)
+- T-audit-findings-to-tickets — DESIGNED: Auto-file or surface audit pass-2 severity-high findings as tickets (Built audit_findings_to_tickets.py with AuditFinding dataclass + FindingMatcher deduplication, integrated into day-close)
+- T-wire-bliss-experiment-sensor — DESIGNED: Wire bliss_integrator, experiment_outcome, sensor_tree into callers (wired bliss_integrator→milieu, experiment_outcome→experiment_scheduler, sensor_tree→palace_metric)
+- T-mcp-igor-unreachable-from-cc — NEEDS DESIGN: CC cannot reach Igor MCP — channel_send connection reset (local) / timeout (yoga9i) (CC_SEND_URL in settings.local.json pointed at port 8080 (SSL) instead of 8082 (plain HTTP). One-line fix. cc_send confir)
+- T-ticket-pass-condition-field — DESIGNED: Add Pass condition as required section to ticket template + audit-ticket check (Added Pass condition as 5th required section to /ticket template; added check 8.5 + [pass-condition] finding to /audit-t)
+- T-backfill-gmail-pass-conditions — DESIGNED: Backfill Pass condition into Gmail tickets (Both Gmail tickets updated in DB with pass condition: Igor opens gmail.com, navigates inbox, extracts sender+subject.)
+- T-mem-cache-bounded-lru — APPROVED: Bound Cortex._mem_cache to LRU with size cap (OrderedDict + _MEM_CACHE_MAX=5000 cap; LRU eviction skips genesis; cache_stats(); 5 tests — commit 7428c136)
+- T-reconsolidation-unification — APPROVED: Delete reconsolidation Path B — confirm_recall, contradict_recall, hook_search_results (Deleted Path B: reconsolidation.py (229 lines) + test file (316 lines) + cortex hook. Two flag keys → one. commit daf0bc)
+- T-scope-guard-dedup-with-self-edit — APPROVED: Unify scope_guard._TIER_TABLE with self_edit.INERTIA into inertia_map.py (inertia_map.py created; scope_guard, self_edit, skill_filter, pe_chain all delegate to it; parity test added; 4405 tests)
+- T-reading-arousal-honest — APPROVED: Reading arousal — stamp current milieu state, not keyword hits (milieu.read_state() added; book_learner uses it for arousal; cp_affinity in metadata; reading_integrator dead Step 4 ret)
+- T-priming-via-spreading-activation — APPROVED: Wire spreading_activation heat_field into cortex.search priming (set_heat_field + _get_current_heat_field on Cortex; NE stashes after SA calls; search bumps hot candidates pre-Phase-2 a)
+- T-clan-pattern-sharing — APPROVED: Wire export_engram/import_engram for cross-Igor pattern sharing (export_pattern + import_pattern tools registered; 5 tests pass round-trip, no-clobber, missing-root; 4420 total pass)
+- T-reading-deposit-batched — APPROVED: Reading deposit — one transaction per chunk, not per node (batch cortex API (store_batch/add_children_batch/add_interpretive_edges_batch) — _deposit_nodes O(N)→O(1) DB round-trips)
+- T-sqlite-config-hunt — DESIGNED: Track down the bare 'config' SQLite table caller (smoking gun of unfinished SQLite removal) (sqlite_caller_trace.py built + wired into main.py (gated IGOR_TRACE_SQLITE_CALLERS=1). Set the flag in .env, restart Igo)
+- T-engram-logging-primitive — DESIGNED: Logging primitive for engram execution — engrams can emit log lines (engram_log + engram_execution_context; wired push_sources×2 + main.py; 4 tests; commit d1159fc5)
+- T-day-close-audit-script-schema-aware — DESIGNED: Day-close audit script — make Steps 8/9/12 schema-aware after multi-tenant split (skill already updated; Steps 8/9/12 verified working (get_balance_trajectory, clan.* schema, clan.memories — all correct)
+- T-cc1-test-minion — DESIGNED: CC.1 test minion — haiku-backed skill executor for end-to-end skill regression (CC1Minion(AgentBase): haiku executor + Bash interceptor; sprint_claim fixture; 5 unit tests + 1 live; commit 3194885a)
+## Notes
+
+## In-flight: Day-close for 2026-05-03 complete (slate closed, audit clean, GH Discussion #588 posted, callmap regen committed c2b61b6c). Next: T-is-user-turn-flag-coverage awaiting Akien approval to implement.
+- done: T-is-user-turn-flag-coverage — audit all gateway.reason() call sites, observability log, 4 tests (commit 3c5e6a64)
+
+- done: CLOSED:T-savestate-skill-consolidation — /savestateauto deleted, absorbed into /savestate
+- done: CLOSED:T-mcp-igor-cognition-debug-capability — debug_session API + CLI + 10 tests (32b2d901)
+- done: CLOSED:T-debug-pe-chain-skill — /debug-pe-chain skill written
+- done: CLOSED:T-cognition-debug-skill — /cognition-debug skill written
+
+- done: T-wire-bliss-experiment-sensor — bliss_integrator→milieu, experiment_outcome→experiment_scheduler, sensor_tree→palace_metric
+- done: T-wire-graph-preparse-pipeline — graph_integrator wired into reading_engine.py after chunk indexing
+- done: T-test-ordering-flakes — per-test teardown fixtures in test_pr_accretion.py + test_pe_chain_qwen_tier.py
+- done: T-audit-findings-to-tickets — audit_findings_to_tickets.py + 18 tests + day-close-audit Step 19.5; found 55 HIGH findings in pass2 data
+
+- done: T-mcp-igor-unreachable-from-cc — CC_SEND_URL was 8080 (SSL) not 8082 (HTTP); one-line fix in settings.local.json
+- T-ticket-pass-condition-field: Add Pass condition to ticket template + audit-ticket check
+- T-backfill-gmail-pass-conditions: Backfill Pass condition into Gmail tickets
+
+## Session close: 2026-05-04a
+Done: Closed 4 Igor-blocked tickets (bliss sensor, graph pipeline, test flakes, audit→tickets). Fixed MCP CC_SEND_URL (8080→8082). Fixed chat_log_formatter output path. Added Pass condition as required ticket field + /audit-ticket check 8.5. Unblocked /cognition-debug realtime mode (needs CC restart).
+Next: Restart CC to pick up MCP fix. Then DESIGNED:T-engram-logging-primitive (S) or third-priority L tickets.
+
+## In-flight: NONE — session clean, all tickets closed and pushed.
+
+## HI-ticket batch filed 2026-05-04
+- T-clan-pattern-sharing: APPROVED: Wire export_engram/import_engram for cross-Igor pattern sharing
+- T-reconsolidation-unification: APPROVED: Delete reconsolidation Path B
+- T-reading-deposit-batched: APPROVED: Reading deposit — one transaction per chunk
+- T-reading-arousal-honest: APPROVED: Reading arousal — stamp current milieu state
+- T-mem-cache-bounded-lru: APPROVED: Bound Cortex._mem_cache to LRU with size cap
+- T-scope-guard-dedup-with-self-edit: APPROVED: Unify scope_guard inertia tables
+- T-priming-via-spreading-activation: APPROVED: Wire spreading_activation heat_field into cortex.search
+- T-process-inner-dismantle: DESIGNED: Map and plan _process_inner dismantle (INVESTIGATE)
+- T-db-proxy-sqlite-shim-retire: DESIGNED: Retire db_proxy SQLite-compat layer (INVESTIGATE)
+- T-sleep-consolidation-honesty: DESIGNED: Honest Hebbian sleep pass (INVESTIGATE)
+- done: T-mem-cache-bounded-lru — LRU cap + 5 tests (7428c136)
+- done: T-reconsolidation-unification — deleted Path B, 559 lines gone (daf0bce4)
+- done: T-scope-guard-dedup-with-self-edit — inertia_map.py unified; 4 callers deduped; 4405 tests pass
+- done: T-reading-arousal-honest — milieu arousal stamped at deposit; cp_affinity in metadata
+- done: T-priming-via-spreading-activation — heat field primes search; 4415 tests pass
+- done: T-clan-pattern-sharing — export_pattern/import_pattern tools wired; 4420 tests pass
+- done: T-reading-deposit-batched — batch cortex writes, O(N)→O(1) DB round-trips in _deposit_nodes
+
+## In-flight: NONE — sprint batch complete; T-scope-guard-dedup-with-self-edit, T-reading-arousal-honest, T-priming-via-spreading-activation, T-clan-pattern-sharing, T-reading-deposit-batched all closed and pushed.
+- T-sqlite-config-hunt: Track down bare config SQLite table caller
+- done: T-sqlite-config-hunt — sqlite_caller_trace.py + main.py wiring (IGOR_TRACE_SQLITE_CALLERS=1); commit 5c5c585e
+
+## In-flight: NONE — T-sqlite-config-hunt closed (sqlite_caller_trace.py + main.py wiring, commit 5c5c585e).
+- T-engram-logging-primitive: Logging primitive for engram execution
+- done: T-engram-logging-primitive — engram_log + context manager; wired 3 dispatch paths; 4 tests (d1159fc5)
+
+## In-flight: NONE — T-engram-logging-primitive closed (engram_log + context manager wired into 3 dispatch paths, commit d1159fc5).
+- done: T-day-close-audit-script-schema-aware — skill already updated; Steps 8/9/12 verified working (no code change needed)
+- done: T-cc1-test-minion — CC1Minion(AgentBase): haiku executor + interceptor; 5 tests; commit 3194885a
+- done: T-mcp-db-query-capability — db_query+db_dispatch; 12 tests; skill consumers migrated (f7e35cd0)
+- done: T-agent-datacenter-workspaces — workspaces created, test logs moved, .gitignore updated (c878abd4)
+- done: T-cc-queue-drop-json-stage-b — all queue.json readers migrated to load_tasks(); echo removed; file deleted
+- done: T-minion-feature-branch-workspaces — MinionWorkspace shipped
+- done: T-inference-migrate-igor-to-datacenter-device — Stage 1 InferenceDevice.dispatch + bus envelopes, 16 tests
+- done: T-retire-legacy-direct-reasoner-path — scope b shipped: voice prompt, gate removed, legacy else block deleted
+
+## In-flight: NONE — T-retire-legacy-direct-reasoner-path scope b shipped and closed
+
+✅ CLOSED
+
+Summary: Day 2026-05-04 was highly productive. Completed T-retire-legacy-direct-reasoner-path scope (b) — migrated voice prompt, removed IGOR_TURN_PIPELINE gate, deleted legacy interactive fallback block. Also filed and closed multiple HI-priority Igor infrastructure tickets (pattern sharing, inertia dedup, memory LRU, spreading activation, batch reads, arousal honesty). Closed support work: MCP CC_SEND_URL fix, Pass condition field addition, skill consolidation, debug capabilities. Total: 28 tickets closed.

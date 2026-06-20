@@ -1,0 +1,1 @@
+MIDSTREAM: T-migration-phases-6-7 closed: Phase 6 (config.get fallback in main.py, env vars optional) + Phase 7 in-repo path migrations committed; actual ~/TheIgors archive rename blocked — crontab has 6 active jobs + 2 ~/bin symlinks referencing ~/TheIgors that need review before rename

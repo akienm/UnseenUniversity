@@ -1,0 +1,36 @@
+# Slate 2026-05-29
+
+## Done today
+- T-rename-utility-closet: CLOSED — all 'closet' refs removed, utility_closet_server.py deleted
+- T-fix-ygm-check-hook: CLOSED — settings.json ygm_check path agent_datacenter→UnseenUniversity
+- T-theigors-to-uu-migration: Phases 2-5 shipped [awaiting_validation]
+  - Phase 2 (8e709d89): 7 CC tools in UU/lab/claudecode/, settings.json clean, superclaude venv fix
+  - Phase 3 (2ed98988): IGOR_HOME→~/.unseen_university, .TheIgors/claudecode symlink removed
+  - Phase 4 (28d56ac4): all .TheIgors hardcodes purged (64 device files + 13 skill files), config.cfg in load order
+  - Phase 5: ~/bin/igor → UU Python launcher with instance discovery
+- Igor: PROC_QUEUE_DRAIN habit disabled (was calling deprecated adopt_top_queue_ticket every 30min); safe_mode cleared
+- T-fix-preexisting-test-failures: filed (adc_shim, bg_score_debug, book_learner_drm)
+- T-scraps-silent-validate: CLOSED — 28/28 pass
+- T-article-skills-full-coverage: CLOSED — 49/49 skills documented + glossary (dc99a38d)
+- T-igor-fallback-goals-restore: CLOSED (Igor) — STANDING goals restored
+- T-day-close-log-error-audit: CLOSED — step 18.7 added to day-close-audit, allowlist seeded
+- T-igor-upstream-reply-parse: CLOSED — JSON parse failure identified at NE:1082, T-igor-json-parse-recovery filed
+
+## Session close: migration sprint
+Done: Igor unstuck (PROC_QUEUE_DRAIN + safe_mode). T-theigors-to-uu-migration Phases 2-5 shipped across 3 commits. All .TheIgors hardcodes purged. ~/bin/igor → UU Python launcher.
+Next: File Phase 6-7 tickets for Granny; shift CC to ticket-filing not foreground sprinting.
+
+## In-flight
+NONE
+
+## Planned
+- T-igor-json-parse-recovery (follow-on from T-igor-upstream-reply-parse)
+- File T-theigors-to-uu-phase6 (IGOR_RUNTIME_ROOT removal) for Granny
+- File T-theigors-to-uu-phase7 (archive ~/TheIgors, remove local checkout) for Granny
+- T-ccqueue-completion-criteria-fix [awaiting_validation]
+- T-granny-shim-self-start [awaiting_validation]
+- T-feeds-mcp-tools [awaiting_validation]
+
+✅ CLOSED
+
+## In-flight: NONE — day-close + weekly-retro complete; session closed cleanly

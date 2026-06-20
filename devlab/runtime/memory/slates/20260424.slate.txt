@@ -1,0 +1,24 @@
+# Slate 2026-04-24
+
+## Planned
+- T-pe-chain-goal-close-on-escalate: Deactivate goal when pe_chain escalates
+
+## Ad hoc
+- T-day-close-creates-next-day-slate — day-close creates new-day slate on date rollover (in progress)
+
+## Done today
+- T-day-close-creates-next-day-slate — day-close creates new-day slate on date rollover (Added Step 1 to day-close SKILL.md: ensure current-day slate exists (create from template if missing). Renumbered steps )
+- T-frame-push-side-effect-regression — test_frame_push_does_not_flood_other_twm_categories deterministic fail — self.capabilities leakage (Investigated: test passes in full file (9/9), fails in isolation — classic shared-TWM-state, already covered by T-test-o)
+- T-pe-chain-preflight-timeout-misdiagnosis — pe_chain preflight times out on full suite + misreads timeout as test failure (ops.run_tests + pe_test fallback: timeout 120s→300s. ops.run_tests returns '[run_tests] timeout' distinct from '[run_tes)
+- T-pe-chain-description-cap-too-tight — pe_chain truncates ticket description at 600/400 chars — cuts off structured fields (pe_chain.py: 4 description slice sites (pe_plan 857+875, pe_situate 1063, pe_hypothesize 1669) replaced with _DESC_CAP_R)
+- T-coherence-inhibitor-winnow-exemption — Coherence inhibitor gates WINNOW-hint-dispatched LLM replies as habit output (main.py:6771-6789 — source_label for coherence inhibitor now gates 'habit:' on memory_type==PROCEDURAL. INTERPRETIVE win)
+- T-delete-memory-fk-cascade — cortex.delete_memory doesn't cascade to memory_embeddings/blobs — NE merge loops + floods logs at MB/sec (cortex.delete_memory (cortex.py:3880) now deletes memory_embeddings + memory_blobs rows first, then memories — all in on)
+- D-directed-positive-prompts-2026-04-24: Directed positive framing + binding imperatives + MCP-first — T-directed-positive-prompts-pass-1
+- done: T-directed-positive-prompts-pass-1 — binding imperatives across 9 skills + CLAUDE.md + 8 palace rules + WorkingWithClaude.md + ClaudeAndAkien (commits ae1c0597, 6726c88)
+- T-consult-multi-turn-follow-through — Consult sessions follow through multi-turn — today every session closes at turn 1 (ConsultSession now basket-persistent — first stuck event opens; different stuck_reasons on same basket re-use the sessio)
+- done: T-consult-multi-turn-follow-through — basket-persistent ConsultSession + conclude-on-goal-close + consult_sessions_recent MCP tool (commit bfc4852b)
+
+- T-pe-chain-goal-close-on-escalate — Deactivate goal when pe_chain escalates (pe_chain deactivates goal on all escalate paths — _close_goal_on_escalate() helper wired into filter_fail, preflight-fai)
+## In-flight: Igor and CC restart pending — pe_chain.py changes + MCP tool registration. 5 remaining consult-hardening tickets (threshold-raise, confab-scan, log-gate, preflight-trigger, confab-integrate) blocked awaiting_approval from D-consult-hardening-2026-04-24. Next: use consult_sessions_recent to diagnose pe_chain empty-body proposals.
+- T-anthropic-api-key-removal: Remove REAL_ANTHROPIC_API_KEY references
+- T-pe-chain-goal-close-on-escalate: pe_chain deactivates goal on all escalate paths (commit b1cade4a)

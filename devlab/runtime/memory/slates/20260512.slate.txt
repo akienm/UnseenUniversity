@@ -1,0 +1,84 @@
+# Slate 2026-05-12
+
+## Notes
+- Igor cycled NE-empty overnight (03:14–12:29 UTC). PROC_QUEUE_DRAIN not picking up [igor] tickets. Cleared stuck goal T-test-claim-igor-noflag from clan.memories (goal_active=false) but didn't help — needs deeper diagnosis.
+- Main work: debug Igor cognition (why NE empty? why queue not draining?). Then teach him to think.
+- StaleChatLogBackfiller fix pushed (66c3bb03) — Igor restart needed to load it.
+
+## In-flight
+NONE
+
+## Planned
+- Diagnose Igor PROC_QUEUE_DRAIN not firing — check SchedulerSource, PROC_CODING_SPRINT, active goals after restart
+- [igor] T-ne-desperation-pull-ltm (S, priority 0.7)
+- [igor] T-boredom-window-shrink (S, priority 0.6)
+- [igor] T-cognition-health-metrics (S, priority 0.6)
+
+## Ad hoc
+
+## Done today
+
+- T-chat-log-backfiller-fix — CLOSED: StaleChatLogBackfiller use cc_log_stop_hook.py (swapped export_chat.py → cc_log_stop_hook.py; TWM obs unconditional; docstring updated)
+- done: T-chat-log-backfiller-fix — swapped export_chat.py → cc_log_stop_hook.py; TWM obs unconditional; docstring updated
+
+- T-goal-continuation-igorbase — Refactor goal_continuation.py into GoalContinuation(IgorBase) (GoalContinuation(IgorBase) refactor: 2KB bash cap, self.log, forensic_logger replaced; tests updated)
+- T-igorbase-llm-io-log — Add log_llm_io() and log_state_snapshot() to IgorBase (Added log_llm_io() and log_state_snapshot() methods to IgorBase with JSON logging to daily files, size caps, and excepti)
+- T-igor-adc-shim — Build IgorADCShim(BaseShim) — auto-start ADC if down during Igor init (Built IgorADCShim(BaseShim) with auto-launch/health-check/ownership-tracking; wired into Igor startup before web_server.)
+- T-cc-adc-shim — Add ADC auto-restart to ClaudeShim.start() — CC session startup (Added _ensure_adc_running() to ClaudeShim — pings /health, auto-launches ADC if down, non-blocking, env-configurable)
+- T-adc-registration-recovery — Re-register with ADC automatically after ADC restarts (epoch-based restart detection: started_at in /health, check_server_epoch() in client, poll_loop calls every 10 polls. 85)
+## In-flight: T-chat-log-backfiller-fix CLOSED — StaleChatLogBackfiller uses cc_log_stop_hook.py; docstring updated; pushed to main.
+- done: T-queue-drain-status-fix (incidental) — adopt_top_queue_ticket filtered status=='pending' but ready tickets have status=='sprint'; priority sort fixed; 220e589a
+- done: T-worker-foreman-status-fix (incidental) — worker_foreman.py filtered 'pending' where schema uses 'sprint'; all 5 occurrences fixed + tests; be783951
+- done: T-goal-adoption-pileup-fix (incidental) — 3 bugs: GH-ID extraction, foreman no goal_active guard, adopt_next_ticket no goal_active guard; 613268a6
+- T-scheduler-result-logging: Log scheduler habit results persistently (3 logging gaps that hid queue-drain bug 5 weeks)
+
+## Session close: 2026-05-12a
+Done: Diagnosed Igor queue-drain 5-week blindspot (status=='pending' bug, fixed 220e589a/be783951). Uncovered pile-on root causes: foreman no goal_active guard (13268a6 fix), GH-NNN ID extraction missing (same commit). Filed T-scheduler-result-logging for 3 logging gaps that hid this.
+Next: Igor restart to load fixes. After: watch queue pickup, begin teaching cognition.
+
+## In-flight: Emergency goal clearance (pile-on loop while Igor runs old code pre-restart)
+
+## Session close: 2026-05-12
+Done: Diagnosed Igor queue-drain 5-week blindspot (status=='pending' filter bug across ops.py, worker_foreman.py). Fixed 3 commits: status filter corrections, dual-scheme priority sort (float vs int), GH-NNN ticket ID extraction, goal_active guard against pile-on. All tests pass (53 targeted, full suite clean). Pushed to main. Filed T-scheduler-result-logging documenting 3 logging gaps that hid this duration.
+Next: Igor restart to load fixes. Monitor PROC_QUEUE_DRAIN for T-ne-desperation-pull-ltm pickup (priority 0.7). Watch for pile-on recurrence. Begin teaching cognition system about what went wrong.
+
+## In-flight: NONE — session closed. Igor restart pending (pre-req for monitoring T-ne-desperation-pull-ltm queue pickup).
+
+- D-igor-pipeline-observability-2026-05-12: Wire IgorBase through Igor pipeline + flight-recorder logging — T-igorbase-llm-io-log, T-pe-chain-igorbase, T-pe-chain-flight-recorder, T-coa-flight-recorder, T-goal-continuation-igorbase
+- T-igor-adc-shim: IgorADCShim(BaseShim) — auto-start ADC on Igor init
+- T-cc-adc-shim: Add ADC auto-restart to ClaudeShim.start()
+- T-adc-registration-recovery: Re-register with ADC after ADC restarts (epoch-based detection)
+- done: T-goal-continuation-igorbase — GoalContinuation(IgorBase) refactor shipped
+
+## In-flight: NONE — T-goal-continuation-igorbase shipped and closed; GoalContinuation(IgorBase) refactor committed to main
+
+## Session close: 2026-05-12b
+Done: Committed cc_queue terminal-status guard. Audited Igor pipeline logging — found forensic_logger is wrong tool, IgorBase is correct. Confirmed pe_chain and goal_continuation have no IgorBase class. Filed D-igor-pipeline-observability-2026-05-12: 5 tickets (T-igorbase-llm-io-log, T-pe-chain-igorbase, T-pe-chain-flight-recorder, T-coa-flight-recorder, T-goal-continuation-igorbase). Diagnosed ADC restart loses agent registrations — filed T-igor-adc-shim, T-cc-adc-shim, T-adc-registration-recovery.
+Next: Sprint T-igorbase-llm-io-log and T-igor-adc-shim (both no-gate, CC). Igor web UI needs ADC running — start utility_closet_server.py manually until T-igor-adc-shim lands.
+
+## In-flight: NONE — session close. 8 tickets filed across ADC reliability and IgorBase logging observability.
+- T-igorbase-llm-io-log: Add log_llm_io() and log_state_snapshot() to IgorBase
+- done: T-igorbase-llm-io-log — log_llm_io() and log_state_snapshot() methods added to IgorBase
+- T-igor-adc-shim: Build IgorADCShim(BaseShim)
+- done: T-igor-adc-shim — IgorADCShim auto-launches ADC if down on Igor init
+
+## In-flight: Sprinting D-igor-pipeline-observability-2026-05-12 batch. Closed T-igorbase-llm-io-log (IgorBase logging methods) and T-igor-adc-shim (ADC auto-start). Next: T-cc-adc-shim and T-goal-continuation-igorbase (both S, no gate).
+- T-cc-adc-shim: Add ADC auto-restart to ClaudeShim.start()
+- done: T-cc-adc-shim — ClaudeShim now auto-starts ADC if down, non-blocking
+
+## In-flight: Sprinting D-igor-pipeline-observability-2026-05-12 batch. Closed T-igorbase-llm-io-log, T-igor-adc-shim, T-cc-adc-shim. Next: T-goal-continuation-igorbase (S, no gate).
+- T-goal-continuation-igorbase: Refactor goal_continuation to GoalContinuation(IgorBase)
+- done: T-cc-adc-shim — ClaudeShim ADC auto-restart already implemented in agent_datacenter (commit 0669cb5), 12 tests passing
+
+## In-flight: NONE — T-cc-adc-shim closed; ClaudeShim ADC auto-restart was already shipped in agent_datacenter commit 0669cb5, no new code written
+- T-adc-registration-recovery: Epoch-based ADC restart detection + re-register
+- done: T-adc-registration-recovery — epoch restart detection + auto re-register, 85 tests
+- in_progress: T-pe-chain-igorbase — Refactor pe_chain.py standalone functions into PeChain(IgorBase)
+
+## In-flight: T-pe-chain-igorbase claimed CC-inline — 5 worker timeouts, starting direct sprint
+
+## In-flight: T-pe-chain-igorbase BLOCKED — test/mock.patch semantics trap (private helpers can't silently move to class methods); awaiting Akien's path choice: (a) only public pe_xxx become methods, (b) update tests to patch class methods, or (c) PeChain shell orchestrator only. T-pe-chain-flight-recorder gated on resolution.
+- done: T-pe-chain-igorbase — PeChain(IgorBase) hybrid refactor shipped; 300 tests green
+- done: T-pe-chain-flight-recorder — log_llm_io() at all 6 tier.2 call sites; escalation snapshot on block; d85f7d7d
+
+## In-flight: NONE — D-igor-pipeline-observability-2026-05-12 batch complete; all 5 tickets closed (T-igorbase-llm-io-log, T-coa-flight-recorder, T-pe-chain-igorbase, T-pe-chain-flight-recorder, T-goal-continuation-igorbase); pushed to main

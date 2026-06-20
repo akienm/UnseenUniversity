@@ -1,0 +1,80 @@
+# Slate 2026-05-11
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+- T-palace-fts-index: Add Postgres FTS index to adc.palace
+- T-research-api-breadth-depth: Librarian research API breadth+depth floats
+- T-rename-utility-closet: Rename utility closet → rack_server
+
+## Ad hoc
+
+## Done today
+- D-hermes-patterns-2026-05-11: Hermes do-learn-improve patterns — T-palace-fts-index, T-pe-chain-skill-gen, T-depth-over-breadth-rule
+- D-igor-synthetic-intelligence-2026-05-11: Igor = Synthetic Intelligence canonical term — T-igor-synthetic-intelligence-term
+- D-librarian-external-fetch-2026-05-11: librarian external doc fetch — T-librarian-external-doc-fetch
+- D-cc-sprint-improvements-2026-05-11: autonomous sprint loop + ultrathink — T-cc-autonomous-sprint-loop, T-sprint-ticket-ultrathink
+- D-research-breadth-depth-2026-05-11: research API breadth+depth floats — T-research-api-breadth-depth (gates T-librarian-external-doc-fetch)
+- D-dreaming-enhancements-2026-05-11: CC /dream + Hebbian edge strengthening — T-cc-dream-command, T-dreaming-wg-hebbian
+- D-xmemory-patterns-2026-05-11: xMemory patterns (uncertainty gating, decay, theme-palace) — T-igor-uncertainty-gated-recall, T-igor-memory-decay-dreaming, T-igor-consolidation-theme-palace
+- DESIGN_START 2026-05-11T12:15:00-06:00 — GH-287 Igor poll-spawn worker spawn + result polling
+- closed: GH-287 — superseded by push/bouquet pattern
+- T-sprint-ticket-ultrathink: ultrathink in sprint-ticket step 4
+- done: T-sprint-ticket-ultrathink — ultrathink in step 4 (L/XL + HIGH-inertia)
+- T-cc-autonomous-sprint-loop: create /sprint-loop skill
+- done: T-cc-autonomous-sprint-loop — /sprint-loop skill ships
+- T-cc-dream-command: create /dream skill
+- done: T-cc-dream-command — /dream skill ships
+- T-rename-utility-closet: rename 'utility closet' → 'rack_server' in user-facing strings
+
+- T-watch-problems-test-flaky — Fix 6 flaky tests — watch_problems lever_watcher hits live DB via missing search_path (fixed _conn() search_path isolation; unqualified _TABLE; batched lever_watcher UPDATEs; mocked escalate_to_channel in th)
+- T-facia-twm-flood — FACIA tool descriptions flood TWM — reduce TTL and salience to unclog NE (ProprioceptionSource: interval 60→300s, salience 0.35→0.08, TTL 120→600s, skip-if-unchanged. body.motor slots drop from )
+- T-foreman-schedule-scan — PROC_WORKER_FOREMAN: add schedule_interval_sec so queue is scanned without worker_done trigger (Added schedule_interval_sec=120 to PROC_WORKER_FOREMAN metadata in clan.memories — SchedulerSource now fires queue scan )
+- T-igor-goals-tree — Igor goals tree — palace nodes concrete enough for NE synthesis (3 palace nodes (palace.shared.igor.goals, .roadmap, .self-improvement-loop) + goal facia PR_GOAL_STRATEGIC_TICKET_PROCES)
+## In-flight: NONE — filed T-rename-utility-closet (low priority cosmetic rename); fixed cc_log_stop_hook.py data loss bug (now ingests all recent sessions)
+- done: T-palace-fts-index — FTS indexes pre-existed; fixed memory_search LIKE→FTS on 114K rows (abea27c)
+
+## In-flight: sprint-batch in progress — T-palace-fts-index done (abea27c), next T-research-api-breadth-depth then T-rename-utility-closet
+- done: T-research-api-breadth-depth — breadth+depth floats, shim for legacy callers, MCP schema updated (c5c6753)
+
+## In-flight: sprint-batch — T-palace-fts-index + T-research-api-breadth-depth done, T-rename-utility-closet next (also T-librarian-external-doc-fetch now ungated)
+- done: T-rename-utility-closet — superclaude + server docstring/HTML/logs renamed to 'rack server' (b8e959b, f6c29336)
+
+## In-flight: NONE — sprint-batch complete (T-palace-fts-index, T-research-api-breadth-depth, T-rename-utility-closet all closed); T-librarian-external-doc-fetch now ungated and ready
+- T-librarian-external-doc-fetch: Wire external doc fetch into librarian research pipeline
+- done: T-librarian-external-doc-fetch — curated source fetch at depth>=0.6, injectable fetch_fn, 4 new tests (525249b)
+
+## In-flight: T-librarian-external-doc-fetch closed (525249b); awaiting Akien's call on T-wire-graph-preparse-pipeline (graph_integrator already wired cbcc1b5a, preparse_router EXPERIMENTAL — recommend close + new ticket)
+- done: T-wire-graph-preparse-pipeline — graph_integrator wired (cbcc1b5a), preparse_router wired as gateway fallback (4db04d0c)
+
+## In-flight: NONE — T-librarian-external-doc-fetch (525249b) and T-wire-graph-preparse-pipeline (4db04d0c) both closed; CC sprint queue empty
+- T-watch-problems-test-flaky: Fix 6 flaky tests — watch_problems lever_watcher hits live DB
+- done: T-watch-problems-test-flaky — fixed search_path isolation in _conn(); all 12 watch_problems tests pass
+
+## In-flight: NONE — T-watch-problems-test-flaky closed; all sprint tickets done
+- T-foreman-schedule-scan: PROC_WORKER_FOREMAN add schedule_interval_sec=120
+- T-facia-twm-flood: reduce FACIA TTL/salience — 27/50 TWM slots clogged
+- T-igor-goals-tree: Igor palace goals tree concrete enough for NE synthesis
+- T-facia-twm-flood (claiming)
+- done: T-facia-twm-flood — ProprioceptionSource interval/salience/TTL + skip-if-unchanged
+- done: T-foreman-schedule-scan — schedule_interval_sec=120 in clan.memories
+- done: T-igor-goals-tree — 3 palace nodes + PR_GOAL_STRATEGIC_TICKET_PROCESSING facia
+
+## In-flight: T-facia/foreman/goals-tree closed; FACIA fix pushed to main; next: /decided self-improvement-loop design + watch Igor queue pickup
+- D-ne-desperation-pull-2026-05-11: NE desperation pull — T-ne-desperation-pull-ltm, T-boredom-window-shrink
+- D-cognition-health-metrics-2026-05-11: cognition health metrics — T-cognition-health-metrics
+- T-lever-watcher-flood-fix: lever_watcher stop-words + throttle
+- done: T-lever-watcher-flood-fix — lever_watcher flood fixed
+- done: T-lever-watcher-flood-fix — stop-word filter + 5-min self-throttle in watch_problems.py; test isolation fix
+
+## In-flight: NONE — T-lever-watcher-flood-fix closed and pushed
+- done: T-chat-log-backfiller-fix — StaleChatLogBackfiller calls cc_log_stop_hook.py (all projects, not just TheIgors) (66c3bb03)
+
+## Session close: 2026-05-11x
+Done: Full-day sprint — 14 CC tickets closed (FTS search, librarian doc fetch, graph pipeline, FACIA flood fix, foreman schedule, lever_watcher flood fix, log backfiller fix + 7 others). Filed D-ne-desperation-pull + D-cognition-health-metrics + D-lever-watcher-flood-fix. Igor restarted but cycled NE-empty overnight — PROC_QUEUE_DRAIN not picking up 13 pending [igor] tickets; stuck goal T-test-claim-igor-noflag cleared manually from clan.memories. Root cognition diagnosis begins tomorrow.
+Next: Debug why Igor's PROC_QUEUE_DRAIN isn't firing after restart; then begin teaching him how to think (NE synthesis quality, boredom→curiosity loop, desperation pull)
+- D-ne-desperation-pull-2026-05-11: NE desperation pull — T-ne-desperation-pull-ltm, T-boredom-window-shrink
+✅ CLOSED 2026-05-11

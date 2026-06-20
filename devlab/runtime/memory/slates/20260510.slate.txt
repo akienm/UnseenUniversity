@@ -1,0 +1,28 @@
+# Slate 2026-05-10
+
+## Done today
+
+### Zombie ticket fix (T-cc-queue-drop-json-stage-b completion)
+- worker_foreman._load_queue() migrated from queue.json (deleted) to cc_queue.load_tasks() (Postgres)
+- ops.read_queue_top() + ops.adopt_top_queue_ticket() migrated from queue.json to Postgres
+- github_sync.py push-queue fixed to exclude all terminal statuses {"done", "closed", "cancelled"}
+- lab/claudecode/cc_queue.py symlink created (TheIgors → ADC)
+- Tests updated: test_queue_consumer.py + test_worker_foreman.py patched for new code paths
+- 8 zombie GH issues closed (T-claude-1, T-nw-1 duplicates)
+- T-claude-1 and T-nw-1 cancelled in Postgres
+- 2 new duplicate GH issues (712, 714) created during push-queue and immediately closed
+- Commit: b7c3c93e
+- All tests: 4585 passed
+- Day-close: github_sync sync, docs DB sync, queue clean
+
+## Notes
+
+## Session close: 2026-05-10 (zombie fix round)
+Done: T-cc-queue-drop-json-stage-b completion — worker_foreman + ops.py readers migrated to Postgres; github_sync push-queue fixed to exclude all terminal statuses; zombie tickets cancelled; 10 GH issues closed. All earlier design sessions (D-dreaming-patterns, D-activate-primitive, D-librarian-elevation, D-cc-session-hygiene, D-igor-memory-depth) shipped with 47 tickets closed on Friday.
+
+Next: Design round tomorrow morning (revisit dreaming/outcomes/grader/playbook patterns and continue from where they left off)
+
+## In-flight
+NONE
+
+✅ CLOSED

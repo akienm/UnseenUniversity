@@ -1,0 +1,40 @@
+# Slate 2026-04-28
+
+## In-flight
+NONE
+
+## Planned
+- T-adc-network-discord-relocate: discord_bot relocation — needs Akien review before unblocking
+- T-adc-installer-design-call: installer bootstrap design conversation (design needed)
+- Continue T-cc-walk-02 through T-cc-walk-10 (autonomous ticket implementations)
+
+## Ad hoc
+- T-igor-programs-himself: parent ticket for 10-ticket autonomous run
+- Stale proposals cleared from 11 tickets (false core_patterns.py HIGH-inertia proposals due to pe_chain bug)
+
+## Done today
+- T-consult-situate-feedback-loop: Wire consult hypotheses back into SITUATE as file-path hints (consult v2)
+- T-p1-step-debug-fix-loop: P1 fix loop (ENGRAM basket isolation + pre-flight false-fail). Shipped.
+- T-context-load-review: Review and optimize context-load. Done in prior sessions.
+- T-llm-tool-dispatch-as-codeblock: Discarded — zero priority, origin unknown.
+- T-igor-tmux-session-launcher: Backfill only — impl shipped in ea0cba88.
+- T-cc-walk-01-bliss-igorbase: Complete. Found+fixed pe_chain hallucination+close bugs. Commit fe818ed9.
+- T-bliss-integrator-igorbase: BlissIntegrator(IgorBase) + super().__init__(). Commit fe818ed9.
+
+## Bugs found and fixed
+- test_pr_accretion.py::test_pr_recent_accretions_orders_newest_first: Sentinel facia_id isolation. Commit 443d134a.
+- pe_chain P1 (already fixed): hallucinated HIGH-inertia hypothesis drops instead of blocks. Commit 8e539e24.
+- pe_close_loop: Falsely closed tickets when implement_skipped=True. Now escalates. Commit fe818ed9.
+
+## Notes
+- Igor's pe_chain ran autonomously: ENTRY → PLAN → FILTER (PASS) → SITUATE → OBSERVE → PRE-FLIGHT (PASS after test fixes) → HYPOTHESIZE → scope_guard (working correctly).
+- HYPOTHESIZE generated non-verbatim old_string that failed validation. CC implemented the trivial BlissIntegrator(IgorBase) change manually.
+- Walk assessment: pe_chain flow correct, bug in HYPOTHESIZE LLM (Qwen) output generation, plus pe_close_loop premature-close bug (both now fixed).
+
+✅ CLOSED
+
+## Ticketed from audit
+- T-capacity-profile-igorbase: _CapacityProfile D125 check (possible false positive)
+- T-cluster-ssh-instance-refs: Replace hardcoded Igor-wild-0001 defaults in cluster_ssh.py
+
+✅ CLOSED

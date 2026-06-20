@@ -1,0 +1,39 @@
+- T-inference-old-proxy-delete: Delete old inference proxy stack
+- T-feeds-bus-types
+- T-feeds-importance-flag
+- T-feeds-mru-device-list
+- T-feeds-dicksimnel
+
+## In-flight (15:27)
+Mid-conversation: delta-UU architecture design with Copilot — inline subagents, tier model maps Vetinari/Hubert/DS to strategy/design/builder, narrow job definitions enable replaceability by small models or graph trees; xRDP live on 100.93.75.116:3389, CRD running in new-session mode
+
+## In-flight (session close)
+Delta-UU architecture discussion with Copilot/Akien: factory-of-factories domain. Key decisions:
+- Stack: Vetinari (strategy) → Hubert (design/intent/framework) → DS (builder) — no new personas needed
+- Intent Doc is the compilation seam: structured BDD-shaped artifact Vetinari produces, everything below compiles against it
+- Inline subagents: synchronous in-context LLM calls (no MCP/subagents at work), response injected back into stream
+- Metric is compilation depth not replaceability: smaller units = more compilable surface; log escalation reasons as compilation roadmap
+- xRDP live on 100.93.75.116:3389; CRD running new-session mode (not existing desktop)
+- T-memory-confidence-rename: both phases done, awaiting validation
+
+## In-flight (16:17)
+Closed: T-memory-confidence-rename (validate), T-lever-memory-type (LEVER enum+0.85 base), T-memory-source-seed (epistemic_source multiplier), T-repo-auditor-schema (validate). Next: T-repo-auditor-structural.
+
+## Session close (16:49)
+Done: Closed T-memory-confidence-rename (validate), T-lever-memory-type (LEVER enum 0.85 base), T-memory-source-seed (epistemic_source multiplier), T-repo-auditor-schema (validate). DS burned ~$80 on Opus OR — stopped DS, saved constraint to memory.
+Next: Deep dive — why DS escalates to Opus every time (tier cascade + foreground flag interaction). DS stays off until Ollama Pro / Google free key wired.
+- T-ds-done-prefix-prompt-fix: DS ToolLoop DONE: prompt fix (costs 0/ticket without it)
+- T-cc-session-name-regression: CC name regression akiendelllinux-YYMMDD not .cc.0
+- T-ds-cost-cap: DS cost cap $3 + DONE: prompt fix (supersedes T-ds-done-prefix-prompt-fix)
+
+## Session close (2026-06-11)
+Done: Deep dived DS Opus escalation — two root causes found: (1) DONE: prefix not enforced so OR models return bare text triggering infinite re-dispatch cascade, (2) no per-ticket cost cap so haiku→sonnet→opus runs unconditionally. Filed T-ds-cost-cap ($3 cap + prompt fix). Filed T-cc-session-name-regression.
+Next: T-ds-cost-cap sprint — talk through prompt revisions with Akien, then implement cost cap + DONE: fix before test run.
+
+## In-flight (session close)
+T-ds-cost-cap ready to sprint — cost cap implementation + DONE: prompt rewrite. Must talk through prompt changes with Akien before marking ready to test.
+- T-cost-to-close-metric: Add cost-to-close metric to every ticket
+- T-six-patterns-base-class: Explore six core prompt patterns in BaseDevice + surface in system behavior
+- T-flat-rate-turn-cap: Cost cap skips flat-rate; higher turn cap for Ollama Pro
+## In-flight (end of session)
+T-flat-rate-turn-cap ready to implement — devstral floor validated; haiku baseline $0.11 for S-size; ollama cloud wired; need per-billing-type turn/cost cap enforcement before next test run

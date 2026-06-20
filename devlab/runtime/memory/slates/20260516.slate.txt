@@ -1,0 +1,4 @@
+- done: goal_continuation SINGLE_TICKET gate fix — daf73b6b
+- done: T-test-file-ticket-metadata — test_metadata_fields passes; all fields verified via DB read
+
+## In-flight: NONE — T-test-file-ticket-metadata closed; test_metadata_fields was already written and passing in agent_datacenter/tests/test_file_ticket.py

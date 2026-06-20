@@ -1,0 +1,101 @@
+
+## Session close (2026-06-12 10:12)
+Done: Completed Vault device (credential storage, Fernet encryption, scoped access) + T-flat-rate-turn-cap (per-billing-type caps). Seeded vault from akien.credentials.cfg; export-to-cfg round-trip wired. All 44 tests passing.
+Next: Wire web server device to vault admin endpoints (T-vault-settings-ui); then T-igor-home-db-rename (436 env var refs).
+
+## In-flight (session close)
+NONE — all work committed, tests green, tickets closed/filed.
+- D-json-envelope-principle-2026-06-12: JSON envelopes + ProseVersion — T-json-envelope-inference, T-slate-json-format, T-consequence-json-envelope
+- D-nightly-chat-classifier-2026-06-12: Nightly classifier over chat transcripts — T-nightly-chat-classifier, T-consequence-nightly-classifier
+- D-orientation-classifier-2026-06-12: Graph-tree builder report at session start — T-orientation-classifier, T-consequence-orientation-classifier
+- D-classifier-device-architecture-2026-06-12: Classifier rack device + palace trees + BuilderReport at filing — T-classifier-device, T-codebase-tree-annotator, T-builder-report-at-filing, T-classifier-inflight-flags, T-annotator-delta-update
+
+## In-flight: 2026-06-12 Done: Four new decisions filed (JSON envelope principle, nightly chat classifier, orientation classifier, classifier device architecture) — 17 tickets, advisor-reviewed. Batch reassigned 10 igor-consequence tickets to CC; 2 low-risk tickets to DS (Ollama). Next: T-classifier-device (L), T-json-envelope-inference (M) for CC; consequence checks batch due 2026-06-19 (20+ S tickets for DS)
+
+## In-flight: NONE — all work committed, decisions filed, tickets assigned, ticket reassignments complete.
+- T-classifier-device (L): closed — BuilderReport schema, meta-classifier, 21 tests, d68003ac
+- T-json-envelope-inference (M): closed — JSON envelope protocol in ToolLoop, legacy compat preserved, 72 tests, 08481755
+- T-flat-rate-turn-cap (S): validated closed
+- T-dicksimnel-channel-test-preexisting (S): filed (pre-existing failures, pri=0.2)
+- D-provider-health-classifier-2026-06-12: classify ping failures by exception type — T-provider-health-classifier, T-consequence-provider-health-classifier
+## Session close (2026-06-12 12:34)
+Done: 3 tickets closed (T-flat-rate-turn-cap validated, T-classifier-device L with BuilderReport/meta-classifier, T-json-envelope-inference M with JSON envelope protocol + legacy compat). 1 decision filed (D-provider-health-classifier — exception-type classifier for source ping failures). Total: 72 green tests, 21 classifier tests, 19 flat-rate tests + existing suite.
+Next: T-provider-health-classifier (S) for CC sprint; run DS again against failing source to see classified log line. Consequence checks batch due 2026-06-19 (20+ S tickets for DS batch after gates pass).
+
+## In-flight (session close)
+NONE — T-provider-health-classifier filed, all prior work committed and closed.
+- D-model-alternatives-classifier-2026-06-12: suggest models when one fails — T-model-alternatives-classifier, T-consequence-model-alternatives-classifier
+- DS dispatch batch: T-provider-health-classifier (S), T-model-alternatives-classifier (M) — 0 Ollama plan cost test
+- FIX: cache InferenceDevice singleton to eliminate per-turn registry spam (8ea6dcdc)
+
+## DESIGN COHERENCE GAP — Granny's Real Role (2026-06-12 15:10)
+
+**Current State: Incoherent**
+- Granny exists as a daemon but isn't the actual queue manager
+- Builders (CC, Igor, DS) still pull tickets from queue directly
+- No handshake protocol (builder doesn't acknowledge receipt to Granny)
+- No offer expiry (ticket stays assigned even if builder never picks it up)
+- No cooldown (failed builder gets re-offered immediately)
+- No evidence that Granny can actually launch/wake builders
+
+**Intended Design (per Akien):**
+1. **Granny is the single queue arbiter** — only she decides who gets what ticket
+2. **Granny offers a ticket to a builder** — posts to their mailbox
+3. **Builder's shim acknowledges receipt** — replies to Granny (within 2 min timeout)
+4. **If no ack within 2 min** — offer expires, ticket returns to queue, builder on 10-min cooldown
+5. **Different builder CAN get it immediately** — only the failed builder is cooled down
+6. **Builder executes ticket, updates status to done** — Granny observes completion
+7. **Granny can launch/wake builders** — not just observe them
+8. **Granny may need inference** — to decide which builder gets which ticket type
+
+**Why This Matters:**
+- CC burns tokens and stops working → Granny wakes CC or routes to DS
+- DS fails on inference → Granny routes to CC or escalates
+- Single authoritative queue manager prevents double-processing and race conditions
+
+**Current Blockers to Implementation:**
+- Builders don't have a "receive offer from Granny, reply with ack" RPC mechanism
+- No cooldown state tracking in queue
+- Granny can't launch builders (only observe them)
+- No inference-based routing logic in Granny
+
+**Decision Required:**
+Implement the handshake protocol fully, or revert to builders managing their own queue consumption?
+
+
+## In-flight (2026-06-12 15:30)
+Granny handshake protocol — plan written, awaiting approval to implement.
+4 gaps: A=timeout→sprint+cooldown, B=cooldown expiry, C=dispatch_done signal, D=builder launch.
+Files: daemon.py (MEDIUM), availability.py (LOW), worker_listener.py (LOW), granny.yaml (LOW).
+
+## Session close (2026-06-12 15:35)
+Done: Fixed Ollama Cloud endpoint (301→302 redirect trap), added self_test infrastructure,
+disabled expensive fallbacks for Ollama-only test, diagnosed architectural incoherence in Granny.
+Plan written: Full handshake protocol for Granny (4 gaps to close).
+Next: Implement handshake protocol per approved plan.
+
+## In-flight: Granny handshake protocol plan approved; ready to implement 4 gaps (timeout→sprint+cooldown, cooldown expiry, dispatch_done signal, builder launch). About to start Gap B (cooldown expiry).
+
+## In-flight: DS hit OR token bleed (tier cascade + foreground flag). Killed, reset ticket. Fixed: disabled OR tiers, foreground=False, OllamaCloudFatalError halt. Commit 4a8d2371. Check OR balance before retry.
+
+## Done today
+
+- T-flat-rate-turn-cap (S): per-billing-type turn caps (flat_rate=80, usage_based=50 + $3 cap)
+- T-classifier-device (L): BuilderReport schema, meta-classifier, 21 tests
+- T-json-envelope-inference (M): JSON envelope protocol in ToolLoop, legacy DONE:/ESCALATE: compat
+- D-json-envelope-principle-2026-06-12: JSON envelopes + ProseVersion (3 tickets filed)
+- D-nightly-chat-classifier-2026-06-12: Nightly classifier over chat transcripts (2 tickets filed)
+- D-orientation-classifier-2026-06-12: Graph-tree builder report at session start (2 tickets filed)
+- D-classifier-device-architecture-2026-06-12: Classifier rack device + palace trees (5 tickets filed)
+- D-provider-health-classifier-2026-06-12: Exception-type classifier for source ping failures (2 tickets filed)
+- Vault device: credential storage, Fernet encryption, scoped access, 44 tests
+- Ollama Cloud: fixed 301→302 redirect trap, added self_test infrastructure
+- Architecture coherence gap: diagnosed Granny handshake protocol gaps (4 gaps mapped)
+
+## Session close (2026-06-12 23:59)
+
+Done: Closed 5 major tickets (T-flat-rate-turn-cap, T-classifier-device, T-json-envelope-inference, Vault device, Ollama Cloud self_test). Filed 5 new decisions (JSON envelope, chat classifier, orientation classifier, classifier device, provider health) totaling 17 tickets. Diagnosed architectural incoherence in Granny (handshake protocol incomplete). Total commits: ~8, tests: 72+ green.
+
+Next: T-builder-strategy-audit (design ticket filed); simulator for builder step-tracing; Granny handshake protocol implementation (4 gaps).
+
+✅ CLOSED

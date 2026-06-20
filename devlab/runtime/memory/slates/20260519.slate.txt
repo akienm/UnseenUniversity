@@ -1,0 +1,38 @@
+# Slate 2026-05-19
+
+## Done today
+
+**Session 1: Pre-batch setup**
+- T-remote-access-setup (commit) — Tailscale+xRDP and Chrome Remote Desktop setup
+- DAEMON_EMERGENCY_EXIT (commit ffc61be6) — remote kill switch for daemon sprint sessions
+- fix: twm_read age-decay assertions (commit d7ccc9f2) — salience assertion fix
+- IGOR_NE_LLM_ENABLED=false — feature removed, switch retired
+
+**Session 2: Ticket schema + queue gates (D-igor-ticket-signing-2026-05-19)**
+- T-dayclose-new-slate — day-close completion marker + context-load suppression
+- T-scraps-device — Scraps gatekeeper device with rule-based + Qwen 8 validation
+- T-ticket-created-by — created_by field auto-inject + display tag
+- T-cc-queue-scraps-gate — Scraps validation wired into cmd_add + cmd_claim
+
+**Session 3: Queue gate (D-queue-gate-circuit-breaker-2026-05-19)**
+- T-queue-gate — Circuit breaker: cmd_next + gate file + auto-trip at 3 timeouts + worker_daemon self-restart via exec
+
+**Session 4: Design + refactor (D-consequence-tickets-and-actionable-view-2026-05-19 + D-pe-chain-contract-refactor-2026-05-19)**
+- T-igor-degrade-safe — cleared for sprint (watchdog→known-safe mode)
+- T-decided-consequence-ticket — /decided Step 5.5: consequence-check tickets for M/L/XL decisions, 14-day gate pattern
+- T-queue-actionable-view — --actionable flag: filters to worker != igor + status in actionable set + gate clear
+- T-pe-chain-typed-contracts — TypedDict contracts for all 12 phases (independence property), 5 tests
+
+## Notes
+- Three major design decisions shipped: consequence tickets, actionable queue view, pe_chain typed contracts
+- Queue gate (circuit breaker) now live and protecting worker-daemon
+- Scraps device integrated as gatekeeper for ticket validation
+
+## Planned
+- T-queue-gate: Post-gate work (placeholder for next batch)
+
+
+## Session close: 2026-05-19
+Done: Sprint-batch shipped 3 tickets (T-decided-consequence-ticket, T-queue-actionable-view, T-pe-chain-typed-contracts). Architectural improvements: consequence tickets (14-day gated), actionable queue filter, pe_chain typed contracts. Tests: 4697 pass, 2 isolation failures (non-blocking).
+Next: Queue gate work pending; no blocking issues before next batch.
+✅ CLOSED — 2026-05-19 end

@@ -1,0 +1,126 @@
+# Slate 2026-04-29
+
+## In-flight
+NONE
+
+## Planned
+- T-capacity-profile-igorbase (S): _CapacityProfile D125 audit check — exempt or fix
+- T-cluster-ssh-instance-refs (S): hardcoded Igor-wild-0001 in cluster_ssh.py
+- T-rotate-large-runtime-logs (S): db_queries.log 13M — rotation
+- T-audit-sqlite-exempt-calibre (S, in_progress): Calibre no-sqlite audit exemption
+- T-consult-preflight-trigger-narrow (S, in_progress): consult trigger narrowing
+- T-web-channel-identify-not-interaction (S, in_progress): web channel boot ping
+- T-timestamp-format-normalization (M, in_progress): standardize timestamps Igor+adc
+- T-test-postgres-schema (M, in_progress): dedicated Postgres test schema
+- T-doc-freshness-timestamps (M): add Updated markers to arch docs
+- T-scope-guard-reattempt-loop (M): scope guard stuck re-attempt loop
+
+## Deferred (needs input)
+- T-adc-network-discord-relocate: needs Akien review
+- T-adc-installer-design-call: needs design conversation
+- T-wandering-search (L, in_progress): larger feature — hold for Igor
+
+## Ad hoc
+
+## Done today
+
+- T-capacity-profile-igorbase — Verify _CapacityProfile D125 exemption or add IgorBase (Rewrote audit_check_igorbase.py with _-prefix skip, ebook_drm exclusion, transitive local inheritance, KNOWN_IGORBASE_AN)
+- T-audit-sqlite-exempt-calibre — audit: no-sqlite-imports — exempt Calibre external-DB read in learner.py (Added tools/learner.py to LEGITIMATE_EXTERNAL in audit_check_sqlite_imports.py — reads Calibre's external metadata.db, n)
+- T-cluster-ssh-instance-refs — Replace hardcoded Igor-wild-0001 defaults in cluster_ssh.py (Fixed remaining 4 hardcoded Igor-wild-0001 refs: stripped from word_graph.py + consolidation.py docstrings, replaced wit)
+- T-rotate-large-runtime-logs — Rotate db_queries.log (13M) — daily cap or rolling window (Lowered RotatingFileHandler cap 50MB→10MB in logging_setup.py, added 10MB rotation check to db_proxy._db_log(), wrote la)
+- T-consult-preflight-trigger-narrow — Narrow 'pre-flight blocked (no recognizer)' consult trigger — unactionable hypotheses (Removed _maybe_consult_stuck(preflight_unrelated) from the no-recognizer-matched pre-flight branch. Post-heal failure pa)
+- T-web-channel-identify-not-interaction — Web channel __identify__ auto-ping at boot counts as interaction #1 (Fix was already in place (early return before _process() in _process_network_msg). Added missing test: 3 cases covering )
+- T-timestamp-format-normalization — Standardize timestamp formats across Igor and agent-datacenter (Created ts_format.py (canonical helper: format_display/format_slug/parse_iso). export_chat.py now shows local YYYY-MM-DD)
+- T-test-postgres-schema — Dedicated Postgres test schema with per-session drop — unblocks SQLite removal (pg_test_schema session fixture creates isolated test_clan_<ts>/test_instance_<ts> schemas; make_home_proxy/make_local_pr)
+- T-doc-freshness-timestamps — Add Updated <timestamp> markers to architectural doc blocks for drift detection (Updated 2026-04-29T17:08:53Z added to 9 HIGH-inertia doc blocks: brainstem/core_patterns.py, memory/models.py, cognition)
+- T-scope-guard-reattempt-loop — Identify what keeps re-firing blocked HIGH-inertia writes — habit or goal stuck in re-attempt loop (Root cause: goal_continuation step 4 re-emitted GOAL_READY even when ticket was awaiting_approval/blocked, causing PROC_)
+- T-audit-design-skill — Build audit-design skill — called by /decided (Built ~/.claude/skills/audit-design/SKILL.md with 9 positive checks (approach-frame goal, runtime-observable success, al)
+- T-audit-rename-pyramid — Rename all audit skills to audit-<scope> shape (pe_chain autonomous: pass)
+- T-rule-inherit-base-class — Promote inherit-base-class to first-class palace rule (Promoted to first-class palace rule. Added theigors/rules/inherit-base-class (narrative covering: basemost class IS the )
+- T-rule-preferred-paths-seed — Palace rule preferred_paths — initial seed of deprecated→preferred pairs (Seeded 7 palace nodes: theigors/rules/preferred_paths/* with 6 deprecated→preferred pairs (raw-psql, channel-direct-writ)
+- T-audit-model-routing — Codify per-audit model routing — Opus at design + expert tiers (Seeded theigors/audits and theigors/audits/model_routing palace nodes with per-audit model table (opus: design+expert, h)
+- T-audit-smell-skill — Build audit-smell skill — post-code, pre-test code-quality layer (Built ~/.claude/skills/audit-smell/SKILL.md describing 17 checks (bare except, silent-return-False, shape-names, dead co)
+- T-audit-telemetry-shape — Audit telemetry — palace tree + per-run record schema (Created lab/claudecode/audit_telemetry.py: AuditRunRecord dataclass, emit_run_record() → theigors/audits/<level>/runs/<t)
+- T-audit-audits-skill — Build audit-audits skill — meta-audit over all audit telemetry (Built ~/.claude/skills/audit-audits/SKILL.md describing 8 analyzers (recurring smell promotion, upstream-miss accumulati)
+- T-sprint-infrastructure-brief — /sprint plan-review — surface infrastructure brief for touched area (Seeded 8 palace nodes theigors/infrastructure/by_area/{cognition,memory,network,tools,reasoning,brainstem,index,parent}.)
+- T-audit-precode-skill — Build audit-precode skill — between /sprint plan and first edit (Created ~/.claude/skills/audit-precode/SKILL.md: 7 checks (file existence, symbol grep, HIGH-inertia reaffirmation, pref)
+- T-audit-debris-skill — Build audit-debris (rename + fold validate-files + own docs-update) (Created ~/.claude/skills/audit-debris/SKILL.md: 10 checks (temp files, runtime staged, .env, debug artifacts, log growth)
+- T-audit-day-skill — Extend audit-day — cross-day watch-for + fix-one-leave-many sweep (Created ~/.claude/skills/audit-day/SKILL.md: inherits day-close-audit + cross-day watch-for, fix-one-leave-many sweep, s)
+- T-audit-ticket-skill — Extend audit-ticket (formerly /review filing-time) — validation/remediation/observability (Created ~/.claude/skills/audit-ticket/SKILL.md: inherits /review + 7 new checks (validation steps, remediation, rollback)
+- T-map-igor-skill — Build /map-igor skill — Haiku, on-demand JSON snapshot of Igor (Created ~/.claude/skills/map-igor/SKILL.md + lab/claudecode/map_igor.py: IgorMap class, 15 section collectors, diff mode)
+- T-auto-scan-for-rest-tickets — audit-day fix-one-leave-many → auto-draft scan-for-rest tickets (Created lab/claudecode/scan_for_rest_drafter.py: ScanForRestDrafter class drafts fix-one-leave-many scan tickets to /tmp)
+- T-rule-preferred-paths-code-scan — Augment preferred_paths via scan of recent Sonnet diffs (Created lab/claudecode/preferred_paths_scan.py: PathScanReport scans 60d git history for 6 deprecated patterns (raw-psql)
+- T-audit-expert-skill — Rework audit-expert — broadest lens per expert + watch_next emission (Created ~/.claude/skills/audit-expert/SKILL.md + lab/claudecode/cc_skills/audit-expert/SKILL.md: 11-expert panel (Cognit)
+- T-igor-self-audit-approach-frame — Igor self-audit habit: scan rule-shaped memories for avoidance-frame, propose reframes (ApproachFrameAuditSource shipped: night-time periodic scan of rule-shaped memories, regex-scored, writes pending_approac)
+- T-wandering-search — Wandering search — incremental/substring memory browse (feel vs query) (WanderingSearch shipped: word-ball browse over memories. seed_from_query (ILIKE substring + similarity ranking), seed_fr)
+- T-detailed-logging-audit — Detailed single-run logging audit (DEFERRED — gated) (audit_logging.py callsite-level audit shipped (lab/claudecode/audit_logging.py + tests/test_audit_logging.py + lab/claud)
+- T-cc-mirror-5min-today — CC chat mirror — 5-min refresh of today's file (drop hourly --all) (Cadence 3600s→300s, dropped --all (default mode = newest session = today). REFRESH_INTERVAL_SEC class constant. 6 new te)
+- T-igor-console-midnight-rotate — Igor console.log midnight rotation — new file per UTC day (rotate_igor_console.py shipped — re-points tmux pipe-pane to today's YYYYMMDD.console.log. Idempotent. Live-validated: t)
+- T-cc-queue-gate-clear-on-close — cc_queue.py — auto-clear gates referencing just-closed ticket id on cmd_done (_ungate_dependents added to cmd_done — scans pending tickets whose gate references just-closed id and nulls them. Retroa)
+- T-uc-server-watchdog — Igor watchdog: detect utility_closet_server down, relaunch (UtilityClosetWatchdog shipped — slow-tier push source, two-strike rule, 120s cooldown, IgorBase-inherited (avoids push_s)
+- T-logging-migrate-utility-closet — Migrate utility_closet/* logging to self.log + get_logger pattern (16 files migrated. utility_closet/* now routes through AgentBase factory (get_logger). Bypass: 51→1 (agent_base bootstra)
+- T-logging-archive-decision — Decide migrate-or-delete for lab/claudecode/archive seed scripts (Decision: exempt archive/ from audit (don't delete, don't migrate). README protects rebuild capability. Added 'archive' )
+- T-adc-installer-design-call — agent_datacenter: installer bootstrap paradox — design call and agentctl init full spec (pe_chain autonomous: pass)
+- T-logging-class-inheritance-fixups — Fix 23 classes missing IgorBase/AgentBase inheritance (audit punch list) (23→0 classes missing inheritance. 7 actual fixups (Transport, MatterController, ConfabScanner, TraceMissAnalyzer, IgorMa)
+- T-logging-migrate-lab-claudecode — Migrate lab/claudecode/* logging to get_logger pattern (excluding archive) (4 non-CLI files migrated to get_logger. CLI exemption broadened (suppress all prints in __main__-guarded files). lab/cla)
+- T-logging-migrate-cognition — Migrate wild_igor/igor/cognition/* logging to self.log + get_logger pattern (58 cognition files migrated. Whole-codebase metrics: logging_bypass 368→225, legacy_log 664→430, classes_missing_inherit)
+- T-ollama-oom-recovery — Detect and recover orphaned ollama runner processes after OOM cascade (pe_chain autonomous: pass)
+- T-delete-absorbed-skills — Delete /review and /validate-files skills, update all callers (Deleted both skill dirs, updated 8 callers, committed.)
+- T-consult-confidence-gate — Consult: add abort-on-low-confidence gate (replaces empty-closed T-consult-confidence-threshold-raise) (ConsultConclusion.aborted + .usable; conclude(min_confidence=0.55 default, env override). Empty + sub-threshold both abo)
+## Notes
+- Igor running cc-walk-02 through cc-walk-10 in parallel
+- CC greedy sprint on all S/M tickets above
+- done: T-capacity-profile-igorbase — IgorBase D125: 9 classes fixed, audit check improved
+- done: T-audit-sqlite-exempt-calibre — added tools/learner.py to LEGITIMATE_EXTERNAL
+- done: T-cluster-ssh-instance-refs — hardcoded-instance-refs audit now clean
+- done: T-rotate-large-runtime-logs — 10MB log cap + db_queries.log rotation
+- done: T-consult-preflight-trigger-narrow — unactionable consult trigger removed
+- done: T-web-channel-identify-not-interaction — regression tests added
+- done: T-timestamp-format-normalization — local time in export_chat + ts_format.py helper
+- done: T-test-postgres-schema — pg_test_schema fixture + search_path isolation for all test psycopg2 connections; 3986 pass
+- done: T-doc-freshness-timestamps — Updated timestamps added to 9 HIGH-inertia doc blocks
+- done: T-scope-guard-reattempt-loop — suppress GOAL_READY re-emit when ticket blocked/awaiting_approval; breaks scope-guard loop
+
+## Decisions today
+- D-audit-pyramid-redesign-2026-04-29: Audit pyramid redesign — unified audit-<scope> family + audit-audits meta + Sonnet-mistakes-as-rules + /map-igor — 18 tickets (T-audit-rename-pyramid, T-audit-telemetry-shape, T-rule-inherit-base-class, T-rule-preferred-paths-seed, T-rule-preferred-paths-code-scan, T-audit-design-skill, T-audit-ticket-skill, T-audit-precode-skill, T-audit-smell-skill, T-audit-debris-skill, T-audit-day-skill, T-audit-expert-skill, T-audit-audits-skill, T-sprint-infrastructure-brief, T-audit-model-routing, T-auto-scan-for-rest-tickets, T-map-igor-skill, T-detailed-logging-audit)
+- done: T-audit-design-skill — audit-design skill (9 checks) + /decided Step 2.5 hook; ac8ea17b
+
+## In-flight: D-audit-pyramid-redesign-2026-04-29 multi-sprint batch — T-audit-design-skill shipped (1 of 18); next on Opus: T-rule-inherit-base-class, then T-audit-smell-skill + T-audit-audits-skill; remaining 14 sprintable on Sonnet via /sprint-batch decision:D-audit-pyramid-redesign-2026-04-29
+- done: T-rule-inherit-base-class — palace rule + check shape (D125 promoted to canonical)
+done: T-rule-preferred-paths-seed
+done: T-audit-model-routing
+- done: T-audit-smell-skill — 17-check audit-smell skill (HIGH/MED/LOW severity, fix-one-leave-many + diff-drift baked in)
+done: T-audit-telemetry-shape
+- done: T-audit-audits-skill — meta-audit (8 analyzers, no codebase reads, candidate proposals through /decided)
+done: T-sprint-infrastructure-brief
+
+## In-flight: D-audit-pyramid-redesign batch — 9 of 18 done (4 Opus + 5 Igor parallel); 5 in_progress (Igor working audit-day, audit-debris, audit-precode, audit-ticket, map-igor); 4 pending (audit-expert + 3 gated). Opus seat free; Sonnet (Igor) actively sprinting the rest. Attribution note: audit-audits/SKILL.md content shipped in 36168520 (wrong commit message — got swept into Igor's T-sprint-infrastructure-brief commit via pre-commit rsync race)
+- done: T-audit-model-routing — palace nodes theigors/audits + theigors/audits/model_routing (Opus: design+expert; Haiku: ticket+debris+precode; Sonnet: smell+day+audits)
+- done: T-sprint-infrastructure-brief — 8 by_area palace nodes + sprint_infrastructure_brief.py + /sprint step 4.5 added
+- done: T-audit-precode-skill — ~/.claude/skills/audit-precode/SKILL.md (7 checks, Haiku)
+- done: T-audit-debris-skill — ~/.claude/skills/audit-debris/SKILL.md (10 checks, Haiku)
+- done: T-audit-day-skill — ~/.claude/skills/audit-day/SKILL.md (cross-day watch-for + fix-one-leave-many, Sonnet)
+- done: T-audit-ticket-skill — ~/.claude/skills/audit-ticket/SKILL.md (observability + validation steps, Haiku)
+- done: T-map-igor-skill — ~/.claude/skills/map-igor/SKILL.md + map_igor.py (15-section snapshot, Haiku)
+- done: T-auto-scan-for-rest-tickets — scan_for_rest_drafter.py (drafts fix-one-leave-many tickets to /tmp/)
+- done: T-rule-preferred-paths-code-scan — preferred_paths_scan.py (60d git scan, 6 patterns, candidate review)
+- done: T-audit-expert-skill — audit-expert skill (11 experts, watch_next, telemetry, Opus)
+
+## In-flight: NONE
+- D-delete-absorbed-skills-2026-04-29: delete absorbed skills → T-delete-absorbed-skills ✓
+
+## End-of-day summary
+
+23 tickets completed. Major waves:
+- **Audit pyramid redesign** (D-audit-pyramid-redesign-2026-04-29) — 18 tickets shipped (4 Opus + 14 Igor parallel) covering audit-<scope> skill family, audit-audits meta-audit, model routing, telemetry, palace seeding, and /map-igor.
+- **Logging migration finalized** — utility_closet (16 files), cognition (58 files), lab/claudecode (4 files); inheritance fixups (23→0 classes); archive exempted; bypass 368→225, legacy_log 664→430.
+- **Igor cert protocol** — IGOR_SINGLE_TICKET kill-switch deployed (commit f695161f); cert_worker_freeze.py (freeze/unfreeze/status) added; 6 walk underlyings reset for fresh attempts; cert findings: 0/10 honestly certifiable.
+- **Production bug fixes from auditing Igor's pe_chain commits** — consult.py CONSULT_LOG_PATH Path('') (commit 5b803f77), main.py:292 + main.py:496 NameErrors (commit d7065b22).
+- **Other**: empty-close guards, consult-confidence-gate, cc_queue gate auto-clear, console.log midnight rotation, CC mirror 5min refresh, watchdog for utility_closet_server, Igor self-audit approach-frame, wandering-search.
+
+## Carry-over to 2026-04-30
+- Cert: 0/10 walks certifiable; live single-step cert protocol pending Akien-in-loop.
+- 6 reset walk underlyings ready for fresh attempts.
+- 6 non-walk Igor empty-closes documented but not reset (need triage).
+
+✅ CLOSED 2026-04-30 10:09

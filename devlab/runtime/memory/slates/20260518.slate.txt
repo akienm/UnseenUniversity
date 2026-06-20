@@ -1,0 +1,43 @@
+# Slate 2026-05-18 ✅ CLOSED
+
+## Done today
+
+### D-adc-web-control-station-2026-05-18 — all 5 shipped
+- done: T-akien-rack-device — devices/akien/ shim + comms://akien/ address + palace.shared.akien.goals upserted (commit 836d882)
+- done: T-web-palace-read — 8 palace browser routes: /rack /palace /palace/{path} /decisions /goals /questions /hypotheses /outcomes (commit 441969c)
+- done: T-web-akien-comms — web WS messages routed as comms://akien/web; channel registered at startup (commit 865bcdf)
+- done: T-web-palace-edit — /palace-edit/{path} edit forms with ADC_EDIT_TOKEN auth; 5 tests (commit 5d98652)
+- done: T-web-two-tabs — Tab 1 Comms, Tab 2 Control Station card grid; switchTab(); 6 tests (commit da2eee2)
+
+### ADC infrastructure batch
+- done: T-adc-inference-budget-gate — InferenceDevice.dispatch() wired to OR budget gate; budget_gate.py (commit 3c58528)
+- done: T-adc-budget-mcp-tool — check_openrouter_balance + openrouter_burn_rate MCP tools in librarian; 15 tests
+- done: T-or-budget-alert — channel alert when OR balance < threshold; 6h dedup (commit b27d813)
+- done: T-adc-architecture-docs — root ARCHITECTURE.md + devices/inference/docs/ + devices/librarian/docs/ (commit f062dce)
+- done: T-adc-conn-search-path — _conn() respects IGOR_LOCAL_SEARCH_PATH (already implemented; confirmed)
+
+### Igor sprint batch (D-tracking-system-redesign-2026-05-18)
+- done: T-igor-validation-throughput — done→awaiting_validation; close→closed; 2-stage validation (commit f78f273)
+- done: T-auto-validate — 5-criteria auto-validate for low-risk Igor tickets; 14 tests (commit 40e936b)
+- done: T-igor-pe-chain-prior-update — pe_chain_priors table + HYPOTHESIZE prior injection; 10 tests
+- done: T-igor-cognition-silent-excepts-loud — 12 silent except-pass blocks logged across 6 cognition files
+- done: T-pe-chain-test-channel-isolation — _post_to_channel mocked in 8 tests; channel spam eliminated
+- done: T-igor-pe-chain-baseline — HYPOTHESIZE ~0% success rate baseline published to palace.metrics
+- done: T-cognition-subsystem-index — SUBSYSTEMS.md: 102 files mapped to 6 subsystems; 3-test enforcer
+- done: T-adc-conn-search-path — confirmed already live
+
+### Bonus (filed/shipped 05-19 morning)
+- done: cc_queue.py done guard — requires --commit or --no-commit; warns + blocks auto-validate when missing (commit 6b931a3)
+
+## Notes
+- Igor NE stuck at valence -0.50 since 05:05 UTC — watch-question scan cycling, not resolving
+- T-akien-rack-device worker=claude loop: daemon ran ~24 loops overnight; root cause: status=sprint despite closed title; fixed by force-close; daemon fix in worker_daemon.sh pending restart
+- T-queue-gate filed (priority 0.8) — queue-as-gatekeeper design; auto-trip at 3 consecutive timeouts
+- Pipeline progression direction saved: batches must always work before moving to pipeline/self-repair
+
+## Session close: 2026-05-18
+
+Done: Shipped D-adc-web-control-station (5 tickets) — Akien as rack device, palace browser, comms routing, edit forms, two-tab UI. Plus ADC budget gate, architecture docs, commit guard. Test count 825→836.
+Next: day-close audit, then T-queue-gate sprint when Akien is home (~05-25).
+
+✅ CLOSED

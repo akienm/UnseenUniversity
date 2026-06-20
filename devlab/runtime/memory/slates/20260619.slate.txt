@@ -1,0 +1,59 @@
+# Slate 2026-06-19 (Friday)
+
+## Done today
+
+### CUTOVER D-build-queue-filesystem-first-2026-06-19 — COMPLETE (#1–#5), live on fleet
+Postgres dropped entirely from the ticket path; build queue is now filesystem-first + dynamic.
+- #1 T-ticket-fs-completeness-audit — gate PASSED (PG=2073/FS=2083, PG-only=0, no silent drops); tickets/closed/ bin live. commit 14561463
+- #2 T-ticket-store-module — unseen_university/ticket_store.py: FS queue chokepoint, atomic write+rename, cross-process flock, churn-free no-op write, status-aware routing (terminal→closed/), conditional_update race-safe check-and-set. commits 8023615b, 3271da70
+- #3 T-cc-queue-fs-first — cc_queue.py flipped FS-first (read+write via ticket_store), default-key backfill, change-detect (no churn bomb), single O(N) snapshot, 4 mutators through conditional_update, forensic JSONL traces in the chokepoint. commits a56f1cba, bfdfe8bc, 1d5de71c, e41c58d8, 626d352e
+- #4 T-ticket-readers-migrate — Phase 1 dispatch-critical (workflow_executor 685aed6a, granny shim 21ae234c, granny daemon 6efb46da, queue rack device 8c227013) + Phase 2 surfaces (web_server 25ee7ce9, search_tools/ticket_tools/orphan_watchdog/action_claim_verifier/dreaming up to 486c48f9, no-tickets-from-DB 6bf241cb) + Phase 3 (7 devlab dev tools 137b7110). closes dbce9500
+- #5 T-ticket-pg-drop — daemon PG mirror + LISTEN/NOTIFY trigger removed (→ _wait_for_work poll, 2848b52e); cc_queue _load_pg/_save_pg_mirror/_project_to_memory/_db_conn/etc removed (409a5ebd). VERIFIED: zero live ticket-state PG readers/writers, zero external importers of deleted symbols. follow-up acd1d3c0
+- test_queue_gate migrated off PG onto isolated tmp ticket_store (9192ef7b)
+- FLEET RESTARTED on cutover code, granny verified LIVE FS dispatch (T-lab-claudecode-path-sweep sprint→dispatched→worker through ticket_store, no NOTIFY = new code) — decision's measurement signal satisfied live
+- LEFT per discriminator: _close_igor_goal (cognition GOAL, not ticket state)
+
+### DS FREE INFERENCE wired + verified — all 4 tiers $0 (commit 6659e275)
+DS was on dead experiment models (not inference-less). 3 faults fixed in devices/inference/:
+- GoogleSource read keys env-only → now reads akien.credentials.cfg via _gemini_key()
+- stale ollama_cloud slugs: qwen2.5-coder:32b→qwen3-coder-next, llama3.3:70b→deepseek-v4-flash (old 404, not on account)
+- retired gemini-2.0-flash→gemini-2.5-flash
+E2E verified all 4 tiers complete on FREE ($0): minion=devstral-small-2:24b, worker=gemini-2.5-flash, analyst=deepseek-v4-flash, designer=gemini-2.5-flash. 254 inference tests pass.
+This implements the DECIDED policy (D-dsimnel-cc-parity, D-minion-model-upgrade, D-or-tiered-cascade) — NOT new context.
+
+### Decisions filed
+- D-build-queue-filesystem-first-2026-06-19 (the cutover above)
+- D-intention-why-observation-2026-06-19 FILED (commit c4c7bdd6) — atomic unit = intention+why+observation; 5 tickets via ticket_store
+- D-ticket-query-api-hubert-2026-06-19 (761bd731) — ticket_store query API + ticket tools Librarian→Hubert
+
+### Tickets filed (committed f9b59cdc)
+- T-web-kill-all-button-broken (M) — web UI kill-all under-killed (left orphans + tmux daemons + systemd units)
+- T-inference-route-fallthrough-on-hard-error (S)
+- T-gemini-paid-suffix-unstripped (S)
+- T-local-ollama-404 (S) — 4-machine LOCAL ollama tier 404s; cloud works
+- T-recover-skill (9cee7c5f, DONE) + T-recover-skill-message-wording
+- T-granny-fs-wake-signal (instant FS wake, descoped from #5)
+- T-lab-claudecode-path-sweep (mechanical grep-replace for a cheaper agent)
+- T-ticket-filename-status-prefix (GATED on T-ticket-pg-drop)
+
+## Notes
+- /recover rewind-safeguard skill is live (skills/recover/SKILL.md) and verified end-to-end.
+- Observation: rewind may be MORE disruptive than compact (memory lands behind git/slate) — still observing.
+
+## Session close: 2026-06-19
+Done: Cutover D-build-queue-filesystem-first COMPLETE #1–#5 (Postgres fully out of ticket path, verified live on fleet); DS free inference wired+verified 4/4 tiers $0 (6659e275); 4 bug tickets filed (f9b59cdc).
+Next: relaunch fleet clean on new code (done 2026-06-20: ground_loop+scraps+web_server up; Granny + builder held down).
+
+## In-flight
+NONE — all work durable and committed.
+
+## Fleet state at session end (relaunched 2026-06-20)
+Fleet was killed via web UI "kill everything" button which UNDER-KILLED (left 3 dicksimnel orphans + granny-in-tmux + scraps + ground_loop). CC finished the kill manually. Relaunched clean on 2026-06-20: ground_loop (scraps + web_server) up on new code; Granny + builder intentionally left down.
+
+## Open / carried forward
+- #6 T-consequence-build-queue-filesystem-first — open by design, observation gate 2026-07-03
+- D-intention-why-observation tickets: T-skill-why-convention, T-skill-why-auditor, T-always-on-observer-pattern, T-offload-harness-gates
+- D-ticket-query-api-hubert tickets: T-ticket-store-query-api, T-ticket-tools-to-hubert
+- Physically DROP inert devlab.tickets NOTIFY trigger row (code gone, folds into table drop)
+
+✅ CLOSED

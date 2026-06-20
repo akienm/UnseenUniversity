@@ -1,0 +1,6 @@
+- T-watch-problems-dedup (claiming)
+- done: T-watch-problems-dedup — upsert on watch_condition; 5468 rows cleaned up
+- T-adc-scheduling-primitive (design — Cherny article → shared scheduling tool)
+
+## In-flight: NONE — T-watch-problems-dedup closed; Igor restarted clean; T-adc-scheduling-primitive filed
+- T-watch-problems-test-isolation (test data leaks to real DB)

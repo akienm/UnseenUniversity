@@ -1,0 +1,53 @@
+# Slate 2026-06-07
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+- T-bash-librarian-shortcuts: bash shortcuts uurecall + uuresearch
+- T-stall-detection-gate: in_progress stall detection + stall-check skill
+- D-agent-notification-system-2026-06-07: SILENT/QUIET/LOUD shim notification system — T-notif-config-schema, T-shim-notif-filter, T-notify-skill, T-consequence-agent-notification-system
+- T-vetinari-autonomy-gap-map: Vetinari gap map vs autonomous directive vision
+- T-notif-config-schema: Notification config schema + reader
+## In-flight: T-notif-config-schema CLOSED — T-shim-notif-filter ungated, sprinting next
+- T-shim-notif-filter: Shim notification filter + tmux delivery
+## Session close (2026-06-07)
+**Done (2 tickets):** T-notif-config-schema — DeliveryMode enum + NotificationConfig (SILENT/QUIET/LOUD, per-sender overrides, atomic write, 16 tests). T-shim-notif-filter — NotificationDispatcher (filter+deliver, tmux guard, drain_pending, state-linked defaults); BaseShim._notifier + filter_incoming additive; 13 tests.
+**In-flight:** T-notify-skill [sprint, ungated] — /notify skill next; T-stall-detection-gate [sprint]; T-vetinari-autonomy-gap-map [sprint]
+**Next priority:** T-notify-skill (S, completes notification chain) → T-stall-detection-gate (M) → T-vetinari-autonomy-gap-map (M)
+- T-notify-skill: /notify skill — set level, show config, list pending
+- T-notify-skill: /notify skill closed
+
+## In-flight
+T-notify-skill CLOSED (notification chain complete: config + shim + tmux + skill)
+Next sprint: T-stall-detection-gate (stall detection + /stall-check skill)
+- T-stall-detection-gate: in_progress stall detection + stall-check skill
+- T-stall-detection-gate: stall detection closed
+
+## In-flight
+T-stall-detection-gate CLOSED — stall_check.py + /stall-check skill + context-load Step 5.5 (15 tests)
+Next: T-vetinari-autonomy-gap-map (gap map: how close is Vetinari to autonomous directive acceptance?)
+
+## In-flight
+T-granny-workflow-scripts CLOSED (WorkflowExecutor + dicksimnel-docstring-chain + 15 tests). Next: DickSimnel graduation (T-shim-docstring-pass, T-dicksimnel-toolloop-docstrings, T-dicksimnel-worker-listener-tests), then T-unified-node-rollout (L)
+
+## In-flight
+T-unified-node-rollout CLOSED (tags+triggers+GIN on 4 tables + node_registry.py 6 types + _cross_type_fts in recall.py). Next: T-vetinari-autonomy-gap-map (M, in_progress), then T-librarian-persistent-inquiry + Igor cognition tickets (all CC work now).
+- T-vetinari-autonomy-gap-map: Vetinari gap map evaluation
+- D-vetinari-gap-map-2026-06-08: Vetinari 7-dim gap map — T-vetinari-directive-intake, T-vetinari-decompose, T-vetinari-clarification-loop, T-vetinari-team-dispatch, T-vetinari-progress-tracking, T-vetinari-deployment-signal, T-vetinari-cp-audit
+- T-librarian-persistent-inquiry: Librarian persistent inquiry / become_knowledgeable_about
+- T-fix-cmd-next-in-progress-transition: fix cmd_next in_progress transition
+- T-fix-granny-role-deferral-test: fix Granny role deferral test
+- T-igor-boredom-background-goals: fix Igor boredom→background-goal pathway
+- T-igor-curiosity-recognition: curiosity recognition scoring in watchlist path
+- T-vetinari-directive-intake: VetinariShim + directive intake
+- T-vetinari-progress-tracking: directive lifecycle tracking
+- T-vetinari-clarification-loop: CP1 clarification before ambiguous decompose
+
+✅ CLOSED

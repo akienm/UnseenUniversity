@@ -1,0 +1,39 @@
+# Slate 2026-06-04
+
+## Done today
+- T-token-tracking-per-sprint — sprint_token_log.py + cc_queue show (3babebc3)
+- T-too-bus-shim-framing — ToO §1.3/§2 bus=network framing (e211de39)
+- T-audit-domain-humility — structural directives vs behavioral questions (52fbebff)
+- T-skill-queue-view-script — queue_view.py compiled /mytickets + /opentickets (cde413f8)
+- T-dicksimnel-escalation-summary — structured escalation summary in ticket body (b6c2c2d8)
+- T-fix-test-minions-module — restored unseen_university.test_minions (53a639b8)
+- T-consequence-skill-queue-view — CLEAR (observation)
+- T-consequence-anticipatory-memory — CLEAR (observation)
+- T-consequence-escalation-handoff — CLEAR (observation)
+- T-gap-mapping-research — D-gap-mapping-proposal-2026-06-04.md design exploration (16f5a53d)
+- T-sprint-anticipatory-brief — sprint_preflight_brief.py + Step 2.3 in skill (f4d26ac7)
+- T-inference-tier-escalation-summary — escalation_hop/prior_attempt on InferenceRequest (3fa92d88)
+- T-inference-provider-priority — batch task class + night-mode local Ollama (966187e3)
+- T-igor-clan-template — C-clan-template concept + profile declarations (fd168efe)
+- T-clan-instance-scoping — bus/memory_protocol.py + C-clan-instance-scoping (45e71922)
+- T-vetinari-device — VetinariDevice: factory ownership, health rollup, escalation (c41ad2c5)
+- D-too-bus-shim-network-2026-06-04: bus=network shim=interface — T-too-bus-shim-framing, T-consequence-too-bus-shim
+- D-skill-queue-view-python-2026-06-04: compile mytickets+opentickets — T-skill-queue-view-script, T-consequence-skill-queue-view
+- D-escalation-handoff-protocol-2026-06-04: escalation handoff structured summary — T-dicksimnel-escalation-summary, T-inference-tier-escalation-summary, T-consequence-escalation-handoff
+- D-audit-domain-humility-2026-06-04: adopt domain-humility in audits — T-audit-domain-humility
+- D-anticipatory-memory-2026-06-04: anticipatory pre-brief + token tracking — T-sprint-anticipatory-brief, T-token-tracking-per-sprint, T-consequence-anticipatory-memory
+- D-gap-mapping-2026-06-04: gap mapping research — T-gap-mapping-research
+
+## Notes
+- T-theigors-archive skipped: IGOR_HOME/THEIGORS_HOME unset; needs Akien to supervise filesystem migration
+- Pre-existing test failures (not introduced by this session): test_cc1_minion (now fixed), test_cc_queue_role (_infer_role missing), test_cc_queue_dispatch_is_assignment (cmd_next not setting in_progress)
+- T-granny-role-dispatch from earlier session: _infer_role and _WORKER_TO_ROLE not yet implemented in daemon.py — tickets exist
+
+## Session close: 2026-06-04 overnight sprint
+Done: 16 tickets closed — full S×7 / M×7 / L×1 / consequence×3 batch sprint.
+Next: Day-close audit + T-theigors-archive (needs Akien) + remaining queue.
+
+## In-flight
+NONE — batch sprint complete, day-close running.
+
+✅ CLOSED

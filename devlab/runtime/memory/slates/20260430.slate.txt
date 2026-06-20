@@ -1,0 +1,289 @@
+# Slate 2026-04-30
+
+## Notes (carry forward until stale)
+
+### Cert curriculum (current shape of work) [carry until tier-1 cleared]
+- Tier 1: **10 single-FILE walks** (1 file per walk; Akien clarification 2026-04-30). Multi-edit-within-1-file is fine; multi-file is tier-2.
+- Tier 2: 10 multi-file walks (source+test, source+caller-update). Multi-file hypothesis, edit ordering. ENTERED ONLY after tier-1 clears.
+- Tier 3+: progressively more complex once each prior tier settles.
+- Today's walk-02 substitute was tier-2 attempted before tier-1 cleared — does not count toward tier-1 score. Cert score: Tier-1 0/10.
+- Patient framing: research, not a race. "Less than one in 10 early" is normal; CC fills the gap, files the bug, fixes when natural.
+
+### Cert protocol invariants (2026-04-30)
+- **pe_chain.py is off-limits to Igor's edits.** If pe_chain proposes editing itself, that's a failure mode — fix the trigger and re-iterate. Chicken-and-egg means cert can never validate edits to the pipeline that produces them.
+- Curriculum sourcing (variety hardens response):
+  - Use existing pending tier-1 walks
+  - Split medium tickets into tier-1 single-file slices
+  - Branch from before-old-tickets and have Igor fix the same bugs again (regression-style replay)
+  - Plant bugs intentionally for Igor to find/fix
+- Variety matters more than the source.
+
+### Slate Notes location decision (2026-04-30) [carry until template updated]
+- Notes section moved to top of slate (right after title) so /context-load surfaces them with In-flight rather than burying them. Notes are short-term reminders for CC's own consultation; they live at top so they're actually read.
+- Each note carries a "carry-until" hint where applicable; dropped at day-close when stale.
+- Pending: update slate template + /context-load formatter to bake this into all future slates (small ticket: T-slate-notes-on-top).
+
+### Igor cert protocol environment [carry until cert complete]
+- IGOR_SINGLE_TICKET kill-switch in switches.cfg controls Igor's pe_chain claim eligibility.
+- cc_queue.cmd_claim worker check (b092865d) is belt-and-suspenders: rejects pending tickets with worker != "igor".
+- Cert walk pattern: set IGOR_SINGLE_TICKET=<ticket-id>, single-step pe_chain via debugger or live, validate end product, mark done as CC.
+- Cert harness must mirror Igor's cfg env (T-cert-debugger-env-mirror) — silent 7B-vs-32B routing detour cost 7 attempts on 2026-04-30.
+
+## Carry-over from 2026-04-29
+
+### Igor cert: 0/10 walks honestly certifiable
+- Comprehensive report: `lab/claudecode/reports/cc_walk_cert_status_2026-04-29.md`
+- Walk-01 closed but with CC pe_chain bug-fixing during attempt
+- Walks 02-10: empty-closes or hallucinated trivia. Real fixes (where they exist) authored by Akien manually.
+- Cert protocol per ticket-2-onward never actually executed.
+
+### Production bugs found in Igor's autonomous edits + fixed overnight
+1. **consult.py CONSULT_LOG_PATH** = `Path('')` when `IGOR_TEST_MODE` unset (Igor commit 13251e0c, T-consult-log-test-mode-gate). Forensic log writes silently failing in production. Repaired + 4 regression tests. (commit 5b803f77)
+2. **main.py:292 NameError** — Igor commit 346f8a40 captured `as e` but body referenced `{_bare_e}`. Repaired. (commit d7065b22)
+3. **main.py:496 NameError** — same commit, captured `as ee_e` but body referenced `{e}`. Repaired. (commit d7065b22)
+
+Of the 4 "pe_chain autonomous edit" commits Igor ever made: 3 contained production bugs, 1 was hallucinated trivia. **Zero produced correct intent-matching work.**
+
+### State at start of day
+- IGOR_SINGLE_TICKET kill-switch deployed in pe_chain (commit f695161f) — activates when Igor next launches with env var set in shell.
+- cert_worker_freeze.py available — `--freeze`, `--unfreeze`, `--status` modes.
+- 6 walk underlyings reset to status=pending + worker=claude (frozen for cert):
+  - T-consult-confidence-threshold-raise (walk-02)
+  - T-consult-log-test-mode-gate (walk-03)
+  - T-hardcoded-instance-refs-cleanup (walk-05)
+  - T-no-sqlite-enforcement (walk-06)
+  - T-ollama-input-cap (walk-08)
+  - T-consult-confab-scan-wiring-verify (walk-10)
+- Igor running (PID 1663951 from 20:08 yesterday) but pe_chain finds nothing claimable due to freeze.
+- 4217 regression tests passing.
+- 6 other Igor empty-closes (non-walk) noted but NOT reset overnight — surfaced for triage.
+
+### Recommended cert protocol per walk
+1. Stop Igor (ctrl-c the python process or his exit primitive)
+2. `export IGOR_SINGLE_TICKET=<underlying-id>` in launching shell
+3. Manually flip THE underlying back to `worker=igor` (e.g. `cc_queue.py set-worker <id> igor`)
+4. Restart Igor
+5. Watch `~/.TheIgors/local/logs/pe_chain.log` live
+6. Validate end product → mark walk-N done OR fix bug + retry
+7. Next walk
+
+### Open questions for today
+1. Does walk-01 cert as-is, or does it need a re-run?
+2. For walks where the underlying ticket is functionally already done by Akien (04, 07, 09): substitute different fresh tickets, or accept those walks can't be re-run cleanly?
+3. Are 9 fresh live attempts realistic in one session, or spread across multiple days?
+
+### Yesterday's commit log highlights (what shipped)
+- 23 tickets completed; 17 via my hand
+- Major: audit pyramid (18 tickets via Igor + me parallel), logging migration (utility_closet, cognition, lab), pe_chain empty-close guards, IGOR_SINGLE_TICKET kill-switch + freeze, consult-confidence-gate
+
+## Today (2026-04-30)
+- T-day-close-audit-skill-drift-20260430 (filed during day-close-audit): Step 8 fn name + Step 9 schema + Step 12 table qualification
+
+## In-flight: NONE — /day-close complete (audit run, drift ticket filed, milieu.py debris reverted, docs committed + pushed, GH Discussion 567 created with slate posted)
+
+## Cert walk-02 trace (afternoon, 2026-04-30)
+
+State change: cert protocol corrected — Akien NOT in loop; CC closes tickets, not Igor, not Akien.
+
+### Reframing (Akien's correction)
+- 10 walks are starting set; gate clears only after 10 successful WITHOUT CC help
+- Per-walk protocol: stop Igor → IGOR_SINGLE_TICKET in cfg → reset target → debugger run → CC validates and closes
+- IGOR_SINGLE_TICKET correct home = /home/akien/.agent_datacenter/Igor-wild-0001/igor.switches.cfg (env_sync hot-reloads on mtime change)
+
+### Walk-02 trace
+- Attempt 1 (T-consult-confidence-threshold-raise): OBSERVE window collapsed at file boundary → fixed (T-pe-chain-observe-window-fix, commit 27ca2807)
+- Attempt 2 (same): regressive-direction edit on no-op terrain — degenerate ticket; advisor flagged for substitution
+- Substituted: T-cc-queue-claim-honors-worker (placebo-freeze fix — small Python edit)
+- Attempt 3: HYPOTHESIZE old_string paraphrasing → fixed (T-pe-chain-hypothesize-retry, commit c0836724) — validate-then-retry pattern
+- Attempt 4: retry fired 2x, LLM (qwen-2.5-coder via OpenRouter @ temp 0.2) emitted same paraphrase each time. ESCALATE preserved, working tree clean. **Walk-02 substitute marked failed-after-2-fixes.**
+
+### Findings filed
+- T-pe-chain-llm-paraphrase-stickiness (M) — LLM token-level stickiness on paraphrase even with verbatim feedback. 5 candidate interventions documented (higher retry temp, model escalation, line-number-based edits, auto-correct, structured-diff redesign).
+
+### Cert dataset preserved
+- ~/.TheIgors/local/logs/cert_walk_02_attempt_2_regressive_edit.json (no-op-terrain regressive)
+- ~/.TheIgors/local/logs/cert_walk_02_substitute_attempt_4_retries_exhausted.json (paraphrase-stickiness)
+
+### Decision
+Cert score still 0/10. Two real pe_chain improvements shipped (OBSERVE + retry). Per advisor's hard-stop rule, no 3rd cert-driven pe_chain fix this session. Next walk should be on fresh ticket — but pe_chain HYPOTHESIZE has the same LLM, so expecting different results without addressing model/strategy is unrealistic. Pausing for Akien direction.
+
+## Cert walk-02 trace continued (afternoon → end of day, 2026-04-30)
+
+### After Akien's "this is research, not product launch" reset
+
+Reframing he gave: don't defer to "later," exhaust each maze terminus, use me
+(Claude) as first-pass LLM-judgment filter on prompts the smaller models will
+see, build unit tests so iteration doesn't burn LLM credits, trace inputs back
+through audits when the LLM input isn't good enough. Stay in the qwen family
+(documented constraint: "if Qwen quality is insufficient, go LARGER Qwen, NOT
+fallback to Claude" — pe_chain.py:780).
+
+### What I shipped today
+- T-pe-chain-observe-window-fix (commit 27ca2807) — OBSERVE window collapsed at
+  file boundaries; rebalance helper added
+- T-pe-chain-hypothesize-retry (commit c0836724) — Aider-style validate-then-
+  retry safety net
+- T-pe-chain-hypothesize-actual-cap-restore-grounding (commits 911edebd +
+  f917310b) — actual cap 4000→16000 + _strip_line_prefix to remove line-number
+  prefixes when serializing for the LLM. 23 new unit tests pin the
+  prompt-assembly behavior (tests/test_pe_chain_hypothesize_prompt.py)
+- Prompt example fix (commit 69ef9b74) — replaced single-quote-priming example
+- T-cc-queue-claim-honors-worker (commit b092865d) — pe_chain produced source
+  edit; CC added test
+
+### The actual root cause
+After all that pe_chain work, cert walk-02 attempts 5/6/7 still failed. Then
+multi-model probe revealed: my debugger script `/tmp/run_walk_02.py` did NOT
+set IGOR_CLOUD_PROGRAMMING=true, so `_call_tier2` routed through local Ollama
+(qwen2.5:7b) instead of cloud (qwen-2.5-coder-32b). The 7B model can't do
+verbatim copy on this prompt; the 32B model can. Igor's real pe_chain runs hit
+the 32B because the cfg sets the var; my probe path silently went 7B for 7
+attempts. Test rig bug, not pe_chain bug.
+
+### Cert walk-02 substitute attempt 8 (with proper routing)
+- pe_chain HYPOTHESIZE produced verbatim-valid edit on cmd_claim
+- Targets correct file, correct line, semantically right
+- IMPLEMENT applied cleanly (1/1 edits)
+- 18 cc_queue + cert_worker tests pass with edit applied
+- BUT: pe_chain produced only the source edit, not the test that ticket scope
+  asked for. That's a known multi-edit limitation of qwen-coder-32b at this
+  prompt shape — it produces 1 edit; the 72B variant produces multiple but
+  with hallucinated paths.
+
+### Cert verdict
+**Walk-02 substitute: PARTIAL.** Engram-level success (pe_chain produced
+intent-matching verbatim source edit), but CC added the test = "with help" =
+does NOT count toward 10-without-help. Cert score still 0/10.
+
+### Real pe_chain capability validated
+For the first time since the cert protocol was reframed: pe_chain produced an
+intent-matching, verbatim-valid edit that applied cleanly. The five fixes
+shipped today plus correct routing got us there. Next walk should test on a
+fresh single-file ticket where the multi-edit gap doesn't bite.
+
+### Still pending followups
+- T-pe-chain-llm-paraphrase-stickiness (filed earlier today) — partially
+  superseded by the test-rig bug discovery. The "stickiness" only manifested
+  on the 7B model. With 32B routing, ungated. Could close as superseded or
+  re-scope as "multi-edit (source + test) gap on qwen-coder-32b" since that's
+  the remaining gap.
+- T-cert-debugger-env-mirror — file ticket: cert harness must mirror Igor's
+  runtime env (IGOR_CLOUD_PROGRAMMING, OPENROUTER_API_KEY, etc.) so test
+  rig matches autonomous behavior. Today's 7-attempt detour is the example.
+
+### State at end of day
+- Igor up (PID 162313); IGOR_SINGLE_TICKET=NONE_BETWEEN_CERT_WALKS keeps him
+  idle until next walk
+- 4217 + 26 new tests pass (3 cc_queue_claim_worker + 23 hypothesize_prompt)
+- 5 commits shipped to main + pushed
+- Cert dataset preserved (~/.TheIgors/local/logs/cert_walk_02_*.json + qwen_temp_probe.json + qwen_models_probe.json)
+- Cert score: 0/10. Walk-02 substitute closed PARTIAL.
+
+## Followup tickets filed end-of-day
+- T-cert-debugger-env-mirror (S, claude) — fix the cert harness so it routes to the same model Igor's autonomous pe_chain uses; today's 7-attempt detour is the canonical example.
+- T-pe-chain-llm-paraphrase-stickiness — closed as superseded (was a 7B artifact; 32B handles it correctly).
+
+## In-flight: NONE — session clean. Cert walk-02 substitute PARTIAL (source succeeded, CC added test = 0/10). All tickets filed + committed.
+
+## In-flight: cert tier-1 curriculum design — pool audit done (3 strict walks: 02/03/04 ish), need 6+ more via split-medium / replay-old / planted-bug. pe_chain.py off-limits per Akien.
+
+## Tier-1 curriculum design proposal (2026-04-30 PM)
+
+### Correction to prior audit
+- The "3 strict tier-1 walks (02/03/04)" was wrong: T-consult-confidence-threshold-raise (02 underlying), T-consult-log-test-mode-gate (03 underlying), T-audit-sqlite-exempt-calibre (04 underlying) — ALL DONE. Same for 05/06/07/08/09/10. The cc-walk-* envelope tickets are functionally expired; the underlyings already shipped.
+- Net: tier-1 pool needs to be rebuilt from scratch.
+
+### Source priority (advisor-ratified)
+1. **replay-old** (mechanical, fix is provably single-file because it shipped that way) — primary source
+2. **split-medium** (design work — do ONE to demonstrate pattern, not five)
+3. **plant-bug** (synthetic — fallback if natural variety runs dry at walk #7+)
+
+### Variety dimension that matters
+**Edit shape**, not file location. pe_chain failure modes cluster by what the LLM is asked to produce. A curriculum of 10 "tweak a constant" walks tests one failure mode 10 times. Spread the shapes:
+- constant tweak (`0.3 → 0.55`)
+- new conditional gate (`if env: skip`)
+- function signature / argument change
+- string-literal change (paraphrase risk — already observed)
+- new test case append
+- dead-code / docstring removal
+- mock injection in test
+- constant-set / list append (e.g. `_PREFLIGHT_IGNORE`)
+
+### Replay-old candidates verified single-file (git show --stat, no pe_chain touch)
+| Walk | commit | edit shape | source file |
+|------|--------|------------|-------------|
+| W-1  | `92749474` | constant-set append | tests/conftest.py (or similar list) |
+| W-2  | `81b96b9a` | test append (regression guard) | test_web_channel_*.py |
+| W-3  | `cd547edd` | dead-code removal | tests/test_pr_accretion.py |
+| W-4  | `443d134a` | constant change (sentinel) | test ordering file |
+| W-5  | `8c7fefc2` | test isolation refactor | test_scope_guard*.py |
+| W-6  | `a51bfb35` | mock injection | test_rate_limit_releases.py |
+| W-7  | `9b86dcbd` | string-literal change (instance ref) | utility closet code |
+| W-8  | `88696d0a` | conditional gate (None guard) | assess_valence path |
+| W-9  | `bd97fe79` | function-call addition | cc_queue done/block |
+| W-10 | `8cea0061` | conditional skip (env gate) | tests with env req |
+
+10 candidates — covers 8+ distinct edit shapes. W-7 through W-10 need single-file re-verification (only checked recent batch); will verify before filing each.
+
+### Akien-facing blocker (advisor flagged)
+**Branching protocol for replay-old.** Igor is running (PID 162313 from yesterday's slate) reading from main. Replay-old means: branch to `<commit>~1`, restart Igor on that branch with IGOR_SINGLE_TICKET=<replay-id>, run pe_chain, validate output equivalent to original fix, restore main. Risks: Igor's runtime state (~/.TheIgors/) may depend on current main schemas/constants; checkout could break startup. Two protocol options:
+- (a) git stash + checkout for the duration of one walk; restore after
+- (b) separate worktree at the older commit; Igor relaunched pointed at it
+**Recommend (b)** — cleaner isolation, no risk of "forgot to restore" leaving Igor on old main.
+**Test on walk W-1 first before scaling to all 10.**
+
+### Filing strategy (advisor-ratified)
+- Do NOT pre-file all 10. Each walk reveals pe_chain edges that may reorder later walks. Pre-filing commits a sequence we'll want to revise.
+- Ratify the design with Akien → file W-1 → run W-1 → close → file W-2 → ...
+- /sprint-batch is wrong tool here; one-walk-at-a-time is the protocol.
+
+### Decisions Akien needs to make
+1. Approve the 10 candidates as the slate (or swap)?
+2. Branching protocol: option (a), (b), or different?
+3. Approve "file walk-by-walk, not pre-file 10"?
+4. When to start W-1 — today (after dog walk) or tomorrow's slate?
+
+## In-flight: tier-1 curriculum DESIGN drafted (10 replay-old candidates, 8+ edit shapes); awaiting Akien decision on (1) candidates approved, (2) branching protocol [recommend worktree], (3) file-walk-by-walk vs pre-file, (4) start W-1 today or tomorrow.
+
+## Akien decisions (2026-04-30 PM): all 4 approved. Worktree (b). Walk-by-walk. Start now. Branching: "you pick the best one." Discussion ticket filed: T-discuss-cognition-delay-by-brain-size (DelaysForCognitionBasedOnBrainSize.txt).
+
+## Cert walk W-1 attempt (2026-04-30 21:29) — BLOCKED on test-rig bug
+
+Setup verified clean before run:
+- Worktree at /home/akien/TheIgors-cert-walks/W1, branch cert-walk-W1, HEAD=92749474~1 (parent of fix)
+- Worktree ops.py: 0 occurrences of "test_twm_context" (clean baseline)
+- Main ops.py: 1 occurrence (fix shipped)
+- T-cert-walk-w1-preflight-ignore-twm-context filed with explicit single-file scope
+- /tmp/run_walk_W1.py replicates yesterday's run_walk_02.py env-loading pattern (IGOR_CLOUD_PROGRAMMING=true, OR creds loaded)
+
+Result: pe_chain finished IMPLEMENT with `implement_skipped: validation failed: old_string not found verbatim`.
+
+### Root cause
+pe_chain.py:638 hardcodes `_REPO_ROOT = Path.home() / "TheIgors"`. OBSERVE returned MAIN's file content (with the fix already in place at lines 1241-1244), not the worktree's. HYPOTHESIZE then produced an edit trying to insert the line under a comment-only-no-entry pattern that doesn't exist anywhere — because at main, the entry IS already there with the comment.
+
+This is the cert-harness analog of yesterday's silent 7B-routing detour: a test-rig bug producing fake cert results without anybody noticing. Filed: **T-pe-chain-respect-worktree-path-for-observe-implement** (S, claude, blocks-cert tag).
+
+### Curriculum implication
+Replay-old via worktree is BLOCKED until pe_chain is path-aware. Three options for tomorrow morning:
+1. **Sprint T-pe-chain-respect-worktree-path-for-observe-implement first** — clean fix, unblocks all 10 replay-old walks, also useful beyond cert. Recommended.
+2. **Pivot to plant-bug source** — operate on main directly, no worktree needed. Risk: Igor's autonomous loop may trip on planted bugs.
+3. **Stop Igor + git-revert-on-branch + run-pe_chain-on-main + restore + restart-Igor** — works without harness fix but disrupts Igor for each walk.
+
+### Cert dataset preserved
+- /home/akien/.TheIgors/local/logs/cert_walk_W1_T-cert-walk-w1-preflight-ignore-twm-context_20260430-212922.json
+- /home/akien/TheIgors-cert-walks/W1/ (worktree intact, can re-run after harness fix)
+
+### W-1 status
+- T-cert-walk-w1-preflight-ignore-twm-context: pending (NOT done — failed for harness reasons, not Igor capability reasons)
+- Cert score: still 0/10. No evidence either way on Igor's actual W-1 capability — the harness never gave him real input.
+
+## In-flight: cert walk W-1 BLOCKED on test-rig bug (T-pe-chain-respect-worktree-path-for-observe-implement, filed). Tomorrow's first action: sprint that ticket OR pivot source. Recommend sprint-the-fix; clean unblock for all 10 replay-old walks. Igor undisturbed (PID 1884185 still running normal autonomous loop).
+- T-discuss-cognition-delay-by-brain-size: DISCUSS — cognition delays scale with brain size (ideas/DelaysForCognitionBasedOnBrainSize.txt; review in light of consult+anticipation+planning work)
+
+✅ CLOSED — 2026-04-30
+
+## Final Status
+- Cert W-1 filed (T-cert-walk-w1-preflight-ignore-twm-context) and attempted; blocked on harness (T-pe-chain-respect-worktree-path-for-observe-implement) ← ready to sprint
+- Discussion ticket filed (T-discuss-cognition-delay-by-brain-size)
+- Tier-1 curriculum design approved + W-1 candidate verified
+- Igor running undisturbed (autonomous loop active)

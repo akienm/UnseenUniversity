@@ -1,0 +1,71 @@
+# Slate 2026-06-15
+
+## Notes
+- AcuRite hub listener live on port 80, dnsmasq serving 10.0.0.229:53. Hub back on ethernet. DNS redirect needed: router http://10.0.0.1 → set primary DNS to 10.0.0.229
+- T-ccqueue-devlab-writer needs Akien pre-approval before sprint
+- T-repo-auditor-semantic-eval ready to resume (get_closed_tickets fix landed)
+
+## In-flight
+NONE
+
+## Planned
+- AcuRite: configure router DNS → 10.0.0.229 (Akien action) + sensor name discovery + new ideas from Akien to /sorted
+- T-judge-wire-post-sprint, T-critic-to-evaluator-core, T-improver-device (sprint-ready)
+
+## Ad hoc
+
+## Done today
+- T-acurite-web-ui closed — weather.html shipped (dark theme, outdoor big card, indoor 2-col grid, auto-refresh, PWA, music links)
+
+- T-cc-groundloop-daemon — CC device: CCWorkerListener as devices/claude/groundloop/runme.py (CCWorkerListener daemon created at devices/claude/groundloop/runme.py; acking Granny dispatch, nag loop running. Commit )
+- T-intent-extractor-device — Build intent extractor device — predict/validate/patterns API (Implemented: devices/intent/ — predict/validate/patterns API, devlab.predictions + devlab.validations tables, 28 tests ()
+- T-carve-holdout-test-fragile — Fix test_stratified_split_approximately_twenty_percent — fragile row-count assumption (Fixed: changed absolute holdout count assertion to ratio check (10%–30% tolerance). 3/3 tests pass. Commit 5467f23b.)
+- T-critic-to-evaluator-core — Refactor CriticDevice to call EvaluatorCore(optimism=-1) (Refactored: CriticDevice.evaluate_decision() now calls EvaluatorCore(optimism=-1.0). evaluate_replay() routes through it)
+- T-research-skill — Create /research skill — CC-side interface to uuresearch (/research skill created at skills/research/SKILL.md — wraps uuresearch with graceful offline degradation)
+- T-improver-device — Build ImproverDevice as EvaluatorCore(optimism=+1) wrapper (Built ImproverDevice: EvaluatorCore(optimism=+1.0) wrapper. improve(patterns) → clusters by pattern → LearningRule objec)
+- T-judge-wire-post-sprint — Wire EvaluatorDevice into sprint-ticket step 8.5 post-sprint grader (sprint_grader.py built: EvaluatorDevice-backed post-sprint grader with pass/partial/fail verdict; stamp-verdict added to)
+- T-intent-extractor-backfill — Intent extractor: backfill tickets + decoration hook at add time (Intent extractor integration complete — cc_queue.py decoration hook predicts/validates intentions on add; intent_backfil)
+- T-backfill-test-sentinel — Test ticket (sentinel cleanup)
+- T-clan-data-audit — Audit clan.memories — categorize by target namespace (clan.memories categorization complete — 187,177 records across 4 target namespaces (bootstrap/devlab/library/employer.ak)
+- T-intent-extractor-librarian — Wire Librarian research completion to intent extractor validate() (Librarian research() completion hook → intent_validate(prediction_id=None); fails open; 3 new tests all green)
+- T-ccqueue-devlab-writer — Update cc_queue.py — write new tickets to devlab (cc_queue.py now routes new tickets to devlab.tickets instead of clan.memories; existing clan tickets remain updatable in)
+## Decisions (pre-audit, not yet submitted)
+- D-acurite-isolated-network-2026-06-15: second network port, isolated hub, daemon listener
+- D-unified-daemon-supervisor-2026-06-15: Ground Loop cron bootstrap, daemon file pattern — T-groundloop-cron-bootstrap, T-daemon-supervisor-file-pattern, T-daemon-supervisor-demo, T-consequence-unified-daemon-supervisor
+- D-critic-skill-script-pair-2026-06-15: /critic skill + scripts/critic.py for testing — T-critic-skill-implementation, T-critic-script-implementation, T-critic-testing-harness, T-consequence-critic-skill-script
+
+## Session close summary
+
+**Done today:**
+- T-clan-data-audit — clan.memories audit: 187,177 records categorized into 4 target namespaces (bootstrap/devlab/library/employer.akien) with manifest
+- T-intent-extractor-librarian — wired Librarian research completion to intent validator; fail-open error handling + 3 tests
+- T-intent-extractor-device (background) — intent extractor learning substrate complete
+- T-intent-extractor-backfill — one-time backfill script for existing tickets
+- T-improver-device — EvaluatorCore wrapper for constructive improvement rules
+- T-research-skill — /research skill for palace/corpus/git full-text search
+
+**Completed decision:** D-intent-extractor-learning-substrate-2026-06-14 (4 implementation tickets + 1 consequence check pending until 2026-06-28)
+
+**Blocked/waiting:**
+- T-ccqueue-devlab-writer (M) — requires Akien pre-approval (HIGH INERTIA: canonical ticket writer)
+- T-consequence-intent-extractor (S) — gated until 2026-06-28
+
+
+## Session 2 close summary
+
+**Additional work completed:**
+- T-ccqueue-devlab-writer — cc_queue.py now routes new tickets to devlab.tickets (not clan); existing clan tickets remain updatable in-place; merged _load() from both tables; status updates work for both
+
+**Architecture checkpoint:**
+- Intent extractor learning complete: device + backfill + Librarian integration
+- Storage layer formalization started: clan.memories audit complete; devlab.tickets writer in place
+- cc_queue.py transition: NEW→devlab, EXISTING→clan (backwards-compatible during migration)
+
+**Decisions shipped:**
+- D-intent-extractor-learning-substrate-2026-06-14 (4/5 tickets — consequence check gated)
+- D-storage-layer-formalization-2026-06-14 (2/3 tickets — migration follow-ups pending)
+
+**No unblocked sprint work remaining.** All pending items have dependencies, holds, or gates.
+
+
+## In-flight: Igor assignment fix complete — _infer_worker() defaults to unassigned instead of igor; /sorted consequence tickets omit worker field; two existing Igor tickets unassigned. Commit be41ce98. Ready to sprint pending tickets (AcuRite isolation, daemon supervisor, critic suite).

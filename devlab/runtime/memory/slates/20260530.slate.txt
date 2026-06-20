@@ -1,0 +1,108 @@
+# Slate 2026-05-30
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+- T-cc-task-listener-autostart — cc_task_listener not started — Granny dispatches land in channel with no worker picking them up (TaskListener started as daemon thread inside GrannyDaemon.start(); stop() wired to GrannyDaemon.stop(); stop event repla)
+
+- T-platform-services-audit — Audit and roadmap UU platform services — what do new agents need? (Design output: 7 sprint tickets filed (T-validate-bus-core through T-agent-scaffold) + T-igor-rack-tool-migration triage)
+- T-palace-decay-timestamps — Fix palace nodes missing updated_at timestamps (11 nodes) (Verified: SELECT count(*) FROM adc.palace WHERE updated_at IS NULL returns 0)
+- T-fix-ygm-check-hook — Fix broken ygm_check UserPromptSubmit hook path (Verified: hook runs via devices.claude.ygm_check, exits 0 (IMAP refused is expected when bus not running))
+## Session close: complete docs pass for weekend
+
+Done: README complete rewrite (21 devices, full inventory, user guide first), TheoryOfOperation.md outline (rack → cognition → queue → safety → alignment, down to memory node design). Fixed false "lives in TheIgors" claim. Two-tier semantic search architecture documented. Granny routing gap fixed (tests tag). Igor safe-mode loop fixed (new aspirational sub-goals + ask-questions + build-question-list standing goals). cc_task_listener autostart wired to GrannyDaemon.
+
+Tickets filed: T-labdocs-to-docs-move (has 5 skill referrers to update).
+
+Open gaps: TheoryOfOperation §8 alignment queries (verify actual DB state matches doc claims); T-labdocs-to-docs-move (medium-lift because of skill file updates and callmap.py refactor); Phases 6-7 UU migration unfiled (ready to go when you want them).
+
+Ready for weekend: README + docs/ + skills list all aligned; device model clear; architecture outlined. Embedding engine is a platform service (not debt). Igor has actionable sub-goals under aspirational frame.
+
+Next: validate architecture against code (run the §8 queries); sprint the audit tickets + T-labdocs-to-docs-move if you want kitchen cleaned up before others arrive; or leave them for Granny to dispatch.
+
+✅ CLOSED
+
+## Strategic observation
+
+User asks: what services are we offering new agents building on UnseenUniversity? What should we offer?
+
+Current service layer for agents:
+- IMAP bus + comms:// addressing (message routing)
+- Skeleton + MCP aggregator (tool discovery & routing)
+- Device registry (flat-file, cold-start proof)
+- Postgres device (long-term storage, shared & instance-private)
+- Inference device (LLM routing + escalation)
+- Queue device (work dispatch, atomic assignment)
+- Librarian device (memory search + retrieval, "what do I know about X?")
+- Embedding engine (semantic search, platform service)
+- Profile system (declarative agent-type YAML)
+- Skill framework (compiled procedures)
+- Installer (agentctl)
+
+Potential future services:
+- Cloud storage abstraction (S3-like, not immediate need)
+- Skill/workflow translator (from openclaw.ai, other platforms)
+- ? (what else?)
+
+Implication: UnseenUniversity is a **platform for building agents**, not just Igor's runtime. The device model is the abstraction. What other abstractions do new agents need?
+
+This should be reflected in docs or architecture planning.
+
+
+## Session close: docs pass + platform architecture
+
+Done: README complete (21 devices, two-tier semantic search, user guide first). TheoryOfOperation.md outline (rack→cognition→queue→safety→alignment, down to memory node types). Granny routing fixed, Igor aspirational sub-goals seeded, cc_task_listener autostarted with GrannyDaemon. Embedding engine framed as platform service not debt. Merge conflict in README resolved by user.
+
+Next: T-platform-services-audit (design conversation — what services does UU provide to new agents?); T-labdocs-to-docs-move (5 skill referrers); validate §8 alignment queries in TheoryOfOperation.
+
+
+## Ad hoc (added 2026-05-30 session 2)
+- T-validate-bus-core: Smoke: announce + IMAP bus
+- T-validate-queue-dispatch: Smoke: queue → Granny → cc_task_listener
+- T-validate-data-services: Smoke: Librarian recall + scraps embed
+- T-validate-web-installer: Smoke: web health + skill installer
+- T-shim-traffic-spy: BaseShim call-log (observability)
+- T-workspace-file-tools: workspace MCP tools for non-CC agents
+- T-agent-scaffold: Librarian new-agent creation skill
+- T-igor-rack-tool-migration: Igor → workspace device (triage, post-Monday)
+- T-platform-services-audit: CLOSED — design output is above batch
+
+- done: T-agent-scaffold — Built /new-agent scaffold skill
+
+## In-flight: T-agent-scaffold closed — /new-agent scaffold skill ships; session clean
+- D-agentic-os-platform-2026-05-30: Complete UU agentic OS platform layer — 32 tickets
+
+## In-flight: 2026-05-30 Done: Complete platform design session — D-agentic-os-platform-2026-05-30. 33 tickets filed (32 sprint, 1 triage). Provenance, governance, resource accounting, observability, factory model, learning loop, security tiers, versioning all designed. Vetinari device queued. Next: Monday beta validation + evals. T-rack-beta-test-suite gates on everything working without Igor.
+
+## In-flight: NONE — platform design session complete, all decisions in palace, all tickets in queue, no in-flight work.
+
+## In-flight: 2026-05-30 Done: Fixed critical Granny dispatch bug + 3 supporting tickets. Pipeline now flows: queue → Granny routes → GRANNY_DISPATCH posted → cc_task_listener marks in_progress. 34 sprint tickets active. Next: Monday validation suite passes. T-murderbot-security-review before external sharing.
+
+## In-flight: NONE — all state captured, tickets in queue, Granny running with fix, no in-flight work.
+
+## Session close: Granny dispatch bottleneck fixed, platform design locked
+
+Done: Fixed critical Granny dispatch bottleneck (_load_sprint_tickets was calling cc_queue.py show 1384 times per poll, now queries Postgres directly — O(1) instead of O(N)). Daemon restarted with fast logic — 35 tickets dispatching, 35 CC workers active. Diagnosed: old daemon predated spawn-fix commit; fixed test mocks for dispatch_chain. Added 4 architecture tickets (unified memory node format, audit trace emission, logging rules). Updated TOO memory clarification; platform model reorg ticket ready.
+
+Next: Monitor CC worker completions (should see closes flowing again). Sprint TOO reorg + audit implementation. Pilot unified memory node format (clan.memories schema).
+
+In-flight: NONE — pipeline flowing autonomously, daemon running, all dispatches active.
+
+✅ CLOSED
+
+## In-flight: T-readme-merge-fix closed no-op — README.md conflict markers were already resolved before sprint; no code changes made
+
+## In-flight: T-readme-merge-fix closed pre-resolved — README.md conflict markers already absent at HEAD; no code changes needed; closed
+- T-granny-rate-limit-gate: Granny dispatch gate — add 7d utilization check
+
+## In-flight: T-doc-versioning-facia-pattern closed — §3.8 facia versioning pattern already committed in prior session; ticket found in sprint, marked in_progress, closed this sprint; no work in-flight
+
+## In-flight: T-validate-bus-core closed — smoke tests for announce protocol and IMAP bus both green and pushed; no further in-flight work
+- T-igor-logs-to-markdown: Convert Igor logs to .md format

@@ -1,0 +1,61 @@
+# Slate 2026-06-09
+
+## Done today
+- T-chat-log-learning-bootstrap: bootstrap_learning.py — chunked session processor; 21 tests (6e644c6c)
+- T-log-rotation-policy: rotate_logs.py — auto-rotates logs >10MB (3036e9d1)
+- T-resolve-dual-learning-pipeline: canonical LearningPipeline is librarian (abd687c7)
+- T-learning-pipeline-atomic-commit: run_once stores + marks processed atomically (3fa21f34)
+- T-google-source-key-header: API key moved to x-goog-api-key header (8b4cf988)
+- T-google-source-429-fallthrough: 429 marks GoogleSource unavailable for 60s (db4d6621)
+- T-outcome-mechanical-enforcement: outcome_check.py surfaces /outcome prompt on decision completion (66b3de51)
+- T-learning-pipeline-embed-wiring: embed knowledge nodes at write time (cb8c6f5b)
+- T-learning-pipeline-schedule: nightly cron for LearningPipeline.run_once() (e4f92ee5)
+- T-wg-search-exclude-phase1: WORD_GRAPH excluded from Phase 1 candidate pool (d9faeca1)
+- T-wg-sync-scope: WORD_GRAPH portable=0 + atomic accumulate_unresolved / button pattern (e23f05cb)
+- T-deferred-node-watchlist-drain: tick_watch_pass wired into NE cycle + m064 index (c6e9ada4)
+- T-uucompactclaude-double-enter: incidental fix during afternoon sprint (78e06a7e)
+- T-consequence-enforcement-gate: mandatory consequence-check gate in /sorted + /audit-ticket (823b5814)
+- T-igor-crashdump-emission: write crash diagnostics to disk before exit (77d6254)
+- T-igor-coa-since-last-nameref: _since_last undefined fix (b77d6254)
+- T-comms-public-landing: Public as default tab, device tabs navigate to fascia stub (62625d46)
+- T-hubert-device-scaffold: Hubert rack device — dev process controller + infra owner (e0bf9312)
+- T-device-fascia-page: 4-box device fascia pages in Comms tab (6e23f6bd)
+- T-hubert-wire-dev-tools: dev tools wired into Hubert fascia Settings box (0b684f7d)
+- T-control-station-breakers-only: Control Station stripped to pure breaker panel (31fa58ed)
+- T-auto-embed-on-creation: Postgres trigger + embedding drain loop (a4bbf888)
+- T-nanny-ogg-scaffold: Nanny Ogg + Ponder devices registered in skeleton (f0a9bcec)
+- T-nanny-ogg-quotes: 40 Nanny Ogg quotes + handle_unknown_prompt() (259e4d77)
+- T-cc-log-session-memory: deposit slate content to clan.memories on session close (3b54e10d)
+- T-uu-root-auto-detect: UU_ROOT portable resolver + CLAUDE.md env var docs (d5ab5fa0)
+- T-uu-root-migrate-skills: savestate/run derives CC_TOOLS from uu_root() (fdd05484)
+- T-nanny-ogg-os-cron: OS cron backend + fascia slash panel; 16 tests (57e2ab4b)
+- T-code-index-schema: clan.code_index table + Nanny Ogg AST sweep; 14 tests (4d27ebe9)
+- T-fascia-screenshot-cache: cached fascia screenshot on offline device; 10 tests (3ea0bdf9)
+- T-fix-datacenter-mcp-test: orphaned test removed (superseded by test_announce_mcp_adapter.py) (548130d2)
+
+## Notes
+- uucompactclaude timing still being tuned by Akien — do not touch lab/claudecode/uucompactclaude
+- T-consequence-web-ui-controls: closed (four-pane layout verified)
+- T-gap-scan-consequence-debt: closed (12 open decisions audited, 6 consequence tickets filed)
+
+## Session close: 2026-06-09 (morning)
+**Done:** T-chat-log-learning-bootstrap closed (bootstrap_learning.py, 21 tests). Day-close Jun 6-8: slates closed, deprecation fixes, logs rotated. 11-expert audit: 10 HIGH findings → 10 tickets. Weekly-retro + audit-audits written. GH Discussions #13 + #14 created.
+**Next:** Expert-audit batch + WORD_GRAPH cleanup.
+
+## Session close: 2026-06-09 (afternoon sprint)
+**Done:** 9 tickets closed: learning pipeline (atomic commit, embed wiring, schedule, Google key/429), log rotation, outcome enforcement, uucompactclaude incidental. crontab entry added for nightly run_once() at 3:30 AM.
+**Next:** T-wg-search-exclude-phase1 (awaiting cortex.py inertia approval) → T-wg-sync-scope → T-deferred-node-watchlist-drain.
+
+## Session close: 2026-06-09 (evening — final expert-audit batch)
+**Done:** All 12 expert-audit tickets closed. WORD_GRAPH fully cleaned up (Phase 1 exclusion, portable=0, accumulate_unresolved atomic). tick_watch_pass() wired. Button-pattern feedback memory saved.
+**In-flight:** NONE — queue clear.
+
+## Session close: 2026-06-09 (late — device sprint)
+**Done:** 5 fascia/device tickets (comms-public-landing, hubert-scaffold, device-fascia-page, hubert-wire-dev-tools, control-station-breakers-only). consequence-enforcement-gate shipped. Nanny Ogg OS cron backend + code index + screenshot cache (84 new tests). T-fix-datacenter-mcp-test (orphaned test removed).
+**Next:** Queue clear. Akien tuning uucompactclaude timing.
+
+## Session close: 2026-06-09 (day-close + weekly retro)
+**Done:** Day-close: 31 tickets closed, post-audit fix (test_distillation stale patch path), Discussion #15 created. Weekly retro posted. All 1495 tests passing.
+**Next:** Queue clear. Akien tuning uucompactclaude. Learning pipeline → inference feedback loop is the north star for next session.
+
+✅ CLOSED

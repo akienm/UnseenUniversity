@@ -1,0 +1,25 @@
+
+## In-flight: IGOR_NE_LLM_ENABLED gate removed; Librarian UC registration added
+- done: NE gate removal (narrative_engine.py + coa.py cleanup)
+- done: Librarian registers with UC on MCP initialize
+- done: Restart Igor with new code; NE confirmed running with LLM path (18-23s cycles)
+- D-adc-action-agency-tools-2026-05-13: action+agency tools in ADC — T-adc-action-log, T-adc-file-ticket-tool, T-adc-shell-exec-tool, T-adc-file-rw-tools, T-adc-nighttime-auditor, T-adc-propose-change-tool
+- T-adc-action-log (claiming)
+- done: T-adc-action-log — action_log.py + tests
+- T-adc-file-ticket-tool: file_ticket MCP tool
+- done: T-adc-file-ticket-tool — ticket_tools.py + tests
+- done: T-adc-shell-exec-tool — exec_tools.py + tests
+- done: T-adc-file-rw-tools — file_tools.py + tests
+- done: T-adc-nighttime-auditor — nighttime_auditor.py + tests
+- done: T-adc-propose-change-tool — proposal_tools.py + tests
+
+## In-flight: NONE — D-adc-action-agency-tools batch complete; all 6 tickets closed and pushed
+- done: T-test-file-ticket-metadata — added missing description assertion to test_metadata_fields
+
+## In-flight: NONE — T-test-file-ticket-metadata closed; session clean
+
+## Session close: 2026-05-13b
+Done: Completed full D-adc-action-agency-tools-2026-05-13 batch (6 tickets: action_log, file_ticket, shell_exec, file_rw, nighttime_auditor, propose_change). All 32 integration tests green. T-test-file-ticket-metadata also closed (missing assertion fix). All pushed to origin/main.
+Next: T-watch-problems-flaky (pending from earlier in day) — confirm with Akien before starting.
+
+## In-flight: NONE — day close

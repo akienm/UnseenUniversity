@@ -1,0 +1,39 @@
+# Slate 2026-06-18
+
+## Done today
+
+- Info-store rot sweep: 99→75 index lines, 0 broken links, 9 junk auto-captures deleted, 2 orphaned facts preserved as proper memories
+- CLAUDE.md combed: Granny dispatch (HANDSHAKE model + regression guard), phase-5 cc_mcp_server marked DONE, "what to read first" updated to canonical devlab/runtime/memory/
+- Roster enriched: Scraps=junk-drawer-that-calves-rackmounts, Hubert=Dev-Lab+Process-Owner, added DS/Librarian/Evaluator/Critic
+- T-memory-index-dedup-maintenance filed (Scraps source-fix)
+- Autocompact skill fixed: fire-only + regression guard, housekeeping moved to savestate
+- T-judge-agent fixed: "Hubert (Auditor)"→"the Auditor", annotated Evaluator supersession
+- T-intent-extractor-graceful-degradation filed (inference unavailability handling)
+- D-leading-digest-pattern-2026-06-18: outcome/as-built summary filed (3 tickets)
+- D-slate-as-narrative-2026-06-18: slate→JSON narrative section filed (2 tickets)
+- DS.0 ramp live: 3 builder tickets re-roled, deep validation cycle running
+- StaleChatLogBackfiller relocation complete: out of Igor into Scraps/Ground Loop (commit 5daebd45)
+- Dynamic worker announce registry + CCWorkerShim: all 126 Granny+Claude tests passing
+- Three dispatch bugs fixed: repo-auditor spam, DickSimnel lab paths, Granny devlab.tickets blind spot
+- CC.1 dispatch loop verified: one_at_a_time guard working, tmux session naming fixed
+
+## Notes
+
+- DS.0 ramp running autonomously; no intervention needed
+- CC.0 availability gated (.false) to keep chat clean during DS.0 build phase
+- Intent-extractor→normalizer→scenario pipeline ready for sprint
+- Shims-are-listeners architectural insight: needs /sorted design before implementation
+
+## Session Close Summary
+
+**Yesterday's work cohered around two themes:**
+
+1. **Info hygiene & regression guards**: Swept memory stores, fixed CLAUDE.md documentation rot (Granny dispatch model, phase completion, reading guide), enriched device roster with actual architecture, filed maintenance ticket for source-of-truth dedup.
+
+2. **Autonomous dispatch & validation**: Brought DS.0 into the wave, fixed three dispatch bugs that were blocking routing, verified CCWorkerShim with circuit-breaker pattern, set CC.0 to validation-only role (Granny routes to DS.0). StaleChatLogBackfiller now survives Igor downtime.
+
+**System now running autonomously:** DS.0 builds, validation loop waits for first 3 tickets, Granny routes dependency-gated wave. No blocking issues.
+
+**Identified design insight for sprint:** Shims should own their listener threads (not subprocess/pid-file model). Needs D-shims-are-listeners decision + ticket batch.
+
+✅ CLOSED

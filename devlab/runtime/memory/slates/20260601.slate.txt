@@ -1,0 +1,76 @@
+- D-minion-model-upgrade-2026-06-01: model lineup to coding-benchmark-validated — T-minion-model-upgrade
+- D-tool-loop-advisor-2026-06-01: ToolLoop advisor redesign + PA2.0 Layer 1→2 pattern tracker — T-tool-loop-advisor, T-granny-escalation-patterns, T-consequence-tool-loop-advisor
+- D-prescient-agents-north-star-2026-06-01: PA2.0 as UU north star + G-factory-of-factories master goal — T-pa20-palace-foundation, T-inference-outcome-learner, T-vetinari-pa20-spec, T-consequence-prescient-agents
+- T-escalation-compile-down: collective operational learner — escalation corpus + routing compiler
+
+## In-flight: T-tool-loop-advisor closed (round-based ToolLoop, advisor meta-layer, 6 signals, 49 tests)
+- done: T-minion-model-upgrade — qwen2.5-coder-32b/deepseek-v3/gemini-2.0-flash
+- done: T-pa20-palace-foundation — palace nodes confirmed current, all D-*.md linked
+- done: T-vetinari-pa20-spec — T-vetinari-device updated with PA2.0 + Alejandro pipeline
+- done: T-granny-escalation-patterns — PatternTracker + on_complete callback (PA2.0 L1->2)
+- done: T-tool-loop-advisor — round-based ToolLoop + advisor (5 iters/round, 2 rounds, 6 signals)
+
+## In-flight: 2026-06-01 Done: T-minion-model-upgrade (qwen2.5/deepseek-v3/gemini-2.0), T-pa20-palace-foundation (palace confirmed), T-vetinari-pa20-spec (Layer 3 spec), T-granny-escalation-patterns (PatternTracker PA2.0 L1→2), T-tool-loop-advisor (round-based ToolLoop + 6-signal advisor). 115 tests passing. All 5 in awaiting_validation. Next: T-inference-outcome-learner + T-escalation-compile-down (M tickets); decide Granny OR CC for compilation work.
+
+## In-flight: NONE — all 5 built tickets in awaiting_validation, Granny running, next M tickets queued (T-inference-outcome-learner, T-escalation-compile-down)
+- T-google-secretary-device: Google Secretary rack device — calendar/email/tasks via bus
+- T-google-secretary-login: Google Secretary login + 2FA (gated on T-google-secretary-device)
+- D-google-secretary-2026-06-01: Google Secretary rack device — T-google-secretary-device, T-google-secretary-login, T-google-secretary-email-test
+- D-agent-taxonomy-2026-06-01: Agent taxonomy utility/specialized/general — T-agent-taxonomy-concept, T-device-registry-agent-class
+## In-flight: Two decisions filed (D-google-secretary, D-agent-taxonomy). 7 tickets in sprint. One more piece pending.
+- T-librarian-inference-proxy: Librarian owns compiled-inference proxy
+- T-inference-learning-pipeline: overnight knowledge graph builder (gated)
+- T-chat-log-learning-bootstrap: retroactive chat log processing (gated)
+- T-igor-clan-template: Igor clan template + memory ownership by device
+- T-memory-flat-table-reform: flat table + tree-as-index memory architecture
+- T-archivist-device: Archivist device — compiled-inference proxy + learning pipeline (supersedes T-librarian-inference-proxy)
+- T-memory-scope-layers: 4-tier memory scope (global/local/agent/client)
+- T-clan-instance-scoping: clan global vs instance-local scoping (gated)
+- T-global-kb-git-repo: global KB as git repo (community-contributable)
+- T-archivist-global-contrib: Archivist proposes local patterns to global KB (gated)
+- D-archivist-compiled-inference-2026-06-01: Archivist proxy + epistemic learning graph — T-archivist-device, T-inference-learning-pipeline, T-chat-log-learning-bootstrap
+- D-memory-scope-layers-2026-06-01: 4-tier memory + git global KB — T-memory-scope-layers, T-global-kb-git-repo, T-archivist-global-contrib
+- D-clan-template-memory-ownership-2026-06-01: clan/Igor template/memory domains — T-igor-clan-template, T-memory-flat-table-reform, T-clan-instance-scoping
+
+## Session Summary — 2026-06-01
+
+Done: 3 massive design decisions filed (Archivist proxy, 4-tier memory scope, clan/Igor template). 18 new tickets spawned across the three decisions. Fixed safe_mode panic signals (removed high-urgency cc_inbox, added channel post instead). Saved calm-signals principle to memory.
+
+Next: T-inference-outcome-learner + T-escalation-compile-down (M tickets in hold, review-gated). Granny routing to inference workers running smoothly. All 5 prior-session tickets in awaiting_validation for Akien review.
+
+
+## In-flight: T-burn-rate-monitor closed — burn_rate() added to context-load/run; context-load now surfaces Burn: X%/hr at session start; queue clean
+
+## In-flight: T-constraint-availability-root closed — palace.constraints schema + 4 nodes seeded (system-availability/no-cc-spawn/burn-rate-gate); T-audit-constraint-check ungated and next in queue
+
+## In-flight: T-device-registry-agent-class closed — AGENT_CLASS added to BaseDevice + igor/granny/nanny/minion/scraps; registry stores field; datacenter_manifest exposes devices section with agent_class per device; librarian self-declares in manifest_tools.py; T-consequence-agent-taxonomy ungated
+
+## In-flight: 2026-06-01 Done: Granny routing fix (CC catch-all, minion-only inference), holds cleanup (11 tickets), docs blueprint (ToO + Ownership Gap chapters updated to reflect pending architecture) Next: L/M architecture tickets in sprint (archivist, memory-scope, google-secretary, global-kb, clan-template, flat-table-reform) — observe escalation patterns closing the loop
+
+## In-flight: Granny routing fixed and restarted; all L/M architecture tickets dispatched to CC; escalation compiler autonomously proposing tier upgrades; system at 37% token burn with 3:38 remaining
+- T-rack-device-reregister: Rack devices re-register after web server restart
+- T-rack-device-channel-push: Device channel posts appear in web UI per-device tab
+
+## In-flight: T-escalation-compile-down CLOSED: escalation corpus captures all non-DONE inference signals; routing compiler finds UPGRADE_TIER/SETUP_GAP/REPROMPT_RATE patterns; add_compiled_rule gates auto-apply; 58 tests pass, pushed to main
+
+## In-flight: T-provenance-write-attribution closed — wired source_agent/source_token/derived_from into channel_post, recall write-back, web_server, learner; schema already migrated; 59 tests green; session clean
+
+## In-flight: NONE — T-igor-logs-to-markdown closed and pushed; narrative_turn log now writes .md with markdown header; 5 tests green
+- D-granny-orphan-watchdog-2026-06-01: Granny orphan watchdog + build-time calibration — T-granny-orphan-watchdog, T-ticket-build-time, T-consequence-granny-orphan-watchdog
+
+## In-flight: NONE — T-workspace-file-tools closed; WorkspaceDevice + shim + mcp_server committed May-31, 18 tests passing, ticket verified and closed today
+## In-flight: D-granny-orphan-watchdog-2026-06-01 filed (T-granny-orphan-watchdog, T-ticket-build-time, T-consequence-granny-orphan-watchdog); Igor visible on web; multiple L/M tickets in sprint (T-memory-scope-layers, T-workspace-file-tools, T-archivist-device, etc.); at 85% budget — no new CC build work until recovery.
+- T-granny-cc-concurrency-gate: CLOSED — GRANNY_THROTTLED channel post added
+- T-cc-stop-command: CLOSED — stop_cc_minions.py written + tested
+- T-granny-health-cmd (S, sprint)
+- T-web-ui-three-pane (M, sprint)
+- T-web-ui-circuit-breakers (M, sprint)
+- T-igor-web-reply-routing (S, sprint)
+- T-consequence-runaway-prevention (S, sprint, gated 2026-06-15)
+
+## In-flight: T-provenance-write-attribution closed — test fixes (db_url isolation, lazy-import patch target) + uu channel.py source_agent stamp; T-theigors-path-cleanup filed with 14 path-rename changes already in working tree
+
+## In-flight: T-archivist-device CLOSED — ArchivistDevice + ArchivistShim scaffold shipped; proxy intercept stub, always-miss graph check, learning queue, skeleton registration (agent_class=specialized); 27 tests + contract suite (354 total); committed 1328431c, pushed to main
+- T-inference-tiered-fallback: CLOSED — analyst→worker→minion cascade, 5 tests
+- T-models-registry-refresh: CLOSED — llama-3.1-70b + gemini-flash-1.5 added
+- D-or-tiered-cascade-2026-06-02 filed

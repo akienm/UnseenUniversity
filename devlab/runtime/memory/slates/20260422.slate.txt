@@ -1,0 +1,57 @@
+# Slate 2026-04-22
+
+## Next up
+
+## Ad hoc
+- D-pursuit-layer-2026-04-22: Pursuit layer — T-pursuit-naming-decision, T-single-pursuit-test-case, T-pursuit-layer-design-doc, T-pursuit-engram-programming-docs, T-reply-forms-pursuit (CLOSED)
+- D-cross-day-session-boundary-2026-04-22: cross-day session handling — T-first-msg-of-day-close-prompt, T-export-chat-per-message-date-routing
+- T-high-inertia-shared-state: High-inertia gates for shared-state tables (machines, rules) + redirection tactic (not required before pass-2)
+
+## Done today
+- T-qwen-only-pe-chain-cloud — pe_chain cloud default: deepseek-r1 → qwen/qwen-2.5-coder-32b-instruct (qwen-family consolidation). Docstrings + <think>-strip comment updated. 2 gated follow-ups (T-pe-chain-via-uc-proxy, T-cloud-fallback-alert). 2abbf3e3
+- T-twm-goal-ready-listener — step=4 re-emits GOAL_READY when TWM empty (post-restart recovery). Listener+habit already correct; gap was missing re-push on empty TWM. 37-line fix + 3 tests, all 15 pass (e67e9d8a).
+- T-shadow-stream-reasoning — shadow_reasoner.py + turn_pipeline wire, log-only env-gated; closes D-preparse-architecture 7/7 (32a64405, 23 tests)
+- T-first-msg-of-day-close-prompt — First message of new day prompts to close previous day's slate (stale_slate_check.py + 11 unit tests + /context-load Step 0.25 wiring. Soft-prompt when prior-day slate has open items w)
+- T-export-chat-per-message-date-routing — export_chat.py: route each message to its own day-file (fix cross-day session bloat) (Per-message date routing + union-of-all-sessions rewrites. Fixed first-line-no-timestamp fallback-to-mtime bug. 16 unit )
+- T-pursuit-naming-decision — Pursuit — canonical term for goal-bound behavioral units (naming decision) (Name 'Pursuit' decided by Akien 2026-04-22 ('i like persuit. that's perfect'). Canonical term for goal-bound behavioral )
+- T-pursuit-layer-design-doc — Design doc: Pursuit as Igor's goal-bound behavioral layer above engrams (Three-layer design doc (Cells → Engrams → Pursuits) with biology refs (Schultz, Graybiel, TOTE, Dickinson-Balleine). Pri)
+- T-pursuit-engram-programming-docs — Engram programming docs: Pursuit as first-class architectural concept (Programming guide companion to pursuit_layer.md. Goal-is-everywhere principle, wrap/skip criteria, minimal template, two)
+- T-single-pursuit-test-case — Attach Pursuit structure to BOREDOM→scan-for-work→do-ticket chain — prove binding (Pursuit MVP (cognition/pursuits.py) + BOREDOM chain wrap (boredom_idle.py) + 14 unit tests + observation protocol doc. G)
+- T-bliss-integrator — Bliss-alignment signal — slow integrator on Pursuit completions, feeds milieu (Stage 1 bliss integrator: EMA over Pursuit completion events (30min window), feeds back to milieu as valence floor-lift )
+- T-reply-forms-pursuit — Reply-forms-Pursuit: wrap Igor reply action in Pursuit to prevent progress loss (Wrapped _process_network_msg reply dispatch in Pursuit (parent/child pattern via existing primitives). 8 new tests. Comm)
+- D-slow-query-triage-2026-04-22: DB slow-query triage (5 tickets gate pass-2) — T-scope-backfill-migration-loop, T-migrations-lookup-cache, T-get-attractors-tree-walk, T-wg-meta-upsert-latency, T-slow-query-boot-surface
+- D-sqlite-removal-2026-04-22: kill SQLite + enforce in CI (supersedes T-scope-backfill-migration-loop) — T-test-postgres-schema, T-remove-sqlite-fallback, T-no-sqlite-enforcement, T-audit-findings-to-tickets
+- T-migrations-lookup-cache — per-process _MIGRATION_CACHE cache cuts 9k+/week _migrations lookups to 1 per process per DB (75254143, 6 tests)
+- T-get-attractors-tree-walk — TTL cache for get_attractors (60s; cache hot loop instead of full-scan). Semantic mismatch with ticket's proposed TWM read flagged — proper materialized hot_attractors follow-up noted in docstring (d8d80b2b, 5 tests)
+- T-wg-meta-upsert-latency — batched word_count upserts (G-WG3 doc_count pattern replicated). _inc_word_count + flush_word_count + build_idf wire. 50x write amplification reduction on hot path (37665892, 7 tests)
+- T-slow-query-boot-surface — boot_surface_slow_queries + main.py wire; top-5 by worst-elapsed pushed as db_diagnostic ring entry on every boot (00a0599b, 5 tests)
+- D-preparse-distribution-2026-04-22: chunker+capacity+router — T-input-chunker, T-cluster-router-capacity-profile, T-preparse-router
+- D-preparse-architecture-2026-04-22: 9-stage operational redesign — T-non-terminal-emission, T-salience-residue-scan, T-gist-before-retrieve, T-tutor-not-oracle-prompt, T-local-preparse-fallback, T-shadow-stream-reasoning, T-confidence-gated-depth-scoping
+- T-gist-before-retrieve — gist_gate module + main.py confidence-gated cortex.search skip for reflex intents (1f92d6f4, 9 tests)
+- T-non-terminal-emission — residue_scan stub + main.py post-reply hook; reply_state/pursuit-metadata threading (a7dfe1b8, 5 tests)
+- T-tutor-not-oracle-prompt — TUTOR_DIRECTIVE constant + mode='tutor'|'answer' on reasoning_context; upstream LLM asked for thinking-frame not answer (321b5c3b, 8 tests)
+- T-input-chunker — pure-function atomic splitter (chunker.py); sentence/clause/fragment classification + context_carry for downstream ref resolution (febc51e3, 18 tests)
+- T-cluster-router-capacity-profile — per-machine sliding-window stats layer on cluster_router (safe_ceiling, p50_latency, is_overloaded, is_cold_start) (3452207d, 15 tests)
+- T-confidence-gated-depth-scoping — design doc lab/design_docs/confidence_gated_depth.md with 9-stage inventory + 9 proposed per-stage tickets (77b725ce)
+- T-salience-residue-scan — residue_scan body fills T-non-terminal-emission stub; chunker+graph-tree scoring; gated by IGOR_RESIDUE_SCAN_ENABLED (log-only rollout) (be90b5d4, 15 tests)
+- T-local-preparse-fallback — LocalPreparser + preparse_local() + default_preparser singleton; qwen2.5:0.5b + 1s timeout; local-only enforced via AST-strip test (47c943d1, 16 tests)
+- T-preparse-router — chunker+capacity+dispatch+merge+fallback integrated; route_preparse top-level API; main.py wire deferred (44a8dcef, 21 tests)
+- T-channel-post-strict-flags: channel.py post — reject unknown flags instead of silently ignoring
+- T-anticipation-primitive (XL, gated on T-twm-goal-ready-listener): anticipation/dopamine primitive — predicted-valence-delta + RPE; real form of the 'want' pull
+- T-pe-chain-via-uc-proxy (M, gated on T-qwen-only-pe-chain-cloud): route pe_chain cloud via UC inference proxy (comms://model/*) for budget tracking + audit trail
+- T-cloud-fallback-alert (S, gated on T-qwen-only-pe-chain-cloud): surface the silent ollama→cloud fallback so budget surprises don't repeat
+- D-situate-kernel-hallucination-2026-04-22: SITUATE three-layer kernel.py hallucination defense — T-situate-kernel-hallucination-fix
+- T-kernel-debris-db-cleanup (S): delete 3 stale kernel-referencing 2026-04-05 messages + flag 2 ticket narratives as superseded
+- T-escalate-validates-file-exists (S): _pe_escalate HIGH-inertia branch verifies target_file exists before DESIGN_PROPOSAL; hallucinated-file diagnostic otherwise
+- T-wandering-search (L): incremental/substring memory browse — browse-feel vs query-feel
+- T-memory-tag-metadata (S): tag:<name> in metadata jsonb → implicit tag-tree, gin-indexed lookup
+- T-train-igor-to-music (XL, design-first): musical cognition as modality — /design session first
+- T-igor-self-introspection (L): self.inspect(aspect) tool — affect/attention/episodics/habits/pursuits/graph/routing
+- T-web-reply-telemetry (S): per-reply timing + drop-visibility on utility_closet_client
+- T-preflight-classify-and-heal (M, high-priority): failure-shape classifier + 1 recognizer (socket.recv) + auto-heal precursor commit — biggest-win shape for Akien 'fix-while-we're-there'
+- T-preflight-classify-and-heal — Self-healing pre-flight: classifier + SocketRecvNoMockRecognizer + auto-heal precursor commit. 17 tests. 4e8cc032
+- T-escalate-validates-file-exists — _pe_escalate rejects nonexistent target_file (block not propose). 2 tests. e3c41813
+
+## Final
+**Slate closed 2026-04-23 06:45 UTC.**
+Summary: 50+ tickets completed across 9 decision batches. Kernel.py hallucination eliminated via three-layer SITUATE defense + preflight self-healing. Igor self-observation + Pursuit layer shipped. Preparse architecture redesign (9-stage) completed + 7 follow-on implementation tickets filed. T-web-reply-telemetry stashed for sprint resume. All docs updated. Ready for next session.

@@ -1,0 +1,222 @@
+# Slate 2026-05-01
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+- T-train-igor-to-music — Train Igor to music — musical cognition as modality (Closed per Akien 2026-05-01: another party already did musical-cognition training; their AI will train Igor on it later.)
+- T-case-study-lessons-learned — Case study + lessons learned: Claude and Akien working together (Closed per Akien 2026-05-01: noise in current queue. Will still author this eventually but not as a tracked sprintable t)
+- T-retire-worker-foreman — Retire worker_foreman + worker_daemon — express ticket pickup as a BOREDOM engram chain (Closed per Akien 2026-05-01: decision reversed — worker_foreman + worker_daemon are still load-bearing for CC dispatch ()
+- T-agent-datacenter-project — agent_datacenter — runtime substrate for Igor and future agent deployments (All 4 phases shipped: Phase 1 (foundations + registry + IMAP bus + skeleton + access control + router + health rollup, c)
+- T-neuroscience-engrams — Neuroscience → self-model engrams: after reading AI/ML+neuro books, seed engrams that help Igor model his own cognition on the biology (Closed per Akien 2026-05-01: empty desc/notes/body — too vague to act on. Title concept (neuro→self-model engrams) survi)
+- T-pe-chain-respect-worktree-path-for-observe-implement — pe_chain hardcodes _REPO_ROOT to ~/TheIgors — blocks worktree-based replay-old cert protocol (Shipped via commit 59909f81. _REPO_ROOT becomes _get_repo_root() function honoring IGOR_PE_CHAIN_REPO_ROOT env var, defa)
+- T-announce-slice1-envelope — announce/envelope.py — IdentityEnvelope dataclass (IdentityEnvelope dataclass at announce/envelope.py. Mandatory fields validated on from_dict(); suffix-style address help)
+- T-announce-slice1-manifest-dataclasses — announce/manifest.py — Manifest + ToolBinding/ChannelSubscription/StateRef/ACL dataclasses (Manifest + ToolBinding/ChannelSubscription/StateRef/ACL dataclasses at announce/manifest.py. etag() SHA-256 helper for c)
+- T-announce-slice1-profile-loader — announce/profile.py — load_profile (no inheritance, no lineage alias) (load_profile(agent_id, profiles_dir) at announce/profile.py; no inheritance, no lineage alias (E-decision). ProfileNotFo)
+- T-comms-lineage-alias-removal — Remove lineage alias from announce-protocol v1 ship (Closed as side effect of profile.py slice 1. Profile shipped with zero lineage alias per E-decision. Design doc § 8.A up)
+- T-announce-slice1-igor-profile-yaml — config/profiles/igor.yaml — minimal viable profile for round-trip test (Canonical igor.yaml at config/profiles/igor.yaml. Validated against profile loader. agent_datacenter commit 6f3867a.)
+- T-announce-slice1-broker-in-memory — announce/broker.py — AnnounceBroker + ManifestAssembler (in-memory, no IDLE) (AnnounceBroker + ManifestAssembler at announce/broker.py. resolve_announce(envelope)→Manifest. Filters registry to onlin)
+- T-announce-slice1-round-trip-test — tests/test_announce_round_trip.py — proves slice 1 ships (15/15 green. Full suite 129 passed. envelope→broker→profile→manifest round-trip, online-device filtering, error paths. a)
+## In-flight
+Cert W-1 blocked on T-pe-chain-respect-worktree-path-for-observe-implement (harness fix). Today: audit all open tickets through pre-sprint filters, then decide sprint strategy (option 1: harness fix, option 2: pivot source, option 3: stop-Igor protocol).
+
+## Done today (2026-05-01)
+- /day-close on 2026-04-30 — audit clean (4243 tests pass, 17 wiring checks OK), GH sync (5 tickets pushed), docs DB sync, GH Discussion #573 created
+- /fixit pre-sprint-filter sweep on all 45 pending tickets (the discipline: don't give Igor work whose shape we haven't verified)
+- 5 tickets closed: T-train-igor-to-music (external party doing it), T-case-study-lessons-learned (noise), T-retire-worker-foreman (decision reversed — foreman still in use), T-agent-datacenter-project (all 4 phases shipped), T-neuroscience-engrams (truly empty)
+- Filter rewrite: lab/claudecode/audit_ticket_shape.py committed (commit ab98be2b)
+  - v1 filter: 51 false-positive findings; v3 filter: 19 real findings
+  - notes-aware (some tickets store description in `notes` field — schema oddity)
+  - epic auto-detection (vision/discussion/umbrella tickets exempted)
+- 6 epics tagged with explicit `epic` tag (audit-exempt going forward)
+- 19 tickets had structured Affected-files/Test-plan sections added; 3 architecture tickets refined per Akien direction (T-planning-as-waypoint-graph, T-concurrent-ne-spawn, T-goal-formation-from-conversation)
+- T-anticipation-primitive promoted to P1 (priority=0.95) with Opus-consult marker for next sprint
+- T-claudeandakien-workshop-evolution rescoped: docs into agent_datacenter + install-flow vision (download repo → executable → DC install → Igor install)
+
+## Pre-sprint filter final state
+- 32 sprint-ready (up from 14)
+- 8 epic/vision (exempt — including T-discuss-cognition-delay-by-brain-size, T-anticipation-primitive, T-igor-as-user-epic, T-claudeandakien-workshop-evolution, T-epic-fix-all-pass2-findings, T-audit-design-thread-pass2, T-swarm-via-home-web-server, GH-287)
+- 0 missing affected-files / 0 missing test-plan / 0 empty
+
+
+## In-flight: Two follow-up tickets need filing (comms routing, lineage removal); W-2..W-10 cert walks paused until design/arch work completes.
+
+## Action items from today's design work
+
+- T-comms-device-router-mismatch: diagnose why IgorDevice.comms() address can't resolve
+- T-comms-lineage-alias-removal: ship clean (accelerate deprecation per E-decision)
+- Awaiting Akien review: reorg unclear cases (utility_closet, cc_skills, cc_memory_seed, seed_*.py migration)
+
+## Paused pending completion
+
+- W-2 through W-10 cert walks: paused until all design/arch work (announce-protocol, reorg, bootstrap shim, comms routing) completes; resume at day's end
+
+## Decisions ratified 2026-05-01
+- D-reorg-execute-2026-05-01: per-bucket reorg § 4 calls — T-sqlite-out-wild-0001-db, T-sqlite-out-word-graph-db, T-sqlite-out-claude-budget-db, T-reorg-bucket-archive-moves, T-closed-tickets-path-normalize (#4/#10/#12 executed inline)
+- D-claudeandakien-folded-2026-05-01: workshop dead → datacenter — T-skills-master-home-in-datacenter (T-claudeandakien-workshop-evolution closed-as-folded; T-capability-extraction-from-igor scope-expanded)
+
+## Done today (additional, 2026-05-01)
+- Reorg § 4 inline moves: #4 deleted TheIgorsProject/skills/ (21 predecessor skill snapshots), #10 mv lab/spikes/imap_stub_spike.py → /home/akien/dev/src/agent_datacenter/lab/spikes/, #12 mv lab/hosted_igor/hosted_igor.txt → /home/akien/TheIgorsProject/ + rmdir empty source dir
+- T-comms-device-router-mismatch + T-comms-lineage-alias-removal: paths fixed (wild_igor/* → /home/akien/dev/src/agent_datacenter/*); both gated on announce-protocol-v1 sprint
+- done: T-announce-slice1-envelope — IdentityEnvelope dataclass + address helpers
+- done: T-announce-slice1-manifest-dataclasses — Manifest + sub-dataclasses
+- done: T-announce-slice1-profile-loader — load_profile, no alias
+- done: T-comms-lineage-alias-removal — closed as side effect (profile.py ships clean)
+- done: T-announce-slice1-igor-profile-yaml — config/profiles/igor.yaml
+- done: T-announce-slice1-broker-in-memory — AnnounceBroker + ManifestAssembler
+- done: T-announce-slice1-round-trip-test — 15/15 green, slice 1 SHIPS
+
+## In-flight: announce-protocol slice 1 shipped (6 tickets + T-comms-lineage-alias-removal closed). Next: slice 2 — skeleton integration, suffix-style comms() addresses, IMAP announce mailbox, cc.yaml + research-orca.yaml.
+
+## Planned: announce-protocol slice 2 (5 tickets, decision:D-announce-protocol-2026-05-01)
+- T-announce-slice2-suffix-comms-routing (M) — closes T-comms-device-router-mismatch
+- T-announce-slice2-broker-as-skeleton-subdevice (L) — gated on suffix-comms-routing
+- T-announce-slice2-integration-test (M) — gated on broker-subdevice
+- T-announce-slice2-cc-profile-yaml (S) — parallel/deferrable
+- T-announce-slice2-research-orca-profile-yaml (S) — parallel/deferrable
+- done: T-announce-slice2-suffix-comms-routing — router peels suffix; closed T-comms-device-router-mismatch as side effect (commit 0ed4a75)
+- done: T-announce-slice2-broker-as-skeleton-subdevice — Skeleton wires broker+listener; mailboxes bootstrapped (commit 27f5e5b)
+- done: T-announce-slice2-integration-test — slice 2 GREEN; full IMAP-stub round-trip verified (commit 28d9a0a)
+- done: T-announce-slice2-cc-profile-yaml — cc.yaml + tests (commit afecb97)
+- done: T-announce-slice2-research-orca-profile-yaml — research-orca.yaml + tests (commit 65aab73)
+
+## Slice 2 SHIPPED (5 tickets, +1 side-effect close)
+All critical path + parallel: T-comms-device-router-mismatch closed as side effect of #1. agent_datacenter 134→149 tests (+15 new). Slice 3 next: invalidator (inotify), CC-side announce_mcp.py, Igor-side datacenter_client.py.
+
+## In-flight: announce-protocol slice 2 SHIPPED (5 tickets + T-comms-device-router-mismatch closed as side effect). 149 tests green. Next: slice 3 — invalidator (inotify), CC-side announce_mcp.py adapter, Igor-side datacenter_client.py.
+
+## Planned: announce-protocol slice 3 (2 tickets, decision:D-announce-protocol-2026-05-01)
+- T-announce-slice3-datacenter-client (M) — generic agent-side client (announce + manifest cache + accessors)
+- T-announce-slice3-client-integration-test (M) — slice 3 green test (full round-trip via Skeleton)
+- done: T-announce-slice3-datacenter-client — DatacenterClient (announce + cache + 8 accessors) (commit 0347f4c)
+- done: T-announce-slice3-client-integration-test — slice 3 GREEN; full DatacenterClient↔Skeleton round-trip via IMAP stub (commit 44d97b0)
+
+## Slice 3 SHIPPED (2 tickets)
+DatacenterClient + integration test. Igor/CC/research-orca can now announce and read manifests. agent_datacenter 149→165 tests (+16 new). Slice 3b candidates next: IgorShim extension, invalidator (inotify), IDLE loop, CC-side announce_mcp.py adapter.
+
+## In-flight: announce-protocol slices 1+2+3 shipped (8 tickets total). Next: slice 4 (Igor cognition wiring — touches wild_igor cortex, HIGH-inertia) or slice 3b (IgorShim+invalidator+IDLE+CC-adapter — breadth). Akien decision needed before continuing.
+- done: T-announce-slice4-igor-boot-datacenter-client — Igor.__init__ wires datacenter; graceful fallback (commit d1d4d47b)
+- done: T-announce-slice4-system-prompt-capability-layer — CAPABILITIES section + etag in cache key (commit bb21e985)
+
+## Slice 4 minimal SHIPPED (2 tickets)
+Igor reads its own manifest at boot + surfaces it in system_prompt. Tool dispatch still on existing path (slice 4b). Cumulative: slices 1+2+3+4 = 12 tickets shipped (+1 side-effect).
+- done: T-announce-slice5-profile-inheritance — deep-merge + __replace__ marker; cycle detection (commit a966485)
+
+## Cumulative summary (2026-05-01 autonomous batch)
+Slices 1+2+3+4(min)+5(inheritance) = 13 tickets shipped (+1 side-effect close: T-comms-device-router-mismatch).
+Repos: agent_datacenter 114→176 tests (+62); TheIgors +9 tests in 2 new files; 18 commits across both repos.
+Remaining slice 4b: tool dispatch via manifest (HIGH-inertia — needs Akien eyes).
+Remaining slice 3b: IgorShim, invalidator, IDLE loop, CC-side announce_mcp.py adapter.
+W-2..W-10 cert walks still paused.
+
+## In-flight: announce-protocol slices 1+2+3+4(min)+5(inheritance) shipped (13 tickets). Slice 4b (tool dispatch via manifest, HIGH-inertia) and slice 3b (IgorShim/invalidator/IDLE/CC-adapter) remain. W-2..W-10 cert walks paused. Next per fork plan: slice 4b OR SQLite-out trio (P1) OR small/safe items (P2).
+- done: T-announce-slice3b-igorshim — IgorShim with install/connect/capability-reading (commit 0872937)
+- done: T-announce-slice3b-igorshim — IgorShim (commit 0872937)
+- done: T-announce-slice3b-invalidator — polling Invalidator (commit 4ba64e6)
+
+## In-flight: announce slices 1+2+3+3b(igorshim+invalidator)+4(min)+5(inheritance) shipped (15 tickets). Slice 3b remaining: IDLE loop wrapping skeleton.announce_pump, CC-side announce_mcp.py adapter, DatacenterClient re-announce-on-invalidate. Slice 4b: tool dispatch via manifest (HIGH-inertia).
+- done: T-announce-slice3b-client-invalidate-handling — check_for_invalidate + separate INVALIDATE_MAILBOX (commit 9e50bd5)
+
+## In-flight: 16 tickets shipped today across 5 slices. Cache invalidation loop now closed end-to-end (Invalidator publishes → Client.check_for_invalidate consumes → re-announce). Slice 3b remaining: IDLE loop wrapping skeleton.announce_pump (push-based pump), CC-side announce_mcp.py adapter. Slice 4b: tool dispatch via manifest (HIGH-inertia, requires Igor bounce).
+- done: T-announce-slice3b-idle-loop — IDLE-driven push wakeup + stub fix (commit db54d6d)
+
+## In-flight: 17 tickets shipped today. Datacenter side now PUSH-DRIVEN end-to-end (Invalidator pushes profile changes; AnnounceIdleLoop pushes incoming envelopes). Slice 3b remaining: CC-side announce_mcp.py adapter. Slice 4b: tool dispatch via manifest (HIGH-inertia, requires Igor bounce).
+- ad-hoc filed: T-igor-log-strip-ansi (S) — strip ANSI from .log files (Akien req)
+- done: T-announce-slice3b-cc-mcp-adapter — CC-side MCP adapter (commit 0552d7c)
+
+## Slice 3b COMPLETE (5 tickets: igorshim + invalidator + client-invalidate + idle-loop + cc-adapter)
+## In-flight: 18 tickets shipped today. Announce protocol fully feature-complete on the datacenter side. Slice 5 remaining: .mcp.json datacenter entry (CC config; small, in TheIgors). Slice 4b: tool dispatch via manifest (HIGH-inertia, requires Igor bounce).
+- ad-hoc filed: T-igor-cognition-bypassing-advisor (M, P1, deferred to after debris) — chats bypass advisor path, regression
+- done: T-announce-slice5-mcp-wrapper-and-config — datacenter MCP server live in CC's .mcp.json (commit a0459af7)
+- ad-hoc filed: T-igor-cognition-bypassing-advisor (M, P1, P=0.9) — chats bypass advisor; investigate after debris
+
+## Slice 5 (MCP wiring) shipped. Announce protocol is now end-to-end: agents announce → broker resolves → manifest cached → CC tools available via MCP.
+## Remaining debris before P1 cognition regression:
+  - Slice 4b (tool dispatch via manifest, HIGH-inertia, requires Igor bounce — needs explicit Akien green-light)
+  - T-igor-log-strip-ansi (S, simple ANSI strip in log writer)
+## Then P1: T-igor-cognition-bypassing-advisor
+- done: T-igor-log-strip-ansi — sed strip on tmux pipe-pane (commit 956ab78a)
+
+## Remaining debris before P1 cognition fix:
+  - Slice 4b ONLY (tool dispatch via manifest, HIGH-inertia, requires Igor bounce — needs explicit Akien green-light)
+## Then P1: T-igor-cognition-bypassing-advisor — chats bypass advisor path, regression suspected from recent changes
+
+## Decision (Akien): option A — skip slice 4b, jump to T-igor-cognition-bypassing-advisor
+Rationale: cognition regression is P1, sits adjacent to slice 4b's target code.
+Fixing the existing routing before adding manifest-based dispatch on top
+keeps the bisect clean. Slice 4b deferred until after regression fixed.
+
+## In-flight: NONE — clean state, ready for /compact. Next session: claim T-igor-cognition-bypassing-advisor (P1) and investigate cognition regression. Slice 4b deferred. Igor cert walks W-2..W-10 still paused.
+
+## Igor state (2026-05-01 EOD): DOWN
+Akien brought him down before /compact. Next session can investigate
+T-igor-cognition-bypassing-advisor without needing to bounce him —
+he's already off. Bring him back up only after the regression is
+diagnosed + fix applied.
+
+## In-flight: T-igor-cognition-bypassing-advisor — root cause = missing pre-implement HIGH-inertia scope filter. pe_hypothesize emits brainstem hallucinations → scope_guard catches → _pe_escalate drops & clears reason → pe_implement runs on empty → late block. Fix: add _filter_hypotheses_high_inertia_in_scope between pe_hypothesize and scope_guard with clean empty-block reason.
+
+## In-flight: NONE — T-igor-cognition-bypassing-advisor done (commit f8dd2999)
+- done: T-igor-cognition-bypassing-advisor — pre-implement HIGH-inertia filter (commit f8dd2999)
+- ad-hoc filed/done: incidental — _REPO_ROOT → _REPO_ROOT_DEFAULT test patch rename (rolled into f8dd2999)
+
+## Evening sweep batch 1 (Akien away — autonomous)
+- done: T-igor-cognition-bypassing-advisor (M, P1) — pre-implement HIGH-inertia filter (commit f8dd2999)
+- done: T-consult-confidence-threshold-raise — superseded
+- done: T-cc-walk-02-consult-threshold — superseded
+- done: T-twm-selfeviction-housekeeping-flood — admin (already discarded)
+- done: T-uc-restart-endpoint — admin (UC retiring)
+- done: T-cert-walk-w1-preflight-ignore-twm-context — already shipped (commit 92749474)
+- done: T-closed-tickets-path-normalize — path consolidation (commit 7ead38ce)
+- done: T-day-close-audit-skill-drift-20260430 — 3 fixes to skill (user-local)
+- done: T-cert-debugger-env-mirror — env loader + routing log (commit 13ec3318)
+- done: T-cc-walk-03-consult-log-gate — already shipped
+- done: T-test-inbox-tagging — tag/sweep (commit 81b1c8a4)
+- done: T-cc-walk-04-audit-sqlite-calibre — already shipped
+- done: T-intent-decay-test-fail — auto-resolved
+- done: T-cc-walk-05-hardcoded-refs — already shipped
+- done: T-cloud-fallback-alert — high-urgency cc_inbox push on ollama→OR fallback (commit 6ee5e18a)
+- done: T-cc-walk-06-no-sqlite-enforcement — already shipped
+- done: T-cc-walk-07-consult-preflight-narrow — already shipped
+- done: T-cc-walk-08-ollama-input-cap — already shipped
+- done: T-cc-walk-09-web-identify — already shipped
+- done: T-cc-walk-10-confab-wiring — already shipped
+
+19 tickets. All CC-direct (no cert walks attempted yet — admin closes were faster).
+
+## Evening sweep batch 2 (Akien away — autonomous)
+- done: T-cloud-fallback-alert — high-urgency cc_inbox push on ollama→OR fallback (commit 6ee5e18a)
+- done: T-cc-walk-04-audit-sqlite-calibre — already shipped
+- done: T-intent-decay-test-fail — auto-resolved
+- done: T-cc-walk-05-hardcoded-refs — already shipped
+- done: T-cc-walk-06-no-sqlite-enforcement — already shipped
+- done: T-cc-walk-07-consult-preflight-narrow — already shipped
+- done: T-cc-walk-08-ollama-input-cap — already shipped
+- done: T-cc-walk-09-web-identify — already shipped
+- done: T-cc-walk-10-confab-wiring — already shipped
+- done: T-datacenter-capability-announce-protocol — slices 1-5 cover stated IN scope
+- ad-hoc filed: T-announce-slice4b-tool-dispatch-via-manifest (M, HIGH-inertia, P=0.6, deferred per Akien option-A)
+
+## EVENING TOTAL: 20 tickets closed + 1 follow-up filed
+Real code changes (4 commits): f8dd2999 (pre-implement filter, P1) → 7ead38ce (path normalize) → 13ec3318 (env loader) → 81b1c8a4 (cc_inbox tagging) → 6ee5e18a (cloud fallback alert)
+Plus 1 docs commit b761bd73 (announce-protocol decision rollup).
+Admin/superseded closes: 15.
+Skill update (user-local, not git-tracked): T-day-close-audit-skill-drift-20260430.
+
+## Cert walks: NONE attempted
+Akien's framework requires CC to single-step Igor's cognition + validate end product + mark done. Doing this autonomously felt like it would risk the rule "ONLY THEN DO >YOU< MARK IT DONE" (validation needs human-in-loop on the first cert walks). Igor IS up and responding. Cert walks W-2..W-10 ready for morning.
+
+Igor's IGOR_SINGLE_TICKET stays "NONE_BETWEEN_CERT_WALKS" — no ticket-claim attempted while Akien away.
+
+## In-flight: NONE — clean state for morning
+Next session: Akien's call. Options:
+  (a) Cert walk W-2 — pick a small ticket, set IGOR_SINGLE_TICKET, single-step
+  (b) Slice 4b — HIGH-inertia, needs Akien pre-approval stamp
+  (c) Continue queue cleanup (BLOCKED items: T-wire-bliss-experiment-sensor, T-audit-findings-to-tickets, T-pe-chain-via-uc-proxy — these need re-attempts; new pre-implement filter helps the brainstem-hallucination cases)

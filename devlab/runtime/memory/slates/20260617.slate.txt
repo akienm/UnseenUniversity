@@ -1,0 +1,21 @@
+- T-gate-clear-source-consolidation: consolidated _gate_clear → unseen_university/gate_logic.py (single source, both callers import; 14 tests) — CLOSED 32bdd54a
+- T-queue-gate-tests-confidence-column: fixed 6 pre-existing gate-test failures (certainty col + 3 stale substring tests) — CLOSED da37ebb1
+- T-bare-script-import-audit: filed (residual bare-script import-hygiene audit, priority 0.25)
+
+## In-flight: 2026-06-17 6 tickets shipped: decisions-dsb, daemon-supervisor (pattern+demo), critic (skill+script), escalated+awaiting_validation statuses T-critic-testing-harness
+
+## In-flight: All work in awaiting_validation — ready for validation pass and next sprint cycle.
+## In-flight: T-unimplemented-designs-audit audit agent running in background; T-lab-to-devlab-rename awaiting_validation d3ece66d; 11 prior tickets closed.
+- D-depends-on-gate-automation-2026-06-17: gate field + Granny eval for auto dep ordering — T-skill-capture-depends-on, T-granny-gate-eval, T-depends-on-validation-test, T-consequence-depends-on-gate
+- D-token-tracking-per-ticket-2026-06-17: token counts on tickets + routing guard + efficiency metric
+- D-quality-3layer-assessment-2026-06-17: judge+classifier+disagreement signal at close
+- D-facia-index-tree-2026-06-17: facia index tree + tree manager object + librarian second-pass
+## Session close — 2026-06-17
+
+**Done:** T-granny-gate-eval shipped (gate_logic evaluation at dispatch). Path fixes: hooks env var + StaleChatLogBackfiller to-Scraps. 12 observability tickets filed: token tracking (4), quality 3-layer (4), facia index tree (4).
+
+**Next:** CC.1 validate parity doc; sprint observability batch
+
+## In-flight
+
+CC.1 on T-dicksimnel-cc-parity-map (reset from escalated). Granny gate ordering live and tested via T-depends-on-validation-test pair (held until predecessor closes, then auto-dispatches).

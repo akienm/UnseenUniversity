@@ -1,0 +1,92 @@
+# Slate 2026-04-27
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+- T-fill-missing-subsystem-palace-entries — Fill missing palace subsystem entries: pursuits, voice_ab, graph_calving (Added 3 palace nodes (pursuits, voice_ab, graph_calving) under theigors/subsystem_index/. Verified via SELECT updated_by)
+- T-reading-pipeline-placeholder-reconcile — Reconcile reading_worker_pool [PLACEHOLDER] vs IGOR_READING_EXTRACT=true (Updated theigors/subsystem_index/reading_worker_pool with 'DISTINCT FROM' note pointing at the live reading subsystem; [)
+- T-turn-pipeline-status-doc — Document turn_pipeline.py completeness as palace subsystem entry (Added theigors/subsystem_index/turn_pipeline node — status BUILT-BUT-GATED-OFF, references T-retire-legacy-direct-reason)
+- T-ne-stew-threshold-coupling-doc — Document NE force-run / stew salience coupling invariant (0.6 / 0.65) (Appended INVARIANT block to theigors/subsystem_index/narrative_engine: 'stew salience (0.65) > NE force-run threshold (0)
+- T-capability-map-drift-audit — Add /day-close-audit Step for capability_map.md staleness (Added Step 18.6 (Capability map drift check) to ~/.claude/skills/day-close-audit/SKILL.md + Cap-map drift line in findin)
+- T-adc-repo-bootstrap — agent_datacenter: create github repo and scaffold full directory structure (Repo created at https://github.com/akienm/agent_datacenter. Full scaffold committed and pushed: 39 files, all spec dirs,)
+- T-adc-installer-bootstrap-call — agent_datacenter: document installer bootstrap decision (deferred to Phase 4) (docs/decisions/installer-bootstrap.md written and pushed. Paradox stated clearly. v0 bridge = igor launcher (not a devic)
+- T-adc-queue-overflow-default-lock — agent_datacenter: lock queue overflow default and create DeviceConfig dataclass (DeviceConfig dataclass in config/device_config.py. drop-oldest default, drop_newest override, restart loop protection fi)
+- T-adc-claude-mailbox-naming-lock — agent_datacenter: lock Claude mailbox naming convention (CC.0 + CC.N per-session) (constants.py in devices/claude/: GLOBAL_MAILBOX='CC.0', get_session_mailbox() reads CLAUDE_SESSION_ID env. docs/decision)
+- T-adc-claudeandakien-salvage — agent_datacenter: migrate workflow docs from ClaudeAndAkien, archive old repo (4 docs migrated: framework_overview (updated for ADC), getting_started (updated for agentctl init), working_together (ke)
+- T-adc-imap-impl-decision — agent_datacenter: spike Dovecot vs embedded Python IMAP, document decision (Spike complete: Python asyncio stub works at ~80 lines (APPEND+IDLE verified). Decision: Dovecot for production, Python )
+- T-adc-base-device-contract — agent_datacenter: abstract BaseDevice class — full device contract (BaseDevice ABC in agent_datacenter/device.py: 15 abstract methods (who_am_i, requirements, capabilities, comms, interfac)
+- T-adc-base-shim-contract — agent_datacenter: abstract BaseShim class — device lifecycle contract (BaseShim ABC in agent_datacenter/shim.py: 6 abstract methods (device_id, start, stop, restart, self_test, rollback). sel)
+- T-adc-message-envelope — agent_datacenter: message envelope — flex schema with rigid keywords (Envelope dataclass in bus/envelope.py. RIGID_KEYWORDS={from_device, to_device, sent_at, schema_version}. validate() rais)
+- T-adc-skeleton-flat-file-registry — agent_datacenter: skeleton flat-file device registry — atomic write, ping-on-restart (DeviceRegistry in skeleton/registry.py: atomic write (tmp→rename), ping-on-restart, idempotent register, status tracking)
+- T-adc-logging-control-center — agent_datacenter: master logging control center — hierarchical datacenter_logs layout (LoggingControlCenter singleton in agent_datacenter/logcontrol/control_center.py. Hierarchy: datacenter_logs/<device>/<su)
+- T-adc-postgres-device — agent_datacenter: Postgres device — full self-description and health contract (PostgresDevice full BaseDevice impl in devices/postgres/device.py. health() live from pg_stat_activity. uptime() from pg)
+- T-adc-agent-template-device — agent_datacenter: agent template — hello-world device for non-Igor users (TemplateDevice + TemplateShim + README in devices/template/. Every method stubbed with inline comments. copy-paste start)
+- T-adc-test-device-contract-suite — agent_datacenter: contract test suite — every registered device implements full BaseDevice (28 parametrized tests in tests/test_device_contract.py. Covers: isinstance, interface_version, health/who_am_i/comms sha)
+- T-adc-postgres-block-clear-error — agent_datacenter: blocked Postgres returns clear error to dependents immediately (DeviceBlockedError in agent_datacenter/skeleton/exceptions.py. PostgresDevice._check_not_blocked() raises it instantly ()
+- T-adc-bounded-inbound-queue — agent_datacenter: bounded per-device inbound message queue with drop policy (DeviceQueue in agent_datacenter/skeleton/device_queue.py. drop-oldest/newest per DeviceConfig. drain() returns in order )
+- T-adc-restart-loop-protection — agent_datacenter: restart loop protection — N failures in window triggers auto-block (RestartGuard in agent_datacenter/skeleton/restart_guard.py. Sliding window, auto-block after N failures. block_type='aut)
+- T-adc-postgres-shim — agent_datacenter: Postgres shim — pg_ctl lifecycle, write/read/rollback self-test (PostgresShim in devices/postgres/shim.py. pg_ctl start/stop/restart (Docker fallback). self_test write/read/rollback in )
+- T-adc-imap-server-embedded — agent_datacenter: embedded IMAP server — mailbox lifecycle, IDLE support (IMAPServer in bus/imap_server.py. Dovecot production / asyncio stub for AGENT_DATACENTER_TEST_MODE=1. IDLE via threading)
+- T-adc-skeleton-mcp-aggregator — agent_datacenter: skeleton MCP aggregator — single endpoint, namespace routing (Skeleton in agent_datacenter/skeleton/skeleton.py. BaseDevice + FastMCP. rack.devices/rack.health/rack.channels tools. r)
+- T-adc-namespace-collision-hard-fail — agent_datacenter: device registration hard-fails on namespace collision (Skeleton.register_device() now checks registry status: raises RegistrationError if online/blocked, allows reattach if of)
+- T-adc-imap-mailbox-lifecycle — agent_datacenter: IMAP mailbox created on device registration, retained on deregistration (Skeleton.__init__ accepts optional imap_server param. register_device() calls imap_server.create_mailbox() after registr)
+- T-adc-access-control-stub — agent_datacenter: v1 access control — halt and block require rack.* or self (AuthError added to exceptions.py. Skeleton._check_caller_auth() enforces from_device==skeleton|self for halt/block. {did)
+- T-adc-imap-24hr-retention — agent_datacenter: IMAP 24-hour message retention policy (IMAPServer.purge_old_messages(retention_hours=24) added: rebuilds mailbox lists, updates seen indices, logs purges. RETE)
+- T-adc-bus-router-comms-uri — agent_datacenter: comms:// URI resolver — address any mailbox or device (agent_datacenter/bus/router.py: Router class with send(address, envelope) + resolve(address). AddressError on unknown/ma)
+- T-adc-rack-namespace — agent_datacenter: rack.* MCP tools — devices, health, channels (agent_datacenter/skeleton/health.py: rack_devices(registry), rack_channels(imap_server), rack_health_async(devices). Ske)
+- T-adc-rack-health-rollup — agent_datacenter: rack.health on-demand fan-out across all registered devices (health.py rack_health_async(): asyncio.gather + to_thread per device, timeout=5s default. rack_health_sync() for non-asy)
+- T-adc-test-skeleton — agent_datacenter: skeleton tests — registration, health rollup, collision (tests/test_skeleton.py: 14 tests — registration, deregistration, reattach, collision (online+offline), health rollup (he)
+- T-adc-test-bus — agent_datacenter: IMAP bus tests — mailboxes, routing, IDLE, 24hr retention (tests/test_bus.py: 17 tests — mailbox lifecycle, Router send/resolve/errors, fetch+seen semantics, IDLE push (<2s), 24hr)
+- T-adc-portable-bootstrap — agent_datacenter: agentctl init — portable rack bootstrap on clean machine (agent_datacenter/cli/agentctl.py: agentctl init (dirs+config+postgres-detect+imap-detect+skeleton start) + agentctl stat)
+- T-adc-channel-py-migration — agent_datacenter: migrate lab/claudecode/channel.py to comms://Shared IMAP mailbox (channel.py: dual-write shim added. post() mirrors to comms://Shared via IMAP Router. read/listen/sessions remain JSONL-b)
+- T-adc-cc-inbox-migration — agent_datacenter: migrate lab/claudecode/cc_inbox.py to comms://CC.0 IMAP mailbox (cc_inbox.py: dual-write shim added. append() mirrors to comms://CC.0 via IMAP Router with InboxEntry as Envelope payload)
+- T-adc-bus-self-healing — agent_datacenter: bus self-healing — calling device relaunches bus when unreachable (BusLauncher: agentctl init relaunch + 10s IMAP wait, auto-block after max_restart_failures. Router.send() catches Connec)
+- T-adc-browser-use-eval-spike — agent_datacenter: browser-use evaluation spike — answer 3 shim questions (GO verdict. lab/spikes/browser-use-eval.md: interface stable (pin 0.12.x), needs own shim (BaseShim maps: start=launch C)
+- T-adc-browser-use-device — agent_datacenter: browser-use device (gated on eval spike go verdict) (BrowserUseDevice + BrowserUseShim shipped; 69/69 tests pass)
+- T-adc-browser-use-shim — agent_datacenter: browser-use shim (gated on device ticket) (BrowserUseShim shipped; self_test fast-paths without Chrome launch)
+- T-adc-igor-device — agent_datacenter: Igor device — full self-description, health, ops (IgorDevice + IgorShim shipped; tmux health check, blocked.flag, 96/96 tests pass)
+- T-adc-inference-device — agent_datacenter: inference device — comms:// unification validation target (InferenceDevice + InferenceShim shipped; openrouter+ollama modes)
+- T-adc-claude-device-mcp-native — agent_datacenter: Claude device — MCP-native registration, CC.0 and CC.N mailboxes (ClaudeDevice + ClaudeShim + ygm_check.py shipped; UserPromptSubmit hook + JSONL fallback)
+- T-adc-ygm-nudge-pipeline — agent_datacenter: YGM/Nudge pipeline — ygm and STOP injection only, minimal footprint (ygm_check.py + ClaudeShim hook registration shipped; JSONL fallback during dual-write window)
+- T-adc-igor-shim — agent_datacenter: Igor shim — subprocess launch, exit-42, tmux integration (IgorShim shipped alongside IgorDevice in 0669cb5)
+- T-adc-inference-comms-unification-test — agent_datacenter: verify Igor→Claude and Igor→Inference are identical comms:// call pattern (comms:// unification validated — identical call pattern for igor→inference and igor→claude in contract tests)
+- T-adc-ygm-end-to-end-test — agent_datacenter: YGM end-to-end test — send to CC.0, submit query, confirm injection (YGM end-to-end verified: ygm_check.py JSONL fallback returns nudge header when unread, exits 0 when empty/IMAP down)
+- T-adc-base-class-extract — agent_datacenter: extract IgorBase/AgentBase into agent_datacenter.device, Igor imports back (BaseDevice already lives in agent_datacenter/device.py; IgorBase extraction is a TheIgors-side import change — deferred )
+- T-adc-igor-block-manual-only — agent_datacenter: Igor block is manual-only — no auto-unblock (IgorDevice.block() ships blocked.flag; shim has no auto-block — satisfies manual-only constraint)
+- T-adc-web-server-device — agent_datacenter: web server device — read-only IMAP subscriber, tab-per-mailbox (Web server device deferred to Phase 5 (no blocker for Igor relaunch))
+## Notes
+- D-agent-datacenter-spec-2026-04-27: agent_datacenter spec finalized — T-agent-datacenter-project
+
+- D-cap-map-followups-2026-04-27: capability_map.md gaps → 8 tickets (5 closed inline: palace nodes + audit step; 3 pending: cognition audit, habit fire-rate, 9-pillar reorg)
+
+- D-adc-phase-0-2026-04-27: agent_datacenter design locked + repo bootstrap — T-adc-repo-bootstrap, T-adc-imap-impl-decision, T-adc-claude-mailbox-naming-lock (+3)
+- D-adc-phase-1-2026-04-27: rack exists — skeleton, IMAP bus, Postgres device (23 tickets)
+- D-adc-phase-2-2026-04-27: Igor on the rack — base-class-extract, logging, web server, migrations (9 tickets)
+- D-adc-phase-3-2026-04-27: Claude on the rack — inference, Claude device, YGM ygm+STOP (5 tickets)
+- D-adc-phase-4-2026-04-27: the rest — Discord, SWADL, browser-use spike, installer (8 tickets)
+- D-adc-phase-5-2026-04-27: cleanup — cc_mcp_server + discord_bot relocation (2 tickets)
+
+## Notes
+- DESIGN_START 2026-04-27T17:56:26-06:00 — central operations log tree + instance home migration (~/.agent_datacenter/)
+- D-adc-ops-log-tree-2026-04-27: central ops log tree + instance home migration — T-adc-ops-log-tree, T-adc-console-capture, T-adc-chat-history-migrate, T-adc-instance-home-migration
+- done: T-adc-ops-log-tree — log tree + env var
+- done: T-adc-console-capture — tmux pipe-pane + pruner
+- done: T-adc-chat-history-migrate — chat logs → CC.0/
+- done: T-adc-instance-home-migration — ~/.TheIgors/Igor-wild-0001 → ~/.agent_datacenter/Igor-wild-0001, symlink in place, Igor verified healthy
+
+- done: T-adc-discord-device — DiscordBotDevice implemented (agent_datacenter)
+- done: T-adc-discord-shim — DiscordBotShim implemented (Phase 4 no-op proxy)
+- done: T-adc-swadl-device — SwadlDevice stub implemented
+- done: T-adc-swadl-shim — SwadlShim stub implemented
+- done: T-adc-cc-mcp-server-deprecation — deprecated cc_mcp_server.py, updated CC_MCP_REGISTRATION.md
+- blocked: T-adc-network-discord-relocate — needs Akien review (main.py 8 sites)
+
+## In-flight: NONE — Phase 4 devices complete; T-adc-network-discord-relocate blocked for review.
+
+✅ CLOSED

@@ -1,0 +1,19 @@
+# Slate 2026-05-24 (CLOSED)
+
+## Done today
+- T-gh-rename-adc-to-uu — GitHub repo renamed to UnseenUniversity
+- T-codebase-refs-adc-to-uu — all agent_datacenter string refs updated
+- T-local-dir-rename-adc-to-uu — local dir renamed, runtime migrated
+- T-audit-finding-codes — AR-001..AR-007 stable codes in audit tools
+- T-worker-foreman-save-tasks-race-stale-bul — race-safe reset_stale_in_progress()
+- fix: symlinks (cc_queue.py, CC.0, superclaude) → UnseenUniversity
+- fix: github_sync.py sys.path → UnseenUniversity
+- fix: remove utility_closet from igor device.py logs()
+- fix: activate.py silent except blocks → add log.debug
+- fix: callmap.md regenerated (AR-006)
+
+## Session close: 2026-05-24b
+Done: Symlink fixes; github_sync path; utility_closet removal; T-worker-foreman race fix (2 tests, 4357 suite pass)
+Next: T-igor-into-adc-device needs Akien design pass; 15 Igor cognition tickets in-progress autonomously
+
+✅ CLOSED

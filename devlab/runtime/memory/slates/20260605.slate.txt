@@ -1,0 +1,88 @@
+# Slate 2026-06-05
+
+## Notes
+- Igor relocated from ~/TheIgors/wild_igor → UnseenUniversity/devices/igor (now via `igor` launcher)
+- Igor web API unresponsive — see T-igor-web-responsiveness
+- uumytickets/uuopentickets working (user confirmation: "iforgot it was uumytickets, my bad")
+
+## In-flight
+T-granny-setstatus-timeout closed: direct Postgres setstatus replaces subprocess; Granny restarted with fix
+## Planned
+- T-igor-web-responsiveness (M) — diagnose web API down
+- Other unblocked sprint tickets (run /opentickets to see)
+
+## Ad hoc
+(none yet)
+
+## Done today
+- T-igor-tmux-session-missing — Igor restarted, verified in tmux session ready for commands
+- GH-187 — feat: Igor own GitHub identity — separate PAT + dual-identity in github.py (cancelled — Igor GitHub identity deferred indefinitely; not on critical path)
+
+- T-autocompact-interruption-protocol — Autocompact send interrupt signals before command (Added three Enter interrupt signals before compact command in /autocompact skill to ensure robustness against concurrent)
+- T-igor-web-responsiveness — Igor: web API unresponsive, needs diagnosis (Diagnosed: root cause was Ollama inference stall (341s), not routing. Routing code is sound — live test confirms comms:/)
+- T-igor-ne-standing-goal-stall — Igor NE loops on blockage question instead of acting on standing goals (Suppressed NE cognitive blockage gap loop when AGED_INTENT standing goals present: NE prompt guidance + _process_gaps() )
+- T-granny-setstatus-timeout — Granny: setstatus subprocess times out, causing re-dispatch loop (Replaced cc_queue.py setstatus subprocess calls with direct psycopg2 UPDATE in _dispatch_cc0, _dispatch_bus, and _proces)
+- T-design-patterns-inventory — Audit pass: build design patterns inventory (11 patterns documented in docs/design_patterns_inventory.md with file refs and quick-reference table)
+- T-cc-compact-availability-gate — CC.0 marks unavailable before compact, available at session start (/autocompact writes CC.0.available.false; /context-load restores .true; Granny defers during compact)
+- T-granny-shim-self-heal — Granny shim: self-heal when tickets in queue but daemon dead (watchdog thread in GrannyShim.start(): stale PID + sprint tickets → kill session + restart daemon; 12 tests)
+- T-sudo-relay-rack-device — sudo relay: formalize as rack device, default-off, guru-start (SudoRelayDevice + SudoRelayShim + web server chat/feed endpoints; 14 tests; password never logged)
+- T-granny-stale-query-typecast — Granny: stale-dispatched query fails, text vs timestamptz cast (::timestamptz cast on updated_at in both stale queries; stale cleanup now runs without error)
+- T-pre-inference-assembler — Pre-inference context assembler script (script at lab/claudecode/pre_inference_assemble.py: pattern matching, symbol map, domain terms; 12 tests)
+- T-granny-cc0-busy-worker-missing — Granny: _cc0_busy() misses in_progress tickets with worker=None (_setstatus_direct() now sets worker='claude' on CC.0 dispatch; _cc0_busy() correctly detects CC busy)
+- T-uu-cli-script-naming-clarify — CLI scripts are named uumytickets/uuopentickets — not mytickets (aliases mytickets/opentickets added to ~/.bashrc; resolve to uumytickets/uuopentickets in interactive shells)
+- T-theigors-archive — Delete DB-mirrored paper echoes from active repos (2 June 3 decisions + 13 decisions_log entries merged to TheIgorsProject; Igor confirmed running from devices/igor/)
+- T-sprint-wire-pre-inference — Wire pre-inference assembler into sprint-ticket (pre_inference_assemble.py wired into sprint-ticket step 2.3; levers doc updated; both repo + userSettings skills updated)
+- T-dsimnel-pre-inference-parity — DickSimnel: wire pre-inference assembler (DickSimnel loads sprint-ticket/SKILL.md as system prompt — already includes pre_inference_assemble.py call; parity autom)
+- T-web-poll-queue-filter — Web server: incoming poll queue not filtered by agent_id (per-agent queues: _api_agent_poll drains agent-specific queue; _api_cc_send routes to to_agent param; file uploads go to)
+- T-context7-mcp-integration — Context7: MCP server for current docs at sprint time (context7 MCP server registered via claude mcp add; node v24.16.0 installed via nvm; context7 shows Connected in claude m)
+## Session close: 2026-06-05 (19:04)
+
+**Done:**
+- Igor restarted (code relocated to UnseenUniversity/devices/igor/, uses `igor` launcher)
+- Ollama restarted via sudo relay (cleared stuck 341s inference call, CPU from 49% → 0.3%)
+- Queue hygiene: moved 22 future-dated consequence checks → dependency, cancelled 7 noise tickets (Gmail cluster, runtime-self-healing-tests), moved T-remote-access-setup → akien
+- sudo_relay fixed: now attaches to current terminal by default (password prompt visible); --no-attach for automation
+- Memory corrected: role hierarchy — never set worker=claude/igor/akien, use role=master/apprentice/guru instead
+- Tickets filed: T-sudo-relay-rack-device (4-state with slash-command chat), T-shim-foreground-spawn (BaseShim helper), T-igor-ne-standing-goal-stall (NE loops on blockage question instead of acting)
+
+**In-flight:**
+Igor NE is looping on a meta-question ("what's causing cognitive blockage?") instead of executing standing goals (read codebase/queue, ask questions). Standing goals are intentional, not stale. Root cause: NARRATIVE_GAP lever generates the blockage question; question becomes highest-salience item; loop repeats. The question is self-reinforcing but doesn't execute any action.
+
+**Next:**
+- T-igor-ne-standing-goal-stall: debug why NE won't execute standing goals
+- T-igor-web-responsiveness: web chat responses not routing back to UI (still in console though)
+- T-wg-cooccur-tree-restructure: update from role=master once Igor is healthier
+
+✅ CLOSED
+
+- T-autocompact-interruption-protocol: Autocompact send interrupt signals before command
+- D-pre-inference-assembly-2026-06-05: pre-inference context assembly — T-design-patterns-inventory, T-pre-inference-assembler, T-sprint-wire-pre-inference, T-dsimnel-pre-inference-parity
+- T-igor-ne-tick-interval: Igor NE structural polling tick (below DickSimnel priority)
+- T-igor-web-responsiveness: CLOSED — root cause was Ollama stall, routing was sound
+- T-web-channel-mismatch-ux: filed follow-on
+- T-web-poll-queue-filter: filed follow-on
+- T-granny-shim-self-heal: filed
+- T-design-patterns-inventory: DONE — 11 patterns documented in docs/design_patterns_inventory.md
+- T-cc-compact-availability-gate: DONE — availability gate: /autocompact writes .false, /context-load restores .true
+- T-granny-shim-self-heal: DONE — watchdog thread: stale PID + sprint tickets → restart daemon
+- T-sudo-relay-rack-device: DONE — device + shim + web chat/feed endpoints; 14 tests
+- T-granny-stale-query-typecast: DONE — ::timestamptz cast in both stale queries
+- T-pre-inference-assembler: DONE — pre_inference_assemble.py: pattern match + symbol map + domain terms
+- T-granny-cc0-busy-worker-missing: DONE — set worker=claude on dispatch; _cc0_busy() now works
+- T-uu-cli-script-naming-clarify: DONE — aliases mytickets/opentickets → uumytickets/uuopentickets in ~/.bashrc
+- T-theigors-archive: DONE — June 3 decisions + decisions_log merged to TheIgorsProject; ~/TheIgors/lab/ retained as read-only archive
+- T-sprint-wire-pre-inference: DONE — pre_inference_assemble.py in step 2.3; levers doc updated
+- T-dsimnel-pre-inference-parity: DONE — DickSimnel inherits via sprint-ticket skill; no code change needed
+
+## In-flight
+Sprint block complete 2026-06-05 ~15:55: 12 tickets closed (Granny dispatch fixes, pre-inference assembler, sudo relay rack device, self-heal watchdog); Granny restarted with worker=claude fix; tmux buffer draining (stale dispatches for closed tickets)
+- T-web-poll-queue-filter: DONE — per-agent queues; poll endpoint filters by agent_id
+- T-context7-mcp-integration: DONE — context7 registered; node v24.16.0 via nvm; Connected in mcp list; verify deferred tools in next session
+- D-compact-cadence-hook-2026-06-05: harness-enforced compaction cadence (Stop hook every 5 closes) + Haiku dance — T-cc-compact-cadence-hook, T-autocompact-haiku-dance, T-consequence-compact-cadence
+- Granny handshake finding: bus-flip is a FAKE COMPLETION (daemon docstring=bus, code=tmux_send_keys) — T-granny-bus-flip-fake-completion [hold/guru, needs Akien]
+- 1M fix: CLAUDE_CODE_DISABLE_1M_CONTEXT=1 added to ~/.bashrc (needs shell restart to take effect)
+- T-cc-compact-cadence-hook: DONE — Stop hook fires /autocompact every 5 closes (15 tests)
+- T-autocompact-haiku-dance: DONE — /autocompact does haiku->compact->sonnet dance
+- D-ticket-quality-verification-loop-2026-06-06: verification-first (Haiku completion audit = priority) + measure-first Opus-ticket eval + HYBRID model (sonnet driver / opus advisor) — T-completion-audit-closed-tickets, T-opus-ticket-eval
+- Model set to sonnet in settings.json; hybrid confirmed (advisor stays opus); CLAUDE_CODE_DISABLE_1M_CONTEXT=1 in bashrc — takes effect on reboot
+- SYSTEM REBOOT pending (Akien). Post-reboot: standard 200K sonnet, compaction cadence hook live (baseline 30, fires at 35 closes), /autocompact does haiku dance
