@@ -8,7 +8,7 @@ decisions_log (architectural decisions), and session records (what happened).
 
 Usage:
     # Deposit a finding
-    python3 lab/claudecode/findings.py add \
+    python3 devlab/claudecode/findings.py add \
         --title "DeepSeek vs Qwen reading comparison" \
         --result "Qwen won by one unit extracted per chunk" \
         --conclusion "Use Qwen for reading extraction" \
@@ -16,11 +16,11 @@ Usage:
         --tags reading,model-comparison
 
     # Query findings
-    python3 lab/claudecode/findings.py list [--tag TAG] [--limit N]
-    python3 lab/claudecode/findings.py search "deepseek"
+    python3 devlab/claudecode/findings.py list [--tag TAG] [--limit N]
+    python3 devlab/claudecode/findings.py search "deepseek"
 
     # Show one finding
-    python3 lab/claudecode/findings.py show <id>
+    python3 devlab/claudecode/findings.py show <id>
 
 Requires UU_HOME_DB_URL.
 """

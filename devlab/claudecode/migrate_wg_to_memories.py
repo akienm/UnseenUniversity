@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """migrate_wg_to_memories.py — One-time migration of wg_edges words into clan.memories WORD_GRAPH nodes.
 
-Run: python3 lab/claudecode/migrate_wg_to_memories.py
+Run: python3 devlab/claudecode/migrate_wg_to_memories.py
 
 Idempotent: safe to run multiple times.
   Phase 1: create WORD_GRAPH memories for all distinct words (word_a UNION word_b from wg_edges).

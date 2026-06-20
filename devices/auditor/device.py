@@ -221,8 +221,8 @@ _DISPATCH = {
 class AuditorDevice(BaseDevice):
     """Rack device that runs registered codebase audit checks.
 
-    Check registry: lab/claudecode/audit_checks.json (forever + next_sweep lists).
-    Check scripts: lab/claudecode/audit_check_*.py invoked as shell commands.
+    Check registry: devlab/claudecode/audit_checks.json (forever + next_sweep lists).
+    Check scripts: devlab/claudecode/audit_check_*.py invoked as shell commands.
     Finding history: adc.audit_findings in Postgres (UU_HOME_DB_URL).
     Allowlist: adc.audit_allowlist in Postgres.
     """

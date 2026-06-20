@@ -13,7 +13,7 @@ For each enabled switch, checks:
   - No obvious stub markers (TODO, FIXME, placeholder, stub, NotImplemented)
 
 Usage:
-    python3 lab/claudecode/wiring_check.py [--cfg PATH] [--source PATH]
+    python3 devlab/claudecode/wiring_check.py [--cfg PATH] [--source PATH]
 
 Exit code: 0 = all OK, 1 = issues found
 """

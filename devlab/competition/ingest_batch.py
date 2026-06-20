@@ -23,7 +23,7 @@ import os
 import sys
 from pathlib import Path
 
-# Resolve repo root so lab.claudecode imports work
+# Resolve repo root so devlab.claudecode imports work
 _REPO = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_REPO))
 sys.path.insert(0, str(_REPO / "lab"))

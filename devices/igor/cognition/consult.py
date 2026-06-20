@@ -421,7 +421,7 @@ class ConsultSession(IgorBase):
         # halve salience or drop based on observed false-positive rate.
         confab_flags: list = []
         try:
-            # Scanner lives in lab.claudecode.engram_tools (CC-side toolkit)
+            # Scanner lives in devlab.claudecode.engram_tools (CC-side toolkit)
             from devlab.claudecode.engram_tools.confab_scanner import scan_turns
 
             confab_flags = scan_turns(

@@ -14,7 +14,7 @@ locked policy end to end against real records:
   - PROVENANCE: body.source records where the projection came from, so the later
     dedup-by-semantic-id + canonical-source cutover has what it needs.
 
-Run:  python3 lab/claudecode/migrate_decisions.py [--dry-run]
+Run:  python3 devlab/claudecode/migrate_decisions.py [--dry-run]
 """
 from __future__ import annotations
 

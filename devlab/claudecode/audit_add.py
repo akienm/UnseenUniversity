@@ -11,7 +11,7 @@ Usage:
 Example:
   python3 audit_add.py add forever basedevice-interface-logging \\
     --kind shell \\
-    --pattern 'python3 lab/claudecode/audit_check_interface_logging.py' \\
+    --pattern 'python3 devlab/claudecode/audit_check_interface_logging.py' \\
     --severity med \\
     --description 'BaseDevice methods that cross interfaces must log the crossing.'
 """

@@ -7,7 +7,7 @@ when **every** referenced predecessor is satisfied: every id token terminal,
 every date token elapsed.
 
 Why this module exists: ``gate_clear`` used to be copied into every caller —
-``lab/claudecode/cc_queue.py`` (the queue authority), ``lab/claudecode/
+``devlab/claudecode/cc_queue.py`` (the queue authority), ``devlab/claudecode/
 queue_view.py`` (the /opentickets renderer), and the ``~/bin/uuopentickets``
 TTY tool. They drifted, and the copies carried a real correctness bug: a gate
 of ``'T-A T-C'`` was released the moment the *first* referenced id (``T-A``)

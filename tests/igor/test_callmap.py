@@ -1,4 +1,4 @@
-"""tests for lab/claudecode/callmap.py — T-callmap-tool.
+"""tests for devlab/claudecode/callmap.py — T-callmap-tool.
 
 Covers API discovery (default, __api__ override, # API: comment), direct-call
 caller detection (intra-file, cross-file imports), subprocess invocation

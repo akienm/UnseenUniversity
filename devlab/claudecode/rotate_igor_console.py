@@ -11,7 +11,7 @@ file.
 
 Cron entry (Akien adds manually):
     1 0 * * * /home/akien/dev/src/UnseenUniversity/.venv/bin/python3 \\
-        /home/akien/dev/src/UnseenUniversity/lab/claudecode/rotate_igor_console.py \\
+        /home/akien/dev/src/UnseenUniversity/devlab/claudecode/rotate_igor_console.py \\
         >> /home/akien/.unseen_university/logs/console_rotate.log 2>&1
 
 Idempotent: re-running mid-day re-points to today's file (already correct);

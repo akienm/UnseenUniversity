@@ -187,7 +187,7 @@ class TestWordGraphPostgresCompat(unittest.TestCase):
 
 # Migration-script test removed in T-sqlite-out-word-graph-db: SQLite
 # word_graph.db deleted, paths().word_graph() removed. The migration script
-# (lab/claudecode/migrate_wg_to_postgres.py) is kept as historical artifact.
+# (devlab/claudecode/migrate_wg_to_postgres.py) is kept as historical artifact.
 
 
 if __name__ == "__main__":

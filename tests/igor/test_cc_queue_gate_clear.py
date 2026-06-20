@@ -7,7 +7,7 @@ Tests for the gate-clear-on-close behavior in cmd_done.
 import sys
 from pathlib import Path
 
-# Ensure TheIgors root is in sys.path so lab.claudecode resolves (with __path__
+# Ensure TheIgors root is in sys.path so devlab.claudecode resolves (with __path__
 # extension to unseen_university for the canonical file).
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:

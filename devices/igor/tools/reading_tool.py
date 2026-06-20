@@ -39,7 +39,7 @@ Three collaborating layers:
      chunks it, and hands chunks to the extractor. Handles format
      dispatch, retry, rate limiting.
 
-  3. lab/claudecode/book_learner.py      — extraction. For each chunk,
+  3. devlab/claudecode/book_learner.py      — extraction. For each chunk,
      runs an LLM distillation via the inference gateway (D359), the
      extractor deposits INTERPRETIVE / FACTUAL / FACT_CLOUD memories
      with full provenance stamps. _extract_nodes is the prompt surface;

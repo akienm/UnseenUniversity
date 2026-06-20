@@ -5,7 +5,7 @@ audit_logging.py — T-detailed-logging-audit
 Callsite-level inventory of logging statements across the codebase. Two
 passes:
 
-1. STATIC (default): AST walk over devices/igor/ (UnseenUniversity), lab/claudecode/.
+1. STATIC (default): AST walk over devices/igor/ (UnseenUniversity), devlab/claudecode/.
    For every logging callsite, classify the pattern and resolve the host
    class. Cross-check inheritance against IgorBase/AgentBase via shared
    logic with audit_check_igorbase.py.
@@ -14,7 +14,7 @@ passes:
    over a window. Per logger, count lines, compute rate. Flag noisy/quiet
    sources and slot-misrouted writes.
 
-Output: lab/claudecode/reports/logging_audit_<ts>.md
+Output: devlab/claudecode/reports/logging_audit_<ts>.md
 
 Patterns classified (severity in parens):
   - GOOD       self.log.<level>(...)              (proper inherited)
@@ -64,7 +64,7 @@ SCAN_ROOTS = (
 )
 
 # Excluded paths (vendored, generated, archived rebuild scripts).
-# `archive` covers lab/claudecode/archive/ — one-shot seed scripts kept for
+# `archive` covers devlab/claudecode/archive/ — one-shot seed scripts kept for
 # DB rebuild capability per the README warning. Do not migrate; do not flag.
 EXCLUDED_PARTS = {
     "__pycache__",
@@ -793,7 +793,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         "--out",
         type=Path,
         default=None,
-        help="Output report path. Default: lab/claudecode/reports/logging_audit_<ts>.md",
+        help="Output report path. Default: devlab/claudecode/reports/logging_audit_<ts>.md",
     )
     parser.add_argument(
         "--json",

@@ -8,7 +8,7 @@ Logs to ~/.unseen_university/logs/learning_pipeline.log.
 
 Cron entry (add via `crontab -e`):
     30 3 * * * /home/akien/dev/src/UnseenUniversity/.venv/bin/python3 \\
-        /home/akien/dev/src/UnseenUniversity/lab/claudecode/cron_learning_pipeline.py \\
+        /home/akien/dev/src/UnseenUniversity/devlab/claudecode/cron_learning_pipeline.py \\
         >> ~/.unseen_university/logs/learning_pipeline.log 2>&1
 """
 

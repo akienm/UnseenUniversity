@@ -35,7 +35,7 @@ from pathlib import Path
 try:
     from devlab.claudecode.ts_format import format_display, parse_iso
 except ImportError:
-    # Fallback if run standalone (e.g. python3 lab/claudecode/export_chat.py)
+    # Fallback if run standalone (e.g. python3 devlab/claudecode/export_chat.py)
     def parse_iso(ts: str) -> datetime:  # type: ignore[misc]
         return datetime.fromisoformat(ts.replace("Z", "+00:00"))
 

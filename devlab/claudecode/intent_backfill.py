@@ -13,7 +13,7 @@ import json
 import sys
 from pathlib import Path
 
-# Add lab/claudecode to path for cc_queue access
+# Add devlab/claudecode to path for cc_queue access
 sys.path.insert(0, str(Path(__file__).parent))
 import cc_queue
 

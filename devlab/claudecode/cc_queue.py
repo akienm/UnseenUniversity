@@ -60,7 +60,7 @@ from pathlib import Path
 
 # This script is invoked as a bare file (`python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py`)
 # by every ticket skill, under the SYSTEM python3 — not the venv. For a script file
-# sys.path[0] is the script's own dir (lab/claudecode), so top-level packages
+# sys.path[0] is the script's own dir (devlab/claudecode), so top-level packages
 # `devices` and `unseen_university` are NOT importable. The lazy `from devices.*`
 # hooks below (classifier, annotator, constraint decorator, intent, scraps) all
 # fail-open on ImportError, so the breakage was SILENT: every queue op printed

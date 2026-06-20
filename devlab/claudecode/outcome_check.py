@@ -6,7 +6,7 @@ decision_id, looks up spawned_tickets in adc.palace, checks all are closed in
 the queue. Prints nothing when the decision is not fully shipped yet.
 
 Usage:
-    python3 lab/claudecode/outcome_check.py T-my-ticket
+    python3 devlab/claudecode/outcome_check.py T-my-ticket
 """
 
 from __future__ import annotations

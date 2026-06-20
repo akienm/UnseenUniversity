@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 
-# Make lab/claudecode importable
+# Make devlab/claudecode importable
 sys.path.insert(0, str(Path(__file__).parent.parent / "devlab" / "claudecode"))
 import critic_core as cc
 
@@ -22,7 +22,7 @@ class TestDetectTargetType:
         assert cc.detect_target_type("T-foo-bar-baz") == "ticket"
 
     def test_module_path_suffix(self):
-        assert cc.detect_target_type("lab/claudecode/critic_core.py") == "module"
+        assert cc.detect_target_type("devlab/claudecode/critic_core.py") == "module"
         assert cc.detect_target_type("devices/granny/daemon.py") == "module"
 
     def test_existing_file(self, tmp_path):

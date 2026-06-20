@@ -1,4 +1,4 @@
-"""Tests for lab.claudecode.cc_task_listener."""
+"""Tests for devlab.claudecode.cc_task_listener."""
 
 from __future__ import annotations
 

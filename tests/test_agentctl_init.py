@@ -87,7 +87,7 @@ def test_write_env_var_preserves_existing_content(tmp_path: Path) -> None:
 def test_detect_cc_workflow_tools_returns_path_or_none() -> None:
     """Smoke test: returns a Path if cc_queue.py exists there, else None."""
     result = _detect_cc_workflow_tools()
-    # On this machine lab/claudecode is in TheIgors, not in unseen_university,
+    # On this machine devlab/claudecode is in TheIgors, not in unseen_university,
     # so the function should gracefully return None.
     assert result is None or isinstance(result, Path)
 
@@ -106,11 +106,11 @@ def test_detect_cc_workflow_tools_path_has_cc_queue_when_found() -> None:
 def test_detect_cc_workflow_tools_respects_fake_repo(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """When DEFAULT_MASTER_ROOT points into a tree that has lab/claudecode/cc_queue.py,
+    """When DEFAULT_MASTER_ROOT points into a tree that has devlab/claudecode/cc_queue.py,
     the function returns that path."""
     import devices.installer.shim as shim_mod
 
-    # Build a fake repo tree: tmp/skills/ and tmp/lab/claudecode/cc_queue.py
+    # Build a fake repo tree: tmp/skills/ and tmp/devlab/claudecode/cc_queue.py
     fake_skills = tmp_path / "skills"
     fake_skills.mkdir()
     fake_claudecode = tmp_path / "devlab" / "claudecode"
@@ -126,7 +126,7 @@ def test_detect_cc_workflow_tools_respects_fake_repo(
 def test_detect_cc_workflow_tools_missing_cc_queue_returns_none(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """If lab/claudecode exists but cc_queue.py is absent, return None."""
+    """If devlab/claudecode exists but cc_queue.py is absent, return None."""
     import devices.installer.shim as shim_mod
 
     fake_skills = tmp_path / "skills"

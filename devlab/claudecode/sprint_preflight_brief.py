@@ -25,7 +25,7 @@ from pathlib import Path
 def _load_queue():
     cc_tools = os.environ.get(
         "CC_WORKFLOW_TOOLS",
-        str(Path.home() / "dev/src/UnseenUniversity/lab/claudecode"),
+        str(Path.home() / "dev/src/UnseenUniversity/devlab/claudecode"),
     )
     spec = importlib.util.spec_from_file_location(
         "cc_queue", str(Path(cc_tools) / "cc_queue.py")

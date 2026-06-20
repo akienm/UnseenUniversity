@@ -1,4 +1,4 @@
-"""cc_inbox_bridge.py — Igor-side wrapper around lab.claudecode.cc_inbox.
+"""cc_inbox_bridge.py — Igor-side wrapper around devlab.claudecode.cc_inbox.
 
 Thin bridge so igor.cognition.* and igor.tools.* callers have a natural
 import path: `from .cognition.cc_inbox_bridge import post_to_cc_inbox`.

@@ -9,9 +9,9 @@ JSONL trace events so /diagnose works uniformly.
 Empty stdout = pass. Non-empty = list of violations, one per line.
 
 Registered as a forever audit check (AR-008):
-  python3 lab/claudecode/audit_add.py add forever
+  python3 devlab/claudecode/audit_add.py add forever
   basedevice-must-emit-traces --kind shell
-  --pattern 'python3 lab/claudecode/audit_check_missing_traces.py'
+  --pattern 'python3 devlab/claudecode/audit_check_missing_traces.py'
   --severity med
 """
 

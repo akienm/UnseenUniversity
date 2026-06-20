@@ -16,7 +16,7 @@ migrate_decisions.py:
     gate are parsed into links as T-…/D-… semantic ids, never filenames.
   - PROVENANCE: body.source records the projection came from cc_queue's merged read.
 
-Run:  python3 lab/claudecode/migrate_tickets.py [--dry-run]
+Run:  python3 devlab/claudecode/migrate_tickets.py [--dry-run]
 """
 from __future__ import annotations
 

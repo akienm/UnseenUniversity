@@ -6,8 +6,8 @@ files are small). Called by day-close-audit Step 7 so manual truncation
 between day-close runs is never needed.
 
 Usage:
-    python3 lab/claudecode/rotate_logs.py [--dry-run]
-    python3 lab/claudecode/rotate_logs.py --max-mb 20   # override threshold
+    python3 devlab/claudecode/rotate_logs.py [--dry-run]
+    python3 devlab/claudecode/rotate_logs.py --max-mb 20   # override threshold
 """
 
 from __future__ import annotations

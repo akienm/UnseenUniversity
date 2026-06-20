@@ -20,7 +20,7 @@ Any of these tokens count. The tag may live in the module docstring or as
 a top-of-file comment; case-insensitive.
 
 This check scans new files added in a diff range (default: last commit
-vs HEAD~1) and reports any new .py file under devices/ or lab/claudecode/
+vs HEAD~1) and reports any new .py file under devices/ or devlab/claudecode/
 that lacks the tag. Exempt: tests/ and __init__.py.
 
 Empty stdout = pass. Non-empty = list of violations, one per line.

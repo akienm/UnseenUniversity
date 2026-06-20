@@ -23,7 +23,7 @@ Ref: T-cc-admin-consolidation
 import sys
 from pathlib import Path
 
-# Ensure lab/claudecode is importable without installing as a package
+# Ensure devlab/claudecode is importable without installing as a package
 _CC_DIR = Path(__file__).resolve().parent
 if str(_CC_DIR) not in sys.path:
     sys.path.insert(0, str(_CC_DIR))

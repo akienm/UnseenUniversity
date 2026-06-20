@@ -8,8 +8,8 @@ Dispatches to language-specific extractors and writes to clan.code_index:
     a  # intent: <one-liner>  comment to the file header (idempotent).
 
 Usage:
-    python3 lab/claudecode/code_indexer.py [--dry-run] [--repo-root PATH]
-    python3 lab/claudecode/code_indexer.py --files a.sh b.sh   # targeted re-index
+    python3 devlab/claudecode/code_indexer.py [--dry-run] [--repo-root PATH]
+    python3 devlab/claudecode/code_indexer.py --files a.sh b.sh   # targeted re-index
 
 clan.code_index schema for file_intent rows:
     path          = repo-relative path  (e.g. "config/cc_env.sh")

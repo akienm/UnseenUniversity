@@ -14,7 +14,7 @@ Empty stdout = pass. Non-empty = list of violations, one per line.
 
 Used as a registered audit check via `audit_add.py add forever
 primary-classes-must-inherit-igorbase --kind shell --pattern
-'python3 lab/claudecode/audit_check_igorbase.py'`.
+'python3 devlab/claudecode/audit_check_igorbase.py'`.
 """
 
 import ast

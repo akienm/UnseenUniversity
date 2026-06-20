@@ -97,11 +97,11 @@ def _detect_imap() -> str:
 
 
 def _detect_cc_workflow_tools() -> Path | None:
-    """Return the path to the lab/claudecode scripts dir, or None if unresolvable.
+    """Return the path to the devlab/claudecode scripts dir, or None if unresolvable.
 
     For a development install (editable) the layout is:
         <repo_root>/skills/       → DEFAULT_MASTER_ROOT
-        <repo_root>/lab/claudecode/  → the tools we want
+        <repo_root>/devlab/claudecode/  → the tools we want
 
     For a pip install the lab tree isn't in sys.prefix, so we skip gracefully.
     """
@@ -270,7 +270,7 @@ def init(instance: str | None) -> None:
             )
     else:
         click.echo(
-            "  CC_WORKFLOW_TOOLS: lab/claudecode not found — skipped "
+            "  CC_WORKFLOW_TOOLS: devlab/claudecode not found — skipped "
             "(set CC_WORKFLOW_TOOLS manually after install)"
         )
 

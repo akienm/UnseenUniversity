@@ -31,7 +31,7 @@ _TERMINAL = {"done", "closed", "cancelled", "discarded"}
 # This script is invoked as a bare-file path by the /mytickets + /opentickets
 # skills (`python3 ${CC_WORKFLOW_TOOLS}/queue_view.py`) under the SYSTEM python3,
 # not the project venv. For a script file, sys.path[0] is the script's own dir
-# (lab/claudecode), so `unseen_university` is NOT importable without help and the
+# (devlab/claudecode), so `unseen_university` is NOT importable without help and the
 # import below would raise ModuleNotFoundError. Put the repo root (two parents up)
 # on sys.path first so the canonical-source import resolves under any interpreter.
 _REPO_ROOT = str(Path(__file__).resolve().parents[2])
@@ -62,7 +62,7 @@ def _load_tickets() -> list[dict]:
     """Load all tickets by importing cc_queue._load() directly."""
     cc_tools = os.environ.get(
         "CC_WORKFLOW_TOOLS",
-        str(Path.home() / "dev/src/UnseenUniversity/lab/claudecode"),
+        str(Path.home() / "dev/src/UnseenUniversity/devlab/claudecode"),
     )
     if cc_tools not in sys.path:
         sys.path.insert(0, cc_tools)

@@ -6,7 +6,7 @@ unchanged (e.g. ``sprint`` still means READY); this module owns only the
 class.
 
 Why this module exists: the label/order/class dicts used to be copied into every
-renderer — ``lab/claudecode/queue_view.py``, ``devices/web_server/server.py``,
+renderer — ``devlab/claudecode/queue_view.py``, ``devices/web_server/server.py``,
 and the ``~/bin/uuopentickets`` / ``uumytickets`` tools. They drifted: the
 "Akien is not legacy" fix had to be applied 3+ times and still half-landed
 (server.py kept rendering ``Akien (legacy)`` until a render-asserting test caught

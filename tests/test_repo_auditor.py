@@ -43,7 +43,7 @@ from devices.hubert.repo_auditor import (
 # ── _parse_affected_files ─────────────────────────────────────────────────────
 
 def test_parse_affected_files_extracts_paths():
-    desc = "**Affected files:** devices/granny/daemon.py, lab/claudecode/cc_queue.py"
+    desc = "**Affected files:** devices/granny/daemon.py, devlab/claudecode/cc_queue.py"
     result = _parse_affected_files(desc)
     assert result is not None
     assert any("daemon.py" in p for p in result)
@@ -59,7 +59,7 @@ def test_parse_affected_files_returns_none_when_absent():
 
 
 def test_parse_affected_files_strips_parenthetical_notes():
-    desc = "**Affected files:** devices/hubert/repo_auditor.py (new), lab/claudecode/completion_audit.py (read only)"
+    desc = "**Affected files:** devices/hubert/repo_auditor.py (new), devlab/claudecode/completion_audit.py (read only)"
     result = _parse_affected_files(desc)
     assert result is not None
     assert any("repo_auditor.py" in p for p in result)
