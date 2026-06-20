@@ -50,6 +50,15 @@ decisions in `devlab/runtime/memory/decisions/`). Search it with `grep -r`.
   *Why: without a log at the crossing point, a bug at a device boundary is invisible — you
   can't tell whether the problem is in the sender or the receiver, or whether the message
   crossed at all. Enforced by audit check AR-009.*
+- **Prove what's load-bearing; everything else must declare itself unproven.** Code that
+  other code depends on closes only with proof — a gate a hollow build can't pass. Spikes,
+  throwaways, and exploration are exempt, but must say plainly they're unproven, never pose
+  as done.
+  *Why: a test that passes on hollow output is the signature of a missing spec — the cost of
+  specifying intent doesn't vanish, it just defers and leaks as hollow builds. A hollow-proof
+  gate moves that cost up-front and visible. Applying it uniformly taxes the exploration that
+  benefits least and drives turtles-to-dust; scoping it to dependence puts the rigor where it
+  pays.*
 
 ---
 
