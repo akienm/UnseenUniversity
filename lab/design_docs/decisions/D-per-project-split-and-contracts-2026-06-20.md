@@ -48,8 +48,12 @@ The test for a real contract (apply to every boundary): **(a)** could the piece 
 
 ## Action plan — ordered, for post-compaction execution
 
+**⮕ ORDERING PRINCIPLE (Akien, 2026-06-20): lay the pieces before the skills can use them.** Structural pieces first — consumption gates, contracts dirs, maps (steps 1b–4) — THEN skills updates + `/skills-audit` (step 5), because *a skill can only enforce or use a structure that already exists.* THEN build debugging, THEN debug each device one at a time. Building outward in any other order means skills reference pieces that aren't there yet (the rot we keep hitting).
+
 0. **Read this doc + today's slate.** Formalize this design via `/sorted` (extract hypothesis Q1–3, draft tickets, file the mandatory consequence ticket).
-1. **Prove the CP1 boundary FIRST** (one boundary with teeth before any split — advisor's line and CC's own): `CoreValues` mixin → base; honesty gate on "done"; a **test that fails if any device lacks the values**; close the hollow values-in-base ticket *honestly*. This is the build process starting to live by CP1.
+1. **Prove the CP1 boundary FIRST** (one boundary with teeth before any split — advisor's line and CC's own):
+   - **1a — ✅ DONE (commit 139efc96, 2026-06-20):** `CoreValuesMixin` in `diagnostic_base/core_values.py` is the single source of truth, composed by both `BaseDevice` and `BaseShim`; Igor's brainstem de-duplicated (sources canonical); `tests/test_core_values.py` is the teeth — fails if any device/shim lacks the values, the set drifts from CP1–CP6, or the brainstem re-inlines the literals. 5/5 new tests + 312 device/shim tests green. Honest completion of the long-closed-but-never-done "values in base" work (original ticket predates the devlab store; not found there — flagged, not confabulated).
+   - **1b — ⏭ NEXT:** CP1 *consumption* — the honesty gate on "done" (no device/skill reports done without passing it; each firing recorded in that project's DSDSDS). This is where `T-quality-judge-at-close` actually lands, and it's a *piece* that must exist before the skills can call it.
 2. **Divide the 28 open tickets** into the 6 buckets below; decide whether "The Factory" splits builder-vs-process. (Akien authorized the division.)
 3. **Stand up `devices/<DEVICE>/contracts/` + `archive/`**; write ONE real contract for ONE device as proof — must pass (a)+(b) above.
 4. **Design + write the global map and one product map** (CC owns); wire the graph-tree orientation device to consume them.
