@@ -21,8 +21,8 @@
   "body": {
     "id": "T-ticket-status-assigned-shim-nag",
     "title": "[sprint] ASSIGNED status + 10-min shim-nag/back-off loop (status model step 3, net-new)",
-    "status": "dispatched",
-    "worker": "claude",
+    "status": "sprint",
+    "worker": "",
     "size": "L",
     "tags": [
       "TicketStatus",
@@ -33,7 +33,7 @@
     "description": "Step 3 of D-ticket-status-model-2026-06-16. NET-NEW behavior: implement the ASSIGNED status + 10-minute shim-nag/back-off loop. A builder can be ASSIGNED a ticket but deem something else too important to start; its shim replies on its behalf, the ticket sits in ASSIGNED until work starts (→INPROGRESS) or the assignment times out at 10 min, after which the dispatcher backs off 10 min before retrying.\n\n**Affected files:** TBD — discovery in sprint. Likely the builder shim (CCWorkerListener / runme.py), Granny dispatch.py, cc_queue.py (add 'assigned' status + transitions), STATUS_ORDER/labels.\n**Design rules:** no-sqlite, External State Principle (assignment + timer held externally so a restart resumes), log-state-change (every assign/nag/timeout/start crossing — AR-009), test-plan.\n**Scope boundary:** IN — ASSIGNED status, shim acknowledge/reply, 10-min timeout + back-off, ASSIGNED→INPROGRESS transition. OUT — the READY/TRIAGE fold (steps 1-2, done/filed).\n**Test plan:** dispatch a ticket → status ASSIGNED, shim acks; no start within 10 min → timeout + back-off logged; builder starts → INPROGRESS; assignment state survives a shim restart.",
     "decision_id": "D-ticket-status-model-2026-06-16",
     "created_at": "2026-06-16T19:24:49.783003+00:00",
-    "updated_at": "2026-06-16T13:24:49.794426-06:00",
+    "updated_at": "2026-06-20T02:58:51.290564+00:00",
     "completed_at": null,
     "result": null,
     "role": "master",

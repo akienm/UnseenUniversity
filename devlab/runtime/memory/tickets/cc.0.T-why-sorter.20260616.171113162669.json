@@ -21,8 +21,8 @@
   "body": {
     "id": "T-why-sorter",
     "title": "[sprint] Why-sorter: capture missing rationale on constraints/patterns; flag absence as debris",
-    "status": "dispatched",
-    "worker": "claude",
+    "status": "sprint",
+    "worker": "",
     "size": "L",
     "tags": [
       "ArchitectureAsCode",
@@ -31,7 +31,7 @@
     "description": "**Problem:** Constraints, patterns, and palace nodes store the *rule* but not the *why* behind it. The why is the lever — mechanism (how/why it works) is what lets the system rebuild things in new ways, making it a compiler rather than a cache. When a structure has no recorded why, nothing distinguishes intentional design from debris.\n\n**Proposed shape:** A capability that, for each constraint/pattern lacking a rationale, either (a) captures one — ask Akien, or a free cloud LLM via librarian orientation — or (b) flags 'no rationale present' as a drift/debris signal. EXTENDS existing infra, does NOT rebuild. Model the rationale-in-metadata shape on devices/igor/brainstem/core_patterns.py, which already stores a `why` field on every PROCEDURAL/CORE_PATTERN/IDENTITY memory.\n\n**Affected files:**\n- devices/hubert/constraint_normalizer.py — extend `_parse_design_patterns()` to read a new `Rationale:` line per pattern\n- docs/design_patterns_inventory.md — add a `Rationale:` section to each PATTERN-NNN entry\n- unseen_university/migrations/m_devlab.py — add `rationale TEXT` column to `devlab.constraints` ⚠️ HIGH-INERTIA DB MIGRATION: pre-approval gate applies at build/sprint time, not at filing time. Filing this ticket does not execute the migration.\n- devices/librarian/persistent_inquiry.py — natural source for accumulated rationale (high-weighted hits feed candidate whys)\n- (reference only, no change) devices/igor/brainstem/core_patterns.py — the `why`-metadata template to follow\n\n**Design rules:** External State Principle (rationale lives in DB/doc, never only in context); free cloud LLMs stay on 'where to look', NEVER on 'is this right' — a captured why is confirmed by Akien or a judge, not auto-blessed.\n\n**Scope boundary:** Schema (`rationale` column) + ingest (parse `Rationale:`) + one capture path (ask Akien) + debris-flag emission on absence. v1 debris detection = MISSING rationale (presence check only). Incoherent/low-quality rationale detection (needs an LLM judge) is EXPLICITLY OUT OF SCOPE for v1. Also out: autonomous free-LLM why-writing without review; general pattern-evolution engine.\n\n**Test plan:** Ingest a pattern with no `Rationale:` line -> debris flag emitted and queryable. Add a `Rationale:` line -> flag clears, rationale returned by `get_constraints()`. Migration applies idempotently (re-run is a no-op).\n\n**Completion criteria:**\n- `devlab.constraints` has a `rationale` column; migration re-runs as a no-op (idempotent).\n- `constraint_normalizer._parse_design_patterns()` reads a `Rationale:` line and persists it.\n- Ingesting a pattern with no `Rationale:` emits a queryable debris flag; adding the line clears it.\n- `get_constraints()` returns the rationale when present.\n- Incoherent-rationale detection is NOT implemented (explicitly deferred).",
     "decision_id": "D-architecture-as-code-cognition-pipeline-2026-06-16",
     "created_at": "2026-06-16T17:11:13.162669+00:00",
-    "updated_at": "2026-06-16T11:11:13.174848-06:00",
+    "updated_at": "2026-06-20T02:58:51.695492+00:00",
     "completed_at": null,
     "result": null,
     "role": "master",

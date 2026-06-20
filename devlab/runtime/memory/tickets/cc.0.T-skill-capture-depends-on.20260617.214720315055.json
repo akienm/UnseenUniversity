@@ -24,8 +24,8 @@
   "body": {
     "id": "T-skill-capture-depends-on",
     "title": "[sprint] Update /ticket and /sorted skills to write gate: T-xxx for dependencies",
-    "status": "dispatched",
-    "worker": "claude",
+    "status": "sprint",
+    "worker": "",
     "size": "S",
     "tags": [
       "Workflow",
@@ -34,7 +34,7 @@
     "description": "When /ticket or /sorted files a ticket that obviously follows another (discussed in the same batch, or the conversation makes sequencing explicit), the skill should elicit the dependency and write it as `gate: \"T-predecessor\"` on the ticket body. Currently neither skill prompts for this — dependencies stay implicit and never land on the ticket.\n\n**Affected files:** skills/sorted/README.md (Step 3 ticket draft template + invariants), skills/ticket/ (description template section)\n**Design rules:** docs-live-in-code\n**Scope boundary:** IN — add dependency-elicitation to the draft-ticket step in both skills; update the template to show `gate: T-xxx` as the canonical pattern. OUT — changing cc_queue.py schema, changing Granny dispatch (that is T-granny-gate-eval).\n**Test plan:** File a two-ticket batch where B follows A; verify the filed ticket JSON has `gate: \"T-A\"`.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
     "decision_id": "D-depends-on-gate-automation-2026-06-17",
     "created_at": "2026-06-17T21:47:20.315055+00:00",
-    "updated_at": "2026-06-17T15:47:20.624595-06:00",
+    "updated_at": "2026-06-20T02:58:50.153690+00:00",
     "completed_at": null,
     "result": null,
     "role": "master",
