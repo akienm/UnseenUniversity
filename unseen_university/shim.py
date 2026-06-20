@@ -30,6 +30,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from diagnostic_base.core_values import CoreValuesMixin
+
 _CIRCUIT_STATE_FILE = Path(
     os.environ.get(
         "UU_CIRCUIT_STATE_FILE",
@@ -195,8 +197,12 @@ class _DispatchHandshake:
         return not self._stop.is_set()
 
 
-class BaseShim(ABC):
-    """Abstract base for all device shims."""
+class BaseShim(CoreValuesMixin, ABC):
+    """Abstract base for all device shims.
+
+    Inherits CP1–CP6 via CoreValuesMixin — every shim carries the core values
+    structurally (see diagnostic_base/core_values.py).
+    """
 
     @property
     @abstractmethod

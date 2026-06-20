@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from diagnostic_base.base import DiagnosticBase
+from diagnostic_base.core_values import CoreValuesMixin
 from diagnostic_base.perf import Stopwatch
 
 if TYPE_CHECKING:
@@ -27,8 +28,12 @@ if TYPE_CHECKING:
 INTERFACE_VERSION = "1.0"
 
 
-class BaseDevice(DiagnosticBase, ABC):
-    """Abstract base for all rack devices."""
+class BaseDevice(CoreValuesMixin, DiagnosticBase, ABC):
+    """Abstract base for all rack devices.
+
+    Inherits CP1–CP6 via CoreValuesMixin — every device carries the core values
+    structurally (see diagnostic_base/core_values.py).
+    """
 
     AGENT_CLASS: str = "utility"
 

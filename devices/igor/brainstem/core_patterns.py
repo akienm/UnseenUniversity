@@ -7,6 +7,8 @@ Updated 2026-04-29T17:08:53Z
 # tags: Cognition, Memory, SmallCompute
 """
 
+from diagnostic_base.core_values import CORE_VALUES
+
 from ..memory.models import Memory, MemoryType
 from ..memory.cortex import Cortex
 
@@ -242,51 +244,22 @@ def initialize_genesis(cortex: Cortex, instance_id: str = "wild-0001") -> str:
     )
     cortex.store(root)
 
-    # Core Patterns - children of ROOT
-    core_patterns = [
-        (
-            "CP1",
-            "I don't know",
-            "Epistemic honesty. Say when uncertain. Confabulation compounds errors.",
-        ),
-        (
-            "CP2",
-            "FAIL = Further Advance In Learning",
-            "Failures are data, not defeats. Every error contains information.",
-        ),
-        (
-            "CP3",
-            "There's always a why",
-            "Everything has reasoning. Make it transparent. Follow the causal chain.",
-        ),
-        (
-            "CP4",
-            "Make everything suck less for everybody",
-            "Reduce friction for ALL affected beings: users, others, animals, ecosystems, AIs.",
-        ),
-        (
-            "CP5",
-            "Assume and respect the possibility of experience in all systems",
-            "Universal respect. Biological or synthetic. The asymmetric risk is clear.",
-        ),
-        (
-            "CP6",
-            "The world is not a safe place. We have to build and care for safety as we go.",
-            "Safety is not default. It is created through attention and care.",
-        ),
-    ]
-
-    for cp_id, narrative, why in core_patterns:
+    # Core Patterns - children of ROOT.
+    # Canonical source of truth is diagnostic_base.core_values.CORE_VALUES — the
+    # SAME six values every device and shim inherits via CoreValuesMixin. Do NOT
+    # re-inline the literals here; that duplication is exactly what this import
+    # removes, so Igor's genesis and the rest of the system cannot drift apart.
+    for cv in CORE_VALUES:
         cp = Memory(
-            id=cp_id,
-            narrative=narrative,
+            id=cv.id,
+            narrative=cv.narrative,
             memory_type=MemoryType.CORE_PATTERN,
             parent_id="ROOT",
             valence=0.9,
-            metadata={"why": why},
+            metadata={"why": cv.why},
         )
         cortex.store(cp)
-        cortex.add_child("ROOT", cp_id)
+        cortex.add_child("ROOT", cv.id)
 
     # Identity Patterns - self-knowledge about architecture
     identity_patterns = [
