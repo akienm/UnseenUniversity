@@ -530,13 +530,33 @@ class GoogleSource(Source):
             self.billing_type = "flat_rate"
         self._rate_limited_until: float = 0.0
 
-    def _api_key(self) -> str:
-        for var in ("GOOGLE_AI_STUDIO_API_KEY", "GOOGLE_STUDIO_API_KEY", "GEMINI_API_KEY"):
+    _KEY_ALIASES = ("GOOGLE_AI_STUDIO_API_KEY", "GOOGLE_STUDIO_API_KEY", "GEMINI_API_KEY")
+
+    def _gemini_key(self) -> str:
+        """Resolve the Google API key: env first, then akien.credentials.cfg.
+
+        Mirrors OllamaCloudSource — the key (GOOGLE_STUDIO_API_KEY lives in the
+        credentials file, not the daemon env) resolves without an env export.
+        Returns '' when no key is found. Single source of truth so _api_key and
+        ping() never drift on what counts as "have a key".
+        """
+        for var in self._KEY_ALIASES:
             key = os.environ.get(var, "").strip()
             if key:
                 return key
+        for var in self._KEY_ALIASES:
+            key = _read_akien_cred(var).strip()
+            if key:
+                return key
+        return ""
+
+    def _api_key(self) -> str:
+        key = self._gemini_key()
+        if key:
+            return key
         raise RuntimeError(
-            "Google API key not set — set GOOGLE_AI_STUDIO_API_KEY, GOOGLE_STUDIO_API_KEY, or GEMINI_API_KEY"
+            "Google API key not set — set GOOGLE_AI_STUDIO_API_KEY, GOOGLE_STUDIO_API_KEY, "
+            "or GEMINI_API_KEY (env or akien.credentials.cfg)"
         )
 
     def _model_name(self, model_id: str) -> str:
@@ -546,7 +566,7 @@ class GoogleSource(Source):
     def ping(self) -> bool:
         import time
         # No key → source is functionally unavailable regardless of connectivity
-        if not any(os.environ.get(v, "").strip() for v in ("GOOGLE_AI_STUDIO_API_KEY", "GOOGLE_STUDIO_API_KEY", "GEMINI_API_KEY")):
+        if not self._gemini_key():
             return False
         if time.time() < self._rate_limited_until:
             return False

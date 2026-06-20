@@ -16,12 +16,12 @@ Default rules — flat_rate (Ollama Pro) preferred, usage_based (OR) as fallback
     2. worker → anthropic/claude-sonnet-4.6 / openrouter  (escalation when haiku insufficient)
     3. worker → gemini-2.0-flash / google_free (flat_rate — preferred when GOOGLE_AI_STUDIO_API_KEY set)
     9. worker → qwen3-coder-30b / openrouter  (last usage fallback; proven weak on complex prompts)
-   10. worker → qwen2.5-coder:32b / ollama_cloud (flat_rate — preferred when OLLAMA_PRO_API_KEY set)
+   10. worker → qwen3-coder-next / ollama_cloud (flat_rate — preferred when OLLAMA_API_KEY set)
   NOTE: direct anthropic source kept for designer tier only (requires Anthropic credit balance)
 
   Analyst tier (research, reasoning):
     3. analyst → deepseek-v4-flash / openrouter (usage_based)
-   11. analyst → llama3.3:70b / ollama_cloud (flat_rate — preferred when key set)
+   11. analyst → deepseek-v4-flash / ollama_cloud (flat_rate — preferred when key set)
 
   Designer tier (architecture, design — cost cascade):
     4.  designer → gemini-2.0-flash / google_free   ($0, 15 RPM cap)
@@ -69,19 +69,19 @@ _DEFAULT_RULES: list[RoutingRule] = [
     # Worker tier — Claude haiku via OR (escalation fallback; insufficient alone)
     RoutingRule(2, "worker", "anthropic/claude-haiku-4.5", "openrouter", "worker→haiku/OR"),
     # Worker tier — Google AI Studio free tier (flat_rate — preferred over OR when key set)
-    RoutingRule(3, "worker", "gemini-2.0-flash", "google_free", "worker→gemini-flash/google-free"),
+    RoutingRule(3, "worker", "gemini-2.5-flash", "google_free", "worker→gemini-flash/google-free"),
     # Worker tier — qwen3-coder last usage fallback (proven weak on complex instructions)
     RoutingRule(9, "worker", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "worker→qwen3-coder-30b/OR"),
     # Worker tier — Ollama Pro flat-rate (active when OLLAMA_PRO_API_KEY set)
     # devstral-small-2 first: purpose-built agentic coding model, floor candidate
     RoutingRule(10, "worker", "devstral-small-2:24b", "ollama_cloud", "worker→devstral-small-2:24b/ollama-pro"),
-    RoutingRule(11, "worker", "qwen2.5-coder:32b", "ollama_cloud", "worker→qwen2.5-coder:32b/ollama-pro"),
+    RoutingRule(11, "worker", "qwen3-coder-next", "ollama_cloud", "worker→qwen3-coder-next/ollama-pro"),
     # Analyst tier — usage-based fallback
     RoutingRule(3, "analyst", "deepseek/deepseek-v4-flash", "openrouter", "analyst→deepseek-v4-flash/OR"),
     # Analyst tier — Ollama Pro flat-rate
-    RoutingRule(11, "analyst", "llama3.3:70b", "ollama_cloud", "analyst→llama3.3:70b/ollama-pro"),
+    RoutingRule(11, "analyst", "deepseek-v4-flash", "ollama_cloud", "analyst→deepseek-v4-flash/ollama-pro"),
     # Designer tier — cost cascade: free → paid-cached → OR-fallback → Anthropic
-    RoutingRule(4, "designer", "gemini-2.0-flash", "google_free", "designer→gemini-flash/google-free"),
+    RoutingRule(4, "designer", "gemini-2.5-flash", "google_free", "designer→gemini-flash/google-free"),
     RoutingRule(5, "designer", "gemini-2.0-flash-paid", "google", "designer→gemini-flash/google-paid"),
     RoutingRule(6, "designer", "google/gemini-2.0-flash", "openrouter", "designer→gemini-flash/OR-fallback"),
     RoutingRule(7, "designer", "claude-sonnet-4-6", "anthropic", "designer→claude-sonnet/anthropic"),
@@ -92,8 +92,8 @@ _DEFAULT_RULES: list[RoutingRule] = [
     RoutingRule(2, "creator", "anthropic/claude-haiku-4.5", "openrouter", "creator→haiku/OR"),
     # Batch tier — off-hours knowledge integration. Cost cascade: free local → flat-rate cloud → OR.
     # Intended for night-mode (00:00-06:00); route() applies a time-of-day gate.
-    RoutingRule(1, "batch", "qwen2.5-coder:32b", "local_ollama", "batch→qwen2.5-coder/local-ollama"),
-    RoutingRule(2, "batch", "qwen2.5-coder:32b", "ollama_cloud", "batch→qwen2.5-coder/ollama-pro"),
+    RoutingRule(1, "batch", "qwen3-coder-next", "local_ollama", "batch→qwen3-coder-next/local-ollama"),
+    RoutingRule(2, "batch", "qwen3-coder-next", "ollama_cloud", "batch→qwen3-coder-next/ollama-pro"),
     RoutingRule(3, "batch", "qwen/qwen3-coder-30b-a3b-instruct", "openrouter", "batch→qwen3-coder-30b/OR"),
 ]
 

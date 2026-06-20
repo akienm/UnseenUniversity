@@ -72,9 +72,14 @@ class TestGoogleSourceMessageConversion:
 
 class TestGoogleSourceApiKey:
     def test_missing_key_raises(self, monkeypatch):
+        import devices.inference.sources as sources
         from devices.inference.sources import GoogleSource
         monkeypatch.delenv("GOOGLE_AI_STUDIO_API_KEY", raising=False)
+        monkeypatch.delenv("GOOGLE_STUDIO_API_KEY", raising=False)
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        # _api_key now falls back to the akien credentials file (like OllamaCloudSource);
+        # to assert the "no key anywhere" path, neutralize the file read too.
+        monkeypatch.setattr(sources, "_read_akien_cred", lambda *a, **k: "")
         src = GoogleSource()
         with pytest.raises(RuntimeError, match="Google API key not set"):
             src._api_key()
@@ -179,7 +184,7 @@ class TestGoogleSourceCall:
 class TestModelsRegistryGoogleModels:
     def test_google_free_model_present(self):
         from devices.inference.models_registry import default_registry
-        spec = default_registry().get("gemini-2.0-flash")
+        spec = default_registry().get("gemini-2.5-flash")
         assert spec is not None
         assert spec.source_name == "google_free"
         assert spec.input_cost_per_1m == 0.0

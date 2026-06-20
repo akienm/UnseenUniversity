@@ -432,7 +432,7 @@ class TestORCostGate:
         worker_rules = [r for r in _DEFAULT_RULES if r.task_class == "worker"]
         google_free_rules = [r for r in worker_rules if r.source_name == "google_free"]
         assert google_free_rules, "expected a worker→google_free rule"
-        assert google_free_rules[0].model_id == "gemini-2.0-flash"
+        assert google_free_rules[0].model_id == "gemini-2.5-flash"
 
     def test_worker_google_free_preferred_over_openrouter_when_available(self):
         """google_free (flat_rate) sorts before openrouter (usage_based) for worker tier."""

@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.T-local-ollama-404.20260619.212520955850",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-local-ollama-404"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-20T03:25:20.955850+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-dsimnel-cc-parity-2026-06-04"
+    ],
+    "tickets": [
+      "T-local-ollama-404"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-local-ollama-404",
+    "title": "Local Ollama source returns 404 — wire the 4-machine local tier",
+    "status": "sprint",
+    "size": "S",
+    "priority": 0.35,
+    "worker": null,
+    "tags": [
+      "Inference",
+      "Ollama",
+      "LocalTier"
+    ],
+    "created_by": "cc.0",
+    "decision_id": "D-dsimnel-cc-parity-2026-06-04",
+    "description": "The `ollama` (local) inference source self-tests with HTTP 404 (`self_test_sources.py`). Akien's topology names FOUR local computers as the background/overnight free-inference tier (slow, good for night-mode batch). The `local_ollama` routing rules exist (batch tier) but the local endpoint/model isn't serving — likely the wrong host/port or models not pulled on the local box(es). Cloud Ollama (ollama_cloud) + Gemini free + deepseek work; this is the local leg of the same free topology.\n\nFound 2026-06-19 while wiring DS free inference (Gemini cred plumbing + ollama_cloud slug reconciliation + gemini-2.5-flash). Worker/analyst/designer/minion all complete on free inference ($0); only the LOCAL ollama source remains down.\n\n**Affected files:** devices/inference/sources.py (OllamaSource / local), local Ollama host config, rules_engine batch tier (local_ollama rules)\n**Design rules:** inference-proxy-only, no-direct-backend\n**Scope boundary:** IN: get the local ollama source serving (correct host/port, pull required models on the 4 machines, verify self_test_sources green). OUT: load-balancing across the 4 machines (separate).\n**Completion criteria:** `self_test_sources.py` shows `ollama ✓`; a batch-tier dispatch routes to local_ollama and completes.\n**Test plan:** run self_test_sources.py; e2e batch-tier dispatch through InferenceDevice."
+  }
+}

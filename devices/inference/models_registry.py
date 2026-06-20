@@ -123,15 +123,16 @@ _SEED: list[ModelSpec] = [
     # Designer tier — Gemini Flash free tier ($0, rate-limited ~15 RPM)
     # Boilerplate cleanup, public-repo tasks, log transforms → cost: $0.
     ModelSpec(
-        model_id="gemini-2.0-flash",
+        model_id="gemini-2.5-flash",
         source_name="google_free",
         tier="designer",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
         context_window=1_048_576,
         tags=["design", "fast", "1m-context", "free-tier"],
-        notes="Google AI Studio free tier. Use for boilerplate and public-repo tasks. ~15 RPM cap.",
-        created_at="2026-06-02T00:00:00Z",
+        notes="Google AI Studio free tier. Use for boilerplate and public-repo tasks. ~15 RPM cap. "
+              "Reconciled 2026-06-19 from gemini-2.0-flash (retired by Google on free-tier generateContent).",
+        created_at="2026-06-19T00:00:00Z",
     ),
     # Designer tier — Gemini Flash paid (native Google API, 75% auto-cache on >32k tokens)
     # Routes through google source directly — NOT OpenRouter (would lose caching discount).
@@ -174,26 +175,28 @@ _SEED: list[ModelSpec] = [
         created_at="2026-06-11T00:00:00Z",
     ),
     ModelSpec(
-        model_id="qwen2.5-coder:32b",
+        model_id="qwen3-coder-next",
         source_name="ollama_cloud",
         tier="worker",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
-        context_window=32_768,
+        context_window=256_000,
         tags=["coding", "flat-rate", "ollama-pro"],
-        notes="Ollama Pro flat-rate: qwen2.5-coder 32B. Preferred over OR when OLLAMA_PRO_API_KEY set.",
-        created_at="2026-06-04T00:00:00Z",
+        notes="Ollama Pro flat-rate: Qwen3 Coder Next, dedicated coder. Reconciled 2026-06-19 "
+              "from qwen2.5-coder:32b (404 — not on the account). Preferred when OLLAMA_API_KEY set.",
+        created_at="2026-06-19T00:00:00Z",
     ),
     ModelSpec(
-        model_id="llama3.3:70b",
+        model_id="deepseek-v4-flash",
         source_name="ollama_cloud",
         tier="analyst",
         input_cost_per_1m=0.0,
         output_cost_per_1m=0.0,
         context_window=128_000,
         tags=["general", "reasoning", "flat-rate", "ollama-pro"],
-        notes="Ollama Pro flat-rate: Llama 3.3 70B. Strong general-purpose analyst.",
-        created_at="2026-06-04T00:00:00Z",
+        notes="Ollama Pro flat-rate: DeepSeek V4 Flash, strong reasoning/coding analyst. Reconciled "
+              "2026-06-19 from llama3.3:70b (404 — not on the account). Preferred when OLLAMA_API_KEY set.",
+        created_at="2026-06-19T00:00:00Z",
     ),
     ModelSpec(
         model_id="anthropic/claude-haiku-4.5",
