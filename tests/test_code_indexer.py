@@ -1,5 +1,5 @@
 """
-Tests for lab/claudecode/code_indexer.py — multi-language code index sweep.
+Tests for devlab/claudecode/code_indexer.py — multi-language code index sweep.
 
 Tests:
 - read_existing_intent: extracts # intent: line or returns ''

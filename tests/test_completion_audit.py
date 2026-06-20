@@ -1,4 +1,4 @@
-"""Tests for lab/claudecode/completion_audit.py data layer."""
+"""Tests for devlab/claudecode/completion_audit.py data layer."""
 import json
 from pathlib import Path
 

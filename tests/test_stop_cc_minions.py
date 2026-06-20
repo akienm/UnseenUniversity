@@ -1,4 +1,4 @@
-"""Tests for lab/claudecode/stop_cc_minions.py."""
+"""Tests for devlab/claudecode/stop_cc_minions.py."""
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
 """
-Tests for lab/claudecode/usage_store.py — per-ticket token/usage actuals.
+Tests for devlab/claudecode/usage_store.py — per-ticket token/usage actuals.
 
 Coverage:
   1. _read_sprint_log_entries: parses correct lines, skips wrong ticket_id, tolerates missing file

@@ -1,4 +1,4 @@
-"""Tests for lab/claudecode/skill_telemetry.py."""
+"""Tests for devlab/claudecode/skill_telemetry.py."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-# Allow importing from lab/claudecode without installing
+# Allow importing from devlab/claudecode without installing
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from devlab.claudecode.skill_telemetry import (
     append_outcome,

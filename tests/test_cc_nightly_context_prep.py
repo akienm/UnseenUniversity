@@ -1,5 +1,5 @@
 """
-Tests for lab/claudecode/cc_nightly_context_prep.py.
+Tests for devlab/claudecode/cc_nightly_context_prep.py.
 
 Tests:
 - build_briefing: includes in-flight from slate

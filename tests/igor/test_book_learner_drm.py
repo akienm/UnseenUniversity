@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-# book_learner lives in lab/claudecode — add to path so the module is importable
+# book_learner lives in devlab/claudecode — add to path so the module is importable
 # as "book_learner" (bare name), which the patch strings below depend on.
 _LAB_CLAUDECODE = str(Path(__file__).resolve().parents[2] / "devlab" / "claudecode")
 if _LAB_CLAUDECODE not in sys.path:

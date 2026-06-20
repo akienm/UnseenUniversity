@@ -1,4 +1,4 @@
-"""CLI strict-flag tests for lab/claudecode/channel.py.
+"""CLI strict-flag tests for devlab/claudecode/channel.py.
 
 T-channel-post-strict-flags: unknown flags must exit non-zero instead of
 silently passing through as positional content (or being dropped), which

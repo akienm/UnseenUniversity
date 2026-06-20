@@ -25,7 +25,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-# Make lab/claudecode importable
+# Make devlab/claudecode importable
 _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO / "devlab" / "claudecode"))
 import critic_core as cc

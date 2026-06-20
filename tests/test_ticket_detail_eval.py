@@ -1,4 +1,4 @@
-"""Tests for lab/claudecode/ticket_detail_eval.py (T-opus-ticket-eval).
+"""Tests for devlab/claudecode/ticket_detail_eval.py (T-opus-ticket-eval).
 
 Covers detail_score, spearman_r, approx_p_value, and the direction-aware
 recommendation logic.

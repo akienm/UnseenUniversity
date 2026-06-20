@@ -87,7 +87,7 @@ class TestGateClear:
 
 
 def _load_bare(name):
-    """Load a lab/claudecode script as a bare module (the skill invocation path)."""
+    """Load a devlab/claudecode script as a bare module (the skill invocation path)."""
     cc = str(_REPO_ROOT / "devlab" / "claudecode")
     if cc not in sys.path:
         sys.path.insert(0, cc)

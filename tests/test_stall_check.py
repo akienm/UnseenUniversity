@@ -1,4 +1,4 @@
-"""Tests for lab.claudecode.stall_check — age calculation and stall detection."""
+"""Tests for devlab.claudecode.stall_check — age calculation and stall detection."""
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta

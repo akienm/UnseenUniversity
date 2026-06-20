@@ -1,5 +1,5 @@
 """
-Tests for lab/claudecode/cc_nightly_palace_updates.py.
+Tests for devlab/claudecode/cc_nightly_palace_updates.py.
 
 Tests:
 - _parse_decision_doc: extracts title, date, status, spawned_tickets, narrative, hypothesis

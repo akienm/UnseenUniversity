@@ -79,7 +79,7 @@ def _flush_to_igor(decision_id: str, description: str):
                     / "dev"
                     / "src"
                     / "unseen_university"
-                    / "lab"
+                    / "devlab"
                     / "claudecode"
                     / "cc_queue.py"
                 ),

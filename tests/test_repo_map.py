@@ -1,4 +1,4 @@
-"""Tests for lab.claudecode.repo_map symbol extractor."""
+"""Tests for devlab.claudecode.repo_map symbol extractor."""
 
 from __future__ import annotations
 

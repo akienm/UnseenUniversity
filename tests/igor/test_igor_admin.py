@@ -8,7 +8,7 @@ Tests:
 1. igor-admin ticket list  — returns non-empty list, exits 0
 2. igor-admin session show 1 — returns valid session string, exits 0
 3. igor-admin channel read 3 — returns something, exits 0
-4. python3 lab/claudecode/cc_queue.py list — shim still works
+4. python3 devlab/claudecode/cc_queue.py list — shim still works
 5. decision_manager.py no longer crashes on the subprocess path bug
 
 Ref: T-cc-admin-consolidation
@@ -115,8 +115,8 @@ def test_decision_manager_path_bug_fixed():
     # Check the corrected path string is in the source (now points to unseen_university)
     source = (CC_DIR / "decision_manager.py").read_text()
     assert (
-        "unseen_university" in source and '"lab"' in source and '"claudecode"' in source
-    ), "decision_manager.py path does not reference unseen_university/lab/claudecode"
+        "unseen_university" in source and '"devlab"' in source and '"claudecode"' in source
+    ), "decision_manager.py path does not reference unseen_university/devlab/claudecode"
     assert (
         'TheIgors" / "claudecode"' not in source
     ), "Old broken path still present in decision_manager.py"

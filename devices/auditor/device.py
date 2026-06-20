@@ -1,7 +1,7 @@
 """
 AuditorDevice — codebase audit runner as a rack device.
 
-Loads registered checks from lab/claudecode/audit_checks.json and runs them on
+Loads registered checks from devlab/claudecode/audit_checks.json and runs them on
 demand. Additional checks may be placed in config/audit_checks/*.json (merged
 at load time — no restart needed). Check results are persisted to
 adc.audit_findings for history queries. Suppression patterns live in
