@@ -97,3 +97,56 @@ Doing better = make skills **structural gates with CP1 on their own "done":**
 **Why this is the most leveraged move:** every build flows through skills. Install CP1 + contract-checking *in the skills*, structurally, and the discipline propagates to every build for free — and it binds **both** Akien and CC (e.g., `/sorted` already forces the 3 hypothesis questions; extend that gate pattern everywhere). The skill system is where the cure gets installed once and inherited by everything.
 
 **→ The four criteria above ARE a `/skills-audit` rubric (Akien, 2026-06-20).** Build it: score every skill on (1) gates-vs-instructs, (2) does its "done" externalize a verifiable artifact, (3) single-source-of-truth vs embedded facts, (4) executable-from-contract vs "use judgment" — flag non-conformers as debris (CP3/why-sorter style). Criteria 3 (grep for hardcoded paths like `wild_igor`/`lab/claudecode`/`~/.unseen_university` literals) and parts of 4 (grep for vague markers "use judgment", "always think about") are **mechanically checkable**; 1 and 2 need a model-scored pass — be honest about which is which, don't claim full automation. Relates to / likely subsumes `T-skill-why-convention` and `T-day-close-audit-skill-stale-paths`. This is itself the discipline applied to the skill layer: a structural gate that catches conventional skills instead of hoping skills get written as gates. Add as a Factory-project ticket.
+
+---
+
+## Proof-on-close — the design of step 1b (CP1 consumption), worked out 2026-06-20 post-compact
+
+This is the consumption layer the values-in-base work (step 1a, ✅ done) only made *possible*. It is the operational definition of CP1's honesty gate. Worked out with Akien turn-by-turn; capture so it can't strand in conversation memory (the way the values-in-base ticket did).
+
+### The principle (Akien)
+- **One ticket, one falsifiable intention.** A design may hold many intentions; a ticket holds exactly one, and it must be falsifiable in its implementation. → more atomic tickets in most cases.
+- **The test, written first, IS the intention made operational.** This is the actual cure for the diagnosis at the top of this doc ("purpose lives in Akien's head, the test lives in the repo, the model bridges the gap by guessing"): if the test fully encodes the one intention, *there is nothing left in anyone's head to guess* — no seam for the magic to leak. "Test-design failure" = **residual intention the test didn't capture**; the implementation will satisfy that residue hollowly.
+- **It's done when it's proven it's done.** The gate enforces one invariant — *proven* — strong enough that no hollow implementation survives it. The means flexes (mechanical test if it suffices; adversarial check or demonstration if not); the standard does not. Default inverts to **not-done until proven** — "done" stops being a claim CC asserts and becomes a burden it discharges. Absence of proof = not-done. (That resting state IS CP1: *I don't know* until proven.)
+- **No human sign-off — but an inspectable log.** The system must develop without Akien (dog food / autonomy). A human gate can't run unattended, so the proof must be a machine-readable artifact, not a person's nod.
+
+### Two test-design failure modes (CP1 honesty — red-green is necessary, not sufficient)
+1. **Vacuous test** — passes even with no implementation. Caught **mechanically** by red-before-green: the test must go red first, and red for the *right reason* (the intention's absence, not an import error). The red→green transition on the same test is the hard evidence it discriminates.
+2. **Loose test** — goes red then green, but a *hollow* implementation also passes because the test didn't capture the whole intention. Red-green does **not** catch this; this is the precise shape of the 3-month bug. The adversarial form is the check: *"could I write a fake implementation that passes this test without fulfilling the intention?"* If yes → test-design failure. Tractable because there's only **one** intention to hold the test against.
+
+### The proof artifact (schema sketch — same shape as every emission: narrative + why)
+```
+proof = one JSON emission:
+{
+  "id": "proof-<slug>",
+  "kind": "proof",
+  "thing": "<the thing implemented>",     // the proof's real unit, NOT the ticket
+  "intention": "<the one falsifiable thing it served — summarized>",
+  "gates": [ {"name": "...", "result": "pass", "evidence": "<red-run + green-run / check output>"} ],
+  "commit": "<sha it was proven against>",
+  "emitted_at": "<iso>",
+  "ticket": "T-...",                       // what it lets close
+  "narrative": "...", "why": "..."
+}
+```
+- **Ticket closes only by pointing at proof(s).** No proof pointer → stays open. Mechanical gate. Filename ~ `proofname.ticketname.json`.
+- **Proof's unit is the thing, not the ticket.** A thing can carry several proofs; it's done only when **all** pass.
+- **Commit-bound (CP3 consequence):** a proof is valid only for the code it was proven against. Change the thing → its proofs go stale; the gate must see proofs anchored to current HEAD or it re-runs. Gives hollow-drift detection for free ("proven at X, but X is 3 commits back" = flag, not silent pass).
+- **Cardinality:** OPEN — lean is one ticket → one thing → its proof(s), keeping "one falsifiable intention per ticket" 1:1. Akien drew the ticket/thing line deliberately; confirm before assuming a ticket can span multiple things.
+
+### The turtle-stopping rule (why the regress is one level deep, not infinite)
+Proof obligations attach **only to "done" claims** — exactly one per ticket. Different artifacts make different speech acts; only one triggers a proof:
+- **Design** says *"decided,"* not done → no proof; needs a **decomposition gate** (not filed-complete until every leaf ticket is one gate-able intention). Checked once at `/sorted`.
+- **Ticket** says *"done"* → exactly one proof. The only place the obligation lives.
+- **Proof** says *"here's the evidence,"* not done → **inspected, not proven.** The floor: a proof is small/structured enough that a hollow one is visible on reading. Reading it IS the proof.
+
+**Stop-splitting test (mechanical, self-terminating):** *can I write one gate a hollow build can't pass for this whole ticket?* Yes → atomic enough, stop. No → split once, ask again. Gate-writability is the atomicity criterion. **Atomic ≠ tiny** — "round-trips correctly" is one intention (one write-then-read gate) though it spans two operations; atomicity is one falsifiable *claim*, not the smallest diff.
+
+### The tradeoff (honest — what we pay)
+Auto-emit makes the **bookkeeping** free; it does **not** make **gate-writing** free, and gate-writing IS the cost (it's fully specifying the intention — the work skipped for 3 months). The discipline doesn't delete the cost; it **moves it from deferred-and-leaking to up-front-and-visible.** In one line: *we pay more, earlier, per load-bearing ticket, for builds that can't lie about being done.* Three costs that don't vanish: (1) per-ticket spec cost; (2) some intentions aren't cheaply gateable ("refactor changed nothing", "robust under partial failure") → forces an honest **shipped-unproven** status that says *why* it's not cheaply falsifiable rather than faking a gate; (3) atomization's coordination/legibility cost (more edges, more rollup to answer "is feature X done?"). → The scoping decision this forces is now a **CLAUDE.md Structural rule** (commit `dbd52206`): prove load-bearing code; everything else declares itself unproven.
+
+### Consequences to see to (feed the 1b ticket + Factory bucket)
+1. **The proof must be a BYPRODUCT of running the gate** — auto-emitted by the harness on red→green. This is the real anti-turtle guard: if proving is separate manual labor, more atomic tickets = more chores = nothing ships. **Build this into 1b.**
+2. **`/audit-ticket` gets the atomicity check** — "exactly one falsifiable intention, and is it gate-writable?" becomes the SPLIT trigger. The one-intention rule gets *enforced*, not hoped.
+3. **Dependency-ordering gets heavier** (more atoms, more edges) — already have open tickets there (`granny-ticket-dependency-ordering`, `depends-on-validation`).
+4. **`T-quality-judge-at-close`** is CP1's consumption contract under another name — it lands here.
