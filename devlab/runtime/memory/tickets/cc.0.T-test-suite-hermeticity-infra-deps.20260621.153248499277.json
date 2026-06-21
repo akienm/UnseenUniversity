@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-test-suite-hermeticity-infra-deps.20260621.153248499277",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-suite-hermeticity-infra-deps"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-21T21:32:48.499277+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-suite-hermeticity-infra-deps"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-suite-hermeticity-infra-deps",
+    "title": "[sprint] Full pytest suite not hermetic — ~282 tests need live bus/Postgres/inference",
+    "size": "M",
+    "tags": [
+      "Testing",
+      "Infra"
+    ],
+    "description": "Running the full `tests/` suite with the rack DOWN yields 144 failed + 138 errors against 3597 passed. Root cause is non-hermetic tests, NOT code regressions: ~90 need the IMAP bus up, ~45 need Postgres (psycopg/UU_HOME_DB_URL), ~14 need the inference proxy/Ollama. `tests/igor/*` (28) also error at collection without UU_HOME_DB_URL. None of the substrate's pure-logic tests fail. This defeats the day-close audit's 'tests are the gate' step: the suite can't go green without standing the whole rack up first.\n\nProposed shape: make infra-dependent tests skip-or-mock when their dependency is absent (pytest markers + an autouse fixture that skips on missing bus/PG/inference), continuing the hermeticity migration already begun (commit 9192ef7b moved test_queue_gate onto the isolated FS store). Goal: `pytest tests/` green on a bare checkout with no rack.\n\n**Affected files:** tests/conftest.py (skip fixtures + markers), tests/igor/* (DB-gated), bus/Postgres/inference-touching test modules, pytest.ini/pyproject markers\n**Design rules:** no-sqlite (use FS-store or skip, never SQLite); test-plan-or-why-not\n**Scope boundary:** IN — mark/skip/mock infra-dependent tests so a bare-checkout run is green; OUT — rewriting the devices under test, standing up CI infra\n**Test plan:** `pytest tests/` on a checkout with no rack running exits 0 (infra tests skipped with reasons, not failed); a separate marked run with the rack up still exercises them",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.2,
+    "status": "sprint",
+    "created_at": "2026-06-21T21:32:48.186361+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-21T21:32:48.235981+00:00"
+  }
+}
