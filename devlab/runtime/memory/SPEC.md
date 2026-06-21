@@ -50,6 +50,9 @@ projects/uu         per-project: UnseenUniversity
 projects/swadl      per-project: SWADL
 rules               design rules / constraints
 tickets             ticket records
+proofs              proof-on-close artifacts (proof_emitter.py output) — a thing's
+                    intention, the authenticated red->green evidence, bound to a
+                    commit via links.commits. A ticket closes by pointing at one.
 ```
 
 Reserved names (`judge`, `chat.cc.0`, `chat.igor`) are kept exactly as Akien named
