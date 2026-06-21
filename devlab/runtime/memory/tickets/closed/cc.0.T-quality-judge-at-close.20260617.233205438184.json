@@ -22,8 +22,8 @@
   },
   "body": {
     "id": "T-quality-judge-at-close",
-    "title": "[sprint] Small model judge at ticket close: did output satisfy completion criteria?",
-    "status": "sprint",
+    "title": "Small model judge at ticket close: did output satisfy completion criteria?",
+    "status": "cancelled",
     "worker": "",
     "size": "S",
     "tags": [
@@ -34,7 +34,7 @@
     "decision_id": "D-quality-3layer-assessment-2026-06-17",
     "created_at": "2026-06-17T23:32:05.438184+00:00",
     "updated_at": "2026-06-20T02:58:49.810505+00:00",
-    "completed_at": null,
+    "completed_at": "2026-06-21T15:57:48.336974+00:00",
     "result": null,
     "role": "master",
     "priority": 0.6,
