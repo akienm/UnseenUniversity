@@ -52,6 +52,25 @@ Scope (this ticket, T-proof-emitter-harness): gates expressible as a single
 pytest test that goes red->green. Non-red->green intentions ("refactor changed
 nothing", "robust under partial failure") are out of scope and close as
 shipped-unproven until a later proof-kind covers them.
+
+KNOWN LIMITATIONS — validation targets, NOT yet resolved (be honest about these)
+--------------------------------------------------------------------------------
+- EDITABLE-INSTALL SHADOWING: ``_git_parent_worktree`` runs the red pass with
+  ``PYTHONPATH=worktree``. That shadows path-imported modules (e.g. things under
+  devlab/claudecode/), but UU is installed with a PEP 660 editable meta-path
+  finder that WINS over PYTHONPATH (verified empirically). So for imports in the
+  ``unseen_university`` package namespace, the worktree red pass imports the
+  INSTALLED (current) code, not HEAD~1 — red comes back green and prove() rejects
+  ("could not generate authentic red"). It fails SAFE (never false-certifies) but
+  cannot yet prove package-namespace things via git. The real fix (in-place
+  ``git checkout HEAD~1 -- <impl>`` working WITH the finder, vs a throwaway-venv
+  install, vs worktree) is a design decision for T-ticket-close-requires-proof.
+  The harness is proven against a synthetic top-level-module repo, NOT against
+  the editable-installed UU package.
+- OVERLAY COPIES ONE TEST FILE: the red worktree gets ``test_nodeid``'s file
+  overlaid from HEAD, but not a sibling conftest.py / fixtures / helper module
+  added in the same commit. Missing support -> collateral rejection (fails safe,
+  but reads as "can't generate authentic red" rather than "missing support file").
 """
 from __future__ import annotations
 
@@ -286,6 +305,16 @@ def prove(thing: str, intention: str, test: str, *,
     the parent ref is genuinely pre-implementation).
     """
     repo_root = repo_root or _git(os.getcwd(), "rev-parse", "--show-toplevel")
+    # Clean-tree invariant: the proof binds to HEAD, but green runs against the
+    # working tree. A dirty tree would emit a proof claiming "passed at HEAD"
+    # when it passed with uncommitted code — defeating commit-bound drift
+    # detection. Enforce, don't assume.
+    if _git(repo_root, "status", "--porcelain"):
+        raise ProofError(
+            "working tree is dirty — a proof binds to HEAD but green would run "
+            "against uncommitted changes (commit-binding would lie). Commit or "
+            "stash first, then prove."
+        )
     commit = _git(repo_root, "rev-parse", "HEAD")
     strategy = _git_parent_worktree(repo_root, test, parent_ref)
     return _run_proof(thing=thing, intention=intention, test=test, ticket=ticket,

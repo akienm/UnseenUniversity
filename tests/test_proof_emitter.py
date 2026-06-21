@@ -267,3 +267,19 @@ def test_git_strategy_rejects_when_parent_already_has_impl(tmp_path, isolated_st
     with pytest.raises(ProofError, match="could not generate authentic red"):
         prove("add", "add(2,3)==5", "test_sample.py::test_adds",
               repo_root=str(root))
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+def test_git_strategy_rejects_dirty_tree(tmp_path, isolated_store):
+    root = tmp_path / "repo3"
+    root.mkdir()
+    _init_repo(root)
+    (root / "sample_thing.py").write_text(IMPL_STUB)
+    _commit(root, "stub")
+    (root / "sample_thing.py").write_text(IMPL_OK)
+    (root / "test_sample.py").write_text(TEST_SRC)
+    _commit(root, "impl + test")
+    # uncommitted change -> proof would bind to HEAD but run against dirty tree
+    (root / "sample_thing.py").write_text(IMPL_OK + "\n# uncommitted edit\n")
+    with pytest.raises(ProofError, match="working tree is dirty"):
+        prove("add", "add(2,3)==5", "test_sample.py::test_adds", repo_root=str(root))
