@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-evaluator-certifies-proof-sufficiency.20260620.201014817774",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-evaluator-certifies-proof-sufficiency"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-21T02:10:14.817774+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-proof-on-close-2026-06-20"
+    ],
+    "tickets": [
+      "T-evaluator-certifies-proof-sufficiency"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-evaluator-certifies-proof-sufficiency",
+    "title": "[sprint] Evaluator certifies proof sufficiency over the bus (supersedes quality-judge-at-close)",
+    "size": "L",
+    "tags": [
+      "Proof",
+      "Evaluator"
+    ],
+    "status": "sprint",
+    "priority": 0.55,
+    "intention": "A proof a builder would wave through but that a hollow build could pass is rejected by an independent Evaluator before it counts as certified; every load-bearing proof carries an Evaluator verdict of proven / rejected-hollow / proven-to-best-current-ability.",
+    "decision_id": "D-proof-on-close-2026-06-20",
+    "gate": "T-proof-emitter-harness",
+    "description": "**SUPERSEDES T-quality-judge-at-close** (D-quality-3layer-assessment-2026-06-17, layer 2). That ticket was a single Haiku call on the ticket; this is the fuller, correct form — an independent Evaluator panel judging the PROOF over the bus with 3 verdicts. Layers 1 (structural audit = our mechanical gate) and 3 (trained classifier) of that decision stand; only layer 2 is absorbed here. Mark the old ticket superseded with a pointer.\n\n**Problem:** The mechanical proof (emitter + close-gate) catches the *vacuous* test (red-green discriminates). It does NOT catch the *loose* test — a hollow implementation that passes because the gate didn't capture the whole intention. That is the precise 3-month bug, and the builder is biased to wave it through (a self-emitted sufficiency verdict = a fancier 'done').\n\n**Proposed shape:** Builder produces evidence; the independent **Evaluator** (existing judge-panel device) judges sufficiency — 'could a hollow build pass this gate?'. Bus-mediated request/response (announce→reply pattern). Three verdicts: certified-proven / rejected-hollow / proven-to-best-current-ability (the third is CP1 — defeasible, commit-bound; a later-surfaced loose gate is CP2 = revise+re-certify). Verdict recorded as an emission linked to the proof. Panel depth scales with stakes. Inference-Proxy-only — the Evaluator reaches no backend directly.\n**Bootstrap exception:** closes on its pytest gate + advisor/inspection, not a self-emitted proof.\n\n**Affected files:** `devices/evaluator/` (certify entry + bus handler); proof emission schema (add `certification` linkage); bus envelope (reuse announce/reply). Discovery step for exact Evaluator API. Also: set T-quality-judge-at-close status=superseded.\n**Design rules:** inference-proxy-only (ALL Evaluator inference through the proxy); filesystem-memory-store; bus-owns-comms (no direct IMAP outside bus/); CP1/CP2.\n**Scope boundary:** IN — certify request/response over the bus, 3-verdict emission, verdict↔proof linkage, defeasible re-certify, superseding quality-judge-at-close. OUT — the emitter (gated dep), the close-path gate; rebuilding a judge from scratch (Evaluator exists — do NOT rebuild the web-server Critic).\n**Test plan:** (correctness, not just reachability — advisor): feed a KNOWN-HOLLOW proof (loose gate a builder would pass) → assert the Evaluator returns rejected-hollow. Feed a genuinely-sufficient proof → certified-proven. Feed an honestly-unprovable-now thing → proven-to-best-current-ability with a why. A proof with no verdict is reported uncertified.\n**Completion criteria:** an automated test asserts the Evaluator REJECTS a known-hollow proof fixture (not merely that rejection is reachable), certifies a sufficient one, and links each verdict to its proof id; T-quality-judge-at-close shows status=superseded pointing here.",
+    "created_at": "2026-06-21T02:10:14.321970+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-21T02:10:14.322026+00:00"
+  }
+}

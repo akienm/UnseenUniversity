@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-audit-ticket-atomicity-gate.20260620.201014959014",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-ticket-atomicity-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-21T02:10:14.959014+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-proof-on-close-2026-06-20"
+    ],
+    "tickets": [
+      "T-audit-ticket-atomicity-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-ticket-atomicity-gate",
+    "title": "[sprint] audit-ticket SPLITs any ticket with >1 falsifiable intention or no writable gate",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Skills"
+    ],
+    "status": "sprint",
+    "priority": 0.45,
+    "intention": "Given a ticket, /audit-ticket returns SPLIT when it carries more than one falsifiable intention OR when no single gate a hollow build couldn't pass can be written for it.",
+    "decision_id": "D-proof-on-close-2026-06-20",
+    "gate": null,
+    "description": "**Problem:** 'One falsifiable intention per ticket' is only a hope unless something enforces it at filing time. The gate-writability test ('can I write one gate a hollow build can't pass for this whole ticket?') is the self-terminating atomicity criterion — it belongs in /audit-ticket as a SPLIT trigger.\n\n**Proposed shape:** Add an atomicity check to /audit-ticket: (1) does the ticket state exactly one falsifiable intention (the `intention` field)? (2) is it gate-writable? If two intentions or non-gate-writable → SPLIT with suggested child boundaries. Atomic≠tiny: 'round-trips' is one intention though it spans write+read — key on one falsifiable *claim*, not smallest diff.\n\n**Affected files:** `skills/audit-ticket/SKILL.md` (+ ~/.claude/skills mirror) — MEDIUM inertia; any audit-ticket helper.\n**Design rules:** skills-live-in-repo (repo skills/ canonical); prove-what's-load-bearing. Be honest re mechanical vs model-scored: presence of one `intention` is mechanical; gate-writability is a model judgement.\n**Scope boundary:** IN — the two-part atomicity check + SPLIT verdict. OUT — the proof emitter/close-gate; the CP-tag check (separate ticket); rewriting the rest of audit-ticket.\n**Test plan:** Feed a 2-intention ticket → SPLIT. Feed a 1-intention gate-writable ticket → no SPLIT on the atomicity axis. Feed a vague 'improve X / use judgement' ticket → SPLIT.\n**Completion criteria:** /audit-ticket on the three fixtures returns SPLIT, PASS-on-axis, SPLIT; the gate-writability question appears verbatim in the skill.",
+    "created_at": "2026-06-21T02:10:14.324607+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-21T02:10:14.324655+00:00"
+  }
+}

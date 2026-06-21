@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-ticket-close-requires-proof.20260620.201014708267",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ticket-close-requires-proof"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-21T02:10:14.708267+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-proof-on-close-2026-06-20"
+    ],
+    "tickets": [
+      "T-ticket-close-requires-proof"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ticket-close-requires-proof",
+    "title": "[sprint] Honesty gate: load-bearing tickets cannot close without a HEAD-valid proof",
+    "size": "L",
+    "tags": [
+      "Proof",
+      "Workflow"
+    ],
+    "status": "sprint",
+    "priority": 0.65,
+    "intention": "A ticket classified load-bearing cannot reach status=closed unless it points to a proof whose commit==current HEAD; missing/stale proof blocks the close, while a ticket explicitly marked exploration closes as shipped-unproven with a reason.",
+    "decision_id": "D-proof-on-close-2026-06-20",
+    "gate": "T-proof-emitter-harness",
+    "description": "**Problem:** A proof emitter is necessary but not sufficient — nothing forces a close to point at one. Without this gate, proofs are optional decoration and 'done' stays a free claim.\n\n**Load-bearing discriminator (advisor blocker):** the gate must MECHANICALLY decide load-bearing vs exploration, or it either taxes everything (turtles-to-dust) or relies on builder self-declaration (the very escape hatch the consequence ticket flags). Rule: derive from dependence where possible — a ticket whose Affected files are imported by other non-test code is load-bearing; fall back to an explicit `proof_scope: load_bearing|exploration` field when dependence can't be determined. Default when ambiguous = load_bearing (CP1: assume it matters until shown otherwise).\n**shipped-unproven (advisor):** reconcile with the canonical status model (`ticket_status.py` / `effective_status()`) — implement as a FLAG on closed (`proven: false` + reason), NOT a new salience status, so it doesn't collide with the CONSEQUENCE·DEPENDENCY·READY… taxonomy. A closed-but-unproven ticket renders distinctly.\n**Commit-binding:** a proof whose `commit` is behind HEAD is stale → close blocked / re-run demanded (free hollow-drift detection).\n**Bootstrap exception:** this foundational piece closes on its pytest gate + advisor/inspection, not a self-emitted proof.\n\n**Affected files:** `devlab/claudecode/cc_queue.py` close/done path (MEDIUM inertia — pre-approval surfaced); `unseen_university/ticket_status.py` (shipped-unproven flag rendering); proof-lookup helper (reads emission store).\n**Design rules:** filesystem-memory-store; prove-what's-load-bearing (the scoping rule); ticket-status-model (don't break effective_status taxonomy); no-sqlite.\n**Scope boundary:** IN — load-bearing discriminator, close-path proof check, HEAD-vs-proof-commit staleness, shipped-unproven flag. OUT — the emitter (gated dep), sufficiency judgement (Evaluator ticket), the atomicity SPLIT check.\n**Test plan:** close load-bearing ticket w/ no proof → rejected; w/ stale-commit proof → rejected; w/ HEAD-valid proof → allowed. Close an exploration-classified ticket with shipped-unproven+reason → allowed, renders as closed-unproven. Assert dependence-derived classification matches expectation on a fixture imported elsewhere vs a standalone script.\n**Completion criteria:** the five close attempts above behave as specified in an automated test; effective_status() renders a shipped-unproven close distinctly from a proven close; a closed load-bearing fixture has a HEAD-bound proof pointer.",
+    "created_at": "2026-06-21T02:10:14.320065+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-21T02:10:14.320123+00:00"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-cp-tagging-convention.20260620.201015184651",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cp-tagging-convention"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-21T02:10:15.184651+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-proof-on-close-2026-06-20"
+    ],
+    "tickets": [
+      "T-cp-tagging-convention"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cp-tagging-convention",
+    "title": "[sprint] CP1-CP6 tags on artifacts as part of the why; audit flags load-bearing misses",
+    "size": "M",
+    "tags": [
+      "Values",
+      "Workflow"
+    ],
+    "status": "sprint",
+    "priority": 0.4,
+    "intention": "Artifacts (tickets, proofs, certifications) carry the CP(s) they serve as tags, and an audit flags any load-bearing artifact that carries no CP tag.",
+    "decision_id": "D-proof-on-close-2026-06-20",
+    "gate": null,
+    "description": "**Problem:** The values-in-base work (step 1a) placed CP1-CP6 structurally, but placement≠consumption. CP1 consumes as the honesty gate; CP2-CP6 have no consumption path. The existing tags mechanism is the carrier — but CP-tagging is not yet a live convention (the CP1-6 strings in the store today are memory-node IDs in old cognition tickets, not value-tags).\n\n**Proposed shape:** Systematize tagging every artifact with the CP(s) it serves, as part of the *why* (defeasible certification → CP1; revise-on-learning → CP2; friction reduction → CP4). Add an audit check (in /audit-ticket and/or /skills-audit) that flags a load-bearing artifact with no CP tag. Mechanical: presence of ≥1 CP tag (greppable). Judgement: is it the RIGHT CP (model-scored, advisory only this cycle) — be honest which is which.\n\n**Affected files:** `skills/audit-ticket/SKILL.md`, `skills/skills-audit/SKILL.md` (latter may be filed separately) — MEDIUM inertia; possibly `memory_emit.py` tag handling.\n**Design rules:** skills-live-in-repo; theory-of-operation (every artifact carries its why); CP3.\n**Scope boundary:** IN — the CP-tagging convention + a presence check flagging load-bearing artifacts missing a CP tag. OUT — auto-assigning the correct CP (advisory only); retagging historical Project-Zero artifacts; the /skills-audit build itself.\n**Test plan:** load-bearing ticket with no CP tag → flagged; ticket carrying e.g. `CP1` → passes presence check; grep confirms the convention is documented.\n**Completion criteria:** the presence check flags a no-CP-tag load-bearing fixture and passes a CP-tagged fixture; the CP-tag convention is documented in the audit skill.",
+    "created_at": "2026-06-21T02:10:14.330077+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-21T02:10:14.330123+00:00"
+  }
+}

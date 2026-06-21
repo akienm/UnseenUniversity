@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-skills-goals-to-intentions.20260620.201015083015",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-goals-to-intentions"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-21T02:10:15.083015+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-proof-on-close-2026-06-20"
+    ],
+    "tickets": [
+      "T-skills-goals-to-intentions"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-goals-to-intentions",
+    "title": "[sprint] Skills track intentions, not goals (drop G-xxx goal-tracking)",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Skills"
+    ],
+    "status": "sprint",
+    "priority": 0.45,
+    "intention": "No skill prompts for or records a G-xxx goal link; the linkage unit everywhere is the intention (the ticket `intention` field and an intention link on decisions).",
+    "decision_id": "D-proof-on-close-2026-06-20",
+    "gate": null,
+    "description": "**Problem:** We are switching the tracked unit from goals to intentions (goals feel like noise; intentions are the falsifiable, ticket-level unit this design rests on). /sorted still asks 'Which goal does this serve? — G-xxx', and the emission schema carries `links.goals`. The skill layer must follow the substrate (the ticket `intention` field + `_check_intention_field` are already wired).\n\n**Proposed shape:** Sweep skills to replace goal-tracking with intention-tracking: /sorted Step 2.6 Q1 → 'Which intention does this serve?' recorded as an intention link; decision record `## Goal Link` → `## Intention`. Stop populating `links.goals`; leave the field in-place (deprecated) for one cycle.\n**Reader-safety (advisor):** before emptying `links.goals`, verify the 3 current readers tolerate empty: `devlab/claudecode/memory_emit.py`, `unseen_university/ticket_store.py`, `devices/hubert/device.py`. 'Deprecate-in-place' must not silently starve a reader (esp. rollup / intent-extractor paths).\n\n**Affected files:** `skills/sorted/SKILL.md`, `skills/context-load/SKILL.md`, `skills/day-close/SKILL.md` (+ ~/.claude/skills mirrors) — MEDIUM inertia; the 3 reader files above (read-only verification, not necessarily edited).\n**Design rules:** skills-live-in-repo; goals→intentions (this design); export-not-copy.\n**Scope boundary:** IN — replace goal prompts/records with intention prompts/records across skills; verify the 3 readers tolerate empty links.goals. OUT — removing `links.goals` from the schema (deprecate-in-place this cycle); the atomicity check; historical G-xxx records (Project-Zero, leave as-is).\n**Test plan:** grep skills/ for `G-xxx`, `Which goal does this serve`, `## Goal Link` → 0 live refs. Run /sorted dry → asks for an intention, records `## Intention`. Confirm the 3 readers handle empty links.goals without error.\n**Completion criteria:** grep of skills/ for the goal-tracking tokens returns 0 live refs; a post-change /sorted decision record contains `## Intention` and no `## Goal Link`; the 3 readers verified non-breaking on empty links.goals.",
+    "created_at": "2026-06-21T02:10:14.327895+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-21T02:10:14.327946+00:00"
+  }
+}
