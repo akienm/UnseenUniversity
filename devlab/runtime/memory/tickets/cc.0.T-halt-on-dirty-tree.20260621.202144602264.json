@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-halt-on-dirty-tree.20260621.202144602264",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-halt-on-dirty-tree"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-22T02:21:44.602264+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-proof-on-close-2026-06-20"
+    ],
+    "tickets": [
+      "T-halt-on-dirty-tree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-halt-on-dirty-tree",
+    "title": "[sprint] Halt-until-sorted: refuse to start work / prove on a dirty tree",
+    "size": "M",
+    "tags": [
+      "ProofOnClose",
+      "Workflow"
+    ],
+    "description": "No-hidden-state principle (D-proof-on-close-2026-06-20): uncommitted work is deferred/hidden state (git's hollow build); it must be sorted immediately (committed or reverted), never stashed or deferred. A dirty tree HALTS work until sorted, at two points: (a) start of a unit of work, (b) proof/close time (the proof_emitter clean-tree guard, already shipped, is this half). Workflow-halt (CC stops, surfaces, sorts) — NOT the device-bus HALT/priority signal. Scope = work-boundaries + proof-time, NOT continuous (avoid the Igor email-panic over-eager-urgency failure).\n\n**Affected files:** TBD — work-start check in the sprint/ticket skills + CC behavior; proposed CLAUDE.md Structural rule ('don't start a unit of work on a dirty tree; sort it first'). CLAUDE.md is HIGH-inertia — rule TEXT needs Akien approval before this builds.\n**Design rules:** prove-what's-load-bearing; do-it-right-not-deprecate-in-place\n**Scope boundary:** IN — the work-start halt check + (approved) CLAUDE.md rule; OUT — bus-HALT signal, continuous/global enforcement\n**Test plan:** a work-start check that detects `git status --porcelain` non-empty and halts with a clear 'commit or revert first' message; test asserts halt fires on dirty + passes on clean. CLAUDE.md rule text reviewed by Akien before merge.",
+    "decision_id": "D-proof-on-close-2026-06-20",
+    "gate": null,
+    "priority": 0.35,
+    "status": "sprint",
+    "created_at": "2026-06-22T02:21:44.264095+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-22T02:21:44.264142+00:00"
+  }
+}
