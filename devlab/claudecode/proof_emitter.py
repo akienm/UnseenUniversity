@@ -37,12 +37,13 @@ an anti-hollow gate. Akien may choose to broaden it at review; it is isolated in
 
 PRODUCTION RED IS DERIVED FROM GIT, NOT THE CALLER
 --------------------------------------------------
-The public ``prove()`` derives the pre-implementation tree from git (parent
-commit in a throwaway worktree, with the test file overlaid from HEAD so a
-test added in the same commit as its impl still exists in the red run). It does
-NOT accept a red-state from the caller — see blocker #1 above. The injectable
-``red_strategy`` seam on ``_run_proof`` exists ONLY for testing this harness and
-is never exposed on the builder-facing API.
+The public ``prove()`` derives the pre-implementation state from git by inverting
+the parent..HEAD diff IN PLACE (see ``_git_inplace_red``) — never from a
+caller-supplied red-state. In-place is required because UU is an editable install
+whose PEP 660 finder resolves imports to the working tree; a separate worktree
+would be shadowed by the installed copy. The injectable ``red_strategy`` seam on
+``_run_proof`` exists ONLY for testing this harness and is never exposed on the
+builder-facing API.
 
 Bootstrap exception: this emitter cannot prove itself before it works. It closes
 on its own pytest suite + the /sorted advisor review + Akien's inspection — NOT
@@ -53,24 +54,21 @@ pytest test that goes red->green. Non-red->green intentions ("refactor changed
 nothing", "robust under partial failure") are out of scope and close as
 shipped-unproven until a later proof-kind covers them.
 
-KNOWN LIMITATIONS — validation targets, NOT yet resolved (be honest about these)
---------------------------------------------------------------------------------
-- EDITABLE-INSTALL SHADOWING: ``_git_parent_worktree`` runs the red pass with
-  ``PYTHONPATH=worktree``. That shadows path-imported modules (e.g. things under
-  devlab/claudecode/), but UU is installed with a PEP 660 editable meta-path
-  finder that WINS over PYTHONPATH (verified empirically). So for imports in the
-  ``unseen_university`` package namespace, the worktree red pass imports the
-  INSTALLED (current) code, not HEAD~1 — red comes back green and prove() rejects
-  ("could not generate authentic red"). It fails SAFE (never false-certifies) but
-  cannot yet prove package-namespace things via git. The real fix (in-place
-  ``git checkout HEAD~1 -- <impl>`` working WITH the finder, vs a throwaway-venv
-  install, vs worktree) is a design decision for T-ticket-close-requires-proof.
-  The harness is proven against a synthetic top-level-module repo, NOT against
-  the editable-installed UU package.
-- OVERLAY COPIES ONE TEST FILE: the red worktree gets ``test_nodeid``'s file
-  overlaid from HEAD, but not a sibling conftest.py / fixtures / helper module
-  added in the same commit. Missing support -> collateral rejection (fails safe,
-  but reads as "can't generate authentic red" rather than "missing support file").
+KNOWN BEHAVIOURS / LIMITATIONS (be honest about these)
+------------------------------------------------------
+- SHARED-TREE MUTATION: in-place red mutates the real working tree for the red
+  window, so any live process importing the package momentarily sees parent_ref
+  code. Small window, low risk, but a real isolation trade vs a worktree (which
+  we can't use here — the editable finder shadows it). Clean-tree precondition +
+  restore-must-raise bound the blast radius.
+- WEAK RED FOR MULTI-COMMIT THINGS: red = HEAD~1 removes only the last commit.
+  Under "commit each bug-fix cycle", a single thing can span commits, so HEAD~1
+  is "impl minus last tweak", not full pre-implementation. Sound for single-commit
+  things; weaker otherwise. (Future: a proof could span thing-start..HEAD.)
+- ADDED IMPL FILES need stub-first: a file ADDED in HEAD is removed for the red
+  run, so a test importing it gets ImportError → collateral → correctly rejected
+  with stub-first guidance. Prove new work as stub-commit then impl-commit (makes
+  the impl file an M, whose stub→real change yields authentic assertion red).
 """
 from __future__ import annotations
 
@@ -78,7 +76,6 @@ import contextlib
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -200,28 +197,106 @@ def _git(repo_root: str, *args: str) -> str:
     return proc.stdout.strip()
 
 
-@contextlib.contextmanager
-def _git_parent_worktree(repo_root: str, test_nodeid: str,
-                         parent_ref: str = "HEAD~1") -> Iterator[str]:
-    """Materialize the pre-implementation tree as a detached worktree at
-    ``parent_ref``, with the test file overlaid from the current HEAD so a test
-    introduced in the same commit as its implementation still exists in the red
-    run. Yields the worktree path to run the red pass in.
+def _impl_changes(repo_root: str, test_file: str, parent_ref: str):
+    """Per-file status of the ``parent_ref``..HEAD diff, EXCLUDING the test file
+    (the test stays at its current/HEAD intention for the red run). Returns a
+    list of (status, path) with status in {M, A, D}; renames are split into A+D.
     """
-    wt = tempfile.mkdtemp(prefix="proof_red_wt.")
-    # mkdtemp created it; git worktree add needs the path absent.
-    os.rmdir(wt)
-    _git(repo_root, "worktree", "add", "--detach", wt, parent_ref)
+    raw = _git(repo_root, "diff", "--name-status", parent_ref, "HEAD")
+    changes = []
+    for line in raw.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        code = parts[0][0]
+        if code == "R" and len(parts) >= 3:          # rename = del(old) + add(new)
+            old, new = parts[1], parts[2]
+            if new != test_file:
+                changes.append(("A", new))
+            if old != test_file:
+                changes.append(("D", old))
+            continue
+        path = parts[1]
+        if path == test_file:
+            continue
+        changes.append((code, path))
+    return changes
+
+
+@contextlib.contextmanager
+def _git_inplace_red(repo_root: str, test_nodeid: str,
+                     parent_ref: str = "HEAD~1") -> Iterator[str]:
+    """Materialize the pre-implementation state IN PLACE by inverting the
+    ``parent_ref``..HEAD diff per file status, run red in repo_root, then restore.
+
+    Works WITH the editable install: UU's PEP 660 finder resolves imports to the
+    working tree, so changing files in place changes what gets imported — which
+    the worktree+PYTHONPATH approach could not do (the finder beat PYTHONPATH).
+    SAFE only because prove() requires a clean tree first: every file we touch is
+    restorable from a commit, with nothing uncommitted to clobber.
+
+    Per-status inversion (the added-file case is the one a naive
+    `git checkout parent -- path` silently breaks — it errors on a path absent in
+    parent and leaves HEAD's file in place, yielding a false "vacuous" rejection):
+      - M (modified): checkout parent_ref version for red; checkout HEAD to restore.
+      - A (added in HEAD): remove the file for red; checkout HEAD to restore.
+        (A typical added *impl* file → test ImportError → collateral → the proof
+        is correctly rejected with stub-first guidance. The way to prove new work
+        is stub-commit-then-impl-commit, which makes the impl file an M, not an A.)
+      - D (deleted in HEAD): resurrect parent_ref version for red; git rm to restore.
+
+    Caveats (documented, not solved here):
+      - In-place mutates the SHARED working tree: any live process importing the
+        package sees parent_ref code for the red window. Small, but a real
+        isolation regression vs the (broken-for-this) worktree approach.
+      - red = parent_ref (HEAD~1) removes only the LAST commit. With the "commit
+        each bug-fix cycle" discipline a single *thing* can span several commits,
+        so HEAD~1 is "impl minus last tweak", not full pre-implementation — a
+        weaker red than it looks. Fine for single-commit things; weaker otherwise.
+    """
+    test_file = test_nodeid.split("::", 1)[0]
+    changes = _impl_changes(repo_root, test_file, parent_ref)
+    if not changes:
+        raise ProofError(
+            f"no implementation delta between {parent_ref} and HEAD (only the "
+            f"test changed?) — cannot generate authentic red. The thing's "
+            f"implementation must be part of this commit."
+        )
+
+    def _to_red():
+        for code, path in changes:
+            if code in ("M", "D"):                    # revert / resurrect parent
+                _git(repo_root, "checkout", parent_ref, "--", path)
+            elif code == "A":                          # remove HEAD-added file
+                fp = os.path.join(repo_root, path)
+                if os.path.exists(fp):
+                    os.remove(fp)
+
+    def _restore():
+        for code, path in changes:
+            if code in ("M", "A"):
+                _git(repo_root, "checkout", "HEAD", "--", path)
+            elif code == "D":                          # must not exist at HEAD
+                _git(repo_root, "rm", "-f", "--quiet", "--", path)
+
+    _to_red()
     try:
-        test_rel = test_nodeid.split("::", 1)[0]
-        src = os.path.join(repo_root, test_rel)
-        if os.path.exists(src):
-            dst = os.path.join(wt, test_rel)
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copy2(src, dst)
-        yield wt
+        yield repo_root
     finally:
-        _git(repo_root, "worktree", "remove", "--force", wt)
+        _restore()
+        # Restore must be PERFECT. Leftover state is exactly the hidden state the
+        # no-stash principle bans → RAISE, don't warn (halt-until-sorted). The
+        # next prove()'s clean-tree guard is the backstop, but we fail loud here.
+        # --untracked-files=no: the red mechanism only mutates TRACKED files, so
+        # we verify those are restored; untracked cruft (pytest __pycache__, etc.)
+        # is not something restore created or should police.
+        dirty = _git(repo_root, "status", "--porcelain", "--untracked-files=no")
+        if dirty:
+            raise ProofError(
+                "red-state restore FAILED — working tree not clean after the "
+                f"proof run. Leftover:\n{dirty}\nSort it immediately "
+                "(git checkout / git clean) before any further work."
+            )
 
 
 def _slug(text: str, n: int = 40) -> str:
@@ -316,7 +391,7 @@ def prove(thing: str, intention: str, test: str, *,
             "stash first, then prove."
         )
     commit = _git(repo_root, "rev-parse", "HEAD")
-    strategy = _git_parent_worktree(repo_root, test, parent_ref)
+    strategy = _git_inplace_red(repo_root, test, parent_ref)
     return _run_proof(thing=thing, intention=intention, test=test, ticket=ticket,
                       narrative=narrative, why=why, red_strategy=strategy,
                       commit=commit, repo_root=repo_root)

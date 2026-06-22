@@ -283,3 +283,46 @@ def test_git_strategy_rejects_dirty_tree(tmp_path, isolated_store):
     (root / "sample_thing.py").write_text(IMPL_OK + "\n# uncommitted edit\n")
     with pytest.raises(ProofError, match="working tree is dirty"):
         prove("add", "add(2,3)==5", "test_sample.py::test_adds", repo_root=str(root))
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+def test_git_inplace_modified_impl_leaves_tree_clean(tmp_path, isolated_store):
+    # M-case: stub commit -> impl+test commit. In-place reverts the impl file to
+    # the stub for red, then must restore PERFECTLY (no leftover red state).
+    root = tmp_path / "repo_m"
+    root.mkdir()
+    _init_repo(root)
+    (root / "sample_thing.py").write_text(IMPL_STUB)
+    _commit(root, "stub")
+    (root / "sample_thing.py").write_text(IMPL_OK)
+    (root / "test_sample.py").write_text(TEST_SRC)
+    _commit(root, "impl + test")
+
+    rec = prove("add() sums", "add(2,3)==5", "test_sample.py::test_adds",
+                ticket="T-x", repo_root=str(root))
+    assert rec["red"]["exc_type"] == "AssertionError"      # authentic, in-place
+    # restore must be perfect — the no-stash principle bans leftover hidden state
+    assert _git(root, "status", "--porcelain", "--untracked-files=no").stdout == "", "tracked files not restored"
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+def test_git_inplace_added_impl_file_rejected_with_stub_first(tmp_path, isolated_store):
+    # The advisor's case: the impl is a NEW file ADDED in HEAD (not modified).
+    # A naive `git checkout HEAD~1 -- <added>` errors and leaves HEAD's file in
+    # place -> false 'vacuous' rejection. In-place removes the added file for red,
+    # so the test gets ImportError -> collateral -> correctly rejected with
+    # stub-first guidance. And the removed file MUST be restored.
+    root = tmp_path / "repo_a"
+    root.mkdir()
+    _init_repo(root)
+    (root / "seed.py").write_text("# seed so HEAD~1 exists\n")
+    _commit(root, "seed")
+    (root / "sample_thing.py").write_text(IMPL_OK)   # ADDED in HEAD
+    (root / "test_sample.py").write_text(TEST_SRC)   # imports sample_thing
+    _commit(root, "add impl + test")
+
+    with pytest.raises(ProofError, match="collateral error|stub-first"):
+        prove("add", "add(2,3)==5", "test_sample.py::test_adds", repo_root=str(root))
+    # the added file we removed for red must be restored; tree clean
+    assert (root / "sample_thing.py").exists()
+    assert _git(root, "status", "--porcelain", "--untracked-files=no").stdout == ""
