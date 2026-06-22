@@ -62,8 +62,17 @@ def _save_availability_state() -> None:
 
 
 def _slate_path() -> Path:
-    date_str = datetime.now().strftime("%Y%m%d")
-    return IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
+    # Canonical slate location is the dev-process memory store, not IGOR_HOME
+    # (T-slate-location-canonical-devlab). Resolve through slate_store; fall back
+    # to the same canonical literal if the package isn't importable (cwd outside
+    # the repo) — never silently write to the old ~/.unseen_university/claudecode.
+    try:
+        from unseen_university import slate_store
+        return slate_store.today_slate_path()
+    except Exception:
+        root = Path(os.environ.get("UU_ROOT") or Path.home() / "dev/src/UnseenUniversity")
+        date_str = datetime.now().strftime("%Y%m%d")
+        return root / "devlab" / "runtime" / "memory" / "slates" / f"{date_str}.slate.txt"
 
 
 def _update_in_flight(hypothesis: str) -> None:

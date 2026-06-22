@@ -10,9 +10,15 @@ import pytest
 from devlab.claudecode import stale_slate_check as mod
 
 
+@pytest.fixture(autouse=True)
+def _redirect_memory_root(tmp_path, monkeypatch):
+    """Point the slate_store resolver at the test's tmp_path (UU_MEMORY_ROOT)."""
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
+
+
 @pytest.fixture
 def slate_dir(tmp_path: Path) -> Path:
-    d = tmp_path / "claudecode"
+    d = tmp_path / "slates"
     d.mkdir()
     return d
 

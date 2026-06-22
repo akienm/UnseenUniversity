@@ -1,0 +1,51 @@
+
+## Session close: 2026-06-21 (Akien + Claude Code) — Step 1b design + FTP naming
+
+**Done:**
+- D-proof-on-close-2026-06-20 design complete, defended against advisor blockers, filed as 7 tickets (3 L foundations, 2 M skill rewrites, 1 M CP-tags, 1 S consequence). Proof-on-close = CP1 consumption gate; ticket closes only by pointing at a commit-bound proof a hollow build couldn't produce. Ordered pieces → skills → build.
+- Fit-To-Purpose (FTP) tests named and defined as the product-level gate above ticket-level proof. The "use-it test" that's failed every time we hit zero tickets. E2E proves wired; FTP proves served. Proof at the root of the tree. Open thread — needs design after map + Evaluator exist.
+- T-quality-judge-at-close cancelled (superseded into T-evaluator-certifies-proof-sufficiency).
+- T-skills-goals-to-intentions rewritten from deprecate-in-place to rip-out-and-rebuild (L, remove `links.goals` from live emission schema, rebuild 3 readers intention-native, tests green after).
+- Philosophy captured: "done" = the tool disappears into fitness-for-purpose, NOT zero-tickets. Build foundations right (rip > deprecate). Never "whatever it takes to get it out the door." Use-it proof sits above proof-on-close.
+
+**Next: **
+- T-proof-emitter-harness implementation (the spine — everything else gates on it). One step at a time, tested together, discussed (the winning method).
+- After emitter: close-gate → Evaluator certifier → then maps + FTP design pass.
+
+
+## In-flight: Proof-on-close (step 1b) design complete, filed 7 tickets; FTP tests named; foundations durable; ready for T-proof-emitter-harness implementation.
+
+## Note: near-term trajectory (Akien 2026-06-21)
+Opus chats→nails specifics→feeds system as tickets→system does ALL steps. First CC.1, then DS.0 (DS gated on free inference) to prove/debug the pipeline. Gates are SCAFFOLDING — proof corpus earns their removal bottom-up: stop gating each step → each skill → each ticket. Last gate off = machine proved itself = disappeared = solid foundation. THEN take lessons to Igor's cognition. => proof-on-close is the immediate priority because it's the machinery that lets gates safely disappear. Memory: project_pipeline_trajectory_gate_removal.
+
+## INSISTENCE WE'VE BEEN MISSING (Akien 2026-06-21): evidence-based gate-removal, NEVER a leap of faith. Root cause of zero-tickets-but-use-it-failed: gates came off (or were never real) without a proof corpus justifying it. A gate stays until its proof earns removal. No gate off on optimism. (memory: project_pipeline_trajectory_gate_removal)
+
+## Autonomous session (Akien away 2h, 2026-06-21): proof-emitter spine BUILT + PROVEN
+- T-proof-emitter-harness: BUILT, 14 tests green (incl. real-git integration), commit ac664025; status -> awaiting_validation (bootstrap exception: NOT self-closed — needs Akien inspection). Interface doc + status committed 505bfb17.
+- What it does: harness runs the gate twice ITSELF (subprocess pytest), authenticates red (assertion-about-behavior, not collateral), emits commit-bound proof JSON to new 'proofs' category. Production red derived from git (parent-commit worktree + test overlay), never caller-supplied (advisor blocker #1). Empirically verified pytest classification (advisor blocker #2): authentic red = AssertionError/Failed only = STUB-FIRST convention (flagged for review).
+- Files: devlab/claudecode/proof_emitter.py, _proof_pytest_plugin.py, tests/test_proof_emitter.py; memory_emit.py (+proofs category), SPEC.md.
+- FOR AKIEN'S REVIEW (in ticket note + D-proof-on-close-2026-06-20.md "Build status"): stub-first convention; green-in-working-tree assumption; commit lives in links.commits (close-gate's interface).
+- STOPPED HERE deliberately: next piece (T-ticket-close-requires-proof) changes how EVERY ticket closes + embeds the load-bearing discriminator Akien flagged → needs discussion, not autonomous build. Honoring "evidence-based, no leap of faith" + "tested together, discussed". Teed up: interface fixed in the decision doc so the discussion starts from a solid spec.
+
+## In-flight: proof-emitter spine proven + awaiting_validation (commit ac664025); close-gate teed up for discussion (changes all closes — not built autonomously).
+
+## CORRECTION (advisor validation, commit 97856e4b): "real-git integration proven" was OVERSTATED. Truth: authentication CORE proven + git strategy proven on a SYNTHETIC top-level-module repo. NOT proven on the editable-installed UU package — UU's PEP 660 editable finder WINS over PYTHONPATH (verified), so the worktree red pass can't yet prove unseen_university-namespace things (fails SAFE). Real red-strategy = a T-ticket-close-requires-proof design decision. Clean-tree invariant now ENFORCED. 15 tests green.
+
+## Session close 2026-06-21 (proof-on-close design settled + in-place red built)
+Done:
+- DESIGN SETTLED + captured (D-proof-on-close-2026-06-20): no-stash + halt-until-sorted + in-place-checkout red (no modes, prove committed HEAD, red=HEAD~1); close-gate FINAL — NO load-bearing discriminator (escape hatch, dropped), every ticket proves OR closes shipped-unproven naming the MISSING PROOF-LEVER (visible backlog); conceptual tickets stay a deliberate nuisance until the lever is found; CP1-6 reviewed against the gate.
+- BUILT: T-proof-emitter-inplace-red (commit f628256c, 18 tests, awaiting_validation) — in-place git-checkout red, fixes editable-finder shadowing (real-pkg probe confirmed); A/M/D partitioning + restore-must-raise + partial-failure-safe. T-proof-emitter-harness also awaiting_validation.
+- CLAUDE.md: added CP1-6 thin-shim (canonical=diagnostic_base/core_values.py; binds the BUILDER) + revised structural rule 'every ticket proves or declares unproven' (supersedes load-bearing rule, 64d6e16e).
+- June 20 DAY-CLOSED (slate ✅, T-test-suite-hermeticity-infra-deps filed, 9d5c6001).
+- Commits this session: f628256c 90b67f0f 133eabaf de1116c7 a0485f19 64d6e16e (+ day-close 9d5c6001).
+
+Next: /sprint-batch the proof-on-close tickets. BUILD ORDER: T-ticket-close-requires-proof next (spec FINAL in decision doc 'Close-gate RESOLVED'). PREREQ inside it: emitter must record impl_paths in the proof body (already computed in _git_inplace_red) so the gate's drift-check (git diff proof.commit HEAD -- impl_paths) works. Also open: T-halt-on-dirty-tree (work-start halt; CLAUDE.md work-start rule). Awaiting_validation for Akien: T-proof-emitter-harness, T-proof-emitter-inplace-red.
+
+## In-flight: proof-on-close design SETTLED + captured; in-place red BUILT (awaiting_validation). Next action = /sprint-batch the proof-on-close tickets (close-gate first, spec final).
+- D-proof-on-close-finalized-2026-06-21: red-strategy + close-gate finalized — T-proof-emitter-inplace-red, T-halt-on-dirty-tree, T-consequence-proof-on-close-finalized
+
+## Session close — final pre-compact (2026-06-21)
+Done: /sorted D-proof-on-close-finalized-2026-06-21 (consequence ticket filed, decision doc written, 6c5f9838). All design decisions from this session durable. Tree clean.
+Next: /sprint-batch — build T-ticket-close-requires-proof first (spec final in D-proof-on-close-2026-06-20 + D-proof-on-close-finalized-2026-06-21); prereq inside it: emitter must record impl_paths. Then T-evaluator-certifies-proof-sufficiency. Awaiting Akien validation: T-proof-emitter-harness, T-proof-emitter-inplace-red.
+
+## In-flight: CLEAN. All design captured. Ready for /sprint-batch.

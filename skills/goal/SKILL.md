@@ -102,7 +102,7 @@ conn.close()
 ### 4. Append to slate
 
 ```bash
-echo "- ${GOAL_ID}: ${TARGET_ONELINER}" >> ${IGOR_HOME:-~/.unseen_university}/claudecode/$(date +%Y%m%d).slate.txt
+echo "- ${GOAL_ID}: ${TARGET_ONELINER}" >> ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/$(date +%Y%m%d).slate.txt
 ```
 
 ### 5. Report

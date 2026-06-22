@@ -31,7 +31,7 @@ A rewind can also be a *code* rewind that deletes committed files — so check t
 working tree too, not just the conversation lag.
 
 ```bash
-SLATE=${IGOR_HOME:-$HOME/.unseen_university}/claudecode/$(date +%Y%m%d).slate.txt
+SLATE=${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/$(date +%Y%m%d).slate.txt
 echo "=== today's slate ($SLATE) ===" && cat "$SLATE" 2>/dev/null || echo "(no slate for today)"
 echo "=== git log --oneline -10 ===" && git -C "${UU_ROOT:-$(pwd)}" log --oneline -10
 echo "=== git status --short (working-tree divergence) ===" && git -C "${UU_ROOT:-$(pwd)}" status --short

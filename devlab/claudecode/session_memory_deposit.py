@@ -22,13 +22,15 @@ from pathlib import Path
 
 import psycopg2
 
+from unseen_university import slate_store
+
 _IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 _DB_URL = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 _MAX_CONTENT = 4000
 
 
 def _read_slate(datestamp: str) -> str | None:
-    slate = _IGOR_HOME / "claudecode" / f"{datestamp}.slate.txt"
+    slate = slate_store.slate_path(datestamp)
     if not slate.exists():
         return None
     return slate.read_text(encoding="utf-8")

@@ -50,7 +50,7 @@ from typing import Iterator, Optional
 
 import fcntl
 
-from unseen_university._uu_root import uu_root
+from unseen_university.memory_root import memory_root as _memory_root
 from unseen_university.gate_logic import TERMINAL_STATUSES
 
 log = logging.getLogger(__name__)
@@ -64,13 +64,7 @@ _LINK_KEYS = ("goals", "decisions", "tickets", "commits", "whys")
 
 
 # ── Paths (env read dynamically so tests can point UU_MEMORY_ROOT at a tmp dir) ──
-
-
-def _memory_root() -> Path:
-    val = os.environ.get("UU_MEMORY_ROOT")
-    if val:
-        return Path(val)
-    return Path(uu_root()) / "devlab" / "runtime" / "memory"
+# _memory_root imported above from the shared resolver (unseen_university.memory_root).
 
 
 def _tickets_dir() -> Path:

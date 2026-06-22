@@ -36,16 +36,9 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-from unseen_university._uu_root import uu_root
+from unseen_university.memory_root import memory_root as _memory_root
 
 log = logging.getLogger(__name__)
-
-
-def _memory_root() -> Path:
-    val = os.environ.get("UU_MEMORY_ROOT")
-    if val:
-        return Path(val)
-    return Path(uu_root()) / "devlab" / "runtime" / "memory"
 
 
 def _proofs_dir() -> Path:

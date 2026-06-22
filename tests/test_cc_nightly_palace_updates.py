@@ -38,6 +38,12 @@ from devlab.claudecode.cc_nightly_palace_updates import (
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+@pytest.fixture(autouse=True)
+def _redirect_memory_root(tmp_path, monkeypatch):
+    """Point the slate_store resolver at the test's tmp_path (UU_MEMORY_ROOT)."""
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
+
+
 def _write_decision(tmp_path: Path, filename: str, content: str) -> Path:
     p = tmp_path / filename
     p.write_text(content, encoding="utf-8")
@@ -235,7 +241,7 @@ def test_write_session_brief_dry_run(capsys):
 
 
 def test_write_session_brief_reads_slate_done(tmp_path):
-    slate_dir = tmp_path / "claudecode"
+    slate_dir = tmp_path / "slates"
     slate_dir.mkdir()
     slate = slate_dir / "20260613.slate.txt"
     slate.write_text(
@@ -243,8 +249,7 @@ def test_write_session_brief_reads_slate_done(tmp_path):
         encoding="utf-8",
     )
 
-    with patch("devlab.claudecode.cc_nightly_palace_updates._IGOR_HOME", tmp_path):
-        done = _read_slate_done("2026-06-13")
+    done = _read_slate_done("2026-06-13")
 
     assert "T-x: did something" in done
 

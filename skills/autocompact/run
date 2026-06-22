@@ -14,7 +14,7 @@ SLATE_DATE=$(date +%Y%m%d)
 cat << 'PRESERVE'
 
 ── COMPACT PRESERVE STRING (in case the auto-fire below failed) ──
-preserve: Read today's slate: ${IGOR_HOME:-$HOME/.unseen_university}/claudecode/${SLATE_DATE}.slate.txt. In-flight and Next: see slate.
+preserve: Read today's slate: ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/${SLATE_DATE}.slate.txt. In-flight and Next: see slate.
 ───────────────────────────────────────────────────────────────
 
 PRESERVE

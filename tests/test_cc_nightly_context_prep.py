@@ -35,8 +35,14 @@ from devlab.claudecode.cc_nightly_context_prep import (
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+@pytest.fixture(autouse=True)
+def _redirect_memory_root(tmp_path, monkeypatch):
+    """Point the slate_store resolver at the test's tmp_path (UU_MEMORY_ROOT)."""
+    monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
+
+
 def _write_slate(tmp_path: Path, date: str, content: str) -> None:
-    slate_dir = tmp_path / "claudecode"
+    slate_dir = tmp_path / "slates"
     slate_dir.mkdir(exist_ok=True)
     datestamp = date.replace("-", "")
     (slate_dir / f"{datestamp}.slate.txt").write_text(content, encoding="utf-8")

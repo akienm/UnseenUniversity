@@ -27,6 +27,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from unseen_university import slate_store
+
 _UU_ROOT = Path(__file__).resolve().parents[2]
 _DECISIONS_DIR = _UU_ROOT / "devlab" / "design_docs" / "decisions"
 _IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
@@ -178,7 +180,7 @@ def write_decision_nodes(docs: list[dict], dry_run: bool = False) -> int:
 def _read_slate_done(date: str) -> str:
     """Return the Done today section from a slate file, or empty string."""
     datestamp = date.replace("-", "")
-    slate = _IGOR_HOME / "claudecode" / f"{datestamp}.slate.txt"
+    slate = slate_store.slate_path(datestamp)
     if not slate.exists():
         return ""
     try:
@@ -192,7 +194,7 @@ def _read_slate_done(date: str) -> str:
 def _read_slate_notes(date: str) -> str:
     """Return the Notes section from a slate file."""
     datestamp = date.replace("-", "")
-    slate = _IGOR_HOME / "claudecode" / f"{datestamp}.slate.txt"
+    slate = slate_store.slate_path(datestamp)
     if not slate.exists():
         return ""
     try:

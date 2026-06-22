@@ -30,7 +30,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from unseen_university import ticket_store
+from unseen_university import slate_store, ticket_store
 
 _IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 _DB_URL = os.environ.get(
@@ -44,7 +44,7 @@ _DB_URL = os.environ.get(
 def _read_slate_section(date: str, section: str) -> str:
     """Return a named ## section from the slate, or empty string."""
     datestamp = date.replace("-", "")
-    slate = _IGOR_HOME / "claudecode" / f"{datestamp}.slate.txt"
+    slate = slate_store.slate_path(datestamp)
     if not slate.exists():
         return ""
     try:

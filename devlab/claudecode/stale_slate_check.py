@@ -2,7 +2,8 @@
 """stale_slate_check.py — soft-prompt /day-close when the most recent slate is stale.
 
 Called by /context-load (Step 0.25) at session start. If the most recent prior-day
-slate in ~/.TheIgors/claudecode/ has open items (non-empty Next up / Blocked /
+slate in <repo>/devlab/runtime/memory/slates/ (resolved via unseen_university.slate_store)
+has open items (non-empty Next up / Blocked /
 After that sections) and lacks a ✅ CLOSED marker, emit a soft prompt telling the
 user their previous day hasn't been closed. Silent when the prior slate is fully
 closed or empty.
@@ -17,22 +18,18 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
-SLATE_DIR = (
-    Path(
-        __import__("os").environ.get(
-            "IGOR_HOME", str(Path.home() / ".unseen_university")
-        )
-    )
-    / "claudecode"
-)
+from unseen_university import slate_store
+
 SLATE_RE = re.compile(r"^(\d{8})\.slate\.txt$")
 CLOSED_MARKER = "✅ CLOSED"
 OPEN_SECTION_HEADINGS = ("## Next up", "## Blocked", "## After that")
 DAYCLOSE_MARKER_PREFIX = "## Day-close for "
 
 
-def find_latest_slate_before(today: date, slate_dir: Path = SLATE_DIR) -> Path | None:
+def find_latest_slate_before(today: date, slate_dir: Path | None = None) -> Path | None:
     """Return the newest YYYYMMDD.slate.txt older than `today`, or None."""
+    if slate_dir is None:
+        slate_dir = slate_store.slates_dir()
     if not slate_dir.exists():
         return None
     candidates: list[tuple[date, Path]] = []
@@ -98,9 +95,11 @@ def format_slate_date(filename: str) -> str:
 
 
 def today_slate_has_dayclose_for(
-    closing_date: str, slate_dir: Path = SLATE_DIR
+    closing_date: str, slate_dir: Path | None = None
 ) -> bool:
     """True when today's slate contains a Day-close completion marker for closing_date (YYYY-MM-DD)."""
+    if slate_dir is None:
+        slate_dir = slate_store.slates_dir()
     today_path = slate_dir / f"{date.today().strftime('%Y%m%d')}.slate.txt"
     if not today_path.exists():
         return False

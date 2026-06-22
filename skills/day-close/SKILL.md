@@ -17,7 +17,7 @@ current-day slate doesn't exist yet, always create it now before closing
 the day being ended — that keeps the "every day has a slate" invariant
 intact.
 ```bash
-TODAY_SLATE=${IGOR_HOME:-~/.unseen_university}/claudecode/$(date +%Y%m%d).slate.txt
+TODAY_SLATE=${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/$(date +%Y%m%d).slate.txt
 if [ ! -f "$TODAY_SLATE" ]; then
   cat > "$TODAY_SLATE" <<EOF
 # Slate $(date +%Y-%m-%d)
@@ -43,7 +43,7 @@ of day-close idempotent.
 
 ### 3. Close the slate for the day being ended
 
-Always update `${IGOR_HOME:-~/.unseen_university}/claudecode/<closing-day>.slate.txt` (typically
+Always update `${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/<closing-day>.slate.txt` (typically
 yesterday's file when day-close runs after midnight):
 - Final status for each ticket: new, unchanged, done, closed, deferred
 - Reorder sections so the closed slate is optimized for future CC reading
@@ -90,7 +90,7 @@ When code changed: `/commit`.
 
 ### 6. Read the closing slate
 ```bash
-cat ${IGOR_HOME:-~/.unseen_university}/claudecode/<closing-day>.slate.txt
+cat ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/<closing-day>.slate.txt
 ```
 
 ### 7. Push tickets to GitHub
@@ -139,7 +139,7 @@ slate (Done today section) and any open sessions list:
 ```bash
 CLOSING_DATE=<YYYY-MM-DD>   # the day being closed
 DATESTAMP=<YYYYMMDD>        # same, no dashes
-SLATE=${IGOR_HOME:-~/.unseen_university}/claudecode/${DATESTAMP}.slate.txt
+SLATE=${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/${DATESTAMP}.slate.txt
 
 # Build content from Done today section of the closing slate
 DONE_SECTION=$(sed -n '/^## Done today/,/^## /p' "$SLATE" | grep "^- " | head -20)

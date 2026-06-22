@@ -54,14 +54,14 @@ resumes from the durable record.
 Preserve string is a fixed generic pointer — no per-session customization:
 
 ```
-preserve: Read today's slate: ${IGOR_HOME:-$HOME/.unseen_university}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
+preserve: Read today's slate: ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/YYYYMMDD.slate.txt. In-flight and Next: see slate.
 ```
 
 Always print the block clearly labeled:
 
 ```
 ── COMPACT PRESERVE STRING (in case the auto-fire below failed) ──
-preserve: Read today's slate: ${IGOR_HOME:-$HOME/.unseen_university}/claudecode/YYYYMMDD.slate.txt. In-flight and Next: see slate.
+preserve: Read today's slate: ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/YYYYMMDD.slate.txt. In-flight and Next: see slate.
 ───────────────────────────────────────────────────────────────
 ```
 

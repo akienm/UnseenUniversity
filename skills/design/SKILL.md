@@ -32,7 +32,7 @@ Lightweight boundary marker. Design conversations usually don't need this — /d
 1. Compose marker: `DESIGN_START YYYY-MM-DDTHH:MM:SSZ — <topic or (none)>`.
 2. Append to today's slate ## Notes:
    ```bash
-   echo "- DESIGN_START $(date -Iseconds) — <topic>" >> ${IGOR_HOME:-~/.unseen_university}/claudecode/$(date +%Y%m%d).slate.txt
+   echo "- DESIGN_START $(date -Iseconds) — <topic>" >> ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/$(date +%Y%m%d).slate.txt
    ```
 3. Write `design_mode.json`:
    ```bash

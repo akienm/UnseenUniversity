@@ -1,0 +1,30 @@
+# Slate 2026-06-22
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+## Sprint 2026-06-22 — proof-on-close GATE built + proven live (1ffb7f13)
+Done:
+- T-ticket-close-requires-proof BUILT + PROVEN LIVE -> awaiting_validation (1ffb7f13). The keystone: a ticket closes proven (HEAD-valid proof) OR shipped-unproven naming the missing proof-lever. NO load-bearing discriminator (dropped escape hatch).
+- Single _proof_gate chokepoint wired into ALL status->closed paths (cmd_close + cmd_setstatus(closed) + _try_auto_validate) — advisor caught the auto-validate bypass; gate is unbypassable.
+- proof_store.py (new, parallel to ticket_store): find_for_ticket(bare body.id) + validate(git reachability + impl-path-scoped drift) + best_valid_proof.
+- proof_emitter records impl_paths (the prereq for the drift check).
+- effective_status + queue listing render shipped-unproven distinctly (⚠️).
+- LIVE use-it test under SYSTEM python3 (the documented failure mode): list imports clean; bare proofless close REFUSED, ticket unmutated. 31 unit tests green.
+- sprint-ticket skill (both copies) close step documents proven + shipped-unproven paths.
+SYSTEM-WIDE BEHAVIOR CHANGE (surfaced): bare proofless closes now reject; auto-validate + sprint-ticket default to shipped-unproven w/ named reason (T-consequence-proof-on-close-finalized watches accumulation).
+
+## In-flight: 3 bootstrap pieces awaiting Akien validation (emitter, inplace-red, close-gate); all close-state = shipped-unproven 'can't self-prove' on nod. Next: T-evaluator-certifies-proof-sufficiency (GATED on close-gate), then maps + FTP design pass.
+
+## In-flight: Proof-on-close gate built + proven live under system python3 (1ffb7f13, awaiting_validation); 3 bootstrap pieces (emitter, inplace-red, close-gate) await Akien validation, all close-state shipped-unproven 'can't self-prove' on nod; batch stopped deliberately — next ticket T-evaluator-certifies-proof-sufficiency is gated on close-gate closing, then maps + FTP design pass.
+- T-memory-arch-build-designed-pieces: build designed-but-unbuilt memory-architecture pieces (gap from docs/memory_architecture.md)
+
+## In-flight: Slate relocation use-it test: writers now route through slate_store -> devlab/runtime/memory/slates.

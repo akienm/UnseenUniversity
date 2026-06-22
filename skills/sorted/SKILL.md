@@ -26,7 +26,7 @@ scope sets which turns feed each decision.
 ```
 python -c "
 from datetime import datetime; from pathlib import Path; import os, re, sys
-slate = Path(os.environ.get('IGOR_HOME', Path.home()/'.unseen_university'))/'claudecode'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
+slate = Path(os.environ.get('UU_ROOT', str(Path.home()/'dev/src/UnseenUniversity')))/'devlab'/'runtime'/'memory'/'slates'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
 if slate.exists():
     lines = [l for l in slate.read_text(encoding='utf-8').splitlines() if re.match(r'^(- D-|## In-flight|## Notes|DESIGN_START)', l)]
     print('\n'.join(lines[-20:]))
@@ -225,7 +225,7 @@ the identical file. Fail-open — a projection failure must never block /sorted:
 ```
 python -c "
 from datetime import datetime; from pathlib import Path; import os
-slate = Path(os.environ.get('IGOR_HOME', Path.home()/'.unseen_university'))/'claudecode'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
+slate = Path(os.environ.get('UU_ROOT', str(Path.home()/'dev/src/UnseenUniversity')))/'devlab'/'runtime'/'memory'/'slates'/(datetime.now().strftime('%Y%m%d')+'.slate.txt')
 slate.open('a',encoding='utf-8').write('- D-...: <summary> — T-x, T-y, T-z\n')
 "
 ```

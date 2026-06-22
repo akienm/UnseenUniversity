@@ -186,7 +186,7 @@ Two canonical env vars. Everything else derives from them.
 | Var | Default | Purpose |
 |---|---|---|
 | `UU_ROOT` | auto-detected via `unseen_university._uu_root.uu_root()` | Repo root. Set explicitly only when auto-detection fails. |
-| `IGOR_HOME` | `~/.unseen_university` | Runtime data dir (logs, slate, flags). Override for non-default installs. |
+| `IGOR_HOME` | `~/.unseen_university` | Runtime data dir (logs, flags, device cachedstate). Override for non-default installs. *(Slates moved out — they live in the dev-process memory store at `devlab/runtime/memory/slates/`, resolved via `unseen_university.slate_store`; T-slate-location-canonical-devlab.)* |
 
 `CC_WORKFLOW_TOOLS` is a **derived alias** — `${UU_ROOT}/devlab/claudecode`. Keep it in `.bashrc` for one deprecation cycle; new code uses `uu_root()` directly.
 

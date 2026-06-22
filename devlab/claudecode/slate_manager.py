@@ -2,7 +2,8 @@
 """
 slate_manager.py — Manage the active daily slate in Postgres.
 
-D304: Slates are daily files at ~/.unseen_university/claudecode/YYYYMMDD.slate.txt.
+D304: Slates are daily files at <repo>/devlab/runtime/memory/slates/YYYYMMDD.slate.txt
+(resolved via unseen_university.slate_store; T-slate-location-canonical-devlab).
 Epics are category tags on tickets (not slate sections).
 
 A slate (DB) represents one day's work bundle:
@@ -28,14 +29,15 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from unseen_university import slate_store
+
 DB_URL = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
 
 _IGOR_HOME = Path(os.getenv("IGOR_HOME", Path.home() / ".unseen_university"))
-_SLATE_DIR = _IGOR_HOME / "claudecode"
 
 
 def _today_slate_path() -> Path:
-    return _SLATE_DIR / datetime.now().strftime("%Y%m%d.slate.txt")
+    return slate_store.today_slate_path()
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -279,7 +281,7 @@ def cmd_render():
     today_slate = next((s for s in slates if s["position"] == 0), None)
     date_str = datetime.now().strftime("%Y-%m-%d")
     out_path = _today_slate_path()
-    _SLATE_DIR.mkdir(parents=True, exist_ok=True)
+    slate_store.slates_dir().mkdir(parents=True, exist_ok=True)
 
     # Cross-reference with queue: tickets done in queue are done on slate too
     queue_done = _queue_done_ids()

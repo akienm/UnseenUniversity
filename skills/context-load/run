@@ -11,6 +11,8 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from unseen_university import slate_store
+
 IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 UU_ROOT = Path(os.environ.get("UU_ROOT", "."))
 CC_WORKFLOW_TOOLS = Path(os.environ.get("CC_WORKFLOW_TOOLS", UU_ROOT / "devlab" / "claudecode"))
@@ -56,7 +58,7 @@ def step_0_restore_availability() -> None:
 # ─── Step 0.25: Stale slate check ───
 def step_0_25_stale_slate_check() -> None:
     """Warn if prior-day slate has open items and lacks CLOSED marker."""
-    slate_dir = IGOR_HOME / "claudecode"
+    slate_dir = slate_store.slates_dir()
     if not slate_dir.exists():
         return
     today_str = datetime.now().strftime("%Y%m%d")
@@ -82,9 +84,8 @@ def step_0_5_debug_flag() -> None:
 # ─── Step 1: Today's slate ───
 def step_1_today_slate() -> None:
     """Ensure today's slate exists, then read and surface its summary."""
-    date_str = datetime.now().strftime("%Y%m%d")
     date_fmt = datetime.now().strftime("%Y-%m-%d")
-    slate = IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
+    slate = slate_store.today_slate_path()
     slate.parent.mkdir(parents=True, exist_ok=True)
 
     if not slate.exists():

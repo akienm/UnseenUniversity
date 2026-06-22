@@ -5,6 +5,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from unseen_university import slate_store
+
 IGOR_HOME     = Path(os.environ.get("IGOR_HOME",     Path.home() / ".unseen_university"))
 UU_ROOT = Path(os.environ.get("UU_ROOT", Path.home() / "dev/src/UnseenUniversity"))
 
@@ -23,8 +25,7 @@ def main() -> None:
     with notes_log.open("a", encoding="utf-8") as f:
         f.write(line + "\n")
 
-    date_str = datetime.now().strftime("%Y%m%d")
-    slate    = IGOR_HOME / "claudecode" / f"{date_str}.slate.txt"
+    slate    = slate_store.today_slate_path()
     if slate.exists():
         with slate.open("a", encoding="utf-8") as f:
             f.write(f"\n- note: {text}\n")

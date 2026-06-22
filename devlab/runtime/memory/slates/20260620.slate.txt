@@ -1,4 +1,35 @@
+# Slate 2026-06-20 (CLOSED)
 
-## In-flight: Session done, at 100% ctx. Fleet KILLED clean (web kill-all button under-killed; ticketed T-web-kill-all-button-broken). All durable: cutover #1-5 + DS free inference (6659e275) committed; 4 tickets committed (f9b59cdc). NEXT: relaunch fleet clean on new code (ground_loop+granny+1 DS) — see slate FLEET DOWN section.
-- T-slate-location-canonical-devlab: BUG slates write to ~/.unseen_university/claudecode not devlab/runtime/memory/slates (filed 06-20)
-- T-slate-location-canonical-devlab filed; lab/claudecode path-sweep COMPLETE (0 refs, awaiting_validation); day-close 06-19 done (Discussion #18, palace rollup). NOT deleting old slates: target dir empty (0 imported) + skills still write old path → deletion would lose live non-git-backed data.
+## Done today
+
+Design-heavy day. The diagnosis (3 months of "hollow builds" = missing structural contracts; Igor's CP1 is the anti-hollow value the build process kept violating) turned into a concrete plan, the first piece shipped, and the second piece's design fully captured + ticketed.
+
+Code shipped:
+- **Step 1a — CP1 boundary** (139efc96): core values CP1–CP6 → `diagnostic_base/core_values.py` (single source) via `CoreValuesMixin` on `BaseDevice` + `BaseShim`; brainstem de-duplicated; `tests/test_core_values.py` = the teeth (fails if any device lacks/drifts/re-inlines). 5/5 new + 312 device/shim tests green.
+- **lab/claudecode → devlab/claudecode path sweep COMPLETE** (da28c9ad, df9b193c): 38 files, 0 stale refs. T-lab-claudecode-path-sweep → awaiting_validation.
+- **Slate migration import-then-destroy** (ee0066d4): 69 slate records imported to `devlab/runtime/memory/slates/` (now git-backed); originals destroyed except the live 20260620 straggler (skills still write the old path until the resolver switch).
+- **New CLAUDE.md rule** (dbd52206): "Prove what's load-bearing; everything else must declare itself unproven."
+- Queue state: 13 stale dispatched tickets auto-reset to sprint (440a7c1f); 4 tickets + web kill-all/inference-routing fixes filed (f9b59cdc).
+- Rack relaunched on new code: ground_loop (systemctl --user) + scraps + web_server (:8078 proxy / :8082 backend). Granny + DS intentionally DOWN.
+
+Design captured + filed:
+- **D-per-project-split-and-contracts-2026-06-20** (33389b5e, 63aec7ee): Project Zero temporal cut; per-device DSDSDS; contracts dirs; values→CoreValues mixin (placement≠consumption); CC owns the MAP; graph-tree orientation device; skills must enforce structurally. The action plan (ordered, pieces-before-skills) lives in the doc.
+- **D-proof-on-close-2026-06-20** filed via /sorted (4d136d30, 5647f35a) → 7 tickets: T-proof-emitter-harness, T-ticket-close-requires-proof, T-evaluator-certifies-proof-sufficiency, T-audit-ticket-atomicity-gate, T-skills-goals-to-intentions, T-cp-tagging-convention, T-consequence-proof-on-close. SUPERSEDES T-quality-judge-at-close.
+- Tickets filed: T-slate-location-canonical-devlab (M), T-day-close-audit-skill-stale-paths (M).
+
+## Notes
+- Design record is authoritative in `lab/design_docs/decisions/D-per-project-split-and-contracts-2026-06-20.md` and `D-proof-on-close-2026-06-20.md` — read those, not the (now-compressed) resume capsules.
+- ORDERING PRINCIPLE (Akien): lay the structural pieces before the skills can use them. Pieces → skills + /skills-audit → build debugging → debug each device one at a time.
+- WINNING METHOD: one step at a time, tested together, discussed.
+
+## Carried into 2026-06-21+
+- Build the proof-on-close pieces outward (proof-emitter → close-gate → Evaluator), pieces-before-skills. [proof-emitter built 06-21]
+- Divide 28 open tickets into 6 buckets (14 = Factory-on-Factory) — AUTHORIZED, not yet executed. Decide if "The Factory" splits builder-vs-process.
+- Revisit/supersede T-slate-location-canonical-devlab + D-filesystem-memory-store (devlab = Project-Zero-only now). JSON conversion of <30d artifacts still owed.
+- Relaunch Granny + 1 DS when ready to resume building.
+- #6 T-consequence-build-queue-filesystem-first gate 2026-07-03.
+
+## In-flight at close
+Session ended at 100% ctx; fleet killed clean (web kill-all under-killed → T-web-kill-all-button-broken). All durable: cutovers #1–5 + DS free inference (6659e275), 4 tickets (f9b59cdc), step 1a (139efc96), design /sorted (5647f35a).
+
+✅ CLOSED

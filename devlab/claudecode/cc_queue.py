@@ -89,6 +89,10 @@ from unseen_university import ticket_store  # noqa: E402
 # the HEAD-valid proof for a ticket here; lookup matches the bare body.id.
 from unseen_university import proof_store  # noqa: E402
 
+# Canonical slate location (T-slate-location-canonical-devlab): slates live in the
+# dev-process memory store, not ~/.unseen_university/claudecode/.
+from unseen_university import slate_store  # noqa: E402
+
 IGOR_FLUSH_URL = "https://localhost:8080/api/cc_send"
 
 
@@ -923,10 +927,7 @@ def _append_to_todays_slate(ticket: dict) -> None:
     Graceful degrade: silent on missing slate or read/write failure.
     """
     try:
-        today = datetime.now(timezone.utc).strftime("%Y%m%d")
-        slate_path = os.path.expanduser(
-            f"~/.unseen_university/claudecode/{today}.slate.txt"
-        )
+        slate_path = str(slate_store.today_slate_path())
         if not os.path.exists(slate_path):
             return
         tid = ticket["id"]
