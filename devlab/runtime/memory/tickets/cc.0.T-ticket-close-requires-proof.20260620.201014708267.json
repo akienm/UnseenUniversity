@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-ticket-close-requires-proof",
-    "title": "[sprint] Honesty gate: load-bearing tickets cannot close without a HEAD-valid proof",
+    "title": "[awaiting_validation] Honesty gate: load-bearing tickets cannot close without a HEAD-valid proof",
     "size": "L",
     "tags": [
       "Proof",
       "Workflow"
     ],
-    "status": "sprint",
+    "status": "awaiting_validation",
     "priority": 0.65,
     "intention": "A ticket classified load-bearing cannot reach status=closed unless it points to a proof whose commit==current HEAD; missing/stale proof blocks the close, while a ticket explicitly marked exploration closes as shipped-unproven with a reason.",
     "decision_id": "D-proof-on-close-2026-06-20",
@@ -35,14 +35,15 @@
     "created_at": "2026-06-21T02:10:14.320065+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Proof-on-close gate BUILT + PROVEN LIVE (commit 1ffb7f13). Single _proof_gate chokepoint wired into ALL status->closed paths (cmd_close + cmd_setstatus(closed) + _try_auto_validate) — verified no bypass. proof_store (find_for_ticket on bare body.id + git-reachability + impl-path-scoped drift). proof_emitter records impl_paths. effective_status renders shipped-unproven distinctly. 31 tests green; LIVE smoke under system python3: list imports clean + bare proofless close REFUSED with ticket unmutated. NO load-bearing discriminator (dropped). BOOTSTRAP: this piece can't self-prove -> close-state is shipped-unproven 'can't self-prove' on Akien's nod (dogfood: gate's first real use = closing itself unproven). FIRST-EXERCISE: git-drift validity path unexercised live until a real proof exists in store (same as emitter). SYSTEM-WIDE: bare proofless closes reject; auto-validate+sprint-ticket default shipped-unproven w/ named lever.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-22T16:53:27.743320+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-21T02:10:14.320123+00:00"
+    "scraps_validated": "2026-06-21T02:10:14.320123+00:00",
+    "commit_hash": "1ffb7f13"
   }
 }
