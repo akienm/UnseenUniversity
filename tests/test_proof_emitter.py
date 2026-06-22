@@ -355,3 +355,25 @@ def test_git_inplace_deleted_impl_file(tmp_path, isolated_store):
     assert rec["red"]["exc_type"] == "AssertionError"          # resurrect -> red
     assert not (root / "flag.py").exists()                     # git rm restored
     assert _git(root, "status", "--porcelain", "--untracked-files=no").stdout == ""
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+def test_proof_records_impl_paths(tmp_path, isolated_store):
+    # The close-gate's drift check reads body.impl_paths. Without it the gate
+    # can't scope drift and rejects every proof — so the emitter MUST record the
+    # impl files (the parent..HEAD delta minus the test). M-case: sample_thing.py.
+    root = tmp_path / "repo_ip"
+    root.mkdir()
+    _init_repo(root)
+    (root / "sample_thing.py").write_text(IMPL_STUB)
+    _commit(root, "stub")
+    (root / "sample_thing.py").write_text(IMPL_OK)
+    (root / "test_sample.py").write_text(TEST_SRC)
+    _commit(root, "impl + test")
+
+    rec = prove("add() sums", "add(2,3)==5", "test_sample.py::test_adds",
+                ticket="T-ticket-close-requires-proof", repo_root=str(root))
+    proof = json.loads(Path(rec["path"]).read_text())
+    # impl file recorded; the test file is NOT an impl path.
+    assert proof["body"]["impl_paths"] == ["sample_thing.py"]
+    assert "test_sample.py" not in proof["body"]["impl_paths"]

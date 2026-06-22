@@ -229,12 +229,33 @@ fi
 Non-fatal — log and continue if the indexer fails or the DB is down.
 Skip silently when `HEAD~1` doesn't exist (first commit in repo).
 
-### 11. Close ticket
+### 11. Close ticket (proof-on-close gate — D-proof-on-close-2026-06-20)
 
-Always close with a one-line summary of what actually shipped:
+A close now passes the **proof-on-close gate**: `cc_queue.py close` is REFUSED
+unless the ticket points at a HEAD-valid proof, or the close NAMES THE MISSING
+PROOF-LEVER. "Done" is no longer a free claim (CP1). Two honest paths:
+
+**Proven** — emit a commit-bound proof first (red→green a hollow build couldn't
+produce), commit it, then close:
 ```bash
+python3 ${CC_WORKFLOW_TOOLS}/proof_emitter.py \
+  --thing "<what>" --intention "<one falsifiable claim>" \
+  --test "tests/test_x.py::test_y" --ticket <id>
+git add -A && git commit -m "proof: <id>"   # commit the emitted proof JSON
 python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py close <id> "what was built"
 ```
+
+**shipped-unproven** — when a proof can't yet be defined (conceptual ticket, or
+the proof step isn't wired for this class), close honestly and name the lever
+we still lack. Visible backlog, never a silent "done":
+```bash
+python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py close <id> "what was built" \
+  --shipped-unproven "<the proof-lever we still lack — e.g. no harness for <X>>"
+```
+
+Until proof-emission is wired into this skill's flow (separate ticket), default
+to `--shipped-unproven` with a concrete missing-lever reason rather than a vague
+one — the reason IS the backlog entry.
 ```
 python run done-slate <id> "what was built"
 ```

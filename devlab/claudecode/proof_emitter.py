@@ -314,6 +314,7 @@ def _slug(text: str, n: int = 40) -> str:
 def _run_proof(*, thing: str, intention: str, test: str,
                ticket: Optional[str], narrative: str, why: str,
                red_strategy, commit: str, repo_root: str,
+               impl_paths: Optional[list] = None,
                emitter: str = "cc.0") -> dict:
     """Core: green at HEAD, authenticated red via ``red_strategy``, then emit.
 
@@ -360,6 +361,11 @@ def _run_proof(*, thing: str, intention: str, test: str,
             },
         }],
         "commit": commit,          # mirrored; canonical home is links.commits
+        # impl_paths: the implementation files this proof binds to (the
+        # parent_ref..HEAD delta minus the test). The close-gate's drift check
+        # (`git diff proof.commit HEAD -- <impl_paths>`) reads exactly this —
+        # without it, drift can't be scoped and a proof can't be validated.
+        "impl_paths": sorted(impl_paths or []),
         "ticket": ticket,
         "narrative": narrative,
         "why": why,
@@ -398,10 +404,14 @@ def prove(thing: str, intention: str, test: str, *,
             "stash first, then prove."
         )
     commit = _git(repo_root, "rev-parse", "HEAD")
+    # Impl paths the proof binds to (same computation _git_inplace_red uses, so
+    # they agree). Recorded in the body for the close-gate's drift check.
+    test_file = test.split("::", 1)[0]
+    impl_paths = sorted({path for _, path in _impl_changes(repo_root, test_file, parent_ref)})
     strategy = _git_inplace_red(repo_root, test, parent_ref)
     return _run_proof(thing=thing, intention=intention, test=test, ticket=ticket,
                       narrative=narrative, why=why, red_strategy=strategy,
-                      commit=commit, repo_root=repo_root)
+                      commit=commit, repo_root=repo_root, impl_paths=impl_paths)
 
 
 def _main(argv=None):

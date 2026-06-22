@@ -85,6 +85,10 @@ from unseen_university.gate_logic import (  # noqa: E402
 # NOT Postgres (D-build-queue-filesystem-first-2026-06-19 / T-ticket-pg-drop).
 from unseen_university import ticket_store  # noqa: E402
 
+# Proof-on-close read side (D-proof-on-close-2026-06-20). The close-gate looks up
+# the HEAD-valid proof for a ticket here; lookup matches the bare body.id.
+from unseen_university import proof_store  # noqa: E402
+
 IGOR_FLUSH_URL = "https://localhost:8080/api/cc_send"
 
 
@@ -395,6 +399,12 @@ def _format_task_line(t: dict) -> str:
         "done": "✅",
     }
     icon = STATUS_ICON.get(t["status"], "?")
+    # Proof-on-close: a closed-but-unproven ticket renders distinctly from a
+    # proven close — the missing proof-lever stays visible in the queue listing.
+    proven_tag = ""
+    if t.get("status") == "closed" and t.get("proven") is False:
+        icon = "⚠️"
+        proven_tag = " [shipped-unproven]"
     size = t.get("size", "?")
     epic = f" #{t['epic']}" if t.get("epic") else ""
     worker_tag = " [igor]" if t.get("worker") == "igor" else ""
@@ -406,7 +416,7 @@ def _format_task_line(t: dict) -> str:
     role_tag = f" [{role}]" if role and role != "apprentice" else ""
     cost_usd = t.get("cost_usd")
     cost_tag = f" ${cost_usd:.2f}" if cost_usd is not None and t.get("status") in ("closed", "done", "awaiting_validation") else ""
-    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag}{tier_tag}{role_tag} {t['title']}  [{t['status']}]{cost_tag}"
+    return f"  {icon} [{t['id']}] ({size}){epic}{worker_tag}{created_by_tag}{gh_tag}{tier_tag}{role_tag} {t['title']}  [{t['status']}]{proven_tag}{cost_tag}"
 
 
 def _print_task(t: dict) -> None:
@@ -1033,6 +1043,53 @@ _HIGH_INERTIA_PATTERNS = (
 )
 
 
+def _proof_gate(t: dict, *, unproven_reason=None, repo_root=None):
+    """Proof-on-close gate (D-proof-on-close-2026-06-20 — the CP1 consumption gate).
+
+    THE single chokepoint every status→closed path calls. A ticket closes one of
+    two honest ways, never a third:
+      • PROVEN — it points at a HEAD-valid proof (proof_store.best_valid_proof):
+        a commit-bound red→green a hollow build couldn't produce, whose commit is
+        reachable from HEAD and whose impl_paths haven't drifted since.
+      • shipped-unproven — an explicit close that NAMES THE MISSING PROOF-LEVER.
+        No load-bearing discriminator (that was an escape hatch, dropped): the
+        honest alternative to a proof is admitting the lever we still lack, kept
+        visible as backlog — never a silent "done".
+
+    Returns ``(allowed, annotations, message)``:
+      allowed     — bool; False means the close must be REJECTED (teeth).
+      annotations — dict to merge onto the ticket (proven flag + provenance).
+      message     — human explanation (rejection cause, or proof/unproven note).
+    """
+    if unproven_reason is not None:
+        reason = (unproven_reason or "").strip()
+        if not reason:
+            return False, {}, (
+                "shipped-unproven requires a reason that NAMES THE MISSING "
+                "PROOF-LEVER (CP1) — e.g. \"no lever yet to prove <conceptual "
+                "claim>\". An empty reason is a silent 'done' by another name."
+            )
+        return True, {"proven": False, "unproven_reason": reason}, (
+            f"closing shipped-unproven — missing proof-lever: {reason}"
+        )
+
+    repo_root = repo_root or _REPO_ROOT
+    proof, rejections = proof_store.best_valid_proof(t["id"], repo_root)
+    if proof is None:
+        why = "; ".join(rejections) if rejections else "no proof found"
+        return False, {}, (
+            f"PROOF REQUIRED: {t['id']} cannot close — {why}. Either emit a proof "
+            "(proof_emitter.prove + commit it) and retry, or close shipped-unproven "
+            "with --shipped-unproven \"<the proof-lever we still lack>\"."
+        )
+    body = proof.get("body") or {}
+    return True, {
+        "proven": True,
+        "proof_id": proof.get("id"),
+        "proof_commit": body.get("commit"),
+    }, f"proof OK — {proof.get('id')} @ {(body.get('commit') or '')[:12]}"
+
+
 def _try_auto_validate(tasks: list, t: dict) -> bool:
     """Auto-close a ticket if it meets all low-risk criteria.
 
@@ -1079,6 +1136,21 @@ def _try_auto_validate(tasks: list, t: dict) -> bool:
             {"action": "auto_validate_skip", "id": t["id"], "reason": "worker_not_igor"}
         )
         return False
+
+    # All low-risk criteria pass. Still route through the proof-gate: prefer a
+    # real HEAD-valid proof if one exists, else close shipped-unproven naming the
+    # missing lever (proof-on-close is not yet wired into the igor/auto-validate
+    # flow). Keeps the factory running while the gap stays visible (CP4), instead
+    # of silently auto-closing as "done" (the hollow build this gate cures).
+    allowed, annotations, gate_msg = _proof_gate(t)
+    if not allowed:
+        allowed, annotations, gate_msg = _proof_gate(
+            t,
+            unproven_reason="auto-validated (igor S/M): proof-on-close not yet "
+            "wired into the auto-validate path",
+        )
+    t.update(annotations)
+    _log({"action": "proof_gate", "id": t["id"], "via": "auto_validate", "result": gate_msg})
 
     # All criteria pass — close immediately
     t["status"] = "closed"
@@ -1181,15 +1253,44 @@ def cmd_done(args):
 
 
 def cmd_close(args):
-    """CC's validated-close path — marks closed, runs rollup and ungate."""
+    """CC's validated-close path — marks closed, runs rollup and ungate.
+
+    Usage: close <id> <result-message> [--shipped-unproven "<missing proof-lever>"]
+
+    Proof-on-close gate (D-proof-on-close-2026-06-20): the close is allowed only
+    when the ticket points at a HEAD-valid proof, OR --shipped-unproven names the
+    proof-lever we still lack. A bare proofless close is REJECTED — "done" is no
+    longer a free claim.
+    """
     if len(args) < 2:
-        print("Usage: close <id> <result-message>")
+        print("Usage: close <id> <result-message> [--shipped-unproven \"<reason>\"]")
         sys.exit(1)
+
+    unproven_reason = None
+    rest = list(args[2:])
+    i = 0
+    while i < len(rest):
+        if rest[i] in ("--shipped-unproven", "--unproven") and i + 1 < len(rest):
+            unproven_reason = rest[i + 1]
+            i += 2
+        else:
+            i += 1
+
     tasks = _load()
     t = _find(tasks, args[0])
     if not t:
         print(f"Task {args[0]} not found.")
         sys.exit(1)
+
+    allowed, annotations, gate_msg = _proof_gate(t, unproven_reason=unproven_reason)
+    _log({"action": "proof_gate", "id": args[0], "via": "close",
+          "result": gate_msg, "allowed": allowed})
+    if not allowed:
+        print(f"REFUSED close {args[0]}: {gate_msg}")
+        sys.exit(1)
+    t.update(annotations)
+    print(gate_msg)
+
     t["status"] = "closed"
     t["title"] = _with_status_prefix("closed", t["title"])
     t["result"] = args[1]
@@ -1942,6 +2043,21 @@ def cmd_setstatus(args):
         print(f"Task {tid} not found.")
         sys.exit(1)
     old_status = t["status"]
+
+    # Closing via raw setstatus still passes the proof-on-close gate — it is a
+    # status→closed path like any other, not an escape hatch. An optional 3rd arg
+    # is treated as a shipped-unproven reason (names the missing proof-lever).
+    if new_status == "closed" and old_status != "closed":
+        unproven_reason = args[2] if len(args) > 2 else None
+        allowed, annotations, gate_msg = _proof_gate(t, unproven_reason=unproven_reason)
+        _log({"action": "proof_gate", "id": tid, "via": "setstatus",
+              "result": gate_msg, "allowed": allowed})
+        if not allowed:
+            print(f"REFUSED setstatus {tid} → closed: {gate_msg}")
+            sys.exit(1)
+        t.update(annotations)
+        print(gate_msg)
+
     t["status"] = new_status
     t["title"] = _with_status_prefix(new_status, t["title"])
     _save(tasks)

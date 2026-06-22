@@ -95,6 +95,7 @@ STATUS_LABEL = {
     "triage":      "Triage (needs your input)",
     "hold":        "Hold",
     "akien":       "👤 Akien (needs your action)",
+    "shipped-unproven": "⚠ Shipped-unproven (no proof — lever still missing)",
     # legacy:
     "approval":    "Awaiting approval (legacy)",
 }
@@ -111,6 +112,7 @@ STATUS_CLASS = {
     "triage":      "",
     "hold":        "warn",
     "akien":       "",   # ownership bucket, not a warning — neutral like triage
+    "shipped-unproven": "warn",   # closed, but the missing proof-lever stays visible
     "approval":    "warn",
 }
 
@@ -154,6 +156,13 @@ def effective_status(ticket: dict, all_tickets: list) -> str:
     # Akien-claimed ticket is never reclassified into a waiting bucket.
     if status in ("akien", "hold"):
         return status
+    # Terminal honesty flag (proof-on-close, D-proof-on-close-2026-06-20): a close
+    # that shipped without a proof renders DISTINCTLY from a proven close. This is
+    # display-only — the STORED status stays "closed" (terminal); it never enters
+    # the salience taxonomy (CONSEQUENCE·DEPENDENCY·READY…), it just keeps an
+    # unproven close visibly unproven instead of posing as plain "done".
+    if status == "closed" and ticket.get("proven") is False:
+        return "shipped-unproven"
     gate = ticket.get("gate")
     gated = bool(gate) and not gate_clear(gate, all_tickets)
     if str(ticket.get("id", "")).startswith(CONSEQUENCE_PREFIX) and gated:

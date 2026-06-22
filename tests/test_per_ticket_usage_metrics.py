@@ -382,7 +382,11 @@ class TestCCQueueCmdCloseCallsRecord:
         monkeypatch.setattr(cq, "_record_ticket_usage", _mock_record)
         monkeypatch.setattr(cq, "_with_status_prefix", lambda s, t: t)
 
-        cq.cmd_close(["T-closetest", "shipped it"])
+        # Proof-on-close gate (D-proof-on-close-2026-06-20): a bare proofless close
+        # is now refused. This test exercises usage-metrics, not the gate, so it
+        # closes shipped-unproven with a named lever to get past the gate honestly.
+        cq.cmd_close(["T-closetest", "shipped it", "--shipped-unproven",
+                      "usage-metrics unit test fixture: no proof emitted"])
 
         assert called_with.get("ticket_id") == "T-closetest"
         assert called_with.get("cost_usd") == pytest.approx(0.01)
