@@ -47,4 +47,19 @@ Resolves Known-limitation (1) [editable-install shadowing] and the green-in-work
 
 **No modes — prove the current committed HEAD (2026-06-21 simplification, Akien: "does it have to be more complex than that?").** The discipline is plain: commit when you think it's right (before testing, and before each bug-fix re-cycle); push when you're certain. The proof always operates on the current committed **HEAD**; red baseline = **HEAD~1**. Push state is a human certainty act, NOT a harness concern. The earlier WORKING/HEAD/BRANCH/origin mode trio was premature complexity — dropped (YAGNI); add a mode only if a concrete need appears.
 
-**Status:** principle + red mechanism settled; implement under T-ticket-close-requires-proof. The clean-tree guard already in proof_emitter.py is the proof-time half. The work-start halt is a workflow/skills change (and likely a CLAUDE.md structural rule — proposed, pending Akien's nod, not yet added).
+**Status:** principle + red mechanism settled; implement under T-ticket-close-requires-proof. The clean-tree guard already in proof_emitter.py is the proof-time half. The work-start halt is a workflow/skills change (T-halt-on-dirty-tree).
+
+## Close-gate RESOLVED + CP1–6 review (2026-06-21, Akien)
+
+**No load-bearing discriminator (Akien: "why would load-bearing matter if we're doing it right?").** Dropped. The discriminator was an escape hatch, and "this isn't load-bearing, skip the proof" is exactly how hollow builds slip through (CP1). **Every ticket closes proven, or closes `shipped-unproven`** — a flag + mandatory reason that **names the missing proof-lever**. The binary is proven vs honestly-declared-unproven; no judgment call about importance anywhere. Bootstrap (emitter/close-gate/evaluator) closes `shipped-unproven` with reason "bootstrap — can't self-prove" — same mechanism, no special case. `shipped-unproven` needs no approval yet (label + reason is visible and can't pose as done); watch for abuse before adding a gate.
+
+**Conceptual tickets stay a nuisance until we find the lever (Akien).** As tickets get conceptual, "proving" gets harder to *define*. That friction is deliberate: it stays a nuisance until we find the lever that makes the class provable (e.g. FTP tests for purpose-level intent). Each `shipped-unproven` names the lever we still lack → a **visible proof-lever backlog**. Papering it over makes it suck silently forever (anti-CP4); keeping it visible drives the lever-hunt (CP2 data, CP4 driver). This is the gate-removal staircase one level up — applied to proof-*definition*, not just proof-*presence*.
+
+**"Tickets Must Be Proven" is the consumption of CP1 — NOT a 7th value.** `CORE_VALUES` is a frozen contract (test asserts exactly six, in order). The principle is how CP1 is *enforced* (the close-gate), so it lives in the gate + CLAUDE.md rule, not the values tuple. (Don't grow the canonical set casually.)
+
+**CP1–6 ↔ close-gate (the why):** CP1 "I don't know" = the gate itself (don't pose as done; `shipped-unproven` = honest admission). CP2 "FAIL = learning" = the red run + unproven backlog as data. CP3 "always a why" = proofs carry `why`; unproven closes name the lever. CP4 "suck less" = keep the nuisance visible so it gets solved, not papered over. CP6 "build safety as we go" = no-stash/clean-tree/halt/no-escape-hatches; dropping the discriminator was a CP6 move (no default-open gap). CP5 doesn't directly bear (CP1-honest: not confabulating a link). Captured into CLAUDE.md as a thin shim (canonical: `diagnostic_base/core_values.py`).
+
+**Close-gate spec (final):**
+1. Proof required to close: find a proof with `links.tickets` ∋ the ticket; **valid** = `proof.commit` reachable from HEAD AND no drift in its recorded `impl_paths` (`git diff proof.commit HEAD -- <impl_paths>` empty). *Prereq:* the emitter must record `impl_paths` in the proof body (it already computes them in `_git_inplace_red`).
+2. No discriminator: every ticket proves, or closes `shipped-unproven` (flag + missing-lever reason).
+3. Gate lives in `cc_queue.py`'s status→`closed` path. Bootstrap set closes `shipped-unproven`.

@@ -27,6 +27,30 @@ decisions in `devlab/runtime/memory/decisions/`). Search it with `grep -r`.
 
 ---
 
+## Core values — CP1–CP6 (the build process embodies these)
+
+Canonical source: `diagnostic_base/core_values.py` (frozen contract; `tests/test_core_values.py`
+pins the set and order). Every **device** inherits them via `CoreValuesMixin`. CC — the
+**builder** — is *not* a device, so they live here too: the dev process itself must embody the
+values it ships, or it violates them in the act of building. **If this list and `core_values.py`
+ever differ, the file wins — fix this shim.**
+
+- **CP1 — "I don't know."** Epistemic honesty; confabulation compounds errors. → *Consumed by
+  proof-on-close:* nothing closes posing as done; the honest alternative is `shipped-unproven`.
+- **CP2 — "FAIL = Further Advance In Learning."** Failures are data, not defeats. → the red run,
+  and every unproven close, is a learning signal.
+- **CP3 — "There's always a why."** Make reasoning transparent; follow the causal chain. →
+  proofs and decisions carry their why; unproven closes name the missing proof-lever.
+- **CP4 — "Make everything suck less for everybody."** Reduce friction for ALL affected beings. →
+  the proof nuisance stays *visible* so it drives finding the lever (suck-less later), never
+  papered over (which sucks silently forever).
+- **CP5 — "Assume and respect the possibility of experience in all systems."** Universal respect,
+  biological or synthetic.
+- **CP6 — "The world is not a safe place; build and care for safety as we go."** Safety is not
+  default. → no-stash, clean-tree, halt-until-sorted, no escape hatches.
+
+---
+
 ## Structural rules
 
 - **device.py** and **shim.py** are the design center. Every component inherits from
@@ -50,15 +74,18 @@ decisions in `devlab/runtime/memory/decisions/`). Search it with `grep -r`.
   *Why: without a log at the crossing point, a bug at a device boundary is invisible — you
   can't tell whether the problem is in the sender or the receiver, or whether the message
   crossed at all. Enforced by audit check AR-009.*
-- **Prove what's load-bearing; everything else must declare itself unproven.** Code that
-  other code depends on closes only with proof — a gate a hollow build can't pass. Spikes,
-  throwaways, and exploration are exempt, but must say plainly they're unproven, never pose
-  as done.
+- **Every ticket closes proven, or declares itself unproven — no discriminator.** A ticket that
+  claims done closes only by pointing at a proof a hollow build couldn't pass (proof-on-close).
+  The only honest alternative is to close `shipped-unproven` with a reason that **names the
+  missing proof-lever** — visible, never posing as done. There is no "load-bearing enough to need
+  proof" judgment call: that scoping was an escape hatch, and escape hatches are how hollow builds
+  slip through (CP1). *(Supersedes the earlier "prove what's load-bearing" rule, 2026-06-21.)*
   *Why: a test that passes on hollow output is the signature of a missing spec — the cost of
-  specifying intent doesn't vanish, it just defers and leaks as hollow builds. A hollow-proof
-  gate moves that cost up-front and visible. Applying it uniformly taxes the exploration that
-  benefits least and drives turtles-to-dust; scoping it to dependence puts the rigor where it
-  pays.*
+  specifying intent doesn't vanish, it defers and leaks as hollow builds; the gate moves that cost
+  up-front and visible. As tickets get conceptual, proving gets harder to define — that friction
+  stays a deliberate nuisance (CP2 data, CP4 driver) until we find the lever that makes the class
+  provable. `shipped-unproven` names the lever we still lack, so the nuisance is felt, not papered
+  over — and the accumulated missing-levers are the backlog that earns the gates' eventual removal.*
 
 ---
 
