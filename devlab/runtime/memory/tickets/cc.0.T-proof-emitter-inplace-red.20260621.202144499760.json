@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-proof-emitter-inplace-red.20260621.202144499760",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proof-emitter-inplace-red"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-22T02:21:44.499760+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-proof-on-close-2026-06-20"
+    ],
+    "tickets": [
+      "T-proof-emitter-inplace-red"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proof-emitter-inplace-red",
+    "title": "[awaiting_validation] Proof emitter: in-place git-checkout red strategy (fix editable-finder shadowing)",
+    "size": "M",
+    "tags": [
+      "ProofOnClose",
+      "Testing"
+    ],
+    "description": "The shipped proof emitter materializes red via a git worktree + PYTHONPATH, which the PEP 660 editable finder defeats — so it can't prove unseen_university-namespace things (fails safe by rejecting). Replace the worktree strategy with IN-PLACE git checkout, which works WITH the finder (it points at the working tree).\n\nMechanism (decision: D-proof-on-close-2026-06-20 'Red-strategy + clean-tree principle RESOLVED'): require clean tree (guard already shipped); impl-paths = `git diff --name-only HEAD~1 HEAD` minus the test file; `git checkout HEAD~1 -- <impl-paths>` (test stays at HEAD intention); run red in repo_root; restore via `git checkout HEAD -- <impl-paths>` in a finally + verify clean after. NO stash, NO worktree, NO modes — prove the current committed HEAD, red = HEAD~1.\n\n**Affected files:** devlab/claudecode/proof_emitter.py (replace _git_parent_worktree with in-place strategy; prove() unchanged surface), tests/test_proof_emitter.py (update git tests to in-place; add restore-safety + clean-after assertions)\n**Design rules:** no-sqlite (n/a); test-plan-or-why-not; prove-what's-load-bearing (this is load-bearing — the emitter's correctness on real code)\n**Scope boundary:** IN — swap red mechanism to in-place checkout, keep clean-tree guard + stub-first + emit schema; OUT — the close-gate (separate ticket), branch/origin modes (dropped as premature)\n**Test plan:** tmp-git-repo tests run checkout-in-place→red→restore and assert (a) authentic AssertionError red, (b) green at HEAD, (c) working tree CLEAN after restore (no leftover HEAD~1 files), (d) a crash mid-red still restores. Document why the finder-shadowing fix is sound (earlier probe: finder resolves to the working tree, so in-place checkout changes what imports).\n\nBUILT + tests green (commit f628256c), awaiting Akien inspection. In-place git-checkout red replaces worktree; fixes editable-finder shadowing. PROVEN: 17 hermetic tests (real git checkout in-place + real subprocess pytest; M happy-path authentic red; A added-file -> correct stub-first rejection [the advisor's silent-hole, now closed]; D; tracked-clean-after-restore; restore-raises-on-dirty). Editable-finder defeat confirmed by direct probe on the REAL package (in-place mutation -> fresh subprocess import sees it -> git checkout restore clean). HONEST GAP: the full composition prove()->_git_inplace_red on a COMMITTED package change isn't a single test (it's covered by orchestration tests + the finder probe); the first real close-gate proof exercises it end-to-end. Caveats documented: shared-tree mutation window; HEAD~1 = weak red for multi-commit things; added impl files need stub-first.",
+    "decision_id": "D-proof-on-close-2026-06-20",
+    "gate": null,
+    "priority": 0.6,
+    "status": "awaiting_validation",
+    "created_at": "2026-06-22T02:21:44.192645+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-22T02:21:44.237616+00:00"
+  }
+}
