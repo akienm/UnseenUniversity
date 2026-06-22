@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-uu-sweep-db-connection-string.20260622.175837129198",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-sweep-db-connection-string"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-22T23:58:37.129198+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-config-identity-layer-2026-06-22"
+    ],
+    "tickets": [
+      "T-uu-sweep-db-connection-string"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-sweep-db-connection-string",
+    "title": "[sprint] Sweep: replace hardcoded DB connection-string fallbacks with the resolver (lazy)",
+    "size": "L",
+    "tags": [
+      "Credentials",
+      "Security"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "decision_id": "D-uu-config-identity-layer-2026-06-22",
+    "gate": "T-uu-identity-resolvers",
+    "intention": "No live file embeds the DB connection string; every DB-URL read goes through the resolver at call time.",
+    "description": "**Problem:** ~91 live files embed `os.environ.get('UU_HOME_DB_URL','postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')` (this single literal covers the password ×155 and the igor-role ×149 and the URL-embedded instance name). Replace the fallback with the resolver.\n\n**Shape:** Mechanical sweep (workflow-able): swap each fallback for the DB-URL resolver call. MANDATORY per advisor: where the binding is at MODULE scope, convert it to lazy (call-time) — do not leave a raise-if-unset call at import scope. Templates/.example (3 files) get a PLACEHOLDER (`<db-password>`), NOT the resolver. Tests using throwaway creds (postgresql://test:test@...) are left as-is.\n\n**Affected files:** ~91 live tracked files (devices/*, devlab/claudecode/*, bus/pg_bus.py, unseen_university/*). HIGH-INERTIA: unseen_university/db_proxy.py, devices/igor/paths.py, devices/*/device.py — SURFACE FOR AKIEN PRE-APPROVAL before editing.\n**Design rules:** no-creds-in-source; lazy-binding (no import-scope raise); behavior-preserving (env still composes the same URL via the config layer).\n**Scope boundary:** IN — code fallbacks → resolver; templates → placeholder. OUT — changing the URL's VALUE (rotation); standalone instance-name uses (separate sweep).\n**Test plan:** after the sweep, `python -c 'import <module>'` succeeds with UU_HOME_DB_URL UNSET for each touched module (proves lazy); the full suite still collects+passes with the env set; services connect.\n**Completion criteria:** `git grep -l 'choose_a_password' -- $(git ls-files | grep -vE '\\.example$|\\.template$|tests?/')` returns ZERO; for every touched module `python -c 'import M'` with UU_HOME_DB_URL unset exits 0; targeted DB-using tests pass with env set.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-22T23:58:36.112026+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-22T23:58:36.112077+00:00"
+  }
+}

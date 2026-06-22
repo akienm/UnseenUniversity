@@ -11,6 +11,7 @@ NONE
 
 ## Done today
 
+- T-slate-location-canonical-devlab — BUG: slates write to ~/.unseen_university/claudecode, not devlab/runtime/memory/slates (Slates relocated to devlab/runtime/memory/slates/ via new slate_store resolver (commit 7fa3c2ff); all writers/readers/sk)
 ## Sprint 2026-06-22 — proof-on-close GATE built + proven live (1ffb7f13)
 Done:
 - T-ticket-close-requires-proof BUILT + PROVEN LIVE -> awaiting_validation (1ffb7f13). The keystone: a ticket closes proven (HEAD-valid proof) OR shipped-unproven naming the missing proof-lever. NO load-bearing discriminator (dropped escape hatch).
@@ -28,3 +29,10 @@ SYSTEM-WIDE BEHAVIOR CHANGE (surfaced): bare proofless closes now reject; auto-v
 - T-memory-arch-build-designed-pieces: build designed-but-unbuilt memory-architecture pieces (gap from docs/memory_architecture.md)
 
 ## In-flight: Slate relocation use-it test: writers now route through slate_store -> devlab/runtime/memory/slates.
+
+## In-flight: Slate relocation SHIPPED (7fa3c2ff) + closed shipped-unproven (lever: T-emitter-new-module-proof). slate_store live; memory_root consolidated; 90 tests green; use-it verified. Slates now in devlab/runtime/memory/slates/.
+
+## In-flight: 2026-06-22 Fixed empty UU_HOME_DB_URL (stale shell predating .bashrc edit) by exporting it in rescueclaude. Wrote docs/memory_architecture.md (runtime memory: design-vs-built, 3 'tree' meanings kept distinct). Shipped slate relocation -> devlab/runtime/memory/slates/ via new slate_store + consolidated memory_root; closed shipped-unproven — FIRST real proof-on-close gate close, which surfaced the emitter new-module gap (filed T-emitter-new-module-proof). Pushed main a82dad06; 90 tests green + live use-it verified. T-emitter-new-module-proof (the lever the gate surfaced), then T-evaluator-certifies-proof-sufficiency (close-gate now built); 3 bootstrap pieces still await Akien validation.
+
+## In-flight: CLEAN — slate relocation shipped + pushed (a82dad06), nothing mid-work; rebooting for OS update. Resume: T-emitter-new-module-proof + T-evaluator-certifies-proof-sufficiency; bootstrap trio (emitter, inplace-red, close-gate) awaits Akien validation.
+- D-uu-config-identity-layer-2026-06-22: config-identity layer + credential scrub — 8 tickets + consequence

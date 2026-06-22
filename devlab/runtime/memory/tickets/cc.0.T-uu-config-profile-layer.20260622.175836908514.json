@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-uu-config-profile-layer.20260622.175836908514",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-config-profile-layer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-22T23:58:36.908514+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-config-identity-layer-2026-06-22"
+    ],
+    "tickets": [
+      "T-uu-config-profile-layer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-config-profile-layer",
+    "title": "[sprint] Config layer: local bootstrap profile + repo secret-free post-processor",
+    "size": "M",
+    "tags": [
+      "Config",
+      "Credentials"
+    ],
+    "status": "sprint",
+    "priority": 0.6,
+    "decision_id": "D-uu-config-identity-layer-2026-06-22",
+    "gate": null,
+    "intention": "A new install boots its identity/credentials from one local file that sources a repo-tracked, secret-free post-processor; nothing identity-related is baked into code.",
+    "description": "**Problem:** Identity (DB url, instance name, host) is hardcoded across the repo. Introduce the config layer that replaces it.\n\n**Shape:** (1) LOCAL `~/.unseen_university/uu_bash_profile.sh` (gitignored-by-location, the ONLY plaintext secret on disk) sets the bootstrap vars: UU_DB_USER, UU_DB_PASSWORD, UU_DB_IP, UU_HOME_DB_IP (optional), IGOR_NAME — initial IGOR_NAME value stays the CURRENT 'Igor-wild-0001' (behavior-preserving; rename is a later ticket). It ends by sourcing the repo processor. (2) REPO `bin/uu_bash_profile_processor.sh` (NO secrets): composes UU_HOME_DB_URL=postgresql://${UU_DB_USER}:${UU_DB_PASSWORD}@${UU_HOME_DB_IP:-${UU_DB_IP}}/${IGOR_NAME}; sets IGOR_SWARM_NAME=$(hostname) and CC session names; then pulls any further secrets from the vault and exports them. (3) .bashrc reduced to a single `source ~/.unseen_university/uu_bash_profile.sh` line.\n\n**Affected files:** new bin/uu_bash_profile_processor.sh; new ~/.unseen_university/uu_bash_profile.sh (local, not committed); ~/.bashrc (one line); .gitignore check; a committed `bin/uu_bash_profile.sh.example` template documenting the bootstrap vars.\n**Design rules:** no-creds-in-source (processor MUST contain no secrets); fail-soft (DB/vault down must NOT break the shell); test-plan-or-why-not.\n**Scope boundary:** IN — the two scripts, the var scheme, the .example template, fail-soft vault pull WITH caching (no DB round-trip on every shell init). OUT — de-hardcoding the code readers (separate sweeps); rotation.\n**Test plan:** sourcing the processor with the bootstrap vars set exports a correct UU_HOME_DB_URL + IGOR_SWARM_NAME==$(hostname); with the DB down it still returns 0 and exports the bootstrap/derived vars (no hang, no error); the processor file contains no credential literal (grep).\n**Completion criteria:** `bash -c 'source bin/uu_bash_profile_processor.sh; echo $UU_HOME_DB_URL'` composes the URL from the bootstrap vars; `grep -E 'choose_a_password|:[^@/]+@' bin/uu_bash_profile_processor.sh` is empty; with DB unreachable the source returns within ~1s and rc 0.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-22T23:58:35.749814+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-22T23:58:35.800318+00:00"
+  }
+}

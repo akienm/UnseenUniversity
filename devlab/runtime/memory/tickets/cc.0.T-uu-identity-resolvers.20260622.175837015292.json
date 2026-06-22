@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-uu-identity-resolvers.20260622.175837015292",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-identity-resolvers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-22T23:58:37.015292+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-config-identity-layer-2026-06-22"
+    ],
+    "tickets": [
+      "T-uu-identity-resolvers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-identity-resolvers",
+    "title": "[sprint] Identity resolvers: DB-URL / IGOR_NAME / hostname — call-time, raise-if-unset, NO module-scope binding",
+    "size": "M",
+    "tags": [
+      "Config",
+      "Credentials"
+    ],
+    "status": "sprint",
+    "priority": 0.6,
+    "decision_id": "D-uu-config-identity-layer-2026-06-22",
+    "gate": null,
+    "intention": "Code reads identity through single resolvers that resolve at call time and raise a guided error if unset — never a baked credential, never a crash at import.",
+    "description": "**Problem:** ~91 files reinvent `os.environ.get('UU_HOME_DB_URL', '<hardcoded creds>')`. Provide the single chokepoints the sweeps will point at.\n\n**Shape:** Consolidate/extend the existing resolvers (devices/igor/paths.py home_db_url already reads env+raises; unseen_university/db_proxy.py). Provide: a DB-URL resolver, an IGOR_NAME/instance resolver, and a hostname resolver (socket.gethostname()). ALL resolve at CALL time and raise a clear, guided error when the env is unset — NO baked fallback.\n\n**CRITICAL (advisor):** the resolvers must NOT be called at module/import scope, and the sweeps that follow must convert any eager module-level binding (e.g. tree_index.py:37 `_DB_URL = _paths().home_db_url`) to lazy. Raise-if-unset at import scope would crash ~91 modules when the env is unset — breaking the rescueclaude recovery contract and worsening the test-collection errors. This ticket establishes the lazy pattern + a helper if useful.\n\n**Affected files:** unseen_university/db_proxy.py, devices/igor/paths.py (HIGH-inertia — surface for approval), possibly a new unseen_university/identity.py.\n**Design rules:** no-creds-in-source; lazy/call-time resolution; raise-with-guidance; log-state-changes.\n**Scope boundary:** IN — the resolvers + the documented lazy pattern + their unit tests. OUT — editing the 91 call sites (the sweeps).\n**Test plan:** resolver returns env value when set; raises a guided error (not KeyError) when unset; importing the resolver module with UU_HOME_DB_URL unset does NOT raise.\n**Completion criteria:** unit test: resolver raises a guided message when unset, returns the value when set; `python -c 'import <resolver_module>'` succeeds with UU_HOME_DB_URL unset (no import-time resolution).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-22T23:58:36.033231+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-22T23:58:36.033311+00:00"
+  }
+}

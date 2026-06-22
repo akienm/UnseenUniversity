@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-uu-sweep-instance-name.20260622.175837221738",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-sweep-instance-name"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-22T23:58:37.221738+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-config-identity-layer-2026-06-22"
+    ],
+    "tickets": [
+      "T-uu-sweep-instance-name"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-sweep-instance-name",
+    "title": "[sprint] Sweep: standalone Igor-wild-0001 → IGOR_NAME resolver (value-preserving)",
+    "size": "L",
+    "tags": [
+      "Config",
+      "Portability"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "decision_id": "D-uu-config-identity-layer-2026-06-22",
+    "gate": "T-uu-identity-resolvers",
+    "intention": "No live file hardcodes the instance name; instance identity comes from IGOR_NAME, still valued Igor-wild-0001 until the rename ticket.",
+    "description": "**Problem:** 'Igor-wild-0001' is hardcoded in ~238 tracked files beyond the DB URL (palace paths, table refs, session names, configs). Parameterize via the IGOR_NAME resolver — at the CURRENT value, so this is a pure behavior-preserving refactor.\n\n**Shape:** Sweep standalone Igor-wild-0001 occurrences (those NOT inside the DB connection string, which the db-string sweep already handled) → IGOR_NAME resolver / ${IGOR_NAME}. Templates → placeholder. Lazy where applicable.\n\n**Affected files:** the ~238 minus the URL-only ones; config/profiles/*, devices/igor/*, devlab/*, docs/* (HIGH-inertia config flagged for approval).\n**Design rules:** behavior-preserving (value stays Igor-wild-0001); no-hardcoded-identity; lazy.\n**Scope boundary:** IN — code/config references → resolver, value unchanged. OUT — changing the value (rename ticket); historical memory JSON/md (leave as-is; they're append-only records).\n**Test plan:** services + tests behave identically (value unchanged) with IGOR_NAME=Igor-wild-0001 set; import-with-unset doesn't crash for touched modules.\n**Completion criteria:** `git grep -l 'Igor-wild-0001' -- $(git ls-files | grep -vE '\\.example$|\\.template$|tests?/|runtime/memory/')` returns ZERO; suite green with IGOR_NAME set.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-22T23:58:36.190823+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-22T23:58:36.190869+00:00"
+  }
+}
