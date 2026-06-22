@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-emitter-new-module-proof.20260622.145137908884",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-emitter-new-module-proof"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-22T20:51:37.908884+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-proof-on-close-finalized-2026-06-21"
+    ],
+    "tickets": [
+      "T-emitter-new-module-proof"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-emitter-new-module-proof",
+    "title": "[sprint] proof_emitter can't authenticate a NEW module's first test (parent-commit ImportError is collateral, not assertion-red)",
+    "size": "M",
+    "tags": [
+      "Proof",
+      "Workflow"
+    ],
+    "status": "sprint",
+    "priority": 0.4,
+    "decision_id": "D-proof-on-close-finalized-2026-06-21",
+    "gate": null,
+    "intention": "Let a ticket that introduces a brand-new module close PROVEN: give proof_emitter a way to authenticate red for a module that does not exist at the parent commit, so its first test isn't disqualified as collateral ImportError.",
+    "description": "**Problem (surfaced live closing T-slate-location-canonical-devlab):** proof_emitter's in-place red checks out the PARENT commit, overlays HEAD's test, and requires an authentic assertion-red (AssertionError/Failed — the stub-first convention). For a ticket that ADDS a new module, the module doesn't exist at the parent commit, so the test reds with ImportError = collateral, not authentic — the emitter fails SAFE and emits no proof. Result: genuinely-proven new-module work (green discriminating unit test + a live use-it test) cannot be closed PROVEN; it can only ship shipped-unproven. This is the missing lever that close named.\n\n**Proposed shapes (pick on sprint):** (a) entry-point-anchored red — prove via a test that imports a module which EXISTS at the parent commit (e.g. assert the live writer's resolved path changed from old->new), so parent reds with an AssertionError; (b) stub-first-at-parent — require the new module to be committed first as a hollow stub (returns the old/wrong answer) so parent-commit red IS authentic, then the impl commit greens it; (c) teach the emitter to treat 'symbol absent at parent' as a distinct, acceptable red class for add-only tickets (with guardrails so it can't mask real collateral).\n\n**Affected files:** devlab/claudecode/proof_emitter.py, devlab/claudecode/_proof_pytest_plugin.py, tests/test_proof_emitter.py. Exact set TBD on sprint.\n**Design rules:** test-plan-or-why-not; log-state-changes (emit a clear classification log so 'why no proof' is visible).\n**Scope boundary:** IN — make new-module work gate-provable by at least one of the shapes above, with a test proving the emitter now emits an authentic proof for an add-only ticket. OUT — removing any gate; changing the validity rules in proof_store.\n**Test plan:** add a proof_emitter test that constructs a synthetic repo where HEAD adds a new module + its test, and asserts the emitter now emits a HEAD-valid proof (not a fail-safe no-op). Prove per proof-on-close.\n**Completion criteria:** proof_emitter emits a HEAD-valid proof for an add-only (new-module) ticket in a synthetic-repo test (verifiable: new test green + a proof JSON written); the slate-relocation class of close can be re-proven (verifiable: emit a proof for slate_store and best_valid_proof returns it).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-22T20:51:37.342336+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-22T20:51:37.394467+00:00"
+  }
+}

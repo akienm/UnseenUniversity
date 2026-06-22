@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-memory-arch-build-designed-pieces.20260622.142138562855",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-arch-build-designed-pieces"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-22T20:21:38.562855+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-wg-node-tree-architecture-2026-06-08"
+    ],
+    "tickets": [
+      "T-memory-arch-build-designed-pieces"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-arch-build-designed-pieces",
+    "title": "[sprint] Build the designed-but-unbuilt memory-architecture pieces (node/index split, calving-by-attractor, facia tree-manager)",
+    "size": "L",
+    "tags": [
+      "Memory",
+      "Architecture"
+    ],
+    "status": "sprint",
+    "priority": 0.3,
+    "decision_id": "D-wg-node-tree-architecture-2026-06-08",
+    "gate": null,
+    "intention": "Close the gap between the documented runtime-memory design and the running code: build the per-tree index-table split, switch calving from deepest-child to dominant-attractor, and add the facia tree-of-trees + tree-manager object — so the architecture in docs/memory_architecture.md stops being mostly design intent.",
+    "description": "**Problem:** docs/memory_architecture.md (the new explainer) surfaced that the remembered design — single node table + small per-tree index tables + calving at 5K by dominant attractors — is mostly DESIGNED, not RUNNING. Three decisions specify pieces that were never built; right now the gap lives only in prose + decision docs. This ticket makes the gap tracked backlog. Likely SPLITS into three on sprint (one per decision).\n\n**The three designed-but-unbuilt pieces (📐 in the doc's §4 gap table):**\n1. Per-tree index tables — the flat content store + pure-index split (clan.memory_store + clan.memory_tree). Today content and the parent_id hierarchy live together in clan.memories. Decision: D-memory-flat-table-reform-2026-06-04.\n2. Calving BY DOMINANT ATTRACTOR — today _maybe_calve splits at the deepest child (cortex.py:6682), and calving is gated OFF by default (IGOR_CALVING_ENABLED=false); the 5000-node WORD_GRAPH threshold is latent (WG nodes stored flat). Decision: D-wg-node-tree-architecture-2026-06-08.\n3. Facia index tree-of-trees + tree-manager object (versioning, calving, link updates). Decision: D-facia-index-tree-2026-06-17.\n\n**Affected files:** devices/igor/memory/cortex.py (calving + schema migrations), devices/igor/memory/tree_index.py, devices/igor/memory/blob_facia.py, new migration(s) for memory_store/memory_tree; docs/memory_architecture.md (flip ✅/🔶/📅 marks as pieces land). Exact set TBD — discovery step per sub-piece on sprint.\n**Design rules:** no-sqlite (Postgres or flat-file only); external-state-principle; log-state-changes-and-interface-crossings; test-plan-or-why-not.\n**Scope boundary:** IN — build the three pieces behind their gates, keep node IDs stable across calving, update the doc's status marks as each lands. OUT — removing the calving gate by default (that is an evidence-based gate-removal decision, not part of building); any Igor-cognition export (that comes after the pipeline proves itself).\n**Test plan:** per-piece — (1) migration creates memory_store/memory_tree and a backfill is idempotent + round-trips a node; (2) attractor-driven split chooses the dominant-attractor boundary on a synthetic over-threshold tree and IDs stay stable; (3) tree-manager calve/version/link-update operations are unit-tested on a synthetic facia tree. Each sub-piece proven per proof-on-close before close.\n\nReference: docs/memory_architecture.md (committed 5a973d3f) — conceptual + impl reference with file:line citations; §4 is the live gap map.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:** (per sub-piece — this ticket likely splits 3 ways) (1) clan.memory_store + clan.memory_tree migrations exist and an idempotent backfill round-trips an existing node (verifiable: tables present in schema spot-check + backfill test). (2) Calving selects a dominant-attractor boundary (not deepest-child) on a synthetic over-threshold tree, node IDs unchanged before/after (verifiable: unit test asserting split node == top attractor + ID stability). (3) A tree-manager object exposes calve/version/link-update and is unit-tested on a synthetic facia tree (verifiable: tests green). (4) docs/memory_architecture.md §4 marks flipped from 📐 to ✅ for each landed piece. Each sub-piece closes proven (proof-on-close) or shipped-unproven naming the missing lever.",
+    "created_at": "2026-06-22T20:21:37.971606+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-22T20:21:38.040192+00:00"
+  }
+}
