@@ -273,14 +273,21 @@ def _git_inplace_red(repo_root: str, test_nodeid: str,
                     os.remove(fp)
 
     def _restore():
+        # Idempotent: must fully restore even if _to_red threw partway (so some
+        # paths were never mutated). M/A checkouts are no-ops when already at
+        # HEAD; --ignore-unmatch makes the D removal a no-op when the file was
+        # never resurrected.
         for code, path in changes:
             if code in ("M", "A"):
                 _git(repo_root, "checkout", "HEAD", "--", path)
             elif code == "D":                          # must not exist at HEAD
-                _git(repo_root, "rm", "-f", "--quiet", "--", path)
+                _git(repo_root, "rm", "-f", "--ignore-unmatch", "--quiet", "--", path)
 
-    _to_red()
+    # _to_red MUST be inside the try so a partial-mutation failure still restores
+    # — a half-mutated live tree with no auto-recovery is the exact hidden state
+    # the clean-tree discipline exists to prevent.
     try:
+        _to_red()
         yield repo_root
     finally:
         _restore()

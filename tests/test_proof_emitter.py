@@ -326,3 +326,32 @@ def test_git_inplace_added_impl_file_rejected_with_stub_first(tmp_path, isolated
     # the added file we removed for red must be restored; tree clean
     assert (root / "sample_thing.py").exists()
     assert _git(root, "status", "--porcelain", "--untracked-files=no").stdout == ""
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+def test_git_inplace_deleted_impl_file(tmp_path, isolated_store):
+    # D-case (the fiddliest path: resurrect for red, `git rm` to restore). The
+    # "thing" is the removal of flag.py; the test asserts the post-removal
+    # behavior. Red resurrects flag.py (parent), flipping behavior -> authentic
+    # AssertionError; restore must `git rm` the resurrected file -> tree clean.
+    # (R/rename is handled as A+D — its parts are covered by the A and D tests.)
+    root = tmp_path / "repo_d"
+    root.mkdir()
+    _init_repo(root)
+    (root / "flag.py").write_text('VALUE = "present"\n')
+    (root / "sample_thing.py").write_text(
+        "try:\n    from flag import VALUE\nexcept ImportError:\n    VALUE = \"absent\"\n"
+    )
+    _commit(root, "flag present")
+    # commit 2 (HEAD): DELETE flag.py + add the test
+    (root / "flag.py").unlink()
+    (root / "test_flag.py").write_text(
+        "import sample_thing\ndef test_flag_gone():\n    assert sample_thing.VALUE == \"absent\"\n"
+    )
+    _commit(root, "delete flag + test")
+
+    rec = prove("flag removed", "VALUE is 'absent' once flag.py is gone",
+                "test_flag.py::test_flag_gone", repo_root=str(root))
+    assert rec["red"]["exc_type"] == "AssertionError"          # resurrect -> red
+    assert not (root / "flag.py").exists()                     # git rm restored
+    assert _git(root, "status", "--porcelain", "--untracked-files=no").stdout == ""
