@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-skill-write-paths-canonical",
-    "title": "[sprint] Every writing skill (the RUNNING copy) targets devlab/runtime/memory/ — retire lab/ + design_docs write-paths",
+    "title": "Every writing skill (the RUNNING copy) targets devlab/runtime/memory/ — retire lab/ + design_docs write-paths",
     "size": "M",
     "tags": [
       "Workflow",
       "MemoryArch"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.7,
     "gate": null,
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
@@ -34,9 +34,9 @@
     "created_at": "2026-06-23T22:10:20.162617+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Writing skills (repo + running ~/.claude copy) emit decisions JSON-only to devlab/runtime/memory/ via memory_emit; /outcome re-emits reusing the stamp; audit-design/hypothesis read body.text; day-close stages the canonical store; /migrate-decisions retired. Proof: tests/test_skill_write_paths_canonical.py::test_no_writing_skill_misfiles_to_lab_design_docs (red→green, afe46e9b).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T22:35:31.990220+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-23T22:10:20.210484+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "08401c6c-bb5c-4242-a2cc-d134d2911deb"
+    "inferred_intention_id": "08401c6c-bb5c-4242-a2cc-d134d2911deb",
+    "proven": true,
+    "proof_id": "cc.0.skill-write-paths-to-the-canonical-memor.T-skill-write-paths-canonical.20260623.163521005295",
+    "proof_commit": "afe46e9bb395598a67c6233a5197d46a60c935e2",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
