@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.inference-dispatch-routes-an-unknown-mod.T-inference-resolve-requests-by-tier.20260623.152505380731",
+  "emitter": "cc.0",
+  "namespace": [
+    "inference-dispatch-routes-an-unknown-mod",
+    "T-inference-resolve-requests-by-tier"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T15:25:05.380731",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-inference-resolve-requests-by-tier"
+    ],
+    "commits": [
+      "d7a916dc7a46272185e6859a1777288cf32c34dc"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "inference dispatch routes an unknown model by tier to a live source, and raises a system alarm on complete inference failure",
+    "intention": "An unknown-model request reaches a live source via rules_engine.route() instead of the dead hardcoded openrouter path; when no source is live, dispatch raises a no-provider:<task_class> system alarm and returns a clean error.",
+    "test": "tests/test_inference_dead_path_and_alarm.py::test_unknown_model_routes_to_live_source_and_alarms_when_all_down",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_inference_dead_path_and_alarm.py::test_unknown_model_routes_to_live_source_and_alarms_when_all_down",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        live.register(_FakeSource(\"ollama_cloud\", available=True, text=\"LIVE-OLLAMA-CLOUD\"))\n        dev = InferenceDevice(mode=\"ollama_cloud\", endpoint=None, sources=live, models=_analyst_models())\n        resp = dev.dispatch(InferenceRequest(\n            messages=[{\"role\": \"user\", \"content\": \"hi\"}],\n            model=\"totally-unknown-model-xyz\", task_class=\"analyst\", agent_id=\"tester\",\n        ))\n>       assert resp.finish_reason != \"error\", f\"dead OR path still firing: {resp.text}\"\nE       AssertionError: dead OR path still firing: [InferenceDevice: no source for model=totally-unknown-model-xyz]\nE       assert 'error' != 'error'\nE        +  where 'error' = InferenceResponse(text='[InferenceDevice: no source for model=totally-unknown-model-xyz]', model='', finish_reason='er...tokens=0, output_tokens=0, cost_estimate=0.0, elapsed_ms=0, raw={}, tool_calls=None, source_billing_type='usage_based').finish_reason\n\ntests/test_inference_dead_path_and_alarm.py:66: AssertionError\n----------------------------- Captured stderr call -----------------------------\n2026-06-23 15:25:05.269 | INFO     | logging:callHandlers:1762 - HealthMonitor: started (interval=60s)\n2026-06-23 15:25:05.269 | INFO     | logging:callHandlers:1762 - dispatch: task_class=analyst foreground=False escalation_hop=0\n2026-06-23 15:25:05.270 | INFO     | logging:callHandlers:1762 - dispatch: unknown model=totally-unknown-model-xyz — routing to openrouter\n2026-06-23 15:25:05.271 | ERROR    | logging:callHandlers:1762 - dispatch: unknown model=totally-unknown-model-xyz and openrouter source unavailable — error response\n=========================== short test summary info ============================\nFAILED tests/test_inference_dead_path_and_alarm.py::test_unknown_model_routes_to_live_source_and_alarms_when_all_down\n1 failed in 0.12s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "d7a916dc7a46272185e6859a1777288cf32c34dc",
+    "impl_paths": [
+      "devices/inference/device.py"
+    ],
+    "ticket": "T-inference-resolve-requests-by-tier",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
