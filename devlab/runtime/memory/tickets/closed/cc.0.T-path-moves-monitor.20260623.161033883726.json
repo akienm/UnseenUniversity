@@ -20,14 +20,14 @@
   },
   "body": {
     "id": "T-path-moves-monitor",
-    "title": "[in_progress] Day-close path-moves monitor — Python, file-index-backed, tickets/alarms non-canonical writes",
+    "title": "Day-close path-moves monitor — Python, file-index-backed, tickets/alarms non-canonical writes",
     "size": "M",
     "tags": [
       "Workflow",
       "MemoryArch",
       "Observability"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.5,
     "gate": null,
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
@@ -35,9 +35,9 @@
     "created_at": "2026-06-23T22:10:29.520509+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Python day-close path-moves monitor: registry (devlab/runtime/memory/rules/path_moves.json) + monitor (devlab/claudecode/path_moves_monitor.py) scans the git file index, raises one deduped system alarm per retired root / per stray artifact; read-only, fail-soft; wired into day-close-audit Step 18.8. Proof: tests/test_path_moves_monitor.py::test_scan_flags_misfiled_artifacts_and_is_silent_on_clean_tree (red→green, 07f8ef55). Live tree: 2 grouped alarms, zero false positives.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T22:47:50.842924+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -46,6 +46,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-23T22:10:29.520566+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "889d0463-1121-4b31-9ebf-589e2add7d7f"
+    "inferred_intention_id": "889d0463-1121-4b31-9ebf-589e2add7d7f",
+    "proven": true,
+    "proof_id": "cc.0.path-moves-monitor-detection.T-path-moves-monitor.20260623.164740375303",
+    "proof_commit": "07f8ef554975c88af861c040560fb832197389a1",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
