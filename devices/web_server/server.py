@@ -485,9 +485,12 @@ def agent_send(text: str, agent_id: str, session_id: str = "shared", persist: bo
 async def _index(request: Request):
     index_file = _DIST_DIR / "index.html"
     if index_file.exists():
-        return FileResponse(str(index_file))
+        html = index_file.read_text(encoding="utf-8")
+    else:
+        html = _FALLBACK_HTML
+    # Inject the ALARMS PANEL so the chat page (which bypasses _html_wrap) shows it too.
     return HTMLResponse(
-        _FALLBACK_HTML,
+        _inject_alarms_panel(html),
         headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
     )
 
@@ -715,12 +718,12 @@ refresh(); setInterval(refresh, 5000);
 
 async def _page_dashboard(request: Request):
     """GET /dashboard — HTML dashboard page."""
-    return HTMLResponse(_DASHBOARD_HTML)
+    return HTMLResponse(_inject_alarms_panel(_DASHBOARD_HTML))
 
 
 async def _page_metrics(request: Request):
     """GET /metrics-page — HTML metrics page (distinct from JSON /metrics)."""
-    return HTMLResponse(_METRICS_HTML)
+    return HTMLResponse(_inject_alarms_panel(_METRICS_HTML))
 
 
 # ── Agent registration ───────────────────────────────────────────────────────
@@ -1634,6 +1637,11 @@ def _html_wrap(title: str, body: str) -> str:
         f"<title>{title} — ADC</title>{_PAGE_CSS}</head>"
         f"<body>{_ALARMS_PANEL}{_NAV}<h1>{title}</h1>{body}</body></html>"
     )
+
+
+def _inject_alarms_panel(html: str) -> str:
+    """STUB — proof scaffold (T-system-alarms-panel-coverage). Real injection next commit."""
+    return html
 
 
 async def _api_alarms(request: Request):
