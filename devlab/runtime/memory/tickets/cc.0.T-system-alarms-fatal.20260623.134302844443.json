@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-system-alarms-fatal.20260623.134302844443",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-system-alarms-fatal"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T19:43:02.844443+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "tickets": [
+      "T-system-alarms-fatal"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-system-alarms-fatal",
+    "title": "[sprint] raise_alarm(fatal=True) — report then halt (throws after the drop)",
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Infrastructure"
+    ],
+    "status": "sprint",
+    "priority": 0.6,
+    "gate": null,
+    "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
+    "intention": "I intend that a should-not-happen event that must NOT allow the caller to continue drops its alarm, then halts the caller by raising — while ordinary alarms stay fail-soft.",
+    "description": "**Problem:** some should-not-happen events are fatal — the caller must not continue (a corrupt invariant, an unrecoverable boot condition). The primitive is fail-soft by default (never raises), which is right for most alarms but wrong for the fatal class.\n\n**Shape:** add `fatal: bool = False` to `raise_alarm`. When `fatal=True`: drop/report the alarm (synchronous, durable to the flat-file store) and emit the log line as usual, THEN raise `SystemAlarmFatal` to halt the caller (throws once reported, not before; not at all when fatal=False). The out-of-band surfacing (panels/tmux) is unaffected — it reads the store. Default behavior unchanged: fatal=False stays fail-soft and never raises.\n\n**Affected files:** unseen_university/system_alarms.py (add SystemAlarmFatal + fatal param), tests/test_system_alarms.py.\n**Design rules:** fail-soft default preserved; fatal is opt-in; the drop happens before the throw (report-then-halt).\n**Scope boundary:** IN — the fatal flag + SystemAlarmFatal + report-then-throw ordering. OUT — panel/tmux surfacing (separate tickets); deciding which call sites are fatal.\n**Test plan:** fatal=True raises SystemAlarmFatal AND the alarm file is still dropped (reported before the throw); fatal=False (default) never raises and returns an AlarmResult.\n**Completion criteria:** raise_alarm(fatal=True) raises SystemAlarmFatal after the artifact is written + log emitted; raise_alarm(fatal=False) returns normally and writes the artifact; SystemAlarmFatal is importable from the module.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T19:43:02.379177+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T19:43:02.424079+00:00"
+  }
+}

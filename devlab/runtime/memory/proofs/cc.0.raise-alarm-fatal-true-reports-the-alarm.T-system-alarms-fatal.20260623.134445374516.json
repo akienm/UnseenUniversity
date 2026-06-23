@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.raise-alarm-fatal-true-reports-the-alarm.T-system-alarms-fatal.20260623.134445374516",
+  "emitter": "cc.0",
+  "namespace": [
+    "raise-alarm-fatal-true-reports-the-alarm",
+    "T-system-alarms-fatal"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T13:44:45.374516",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-system-alarms-fatal"
+    ],
+    "commits": [
+      "87de215733fc1d886c75e111d142900f3da365fe"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "raise_alarm(fatal=True) reports the alarm then raises SystemAlarmFatal",
+    "intention": "raise_alarm(fatal=True) drops the alarm durably and emits the log line, THEN raises SystemAlarmFatal to halt the caller; fatal=False never raises.",
+    "test": "tests/test_system_alarms.py::test_fatal_drops_then_raises",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_system_alarms.py::test_fatal_drops_then_raises",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "Failed",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________________ test_fatal_drops_then_raises _________________________\n\n    def test_fatal_drops_then_raises():\n        \"\"\"fatal=True reports the alarm (durably) THEN raises to halt the caller.\"\"\"\n>       with pytest.raises(sa.SystemAlarmFatal):\nE       Failed: DID NOT RAISE <class 'unseen_university.system_alarms.SystemAlarmFatal'>\n\ntests/test_system_alarms.py:114: Failed\n=========================== short test summary info ============================\nFAILED tests/test_system_alarms.py::test_fatal_drops_then_raises - Failed: DI...\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "87de215733fc1d886c75e111d142900f3da365fe",
+    "impl_paths": [
+      "unseen_university/system_alarms.py"
+    ],
+    "ticket": "T-system-alarms-fatal",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
