@@ -1637,8 +1637,38 @@ def _html_wrap(title: str, body: str) -> str:
 
 
 async def _api_alarms(request: Request):
-    """GET /api/alarms — open system alarms for the ALARMS PANEL (stub)."""
-    return JSONResponse({"alarms": []})
+    """GET /api/alarms — open system alarms for the ALARMS PANEL.
+
+    Reads the flat-file store directly (resilient — no dependency on the
+    alarm-raiser or DB being up). Returns human-rendered fields only; the UI
+    never sees raw JSON internals.
+    """
+    from unseen_university import system_alarms as _sa
+
+    out = []
+    for a in _sa.list_alarms():
+        callers = a.get("callers", {}) or {}
+        primary = max(callers, key=callers.get) if callers else "?"
+        last = (a.get("last_seen", "") or "")[:19].replace("T", " ")
+        first = (a.get("first_seen", "") or "")[:19].replace("T", " ")
+        breakdown = ", ".join(
+            f"{c}×{n}" for c, n in sorted(callers.items(), key=lambda kv: -kv[1])
+        )
+        out.append(
+            {
+                "datetime": last,
+                "emitter": primary,
+                "description": a.get("last_message") or a.get("signature", ""),
+                "detail": {
+                    "signature": a.get("signature", ""),
+                    "seen": f"{a.get('count', 0)}× · first {first} · last {last}",
+                    "level_message": f"[{a.get('level', '')}] {a.get('last_message', '')}",
+                    "callers": breakdown,
+                },
+            }
+        )
+    log.info("api: /api/alarms read — %d open alarm(s)", len(out))
+    return JSONResponse({"alarms": out})
 
 
 def _db_conn():
