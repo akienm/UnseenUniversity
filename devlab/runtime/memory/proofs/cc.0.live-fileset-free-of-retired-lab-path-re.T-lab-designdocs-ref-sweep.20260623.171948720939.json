@@ -1,0 +1,64 @@
+{
+  "id": "cc.0.live-fileset-free-of-retired-lab-path-re.T-lab-designdocs-ref-sweep.20260623.171948720939",
+  "emitter": "cc.0",
+  "namespace": [
+    "live-fileset-free-of-retired-lab-path-re",
+    "T-lab-designdocs-ref-sweep"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T17:19:48.720939",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-lab-designdocs-ref-sweep"
+    ],
+    "commits": [
+      "525765b1c6a8c1f6bb88cbddb58e79c63dbf62db"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "live fileset free of retired lab/ path references",
+    "intention": "no live code/skill/doc/test/script references the retired lab/claudecode or lab/design_docs paths outside the documented allowlist",
+    "test": "tests/test_lab_designdocs_ref_sweep.py::test_no_live_file_references_retired_lab_paths",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_lab_designdocs_ref_sweep.py::test_no_live_file_references_retired_lab_paths",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    def test_no_live_file_references_retired_lab_paths():\n        \"\"\"Proof node (one intention): no live file references a retired lab/ path\n        outside the documented allowlist.\"\"\"\n        offenders = _genuine_lab_ref_files()\n        stray = offenders - ALLOWLIST\n>       assert stray == set(), f\"live files still reference retired lab/ paths (not allowlisted): {sorted(stray)}\"\nE       AssertionError: live files still reference retired lab/ paths (not allowlisted): ['devices/igor/cognition/bliss_integrator.py', 'devices/igor/cognition/pursuits.py', 'devlab/claudecode/migrate_decisions.py', 'devlab/claudecode/slate_manager.py']\nE       assert {'devices/igo...e_manager.py'} == set()\nE         \nE         Extra items in the left set:\nE         'devlab/claudecode/migrate_decisions.py'\nE         'devices/igor/cognition/bliss_integrator.py'\nE         'devlab/claudecode/slate_manager.py'\nE         'devices/igor/cognition/pursuits.py'\nE         Use -v to get more diff\n\ntests/test_lab_designdocs_ref_sweep.py:62: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_lab_designdocs_ref_sweep.py::test_no_live_file_references_retired_lab_paths\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "525765b1c6a8c1f6bb88cbddb58e79c63dbf62db",
+    "impl_paths": [
+      "devices/igor/cognition/bliss_integrator.py",
+      "devices/igor/cognition/pursuits.py",
+      "devlab/claudecode/migrate_decisions.py",
+      "devlab/claudecode/slate_manager.py",
+      "devlab/runtime/memory/SPEC.md",
+      "devlab/runtime/memory/tickets/cc.0.T-cc-nightly-reads-decision-md.20260623.171349188629.json",
+      "devlab/runtime/memory/tickets/cc.0.T-cc-queue-rollup-misfiles-lab.20260623.171349065374.json",
+      "devlab/runtime/memory/tickets/cc.0.T-lab-designdocs-ref-sweep.20260623.161033668532.json"
+    ],
+    "ticket": "T-lab-designdocs-ref-sweep",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
