@@ -109,6 +109,23 @@ def test_drop_failure_never_raises(monkeypatch, caplog):
     assert any("SYSTEM_ALARM" in r.message for r in caplog.records)
 
 
+def test_fatal_drops_then_raises():
+    """fatal=True reports the alarm (durably) THEN raises to halt the caller."""
+    with pytest.raises(sa.SystemAlarmFatal):
+        sa.raise_alarm("no-provider:worker", "caller.g", "unrecoverable",
+                       fatal=True, emit_log=False)
+    # reported before the throw — the artifact is on disk despite the raise
+    rec = sa.get_alarm("no-provider:worker")
+    assert rec is not None
+    assert rec["callers"] == {"caller.g": 1}
+
+
+def test_non_fatal_never_raises():
+    """Default fatal=False returns normally and never raises."""
+    res = sa.raise_alarm("no-provider:analyst", "caller.h", "down", emit_log=False)
+    assert res.status in ("new", "incremented")
+
+
 def test_ordinary_logging_drops_no_alarm():
     """Only raise_alarm drops a file; plain logging must not."""
     logging.getLogger("unseen_university.system_alarms").error("just an error")

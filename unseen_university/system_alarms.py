@@ -238,12 +238,17 @@ def raise_alarm(
             levelno = logging.ERROR
         log.log(
             levelno,
-            "SYSTEM_ALARM|signature=%s|caller=%s|count=%s|%s",
+            "SYSTEM_ALARM|signature=%s|caller=%s|count=%s|fatal=%s|%s",
             signature,
             caller,
             count,
+            fatal,
             message,
         )
+    if fatal:
+        # Report-then-halt: the drop + log above already ran, so the alarm is
+        # durable before we stop the caller. Raised only when fatal=True.
+        raise SystemAlarmFatal(f"{signature}: {message}")
     return AlarmResult(signature=signature, status=status, count=count)
 
 
