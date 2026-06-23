@@ -18,13 +18,13 @@
   },
   "body": {
     "id": "T-loguru-ownership-to-base",
-    "title": "[sprint] Move loguru/stdlib-intercept ownership from Igor to the base (common-environment logger)",
+    "title": "Move loguru/stdlib-intercept ownership from Igor to the base (common-environment logger)",
     "size": "S",
     "tags": [
       "Architecture",
       "Infrastructure"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.65,
     "gate": null,
     "intention": "I intend that loguru/common-logging is owned by the shared base every device boots into, not by Igor — so any device process gets stdlib→loguru routing regardless of whether Igor is up.",
@@ -33,14 +33,21 @@
     "created_at": "2026-06-23T18:31:51.355932+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Moved loguru/stdlib-intercept ownership Igor→base; installs per-process at device boot (covers rack via Skeleton + every device process), ground loop stays lightweight. Proof: tests/test_logging_bridge_ownership.py @ 031295ea.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T18:36:14.684945+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-23T18:31:51.401205+00:00"
+    "scraps_validated": "2026-06-23T18:31:51.401205+00:00",
+    "proven": true,
+    "proof_id": "cc.0.loguru-stdlib-intercept-ownership-moved.T-loguru-ownership-to-base.20260623.123605114938",
+    "proof_commit": "031295eab526b6bd0b37ee91be739708dd13c0e5",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
