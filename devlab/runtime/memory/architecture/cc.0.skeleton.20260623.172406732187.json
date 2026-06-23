@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.skeleton.20260623.172406732187",
+  "emitter": "cc.0",
+  "namespace": [
+    "skeleton"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-23T17:24:06.732187",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "skeleton",
+    "kind": "boot",
+    "title": "Skeleton — MCP aggregator + flat-file registry (boots before the DB)",
+    "summary": "Owns the MCP aggregator and the flat-file device registry, with NO Postgres dependency — skeleton must boot before the DB is up, so a Postgres dependency here would make cold-start impossible. Flat-file registry is the boot-time source of truth for what devices exist and their halt state; the MCP aggregator fans tool calls out to devices.",
+    "key_concepts": [
+      {
+        "name": "flat-file registry",
+        "what": "boot-durable device registry; no DB dependency (skeleton boots before Postgres)"
+      },
+      {
+        "name": "halt registry",
+        "what": "halt/priority state held flat-file so it survives a cold start"
+      },
+      {
+        "name": "MCP aggregator",
+        "what": "fans MCP tool dispatch out to the registered devices"
+      }
+    ],
+    "implementing_files": [
+      "skeleton/registry.py",
+      "skeleton/halt_registry.py",
+      "unseen_university/skeleton/container_shim.py",
+      "unseen_university/skeleton/device_queue.py"
+    ],
+    "reference_docs": [],
+    "related": [
+      "[[device-shim]]"
+    ]
+  }
+}

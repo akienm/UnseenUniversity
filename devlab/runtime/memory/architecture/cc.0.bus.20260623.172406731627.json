@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.bus.20260623.172406731627",
+  "emitter": "cc.0",
+  "namespace": [
+    "bus"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-23T17:24:06.731627",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "bus",
+    "kind": "transport",
+    "title": "Bus — comms:// routing (the only thing that speaks IMAP)",
+    "summary": "Owns comms:// routing; nothing outside bus/ speaks IMAP directly, so swapping the transport touches only bus/. Receive is IDLE PUSH, not polling: a device's bus-facing component runs an idle_wait loop in a background thread (started by shim.start()); on a message it wakes, fetch_unseen(), dispatches. Request/response is built in — every envelope carries from_device + to_device; reply by appending to the target and letting the caller's idle_wait deliver it (no RPC library). The announce -> manifest flow is the canonical live example.",
+    "key_concepts": [
+      {
+        "name": "IDLE push",
+        "what": "IMAPServer.idle_wait(mailbox) is the receive primitive; AnnounceListener.run_forever() is the ~15-line canonical loop"
+      },
+      {
+        "name": "envelope",
+        "what": "from_device + to_device on every message; reply_to in the payload by convention when the reply address differs"
+      },
+      {
+        "name": "transport decoupling",
+        "what": "swap IMAP for another transport by touching only bus/"
+      }
+    ],
+    "implementing_files": [
+      "bus/imap_server.py",
+      "bus/envelope.py",
+      "bus/connection.py",
+      "bus/pg_bus.py",
+      "unseen_university/announce/listener.py"
+    ],
+    "reference_docs": [],
+    "related": [
+      "[[device-shim]]"
+    ]
+  }
+}

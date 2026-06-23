@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.memory-dev-artifacts.20260623.172406727919",
+  "emitter": "cc.0",
+  "namespace": [
+    "memory-dev-artifacts"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-23T17:24:06.727919",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "memory-dev-artifacts",
+    "kind": "memory",
+    "title": "Dev-process artifact memory — the filesystem store",
+    "summary": "One of the TWO kinds of memory in this system: the SOFTWARE-DEVELOPMENT-ARTIFACT store at devlab/runtime/memory/. The sole home for every dev-process artifact — decisions, tickets, slates, sessions, rules, proofs, design_patterns, notes, projects, and these architecture intention-points. One pretty-printed JSON file per record, grep-able and git-backed; searched with `grep -r`. memory_emit.py is the one chokepoint, so a write anywhere else is a detectable error (the path-moves monitor flags it at day-close). Distinct from graph-tree memory: this is the BUILD PROCESS's memory (flat files), not Igor's cognition.",
+    "key_concepts": [
+      {
+        "name": "categories (folders)",
+        "what": "decisions/ tickets/ slates/ sessions/ rules/ proofs/ design_patterns/ notes/ projects/ architecture/ — one subdir per artifact type"
+      },
+      {
+        "name": "filename convention",
+        "what": "emitter.namespace.stamp.json; stamp is yyyymmdd.hhmmssuuuuuu (microsecond) so collisions are effectively impossible; same stamp -> idempotent overwrite (updates re-emit reusing the stamp)"
+      },
+      {
+        "name": "record envelope",
+        "what": "{id, emitter, namespace, category, kind, emitted_at, links, body} — the artifact rides in body, links carry semantic-id graph edges"
+      },
+      {
+        "name": "canonical-home law",
+        "what": "D-canonical-memory-consolidation: nothing of these types may live under lab/ or devlab/design_docs[_for_igor]/; the path-moves monitor enforces it"
+      },
+      {
+        "name": "projection not relocation",
+        "what": "migration reads a source and writes a projection, deleting nothing until cutover (SPEC.md migration policy)"
+      }
+    ],
+    "implementing_files": [
+      "devlab/claudecode/memory_emit.py",
+      "devlab/claudecode/cc_queue.py",
+      "devlab/runtime/memory/rules/path_moves.json",
+      "devlab/claudecode/path_moves_monitor.py"
+    ],
+    "reference_docs": [
+      "devlab/runtime/memory/SPEC.md"
+    ],
+    "related": [
+      "[[memory-graph-tree]]",
+      "D-canonical-memory-consolidation-2026-06-23",
+      "D-filesystem-memory-store-2026-06-16"
+    ]
+  }
+}

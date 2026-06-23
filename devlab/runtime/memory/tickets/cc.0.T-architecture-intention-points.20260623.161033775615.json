@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-architecture-intention-points",
-    "title": "[sprint] Prior architecture docs -> uniform devlab/runtime/memory/architecture/<subsystem>.json (classify-first)",
+    "title": "[in_progress] Prior architecture docs -> uniform devlab/runtime/memory/architecture/<subsystem>.json (classify-first)",
     "size": "L",
     "tags": [
       "MemoryArch",
       "Architecture"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.5,
     "gate": null,
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",

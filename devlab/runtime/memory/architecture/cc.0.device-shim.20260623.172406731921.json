@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.device-shim.20260623.172406731921",
+  "emitter": "cc.0",
+  "namespace": [
+    "device-shim"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-23T17:24:06.731921",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "device-shim",
+    "kind": "lifecycle",
+    "title": "Device / Shim — the design center",
+    "summary": "The design center: every component inherits from BaseDevice / BaseShim — OOP-first, no standalone functions doing device work — so the framework can iterate all devices uniformly for start/stop/restart/self_test/rollback. BaseShim itself has no idle_wait; the IDLE loop lives in the bus-facing component the shim launches. Each device is one subdirectory under devices/, independently deployable, so a broken import can't crash the whole rack. Devices inherit the CP1-CP6 core values via CoreValuesMixin.",
+    "key_concepts": [
+      {
+        "name": "BaseShim lifecycle",
+        "what": "start/stop/restart/self_test/rollback — uniform across devices; start() launches the bus-facing IDLE component"
+      },
+      {
+        "name": "one dir per device",
+        "what": "devices/<name>/{device.py,shim.py}; independently deployable; blast-radius containment"
+      },
+      {
+        "name": "core values",
+        "what": "every device inherits CP1-CP6 via CoreValuesMixin; frozen contract in diagnostic_base/core_values.py"
+      }
+    ],
+    "implementing_files": [
+      "diagnostic_base/base.py",
+      "diagnostic_base/core_values.py",
+      "devices/auditor/device.py",
+      "devices/auditor/shim.py"
+    ],
+    "reference_docs": [],
+    "related": [
+      "[[bus]]",
+      "[[skeleton]]"
+    ]
+  }
+}

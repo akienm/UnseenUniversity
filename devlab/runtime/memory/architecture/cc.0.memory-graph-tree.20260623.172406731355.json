@@ -1,0 +1,61 @@
+{
+  "id": "cc.0.memory-graph-tree.20260623.172406731355",
+  "emitter": "cc.0",
+  "namespace": [
+    "memory-graph-tree"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-23T17:24:06.731355",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "memory-graph-tree",
+    "kind": "memory",
+    "title": "Graph-tree memory — Igor's cognitive node store",
+    "summary": "The SECOND kind of memory: Igor's RUNTIME COGNITION memory — a single node store (clan.memories, one Postgres table) where nodes relate two ways: a FOREST (parent_id hierarchy) and a GRAPH (interpretive_edges, Hebbian-weighted). Named traversals are cataloged as 'trees' (a query catalog, NOT the forest). Attractors are emergent hot regions, scored rather than labeled. Calving splits overgrown nodes (gated off by default). This is cognition memory (Postgres, NO SQLITE), distinct from the dev-process filesystem store.",
+    "key_concepts": [
+      {
+        "name": "'tree' means three things",
+        "what": "keep apart: the parent_id forest, the named-traversal query catalog, and tag/sensor trees — docs/memory_architecture.md §1"
+      },
+      {
+        "name": "node store (one table)",
+        "what": "clan.memories holds every node; implemented ✅"
+      },
+      {
+        "name": "forest vs graph",
+        "what": "parent_id = containment hierarchy; interpretive_edges = associative Hebbian graph; two relations over the same nodes"
+      },
+      {
+        "name": "attractors",
+        "what": "emergent hot regions surfaced by scoring (not pre-labeled); implemented ✅"
+      },
+      {
+        "name": "calving",
+        "what": "split an overgrown node into children when it accretes too much; designed + gated OFF by default 🔶"
+      }
+    ],
+    "implementing_files": [
+      "devices/igor/memory/models.py",
+      "devices/igor/memory/cortex.py",
+      "devices/igor/memory/node_id.py",
+      "devices/igor/memory/tree_index.py",
+      "devices/igor/memory/tag_tree.py",
+      "devices/igor/memory/twm_leap.py",
+      "devices/igor/cognition/hebbian_bridge.py"
+    ],
+    "reference_docs": [
+      "docs/memory_architecture.md"
+    ],
+    "status_notes": "node store / trees / attractors implemented ✅; calving gated off 🔶. Implemented-vs-designed gap map: docs/memory_architecture.md §4.",
+    "related": [
+      "[[memory-dev-artifacts]]"
+    ]
+  }
+}
