@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-test-suite-failing-baseline-triage.20260623.095511436056",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-test-suite-failing-baseline-triage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T15:55:11.436056+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-test-suite-failing-baseline-triage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-test-suite-failing-baseline-triage",
+    "title": "[triage] Triage the 210-failure full-suite baseline (env-dependent vs real)",
+    "size": "M",
+    "tags": [
+      "Testing",
+      "Health"
+    ],
+    "status": "triage",
+    "priority": 0.45,
+    "decision_id": null,
+    "gate": null,
+    "intention": "I intend that we know which of the 210 full-suite failures are environmental (need live OR/IMAP/DB) vs real breakage, so the suite has a known-green or known-baseline state.",
+    "description": "**Problem:** Full `pytest tests/` on 2026-06-23 (day-close): **210 failed, 8002 passed, 73 skipped, 28 errors** in 8:22. Tonight's additive changes (unseen_university/identity.py, bin/uu_bash_profile*, skills cleanup) are NOT in the failing set — verified. Failures cluster in bus/granny/igor/device-contract/inference subsystems; dominant signature is `dispatch: unknown model=... and openrouter source unavailable` (no inference backend in test env) plus bus/IMAP integration teardown tracebacks (bus/imap_server.py daemon threads). Looks pre-existing + environmental, but 210 is large enough to need real triage.\n\n**Shape:** Categorize the saved failure list (devlab/runtime/memory/daycloseaudit_20260623_failures.txt) into (a) needs-live-service (OR/inference/IMAP/DB) — mark as integration, consider a marker/skip-without-backend; (b) .dsb/docs_sync migration churn (test_claudecode_managers, test_docs_sync_freshness) — likely tied to filesystem-store migration; (c) genuine logic breakage — fix or ticket. Establish a known baseline so day-close can assert against it.\n\n**Affected files:** test triage only; possibly pytest markers / conftest for service-gated tests. Top failing files: test_base_device_contract (26), test_granny_rules_engine (15), test_template_extractor (15), test_granny_bus_dispatch (10), test_worker_foreman (10), test_routing (10), test_network_proxy (10).\n**Design rules:** none apply (triage).\n**Scope boundary:** IN — categorize + establish baseline + mark/skip env-gated tests. OUT — fixing every integration test's backend.\n**Test plan:** no tests — this is the test-triage ticket itself.\n**Completion criteria:** Each of the 210 failures bucketed (env / migration / real); real-breakage ones ticketed or fixed; a documented expected-baseline (e.g. 'N env-gated skips without backends') so the next full run is interpretable.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T15:55:10.963889+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T15:55:11.015258+00:00"
+  }
+}

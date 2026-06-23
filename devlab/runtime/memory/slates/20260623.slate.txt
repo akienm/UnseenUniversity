@@ -23,3 +23,9 @@
 
 - Skills cleanup (safe portion, 4b5697f1): deleted ADCHelp/decided, promoted query-ticket/mytickets/
   opentickets/concept to repo+manifest, revised harmony doc with the real 4-axis drift finding.
+- Day-close 2026-06-22: slate closed, this slate opened.
+- Day-close audit (full suite): **210 failed / 8002 passed / 73 skipped / 28 errors** (8:22). Tonight's
+  additive changes NOT in the failing set (verified). Failures are pre-existing/environmental
+  (inference `openrouter source unavailable`; bus/IMAP integration; .dsb/docs_sync migration churn).
+  Filed **T-test-suite-failing-baseline-triage** (M, triage); failure list saved to
+  devlab/runtime/memory/daycloseaudit_20260623_failures.txt. NOT blocking — pre-existing baseline.
