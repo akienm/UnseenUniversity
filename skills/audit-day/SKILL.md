@@ -52,7 +52,7 @@ Auto-draft a scan-for-rest ticket (see Step 8).
 
 ```bash
 python3 -c "
-from lab.claudecode.audit_telemetry import read_watch_next
+from devlab.claudecode.audit_telemetry import read_watch_next
 notes = read_watch_next('day', include_expired=False)
 for n in notes:
     print(n['path'])
@@ -136,7 +136,7 @@ The JSON lands in `/tmp/` — never auto-files. Surfaces in next `/decided` sess
 ### Step 9 — Emit telemetry
 
 ```python
-from lab.claudecode.audit_telemetry import emit_run_record, emit_watch_next, AuditRunRecord
+from devlab.claudecode.audit_telemetry import emit_run_record, emit_watch_next, AuditRunRecord
 
 record = AuditRunRecord(
     level="day",

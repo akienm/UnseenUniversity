@@ -121,7 +121,7 @@ Compare to last week's count (use palace.evals.* from prior week if available).
 ```bash
 # CC inbox entries from this week
 python3 -c "
-from lab.claudecode.cc_inbox import read_unread
+from devlab.claudecode.cc_inbox import read_unread
 import datetime
 entries = [e for e in read_unread() if True]  # all entries
 print(f'{len(entries)} inbox entries')

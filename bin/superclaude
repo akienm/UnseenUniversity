@@ -162,7 +162,7 @@ recover_stale_session() {
 # ─ Rack server (D335) ───────────────────────────────────────────────────────
 
 start_rack_server() {
-    # Derive UU root: CC_WORKFLOW_TOOLS is lab/claudecode — two levels up is repo root.
+    # Derive UU root: CC_WORKFLOW_TOOLS is devlab/claudecode — two levels up is repo root.
     local uu_dir
     if [[ -n "${CC_WORKFLOW_TOOLS:-}" ]]; then
         uu_dir="$(dirname "$(dirname "${CC_WORKFLOW_TOOLS}")")"

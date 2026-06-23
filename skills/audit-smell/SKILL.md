@@ -207,7 +207,7 @@ inline the concrete shape."
 
 ### Check 12 — Class without base-class inheritance
 
-**Detector**: AST scan via `lab/claudecode/audit_check_igorbase.py`
+**Detector**: AST scan via `devlab/claudecode/audit_check_igorbase.py`
 (existing tool). Reports new class definitions in `wild_igor/igor/` whose
 bases don't include `IgorBase` / `AgentBase` and aren't in
 `THIRD_PARTY_BASES` (Pydantic, Enum, ABC, Protocol, dataclass, etc.).
@@ -354,7 +354,7 @@ condition. Hits get logged in the run record.
 
 Each check produces zero or more findings. Findings carry severity,
 file:line, matched_pattern, and the AMEND message. Use the helper
-engine at `lab/claudecode/audit_smell_engine.py` for AST / regex
+engine at `devlab/claudecode/audit_smell_engine.py` for AST / regex
 scans.
 
 Stop-on-first-fail is NOT enabled — run all 17 even if early checks
@@ -384,7 +384,7 @@ on this return for HIGH severity findings.
 
 ---
 
-## Helper engine: lab/claudecode/audit_smell_engine.py
+## Helper engine: devlab/claudecode/audit_smell_engine.py
 
 The skill's procedural shell delegates to a Python helper for the
 AST-heavy checks. The helper provides a single class
@@ -434,9 +434,9 @@ audit should pass its own checks.)
 Existing checks already implemented standalone get reused, not
 re-implemented:
 - Check 12 (base-class inheritance) wraps
-  `lab/claudecode/audit_check_igorbase.py`.
-- Check 9 (SQLite) wraps `lab/claudecode/audit_check_sqlite_imports.py`.
-- Check 1 (bare except) wraps `lab/claudecode/audit_check_bare_except.py`.
+  `devlab/claudecode/audit_check_igorbase.py`.
+- Check 9 (SQLite) wraps `devlab/claudecode/audit_check_sqlite_imports.py`.
+- Check 1 (bare except) wraps `devlab/claudecode/audit_check_bare_except.py`.
 
 The engine and its tests land when this skill ships. Until then, the
 SKILL.md describes the shape and downstream tickets fill in.

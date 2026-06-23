@@ -13,7 +13,7 @@ Recovery snapshot. If something scrolls off the top of the chat, `/export-chat` 
 Run the helper script (default target is the most-recently-modified transcript — i.e. the current session):
 
 ```bash
-python3 ~/dev/src/UnseenUniversity/lab/claudecode/export_chat.py
+python3 ~/dev/src/UnseenUniversity/devlab/claudecode/export_chat.py
 ```
 
 Output: `~/dev/src/UnseenUniversity/claude_chat_logs/YYYY-MM-DD.md`. Overwrites today's file; appends with a separator if the same day already has content from a different session.
@@ -49,5 +49,5 @@ Output: `~/dev/src/UnseenUniversity/claude_chat_logs/YYYY-MM-DD.md`. Overwrites 
 ## Source location
 
 - Transcripts: `~/.claude/projects/-home-akien-dev-src-UnseenUniversity/<session-id>.jsonl`
-- Script:      `~/dev/src/UnseenUniversity/lab/claudecode/export_chat.py`
+- Script:      `~/dev/src/UnseenUniversity/devlab/claudecode/export_chat.py`
 - Output:      `~/dev/src/UnseenUniversity/claude_chat_logs/YYYY-MM-DD.md`

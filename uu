@@ -93,7 +93,7 @@ def _launch_terminal(cfg: configparser.ConfigParser) -> None:
     # Try to import channel tooling; degrade gracefully if unavailable.
     try:
         sys.path.insert(0, str(UU_ROOT))
-        from lab.claudecode.channel import post_to_channel, read_channel
+        from devlab.claudecode.channel import post_to_channel, read_channel
 
         def _ask(question: str) -> str:
             post_to_channel("librarian", "uu", f"RECALL:{question}")

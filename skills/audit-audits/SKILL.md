@@ -281,7 +281,7 @@ Next: review candidates at unseenuniversity/audits/audits/candidates/* via /deci
 
 ---
 
-## Helper engine: lab/claudecode/audit_audits_engine.py
+## Helper engine: devlab/claudecode/audit_audits_engine.py
 
 ```python
 class AuditAuditsEngine(IgorBase):

@@ -66,7 +66,7 @@ grep -r "self\._.*= \|self\.state = \|self\.context = " \
 ```bash
 # Flag bare except, silent returns, swallowed errors
 grep -r "except:\|except Exception:" \
-  --include="*.py" devices/ lab/claudecode/ | \
+  --include="*.py" devices/ devlab/claudecode/ | \
   grep -v "except.*as\|# log\|self.log"
 ```
 **PASS**: No bare except, all exceptions logged/re-raised. **FAIL**: AMEND with "log the error".
@@ -115,7 +115,7 @@ grep -r "ENABLE_\|EXPERIMENTAL_\|TODO_.*=" \
 #### Check 3.4 — Preferred paths in use, deprecated removed
 ```bash
 # Sample: no psycopg2.connect (use memory_get MCP)
-grep -r "psycopg2\.connect\|from lab.claudecode.channel import" \
+grep -r "psycopg2\.connect\|from devlab.claudecode.channel import" \
   --include="*.py" devices/ unseen_university/
 ```
 **PASS**: No deprecated paths. **FAIL**: AMEND "use preferred path".
@@ -125,7 +125,7 @@ grep -r "psycopg2\.connect\|from lab.claudecode.channel import" \
 #### Check 4.1 — Audit findings in telemetry, not ephemeral
 ```bash
 # Check that audit runs emit telemetry records
-ls -t lab/claudecode/audit_telemetry/ 2>/dev/null | head -1 && \
+ls -t devlab/claudecode/audit_telemetry/ 2>/dev/null | head -1 && \
   echo "PASS: telemetry written" || \
   echo "FAIL: no telemetry records"
 ```
@@ -144,7 +144,7 @@ find . -maxdepth 1 -name "*.tmp" -o -name "*.bak" -o -name "*~"
 python3 - <<'PY'
 import os, json
 from pathlib import Path
-queue_file = Path(os.environ.get("UU_ROOT", ".")) / "lab/claudecode/cc_queue.py"
+queue_file = Path(os.environ.get("UU_ROOT", ".")) / "devlab/claudecode/cc_queue.py"
 # (Would import and check queue for T-consequence-* tickets gated to recent D-*)
 # For now, just flag if no consequence tickets exist
 print("PASS: (manual verification needed)")

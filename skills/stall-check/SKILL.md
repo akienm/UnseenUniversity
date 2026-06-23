@@ -20,12 +20,12 @@ Lists in_progress tickets and flags any that have been stuck beyond the threshol
 ### 1. Run the detector
 
 ```bash
-python3 "${CC_WORKFLOW_TOOLS:-$HOME/TheIgors/lab/claudecode}/stall_check.py" "$@" 2>/dev/null
+python3 "${CC_WORKFLOW_TOOLS:-$HOME/TheIgors/devlab/claudecode}/stall_check.py" "$@" 2>/dev/null
 ```
 
 Or with `--all`:
 ```bash
-python3 "${CC_WORKFLOW_TOOLS:-$HOME/TheIgors/lab/claudecode}/stall_check.py" --all 2>/dev/null
+python3 "${CC_WORKFLOW_TOOLS:-$HOME/TheIgors/devlab/claudecode}/stall_check.py" --all 2>/dev/null
 ```
 
 Exit code 0 = no stalls. Exit code 1 = stalls found.

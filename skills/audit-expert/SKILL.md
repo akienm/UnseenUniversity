@@ -65,7 +65,7 @@ python3 ${CC_WORKFLOW_TOOLS}/map_igor.py --section=tickets
 python3 ${CC_WORKFLOW_TOOLS}/map_igor.py --section=gates
 # Prior watch-for notes for expert level
 python3 -c "
-from lab.claudecode.audit_telemetry import read_watch_next
+from devlab.claudecode.audit_telemetry import read_watch_next
 for n in read_watch_next('expert'):
     print(n['path'], n['content'][:100])
 "
@@ -107,7 +107,7 @@ covers it (`/audit-ticket` duplicate check). If not → draft a candidate ticket
 ### 4. Write watch-for notes
 For each watch-for observation:
 ```python
-from lab.claudecode.audit_telemetry import emit_watch_next
+from devlab.claudecode.audit_telemetry import emit_watch_next
 emit_watch_next("expert", "<note>", ttl_days=7)
 ```
 
@@ -130,7 +130,7 @@ After all experts run:
 
 ### 8. Emit telemetry
 ```python
-from lab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord
+from devlab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord
 record = AuditRunRecord(
     level="expert",
     checks_fired=len(selected_experts),

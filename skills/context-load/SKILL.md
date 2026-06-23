@@ -195,7 +195,7 @@ Always check the inbox — pushes from Igor subsystems (pe_chain escalations,
 scope_guard blocks, go-live-when trips) land here and need surfacing:
 ```bash
 python3 -c "
-from lab.claudecode.cc_inbox import read_unread
+from devlab.claudecode.cc_inbox import read_unread
 entries = read_unread()
 if entries:
     high = sum(1 for e in entries if e.urgency == 'high')

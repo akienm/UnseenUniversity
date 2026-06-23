@@ -117,7 +117,7 @@ du -sh ~/.unseen_university/logs/*.log 2>/dev/null | sort -rh | head -10
 
 Any file > 10MB → rotate automatically:
 ```bash
-python3 ~/dev/src/UnseenUniversity/lab/claudecode/rotate_logs.py
+python3 ~/dev/src/UnseenUniversity/devlab/claudecode/rotate_logs.py
 ```
 
 `rotate_logs.py` renames files >10MB to `.log.1` (one backup kept) and recreates an empty log.
@@ -374,7 +374,7 @@ Hardcoded credentials → must move to `.env`.
 Scan for partial implementations missing follow-up tickets:
 
 ```bash
-cd ~/dev/src/UnseenUniversity && grep -rn "# POC:\|# TODO:\|# LIMITATION:\|# HACK:" wild_igor/ lab/tools/ lab/claudecode/ --include="*.py" | grep -v __pycache__ | head -30
+cd ~/dev/src/UnseenUniversity && grep -rn "# POC:\|# TODO:\|# LIMITATION:\|# HACK:" wild_igor/ lab/tools/ devlab/claudecode/ --include="*.py" | grep -v __pycache__ | head -30
 ```
 
 For each hit: verify there's a matching ticket in cc_queue. If not, flag it.
@@ -414,18 +414,18 @@ Run any checks registered via `audit_add.py`. These are checks added at the mome
 - `primary-classes-must-inherit-igorbase` — D125 enforcement
 
 ```bash
-cd ~/dev/src/UnseenUniversity && python3 lab/claudecode/audit_runner.py --drain 2>&1
+cd ~/dev/src/UnseenUniversity && python3 devlab/claudecode/audit_runner.py --drain 2>&1
 ```
 
 The `--drain` flag moves any `next_sweep` entries to history after running so they don't repeat. Add findings to the report alongside the static-step findings. Severity: HIGH = fix or ticket immediately, MED = ticket if not trivial, LOW = note in findings.
 
 To register a new check during normal work:
 ```bash
-python3 lab/claudecode/audit_add.py add forever "name" --kind grep --pattern "REGEX" --description "why" --severity high
-python3 lab/claudecode/audit_add.py add next "name" --kind shell --pattern "command" --severity med
-python3 lab/claudecode/audit_add.py list   # show all registered
-python3 lab/claudecode/audit_add.py rm "name"
-python3 lab/claudecode/audit_add.py ack "name" --until 2026-04-30   # silence false positive
+python3 devlab/claudecode/audit_add.py add forever "name" --kind grep --pattern "REGEX" --description "why" --severity high
+python3 devlab/claudecode/audit_add.py add next "name" --kind shell --pattern "command" --severity med
+python3 devlab/claudecode/audit_add.py list   # show all registered
+python3 devlab/claudecode/audit_add.py rm "name"
+python3 devlab/claudecode/audit_add.py ack "name" --until 2026-04-30   # silence false positive
 ```
 
 Kinds: `grep` (regex across wild_igor/), `sql` (psql against home DB), `shell` (one-liner; non-empty stdout = fail), `python` (inline expression; truthy = fail).
@@ -437,7 +437,7 @@ Kinds: `grep` (regex across wild_igor/), `sql` (psql against home DB), `shell` (
 Verify that enabled switches (IGOR_*=true in igor.switches.cfg) have end-to-end wiring — no stubs, no placeholders, no NotImplementedError in the gated code path. Born from two incidents (2026-04-16b) where flipping switches without verifying output caused Igor to become incoherent and then crash.
 
 ```bash
-cd ~/dev/src/UnseenUniversity && python3 lab/claudecode/wiring_check.py
+cd ~/dev/src/UnseenUniversity && python3 devlab/claudecode/wiring_check.py
 ```
 
 Exit code 0 = all OK. Any UNREFERENCED or STUB_NEAR_GATE findings → ticket or fix before the switch stays enabled.
@@ -474,7 +474,7 @@ Check that recently-closed tickets' completion criteria are met in the actual re
 This is the verification half of the ticket-quality loop — catches fake completions.
 
 ```bash
-python3 lab/claudecode/completion_audit.py list --days 1
+python3 devlab/claudecode/completion_audit.py list --days 1
 ```
 
 For each ticket returned with criteria (the "Auditable" section):
@@ -487,7 +487,7 @@ For each ticket returned with criteria (the "Auditable" section):
 4. Record each verdict:
 
 ```bash
-python3 lab/claudecode/completion_audit.py log-result <ticket-id> <pass|fail|cannot-verify> "<one-line reason>"
+python3 devlab/claudecode/completion_audit.py log-result <ticket-id> <pass|fail|cannot-verify> "<one-line reason>"
 ```
 
 **Findings:**
@@ -498,7 +498,7 @@ python3 lab/claudecode/completion_audit.py log-result <ticket-id> <pass|fail|can
 After all tickets checked, print summary:
 
 ```bash
-python3 lab/claudecode/completion_audit.py summary --days 1
+python3 devlab/claudecode/completion_audit.py summary --days 1
 ```
 
 Add to the findings report: `Completion audit: N pass, N fail, N cannot-verify`

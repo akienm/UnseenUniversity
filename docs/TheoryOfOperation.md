@@ -204,7 +204,7 @@ Log levels:
 
 ### 3.3 cc_task_listener
 
-`lab/claudecode/cc_task_listener.py` — Polls the shared channel for `GRANNY_DISPATCH` messages and calls `cc_queue.py dispatch` to mark tickets `in_progress`. Runs as a background thread inside `GrannyDaemon`.
+`devlab/claudecode/cc_task_listener.py` — Polls the shared channel for `GRANNY_DISPATCH` messages and calls `cc_queue.py dispatch` to mark tickets `in_progress`. Runs as a background thread inside `GrannyDaemon`.
 
 **Why a listener instead of direct dispatch?** CC doesn't have a persistent inbound channel. The channel is the handoff point; the listener bridges the bus to CC's queue.
 

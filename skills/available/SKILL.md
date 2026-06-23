@@ -11,7 +11,7 @@ step away to do something else (an interactive session, a long manual task) and
 again when you're ready to rejoin dispatch — without waiting for the next
 `/context-load` or a Granny cooldown to expire.
 
-Backed by `lab/claudecode/cc_available.py`, which manipulates the flag protocol
+Backed by `devlab/claudecode/cc_available.py`, which manipulates the flag protocol
 in `~/.granny/available/` directly (self-contained — runs from any cwd):
 
 - `{worker}.available.true`  — opted in
@@ -33,8 +33,8 @@ Default worker is `CC.0`. Pass a worker id as the last arg to target another.
 python3 ${CC_WORKFLOW_TOOLS}/cc_available.py ${1:-on}
 ```
 
-`${CC_WORKFLOW_TOOLS}` is `${UU_ROOT}/lab/claudecode`. If unset, use
-`$(python3 -c 'from unseen_university._uu_root import uu_root; print(uu_root())')/lab/claudecode/cc_available.py`.
+`${CC_WORKFLOW_TOOLS}` is `${UU_ROOT}/devlab/claudecode`. If unset, use
+`$(python3 -c 'from unseen_university._uu_root import uu_root; print(uu_root())')/devlab/claudecode/cc_available.py`.
 
 ## When to press it
 

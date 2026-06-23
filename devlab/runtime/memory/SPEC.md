@@ -20,7 +20,7 @@ pretty-printed JSON file** under a category folder here. The store is:
 - **In the repo on purpose.** Per Akien: *"this violates nothing in the repo, but
   it backs up product development artifacts for free. I will change it later."*
   Location is provisional — it moves when `lab/` → `devlab/` completes. All writes
-  route through ONE helper (`lab/claudecode/memory_emit.py`) so the move is a
+  route through ONE helper (`devlab/claudecode/memory_emit.py`) so the move is a
   one-line change, not a sweep across thousands of files.
 
 It is the design answer to "the palace system is not working": the Postgres palace
@@ -114,13 +114,13 @@ emitter/namespace path. See `memory_emit.parse_filename()` for the reference imp
 Always through the one chokepoint — never hand-write a file:
 
 ```bash
-python3 lab/claudecode/memory_emit.py \
+python3 devlab/claudecode/memory_emit.py \
   --category decisions --emitter cc.0 --namespace hubert --kind decision \
   --body-file /tmp/record.json \
   --links '{"tickets":["T-build-log-digester"],"decisions":["D-rewind-as-workflow-primitive-2026-06-16"]}'
 ```
 
-Or from Python: `from lab.claudecode.memory_emit import emit`.
+Or from Python: `from devlab.claudecode.memory_emit import emit`.
 
 ---
 

@@ -262,7 +262,7 @@ python run done-slate <id> "what was built"
 
 Then check whether closing this ticket completes a decision's spawned_tickets list:
 ```bash
-python3 ~/dev/src/UnseenUniversity/lab/claudecode/outcome_check.py <id>
+python3 ~/dev/src/UnseenUniversity/devlab/claudecode/outcome_check.py <id>
 ```
 When all spawned_tickets in a decision are now closed, this prints:
 `🏁 Decision D-xxx is fully shipped — run /outcome D-xxx: <hypothesis>`

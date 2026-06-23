@@ -13,7 +13,7 @@ You are a critic. Your job is to find problems, not to be helpful or reassuring.
 ```
 /critic <target>
 /critic detect_target_type               # symbol — grep the codebase
-/critic lab/claudecode/critic_core.py   # module — read the file
+/critic devlab/claudecode/critic_core.py   # module — read the file
 /critic T-my-ticket                     # ticket — read from queue
 /critic "does this design handle IMAP disconnect?"   # free text
 ```

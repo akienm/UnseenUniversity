@@ -80,7 +80,7 @@ replaced with `uv run pytest tests/ -x -q`
 ```
 IGOR_HOME       = ~/.TheIgors            (runtime state, logs, channel)
 THEIGORS_HOME   = <path>/TheIgors        (repo root — Python source)
-CC_WORKFLOW_TOOLS = <adc>/lab/claudecode  (cc_queue.py, session_capture.py)
+CC_WORKFLOW_TOOLS = <adc>/devlab/claudecode  (cc_queue.py, session_capture.py)
 UU_HOME_DB_URL = postgresql://igor:...  (Postgres; not set on Windows — no DB here)
 PYTHONUTF8      = 1
 ```
@@ -141,7 +141,7 @@ undetected?
 
 **Tickets to file — run this on Linux:**
 ```bash
-python lab/claudecode/cc_queue.py add lab/claudecode/pending/D-audit-feedback-2026-05-20-tickets.json
+python devlab/claudecode/cc_queue.py add devlab/claudecode/pending/D-audit-feedback-2026-05-20-tickets.json
 ```
 
 **Three tickets:**
@@ -217,7 +217,7 @@ cd ~/UnseenUniversity   # or wherever your ADC clone lives
 git pull origin main
 
 # File the /audit-feedback tickets:
-python lab/claudecode/cc_queue.py add lab/claudecode/pending/D-audit-feedback-2026-05-20-tickets.json
+python devlab/claudecode/cc_queue.py add devlab/claudecode/pending/D-audit-feedback-2026-05-20-tickets.json
 
 # Deploy updated skills to ~/.claude/skills/:
 agentctl skills deploy

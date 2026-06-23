@@ -50,7 +50,7 @@ Match → AMEND with preferred alternative.
 
 Patterns to watch for even without palace load:
 - `psycopg2.connect` for palace reads → use `memory_get` MCP
-- `from lab.claudecode.channel import` → use `_post_to_channel` or MCP
+- `from devlab.claudecode.channel import` → use `_post_to_channel` or MCP
 - `print(` in wild_igor/ → use `self.log.*`
 - new `MemoryType.` enum value → metadata tag instead
 - new `IGOR_*_ENABLED` flag → build to intent + go-live-when ticket
@@ -98,4 +98,4 @@ Checks flagged:
 - HIGH-inertia reaffirmation requires a human reason, not a ticket cite.
 - AMEND on any failed check — don't skip and proceed.
 - Emit per-run telemetry at the end of every run (even PASS):
-  `from lab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord`
+  `from devlab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord`

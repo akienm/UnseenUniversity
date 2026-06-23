@@ -30,7 +30,7 @@ Consumer path: this skill + the context-load auto-read.
 ### 1. Read unread entries
 
 ```bash
-python3 ~/dev/src/UnseenUniversity/lab/claudecode/cc_inbox.py list
+python3 ~/dev/src/UnseenUniversity/devlab/claudecode/cc_inbox.py list
 ```
 
 Output format per entry:
@@ -67,7 +67,7 @@ Inbox: 3 unread (1 high, 2 normal)
 After surfacing them to Akien, mark them read so they don't re-surface:
 
 ```bash
-python3 ~/dev/src/UnseenUniversity/lab/claudecode/cc_inbox.py mark-all-read
+python3 ~/dev/src/UnseenUniversity/devlab/claudecode/cc_inbox.py mark-all-read
 ```
 
 Only do this when the entries were actually shown to Akien. If Akien didn't
@@ -94,7 +94,7 @@ read — cheap enough to do every turn:
 
 ```bash
 python3 -c "
-from lab.claudecode.cc_inbox import read_unread
+from devlab.claudecode.cc_inbox import read_unread
 entries = read_unread()
 if entries:
     high = sum(1 for e in entries if e.urgency == 'high')
@@ -120,4 +120,4 @@ Rule of thumb: if the one-liner shows anything, mention it. If it's empty, silen
 - Path: `~/.unseen_university/cc_inbox.jsonl`
 - Schema: `{id, ts, kind, summary, body, urgency, response_expected, read, ticket_id?}`
 - TTL: entries older than 30 days purged on read
-- Writer: `lab.claudecode.cc_inbox.append()` (or via Igor bridge `cc_inbox_bridge.post_to_cc_inbox()`)
+- Writer: `devlab.claudecode.cc_inbox.append()` (or via Igor bridge `cc_inbox_bridge.post_to_cc_inbox()`)

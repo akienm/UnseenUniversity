@@ -114,4 +114,4 @@ Checks flagged:
 - AMEND on any temp file, debug artifact, or runtime path staged — these are
   never acceptable in a commit.
 - Emit per-run telemetry:
-  `from lab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord`
+  `from devlab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord`

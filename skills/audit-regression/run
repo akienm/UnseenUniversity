@@ -45,7 +45,7 @@ def main():
              "! grep -r '\\.write\\|f\\.write\\|open(.*, .w' --include='*.py' devices/ 2>/dev/null | grep -v '\\.log\\|log_file\\|\\.md\\|\\.txt' | grep .",
              "exists"),
             ("1.5 No silent failures (bare except)",
-             "grep -r 'except:\\|except Exception:' --include='*.py' devices/ lab/claudecode/ 2>/dev/null | grep -v 'except.*as\\|# log\\|self.log' | head -5",
+             "grep -r 'except:\\|except Exception:' --include='*.py' devices/ devlab/claudecode/ 2>/dev/null | grep -v 'except.*as\\|# log\\|self.log' | head -5",
              "grep"),
         ],
         "idle-loops": [

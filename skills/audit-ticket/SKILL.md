@@ -112,7 +112,7 @@ the rule-implementing ticket itself). Note the exemption in output.
 
 **Check:** scan Affected files for both sides:
 - HANDLER paths (any one match): `UnseenUniversity/devices/`,
-  `lab/claudecode/mcp_*`, `wild_igor/igor/**/device*.py`,
+  `devlab/claudecode/mcp_*`, `wild_igor/igor/**/device*.py`,
   `UnseenUniversity/**/capability*.py`
 - SKILL CONSUMER paths (any one match): `/home/akien/.claude/skills/*`
 
@@ -255,5 +255,5 @@ This fires on every audit-ticket run, no exceptions.
   exemption line with a stated reason.
 - HIGH-inertia rollback plan is required — ask Akien if unclear.
 - Emit per-run telemetry:
-  `from lab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord`
+  `from devlab.claudecode.audit_telemetry import emit_run_record, AuditRunRecord`
 - Hold-status tickets without a named dependency (T-xxx) or Akien: action → AMEND, no exceptions.
