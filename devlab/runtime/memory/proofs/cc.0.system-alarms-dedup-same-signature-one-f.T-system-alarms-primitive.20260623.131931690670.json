@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.system-alarms-dedup-same-signature-one-f.T-system-alarms-primitive.20260623.131931690670",
+  "emitter": "cc.0",
+  "namespace": [
+    "system-alarms-dedup-same-signature-one-f",
+    "T-system-alarms-primitive"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T13:19:31.690670",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-system-alarms-primitive"
+    ],
+    "commits": [
+      "c3544c5ec33309f4d0ba7df3809b3adb88e17eb4"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "system_alarms dedup: same signature → one file with correct aggregate + per-caller counts",
+    "intention": "raise_alarm dedups same-signature drops into one flat file with correct aggregate count and per-caller breakdown (the punch-list).",
+    "test": "tests/test_system_alarms.py::test_dedup_same_signature_one_file_with_counts",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_system_alarms.py::test_dedup_same_signature_one_file_with_counts",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________ test_dedup_same_signature_one_file_with_counts ________________\n\n    def test_dedup_same_signature_one_file_with_counts():\n        sa.raise_alarm(\"no-provider:worker\", \"caller.a\", \"down\", emit_log=False)\n        sa.raise_alarm(\"no-provider:worker\", \"caller.a\", \"down\", emit_log=False)\n        res = sa.raise_alarm(\"no-provider:worker\", \"caller.b\", \"down\", emit_log=False)\n    \n>       assert res.status == \"incremented\"\nE       AssertionError: assert 'new' == 'incremented'\nE         \nE         - incremented\nE         + new\n\ntests/test_system_alarms.py:31: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_system_alarms.py::test_dedup_same_signature_one_file_with_counts\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "c3544c5ec33309f4d0ba7df3809b3adb88e17eb4",
+    "impl_paths": [
+      "unseen_university/system_alarms.py"
+    ],
+    "ticket": "T-system-alarms-primitive",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
