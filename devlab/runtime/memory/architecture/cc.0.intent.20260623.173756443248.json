@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.intent.20260623.173756443248",
+  "emitter": "cc.0",
+  "namespace": [
+    "intent"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-23T17:37:56.443248",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "intent",
+    "kind": "learning",
+    "title": "Intent extractor — the universal learning substrate",
+    "summary": "The lowest-level learning primitive: a domain-agnostic device (devices/intent/) that every feedback loop eventually wires into. API: predict(context, domain) / validate(prediction_id, actual_outcome) / patterns(domain). Validated predictions are compile targets in every domain — coding, people, projects, calendar — the Radar O'Reilly pattern (anticipate before being asked, built from validated predictions accumulating across domains). V1: store-and-retrieve few-shot; V2: fine-tuning or attractor-based pattern mining once validation count suffices. Ties the dev process to the compiled-inference north star.",
+    "key_concepts": [
+      {
+        "name": "predict/validate/patterns API",
+        "what": "domain-agnostic; prediction_id nullable by design (post-hoc ground truth allowed)"
+      },
+      {
+        "name": "compile-target framing",
+        "what": "a validated prediction is a compile target — the bridge to intent-driven compiled inference"
+      },
+      {
+        "name": "Librarian exception",
+        "what": "research produces genuine unknowns; Librarian uses validate(prediction_id=None) only — post-hoc, never pre-hoc (predicting research findings is noise)"
+      }
+    ],
+    "implementing_files": [
+      "devices/intent/device.py",
+      "devices/intent/store.py",
+      "devices/intent/tools.py"
+    ],
+    "reference_docs": [],
+    "status_notes": "device built; was goal G-intent-extractor (active), seeded by D-intent-extractor-learning-substrate-2026-06-14; goal .md retired into this intention-point.",
+    "related": [
+      "D-intent-extractor-learning-substrate-2026-06-14",
+      "D-architecture-as-code-cognition-pipeline-2026-06-16",
+      "[[memory-graph-tree]]"
+    ]
+  }
+}
