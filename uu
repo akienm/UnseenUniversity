@@ -9,6 +9,7 @@ Usage:
   ./uu                          # use uu.cfg default_frontend (librarian)
   ./uu --frontend=terminal      # force terminal REPL
   ./uu --frontend=web           # open browser to web server UI
+  ./uu workflow                 # print the canonical workflow map (skills/workflow.md)
   ./uu --help
 """
 
@@ -272,12 +273,30 @@ def _cmd_bootstrap(args: list[str]) -> None:
         sys.exit(1)
 
 
+def _cmd_workflow() -> None:
+    """uu workflow — print the canonical workflow map (skills/workflow.md) to the console.
+
+    This is the single source of truth for how the skills fit together; the
+    /workflow skill renders the same file. No venv, no chat launch.
+    """
+    wf = UU_ROOT / "skills" / "workflow.md"
+    if not wf.exists():
+        print(f"uu workflow: workflow map not found at {wf}", file=sys.stderr)
+        sys.exit(1)
+    sys.stdout.write(wf.read_text(encoding="utf-8"))
+
+
 def main() -> None:
     args = sys.argv[1:]
 
     if "--help" in args or "-h" in args:
         print(__doc__)
         sys.exit(0)
+
+    # `uu workflow` — print the canonical workflow map and exit (no venv / no chat).
+    if args and args[0] == "workflow":
+        _cmd_workflow()
+        return
 
     # Re-exec under venv python if not already there
     if Path(sys.executable).resolve() != VENV_PYTHON.resolve():

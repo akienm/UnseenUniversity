@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-workflow-md-source-of-truth.20260623.153400584158",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-workflow-md-source-of-truth"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T21:34:00.584158+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-md-source-of-truth-2026-06-23"
+    ],
+    "tickets": [
+      "T-workflow-md-source-of-truth"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-workflow-md-source-of-truth",
+    "title": "[sprint] workflow.md as single source of truth; /workflow + uu workflow both output it",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Tooling"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "gate": null,
+    "decision_id": "D-workflow-md-source-of-truth-2026-06-23",
+    "intention": "I intend that the workflow map lives in ONE file (skills/workflow.md) that both the /workflow skill and `uu workflow` render, so there is a single source of truth to maintain instead of a map duplicated (and drifting) inside the skill.",
+    "description": "**Problem:** The workflow map is embedded in skills/workflow/SKILL.md and has drifted (repo copy still says /decided; the ~/.claude copy says /sorted). Akien wants one source of truth he can point to, renderable from the shell.\n\n**Shape:** Extract the map to skills/workflow.md (at skills/ root — NOT inside skills/workflow/, because it spans most skills, not one). Simplify skills/workflow/SKILL.md to just output that file (no duplicated map). Add a `uu workflow` verb that prints skills/workflow.md to the console (early, venv-free, no chat launch). Correct the stale /decided -> /sorted in the canonical map.\n**Affected files:** skills/workflow.md (new, source of truth); skills/workflow/SKILL.md (simplify to point at it); uu (add `workflow` verb).\n**Design rules:** single-source-of-truth; skills-live-in-repo; no duplicated map text.\n**Scope boundary:** IN — the file, the skill simplification, the uu verb, the /decided->/sorted fix. OUT — the full uu <verb> dispatcher (T-uu-cli-dispatcher); a full audit of every skill's accuracy.\n**Test plan:** `uu workflow` (via _cmd_workflow) prints exactly the contents of skills/workflow.md and the map contains current markers (THE TRACKING STACK, /sorted, /sprint-ticket) and not the stale /decided; SKILL.md points at skills/workflow.md and no longer embeds the map.\n**Completion criteria:** skills/workflow.md exists and is the only place the map lives; `uu workflow` prints it verbatim; SKILL.md references skills/workflow.md and contains no duplicated map; /decided is gone from the map (uses /sorted).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T21:33:58.256925+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T21:33:58.302182+00:00"
+  }
+}
