@@ -30,3 +30,4 @@
   Filed **T-test-suite-failing-baseline-triage** (M, triage); failure list saved to
   devlab/runtime/memory/daycloseaudit_20260623_failures.txt. NOT blocking — pre-existing baseline.
 - D-skills-two-products-2026-06-23: skills = uu CLI (views) + single-source workflow skills — T-uu-cli-dispatcher, T-uu-readfeed, T-skills-views-retire-to-cli, T-skills-prune-deprecated-merge, T-skills-content-merge-survivors, T-skills-single-source-flip, +consequence (audit-proportionality DEFERRED to discussion)
+- D-inference-provider-router-redesign-2026-06-23: inference fix=redesign (root cause of dark audits + Igor silence) — 7 tickets + consequence; ollama_cloud/google_free WORK, routing pointed at dead OR

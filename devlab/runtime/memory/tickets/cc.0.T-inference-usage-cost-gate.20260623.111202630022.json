@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-usage-cost-gate.20260623.111202630022",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-usage-cost-gate"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T17:12:02.630022+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-provider-router-redesign-2026-06-23"
+    ],
+    "tickets": [
+      "T-inference-usage-cost-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-usage-cost-gate",
+    "title": "[sprint] Generalize budget gate to per-usage-provider routing constraint",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Cost"
+    ],
+    "decision_id": "D-inference-provider-router-redesign-2026-06-23",
+    "gate": "T-inference-policy-router",
+    "priority": 0.5,
+    "status": "sprint",
+    "intention": "I intend that cost gating is a general per-usage-provider budget constraint, with local and subscription providers never gated.",
+    "description": "**Problem:** budget_gate.py is OR-specific (reads OPENROUTER_API_KEY, fetches OR balance). Cost gating IS needed (not just us will use this) but must be general — a per-usage-provider budget, not baked-in OR logic.\n\n**Shape:** Generalize to a per-usage-provider budget ledger; the router skips usage providers over their budget. local + subscription providers bypass the gate entirely (free at margin / sunk cost). Remove OR-specific balance logic from the dispatch path.\n\n**Affected files:** devices/inference/budget_gate.py (generalize), budget_ledger.py, router integration.\n**Design rules:** cost gate = constraint on USAGE providers only; local/sub bypass; general (per-provider budget, not OR-specific).\n**Scope boundary:** IN — per-usage-provider budget ledger + router skip-when-over-budget + local/sub bypass. OUT — OR-specific balance API (removed).\n**Test plan:** a usage provider marked over-budget is skipped by the router (proof); local & subscription providers are never gated; no OPENROUTER balance call in the dispatch path.\n**Completion criteria:** router skips an over-budget usage provider (unit proof); local/subscription bypass the gate; `git grep` shows no OR-specific balance logic in the dispatch path.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T17:12:01.663474+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T17:12:01.663527+00:00"
+  }
+}

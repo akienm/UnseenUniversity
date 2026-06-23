@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-inference-strip-or-cost-rules-keep-proxy.20260623.111202937444",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-strip-or-cost-rules-keep-proxy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T17:12:02.937444+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-provider-router-redesign-2026-06-23"
+    ],
+    "tickets": [
+      "T-inference-strip-or-cost-rules-keep-proxy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-strip-or-cost-rules-keep-proxy",
+    "title": "[sprint] Strip OR/Anthropic cost rules; keep + reframe inference-proxy-only",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Rules",
+      "Cleanup"
+    ],
+    "decision_id": "D-inference-provider-router-redesign-2026-06-23",
+    "gate": "T-inference-usage-cost-gate",
+    "priority": 0.4,
+    "status": "sprint",
+    "intention": "I intend that the dead OR-dollar rules are gone while the inference-proxy-only architecture rule stays (reframed as routing, not cost).",
+    "description": "**Problem:** many rules were about not burning OR budget; OR is fully disabled, so they're dead weight. But the 'inference-proxy-only' rule is the SPINE (route everything through the proxy) — keep it, reframed as routing not cost. New cost gating is now general (T-inference-usage-cost-gate), so the OR-specific rules can go.\n\n**Shape:** Remove OR/Anthropic COST rules: palace unseenuniversity/rules/budget, day-close-audit Step 8 (OR burn rate — also a stale wild_igor path), OR-cost language in palace cc-minion/igor-constraints. KEEP + reframe inference-proxy-only. UPDATE (do NOT delete) the cost memories (project_ds_cost_constraint et al.) to the new state: 'satisfied — free inference (ollama_cloud/google_free) live; DS unblocked' — preserve the why.\n\n**Affected files:** palace unseenuniversity/rules/budget + cc-minion + igor-constraints (DB), skills/day-close-audit/SKILL.md (Step 8), ~/.claude memory cost files (update), CLAUDE.md (only if it carries OR-cost rules; inference-proxy-only stays).\n**Design rules:** keep inference-proxy-only (routing not cost); strip OR-dollar rules; preserve the why on updated memories.\n**Scope boundary:** IN — remove OR cost rules; reframe-keep inference-proxy-only; UPDATE cost memories to satisfied-state. OUT — deleting inference-proxy-only; the router/gate (done in T-inference-policy-router / T-inference-usage-cost-gate).\n**Test plan:** no tests because rules/docs/memory edits; verify inference-proxy-only still present (reframed); no OR-balance rule remains; project_ds_cost_constraint updated (not deleted) with why preserved.\n**Completion criteria:** palace rules/budget + day-close Step 8 OR-burn removed; inference-proxy-only present and reframed (routing); project_ds_cost_constraint updated to satisfied-state (DS unblocked) with the why intact; `git grep`/palace search for OR-budget rules returns only historical/reframed mentions.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T17:12:01.904469+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T17:12:01.904541+00:00"
+  }
+}

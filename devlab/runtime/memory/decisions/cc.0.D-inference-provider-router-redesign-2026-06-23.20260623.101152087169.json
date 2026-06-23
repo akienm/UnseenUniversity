@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.D-inference-provider-router-redesign-2026-06-23.20260623.101152087169",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-inference-provider-router-redesign-2026-06-23"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-23T10:11:52.087169",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-provider-router-redesign-2026-06-23"
+    ],
+    "tickets": [
+      "T-consequence-inference-redesign",
+      "T-inference-honest-degradation",
+      "T-inference-liveness-and-loud-fail",
+      "T-inference-policy-router",
+      "T-inference-provider-billing-model",
+      "T-inference-request-priority-split",
+      "T-inference-strip-or-cost-rules-keep-proxy",
+      "T-inference-usage-cost-gate"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-inference-provider-router-redesign-2026-06-23",
+    "title": "Redesign inference as billing-type providers + a pure policy router + a loud/honest/proven reliability layer",
+    "status": "open",
+    "date": "2026-06-23",
+    "source": "lab/design_docs/decisions/D-inference-provider-router-redesign-2026-06-23.md",
+    "text": "# D-inference-provider-router-redesign-2026-06-23\n**title:** Redesign inference as billing-type providers + a pure policy router + a loud/honest/proven reliability layer\n**date:** 2026-06-23\n**status:** open\n**spawned_tickets:** T-inference-provider-billing-model, T-inference-request-priority-split, T-inference-policy-router, T-inference-usage-cost-gate, T-inference-liveness-and-loud-fail, T-inference-honest-degradation, T-inference-strip-or-cost-rules-keep-proxy, T-consequence-inference-redesign\n\n## Hypothesis\nInference dispatches succeed through working providers (ollama_cloud / google_free) routed by a pure billing-type policy with no provider hardcoded in env or rules; when inference is down every consumer (Igor included) says so loudly instead of going silent; and the engine is proven (router conflict-case unit proofs + a live canary) so it can't silently rot again.\n\n## Measurement Signal\nA live dispatch returns text; an Igor chat round-trip yields a response; `uu health` shows per-provider liveness + last-successful-dispatch; with all providers forced down, Igor replies \"inference unavailable\" and the canary alarms (red→green); `git grep` finds no provider/model forced by INFERENCE_MODE and no OpenRouter balance logic in the dispatch path.\n\n## Goal Link\nnone: serves the standing inference intentions — Inference-Proxy-only, Ollama/free-inference as the target — plus the proof + observability + CP1-honesty values. Goal layer retired for intentions. Side effect: satisfies project_ds_cost_constraint (DS was gated on exactly the free inference that now works → DS unblocked).\n\n## Decision narrative\nThree symptoms — dark (no-op) audits, `IntentExtractor` errors on every ticket-file, and Igor going mute — traced to ONE dead path: the inference proxy routes every tier to `openrouter`, OR is disabled, and the proxy fails closed in front of working sources. The self-test proved `ollama_cloud` ✓ and `google_free` ✓ answer right now; `local_ollama` is reachable but 404s; `openrouter` is correctly gone. **Inference isn't broken — the routing points at a dead source.** And nobody noticed because nothing proved the path live — it failed to *silence*, discovered by accident.\n\nTwo category errors named: (1) `INFERENCE_MODE` welds foreground/background to a hardcoded provider — priority is a request property, provider is a routing outcome; an env var must never pin a supplier. (2) The engine had no proof, so a core shared dependency rotted in the dark.\n\n**Redesign (built right, one decision — no incremental Step-0 patch; the system is already fully down with no users, so there is no blast radius to protect):**\n- **4-axis split:** Request carries priority (fg/bg) + capability + limits, never a provider. Provider (install-configured) declares a **billing type** — local / subscription / usage — plus models/capabilities/liveness and (usage only) a cost gate. A **pure policy Router** `(request, available_providers, policy)→(provider,model)` picks by a preference order over billing TYPES (default `local→subscription→usage`), constrained by capability — replacing rules_engine's hardcoded OR tiers. **Cost gate** = a general per-usage-provider budget constraint; local/subscription bypass. General by construction (works for anyone's provider mix — subscription/usage/local — not just ours).\n- **Inbound bridge (advisor catch):** callers emit concrete model IDs (anthropic/claude-haiku-4-5-20251001, llama3, openai/gpt-4o-mini); the registry maps every legacy ID → a capability tier (unknown → default) so real traffic resolves and Igor's round-trip passes.\n- **Reliability layer (what would have caught Igor-mute):** loud-fail (zero-providers = health RED announced, not silent per-call error), honest degradation (every consumer says \"inference unavailable\" rather than going silent — CP1, silence is a lie), visible (`uu health` shows per-provider liveness + last-successful-dispatch), and a continuous canary (real dispatch through the proxy + Igor's full loop, alarms on fail).\n- **Proofs:** the router is pure → unit-provable on CONFLICT cases (over-budget→skip, preferred-down→next tier, capability excludes too-weak local, legacy-ID→routes); finishing the router IS the restore (live dispatch + live Igor round-trip in its completion criteria). The thing that had no proof gets proven first.\n- **Rules cleanup:** strip the OR/Anthropic *cost* rules (palace rules/budget, day-close Step 8 OR-burn, cc-minion/igor-constraints cost language); **keep + reframe** inference-proxy-only as routing-not-cost; **update** (not delete) the cost memories to \"satisfied — free inference live, DS unblocked,\" preserving the why.\n\n**Interim policy (maps onto the model with no special-casing):** ollama_cloud = subscription (primary), google_free = usage (spillover), local_ollama = local (preferred-when-up once the 404 is fixed). Later: Mac Studio (M1 Max) = the primary `local` provider — cloud drops to fallback, no code change.\n\n**Assumptions (override if wrong):** ollama_cloud is a subscription (sorts above usage); policy hardcoded `local→sub→usage` now, pulled to per-install config when the Apple lands.\n\n**Alternatives considered & rejected:** (a) quick Step-0 repoint then redesign — rejected: counter to do-it-right, and no live service/users to protect (system already down). (b) keep INFERENCE_MODE as provider selector — rejected: category error. (c) keep OR-specific budget_gate — rejected: not general; others will have different provider mixes.\n\n**Refs:** devices/inference/ (sources.py, rules_engine.py, budget_gate.py, self_test_sources.py, models_registry.py). Cross-ref D-skills-two-products-2026-06-23 (the `uu health` surface). Relates to project_mac_studio_inference_host, project_ds_cost_constraint, feedback_inference_proxy_only.\n"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-provider-billing-model.20260623.111202293642",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-provider-billing-model"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T17:12:02.293642+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-provider-router-redesign-2026-06-23"
+    ],
+    "tickets": [
+      "T-inference-provider-billing-model"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-provider-billing-model",
+    "title": "[sprint] Provider abstraction with billing types + legacy model-ID -> capability map",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Architecture"
+    ],
+    "decision_id": "D-inference-provider-router-redesign-2026-06-23",
+    "gate": null,
+    "priority": 0.6,
+    "status": "sprint",
+    "intention": "I intend that the inference engine knows each provider's billing type and can map any model ID callers actually emit to a capability tier, so routing is general across anyone's provider mix.",
+    "description": "**Problem:** sources.py conflates provider with everything else; there's no billing-type concept and no map from the concrete model IDs callers actually emit (anthropic/claude-haiku-4-5-20251001, llama3, openai/gpt-4o-mini) to a capability tier. Without that map the router (T-inference-policy-router) can't route real traffic and Igor stays mute.\n\n**Shape:** Give each Source a `billing` type: local (owned hardware, free at margin), subscription (flat-rate), usage (per-token, metered). Register the real set: ollama_cloud=subscription (primary), google_free=usage, local_ollama=local. Add a models registry that maps every legacy/concrete model ID (incl. the three above) -> a capability tier; unknown ID -> a sane default tier. Liveness reports honestly (local_ollama's current 404 -> unavailable, NOT an error that fails the build).\n\n**Affected files:** devices/inference/sources.py (billing on Source + registry), devices/inference/models_registry.py (legacy-ID->tier), devices/inference/self_test_sources.py, default_registry().\n**Design rules:** inference-proxy-only; general (billing types, not provider names); honest liveness; no-creds-in-source.\n**Scope boundary:** IN — billing-type on providers, register the 3 working sources, legacy-ID->tier map (unknown->default), honest liveness. OUT — the router (T-inference-policy-router), the cost gate (T-inference-usage-cost-gate).\n**Test plan:** providers expose a billing type; models_registry maps anthropic/claude-haiku-4-5-20251001, llama3, openai/gpt-4o-mini AND an unknown ID to a tier; self_test passes for AVAILABLE providers and reports a down local as unavailable (does not fail).\n**Completion criteria:** `default_registry()` lists each provider with a billing type; models_registry resolves the 3 named legacy IDs + unknown->default to a capability tier; self-test green for reachable providers with local-404 reported unavailable (not a failure).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T17:12:01.287891+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T17:12:01.332047+00:00"
+  }
+}

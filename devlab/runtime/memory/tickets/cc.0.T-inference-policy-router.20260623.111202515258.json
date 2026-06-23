@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-policy-router.20260623.111202515258",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-policy-router"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T17:12:02.515258+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-inference-provider-router-redesign-2026-06-23"
+    ],
+    "tickets": [
+      "T-inference-policy-router"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-policy-router",
+    "title": "[sprint] Pure billing-type policy router (replaces rules_engine OR tiers)",
+    "size": "L",
+    "tags": [
+      "Inference",
+      "Architecture"
+    ],
+    "decision_id": "D-inference-provider-router-redesign-2026-06-23",
+    "gate": "T-inference-provider-billing-model",
+    "priority": 0.6,
+    "status": "sprint",
+    "intention": "I intend that a pure, unit-provable router picks a provider+model from billing-type policy and the install's available providers — and that finishing it brings Igor back, proven.",
+    "description": "**Problem:** rules_engine.py hardcodes every tier to openrouter-primary; device.py's unknown-model fallthrough also targets openrouter. With OR off, the proxy fails closed in front of working sources (ollama_cloud, google_free). This is THE bug behind dark audits, ticket-file IntentExtractor errors, and Igor's silence.\n\n**Shape:** Pure function `route(request, available_providers, policy) -> (provider, model)`. Policy = preference order over billing TYPES (default local -> subscription -> usage, cheapest-usage-first), constrained to providers meeting the request's capability tier. Replace rules_engine's hardcoded OR/anthropic tiers; fix device.py fallthrough to use the router (not openrouter). Deterministic -> unit-provable. Gated behind the provider/billing model + legacy-ID map (so real traffic resolves).\n\n**Affected files:** devices/inference/rules_engine.py (replace OR tiers), devices/inference/device.py (dispatch fallthrough), policy default.\n**Design rules:** pure/deterministic; policy over billing types (general); no provider hardcoded.\n**Scope boundary:** IN — pure router + default policy + replace rules_engine OR tiers + fix fallthrough. OUT — the cost-gate budget check internals (T-inference-usage-cost-gate; router calls into it); reliability layer.\n**Test plan:** router UNIT PROOFS on CONFLICT cases (not happy-path): (a) usage provider over-budget -> skipped; (b) preferred provider down -> falls to next billing tier; (c) capability need excludes a too-weak local model; (d) a request carrying a legacy concrete model ID -> routes to an available provider, not an error. LIVE: a real dispatch returns text; an Igor chat round-trip yields a response.\n**Completion criteria:** rules_engine has NO hardcoded openrouter/anthropic primary tiers; router is a pure fn with unit proofs covering conflict cases (a)-(d); a live dispatch through the proxy returns text; an Igor round-trip returns a response (Igor talks again — proven).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T17:12:01.580663+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T17:12:01.580713+00:00"
+  }
+}
