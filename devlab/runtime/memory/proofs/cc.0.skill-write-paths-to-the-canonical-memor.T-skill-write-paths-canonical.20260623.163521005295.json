@@ -1,0 +1,62 @@
+{
+  "id": "cc.0.skill-write-paths-to-the-canonical-memor.T-skill-write-paths-canonical.20260623.163521005295",
+  "emitter": "cc.0",
+  "namespace": [
+    "skill-write-paths-to-the-canonical-memor",
+    "T-skill-write-paths-canonical"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T16:35:21.005295",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skill-write-paths-canonical"
+    ],
+    "commits": [
+      "afe46e9bb395598a67c6233a5197d46a60c935e2"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "skill write-paths to the canonical memory store",
+    "intention": "every writing skill emits dev-process artifacts only to devlab/runtime/memory/ via memory_emit, never to lab/design_docs/",
+    "test": "tests/test_skill_write_paths_canonical.py::test_no_writing_skill_misfiles_to_lab_design_docs",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_skill_write_paths_canonical.py::test_no_writing_skill_misfiles_to_lab_design_docs",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n______________ test_no_writing_skill_misfiles_to_lab_design_docs _______________\n\n    def test_no_writing_skill_misfiles_to_lab_design_docs():\n        \"\"\"Proof node (one intention): every decision writer/reader targets the canonical\n        store, never lab/design_docs/. RED on the pre-consolidation skills, GREEN after.\"\"\"\n        sorted_s, outcome_s, day_s = _skill(\"sorted\"), _skill(\"outcome\"), _skill(\"day-close\")\n        ad, ah = _skill(\"audit-design\"), _skill(\"audit-hypothesis\")\n        # canonical write/read present (a reverted skill lacks these)\n>       assert \"memory_emit.py\" in sorted_s and \"devlab/runtime/memory/decisions\" in sorted_s\nE       AssertionError: assert ('memory_emit.py' in '---\\nname: sorted\\ndescription: Batch-ticketize conversation decisions. Reads recent conversation turns (since /desig...is also closed.** Writing `**status:** closed` without a verified closed consequence ticket is a workflow violation.\\n')\n\ntests/test_skill_write_paths_canonical.py:63: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_skill_write_paths_canonical.py::test_no_writing_skill_misfiles_to_lab_design_docs\n1 failed in 0.07s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "afe46e9bb395598a67c6233a5197d46a60c935e2",
+    "impl_paths": [
+      "skills/audit-design/SKILL.md",
+      "skills/audit-hypothesis/SKILL.md",
+      "skills/day-close/SKILL.md",
+      "skills/migrate-decisions/SKILL.md",
+      "skills/outcome/SKILL.md",
+      "skills/sorted/SKILL.md"
+    ],
+    "ticket": "T-skill-write-paths-canonical",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
