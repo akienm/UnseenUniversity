@@ -6,19 +6,55 @@ repo `skills/` (49 + `manifest.json` — the canonical master).
 
 ---
 
-## TL;DR
+## TL;DR (REVISED 2026-06-23 after content inspection — read this version)
 
-**The model is already sound — keep it.** Repo `skills/` + `manifest.json` is the
-canonical master; `/skills-sync` deploys repo→local ("master always wins"); Igor's
-runtime-debug skills are *deliberately* local-only. The divergence is **operational
-drift** (sync hasn't been run + a few local skills never got promoted), not a design gap.
+**The model is sound — keep it.** Repo `skills/` + `manifest.json` is the canonical
+master; `/skills-sync` deploys repo→local ("master wins"); Igor's runtime-debug skills are
+*deliberately* local-only.
 
-**One real trap:** 6 drifted skills are **LOCAL-newer**. A blind repo→local sync would
-**regress** them — most dangerously `autocompact` back to an old bloated version (the
-exact 2026-06-17 regression its own guard comment warns about). Reconcile those repo-ward
-*before* any deploy.
+**But the drift is NOT a simple newer/older — and `deploy` is NOT safe yet.** Content
+inspection (not mtime) shows **both trees are inconsistently half-migrated across four
+independent axes**, and neither tree is consistently forward on all of them:
 
-Cleanup is small: **2 deletions, ~6 local→repo promotions, 1 sync run.**
+| Axis | stale form | forward form |
+|---|---|---|
+| palace paths | `theigors/...` | `unseenuniversity/...` |
+| design command | `/decided` | `/sorted` |
+| decision storage | `decisions_log.dsb` | `devlab/runtime/memory/` store |
+| repo / runtime root | `~/TheIgors`, `~/.TheIgors` | `~/dev/src/UnseenUniversity`, `~/.unseen_university` |
+
+Example: repo `audit-audits` has the new `unseenuniversity/` paths but still says
+`/decided`; local has `/sorted` but the old `theigors/` paths. So a blind `deploy`
+(repo→local, master-wins, all-or-nothing) would **regress the live skills** — e.g. push
+`/decided` naming back over the working `/sorted` versions. A blind sync *either direction*
+loses something.
+
+**Correct reconciliation = a per-axis MERGE to one forward-canonical version of each of the
+19 drifted skills, committed to repo, THEN a deliberate verified deploy.** That is genuine
+review/session work, not a mechanical sync. (The env-var axis `IGOR_HOME_DB_URL →
+UU_HOME_DB_URL` is intentionally left to the gated de-hardcoding sweeps `T-uu-sweep-*`,
+which cover `skills/` too — don't hand-edit env vars here.)
+
+**Per-skill calls that changed after inspection:**
+- `sorted` → **keep LOCAL** (its `decisions_log.dsb` append): `T-decisions-dsb-cutover` is
+  still OPEN and `context-load` still reads the `.dsb` fallback. Dropping the write half
+  (repo's version) is a partial-migration fake-completion.
+- The 13 "repo-newer" skills are mostly **stale on content** (old `theigors/`, `/decided`,
+  `~/TheIgors`) despite newer mtime — local is forward on naming, repo on some paths. Each
+  needs a merge, not a side-pick.
+
+### Done 2026-06-23 (safe, zero-deploy, committed)
+- Deleted dead local skills `ADCHelp` (→`/workflow`) and `decided` (→`/sorted`); removed the
+  stale `decided` manifest entry (it pointed at a skill absent from the repo).
+- Promoted `query-ticket`, `mytickets`, `opentickets`, `concept` local→repo + manifest
+  (additive; canonical; not deployed).
+
+### Deferred to the review (the real work)
+- The **19-skill per-axis merge** to forward-canonical, then a verified `/skills-sync deploy`.
+- `research` / `critic` / `factory-create` sit in the repo dir but **unmanaged** (no manifest
+  entry) — productizing them (manifest `deploy:true`) is a deliberate decision, not drift
+  cleanup. Review item.
+- `new-agent` is `deploy:true` but missing locally — deploy will place it once deploy is safe.
 
 ---
 
