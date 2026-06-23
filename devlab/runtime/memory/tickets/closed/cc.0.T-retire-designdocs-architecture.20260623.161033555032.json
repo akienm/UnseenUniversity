@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-retire-designdocs-architecture",
-    "title": "[sprint] Remove devlab/design_docs/ architecture remnants — AFTER intention-point conversion",
+    "title": "Remove devlab/design_docs/ architecture remnants — AFTER intention-point conversion",
     "size": "S",
     "tags": [
       "Workflow",
       "MemoryArch"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.45,
     "gate": null,
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
@@ -34,9 +34,9 @@
     "created_at": "2026-06-23T22:10:24.145978+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Removed the rest of devlab/design_docs/ (same commit as T-retire-decision-folders). Stragglers handled per relevance review: G-intent-extractor -> architecture/intent.json (device exists, reformatted); clan_migration_manifest (unimplemented+superseded by filesystem-store), compiled_inference_scraps_discovery (Scraps scripts built), findings-2026-06-13 (dated test report) tossed — git history preserves. The deletion IS verified: tests/test_retired_dirs_gone.py::test_path_moves_monitor_is_fully_clean went red->green (monitor 109->0), bound to T-retire-decision-folders.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T23:40:40.772340+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-23T22:10:24.146039+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "a6744553-36c3-4d5f-ab7e-8ddf67f69e27"
+    "inferred_intention_id": "a6744553-36c3-4d5f-ab7e-8ddf67f69e27",
+    "proven": false,
+    "unproven_reason": "proof-on-close can't bind a 2nd ticket to a shared deletion commit — once T-retire-decision-folders' proof committed, the deletion left HEAD and proof_emitter can't reconstruct red for a second binding. Lever needed: multi-ticket binding to one proof/commit. The intention is proven, just not separately bindable.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
