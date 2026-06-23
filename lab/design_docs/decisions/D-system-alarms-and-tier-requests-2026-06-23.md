@@ -29,3 +29,17 @@ Two ideas converged into one decision, both rooted in the same disease — **sil
 **Alternatives rejected:** (a) Step-0 patch then redesign — no, the layer's already built; the real work is narrow + the alarms primitive. (b) keep silent-log failures — violates CP1 and is the disease itself. (c) per-caller alarm tickets — rejected for one-ticket-per-subject with caller-breakdown (the whole blast radius in one view). (d) delete-on-close — rejected for archive-on-close (recurrence is signal).
 
 **Refs:** devices/inference/{sources.py,rules_engine.py,device.py,models_registry.py,self_test_sources.py}. Paths pre-approved by Akien (operations/system_alarms/ + archive/). Relates to [[feedback_check_new_paths_unseen_university]], [[project_mac_studio_inference_host]], feedback_inference_proxy_only. Cross-ref D-skills-two-products-2026-06-23 (`uu` dispatcher hosts `uu alarms`).
+
+## Update 2026-06-23 — notify reshaped (email/push → visual surfacing)
+The original T-system-alarms-notify (email+push via the loudest channel) is **cancelled**:
+google_secretary (the only email path) doesn't work and was taken off the list (it kept
+alarming Sonnet). The loud channel for a new/reopened alarm is now **visual surfacing**, split:
+- **T-system-alarms-fatal** (DONE, proven @ 87de2157): `raise_alarm(fatal=True)` reports then
+  raises `SystemAlarmFatal`; fatal=False stays fail-soft.
+- **T-system-alarms-web-panel**: a conditional ALARMS PANEL (renders only when an alarm exists)
+  on all web pages + indicators on the Akien/CC/Skeleton/Vetinari status panels + Control Station,
+  reading the flat-file store directly (keeps the primitive's resilience). Needs a web-UI pass.
+- **T-system-alarms-tmux-nag**: out-of-band tmux send-keys nag for workers running in tmux, one
+  per new/reopened (not per increment).
+Also: the loguru/stdlib-intercept ownership was moved Igor→base as a prerequisite cleanup
+(T-loguru-ownership-to-base, proven @ 031295ea) — the alarm primitive logs through that base logger.

@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-system-alarms-tmux-nag.20260623.134627907144",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-system-alarms-tmux-nag"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T19:46:27.907144+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "tickets": [
+      "T-system-alarms-tmux-nag"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-system-alarms-tmux-nag",
+    "title": "[sprint] tmux nag on new/reopened alarm (out-of-band) for workers running in tmux",
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Infrastructure"
+    ],
+    "status": "sprint",
+    "priority": 0.45,
+    "gate": null,
+    "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
+    "intention": "I intend that a worker running in tmux gets an unignorable in-session nag when a new/reopened alarm appears, pointing it at the alarms.",
+    "description": "**Problem:** a worker heads-down in a tmux session won't see a web panel. It needs an in-session nudge on a NEW/reopened alarm (not per-increment — calm signals).\n\n**Shape:** An out-of-band notifier (hook or periodic sweep) detects new/reopened open alarms and, when a worker is running in tmux, sends a tmux send-keys nag pointing at the alarms (reuse the NotificationDispatcher LOUD/tmux pattern). One nag per new/reopened signature, never per dedup increment. Out-of-band so it never touches the raise_alarm hot path.\n\n**Affected files:** a small notifier module (reads system_alarms store), reuses unseen_university/notification_dispatcher.py tmux path.\n**Design rules:** out-of-band (not in raise_alarm); calm-signals (one nag per new/reopened, not per increment); fail-soft.\n**Scope boundary:** IN — detect new/reopened + tmux nag when in tmux. OUT — the web panel (T-system-alarms-web-panel); choosing alarm sites.\n**Test plan:** a first-seen alarm yields one nag (tmux path invoked once); a 2nd increment yields none; with no tmux session, the notifier degrades quietly (no nag, no error).\n**Completion criteria:** new/reopened alarm → exactly one tmux nag when a session is present; increment → zero; absent tmux session → silent no-op, never raises.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T19:46:27.440647+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T19:46:27.486824+00:00"
+  }
+}
