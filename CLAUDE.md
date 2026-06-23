@@ -53,6 +53,19 @@ ever differ, the file wins — fix this shim.**
 
 ## Structural rules
 
+- **Canonical dev-process memory — one home, no exceptions.** Every dev-process artifact —
+  tickets, decisions, design patterns, notes, slates, sessions, rules, proofs, project
+  descriptions, and architecture intention-points — lives **only** under
+  `devlab/runtime/memory/` (subdirs `decisions/ tickets/ slates/ sessions/ rules/ proofs/
+  design_patterns/ notes/ projects/ architecture/`). `lab/`, `devlab/design_docs/`, and
+  `devlab/design_docs_for_igor/` are **retired and invalid** — nothing of these types may be
+  written there. Prior architecture docs become uniform `architecture/<subsystem>.json`
+  **intention-points**: a summary of how that subsystem works plus pointers to the files that
+  implement it (intent → implementation, all in one place, in JSON).
+  *Why: a renamed store with surviving write-paths silently splits the source of truth — recent
+  decisions were written to the dead `lab/design_docs/` for days before anyone noticed (the
+  stale `/sorted` write-path). One enforced home means a tool writing elsewhere is a detectable
+  error (the day-close path-moves monitor tickets it), not invisible drift.*
 - **device.py** and **shim.py** are the design center. Every component inherits from
   `BaseDevice` / `BaseShim`. OOP-first — no standalone functions doing device work.
   *Why: a single well-known entry point per device makes lifecycle management (start/stop/restart/self-test)
