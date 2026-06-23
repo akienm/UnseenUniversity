@@ -46,8 +46,9 @@ CP6 — build safety as we go; CP4 — suck less for every install, not just thi
 1. Vault / credential-manager maturation — the store the post-processor pulls from.
 2. The paused launcher reorg (`rescueclaude` + root launchers → `bin/`).
 3. The `THEIGORS_HOME` `NameError` in the two repo `run` copies (note/run, sprint-ticket/run).
-4. Skill catch-up: goals are retired in favor of Intention/Why/Followups — update `/sorted` Step 2.6
-   and the other goal-shaped skills.
+4. Skill catch-up (goals → Intention/Why/Followups) is **already tracked by the existing sprint ticket
+   `T-skills-goals-to-intentions`** (rip-out: `/sorted` Q1 → "which intention", `## Goal Link` → `## Intention`,
+   drop every G-xxx prompt + `links.goals` schema). Not a new followup — surfaced here for linkage only.
 
 ## Hypothesis
 
@@ -61,7 +62,6 @@ Those four `git grep` counts hit 0 in live files; a new shell sourcing `uu_bash_
 `uu_bash_profile_processor.sh` populates `UU_HOME_DB_URL`/`IGOR_NAME`/`IGOR_SWARM_NAME` from the local
 file + `$(hostname)` (no baked defaults); and all services still connect after the password rotation.
 
-## Goal Link
+<!-- No "Goal Link" section by design: goals are retired in favor of Intention/Why/Followups
+(T-skills-goals-to-intentions). This record uses the new triad above. -->
 
-none — goals retired in favor of Intention/Why/Followups (this session). Serves security hygiene +
-new-install portability; no G-id.
