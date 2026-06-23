@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-system-alarms-tmux-nag",
-    "title": "[sprint] tmux nag on new/reopened alarm (out-of-band) for workers running in tmux",
+    "title": "tmux nag on new/reopened alarm (out-of-band) for workers running in tmux",
     "size": "S",
     "tags": [
       "Observability",
       "Infrastructure"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.45,
     "gate": null,
     "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
@@ -35,14 +35,21 @@
     "created_at": "2026-06-23T19:46:27.440647+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Out-of-band notify_new_alarms nags once per new/reopened alarm via tmux send-keys (points at 'uu alarms'); increments don't re-nag, reopens do; absent tmux = silent retry-next-sweep no-op. Proof: tests/test_system_alarm_notifier.py @ 9a6fca03 (stub-first red→green).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T20:16:35.982177+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-23T19:46:27.486824+00:00"
+    "scraps_validated": "2026-06-23T19:46:27.486824+00:00",
+    "proven": true,
+    "proof_id": "cc.0.out-of-band-notifier-nags-once-per-new-r.T-system-alarms-tmux-nag.20260623.141628081852",
+    "proof_commit": "9a6fca03feb174f635e15d58b26386f40c7776a6",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

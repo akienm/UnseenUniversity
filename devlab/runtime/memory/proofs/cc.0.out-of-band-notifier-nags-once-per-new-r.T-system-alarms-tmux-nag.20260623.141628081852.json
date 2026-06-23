@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.out-of-band-notifier-nags-once-per-new-r.T-system-alarms-tmux-nag.20260623.141628081852",
+  "emitter": "cc.0",
+  "namespace": [
+    "out-of-band-notifier-nags-once-per-new-r",
+    "T-system-alarms-tmux-nag"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T14:16:28.081852",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-system-alarms-tmux-nag"
+    ],
+    "commits": [
+      "9a6fca03feb174f635e15d58b26386f40c7776a6"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "out-of-band notifier nags once per new/reopened alarm, never per increment",
+    "intention": "notify_new_alarms nags exactly once for a new alarm and zero times on the next sweep (notified_at stamped); increments don't re-nag, reopens do.",
+    "test": "tests/test_system_alarm_notifier.py::test_new_alarm_nags_once_then_silent",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_system_alarm_notifier.py::test_new_alarm_nags_once_then_silent",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____________________ test_new_alarm_nags_once_then_silent _____________________\n\n    def test_new_alarm_nags_once_then_silent():\n        sa.raise_alarm(\"no-provider:worker\", \"caller.a\", \"down\", emit_log=False)\n        calls: list[str] = []\n        ok = lambda s: (calls.append(s) or True)  # noqa: E731\n    \n>       assert nf.notify_new_alarms(send_fn=ok) == 1\nE       assert 0 == 1\nE        +  where 0 = <function notify_new_alarms at 0x717adb0c5300>(send_fn=<function test_new_alarm_nags_once_then_silent.<locals>.<lambda> at 0x717adb0c5b20>)\nE        +    where <function notify_new_alarms at 0x717adb0c5300> = nf.notify_new_alarms\n\ntests/test_system_alarm_notifier.py:28: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_system_alarm_notifier.py::test_new_alarm_nags_once_then_silent\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "9a6fca03feb174f635e15d58b26386f40c7776a6",
+    "impl_paths": [
+      "unseen_university/system_alarm_notifier.py"
+    ],
+    "ticket": "T-system-alarms-tmux-nag",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
