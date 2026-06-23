@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-specific-model-alarm.20260623.115831014782",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-specific-model-alarm"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T17:58:31.014782+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "tickets": [
+      "T-inference-specific-model-alarm"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-specific-model-alarm",
+    "title": "[sprint] Specific-model request outside testing drops a system_alarm (caller punch-list)",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Observability"
+    ],
+    "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
+    "gate": "T-system-alarms-primitive",
+    "priority": 0.5,
+    "status": "sprint",
+    "intention": "I intend that every fragile specific-model request surfaces as a deduped alarm naming the caller, so the stragglers get fixed.",
+    "description": "**Problem:** specific-model requests are fragile and must be driven to zero, but only the known ones are converted in T-callers-request-tiers. The rest are invisible until they break.\n\n**Shape:** When a request names a specific model OUTSIDE a testing context, drop a system_alarm signature=`specific-model:<model>` with the caller in the breakdown. As callers are fixed, their entries go quiet and drop off; the alarm self-clears when the breakdown empties. Testing exception = an explicit request-level flag (e.g. `req.allow_explicit_model=True`) set ONLY by the proxy self-test and pytest fixtures — NEVER an inherited env var (so the suite doesn't spam and prod can't dodge).\n\n**Affected files:** devices/inference/device.py (detect named-model + drop alarm), InferenceRequest (the testing flag), self_test_sources.py / test fixtures (set the flag).\n**Design rules:** depends on T-system-alarms-primitive; testing flag is request-scoped, not env.\n**Scope boundary:** IN — alarm-on-named-model + the request-scoped testing flag. OUT — the alarm primitive; converting callers (T-callers-request-tiers). Also needs T-inference-resolve-requests-by-tier to be in place.\n**Test plan:** a non-test caller naming a model produces a system_alarm `specific-model:<model>` with that caller in the breakdown; a request with `allow_explicit_model=True` (test fixture) produces NO alarm; the flag cannot be set via env var.\n**Completion criteria:** named-model-from-non-test-caller -> deduped alarm with caller breakdown; test-flagged request -> no alarm; flag is request-scoped only (grep: not read from os.environ).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T17:58:29.983300+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T17:58:29.983352+00:00"
+  }
+}

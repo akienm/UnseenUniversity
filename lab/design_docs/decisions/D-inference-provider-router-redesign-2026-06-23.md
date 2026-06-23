@@ -1,8 +1,20 @@
 # D-inference-provider-router-redesign-2026-06-23
 **title:** Redesign inference as billing-type providers + a pure policy router + a loud/honest/proven reliability layer
 **date:** 2026-06-23
-**status:** open
+**status:** superseded-in-part by D-system-alarms-and-tier-requests-2026-06-23
 **spawned_tickets:** T-inference-provider-billing-model, T-inference-request-priority-split, T-inference-policy-router, T-inference-usage-cost-gate, T-inference-liveness-and-loud-fail, T-inference-honest-degradation, T-inference-strip-or-cost-rules-keep-proxy, T-consequence-inference-redesign
+
+## ⚠️ Superseded-in-part (2026-06-23, same day) — reading sources.py disproved the premise
+Reading the code (not grepping) showed the provider/billing/router layer was **already built** (2026-06-12): `Source.billing_type`, `default_registry()` registering ollama_cloud/google_free with OR disabled, and `rules_engine.route()` already routing by tier, skipping unavailable sources, preferring flat_rate, with a `foreground` flag. The live bug was narrow: device.py's unknown-model fallthrough hardcoding the dead `openrouter` source. Disposition of this decision's tickets:
+- **T-inference-provider-billing-model** → CANCELLED (built; honest-liveness sub-point absorbed into T-inference-resolve-requests-by-tier).
+- **T-inference-policy-router** → CANCELLED (rules_engine.route() already does this).
+- **T-inference-request-priority-split** → CANCELLED (route(foreground=…) exists).
+- **T-inference-liveness-and-loud-fail** → RE-POINTED to consume the system_alarms primitive.
+- **T-inference-honest-degradation** → RE-POINTED to consume the system_alarms primitive.
+- **T-inference-usage-cost-gate** → KEPT (low priority; no usage providers active).
+- **T-inference-strip-or-cost-rules-keep-proxy** → KEPT.
+- **T-consequence-inference-redesign** → superseded by T-consequence-system-alarms-tier-requests.
+The real, accurate work lives in **D-system-alarms-and-tier-requests-2026-06-23**. Lesson logged: grep-not-read produced a wrong premise — the same silent-rot the trouble-ticket/system-alarm work fights.
 
 ## Hypothesis
 Inference dispatches succeed through working providers (ollama_cloud / google_free) routed by a pure billing-type policy with no provider hardcoded in env or rules; when inference is down every consumer (Igor included) says so loudly instead of going silent; and the engine is proven (router conflict-case unit proofs + a live canary) so it can't silently rot again.

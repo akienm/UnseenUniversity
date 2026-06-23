@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-inference-route-fallthrough-on-hard-error",
-    "status": "sprint",
+    "status": "cancelled",
     "size": "S",
     "priority": 0.45,
     "worker": null,
@@ -32,6 +32,6 @@
     "created_by": "cc.0",
     "decision_id": "D-or-tiered-cascade-2026-06-02",
     "title": "Inference routing aborts the tier on a model hard-error instead of falling through",
-    "description": "Found 2026-06-19 wiring DS free inference. When the preferred flat-rate model raised a HARD error mid-dispatch (e.g. Gemini 404 'model no longer available', or 'Google API key not set'), InferenceDevice.dispatch RAISED and aborted the whole worker/designer tier instead of falling through to the next candidate (devstral-small-2:24b / qwen3-coder-next on ollama_cloud, which were healthy). Rate-limit (429) IS handled — ping()→False→routing skips the source. But a hard error during the actual completion call is not caught for fall-through. With slugs now correct this is latent, but a future model retirement / transient hard error would silently break a tier.\n\n**Affected files:** devices/inference/device.py (dispatch fall-through), devices/inference/rules_engine.py\n**Design rules:** inference-proxy-only, graceful-degradation\n**Scope boundary:** IN: on a candidate model hard-error, log and advance to the next routing rule rather than raise. OUT: changing the preference ordering.\n**Completion criteria:** with the top candidate forced to hard-error, dispatch returns a completion from the next healthy candidate (not an exception).\n**Test plan:** unit — mock top candidate to raise, assert dispatch falls through and completes."
+    "description": "Found 2026-06-19 wiring DS free inference. When the preferred flat-rate model raised a HARD error mid-dispatch (e.g. Gemini 404 'model no longer available', or 'Google API key not set'), InferenceDevice.dispatch RAISED and aborted the whole worker/designer tier instead of falling through to the next candidate (devstral-small-2:24b / qwen3-coder-next on ollama_cloud, which were healthy). Rate-limit (429) IS handled \u2014 ping()\u2192False\u2192routing skips the source. But a hard error during the actual completion call is not caught for fall-through. With slugs now correct this is latent, but a future model retirement / transient hard error would silently break a tier.\n\n**Affected files:** devices/inference/device.py (dispatch fall-through), devices/inference/rules_engine.py\n**Design rules:** inference-proxy-only, graceful-degradation\n**Scope boundary:** IN: on a candidate model hard-error, log and advance to the next routing rule rather than raise. OUT: changing the preference ordering.\n**Completion criteria:** with the top candidate forced to hard-error, dispatch returns a completion from the next healthy candidate (not an exception).\n**Test plan:** unit \u2014 mock top candidate to raise, assert dispatch falls through and completes.\n\n**[reconcile 2026-06-23]** ABSORBED into T-inference-resolve-requests-by-tier (hard-error fall-through is part of the routing fix)."
   }
 }

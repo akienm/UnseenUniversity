@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-empty-response-fallthrough.20260623.115830808904",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-empty-response-fallthrough"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T17:58:30.808904+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "tickets": [
+      "T-inference-empty-response-fallthrough"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-empty-response-fallthrough",
+    "title": "[sprint] Empty/blank dispatch response triggers tier fall-through (worker/designer fix)",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "Routing"
+    ],
+    "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
+    "gate": "T-inference-resolve-requests-by-tier",
+    "priority": 0.55,
+    "status": "sprint",
+    "intention": "I intend that an empty model response is treated as a failure and falls through, not returned as a valid answer.",
+    "description": "**Problem:** empirically, worker/designer route to google_free/gemini-2.5-flash which returns EMPTY text (proven this session) while ollama_cloud returns real text. Empty isn't a hard error, so the cascade returns the blank as if valid.\n\n**Shape:** Treat an empty/blank response as a fall-through trigger (continue to the next tier candidate, e.g. ollama_cloud). Root-cause the gemini-2.5-flash empty (likely a wrong/renamed model id vs the google_free available set) and fix or deprioritize it.\n\n**Affected files:** devices/inference/rules_engine.py or device.py (empty-response -> fall-through), GoogleSource / models_registry (gemini model id).\n**Design rules:** fall-through extends T-inference-resolve-requests-by-tier's cascade; honest (empty != success).\n**Scope boundary:** IN — empty-response fall-through + gemini-2.5-flash root-cause. OUT — hard-error fall-through (done in T-inference-resolve-requests-by-tier).\n**Test plan:** a worker-tier dispatch returns NON-empty text (falls through the google_free-empty to ollama_cloud, or gemini fixed); an injected empty response from a candidate advances the cascade.\n**Completion criteria:** worker-tier dispatch returns non-empty text (proof); an empty candidate response triggers fall-through rather than being returned.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T17:58:29.823213+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T17:58:29.823259+00:00"
+  }
+}
