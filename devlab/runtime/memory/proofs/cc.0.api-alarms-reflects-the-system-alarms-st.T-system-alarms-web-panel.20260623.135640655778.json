@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.api-alarms-reflects-the-system-alarms-st.T-system-alarms-web-panel.20260623.135640655778",
+  "emitter": "cc.0",
+  "namespace": [
+    "api-alarms-reflects-the-system-alarms-st",
+    "T-system-alarms-web-panel"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T13:56:40.655778",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-system-alarms-web-panel"
+    ],
+    "commits": [
+      "b5724bdbd8eac4cecffc54866b62daf7dd87500a"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "/api/alarms reflects the system_alarms store with human-rendered fields for the ALARMS PANEL",
+    "intention": "GET /api/alarms returns open alarms from list_alarms() as human fields (datetime/emitter/description + detail), so the conditional ALARMS PANEL has data to render.",
+    "test": "tests/test_web_alarms_panel.py::test_reflects_dropped_alarm_with_human_fields",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_web_alarms_panel.py::test_reflects_dropped_alarm_with_human_fields",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________ test_reflects_dropped_alarm_with_human_fields _________________\n\n    def test_reflects_dropped_alarm_with_human_fields():\n        sa.raise_alarm(\"no-provider:worker\", \"devices.inference.device\", \"no source\", emit_log=False)\n        sa.raise_alarm(\"no-provider:worker\", \"devices.inference.device\", \"no source\", emit_log=False)\n        sa.raise_alarm(\"no-provider:worker\", \"devices.igor.cognition\", \"no source\", emit_log=False)\n    \n        import asyncio\n    \n        data = asyncio.run(_call_alarms())\n>       assert len(data[\"alarms\"]) == 1\nE       assert 0 == 1\nE        +  where 0 = len([])\n\ntests/test_web_alarms_panel.py:46: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_web_alarms_panel.py::test_reflects_dropped_alarm_with_human_fields\n1 failed in 0.17s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.14s"
+          }
+        }
+      }
+    ],
+    "commit": "b5724bdbd8eac4cecffc54866b62daf7dd87500a",
+    "impl_paths": [
+      "devices/web_server/server.py"
+    ],
+    "ticket": "T-system-alarms-web-panel",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
