@@ -13,6 +13,7 @@ NONE
 
 - T-slate-location-canonical-devlab — BUG: slates write to ~/.unseen_university/claudecode, not devlab/runtime/memory/slates (Slates relocated to devlab/runtime/memory/slates/ via new slate_store resolver (commit 7fa3c2ff); all writers/readers/sk)
 - T-uu-config-profile-layer — Config layer: local bootstrap profile + repo secret-free post-processor (Config-identity layer: secret-free bin/uu_bash_profile_processor.sh composes UU_HOME_DB_URL + hostname-derived names fro)
+- T-uu-identity-resolvers — Identity resolvers: DB-URL / IGOR_NAME / hostname — call-time, raise-if-unset, NO module-scope binding (Created unseen_university/identity.py — canonical call-time resolvers igor_name()/home_db_url()/swarm_hostname(): raise-)
 ## Sprint 2026-06-22 — proof-on-close GATE built + proven live (1ffb7f13)
 Done:
 - T-ticket-close-requires-proof BUILT + PROVEN LIVE -> awaiting_validation (1ffb7f13). The keystone: a ticket closes proven (HEAD-valid proof) OR shipped-unproven naming the missing proof-lever. NO load-bearing discriminator (dropped escape hatch).
