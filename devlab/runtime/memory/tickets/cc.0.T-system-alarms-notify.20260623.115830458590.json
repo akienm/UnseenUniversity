@@ -27,7 +27,7 @@
       "Notification"
     ],
     "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
-    "gate": "T-system-alarms-primitive",
+    "gate": null,
     "priority": 0.5,
     "status": "sprint",
     "intention": "I intend that a new system alarm reaches Akien through a channel he can't ignore, pulling him to uu alarms.",
