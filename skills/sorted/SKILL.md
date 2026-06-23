@@ -54,7 +54,7 @@ The hypothesis must be extracted and stored on the decision record before audit-
 
 **Question 3:** "How will we know? What's the signal?" — a metric, log line, behavior, or eval question that can be checked with current infrastructure.
 
-Store answers in the decision record (both the .md file and palace node metadata):
+Store answers in the decision JSON `body.text` (these sections are emitted in Step 6):
 ```
 ## Hypothesis
 <Question 2 answer>
@@ -187,38 +187,36 @@ The "Predicted unintended effects" field must come from reasoning about the deci
 
 Run `/audit-ticket` on this draft before filing. File via `cc_queue.py add` alongside the batch (append to the same `/tmp/sorted_batch_<D-id>.json` file, or add separately — either is fine).
 
-### 6. Write to Igor memory palace
+### 6. Write the decision to the canonical store (JSON only)
 
-Always create a decision node so the rollup loop can find it. Until
-`T-decisions-into-palace-subtree` ships the palace writer, drop a file stub
-at `lab/design_docs/decisions/D-....md`:
-```markdown
-# D-<id>
-**title:** <one-line summary>
-**date:** YYYY-MM-DD
-**status:** open
-**spawned_tickets:** T-x, T-y, T-z
-
-## Decision narrative
-<1-2 sentences from step 2 + context from the conversation scope>
-```
-
-Fields expected on the palace node (same shape):
-- `title` — one-line decision summary
-- `content` — decision narrative (summary + scope context)
-- `spawned_tickets` — list of ticket ids created
-- `date` — YYYY-MM-DD
-- `status` — `open` (auto-closes when all spawned_tickets close, via decision-rollup)
-
-**Then project the decision into the filesystem memory store** (dual-write,
-D-filesystem-memory-store-2026-06-16). The `.md` stub stays authoritative;
-this keeps `devlab/runtime/memory/decisions/` current via the SAME idempotent
-projector the bulk migrator uses, so a fresh /sorted and a re-migration emit
-the identical file. Fail-open — a projection failure must never block /sorted:
+The decision is a JSON file in the canonical store —
+`devlab/runtime/memory/decisions/`. No `.md` stub, no `lab/` path: every store
+file is JSON and the full narrative rides in `body.text`
+(D-canonical-memory-consolidation-2026-06-23). `memory_emit.py` is the one
+chokepoint — always go through it so the filename convention and envelope stay
+uniform:
 ```bash
-( cd "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/lab/claudecode" && \
-  python3 -c "import migrate_decisions; migrate_decisions.migrate_one('${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/lab/design_docs/decisions/D-<id>.md')" ) || true
+cat > /tmp/decision_body_<id>.json <<'JSON'
+{
+  "decision_id": "D-<id>",
+  "title": "<one-line summary>",
+  "status": "open",
+  "date": "YYYY-MM-DD",
+  "spawned_tickets": ["T-x", "T-y", "T-z"],
+  "text": "# D-<id>\n**title:** <summary>\n**date:** YYYY-MM-DD\n**status:** open\n**spawned_tickets:** T-x, T-y, T-z\n\n## Decision narrative\n<1-2 sentences from step 2 + scope context>\n\n## Hypothesis\n<Q2 answer>\n\n## Measurement Signal\n<Q3 answer>\n\n## Goal Link\n<G-xxx or 'none: <reason>'>"
+}
+JSON
+python3 "${CC_WORKFLOW_TOOLS}/memory_emit.py" \
+  --category decisions --emitter cc.0 --kind decision \
+  --namespace D-<id> --body-file /tmp/decision_body_<id>.json
 ```
+
+The emit lands one file at
+`devlab/runtime/memory/decisions/cc.0.D-<id>.<stamp>.json` (unique microsecond
+stamp — collisions are effectively impossible). The decision auto-closes when
+all spawned_tickets close (decision-rollup reads the store). To UPDATE it later
+(outcome, status-close), re-emit reusing the file's existing `<stamp>` — an
+atomic in-place overwrite, never a second node (see `/outcome`).
 
 ### 8. Append to slate
 
@@ -280,7 +278,7 @@ Multiple decisions in one session:
 - /audit-ticket runs on EVERY draft, not just the first or biggest.
 - HIGH-inertia approvals land in the ticket body before filing; they are not kept in CC's conversational memory.
 - Every M/L/XL decision — and every S-only decision where Step 2.6 extracted a behavioral hypothesis — gets a consequence-check ticket (Step 5.5). This is non-negotiable: no M/L/XL decision closes without one.
-- Design status moves to `closed` only when: (a) all spawned_tickets are closed AND (b) at least one T-consequence-{slug} for this decision is also closed. Before writing `**status:** closed` to the decision .md file, verify: `python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep "T-consequence"` for the decision slug shows a closed entry. If not, file the consequence ticket first.
+- Design status moves to `closed` only when: (a) all spawned_tickets are closed AND (b) at least one T-consequence-{slug} for this decision is also closed. Before re-emitting the decision JSON with `status: closed` (reuse the file's existing stamp — atomic overwrite), verify: `python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep "T-consequence"` for the decision slug shows a closed entry. If not, file the consequence ticket first.
 - Any batch containing an L or XL ticket gets an `advisor()` review (Step 3.5) before /audit-ticket runs. S-only batches skip this.
 
 ## Hard rules

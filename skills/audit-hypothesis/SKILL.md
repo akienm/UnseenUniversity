@@ -27,7 +27,8 @@ Called automatically by /decided after hypothesis extraction. Also standalone:
 
 For standalone on a filed decision:
 ```bash
-cat ~/dev/src/UnseenUniversity/lab/design_docs/decisions/<D-id>.md | grep -A 10 "## Hypothesis"
+F=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)
+python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('text',''))" "$F" | grep -A 10 "## Hypothesis"
 ```
 
 ---

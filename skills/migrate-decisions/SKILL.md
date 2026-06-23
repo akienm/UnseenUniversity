@@ -1,6 +1,14 @@
-# migrate-decisions — Project decisions from .md to filesystem memory store
+# migrate-decisions — RETIRED as a routine step (one-time legacy backfill only)
 
-Post-/sorted step. Migrates decision markdown files from `lab/design_docs/decisions/` into `devlab/runtime/memory/decisions/` as JSON, so `/context-load` and other tools can find them.
+> **RETIRED 2026-06-23 (D-canonical-memory-consolidation).** `/sorted` now emits
+> the decision JSON straight into `devlab/runtime/memory/decisions/` (Step 6), so
+> there is no `.md` to project — this is **no longer a post-/sorted step**. It
+> survives only as a one-time backfill for legacy `.md` decisions that predate the
+> JSON-only cutover (e.g. before `T-retire-decision-folders` removes them). Do not
+> wire it into the routine workflow.
+
+Migrates any remaining legacy decision markdown files into
+`devlab/runtime/memory/decisions/` as JSON, so `/context-load` and other tools can find them.
 
 ## Usage
 

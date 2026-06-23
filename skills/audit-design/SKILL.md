@@ -194,8 +194,8 @@ explicitly overridden inline).
 
 When called from `/decided`: the decision summary + scope are passed in
 the parent context. When called standalone with `<decision-id>`: read the
-decision file at `~/dev/src/UnseenUniversity/lab/design_docs/decisions/<decision-id>.md`
-plus recent decisions from `devlab/runtime/memory/decisions/`.
+decision JSON at `devlab/runtime/memory/decisions/*<decision-id>*.json` (the
+narrative is in `body.text`) plus recent decisions from the same directory.
 
 ### 2. Read prior watch-for notes
 

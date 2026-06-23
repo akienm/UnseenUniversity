@@ -32,8 +32,9 @@ knowing if the system is actually improving.
 ### 1. Read the hypothesis
 
 ```bash
-DECISION_FILE=~/dev/src/UnseenUniversity/lab/design_docs/decisions/<D-id>.md
-grep -A 20 "## Hypothesis" "$DECISION_FILE"
+DECISION_FILE=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)
+python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('text',''))" "$DECISION_FILE" \
+  | grep -A 20 "## Hypothesis"
 ```
 
 If the decision predates hypothesis tracking (no `## Hypothesis` section), note that and skip to a general outcome assessment.
@@ -80,10 +81,14 @@ Compare the hypothesis claim against the evidence. Choose one:
 
 ### 4. Write verdict to decision record
 
-Append to the decision's `.md` file:
+Re-emit the decision JSON with an `## Outcome` section appended to `body.text`,
+reusing the file's existing stamp so it's an atomic in-place overwrite — never a
+second decision node (D-canonical-memory-consolidation-2026-06-23). Fill the
+verdict fields (from Step 3) into `OUTCOME` before running:
 
 ```bash
-cat >> ~/dev/src/UnseenUniversity/lab/design_docs/decisions/<D-id>.md << EOF
+DECISION_FILE=$(ls "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"/devlab/runtime/memory/decisions/*<D-id>*.json | head -1)
+OUTCOME=$(cat <<EOF
 
 ## Outcome — $(date +%Y-%m-%d)
 **Verdict:** <confirmed / partially_confirmed / falsified / too_early / inconclusive>
@@ -92,6 +97,23 @@ cat >> ~/dev/src/UnseenUniversity/lab/design_docs/decisions/<D-id>.md << EOF
 **Learning:** <one sentence: what does this outcome teach us about this kind of decision?>
 **Re-check:** <if too_early: when to check again>
 EOF
+)
+OUTCOME="$OUTCOME" python3 - "$DECISION_FILE" <<'PY'
+import json, os, sys, subprocess
+sys.path.insert(0, os.environ["CC_WORKFLOW_TOOLS"])
+from memory_emit import parse_filename
+path = sys.argv[1]
+rec = json.load(open(path))
+body = rec["body"]
+body["text"] = body.get("text", "") + os.environ["OUTCOME"]
+body["outcome_date"] = __import__("datetime").date.today().isoformat()
+open("/tmp/outcome_body.json", "w").write(json.dumps(body))
+stamp = parse_filename(os.path.basename(path))["stamp"]   # reuse → atomic overwrite
+subprocess.run([sys.executable, os.path.join(os.environ["CC_WORKFLOW_TOOLS"], "memory_emit.py"),
+    "--category", "decisions", "--emitter", rec["emitter"], "--kind", "decision",
+    "--namespace", body["decision_id"], "--stamp", stamp,
+    "--body-file", "/tmp/outcome_body.json"], check=True)
+PY
 ```
 
 Also update the palace node:
