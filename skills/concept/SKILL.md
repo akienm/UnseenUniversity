@@ -109,7 +109,7 @@ print(f"Written: {path}")
 Write a one-line entry to the flat echo file so the index is readable offline:
 
 ```bash
-echo "- C-${SLUG}: ${TITLE}" >> ~/TheIgors/devlab/claudecode/palace_echo/concept_index.md
+echo "- C-${SLUG}: ${TITLE}" >> ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/palace_echo/concept_index.md
 ```
 
 Create the file if it doesn't exist. The palace is canonical; this file is a
