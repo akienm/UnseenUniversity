@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-workflow-md-source-of-truth-2026-06-23.20260623.230354650909",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-workflow-md-source-of-truth-2026-06-23"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-23T23:03:54.650909",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-workflow-md-source-of-truth-2026-06-23"
+    ],
+    "tickets": [
+      "T-workflow-md-source-of-truth"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-workflow-md-source-of-truth-2026-06-23",
+    "title": "Workflow map becomes a single source-of-truth file (skills/workflow.md), rendered by /workflow and `uu workflow`",
+    "status": "open",
+    "date": "2026-06-23",
+    "source": "lab/design_docs/decisions/D-workflow-md-source-of-truth-2026-06-23.md",
+    "text": "# D-workflow-md-source-of-truth-2026-06-23\n**title:** Workflow map becomes a single source-of-truth file (skills/workflow.md), rendered by /workflow and `uu workflow`\n**date:** 2026-06-23\n**status:** open\n**spawned_tickets:** T-workflow-md-source-of-truth\n\n## Decision narrative\nThere are too many skills to hold in one's head, and the workflow map was embedded\nin skills/workflow/SKILL.md where it drifted (repo copy said /decided; the ~/.claude\ncopy said /sorted). The map is extracted to `skills/workflow.md` — at the `skills/`\nroot, NOT inside `skills/workflow/`, because it describes how most skills fit\ntogether, not a single skill. The `/workflow` skill is simplified to render that file;\n`uu workflow` prints it to the console. The file is the single source of truth; both\nrenderers read it, so the map can no longer diverge.\n\n## Hypothesis\nAfter this ships, the workflow map lives in exactly one file; `/workflow` and `uu\nworkflow` both render it; updating the workflow means editing only skills/workflow.md.\n\n## Measurement Signal\n`uu workflow` output equals skills/workflow.md verbatim (proven test); SKILL.md\ncontains no duplicated map; the stale /decided reference is gone (uses /sorted).\n\n## Goal Link\nnone: dev-process tooling / friction reduction (too-many-skills navigability).\n"
+  }
+}
