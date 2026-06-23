@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.alarms-panel-injected-into-the-chat-dash.T-system-alarms-panel-coverage.20260623.141317619533",
+  "emitter": "cc.0",
+  "namespace": [
+    "alarms-panel-injected-into-the-chat-dash",
+    "T-system-alarms-panel-coverage"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T14:13:17.619533",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-system-alarms-panel-coverage"
+    ],
+    "commits": [
+      "9c89561931138fe0a6eeee3efb414058b3e8e562"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "ALARMS PANEL injected into the chat/dashboard/metrics pages that bypass _html_wrap",
+    "intention": "_inject_alarms_panel inserts the ALARMS PANEL after <body>, and _index/_page_dashboard/_page_metrics all serve it — so the panel reaches every page.",
+    "test": "tests/test_web_alarms_panel_coverage.py::test_chat_dashboard_metrics_pages_carry_the_panel",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_web_alarms_panel_coverage.py::test_chat_dashboard_metrics_pages_carry_the_panel",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n______________ test_chat_dashboard_metrics_pages_carry_the_panel _______________\n\n    def test_chat_dashboard_metrics_pages_carry_the_panel():\n        from devices.web_server import server\n    \n        chat = asyncio.run(server._index(request=None))\n        dash = asyncio.run(server._page_dashboard(request=None))\n        metrics = asyncio.run(server._page_metrics(request=None))\n    \n        for resp in (chat, dash, metrics):\n>           assert 'id=\"sysalarm-panel\"' in _body(resp)\nE           assert 'id=\"sysalarm-panel\"' in '<!DOCTYPE html>\\n<html lang=\"en\">\\n<head>\\n  <meta charset=\"UTF-8\">\\n  <meta name=\"viewport\" content=\"width=device-wi...   } catch(e) {}\\n    }\\n\\n    connect();\\n    loadChannels();\\n    seedDeviceTabs();\\n  </script>\\n</body>\\n</html>\\n'\nE            +  where '<!DOCTYPE html>\\n<html lang=\"en\">\\n<head>\\n  <meta charset=\"UTF-8\">\\n  <meta name=\"viewport\" content=\"width=device-wi...   } catch(e) {}\\n    }\\n\\n    connect();\\n    loadChannels();\\n    seedDeviceTabs();\\n  </script>\\n</body>\\n</html>\\n' = _body(<starlette.responses.HTMLResponse object at 0x70acdbed3290>)\n\ntests/test_web_alarms_panel_coverage.py:43: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_web_alarms_panel_coverage.py::test_chat_dashboard_metrics_pages_carry_the_panel\n1 failed in 0.16s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.12s"
+          }
+        }
+      }
+    ],
+    "commit": "9c89561931138fe0a6eeee3efb414058b3e8e562",
+    "impl_paths": [
+      "devices/web_server/server.py"
+    ],
+    "ticket": "T-system-alarms-panel-coverage",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
