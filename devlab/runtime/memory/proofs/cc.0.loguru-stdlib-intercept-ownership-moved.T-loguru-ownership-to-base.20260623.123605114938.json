@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.loguru-stdlib-intercept-ownership-moved.T-loguru-ownership-to-base.20260623.123605114938",
+  "emitter": "cc.0",
+  "namespace": [
+    "loguru-stdlib-intercept-ownership-moved",
+    "T-loguru-ownership-to-base"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T12:36:05.114938",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-loguru-ownership-to-base"
+    ],
+    "commits": [
+      "031295eab526b6bd0b37ee91be739708dd13c0e5"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "loguru/stdlib-intercept ownership moved from Igor to the base; installed per-process at device boot",
+    "intention": "Common logging is base-owned (not Igor), installs once per process on device boot not import; rack process (via Skeleton, a BaseDevice) and every device process get it, ground loop does not.",
+    "test": "tests/test_logging_bridge_ownership.py::test_device_boot_installs_intercept",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_logging_bridge_ownership.py::test_device_boot_installs_intercept",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    def _probe(snippet: str) -> list[str]:\n        \"\"\"Run a snippet in a clean interpreter and return its stdout tokens.\"\"\"\n        out = subprocess.run(\n            [sys.executable, \"-c\", snippet],\n            capture_output=True,\n            text=True,\n            cwd=str(REPO),\n        )\n>       assert out.returncode == 0, out.stderr\nE       AssertionError: Traceback (most recent call last):\nE           File \"<string>\", line 1, in <module>\nE         ModuleNotFoundError: No module named 'diagnostic_base.logging_bridge'\nE         \nE       assert 1 == 0\nE        +  where 1 = CompletedProcess(args=['/home/akien/dev/src/UnseenUniversity/.venv/bin/python3', '-c', \"import logging; import diagnos...):\\n  File \"<string>\", line 1, in <module>\\nModuleNotFoundError: No module named \\'diagnostic_base.logging_bridge\\'\\n').returncode\n\ntests/test_logging_bridge_ownership.py:37: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_logging_bridge_ownership.py::test_device_boot_installs_intercept\n1 failed in 0.17s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.16s"
+          }
+        }
+      }
+    ],
+    "commit": "031295eab526b6bd0b37ee91be739708dd13c0e5",
+    "impl_paths": [
+      "devices/igor/igor_base.py",
+      "devlab/runtime/memory/tickets/cc.0.T-loguru-ownership-to-base.20260623.123151821727.json",
+      "diagnostic_base/base.py",
+      "diagnostic_base/logging_bridge.py"
+    ],
+    "ticket": "T-loguru-ownership-to-base",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
