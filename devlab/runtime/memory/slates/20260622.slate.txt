@@ -46,3 +46,5 @@ SYSTEM-WIDE BEHAVIOR CHANGE (surfaced): bare proofless closes now reject; auto-v
 ## In-flight: T-uu-config-profile-layer closed PROVEN (config-identity layer shipped); starting T-uu-identity-resolvers (ticket 2/2 of this batch's ungated set)
 
 ## In-flight: Batch decision:D-uu-config-identity-layer complete for eligible set — T-uu-config-profile-layer + T-uu-identity-resolvers both closed PROVEN; 3 sweeps now ungated for next batch
+- T-skills-location-audit: audit skills in repo vs ~/.claude/skills/ before Friday discussion
+- T-skills-location-audit: recommendation ready → docs/skills_harmony_recommendation_20260622.md (read before Friday; 2 deletes + 6 promotions + 1 sync run; autocompact blind-sync regression risk flagged)
