@@ -20,14 +20,14 @@
   },
   "body": {
     "id": "T-path-moves-monitor",
-    "title": "[sprint] Day-close path-moves monitor — Python, file-index-backed, tickets/alarms non-canonical writes",
+    "title": "[in_progress] Day-close path-moves monitor — Python, file-index-backed, tickets/alarms non-canonical writes",
     "size": "M",
     "tags": [
       "Workflow",
       "MemoryArch",
       "Observability"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.5,
     "gate": null,
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",

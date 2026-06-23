@@ -12,6 +12,5 @@
     {"from": "lab/claudecode/", "to": "devlab/claudecode/"},
     {"from": "devlab/design_docs/decisions/", "to": "devlab/runtime/memory/decisions/"}
   ],
-  "artifact_suffixes": [".slate.txt", ".dsb"],
-  "artifact_dir_globs": ["decisions", "tickets", "slates", "sessions", "proofs", "design_patterns", "notes", "projects", "rules", "architecture"]
+  "artifact_suffixes": [".slate.txt", ".dsb"]
 }

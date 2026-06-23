@@ -18,12 +18,15 @@ from __future__ import annotations
 
 import json
 import logging
-import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Optional
 
 log = logging.getLogger("devlab.path_moves_monitor")
+
+# Emission filename signature: <emitter>.<ns>.yyyymmdd.hhmmss[uuuuuu].json
+_STAMP_RE = re.compile(r"\.\d{8}\.\d{6,}\.json$")
 
 _REPO = Path(__file__).resolve().parents[2]
 _REGISTRY = _REPO / "devlab" / "runtime" / "memory" / "rules" / "path_moves.json"
@@ -44,12 +47,16 @@ def git_tracked_files(repo: "Optional[Path]" = None) -> list:
 
 
 def _is_artifact(path: str, registry: dict) -> bool:
-    """A path is a dev-process artifact if it carries a store suffix or lives in a
-    store sub-directory (decisions/, tickets/, slates/, ...)."""
+    """A path is a dev-process artifact if it carries a store suffix (.dsb,
+    .slate.txt), matches the emission filename signature (`.<stamp>.json`), or is
+    a legacy `D-*.md` decision stub. Intrinsic to the file — no dir-name guessing,
+    so unrelated `rules/`, `notes/`, `projects/` dirs don't false-positive."""
+    base = path.rsplit("/", 1)[-1]
     if any(path.endswith(sfx) for sfx in registry.get("artifact_suffixes", [])):
         return True
-    segs = path.split("/")
-    return any(d in segs for d in registry.get("artifact_dir_globs", []))
+    if _STAMP_RE.search(base):
+        return True
+    return base.startswith("D-") and base.endswith(".md")
 
 
 def _suggest(path: str, registry: dict) -> str:
@@ -60,8 +67,20 @@ def _suggest(path: str, registry: dict) -> str:
 
 
 def scan(files: list, registry: dict) -> list:
-    """STUB — replaced by the real detector in the next commit."""
-    return []
+    """Flag every file under a retired path, and every dev-process artifact outside
+    the canonical home. Pure (no I/O) so it is deterministic to test."""
+    home = registry.get("canonical_home", "").rstrip("/") + "/"
+    retired = [p.rstrip("/") + "/" for p in registry.get("retired_paths", [])]
+    findings = []
+    for f in files:
+        hit = next((r for r in retired if f.startswith(r)), None)
+        if hit:
+            findings.append({"path": f, "reason": "under-retired-path",
+                             "suggested": _suggest(f, registry)})
+        elif _is_artifact(f, registry) and not f.startswith(home):
+            findings.append({"path": f, "reason": "artifact-outside-canonical-home",
+                             "suggested": home})
+    return findings
 
 
 def run(*, repo: "Optional[Path]" = None, emit: bool = True) -> list:
@@ -78,12 +97,33 @@ def run(*, repo: "Optional[Path]" = None, emit: bool = True) -> list:
     if emit and findings:
         try:
             from unseen_university import system_alarms
+            # Group retired-path findings by root → ONE alarm per retired root (not
+            # per file; a populated retired dir can hold a hundred artifacts). Stray
+            # artifacts outside the home are rarer and surprising → one alarm each.
+            roots: dict = {}
+            strays = []
             for f in findings:
+                if f["reason"] == "under-retired-path":
+                    root = next((r for r in registry.get("retired_paths", [])
+                                 if f["path"].startswith(r)), f["path"])
+                    roots.setdefault(root, []).append(f["path"])
+                else:
+                    strays.append(f)
+            for root, paths in roots.items():
+                system_alarms.raise_alarm(
+                    signature=f"retired-path-populated:{root}",
+                    caller="path_moves_monitor",
+                    message=(f"{len(paths)} dev-process artifact(s) still under retired path "
+                             f"{root!r} — move to {registry.get('canonical_home')} or remove "
+                             f"(e.g. {paths[0]})"),
+                    fatal=False,
+                )
+            for f in strays:
                 system_alarms.raise_alarm(
                     signature=f"noncanonical-artifact:{f['path']}",
                     caller="path_moves_monitor",
-                    message=(f"dev-process artifact at a non-canonical path: {f['path']} "
-                             f"({f['reason']}) — canonical: {f['suggested']}"),
+                    message=(f"dev-process artifact outside the canonical home: {f['path']} "
+                             f"— canonical: {f['suggested']}"),
                     fatal=False,
                 )
         except Exception as exc:  # noqa: BLE001 — alarm failure is non-fatal
