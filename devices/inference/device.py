@@ -316,6 +316,9 @@ class InferenceDevice(BaseDevice):
         # Route via rules engine
         # When model is explicitly set, find its source directly — skip rules engine model selection
         # so the caller's explicit choice is honored (e.g. Dick's tier cascade forcing haiku/sonnet).
+        source = None
+        provider_name = ""
+        decision = None
         if request.model:
             spec = self._models.get(request.model)
             if spec is not None:
@@ -346,20 +349,19 @@ class InferenceDevice(BaseDevice):
                         foreground=request.foreground,
                     )
             else:
-                # Unknown model ID — fall through to openrouter; guard against no source.
-                source = self._sources.get("openrouter")
-                provider_name = "openrouter"
-                log.info("dispatch: unknown model=%s — routing to openrouter", request.model)
-                decision = None
-                if source is None:
-                    log.error(
-                        "dispatch: unknown model=%s and openrouter source unavailable — error response",
-                        request.model,
-                    )
-                    return InferenceResponse(
-                        text=f"[InferenceDevice: no source for model={request.model}]",
-                        finish_reason="error",
-                    )
+                # Unknown model ID — converge on the tier router (same fall-through as
+                # an unavailable explicit model). No hardcoded source: route() skips dead
+                # sources and returns None only when nothing is available at all, which the
+                # complete-inference-failure chokepoint below turns into a loud alarm.
+                log.info(
+                    "dispatch: unknown model=%s — routing by task_class=%s via rules engine",
+                    request.model, request.task_class or "worker",
+                )
+                decision = self._rules.route(
+                    task_class=request.task_class or "worker",
+                    session_id=request.session_id,
+                    foreground=request.foreground,
+                )
         else:
             decision = self._rules.route(
                 task_class=request.task_class or "worker",
@@ -397,22 +399,43 @@ class InferenceDevice(BaseDevice):
                 decision.rule_label,
             )
         elif not request.model:
-            # No rules decision and no explicit model — fall back to legacy _mode
+            # No rules decision and no explicit model — last-ditch legacy _mode source.
+            # The complete-inference-failure chokepoint below catches it when _mode is a
+            # dead/disabled source (e.g. the now-disabled openrouter default).
             log.warning(
-                "dispatch: rules engine returned no decision — falling back to legacy mode=%s",
+                "dispatch: rules engine returned no decision — trying legacy mode=%s",
                 self._mode,
             )
             source = self._sources.get(self._mode)
             provider_name = self._mode
-            if source is None:
-                log.error(
-                    "dispatch: no source available for mode=%s — returning error response",
-                    self._mode,
-                )
-                return InferenceResponse(
-                    text=f"[InferenceDevice: no source available for mode={self._mode}]",
-                    finish_reason="error",
-                )
+
+        # ── Complete inference failure chokepoint ──────────────────────────────
+        # Every routing path lands here. If no live source resolved (route() exhausted
+        # all tier candidates, or the legacy fallback is a dead/disabled source), this is
+        # a complete inference failure: raise a LOUD system alarm (surfaces on the web
+        # ALARMS PANEL + tmux nag) and return a clean error — never fall through to the
+        # legacy _or_call/_ollama_call dead-ends. fatal=False so the device stays up.
+        if source is None or not getattr(source, "available", True):
+            from unseen_university import system_alarms
+
+            tc = request.task_class or "worker"
+            system_alarms.raise_alarm(
+                signature=f"no-provider:{tc}",
+                caller=request.agent_id or "inference.device",
+                message=(
+                    f"complete inference failure — no live source for "
+                    f"task_class={tc!r} model={request.model!r}"
+                ),
+                fatal=False,
+            )
+            log.error(
+                "dispatch: complete inference failure — no live source for task_class=%s model=%s",
+                tc, request.model,
+            )
+            return InferenceResponse(
+                text=f"[InferenceDevice: no live inference source for task_class={tc}]",
+                finish_reason="error",
+            )
 
         # OR-specific pre-call gates
         if provider_name == "openrouter":
@@ -428,13 +451,9 @@ class InferenceDevice(BaseDevice):
                 if not ok:
                     raise RuntimeError(f"budget limit: {msg}")
 
+        # source is guaranteed non-None and available past the chokepoint above.
         t0 = time.time()
-        if source is not None:
-            raw = source.call(request)
-        elif self._mode == "openrouter":
-            raw = self._or_call(request)
-        else:
-            raw = self._ollama_call(request)
+        raw = source.call(request)
         elapsed_ms = round((time.time() - t0) * 1000)
 
         resp = _parse_response(raw, elapsed_ms=elapsed_ms)
