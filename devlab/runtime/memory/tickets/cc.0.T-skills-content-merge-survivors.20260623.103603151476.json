@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-skills-content-merge-survivors.20260623.103603151476",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-content-merge-survivors"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T16:36:03.151476+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products-2026-06-23"
+    ],
+    "tickets": [
+      "T-skills-content-merge-survivors"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-content-merge-survivors",
+    "title": "[sprint] One-time content merge of drifted survivor skills to canonical",
+    "size": "L",
+    "tags": [
+      "Skills",
+      "Migration"
+    ],
+    "decision_id": "D-skills-two-products-2026-06-23",
+    "gate": "T-skills-views-retire-to-cli",
+    "priority": 0.4,
+    "intention": "I intend that each surviving workflow skill has exactly one forward-canonical version in the repo, so the single-source flip can't freeze a stale copy.",
+    "description": "**Problem:** the surviving workflow skills are drifted between local and repo across 4 axes; pick one forward-canonical version of each BEFORE single-sourcing (flip-before-merge would freeze a stale-on-some-axis copy). Also gated behind the prune ticket so only the FINAL survivor set is merged.\n\n**Shape:** For each drifted survivor, merge to forward-canonical: theigors/->unseenuniversity/ (palace paths), /decided->/sorted (command), ~/TheIgors->~/dev/src/UnseenUniversity & ~/.TheIgors->~/.unseen_university (roots). KEEP sorted's decisions_log.dsb append (T-decisions-dsb-cutover still OPEN; context-load still reads the .dsb fallback). Union features where copies diverged. Most survivors are mechanical 4-axis find-replace; only ~3 need feature-merge judgment: day-close (gate-sweep + prune-emissions + discussion note), sprint-ticket (EvaluatorDevice grader), autocompact (the trimmed local version, NOT the bloated repo one). Land canonical in repo skills/. Env-var axis (IGOR_HOME_DB_URL->UU_HOME_DB_URL) is LEFT to the gated T-uu-sweep-* sweeps — do NOT hand-edit env vars here.\n\n**Affected files:** skills/ (the ~19 drifted survivors minus those removed in the retire/prune tickets). Ref: docs/skills_intention_review_20260623.md, docs/skills_harmony_recommendation_20260622.md.\n**Design rules:** behavior-preserving per skill; env-var de-hardcoding deferred to the sweeps (no double-work).\n**Scope boundary:** IN — content merge of survivors to canonical repo copies. OUT — the flip to single-source (T-skills-single-source-flip); env-var de-hardcoding (T-uu-sweep-*).\n**Test plan:** per skill, repo copy reflects forward forms; spot-run that day-close, autocompact, sprint-ticket SKILL.md still parse / load.\n**Completion criteria:** `git grep -nE 'theigors/|/decided|~/TheIgors|~/.TheIgors' skills/` returns zero in survivors (excluding sorted's intentional .dsb line); each survivor is a single agreed version; the 3 feature-merge skills retain ALL features from both copies.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "sprint",
+    "created_at": "2026-06-23T16:36:02.277826+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T16:36:02.277877+00:00"
+  }
+}

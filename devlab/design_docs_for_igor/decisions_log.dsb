@@ -4,3 +4,4 @@
 2026-06-17T17:32:21 | D-facia-index-tree-2026-06-17 | Facia index tree + tree manager | tickets: T-facia-index-tree, T-tree-manager-object, T-librarian-facia-second-pass
 2026-06-18T09:42:03 | D-leading-digest-pattern-2026-06-18 | outcome/as-built summary at head of terminal artifacts | tickets: T-ticket-outcome-header, T-decision-asbuilt-summary, T-consequence-leading-digest
 2026-06-18T09:42:03 | D-slate-as-narrative-2026-06-18 | slate becomes JSON; narrative section = small read-first summary | tickets: T-slate-narrative-log, T-consequence-slate-as-narrative
+2026-06-23T00:00:00 | D-skills-two-products-2026-06-23 | skills = uu CLI (views) + single-source workflow skills | tickets: T-uu-cli-dispatcher, T-uu-readfeed, T-skills-views-retire-to-cli, T-skills-prune-deprecated-merge, T-skills-content-merge-survivors, T-skills-single-source-flip

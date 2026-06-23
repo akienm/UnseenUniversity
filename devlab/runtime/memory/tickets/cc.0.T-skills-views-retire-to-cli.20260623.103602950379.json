@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-skills-views-retire-to-cli.20260623.103602950379",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-views-retire-to-cli"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T16:36:02.950379+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products-2026-06-23"
+    ],
+    "tickets": [
+      "T-skills-views-retire-to-cli"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-views-retire-to-cli",
+    "title": "[sprint] Retire ~13 view skills; repoint refs to uu <verb>",
+    "size": "M",
+    "tags": [
+      "Skills",
+      "Cleanup"
+    ],
+    "decision_id": "D-skills-two-products-2026-06-23",
+    "gate": "T-uu-readfeed",
+    "priority": 0.45,
+    "intention": "I intend that pure state-views exist only as zero-inference uu commands, with no skill (and no dangling reference) left behind.",
+    "description": "**Problem:** the view skills duplicate `uu <verb>` and, as skills, cost inference. Retire them as skills once `uu` covers them — AND repoint every reference, or a future CC calls a skill that no longer exists (fix-one-leave-many).\n\n**Shape:** For each view skill — mytickets, opentickets, query-ticket, stall-check, health, readinbox, recall, research, map-igor, export-chat, workflow, notify, available (NOT readigor — retired in T-uu-readfeed) — ensure a `uu <verb>` equivalent exists, then remove the skill from both locations. DECISION: `/query-ticket` is FULLY replaced by `uu query-ticket` (no slash shim). Repoint CLAUDE.md ('what's next' entry point) and the sprint family (sprint/sprint-batch/sprint-loop, which invoke /query-ticket) to `uu query-ticket`.\n\n**Affected files:** skills/ + ~/.claude/skills/ (remove the ~13 view skills); bin/uu (verb parity); CLAUDE.md (query-ticket -> uu query-ticket); skills/sprint*, skills/sprint-batch, skills/sprint-loop (repoint).\n**Design rules:** zero-inference views; single-source; no-dangling-reference.\n**Scope boundary:** IN — retire the ~13 view skills, ensure uu parity, repoint ALL callers incl CLAUDE.md. OUT — the reasoning-bearing workflow skills; readigor (done in T-uu-readfeed).\n**Test plan:** each retired skill's function reachable via `uu <verb>` with equal output; sprint family + CLAUDE.md invoke `uu query-ticket`.\n**Completion criteria:** the ~13 view skills removed from BOTH locations; `uu <verb>` covers each; `git grep` for invocations of any retired view skill (e.g. `/query-ticket`, `/mytickets`) returns zero OUTSIDE changelogs/this decision doc; CLAUDE.md references `uu query-ticket`.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "sprint",
+    "created_at": "2026-06-23T16:36:02.107228+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T16:36:02.107280+00:00"
+  }
+}
