@@ -41,3 +41,5 @@ SYSTEM-WIDE BEHAVIOR CHANGE (surfaced): bare proofless closes now reject; auto-v
 ## In-flight: 2026-06-22 Done: Credential/config-identity layer decision filed (D-uu-config-identity-layer-2026-06-22); 9 tickets + consequence check (lazy-binding req + rotation window + parameterize-at-current); advisor fixes baked in; goals→intentions memory updated; all pushed (b5ed73fc) Next: T-uu-config-profile-layer (M, sprint); vault maturation; launcher reorg; THEIGORS_HOME NameError in repo skills; T-skills-goals-to-intentions
 
 ## In-flight: NONE — all work complete, all tickets filed and gated, decision recorded and projected, nothing mid-sprint.
+
+## In-flight: T-uu-config-profile-layer closed PROVEN (config-identity layer shipped); starting T-uu-identity-resolvers (ticket 2/2 of this batch's ungated set)

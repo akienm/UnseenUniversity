@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-uu-identity-resolvers",
-    "title": "[sprint] Identity resolvers: DB-URL / IGOR_NAME / hostname — call-time, raise-if-unset, NO module-scope binding",
+    "title": "[in_progress] Identity resolvers: DB-URL / IGOR_NAME / hostname — call-time, raise-if-unset, NO module-scope binding",
     "size": "M",
     "tags": [
       "Config",
       "Credentials"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.6,
     "decision_id": "D-uu-config-identity-layer-2026-06-22",
     "gate": null,
