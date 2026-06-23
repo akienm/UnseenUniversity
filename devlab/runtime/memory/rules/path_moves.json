@@ -1,0 +1,17 @@
+{
+  "description": "Canonical-home rules for dev-process artifacts (D-canonical-memory-consolidation-2026-06-23). The path-moves monitor (devlab/claudecode/path_moves_monitor.py) runs this against the git file index at day-close and raises a system alarm for any artifact found under a retired path or outside the canonical home — so a renamed store with a surviving write-path can never again silently split the source of truth.",
+  "canonical_home": "devlab/runtime/memory/",
+  "retired_paths": [
+    "lab/",
+    "devlab/design_docs/",
+    "devlab/design_docs_for_igor/"
+  ],
+  "moves": [
+    {"from": "lab/design_docs/decisions/", "to": "devlab/runtime/memory/decisions/"},
+    {"from": "lab/design_docs_for_igor/", "to": "devlab/runtime/memory/decisions/"},
+    {"from": "lab/claudecode/", "to": "devlab/claudecode/"},
+    {"from": "devlab/design_docs/decisions/", "to": "devlab/runtime/memory/decisions/"}
+  ],
+  "artifact_suffixes": [".slate.txt", ".dsb"],
+  "artifact_dir_globs": ["decisions", "tickets", "slates", "sessions", "proofs", "design_patterns", "notes", "projects", "rules", "architecture"]
+}

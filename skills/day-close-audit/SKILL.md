@@ -505,6 +505,26 @@ Add to the findings report: `Completion audit: N pass, N fail, N cannot-verify`
 
 ---
 
+## Step 18.8 — Path-moves monitor (canonical-home guard)
+
+Verify no dev-process artifact has drifted to a retired path or outside the
+canonical store `devlab/runtime/memory/` (D-canonical-memory-consolidation). The
+monitor runs the registry (`devlab/runtime/memory/rules/path_moves.json`) against
+the git file index and raises a system alarm per offending path. Read-only and
+fail-soft — never gates day-close.
+
+```bash
+python3 ${CC_WORKFLOW_TOOLS}/path_moves_monitor.py
+```
+
+Clean output = every artifact is in the canonical home. Any finding → a
+`noncanonical-artifact:<path>` alarm is raised (see `uu alarms`); surface it in
+the report and fix the misfiled artifact (or its stale write-path).
+
+Add to the findings report: `Path-moves: clean | <N> non-canonical artifact(s)`
+
+---
+
 ## Step 19 — Evaluate findings + fix
 
 For each finding across Steps 1–18.6:
