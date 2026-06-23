@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.path-moves-monitor-detection.T-path-moves-monitor.20260623.164740375303",
+  "emitter": "cc.0",
+  "namespace": [
+    "path-moves-monitor-detection",
+    "T-path-moves-monitor"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T16:47:40.375303",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-path-moves-monitor"
+    ],
+    "commits": [
+      "07f8ef554975c88af861c040560fb832197389a1"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "path-moves monitor detection",
+    "intention": "the monitor flags any dev-process artifact under a retired path or outside the canonical home, and is silent on a clean tree",
+    "test": "tests/test_path_moves_monitor.py::test_scan_flags_misfiled_artifacts_and_is_silent_on_clean_tree",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_path_moves_monitor.py::test_scan_flags_misfiled_artifacts_and_is_silent_on_clean_tree",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            \"src/whatever/cc.0.D-y.20260101.000000000000.json\",\n            # the legacy .dsb log anywhere but the store:\n            \"devlab/design_docs_for_igor/decisions_log.dsb\",\n        ]\n        found = pmm.scan(misfiled, _REGISTRY)\n        flagged = {f[\"path\"] for f in found}\n>       assert flagged == set(misfiled), f\"monitor missed a misfiled artifact: {set(misfiled) - flagged}\"\nE       AssertionError: monitor missed a misfiled artifact: {'lab/design_docs/decisions/cc.0.D-x.20260623.120000123456.json', 'devlab/design_docs_for_igor/decisions_log.dsb', 'src/whatever/cc.0.D-y.20260101.000000000000.json'}\nE       assert set() == {'devlab/desi...0000000.json'}\nE         \nE         Extra items in the right set:\nE         'lab/design_docs/decisions/cc.0.D-x.20260623.120000123456.json'\nE         'devlab/design_docs_for_igor/decisions_log.dsb'\nE         'src/whatever/cc.0.D-y.20260101.000000000000.json'\nE         Use -v to get more diff\n\ntests/test_path_moves_monitor.py:38: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_path_moves_monitor.py::test_scan_flags_misfiled_artifacts_and_is_silent_on_clean_tree\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "07f8ef554975c88af861c040560fb832197389a1",
+    "impl_paths": [
+      "devlab/claudecode/path_moves_monitor.py",
+      "devlab/runtime/memory/rules/path_moves.json",
+      "devlab/runtime/memory/tickets/cc.0.T-path-moves-monitor.20260623.161033883726.json"
+    ],
+    "ticket": "T-path-moves-monitor",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
