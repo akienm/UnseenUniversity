@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-alarm-on-dirty-tree.20260623.142845339060",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-alarm-on-dirty-tree"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T20:28:45.339060+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "tickets": [
+      "T-alarm-on-dirty-tree"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-alarm-on-dirty-tree",
+    "title": "[sprint] Lingering uncommitted changes / stashes raise a system_alarm (CP6 clean-tree, made literal)",
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Infrastructure"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "gate": null,
+    "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
+    "intention": "I intend that abandoned uncommitted work — a dirty working tree or a lingering git stash — surfaces as a system alarm instead of rotting silently, because that is exactly the should-not-happen, weeks-of-invisibility condition the alarm primitive exists to catch (CP6 clean-tree / no-stash, made literal).",
+    "description": "**Problem:** 3 CC stashes sat invisible for 3 weeks (work behind 'done' tickets that never shipped). CP6 says clean-tree / no-stash, but nothing enforces or surfaces a violation — so abandoned WIP rots until a git accident exposes it. This is precisely the should-not-happen-and-stays-invisible pattern system_alarms was built for.\n\n**Shape:** A detection function that, for a given repo, checks for (a) a dirty working tree (uncommitted tracked changes) and (b) lingering stashes, and calls raise_alarm with a stable signature per condition — e.g. `dirty-tree:<repo>` and `lingering-stash:<repo>` — caller = the checking context, message = a human one-liner (file count / stash count + age). The alarm then surfaces on the ALARMS PANEL and tmux nag like any other. Self-clears when the tree goes clean (the alarm ages out via prune_stale / can be closed). NEVER auto-commits, auto-cleans, or drops a stash — surfacing only; humans decide (no escape hatch, CP6).\n\n**Affected files:** a new small checker (e.g. unseen_university/git_hygiene_alarm.py) calling unseen_university.system_alarms.raise_alarm; no changes to the primitive.\n**Design rules:** fail-soft (a broken check never breaks the caller); read-only git (status/stash list); flat-file alarm store (already resilient); never destroy WIP.\n**Scope boundary:** IN — the detection + raise_alarm wiring with stable signatures, returning what it alarmed. OUT — WHERE/when it runs (which device sweeps it — separate wiring ticket); any auto-remediation; the salvage of the current 3 stashes (separate review).\n**Test plan:** a temp git repo with an uncommitted change raises `dirty-tree:<repo>` once (deduped on re-check); a repo with a stash raises `lingering-stash:<repo>`; a clean repo with no stashes raises nothing; the checker never raises an exception even if git is absent.\n**Completion criteria:** the checker drops `dirty-tree:<repo>` when the tree has uncommitted changes and `lingering-stash:<repo>` when stashes exist, deduped by signature; a clean repo produces no alarm; the checker is fail-soft (returns, never throws) and never mutates git state.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T20:28:44.884162+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T20:28:44.929092+00:00"
+  }
+}
