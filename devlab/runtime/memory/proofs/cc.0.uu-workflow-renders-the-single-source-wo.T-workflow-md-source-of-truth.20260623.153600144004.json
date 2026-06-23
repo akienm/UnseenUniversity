@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.uu-workflow-renders-the-single-source-wo.T-workflow-md-source-of-truth.20260623.153600144004",
+  "emitter": "cc.0",
+  "namespace": [
+    "uu-workflow-renders-the-single-source-wo",
+    "T-workflow-md-source-of-truth"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T15:36:00.144004",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-workflow-md-source-of-truth"
+    ],
+    "commits": [
+      "b99a6acfb037cb29eb238bc5054d0b4ef3ec851d"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "uu workflow renders the single-source workflow map from skills/workflow.md",
+    "intention": "uu workflow prints skills/workflow.md verbatim and the map carries current markers (THE TRACKING STACK, /sorted, /sprint-ticket) and not the stale /decided.",
+    "test": "tests/test_workflow_md_source_of_truth.py::test_uu_workflow_renders_the_map_from_the_single_source",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_workflow_md_source_of_truth.py::test_uu_workflow_renders_the_map_from_the_single_source",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    \n        uu = _load_uu()\n        buf = io.StringIO()\n        with contextlib.redirect_stdout(buf):\n            uu._cmd_workflow()\n        out = buf.getvalue()\n    \n        # `uu workflow` prints the source file verbatim — one source, no divergence.\n        assert out.strip() == wf.read_text(encoding=\"utf-8\").strip()\n    \n        # the rendered map is real and current (a hollow/placeholder or stale map fails here):\n        for marker in (\"THE TRACKING STACK\", \"WHERE AM I?\", \"/sorted\", \"/sprint-ticket\"):\n>           assert marker in out, f\"missing map marker: {marker}\"\nE           AssertionError: missing map marker: THE TRACKING STACK\nE           assert 'THE TRACKING STACK' in '# UnseenUniversity Workflow Map\\n\\nTODO: source-of-truth workflow map (stub).\\n'\n\ntests/test_workflow_md_source_of_truth.py:43: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_workflow_md_source_of_truth.py::test_uu_workflow_renders_the_map_from_the_single_source\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "b99a6acfb037cb29eb238bc5054d0b4ef3ec851d",
+    "impl_paths": [
+      "skills/workflow.md",
+      "skills/workflow/SKILL.md"
+    ],
+    "ticket": "T-workflow-md-source-of-truth",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
