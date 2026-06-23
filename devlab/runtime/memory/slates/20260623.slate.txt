@@ -44,3 +44,7 @@
 - D-system-alarms-and-tier-requests-2026-06-23: system_alarms primitive + tier-based inference requests — 7 tickets + consequence; SUPERSEDES built parts of D-inference (provider/billing/router already existed 2026-06-12); live bug = device.py fallthrough to dead OR
 
 ## In-flight: Alarms phase: shipped proven 4 closes (loguru-ownership, system-alarms-primitive, fatal, web-panel). Notify reshaped (email/push dead → visual). Coverage gap filed (chat SPA/dashboard/metrics panel); tmux-nag + uu-alarms-cli queued. Keystone routes: alarms-coverage or inference-restore-igor. Deep-clean substrate work done (logging ownership, alarm mouth, fatal behavior, web visual channel all proven).
+
+## In-flight: 2026-06-23 Done: 7 proven closes (alarms complete + inference keystone #1+alarm); workflow.md source-of-truth; canonical-memory law locked in CLAUDE.md; 11 misfiled decisions migrated + .dsb merged. Next: canonical-memory consolidation design (5 tickets, ready to /sorted) or audit-layer proportionality pass (14 audits vs proof-on-close spine; deferred, never ticketed).
+
+## In-flight: Two design conversations in-flight: canonical-memory consolidation (ready to lock via /sorted) or audit-layer proportionality (audit skills vs proof-on-close, deferred decision).
