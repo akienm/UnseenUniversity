@@ -144,6 +144,11 @@ def _read(path: Path) -> Optional[dict]:
 # ── Result ────────────────────────────────────────────────────────────────────
 
 
+class SystemAlarmFatal(Exception):
+    """Raised by ``raise_alarm(fatal=True)`` AFTER the alarm is reported, to halt
+    a caller that must not continue. Never raised when ``fatal=False``."""
+
+
 @dataclass
 class AlarmResult:
     """Outcome of a ``raise_alarm`` call.
@@ -169,9 +174,14 @@ def raise_alarm(
     *,
     level: str = "ERROR",
     emit_log: bool = True,
+    fatal: bool = False,
     now: Optional[datetime] = None,
 ) -> AlarmResult:
-    """Drop/dedup a system alarm AND emit a normal log line. Never raises.
+    """Drop/dedup a system alarm AND emit a normal log line.
+
+    Fail-soft by default (``fatal=False``): never raises. When ``fatal=True``,
+    the caller must not continue — the alarm is dropped/reported and logged
+    first, THEN ``SystemAlarmFatal`` is raised (report-then-halt).
 
     Args:
         signature: the dedup subject, e.g. ``"no-provider:worker"`` or
@@ -180,6 +190,7 @@ def raise_alarm(
         message: human-readable one-liner for the log + ``last_message``.
         level: log severity name (default ``"ERROR"``).
         emit_log: also emit the normal log line (default True).
+        fatal: if True, raise ``SystemAlarmFatal`` after reporting (default False).
         now: injectable clock for tests.
     """
     now = now or datetime.now(timezone.utc)
