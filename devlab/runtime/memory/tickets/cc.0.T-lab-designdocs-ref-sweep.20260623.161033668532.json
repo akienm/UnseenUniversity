@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-lab-designdocs-ref-sweep",
-    "title": "[sprint] Sweep all lab/ + design_docs/ read-refs to canonical paths — proven by grep zero",
+    "title": "[in_progress] Sweep all lab/ + design_docs/ read-refs to canonical paths — proven by grep zero",
     "size": "M",
     "tags": [
       "Workflow",
       "MemoryArch"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.55,
     "gate": null,
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",

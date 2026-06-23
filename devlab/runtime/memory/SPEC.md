@@ -3,7 +3,7 @@
 **Status:** foundation laid 2026-06-16. Migration of existing records NOT yet run.
 **Owner:** Hubert (dev-process / decisions / lab artifacts).
 **Decision:** `decisions/cc.0.hubert.20260616.*.json` (genesis, dogfooded) and
-`lab/design_docs/decisions/D-filesystem-memory-store-2026-06-16.md`.
+`devlab/runtime/memory/decisions/` (projected from the genesis design note).
 
 ---
 

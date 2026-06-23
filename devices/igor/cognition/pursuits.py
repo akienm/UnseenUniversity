@@ -3,8 +3,8 @@ pursuits.py — Pursuit layer: goal-bound behavioral units above engrams.
 
 A Pursuit holds the commitment-to-completion arc of an action that cannot
 be captured by a single engram firing. See:
-  lab/design_docs/pursuit_layer.md         — the concept and biology
-  lab/design_docs/pursuit_programming.md   — when to wrap, how to wrap
+  the pursuit-layer design conversation in devlab/runtime/memory/decisions/
+  (the original pursuit_layer.md / pursuit_programming.md notes are in git history)
 
 MVP scope (T-single-pursuit-test-case):
   - Pursuit dataclass + in-process registry (TWM-style)

@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-cc-queue-rollup-misfiles-lab.20260623.171349065374",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-rollup-misfiles-lab"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T23:13:49.065374+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-canonical-memory-consolidation-2026-06-23"
+    ],
+    "tickets": [
+      "T-cc-queue-rollup-misfiles-lab"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-queue-rollup-misfiles-lab",
+    "title": "[sprint] cc_queue decision-rollup writes .md stub to retired lab/design_docs/ — disable or re-emit JSON",
+    "size": "S",
+    "tags": [
+      "Memory",
+      "CanonicalStore"
+    ],
+    "description": "Surfaced by T-lab-designdocs-ref-sweep. cc_queue.py `_rollup_decision` (≈L857) does `mkdir -p ~/dev/src/UnseenUniversity/lab/design_docs/decisions` and writes a `<decision-id>.md` rollup stub when all of a decision's tickets close — a surviving WRITE-path that recreates a retired dir AND in the wrong format (decisions are JSON in devlab/runtime/memory/decisions/ now). Sibling to T-skill-write-paths-canonical. Store-based decision lifecycle already exists (outcome_check.py detects completion; cc_nightly/migrate_decisions touch the store), so the .md rollup is legacy/redundant.\n\n**Proposed shape:** either (a) delete the .md rollup branch entirely (decisions auto-close via the store), or (b) re-emit the decision JSON with status=closed + rollup info via memory_emit reusing the file's stamp (same atomic-overwrite pattern /outcome uses). Prefer (a) if outcome_check + store rollup fully cover it; verify first.\n\n**Affected files:** devlab/claudecode/cc_queue.py\n**Design rules:** no-writes-outside-canonical-home (D-canonical-memory-consolidation)\n**Scope boundary:** IN — the cc_queue .md rollup write-path. OUT — cc_nightly's read-scan (separate ticket), the broader ref-sweep.\n**Test plan:** proof-on-close — a test asserting closing a decision's last ticket creates NO file under lab/ (and, if (b), re-emits the decision JSON closed). red on current code, green after.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-canonical-memory-consolidation-2026-06-23",
+    "gate": null,
+    "priority": 0.55,
+    "status": "sprint",
+    "created_at": "2026-06-23T23:13:44.665036+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T23:13:44.716542+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c5038344-6ffb-479f-907a-a47511c6e7aa"
+  }
+}

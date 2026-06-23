@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Pilot migrator: lab/design_docs/decisions/*.md  ->  memory store `decisions/`.
+"""Pilot migrator: devlab/design_docs/decisions/*.md  ->  memory store `decisions/`.
 
 This is the TEMPLATE the bulk (Haiku) migration generalizes. It demonstrates the
 locked policy end to end against real records:
 
   - PROJECTION not relocation: reads the source, writes a projection, deletes
-    nothing. lab/design_docs/decisions/ stays authoritative this pass.
+    nothing. devlab/design_docs/decisions/ stays authoritative this pass.
   - IDEMPOTENT: stamp derived from the SEMANTIC id via stamp_for_day_only(), so a
     re-run overwrites in place — never duplicates. (These docs are day-only:
     a date in frontmatter, no clock time.)

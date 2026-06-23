@@ -24,8 +24,8 @@ Deferred to Stage 2 (gated on T-goal-formation-from-conversation):
 Gate: IGOR_BLISS_ENABLED (default false). When disabled, get_bliss()
 returns 0.0 and apply-to-milieu is a no-op.
 
-See lab/design_docs/pursuit_layer.md for the design conversation this
-derives from.
+See the pursuit-layer design conversation in devlab/runtime/memory/decisions/
+(the original pursuit_layer.md is in git history) for what this derives from.
 """
 
 from __future__ import annotations

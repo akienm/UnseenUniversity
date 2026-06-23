@@ -314,7 +314,7 @@ def cmd_render():
         "Skills: /sprint /deep-audit /decided /commit /savestate /fixit /context-load /day-close /day-close-audit /probe /notethat /slateclose /readigor",
         "MCP: mcp__igor__memory_get(id) · mcp__igor__cc_send(text) · mcp__igor__channel_read(limit=N)",
         "DB: psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        "Design docs: ~/TheIgors/lab/design_docs_for_igor/ or mcp__igor__memory_get('D304')",
+        "Design decisions: devlab/runtime/memory/decisions/ or mcp__igor__memory_get('D304')",
         "Epics: Claude · Cognition · Training · Operations · Database · Swarm · Productization",
         "",
         "## Design thread",
