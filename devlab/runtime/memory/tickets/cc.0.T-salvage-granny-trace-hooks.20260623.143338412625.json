@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-salvage-granny-trace-hooks.20260623.143338412625",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-salvage-granny-trace-hooks"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T20:33:38.412625+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-salvage-granny-trace-hooks"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-salvage-granny-trace-hooks",
+    "title": "[sprint] Salvage: Granny routing/audit trace_record observability hooks",
+    "size": "S",
+    "tags": [
+      "Observability",
+      "Granny"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "gate": null,
+    "intention": "I intend that Granny's routing and audit decisions emit trace_record observability hooks, because that instrumentation is the one genuinely-still-needed part of the abandoned 3-week-old WIP stash and it matches the project's observability-is-the-north-star priority.",
+    "description": "**Origin:** The salvage review of 3 abandoned CC stashes (all 'WIP on main: 171e26fe') found ~95% already-landed/superseded. The ONE clean, high-value pickup: Granny device.py adds trace_record() calls at its decision points — route_ticket, no_route, audit_pass / audit_fail / audit_escalate (and cc_spawn). trace_record is inherited from DiagnosticBase (present in HEAD, tested in test_diagnostic_base.py), so these are pure additive instrumentation that apply cleanly.\n\n**Proposed shape:** Extract ONLY the trace_record additions from stash@{0}:devices/granny/device.py (do NOT apply the whole stash — its daemon.py/registry.py changes are obsolete). Re-add the hooks at the matching decision points in current device.py. DROP or adapt the cc_spawn hook — spawn is deprecated (Granny is handshake-only, never spawns CC); if a comparable handshake/route decision point exists, instrument that instead, else omit.\n\n**Carried note (NOT cherry-picked):** stash daemon.py also had a 5h-usage-cache rate-limit pause — `_check_rate_limit()` reads ~/.claude/usage-cache.json and pauses dispatch above 90%. HEAD's _launch_builder only does a time-based retry throttle, not usage-based. This is a genuinely distinct idea but entangled with the obsolete spawn-cap code; capture as a future ticket idea, do not salvage the code here.\n\n**Affected files:** devices/granny/device.py (trace_record call sites only).\n**Design rules:** log-every-state-change-and-interface-crossing (these hooks ARE that, for Granny's routing/audit boundary); fail-soft (trace_record must never break routing); no-spawn (drop/adapt cc_spawn).\n**Scope boundary:** IN — the route/no-route/audit trace_record hooks on current device.py, cc_spawn dropped or adapted. OUT — the usage-cache rate-limit (note only); anything from daemon.py/registry.py/the rest of the stash; wiring devices/granny/orchestrator.py.\n**Test plan:** spy/monkeypatch trace_record on a GrannyWeatherwaxDevice instance, drive each decision path (a routed ticket, a no-route, an audit pass/fail/escalate), assert trace_record fired with the expected event label each time.\n**Completion criteria:** Granny's route_ticket, no_route, and audit pass/fail/escalate paths each call trace_record with a distinct event label; a test asserts each fires; cc_spawn hook is dropped or adapted to a non-spawn decision point; trace_record failure cannot break routing (fail-soft).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T20:33:37.948262+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T20:33:37.994664+00:00"
+  }
+}
