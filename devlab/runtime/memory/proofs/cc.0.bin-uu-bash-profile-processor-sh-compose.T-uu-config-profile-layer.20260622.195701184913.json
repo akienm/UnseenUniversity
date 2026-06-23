@@ -1,0 +1,61 @@
+{
+  "id": "cc.0.bin-uu-bash-profile-processor-sh-compose.T-uu-config-profile-layer.20260622.195701184913",
+  "emitter": "cc.0",
+  "namespace": [
+    "bin-uu-bash-profile-processor-sh-compose",
+    "T-uu-config-profile-layer"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-22T19:57:01.184913",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-config-profile-layer"
+    ],
+    "commits": [
+      "a1aa5fba2beca5da381acdd1af46f24c0544135f"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "bin/uu_bash_profile_processor.sh composes the identity env from bootstrap vars, secret-free, fail-soft",
+    "intention": "Clean-env source with only bootstrap vars composes UU_HOME_DB_URL byte-for-byte + sets hostname-derived names; no credential literal; no bootstrap vars => rc0 fast, invents no URL",
+    "test": "tests/test_uu_bash_profile_processor.py::test_composes_db_url_from_bootstrap_in_clean_env",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_uu_bash_profile_processor.py::test_composes_db_url_from_bootstrap_in_clean_env",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______________ test_composes_db_url_from_bootstrap_in_clean_env _______________\n\n    def test_composes_db_url_from_bootstrap_in_clean_env():\n        r = _run(f'source \"{PROC}\"; printf \"%s\" \"$UU_HOME_DB_URL\"', BOOTSTRAP)\n        assert r.returncode == 0, r.stderr\n>       assert r.stdout == EXPECTED_URL\nE       AssertionError: assert '' == 'postgresql:/...instance-0001'\nE         \nE         - postgresql://testuser:testpass@127.0.0.1/Test-instance-0001\n\ntests/test_uu_bash_profile_processor.py:55: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_uu_bash_profile_processor.py::test_composes_db_url_from_bootstrap_in_clean_env\n1 failed in 0.07s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "a1aa5fba2beca5da381acdd1af46f24c0544135f",
+    "impl_paths": [
+      ".gitignore",
+      "bin/uu_bash_profile.sh.example",
+      "bin/uu_bash_profile_processor.sh",
+      "bin/uu_shell_secrets.manifest",
+      "devlab/runtime/memory/tickets/cc.0.T-uu-config-profile-layer.20260622.175836908514.json"
+    ],
+    "ticket": "T-uu-config-profile-layer",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
