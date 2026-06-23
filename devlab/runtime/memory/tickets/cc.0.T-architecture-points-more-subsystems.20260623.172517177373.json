@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-architecture-points-more-subsystems.20260623.172517177373",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-architecture-points-more-subsystems"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T23:25:17.177373+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-canonical-memory-consolidation-2026-06-23"
+    ],
+    "tickets": [
+      "T-architecture-points-more-subsystems"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-architecture-points-more-subsystems",
+    "title": "[sprint] Add architecture intention-points for remaining subsystems (incremental)",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Memory"
+    ],
+    "description": "T-architecture-intention-points established the intention-point pattern + covered both memory kinds + bus/device-shim/skeleton. This tracks incremental coverage of the remaining subsystems as they warrant a summary+pointers node: devices roster (granny/igor/scraps/hubert/librarian/etc.), diagnostic_base, datacenter_logs hierarchy, the proof-on-close gate, the queue/dispatch path, the inference proxy. Add one small architecture/<subsystem>.json per subsystem via memory_emit; not urgent — add when touching a subsystem.\n\n**Affected files:** devlab/runtime/memory/architecture/\n**Design rules:** none apply\n**Scope boundary:** IN — new intention-points for un-covered subsystems. OUT — the 5 already shipped.\n**Test plan:** extend tests/test_architecture_intention_points.py (pointers resolve) per added point.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-canonical-memory-consolidation-2026-06-23",
+    "gate": null,
+    "priority": 0.2,
+    "status": "sprint",
+    "created_at": "2026-06-23T23:25:14.770090+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T23:25:14.815245+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "0f605fb5-37b4-4f37-9731-253a295185a8"
+  }
+}

@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-architecture-intention-points",
-    "title": "[in_progress] Prior architecture docs -> uniform devlab/runtime/memory/architecture/<subsystem>.json (classify-first)",
+    "title": "Prior architecture docs -> uniform devlab/runtime/memory/architecture/<subsystem>.json (classify-first)",
     "size": "L",
     "tags": [
       "MemoryArch",
       "Architecture"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.5,
     "gate": null,
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
@@ -34,9 +34,9 @@
     "created_at": "2026-06-23T22:10:27.682992+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Established the architecture intention-point pattern (uniform JSON in architecture/ via memory_emit, namespace=subsystem: summary + intent->implementation pointers). Covered BOTH memory kinds in small bites — memory-dev-artifacts + memory-graph-tree — plus bus/device-shim/skeleton. Classify-first finding: devlab/design_docs/ holds decisions/goals/findings (not subsystem architecture) + the_ownership_gap is narrative essay — so no large doc-pile to convert; architecture lives in subsystems + the 2 memory docs. Remaining subsystem coverage tracked in T-architecture-points-more-subsystems (incremental). Proof: tests/test_architecture_intention_points.py::test_every_intention_point_pointer_resolves (red->green, every pointer resolves).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T23:25:17.419554+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-23T22:10:27.683097+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "b66be36f-c28a-4512-a0b9-4d257a38a9e2"
+    "inferred_intention_id": "b66be36f-c28a-4512-a0b9-4d257a38a9e2",
+    "proven": true,
+    "proof_id": "cc.0.architecture-intention-points-with-resol.T-architecture-intention-points.20260623.172442447505",
+    "proof_commit": "75b10997dec0ce1f4d1bf776fdb2f6240f77b40a",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
