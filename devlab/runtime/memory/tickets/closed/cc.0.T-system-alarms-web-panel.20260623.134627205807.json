@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-system-alarms-web-panel",
-    "title": "[sprint] ALARMS PANEL — conditional, all web pages + status panels (the loud visual channel)",
+    "title": "ALARMS PANEL — conditional, all web pages + status panels (the loud visual channel)",
     "size": "M",
     "tags": [
       "Observability",
       "WebUI"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.55,
     "gate": null,
     "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
@@ -35,14 +35,21 @@
     "created_at": "2026-06-23T19:46:26.746521+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Black ALARMS PANEL (red inset box, bold-red SYSTEM ALARMS, 3-line scrollable clickable list, 4-line detail, no JSON) injected via _html_wrap on all pages; renders only when an open alarm exists; /api/alarms reads the flat-file store directly. Proof: tests/test_web_alarms_panel.py @ b5724bdb (stub-first red→green).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T19:56:50.053257+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-23T19:46:26.793283+00:00"
+    "scraps_validated": "2026-06-23T19:46:26.793283+00:00",
+    "proven": true,
+    "proof_id": "cc.0.api-alarms-reflects-the-system-alarms-st.T-system-alarms-web-panel.20260623.135640655778",
+    "proof_commit": "b5724bdbd8eac4cecffc54866b62daf7dd87500a",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
