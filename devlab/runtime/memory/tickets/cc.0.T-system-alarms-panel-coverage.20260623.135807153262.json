@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-system-alarms-panel-coverage.20260623.135807153262",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-system-alarms-panel-coverage"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T19:58:07.153262+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "tickets": [
+      "T-system-alarms-panel-coverage"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-system-alarms-panel-coverage",
+    "title": "[sprint] ALARMS PANEL on the pages that bypass _html_wrap (chat SPA, dashboard, metrics)",
+    "size": "M",
+    "tags": [
+      "Observability",
+      "WebUI"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "gate": null,
+    "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
+    "intention": "I intend that the ALARMS PANEL is truly on EVERY web page, including the main chat page and the dashboard/metrics pages that don't go through _html_wrap.",
+    "description": "**Problem:** T-system-alarms-web-panel injected the ALARMS PANEL via _html_wrap, covering the data/admin pages. Three pages bypass _html_wrap and currently show NO panel: (1) `/` the main chat page, served as a static built SPA (_DIST_DIR/index.html); (2) `/dashboard` (_DASHBOARD_HTML constant); (3) `/metrics-page` (_METRICS_HTML constant). The chat page is the one Akien looks at most — the loud channel must reach it.\n\n**Shape:** Inject the ALARMS PANEL into _DASHBOARD_HTML and _METRICS_HTML (trivial — prepend the shared _ALARMS_PANEL constant inside <body>). For the SPA chat page, either (a) add the panel to the frontend source + rebuild the dist, or (b) inject server-side by templating the panel into the served index.html. Decide (a) vs (b) based on where the SPA source lives.\n\n**Affected files:** devices/web_server/server.py (_DASHBOARD_HTML, _METRICS_HTML); the SPA frontend source or the _index server path.\n**Design rules:** reuse the existing _ALARMS_PANEL constant (one source of truth for the panel); zero new deps; conditional render preserved.\n**Scope boundary:** IN — panel present on dashboard, metrics, and the chat SPA page. OUT — new panel features; the endpoint (shipped); admin close controls.\n**Test plan:** _DASHBOARD_HTML and _METRICS_HTML contain id=sysalarm-panel; the served chat page contains it (test the chosen injection path).\n**Completion criteria:** all three bypassing pages include the ALARMS PANEL markup; the panel still renders only when an alarm exists.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T19:58:06.694977+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T19:58:06.741840+00:00"
+  }
+}
