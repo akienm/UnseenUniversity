@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.unseen-university-identity-py-call-time.T-uu-identity-resolvers.20260622.200227019103",
+  "emitter": "cc.0",
+  "namespace": [
+    "unseen-university-identity-py-call-time",
+    "T-uu-identity-resolvers"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-22T20:02:27.019103",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-identity-resolvers"
+    ],
+    "commits": [
+      "35af2b4ef918522b7cc63c01855a7a55ac9ff89b"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "unseen_university/identity.py call-time resolvers (import-safe, raise-if-unset)",
+    "intention": "from unseen_university import identity; identity.igor_name() resolves IGOR_NAME at call time to its env value, and the module imports cleanly with all identity vars unset",
+    "test": "tests/test_identity_resolvers.py::test_igor_name_resolves_via_subprocess",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_identity_resolvers.py::test_igor_name_resolves_via_subprocess",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "=================================== FAILURES ===================================\n____________________ test_igor_name_resolves_via_subprocess ____________________\n\n    def test_igor_name_resolves_via_subprocess():\n        # PROOF test: subprocess so module-absent red is an AssertionError, not ImportError.\n        r = subprocess.run(\n            [sys.executable, \"-c\",\n             \"from unseen_university import identity; print(identity.igor_name(), end='')\"],\n            env=_base_env(PYTHONPATH=os.getcwd(), IGOR_NAME=\"Igor-wild-0001\"),\n            capture_output=True, text=True, timeout=30,\n        )\n>       assert r.stdout == \"Igor-wild-0001\"\nE       AssertionError: assert '' == 'Igor-wild-0001'\nE         \nE         - Igor-wild-0001\n\ntests/test_identity_resolvers.py:48: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_identity_resolvers.py::test_igor_name_resolves_via_subprocess\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.09s"
+          }
+        }
+      }
+    ],
+    "commit": "35af2b4ef918522b7cc63c01855a7a55ac9ff89b",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260622.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-uu-identity-resolvers.20260622.175837015292.json",
+      "unseen_university/identity.py"
+    ],
+    "ticket": "T-uu-identity-resolvers",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
