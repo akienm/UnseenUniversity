@@ -1,0 +1,25 @@
+# Slate 2026-06-23
+
+## Notes
+
+- New (to us) hardware incoming — see ~/.unseen_university/akien/20260623.Apple.txt (Akien's surprise;
+  review together). May reshape "what's next" (deploy targets / inference host).
+- Skills: repo is canonical; `deploy` is NOT safe until the 19-skill per-axis merge lands (both trees
+  half-migrated across theigors→unseenuniversity, /decided→/sorted, .dsb→fs-store, ~/TheIgors→UU).
+- Proof-on-close: default to `--shipped-unproven` w/ named lever until proof-emission is wired in.
+
+## Planned
+
+- **Skills 19-skill per-axis merge** (top of T-skills-location-audit) — REVIEW-gated decisions:
+  which grader design is canonical (EvaluatorDevice vs inline-subagent in sprint-ticket), day-close
+  feature union (gate-sweep + prune + discussion note), productize research/critic/factory-create?
+- **Config-identity sweeps** (next batch, now ungated): T-uu-sweep-db-connection-string (L, HIGH-inertia
+  db_proxy.py), T-uu-sweep-instance-name (L), T-uu-sweep-hostname (M) → then env-coverage-audit → rotate.
+- Bootstrap trio (emitter, inplace-red, close-gate) awaits Akien validation.
+
+## Ad hoc
+
+## Done today
+
+- Skills cleanup (safe portion, 4b5697f1): deleted ADCHelp/decided, promoted query-ticket/mytickets/
+  opentickets/concept to repo+manifest, revised harmony doc with the real 4-axis drift finding.

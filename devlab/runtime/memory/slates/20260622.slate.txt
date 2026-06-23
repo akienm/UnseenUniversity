@@ -1,50 +1,37 @@
 # Slate 2026-06-22
 
-## Notes
-
-## In-flight
-NONE
-
-## Planned
-
-## Ad hoc
-
 ## Done today
 
-- T-slate-location-canonical-devlab — BUG: slates write to ~/.unseen_university/claudecode, not devlab/runtime/memory/slates (Slates relocated to devlab/runtime/memory/slates/ via new slate_store resolver (commit 7fa3c2ff); all writers/readers/sk)
-- T-uu-config-profile-layer — Config layer: local bootstrap profile + repo secret-free post-processor (Config-identity layer: secret-free bin/uu_bash_profile_processor.sh composes UU_HOME_DB_URL + hostname-derived names fro)
-- T-uu-identity-resolvers — Identity resolvers: DB-URL / IGOR_NAME / hostname — call-time, raise-if-unset, NO module-scope binding (Created unseen_university/identity.py — canonical call-time resolvers igor_name()/home_db_url()/swarm_hostname(): raise-)
-## Sprint 2026-06-22 — proof-on-close GATE built + proven live (1ffb7f13)
-Done:
-- T-ticket-close-requires-proof BUILT + PROVEN LIVE -> awaiting_validation (1ffb7f13). The keystone: a ticket closes proven (HEAD-valid proof) OR shipped-unproven naming the missing proof-lever. NO load-bearing discriminator (dropped escape hatch).
-- Single _proof_gate chokepoint wired into ALL status->closed paths (cmd_close + cmd_setstatus(closed) + _try_auto_validate) — advisor caught the auto-validate bypass; gate is unbypassable.
-- proof_store.py (new, parallel to ticket_store): find_for_ticket(bare body.id) + validate(git reachability + impl-path-scoped drift) + best_valid_proof.
-- proof_emitter records impl_paths (the prereq for the drift check).
-- effective_status + queue listing render shipped-unproven distinctly (⚠️).
-- LIVE use-it test under SYSTEM python3 (the documented failure mode): list imports clean; bare proofless close REFUSED, ticket unmutated. 31 unit tests green.
-- sprint-ticket skill (both copies) close step documents proven + shipped-unproven paths.
-SYSTEM-WIDE BEHAVIOR CHANGE (surfaced): bare proofless closes now reject; auto-validate + sprint-ticket default to shipped-unproven w/ named reason (T-consequence-proof-on-close-finalized watches accumulation).
+- **T-slate-location-canonical-devlab** — slate relocation SHIPPED (a82dad06): slates now in
+  `devlab/runtime/memory/slates/` via new `slate_store` resolver; `memory_root` consolidated;
+  closed shipped-unproven (lever: T-emitter-new-module-proof). 90 tests green + use-it verified.
+- **docs/memory_architecture.md** — runtime memory design (design-vs-built; 3 "tree" meanings).
+- **D-uu-config-identity-layer-2026-06-22** filed — config-identity layer + credential scrub;
+  9 tickets + consequence check; advisor fixes baked in; projected to memory store (b5ed73fc).
+- **T-uu-config-profile-layer** — closed PROVEN: secret-free `bin/uu_bash_profile_processor.sh`
+  composes UU_HOME_DB_URL + hostname-derived names (fail-soft); local bootstrap + .bashrc cutover
+  verified live (byte-identical URL); 7-test clean-env red→green proof.
+- **T-uu-identity-resolvers** — closed PROVEN: `unseen_university/identity.py` call-time resolvers
+  (igor_name/home_db_url/swarm_hostname), raise-if-unset, import-safe; ungated the 3 sweeps.
+- Findings filed: **T-uu-bashrc-openrouter-key** (live OR key in ~/.bashrc:144 — relocate+rotate),
+  **T-code-indexer-mutates-source** (indexer injects `# intent:` into tracked source).
+- **T-skills-location-audit** filed + **docs/skills_harmony_recommendation_20260622.md** written.
 
-## In-flight: 3 bootstrap pieces awaiting Akien validation (emitter, inplace-red, close-gate); all close-state = shipped-unproven 'can't self-prove' on nod. Next: T-evaluator-certifies-proof-sufficiency (GATED on close-gate), then maps + FTP design pass.
+## Notes
 
-## In-flight: Proof-on-close gate built + proven live under system python3 (1ffb7f13, awaiting_validation); 3 bootstrap pieces (emitter, inplace-red, close-gate) await Akien validation, all close-state shipped-unproven 'can't self-prove' on nod; batch stopped deliberately — next ticket T-evaluator-certifies-proof-sufficiency is gated on close-gate closing, then maps + FTP design pass.
-- T-memory-arch-build-designed-pieces: build designed-but-unbuilt memory-architecture pieces (gap from docs/memory_architecture.md)
+- Proof-on-close gate (1ffb7f13) is live: closes are proven (HEAD-valid proof) or shipped-unproven
+  naming the missing lever. Bootstrap trio (emitter, inplace-red, close-gate) still awaits Akien
+  validation. Default to `--shipped-unproven` until proof-emission is wired into the skill flow.
 
-## In-flight: Slate relocation use-it test: writers now route through slate_store -> devlab/runtime/memory/slates.
+## Session close: 2026-06-22 → early 06-23
+Done: Shipped + proved the first two tickets of the config-identity layer (the original purpose of
+this Opus round); filed the skills-harmony audit + recommendation; began executing skills cleanup.
+Next: skills 19-skill per-axis merge (review-gated — decision work); then the 3 de-hardcoding sweeps
+(next batch; db-string sweep touches HIGH-inertia db_proxy.py).
 
-## In-flight: Slate relocation SHIPPED (7fa3c2ff) + closed shipped-unproven (lever: T-emitter-new-module-proof). slate_store live; memory_root consolidated; 90 tests green; use-it verified. Slates now in devlab/runtime/memory/slates/.
+## In-flight
+Skills cleanup safe-portion done (deletes + 4 promotions + revised doc, 4b5697f1); the 19-skill
+per-axis merge is deferred to the review (both trees half-migrated across 4 axes — blind deploy
+regresses live skills). Day-close 2026-06-23 in progress (full suite running in background).
 
-## In-flight: 2026-06-22 Fixed empty UU_HOME_DB_URL (stale shell predating .bashrc edit) by exporting it in rescueclaude. Wrote docs/memory_architecture.md (runtime memory: design-vs-built, 3 'tree' meanings kept distinct). Shipped slate relocation -> devlab/runtime/memory/slates/ via new slate_store + consolidated memory_root; closed shipped-unproven — FIRST real proof-on-close gate close, which surfaced the emitter new-module gap (filed T-emitter-new-module-proof). Pushed main a82dad06; 90 tests green + live use-it verified. T-emitter-new-module-proof (the lever the gate surfaced), then T-evaluator-certifies-proof-sufficiency (close-gate now built); 3 bootstrap pieces still await Akien validation.
-
-## In-flight: CLEAN — slate relocation shipped + pushed (a82dad06), nothing mid-work; rebooting for OS update. Resume: T-emitter-new-module-proof + T-evaluator-certifies-proof-sufficiency; bootstrap trio (emitter, inplace-red, close-gate) awaits Akien validation.
-- D-uu-config-identity-layer-2026-06-22: config-identity layer + credential scrub — 8 tickets + consequence
-
-## In-flight: 2026-06-22 Done: Credential/config-identity layer decision filed (D-uu-config-identity-layer-2026-06-22); 9 tickets + consequence check (lazy-binding req + rotation window + parameterize-at-current); advisor fixes baked in; goals→intentions memory updated; all pushed (b5ed73fc) Next: T-uu-config-profile-layer (M, sprint); vault maturation; launcher reorg; THEIGORS_HOME NameError in repo skills; T-skills-goals-to-intentions
-
-## In-flight: NONE — all work complete, all tickets filed and gated, decision recorded and projected, nothing mid-sprint.
-
-## In-flight: T-uu-config-profile-layer closed PROVEN (config-identity layer shipped); starting T-uu-identity-resolvers (ticket 2/2 of this batch's ungated set)
-
-## In-flight: Batch decision:D-uu-config-identity-layer complete for eligible set — T-uu-config-profile-layer + T-uu-identity-resolvers both closed PROVEN; 3 sweeps now ungated for next batch
-- T-skills-location-audit: audit skills in repo vs ~/.claude/skills/ before Friday discussion
-- T-skills-location-audit: recommendation ready → docs/skills_harmony_recommendation_20260622.md (read before Friday; 2 deletes + 6 promotions + 1 sync run; autocompact blind-sync regression risk flagged)
+✅ CLOSED
