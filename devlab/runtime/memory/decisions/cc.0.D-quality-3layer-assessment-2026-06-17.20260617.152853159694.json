@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-quality-3layer-assessment-2026-06-17.20260617.152853159694",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-quality-3layer-assessment-2026-06-17"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-17T15:28:53.159694",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-quality-3layer-assessment-2026-06-17"
+    ],
+    "tickets": [
+      "T-consequence-quality-3layer",
+      "T-quality-classifier-output-scoring",
+      "T-quality-disagreement-signal",
+      "T-quality-judge-at-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-quality-3layer-assessment-2026-06-17",
+    "title": "3-layer output quality assessment — structural + judge + classifier",
+    "status": "open",
+    "date": "2026-06-17",
+    "source": "devlab/design_docs/decisions/D-quality-3layer-assessment-2026-06-17.md",
+    "text": "# D-quality-3layer-assessment-2026-06-17\n**title:** 3-layer output quality assessment — structural + judge + classifier\n**date:** 2026-06-17\n**status:** open\n**spawned_tickets:** T-quality-judge-at-close, T-quality-classifier-output-scoring, T-quality-disagreement-signal, T-consequence-quality-3layer\n\n## Decision narrative\nThree layers at ticket close: (1) structural — existing audit skills (free, already wired); (2) small model judge — one Haiku inference call evaluating completion criteria, emits pass/fail + confidence; (3) trained classifier — devices/classifier exists, needs output-quality scoring path; trains on labeled (ticket, output, pass/fail) pairs from validated closes. Judge/classifier disagreement (judge=FAIL, classifier=PASS) surfaces for human review and becomes the highest-value training example. False-positive rate (classifier PASS + human rejected) trends toward zero as training data accumulates. Disagreement tunes itself out over training.\n\n## Hypothesis\nBad outputs are caught before human review; classifier false-positive rate trends toward zero over time.\n\n## Measurement Signal\nCompare classifier verdict at close against human validation outcome; track false_positive_rate metric; disagreement count decreasing over weeks.\n\n## Goal Link\nnone: factory-of-factories is the north star vision, no G-id filed yet\n"
+  }
+}

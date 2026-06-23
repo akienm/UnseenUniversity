@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-depends-on-gate-automation-2026-06-17.20260617.061114712136",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-depends-on-gate-automation-2026-06-17"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-17T06:11:14.712136",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-depends-on-gate-automation-2026-06-17"
+    ],
+    "tickets": [
+      "T-consequence-depends-on-gate",
+      "T-granny-gate-eval",
+      "T-skill-capture-depends-on"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-depends-on-gate-automation-2026-06-17",
+    "title": "Automate ticket dependency ordering — gate field + Granny dispatch eval",
+    "status": "open",
+    "date": "2026-06-17",
+    "source": "devlab/design_docs/decisions/D-depends-on-gate-automation-2026-06-17.md",
+    "text": "# D-depends-on-gate-automation-2026-06-17\n\n**title:** Automate ticket dependency ordering — gate field + Granny dispatch eval\n**date:** 2026-06-17\n**status:** open\n**spawned_tickets:** T-skill-capture-depends-on, T-granny-gate-eval, T-consequence-depends-on-gate\n\n## Decision narrative\n\nThe `gate` field already supports ticket-ID references (`gate: \"T-A\"`) and\n`gate_logic.gate_clear()` already evaluates multi-predecessor semantics\ncorrectly. Two gaps prevent this from working end-to-end:\n\n1. `/ticket` and `/sorted` skills don't prompt for or write dependency edges at\n   filing time — so the graph stays implicit in conversation and never lands on\n   the ticket.\n\n2. Granny's dispatch Postgres query (`gate IS NULL OR gate = ''`) skips gated\n   tickets entirely rather than evaluating whether their gate has cleared.\n   Combined, these mean ticket B never auto-dispatches after ticket A closes —\n   someone has to `cc_queue.py ungate` manually.\n\nFix: (a) update skills to elicit and write `gate: T-xxx` when a ticket obviously\nfollows another; (b) update Granny's dispatch loop to call `gate_logic.gate_clear()`\non gated tickets and make them eligible when clear.\n\n## Hypothesis\n\nGranny holds ticket B even when a builder is free, releasing it only after A\nreaches `closed` — without manual intervention.\n\n## Measurement Signal\n\nGranny dispatch log shows B skipped with reason \"gate not clear: T-A not terminal\";\nthen dispatches B on the next cycle after A closes. Validated with a throwaway\nticket pair.\n\n## Goal Link\n\nnone: factory-of-factories is the north star vision but no formal G-id filed yet\n"
+  }
+}
