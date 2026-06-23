@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-hard-error-fallthrough.20260623.152620686265",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-hard-error-fallthrough"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T21:26:20.686265+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "tickets": [
+      "T-inference-hard-error-fallthrough"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-hard-error-fallthrough",
+    "title": "[sprint] Inference: a candidate raising a hard error falls through to the next tier candidate",
+    "size": "M",
+    "tags": [
+      "Inference",
+      "Resilience"
+    ],
+    "status": "sprint",
+    "priority": 0.55,
+    "gate": null,
+    "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
+    "intention": "I intend that when a routed candidate raises a HARD error (e.g. Gemini 404 / key-not-set), dispatch advances to the next available tier candidate instead of aborting the whole request, so one dead provider doesn't sink a servable request.",
+    "description": "**Split from T-inference-resolve-requests-by-tier (#2 of 3).** Today route() returns ONE decision; if source.call() raises a hard error, dispatch propagates it and the request dies even though lower-priority tier candidates are live.\n\n**Shape:** Let dispatch try tier candidates in priority order — either route() exposes ranked candidates (route_candidates(task_class)) and dispatch loops, or a re-route-excluding-failed loop around source.call(). A hard error (4xx/auth/model-not-found — reuse _classify_ping_failure categories) advances to the next candidate; only when all candidates are exhausted does the complete-inference-failure chokepoint fire (no-provider:<task_class> alarm, already shipped in #1).\n**Affected files:** devices/inference/device.py (dispatch loop), devices/inference/rules_engine.py (ranked candidates).\n**Design rules:** inference-proxy-only; pure router preserved; fail-LOUD only when ALL candidates exhausted.\n**Scope boundary:** IN — hard-error classification + fall-through to next candidate + exhaustion lands on the existing chokepoint. OUT — empty-response fall-through (T-inference-empty-response-fallthrough); the #1 dead-path (shipped); honest ollama liveness (#3).\n**Test plan:** inject two fake candidates for one tier where the higher-priority one raises a hard error on call(); assert dispatch returns the lower-priority candidate's text; assert all-candidates-hard-error lands on the no-provider alarm + clean error.\n**Completion criteria:** a tier with a hard-erroring top candidate and a live lower candidate returns the live candidate's text; all-candidates-failing raises the no-provider alarm + clean error; non-hard errors are unaffected.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T21:26:18.363531+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T21:26:18.407349+00:00"
+  }
+}

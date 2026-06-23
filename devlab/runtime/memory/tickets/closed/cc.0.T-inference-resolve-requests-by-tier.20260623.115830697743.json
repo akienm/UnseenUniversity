@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-inference-resolve-requests-by-tier",
-    "title": "[sprint] Inference resolves by tier + best-available-match + fall-through (fixes Igor path)",
+    "title": "Inference resolves by tier + best-available-match + fall-through (fixes Igor path)",
     "size": "M",
     "tags": [
       "Inference",
@@ -29,20 +29,27 @@
     "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
     "gate": null,
     "priority": 0.6,
-    "status": "sprint",
+    "status": "closed",
     "intention": "I intend that an inference request always resolves to an available provider via the tier router, never failing closed at a dead hardcoded source.",
     "description": "**Problem:** device.py's dispatch fallthrough for an unknown/explicit model hardcodes the `openrouter` source (unregistered) -> returns error — the live cause of dark audits + Igor silence. The working `rules_engine.route()` (billing-type, available-source-skipping) is bypassed on that path. Also: a candidate raising a HARD error (Gemini 404 / key-not-set) aborts the whole tier instead of falling through (absorbs T-inference-route-fallthrough-on-hard-error). And local `ollama` reports available=True while its chat 404s (ping != dispatch — the honest-liveness gap from the cancelled provider-billing-model).\n\n**Shape:** Route every request by tier (task_class) through rules_engine. When a specific model IS named and unavailable, resolve to best-available-match within the tier (reuse OllamaCloudSource._fuzzy_match_model / a capability map) rather than erroring. A candidate that raises a hard error falls through to the next tier candidate. Liveness must reflect dispatch-ability, not just socket-ping (mark local ollama unavailable when its chat path 404s).\n\n**Affected files:** devices/inference/device.py (dispatch fallthrough), rules_engine.py (fall-through-on-error in the cascade), sources.py (liveness = dispatch-ability for OllamaSource).\n**Design rules:** inference-proxy-only; honest liveness; pure router preserved.\n**Scope boundary:** IN — tier routing on all paths, best-available-match for named models, hard-error fall-through, dispatch-aware liveness. OUT — empty-response fall-through (T-inference-empty-response-fallthrough), caller conversion (T-callers-request-tiers), the specific-model alarm (T-inference-specific-model-alarm). NOT the Igor end-to-end proof (lands on T-callers-request-tiers).\n**Test plan:** a tier-routed dispatch (analyst -> ollama_cloud) returns text; a request naming an unavailable model resolves to an available provider (not an error); a candidate raising a hard error falls through to the next candidate; OllamaSource with a 404ing chat path reports available=False.\n**Completion criteria:** no dispatch path references a hardcoded `openrouter` source; analyst tier-routed dispatch returns non-empty text (proof); a named-unavailable-model request returns text via best-available-match; hard-error on a candidate continues the cascade; local-ollama-404 -> available=False. Absorbs T-inference-route-fallthrough-on-hard-error.\n\n**Approved + scope addition (Akien, 2026-06-23):** 'yes, lgtm, go' — HIGH-attention: touches the core inference router (device.py dispatch / rules_engine / sources.py). ADDED to IN scope: raise a system_alarm at the single 'no live source' chokepoint (before line ~432's legacy _or_call/_ollama_call fallthrough) when routing is fully exhausted (decision is None AND no available source) — signature `no-provider:<task_class>`, fatal=False, returns a clean error response. Complete inference failure becomes LOUD (panel + tmux) instead of a silent error / legacy OPENROUTER_API_KEY-not-set raise. DISTINCT from the specific-model alarm (T-inference-specific-model-alarm, still OUT).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-06-23T17:58:29.737903+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Shipped + proven (#1 of original 3 + the alarm): removed the dead hardcoded-openrouter dispatch fallthrough — unknown models now route by task_class via rules_engine.route(); a single complete-inference-failure chokepoint raises a no-provider:<task_class> system alarm (fatal=False) + clean error, killing the legacy _or_call/_ollama_call dead-end. THE line that silenced Igor. Proof: tests/test_inference_dead_path_and_alarm.py @ d7a916dc (red=AssertionError→green). Per Akien's approved plan (#1→proof→close, #2/#3 follow-on), remaining scope SPLIT to T-inference-hard-error-fallthrough (#2) + T-inference-ollama-honest-liveness (#3); fuzzy-match-by-name deferred (route-by-task_class per advisor). Note: pre-existing TestDispatchOpenRouter/Ollama failures now cover the removed legacy dispatch — reconcile in a test-cleanup pass.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T21:26:54.914046+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-23T17:58:29.737955+00:00"
+    "scraps_validated": "2026-06-23T17:58:29.737955+00:00",
+    "proven": true,
+    "proof_id": "cc.0.inference-dispatch-routes-an-unknown-mod.T-inference-resolve-requests-by-tier.20260623.152505380731",
+    "proof_commit": "d7a916dc7a46272185e6859a1777288cf32c34dc",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

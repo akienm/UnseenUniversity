@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inference-ollama-honest-liveness.20260623.152623807196",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inference-ollama-honest-liveness"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T21:26:23.807196+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-system-alarms-and-tier-requests-2026-06-23"
+    ],
+    "tickets": [
+      "T-inference-ollama-honest-liveness"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inference-ollama-honest-liveness",
+    "title": "[sprint] Inference: OllamaSource liveness reflects dispatch-ability, not just socket-ping",
+    "size": "S",
+    "tags": [
+      "Inference",
+      "HonestLiveness"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "gate": null,
+    "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
+    "intention": "I intend that local OllamaSource reports available=False when its chat path 404s, so the router never picks a socket-reachable-but-undispatchable local ollama (the ping != dispatch honest-liveness gap).",
+    "description": "**Split from T-inference-resolve-requests-by-tier (#3 of 3).** Local ollama reports available=True on a socket connect even when its /v1/chat path 404s (model not pulled / endpoint wrong), so route() picks it and the call dies. Liveness must mean dispatch-ability.\n\n**Shape:** OllamaSource.ping()/check_and_update verifies the actual chat/generate path (cheap probe or a models-list check), not just socket.create_connection. A 404/model-absent => available=False, so route() skips it and falls through (now safely, given #1's chokepoint).\n**Affected files:** devices/inference/sources.py (OllamaSource.ping / check_and_update / self_test).\n**Design rules:** honest liveness; read-only probe; fail-soft (probe error => available=False, never raises into the health loop).\n**Scope boundary:** IN — OllamaSource dispatch-aware liveness. OUT — other sources' liveness; the dispatch routing (#1, shipped); hard-error fall-through (#2).\n**Test plan:** monkeypatch OllamaSource's probe so the chat path 404s => available=False; a socket-up + chat-200 => available=True.\n**Completion criteria:** OllamaSource.available is False when the chat path 404s and True only when a dispatch-shaped probe succeeds; the health loop never raises on probe failure.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T21:26:20.949291+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T21:26:20.999495+00:00"
+  }
+}

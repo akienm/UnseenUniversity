@@ -27,7 +27,7 @@
       "Routing"
     ],
     "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
-    "gate": "T-inference-resolve-requests-by-tier",
+    "gate": null,
     "priority": 0.55,
     "status": "sprint",
     "intention": "I intend that an empty model response is treated as a failure and falls through, not returned as a valid answer.",
