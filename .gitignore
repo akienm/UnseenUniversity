@@ -2,6 +2,8 @@
 *.db
 .env
 datacenter_logs/
+# Local bootstrap copy must never be committed (only the .example template is tracked)
+bin/uu_bash_profile.sh
 
 # Python
 __pycache__/

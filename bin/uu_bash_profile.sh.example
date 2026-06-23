@@ -1,0 +1,25 @@
+# uu_bash_profile.sh.example — template for the LOCAL bootstrap file.
+#
+# Copy this to ~/.unseen_university/uu_bash_profile.sh, fill in the values for THIS
+# install, and `chmod 600` it. That local copy is the ONLY plaintext secret on disk
+# and is never committed (it lives outside the repo). Your ~/.bashrc sources it with
+# a single line:
+#
+#     [ -f "$HOME/.unseen_university/uu_bash_profile.sh" ] && \
+#         source "$HOME/.unseen_university/uu_bash_profile.sh"
+#
+# To boot a fresh install you only edit the bootstrap vars below.
+# (D-uu-config-identity-layer-2026-06-22 — T-uu-config-profile-layer.)
+
+# --- bootstrap secrets / identity (edit these) ------------------------------
+export UU_DB_USER=CHANGE_ME            # DB role (the rotation ticket moves this off "igor")
+export UU_DB_PASSWORD=CHANGE_ME        # DB password — the only secret here
+export UU_DB_IP=127.0.0.1              # DB host for this machine
+# export UU_HOME_DB_IP=10.0.0.1        # set ONLY if the home Igor DB lives on another host
+export IGOR_NAME=Igor-wild-0001        # this instance / home DB name
+
+# --- repo location (override only if auto-detection is wrong) ----------------
+export UU_ROOT="$HOME/dev/src/UnseenUniversity"
+
+# --- compose the derived environment (NO secrets live in the processor) ------
+source "${UU_ROOT}/bin/uu_bash_profile_processor.sh"
