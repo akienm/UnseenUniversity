@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-system-alarms-panel-coverage",
-    "title": "[sprint] ALARMS PANEL on the pages that bypass _html_wrap (chat SPA, dashboard, metrics)",
+    "title": "ALARMS PANEL on the pages that bypass _html_wrap (chat SPA, dashboard, metrics)",
     "size": "M",
     "tags": [
       "Observability",
       "WebUI"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.5,
     "gate": null,
     "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
@@ -35,14 +35,21 @@
     "created_at": "2026-06-23T19:58:06.694977+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "ALARMS PANEL now on every page: _inject_alarms_panel inserts the single _ALARMS_PANEL source after <body>, wired into _index (chat SPA/fallback), dashboard, metrics; idempotent + no-op without <body>. Proof: tests/test_web_alarms_panel_coverage.py @ 9c895619 (stub-first red→green).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T20:13:26.436893+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-23T19:58:06.741840+00:00"
+    "scraps_validated": "2026-06-23T19:58:06.741840+00:00",
+    "proven": true,
+    "proof_id": "cc.0.alarms-panel-injected-into-the-chat-dash.T-system-alarms-panel-coverage.20260623.141317619533",
+    "proof_commit": "9c89561931138fe0a6eeee3efb414058b3e8e562",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
