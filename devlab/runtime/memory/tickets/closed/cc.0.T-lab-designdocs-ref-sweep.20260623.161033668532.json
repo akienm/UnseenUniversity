@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-lab-designdocs-ref-sweep",
-    "title": "[in_progress] Sweep all lab/ + design_docs/ read-refs to canonical paths — proven by grep zero",
+    "title": "Sweep all lab/ + design_docs/ read-refs to canonical paths — proven by grep zero",
     "size": "M",
     "tags": [
       "Workflow",
       "MemoryArch"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.55,
     "gate": null,
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
@@ -34,9 +34,9 @@
     "created_at": "2026-06-23T22:10:25.993603+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Swept retired-path read-refs to canonical across the live fileset. claudecode 1:1 bulk (lab/claudecode->devlab/claudecode, lab.claudecode->devlab.claudecode) delegated to a subagent — 27 files, pytest --co green, pushed 1eb4d6d9. design_docs read-refs (igor cognition comments, legacy migrator, slate help, SPEC pointer) repointed by hand. Folds T-day-close-audit-skill-stale-paths (skill paths swept) + the done T-lab-claudecode-path-sweep. 2 logic bugs the sweep can't path-swap filed: T-cc-queue-rollup-misfiles-lab, T-cc-nightly-reads-decision-md. Proof: tests/test_lab_designdocs_ref_sweep.py::test_no_live_file_references_retired_lab_paths (red->green, allowlist grep-zero).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-23T23:20:06.941992+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-23T22:10:25.993652+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "2f1fd6ff-3d59-470a-8a5d-b76af949f5cd"
+    "inferred_intention_id": "2f1fd6ff-3d59-470a-8a5d-b76af949f5cd",
+    "proven": true,
+    "proof_id": "cc.0.live-fileset-free-of-retired-lab-path-re.T-lab-designdocs-ref-sweep.20260623.171948720939",
+    "proof_commit": "525765b1c6a8c1f6bb88cbddb58e79c63dbf62db",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
