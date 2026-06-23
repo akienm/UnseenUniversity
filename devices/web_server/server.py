@@ -1598,13 +1598,47 @@ _PAGE_CSS = (
 )
 
 
+# ── SYSTEM ALARMS panel (T-system-alarms-web-panel) ──────────────────────────
+# Black panel at the top of every page; a red-outlined box inset a smidge inside
+# it. Renders ONLY when an open alarm exists (display:none otherwise). Polls
+# /api/alarms; the list is 3 lines tall + scrollable, each line clickable; the
+# detail pane below is 4 lines. No JSON is shown — textContent only (also XSS-safe).
+_ALARMS_PANEL = (
+    '<div id="sysalarm-panel" style="display:none;background:#000;padding:6px;margin-bottom:1rem">'
+    '<div style="border:2px solid #e02020;padding:8px">'
+    '<div style="color:#ff2a2a;font-weight:bold;font-size:0.95rem;margin-bottom:6px">SYSTEM ALARMS</div>'
+    '<div id="sysalarm-list" style="height:3.6em;overflow-y:auto;font-size:0.8rem;'
+    'line-height:1.2em;cursor:pointer"></div>'
+    '<div id="sysalarm-detail" style="height:4.8em;overflow-y:auto;margin-top:6px;'
+    'padding-top:6px;border-top:1px solid #501010;font-size:0.78rem;line-height:1.2em;'
+    'color:#f0a0a0;white-space:pre-wrap"></div>'
+    "</div></div>"
+    "<script>(function(){"
+    "function load(){fetch('/api/alarms').then(function(r){return r.json();}).then(function(d){"
+    "var p=document.getElementById('sysalarm-panel'),l=document.getElementById('sysalarm-list'),"
+    "x=document.getElementById('sysalarm-detail');var a=(d&&d.alarms)||[];"
+    "if(!a.length){p.style.display='none';return;}p.style.display='block';l.innerHTML='';"
+    "a.forEach(function(m){var row=document.createElement('div');row.style.padding='1px 0';"
+    "row.textContent=m.datetime+' : '+m.emitter+' : '+m.description;row.onclick=function(){"
+    "var t=m.detail||{};x.textContent=[t.signature,t.seen,t.level_message,t.callers].join('\\n');"
+    "Array.prototype.forEach.call(l.children,function(c){c.style.background='';});"
+    "row.style.background='#300';};l.appendChild(row);});}).catch(function(){});}"
+    "load();setInterval(load,15000);})();</script>"
+)
+
+
 def _html_wrap(title: str, body: str) -> str:
     return (
         f'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1">'
         f"<title>{title} — ADC</title>{_PAGE_CSS}</head>"
-        f"<body>{_NAV}<h1>{title}</h1>{body}</body></html>"
+        f"<body>{_ALARMS_PANEL}{_NAV}<h1>{title}</h1>{body}</body></html>"
     )
+
+
+async def _api_alarms(request: Request):
+    """GET /api/alarms — open system alarms for the ALARMS PANEL (stub)."""
+    return JSONResponse({"alarms": []})
 
 
 def _db_conn():
@@ -3412,6 +3446,7 @@ def _make_app() -> Starlette:
         Route("/api/metrics", _api_metrics),
         Route("/api/dashboard", _api_dashboard),
         Route("/api/sessions", _api_sessions),
+        Route("/api/alarms", _api_alarms),
         # HTML pages
         Route("/dashboard", _page_dashboard),
         Route("/metrics-page", _page_metrics),
