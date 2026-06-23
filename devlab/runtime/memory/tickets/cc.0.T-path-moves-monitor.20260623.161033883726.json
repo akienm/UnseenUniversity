@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-path-moves-monitor.20260623.161033883726",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-path-moves-monitor"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T22:10:33.883726+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-canonical-memory-consolidation-2026-06-23"
+    ],
+    "tickets": [
+      "T-path-moves-monitor"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-path-moves-monitor",
+    "title": "[sprint] Day-close path-moves monitor — Python, file-index-backed, tickets/alarms non-canonical writes",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "MemoryArch",
+      "Observability"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "gate": null,
+    "decision_id": "D-canonical-memory-consolidation-2026-06-23",
+    "description": "**Problem:** A renamed store with a surviving write-path silently split the source of truth (the misfiled decisions). Nothing detects an artifact written to a retired/non-canonical path. This is the regression guard so it can't happen invisibly again.\n\n**Shape (Python only):** A path-moves registry (JSON) in the canonical store recording retired->canonical path mappings + the canonical-home rule per artifact type. A Python day-close check runs the registry against the file index (we already have a file/code index — reuse it, do not re-walk) and flags any dev-process artifact (decision/ticket/slate/etc.) found at a retired path or outside devlab/runtime/memory/. On a match it tickets/alarms (system_alarm or a filed ticket); a clean tree is silent. Runs inside day-close-audit.\n\n**Affected files:** a new Python checker (e.g. devlab/claudecode/path_moves_monitor.py); a path_moves registry JSON under devlab/runtime/memory/rules/; day-close-audit skill wiring (one step).\n**Design rules:** canonical-memory-location law; fail-soft (a monitor error never breaks day-close); read-only (never moves/deletes — surfaces only).\n**Scope boundary:** IN — the registry + the Python monitor + day-close wiring + ticket/alarm on match. OUT — auto-remediation (surface only); the actual sweep (other tickets).\n**Test plan:** plant a decision .json at a retired path (e.g. lab/design_docs/) in a temp tree -> monitor emits a finding/ticket naming the path; a clean canonical tree -> monitor silent; a monitor exception -> logged, day-close continues (fail-soft).\n**Completion criteria:** the registry exists; the Python monitor flags a planted non-canonical artifact (ticket or alarm naming the offending path) and is silent on a clean tree; it runs in day-close-audit and never raises into it; it uses the existing file index rather than re-walking the repo.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T22:10:29.520509+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T22:10:29.520566+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "889d0463-1121-4b31-9ebf-589e2add7d7f"
+  }
+}

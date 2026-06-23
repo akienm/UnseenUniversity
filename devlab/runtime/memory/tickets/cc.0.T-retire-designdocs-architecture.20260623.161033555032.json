@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-retire-designdocs-architecture.20260623.161033555032",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retire-designdocs-architecture"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T22:10:33.555032+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-canonical-memory-consolidation-2026-06-23"
+    ],
+    "tickets": [
+      "T-retire-designdocs-architecture"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retire-designdocs-architecture",
+    "title": "[sprint] Remove devlab/design_docs/ architecture remnants — AFTER intention-point conversion",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "MemoryArch"
+    ],
+    "status": "sprint",
+    "priority": 0.45,
+    "gate": "T-architecture-intention-points",
+    "decision_id": "D-canonical-memory-consolidation-2026-06-23",
+    "description": "**Problem:** After T-retire-decision-folders removes design_docs/decisions/, the remaining devlab/design_docs/ content is architecture/design .md. Those must not be deleted until T-architecture-intention-points has converted each into a devlab/runtime/memory/architecture/<subsystem>.json (or classified it elsewhere) — hence the gate on #4, NOT on #1 (avoids deleting unconverted content).\n\n**Shape:** Verify every remaining devlab/design_docs/*.md has either a corresponding architecture/<subsystem>.json intention-point or an explicit reclassification (projects/ or published docs/). Then git rm the now-converted devlab/design_docs/ tree so the folder ceases to exist.\n\n**Affected files:** devlab/design_docs/** (remove after conversion verified).\n**Design rules:** canonical-memory-location law; no-data-loss (verify-converted-before-delete).\n**Scope boundary:** IN — verify-then-remove the design_docs/ architecture remnants. OUT — the conversion itself (T-architecture-intention-points); decision-folder removal (T-retire-decision-folders).\n**Test plan:** pre-removal check asserts every remaining devlab/design_docs/*.md maps to an architecture/*.json (or a recorded reclassification); post-removal `test ! -d devlab/design_docs`.\n**Completion criteria:** devlab/design_docs/ does not exist; every former architecture doc has a verified canonical counterpart (intention-point or reclassification); nothing lost.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T22:10:24.145978+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T22:10:24.146039+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a6744553-36c3-4d5f-ab7e-8ddf67f69e27"
+  }
+}

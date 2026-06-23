@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.D-canonical-memory-consolidation-2026-06-23.20260623.161115759848",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-canonical-memory-consolidation-2026-06-23"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-23T16:11:15.759848",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-canonical-memory-consolidation-2026-06-23",
+    "title": "Consolidate all dev-process artifacts into devlab/runtime/memory/ (sole home); retire lab/ + design_docs; architecture docs become uniform JSON intention-points; day-close monitors path-moves",
+    "status": "open",
+    "date": "2026-06-23",
+    "source": "Authored canonically (no lab/design_docs .md stub — this decision dog-foods its own law).",
+    "spawned_tickets": [
+      "T-skill-write-paths-canonical",
+      "T-retire-decision-folders",
+      "T-retire-designdocs-architecture",
+      "T-lab-designdocs-ref-sweep",
+      "T-architecture-intention-points",
+      "T-path-moves-monitor",
+      "T-consequence-canonical-memory-consolidation"
+    ],
+    "text": "# D-canonical-memory-consolidation-2026-06-23\n**title:** Consolidate all dev-process artifacts into devlab/runtime/memory/ as the sole home; retire lab/ + devlab/design_docs[_for_igor]/; architecture docs become uniform JSON intention-points; day-close monitors path-moves.\n**date:** 2026-06-23\n**status:** open\n**spawned_tickets:** T-skill-write-paths-canonical, T-retire-decision-folders, T-retire-designdocs-architecture, T-lab-designdocs-ref-sweep, T-architecture-intention-points, T-path-moves-monitor, T-consequence-canonical-memory-consolidation\n\n## Decision narrative\ndevlab/runtime/memory/ is the SOLE home for every dev-process artifact — tickets, decisions, design patterns, notes, slates, sessions, rules, proofs, project descriptions, and architecture intention-points. lab/, devlab/design_docs/, and devlab/design_docs_for_igor/ are retired and invalid. The drift was concrete: stale skill write-paths (the running ~/.claude/skills copy of /sorted) misfiled days of recent decisions to dead lab/design_docs/ before anyone noticed — incl. D-proof-on-close, D-system-alarms-and-tier-requests, and D-workflow-md-source-of-truth (the last misfiled THIS session). The law is recorded in CLAUDE.md (commit 5de3e3e6); this decision is the execution + a regression guard. Architecture docs become uniform devlab/runtime/memory/architecture/<subsystem>.json intention-points: a summary of how the subsystem works + pointers to the files that implement it (intent -> implementation, in JSON). A day-close path-moves monitor (Python, file-index-backed) tickets/alarms any artifact written outside the canonical home, so a renamed store can never silently split the source of truth again.\n\n## Decomposition (7 tickets)\n1. T-skill-write-paths-canonical (M) — root cause: every writing skill, including the RUNNING ~/.claude/skills copy (kept in sync with repo skills/), writes only to devlab/runtime/memory/; decision narrative preserved in the canonical JSON body.text.\n2. T-retire-decision-folders (S, gate #1) — remove lab/, devlab/design_docs_for_igor/, devlab/design_docs/decisions/ after verifying JSON counterparts.\n3. T-retire-designdocs-architecture (S, gate #5) — remove the design_docs/ architecture remnants ONLY after they are converted (avoids the single-gate data-loss path).\n4. T-lab-designdocs-ref-sweep (M, gate #1) — sweep ~80 read-refs to canonical, proven by grep zero (exclusion-aware; folds T-day-close-audit-skill-stale-paths + the done T-lab-claudecode-path-sweep).\n5. T-architecture-intention-points (L) — classify-first: subsystem architecture -> architecture/<subsystem>.json; narrative essays (docs/the_ownership_gap) are NOT forced into the schema.\n6. T-path-moves-monitor (M) — Python day-close monitor + JSON registry; flags non-canonical writes via the existing file index.\n7. T-consequence-canonical-memory-consolidation (S, gate 2026-07-07).\n\n## Amendments applied at /sorted (advisor, 2026-06-23)\n- Fix must reach the RUNNING ~/.claude/skills copy, not just repo skills/ (else closes-while-broken).\n- Split the folder-removal ticket: single-valued gate can't express 'after #1 AND #4'; design_docs architecture must not be deleted before conversion (data-loss).\n- Ticket 4 classify-first: the_ownership_gap is narrative, not subsystem architecture.\n- .md->JSON authoring: narrative preserved in body.text is the invariant; the .md form is not unilaterally killed.\n\n## Hypothesis\nEvery dev-process artifact lives only under devlab/runtime/memory/; lab/ + devlab/design_docs[_for_igor]/ no longer exist; grep finds zero non-artifact refs; no skill (incl. the running copy) writes outside the canonical home; the day-close monitor tickets any new out-of-home write.\n\n## Measurement Signal\ngrep -rnE \"(^|[^v])lab/|design_docs/\" (excluding the canonical store + this decision's artifacts) returns zero; a functional test asserts the writing skills emit to devlab/runtime/memory/decisions/ with narrative in body.text and nothing under lab/; the path-moves monitor emits a ticket/alarm on a planted non-canonical write and is silent on a clean tree.\n\n## Goal Link\nnone: dev-process source-of-truth integrity / 'the tool disappears' (friction reduction)."
+  }
+}

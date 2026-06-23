@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-skill-write-paths-canonical.20260623.161033327641",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skill-write-paths-canonical"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T22:10:33.327641+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-canonical-memory-consolidation-2026-06-23"
+    ],
+    "tickets": [
+      "T-skill-write-paths-canonical"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skill-write-paths-canonical",
+    "title": "[sprint] Every writing skill (the RUNNING copy) targets devlab/runtime/memory/ — retire lab/ + design_docs write-paths",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "MemoryArch"
+    ],
+    "status": "sprint",
+    "priority": 0.7,
+    "gate": null,
+    "decision_id": "D-canonical-memory-consolidation-2026-06-23",
+    "description": "**Problem (ROOT CAUSE):** Writing skills emit dev-process artifacts to retired paths — /sorted writes the decision .md to lab/design_docs/decisions/ + the log to lab/design_docs_for_igor/decisions_log.dsb + projects via lab/claudecode; day-close commits lab/design_docs/; audit scripts reference lab/. This misfiled days of recent decisions to dead lab/design_docs/. CRITICAL: the copy the harness actually executes is ~/.claude/skills/ — that is the copy that misfiled D-workflow-md to lab/design_docs/ THIS session. Fixing only repo skills/ would close 'done' while the running copy keeps leaking until a sync propagates.\n\n**Shape:** Audit every skill + writer script that PERSISTS an artifact; redirect to devlab/runtime/memory/<type>/. Decisions emit as JSON via memory_emit.py into decisions/ with the FULL narrative in body.text (nothing lost). Update /sorted Steps 6/7/8, /migrate-decisions, day-close Step 13, /ticket, /note, /savestate, and devlab/claudecode/ writers referencing lab/. Then propagate to the running copy: run /skills-sync (verify direction repo skills/ -> ~/.claude/skills/) OR fix both, so the EXECUTING skill writes canonical.\n\n**Affected files:** skills/sorted/SKILL.md, skills/migrate-decisions/SKILL.md, skills/day-close/SKILL.md, skills/ticket/SKILL.md, skills/note/SKILL.md, skills/savestate/*, devlab/claudecode/ writers referencing lab/; ~/.claude/skills/ (via /skills-sync).\n**Design rules:** canonical-memory-location law; single-source-of-truth; no-data-loss (narrative preserved in body.text).\n**Scope boundary:** IN — redirect WRITE paths in repo skills/ + writers to devlab/runtime/memory/, preserve decision narrative in the canonical JSON body, AND propagate to the running ~/.claude/skills copy. OUT — read-ref sweep (T-lab-designdocs-ref-sweep), folder removal (T-retire-*), the .md-vs-JSON authoring-form choice (keep any .md form canonical-located if retained — do not delete content).\n**Test plan:** FUNCTIONAL (not grep): drive the decision-emit path and assert a JSON file lands under devlab/runtime/memory/decisions/ carrying the full narrative in body.text AND nothing is written under lab/ or design_docs/. Repeat against the running ~/.claude/skills copy (or assert the sync ran repo->~/.claude).\n**Completion criteria:** the skill the harness actually runs (~/.claude/skills, kept in sync with repo skills/) writes every dev-process artifact only under devlab/runtime/memory/; emitting a decision lands a JSON file in decisions/ whose body.text holds the full narrative; nothing is written under lab/ or design_docs/; the repo->~/.claude sync direction is verified.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T22:10:20.162617+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T22:10:20.210484+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "08401c6c-bb5c-4242-a2cc-d134d2911deb"
+  }
+}

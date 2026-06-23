@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-retire-decision-folders.20260623.161033446745",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retire-decision-folders"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T22:10:33.446745+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-canonical-memory-consolidation-2026-06-23"
+    ],
+    "tickets": [
+      "T-retire-decision-folders"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retire-decision-folders",
+    "title": "[sprint] Remove lab/ + devlab/design_docs_for_igor/ + devlab/design_docs/decisions/ (verify JSON counterparts first)",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "MemoryArch"
+    ],
+    "status": "sprint",
+    "priority": 0.6,
+    "gate": "T-skill-write-paths-canonical",
+    "decision_id": "D-canonical-memory-consolidation-2026-06-23",
+    "description": "**Problem:** lab/ (3 empty dirs after the 2026-06-23 migration), devlab/design_docs_for_igor/ (legacy decisions_log.dsb), and devlab/design_docs/decisions/ (97 decision .md) are retired DECISION/LOG locations. Gated on T-skill-write-paths-canonical so the writers stop targeting them first (else they regenerate). The design_docs/ ARCHITECTURE .md are a SEPARATE ticket (T-retire-designdocs-architecture, gated on conversion) — do not touch them here.\n\n**Shape:** Pre-removal data-safety check: every devlab/design_docs/decisions/*.md must have a JSON counterpart in devlab/runtime/memory/decisions/ (the 11 lab-only ones already migrated). Then rmdir the empty lab/ tree, git rm devlab/design_docs_for_igor/, and git rm devlab/design_docs/decisions/. Leave the rest of devlab/design_docs/ (architecture) for T-retire-designdocs-architecture.\n\n**Affected files:** lab/** (remove), devlab/design_docs_for_igor/** (remove), devlab/design_docs/decisions/** (remove after verify).\n**Design rules:** canonical-memory-location law; no-data-loss (verify-before-delete).\n**Scope boundary:** IN — verify-then-remove lab/, design_docs_for_igor/, and design_docs/decisions/. OUT — design_docs/ architecture remnants (T-retire-designdocs-architecture); read-ref sweep.\n**Test plan:** a pre-removal script asserts every devlab/design_docs/decisions/*.md has a matching devlab/runtime/memory/decisions/*<slug>*.json; post-removal `test ! -d lab && test ! -d devlab/design_docs_for_igor && test ! -d devlab/design_docs/decisions`.\n**Completion criteria:** lab/, devlab/design_docs_for_igor/, devlab/design_docs/decisions/ do not exist; the pre-removal check confirmed every decision .md had a JSON counterpart; nothing unique lost.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-23T22:10:22.283574+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T22:10:22.283650+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b49c62db-9c1d-4fea-9acd-f2bb3ce54cca"
+  }
+}
