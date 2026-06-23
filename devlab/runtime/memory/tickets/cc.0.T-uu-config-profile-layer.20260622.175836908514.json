@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-uu-config-profile-layer",
-    "title": "[sprint] Config layer: local bootstrap profile + repo secret-free post-processor",
+    "title": "[in_progress] Config layer: local bootstrap profile + repo secret-free post-processor",
     "size": "M",
     "tags": [
       "Config",
       "Credentials"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.6,
     "decision_id": "D-uu-config-identity-layer-2026-06-22",
     "gate": null,
