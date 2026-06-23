@@ -23,12 +23,18 @@ from loguru import logger as _root_logger
 
 from .tagged_logger import TaggedLogger
 from .perf import Stopwatch
+from .logging_bridge import install_stdlib_intercept
 
 # Per-class logger cache so subclasses see their own class name in log records
 _logger_cache: dict[type, TaggedLogger] = {}
 
 # Registered once on first DiagnosticBase instantiation
 _json_sink_id: int | None = None
+
+# stdlib → loguru bridge installed once on first DiagnosticBase instantiation.
+# Owned by the base, triggered by ANY device boot — not by any one device
+# (Igor is not special; it must not gate base logging for everyone else).
+_intercept_installed: bool = False
 
 
 def _json_file_sink(message) -> None:
@@ -128,7 +134,7 @@ class DiagnosticBase:
         parent: "DiagnosticBase | None" = None,
         **kwargs: Any,
     ):
-        global _json_sink_id
+        global _json_sink_id, _intercept_installed
         self._device_id = device_id or type(self).__name__.lower()
         self._parent = parent
         # Explicit name wins; gc lookup is a best-effort fallback for module/class-scope vars
@@ -140,6 +146,13 @@ class DiagnosticBase:
             _json_sink_id = _root_logger.add(
                 _json_file_sink, enqueue=False, backtrace=False, diagnose=False
             )
+        # Install the stdlib→loguru intercept once, on first device boot, so
+        # stdlib logging.getLogger() calls from any device flow into loguru and
+        # this JSON sink. Base-owned + boot-triggered (not import-triggered, so
+        # tests/CLI tooling that merely import the base aren't affected).
+        if not _intercept_installed:
+            install_stdlib_intercept()
+            _intercept_installed = True
 
     # ── Instance naming (SWADL gc trick) ─────────────────────────────────────
 

@@ -1,0 +1,46 @@
+{
+  "id": "cc.0.T-loguru-ownership-to-base.20260623.123151821727",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-loguru-ownership-to-base"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-23T18:31:51.821727+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-loguru-ownership-to-base"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-loguru-ownership-to-base",
+    "title": "[sprint] Move loguru/stdlib-intercept ownership from Igor to the base (common-environment logger)",
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Infrastructure"
+    ],
+    "status": "sprint",
+    "priority": 0.65,
+    "gate": null,
+    "intention": "I intend that loguru/common-logging is owned by the shared base every device boots into, not by Igor — so any device process gets stdlib→loguru routing regardless of whether Igor is up.",
+    "description": "**Problem:** `devices/igor/igor_base.py` imported loguru directly and installed the stdlib→loguru `InterceptHandler` globally at module import — residue from when Igor was its own repo. That made a base substrate primitive (common logging) owned and gated by one device. Igor is not special; each device is its own process joining a common environment, and the logger belongs to that common environment (the base), not to Igor.\n\n**Shape:** Extract `InterceptHandler` + install into `diagnostic_base/logging_bridge.py` (the base already owns loguru via TaggedLogger/DiagnosticBase). Install fires once per process from `DiagnosticBase.__init__` (first device boot), NOT at import — so tests/CLI that merely import the base aren't clobbered, and every device process self-establishes common logging regardless of boot order or whether Igor/ground-loop is involved. The ground loop stays lightweight (no loguru dependency — it's the resilience anchor). Igor keeps a backward-compat re-export of `InterceptHandler` only.\n\n**Affected files:** diagnostic_base/logging_bridge.py (new), diagnostic_base/base.py (install in __init__, once-guarded), devices/igor/igor_base.py (drop direct loguru import + install; re-export only).\n**Design rules:** oop-first (base owns the contract; devices consume); no behavior change to the ~80 igor_base importers; ground loop stays dependency-light.\n**Scope boundary:** IN — relocate the loguru intercept ownership to the base + boot-time (not import-time) per-process install. OUT — routing the rack/agentctl or web-interface processes through the base logger (separate follow-up); the system_alarms work.\n**Test plan:** the ~80-importer contract survives (tests/igor/test_igor_base.py, test_agent_base.py, test_audit_logging.py); base + ground-loop suites stay green (tests/test_diagnostic_base.py, test_tagged_logger.py, test_ground_loop*.py); intercept installs on first DiagnosticBase instantiation and NOT on bare import; no `from loguru` import remains under devices/igor/.\n**Completion criteria:** grep finds zero `from loguru`/`import loguru` under devices/igor/; importing diagnostic_base.base does NOT install the intercept; instantiating a DiagnosticBase device DOES install it (InterceptHandler on root); the named test files pass unchanged.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "created_at": "2026-06-23T18:31:51.355932+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-23T18:31:51.401205+00:00"
+  }
+}

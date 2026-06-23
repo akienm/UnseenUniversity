@@ -14,9 +14,11 @@ Adds for backward compat with existing IgorBase subclasses:
   - log_llm_io()  -> LLM I/O flight recorder
   - log_state_snapshot() -> arbitrary state snapshot logger
 
-stdlib → loguru intercept: installed once at module import so all
-logging.getLogger() calls from existing Igor code flow through loguru
-and hit the DiagnosticBase JSON file sink automatically.
+stdlib → loguru intercept: the bridge is base substrate (loguru ownership
+lives in diagnostic_base, not in Igor — residue from when Igor was its own
+repo). It is installed by DiagnosticBase on the first device boot, so it is
+NOT gated on Igor: any device that runs on the base gets stdlib→loguru
+routing into the JSON sink. Igor is just one consumer.
 # tags: Architecture, Cognition
 """
 
@@ -26,32 +28,17 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from loguru import logger as _loguru_logger
-
 from .paths import paths
 
-# ── stdlib → loguru intercept ────────────────────────────────────────────────
-
-
-class InterceptHandler(logging.Handler):
-    """Routes all stdlib logging.Logger calls through loguru."""
-
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            level = _loguru_logger.level(record.levelname).name
-        except ValueError:
-            level = record.levelno
-        frame, depth = logging.currentframe(), 2
-        while frame.f_code.co_filename == logging.__file__:
-            frame = frame.f_back
-            depth += 1
-        _loguru_logger.opt(depth=depth, exception=record.exc_info).log(
-            level, record.getMessage()
-        )
-
-
-# Install once — all stdlib logging flows through loguru from this point on.
-logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+# ── stdlib → loguru intercept (base-owned; installed by DiagnosticBase) ───────
+# T-loguru-ownership-to-base: the InterceptHandler + install moved to
+# diagnostic_base.logging_bridge and the install now fires from
+# DiagnosticBase.__init__ (any device boot), not from Igor. Re-exported here
+# only for backward compat with any caller that imported it from igor_base.
+try:
+    from diagnostic_base.logging_bridge import InterceptHandler  # noqa: F401
+except ImportError:
+    pass  # diagnostic_base unavailable — mirrors the _BASE = object fallback below
 
 # ── _EmergencySafeLogger + get_logger (backward compat re-exports) ───────────
 
