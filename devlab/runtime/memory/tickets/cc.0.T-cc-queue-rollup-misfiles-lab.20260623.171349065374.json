@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-cc-queue-rollup-misfiles-lab",
-    "title": "[sprint] cc_queue decision-rollup writes .md stub to retired lab/design_docs/ — disable or re-emit JSON",
+    "title": "[in_progress] cc_queue decision-rollup writes .md stub to retired lab/design_docs/ — disable or re-emit JSON",
     "size": "S",
     "tags": [
       "Memory",
@@ -30,7 +30,7 @@
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
     "gate": null,
     "priority": 0.55,
-    "status": "sprint",
+    "status": "in_progress",
     "created_at": "2026-06-23T23:13:44.665036+00:00",
     "worker": null,
     "created_by": null,
