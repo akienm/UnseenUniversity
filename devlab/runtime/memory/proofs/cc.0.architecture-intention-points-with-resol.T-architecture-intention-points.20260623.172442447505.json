@@ -1,0 +1,62 @@
+{
+  "id": "cc.0.architecture-intention-points-with-resol.T-architecture-intention-points.20260623.172442447505",
+  "emitter": "cc.0",
+  "namespace": [
+    "architecture-intention-points-with-resol",
+    "T-architecture-intention-points"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T17:24:42.447505",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-architecture-intention-points"
+    ],
+    "commits": [
+      "75b10997dec0ce1f4d1bf776fdb2f6240f77b40a"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "architecture intention-points with resolving pointers",
+    "intention": "every architecture intention-point's implementing_files and reference_docs paths exist in the repo, and both memory kinds are covered",
+    "test": "tests/test_architecture_intention_points.py::test_every_intention_point_pointer_resolves",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_architecture_intention_points.py::test_every_intention_point_pointer_resolves",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________ test_every_intention_point_pointer_resolves __________________\n\n    def test_every_intention_point_pointer_resolves():\n        \"\"\"Proof node (one intention): every implementing_files + reference_docs path in\n        every architecture intention-point exists in the repo.\"\"\"\n        pts = _load()\n>       assert pts, \"no architecture intention-points found\"\nE       AssertionError: no architecture intention-points found\nE       assert {}\n\ntests/test_architecture_intention_points.py:40: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_architecture_intention_points.py::test_every_intention_point_pointer_resolves\n1 failed in 0.07s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "75b10997dec0ce1f4d1bf776fdb2f6240f77b40a",
+    "impl_paths": [
+      "devlab/runtime/memory/architecture/cc.0.bus.20260623.172406731627.json",
+      "devlab/runtime/memory/architecture/cc.0.device-shim.20260623.172406731921.json",
+      "devlab/runtime/memory/architecture/cc.0.memory-dev-artifacts.20260623.172406727919.json",
+      "devlab/runtime/memory/architecture/cc.0.memory-graph-tree.20260623.172406731355.json",
+      "devlab/runtime/memory/architecture/cc.0.skeleton.20260623.172406732187.json",
+      "devlab/runtime/memory/tickets/cc.0.T-architecture-intention-points.20260623.161033775615.json"
+    ],
+    "ticket": "T-architecture-intention-points",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
