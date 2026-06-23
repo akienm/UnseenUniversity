@@ -260,6 +260,27 @@ def get_alarm(signature: str) -> Optional[dict]:
     return _read(_open_path(signature))
 
 
+def mark_notified(signature: str, *, now: Optional[datetime] = None) -> bool:
+    """Stamp ``notified_at`` on an open alarm (the out-of-band notifier did its nag).
+
+    A reopened alarm is recreated without ``notified_at``, so it re-nags; an
+    incremented one keeps its stamp, so it does not. Fail-soft: returns False on
+    any I/O error rather than raising.
+    """
+    now = now or datetime.now(timezone.utc)
+    try:
+        with _signature_lock(signature):
+            rec = _read(_open_path(signature))
+            if rec is None:
+                return False
+            rec["notified_at"] = now.isoformat()
+            _atomic_write(_open_path(signature), rec)
+            return True
+    except Exception as exc:
+        log.error("system_alarm: mark_notified failed for signature=%s: %s", signature, exc)
+        return False
+
+
 def list_alarms() -> list[dict]:
     """All open alarms, most-recently-seen first."""
     d = alarms_dir()
