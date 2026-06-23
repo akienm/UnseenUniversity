@@ -1640,8 +1640,22 @@ def _html_wrap(title: str, body: str) -> str:
 
 
 def _inject_alarms_panel(html: str) -> str:
-    """STUB — proof scaffold (T-system-alarms-panel-coverage). Real injection next commit."""
-    return html
+    """Insert the ALARMS PANEL right after the opening <body> tag.
+
+    Lets pages that bypass _html_wrap (the chat SPA, dashboard, metrics) carry
+    the same panel from the single _ALARMS_PANEL source. Returns the html
+    unchanged when there is no <body> (already-injected or non-HTML responses).
+    """
+    if "sysalarm-panel" in html:
+        return html  # already present (e.g. a future _html_wrap page passed through)
+    lo = html.lower()
+    idx = lo.find("<body")
+    if idx == -1:
+        return html
+    gt = html.find(">", idx)
+    if gt == -1:
+        return html
+    return html[: gt + 1] + _ALARMS_PANEL + html[gt + 1 :]
 
 
 async def _api_alarms(request: Request):
