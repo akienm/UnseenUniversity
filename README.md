@@ -20,7 +20,7 @@ Two ways to read this document:
 ### Prerequisites
 
 - Python ≥ 3.11
-- Postgres running locally (`docker run -p 5432:5432 -e POSTGRES_PASSWORD=choose_a_password postgres` works)
+- Postgres running locally (`docker run -p 5432:5432 -e POSTGRES_PASSWORD=<password> postgres` works)
 
 ### Install
 

@@ -11,17 +11,13 @@ Usage:
 """
 
 import json
+from unseen_university.identity import home_db_url
 import os
 import sys
 from pathlib import Path
 
 _UU_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_UU_ROOT))
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 _HABIT = {
     "id": "PROC_BOREDOM_FOREMAN",
@@ -51,7 +47,7 @@ def seed():
     import psycopg2.extras
     from datetime import datetime, timezone
 
-    conn = psycopg2.connect(_DB_URL, connect_timeout=10)
+    conn = psycopg2.connect(home_db_url(), connect_timeout=10)
     conn.autocommit = True
     cur = conn.cursor()
 

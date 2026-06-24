@@ -13,17 +13,13 @@ at DEBUG and silently dropped so callers are never blocked.
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import logging
 import os
 
 log = logging.getLogger(__name__)
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS adc.action_log (
@@ -42,7 +38,7 @@ CREATE TABLE IF NOT EXISTS adc.action_log (
 def _conn():
     import psycopg2
 
-    return psycopg2.connect(_PG_URL)
+    return psycopg2.connect(home_db_url())
 
 
 def _ensure_table(conn) -> None:

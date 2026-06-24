@@ -15,7 +15,7 @@ The instantiator supplies the actual parsing tool (code_ref slot).
 
 Usage:
     cd ~/TheIgors && source venv/bin/activate
-    UU_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 \\
+    UU_HOME_DB_URL=postgresql://igor:<password>@127.0.0.1/Igor-wild-0001 \\
         python claudecode/seed_layer3_parse_goal.py
 
 Verify:

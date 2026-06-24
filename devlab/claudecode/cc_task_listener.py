@@ -25,6 +25,7 @@ Embedding in a loop:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 from unseen_university._uu_root import uu_home
 
 import logging
@@ -35,9 +36,6 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-)
 _CC_QUEUE = Path(__file__).parent / "cc_queue.py"
 _HWM_FILE = (
     Path(uu_home())
@@ -80,7 +78,7 @@ def _fetch_new_messages(since_id: int) -> list[dict]:
     try:
         import psycopg2
 
-        conn = psycopg2.connect(_DB_URL)
+        conn = psycopg2.connect(home_db_url())
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id, content FROM infra.channel_messages"

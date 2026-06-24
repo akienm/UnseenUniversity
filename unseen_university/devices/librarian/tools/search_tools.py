@@ -12,15 +12,12 @@ Sources:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import os
 import subprocess
 from pathlib import Path
 
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _REPO_ROOT = Path(__file__).resolve().parents[5]
 _SNIPPET_LEN = 90
 _VALID_SOURCES = frozenset({"all", "palace", "memories", "tickets", "files"})
@@ -28,7 +25,7 @@ _VALID_SOURCES = frozenset({"all", "palace", "memories", "tickets", "files"})
 
 def _conn():
     import psycopg2
-    return psycopg2.connect(_PG_URL)
+    return psycopg2.connect(home_db_url())
 
 
 def _snip(text: str) -> str:

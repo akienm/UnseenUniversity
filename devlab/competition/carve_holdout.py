@@ -13,16 +13,12 @@ Usage:
     python lab/competition/carve_holdout.py [--dry-run]
 """
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import argparse
 import os
 
 import psycopg2
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 HOLDOUT_FRACTION = 0.20
 
@@ -32,7 +28,7 @@ def carve(dry_run: bool = False) -> dict[str, dict]:
 
     Returns {memory_type: {total, holdout, train}} for each type.
     """
-    conn = psycopg2.connect(_DB_URL)
+    conn = psycopg2.connect(home_db_url())
     results: dict[str, dict] = {}
     try:
         with conn:

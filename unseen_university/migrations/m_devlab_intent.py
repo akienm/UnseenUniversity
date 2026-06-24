@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 
 _DB_URL = os.environ.get(
     "UU_HOME_DB_URL",
-    os.environ.get("IGOR_HOME_DB_URL", ""),
+    os.environ.get("UU_HOME_DB_URL", ""),
 )
 
 _SQL = """
@@ -70,7 +70,7 @@ CREATE INDEX IF NOT EXISTS intent_validations_created ON devlab.validations (cre
 
 def migrate() -> None:
     if not _DB_URL:
-        raise RuntimeError("Set UU_HOME_DB_URL or IGOR_HOME_DB_URL before running this migration")
+        raise RuntimeError("Set UU_HOME_DB_URL or UU_HOME_DB_URL before running this migration")
     conn = psycopg2.connect(_DB_URL)
     conn.autocommit = True
     try:

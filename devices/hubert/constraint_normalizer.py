@@ -31,11 +31,11 @@ _UU_ROOT = Path(__file__).parent.parent.parent
 
 
 def _db_url() -> str:
-    for key in ("UU_HOME_DB_URL", "IGOR_HOME_DB_URL"):
+    for key in ("UU_HOME_DB_URL", "UU_HOME_DB_URL"):
         val = os.environ.get(key, "")
         if val:
             return val
-    raise RuntimeError("No DB URL — set UU_HOME_DB_URL or IGOR_HOME_DB_URL")
+    raise RuntimeError("No DB URL — set UU_HOME_DB_URL or UU_HOME_DB_URL")
 
 
 def _connect():

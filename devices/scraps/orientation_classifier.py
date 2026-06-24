@@ -12,6 +12,7 @@ D-orientation-classifier-arch-2026-06-13
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import logging
 import os
@@ -19,11 +20,6 @@ import re
 from dataclasses import asdict, dataclass, field
 
 log = logging.getLogger(__name__)
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
-)
 
 _STOP_WORDS = frozenset([
     "the", "and", "or", "but", "for", "not", "with", "this", "that",
@@ -220,7 +216,7 @@ def classify(ticket: dict, db_url: str | None = None) -> BuilderReport:
     Interface crossing log: INFO with ticket id and match count.
     """
     if db_url is None:
-        db_url = _DB_URL
+        db_url = home_db_url()
 
     keywords = extract_keywords(ticket)
     task_shape = classify_task_shape(ticket)

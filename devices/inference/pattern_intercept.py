@@ -20,6 +20,7 @@ The intercept is a no-op when:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import hashlib
 import logging
@@ -88,10 +89,7 @@ def find_pattern_match(
     if Postgres is unavailable or the archivist schema doesn't exist yet.
     """
     if db_url is None:
-        db_url = os.environ.get(
-            "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
+        db_url = home_db_url()
 
     try:
         import psycopg2
@@ -144,10 +142,7 @@ def find_pattern_match(
 def record_hit(pattern_id: int, db_url: str | None = None) -> None:
     """Increment hit_count and update last_hit_at for a matched pattern."""
     if db_url is None:
-        db_url = os.environ.get(
-            "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
+        db_url = home_db_url()
     try:
         import psycopg2
 

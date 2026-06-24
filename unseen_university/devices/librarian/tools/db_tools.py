@@ -1,6 +1,7 @@
 """DB tools — generic read/write SQL against the Igor Postgres DB."""
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import os
@@ -9,11 +10,6 @@ import uuid
 import psycopg2.extras
 
 from unseen_university.devices.librarian.db import get_conn
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 SCHEMAS = [
     {
@@ -62,31 +58,36 @@ SCHEMAS = [
 ]
 
 
-def _q(sql: str, params=(), pg_url: str = _PG_URL) -> list[dict]:
+def _q(sql: str, params=(), pg_url: str = None) -> list[dict]:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     with get_conn(pg_url) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, params)
             return [dict(r) for r in cur.fetchall()]
 
 
-def _exec(sql: str, params=(), pg_url: str = _PG_URL) -> int:
+def _exec(sql: str, params=(), pg_url: str = None) -> int:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     with get_conn(pg_url) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
             return cur.rowcount
 
 
-def db_query(sql: str, params: list | None = None, pg_url: str = _PG_URL) -> str:
+def db_query(sql: str, params: list | None = None, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rows = _q(sql, params or [], pg_url)
     return json.dumps({"rows": rows, "count": len(rows)}, default=str)
 
 
-def db_dispatch(sql: str, params: list | None = None, pg_url: str = _PG_URL) -> str:
+def db_dispatch(sql: str, params: list | None = None, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rowcount = _exec(sql, params or [], pg_url)
     return json.dumps({"rowcount": rowcount, "request_id": str(uuid.uuid4())})
 
 
-def dispatch(name: str, args: dict, pg_url: str = _PG_URL) -> str | None:
+def dispatch(name: str, args: dict, pg_url: str = None) -> str | None:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     if name == "db_query":
         return db_query(args["sql"], args.get("params"), pg_url)
     if name == "db_dispatch":

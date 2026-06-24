@@ -391,7 +391,7 @@ def make_home_proxy(db_path=None) -> PGDatabaseProxy:
 
     IGOR_HOME_SEARCH_PATH overrides (used by test fixtures for isolated schemas).
     """
-    db_url = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+    db_url = os.getenv("UU_HOME_DB_URL") or os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
     if not db_url:
         raise RuntimeError(
             "UU_HOME_DB_URL not set — export UU_HOME_DB_URL=postgresql://..."
@@ -413,7 +413,7 @@ def make_local_proxy(db_path=None) -> PGDatabaseProxy:
     db_url = (
         os.getenv("IGOR_LOCAL_DB_URL")
         or os.getenv("UU_HOME_DB_URL")
-        or os.getenv("IGOR_HOME_DB_URL")
+        or os.getenv("UU_HOME_DB_URL")
         or os.getenv("IGOR_DB_URL")
     )
     if not db_url:
@@ -430,7 +430,7 @@ def make_infra_proxy() -> Optional[PGDatabaseProxy]:
     Used by rack server services that don't need clan or instance access.
     Returns None if UU_HOME_DB_URL is not set.
     """
-    db_url = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+    db_url = os.getenv("UU_HOME_DB_URL") or os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
     if not db_url:
         return None
     return PGDatabaseProxy(db_url, search_path="infra,public")
@@ -501,7 +501,7 @@ def make_agent_proxy() -> PGDatabaseProxy:
     device_id = os.getenv("DEVICE_ID", "igor")
     var_name = device_id.upper().replace("-", "_").replace(".", "_") + "_AGENT_DB_URL"
     db_url = (
-        os.getenv(var_name) or os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
+        os.getenv(var_name) or os.getenv("UU_HOME_DB_URL") or os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
     )
     if not db_url:
         raise RuntimeError(

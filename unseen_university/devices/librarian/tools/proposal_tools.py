@@ -5,14 +5,11 @@ apply decisions — nothing here auto-applies.
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import os
 
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _CC_SEND_URL = os.environ.get("CC_SEND_URL", "http://localhost:8082/api/cc_send")
 
 _DDL = """
@@ -34,7 +31,7 @@ CREATE TABLE IF NOT EXISTS adc.code_proposals (
 def _conn():
     import psycopg2
 
-    return psycopg2.connect(_PG_URL)
+    return psycopg2.connect(home_db_url())
 
 
 def _ensure_table(conn) -> None:

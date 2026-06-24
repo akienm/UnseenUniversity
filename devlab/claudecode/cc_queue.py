@@ -48,6 +48,7 @@ Usage:
 """
 
 import json
+from unseen_university.identity import home_db_url
 from unseen_university._uu_root import uu_home
 import logging
 import os
@@ -718,9 +719,7 @@ def _annotator_delta_update(ticket_id: str) -> None:
             return
         touched = [f.strip() for f in result.stdout.splitlines() if f.strip()]
         from devices.classifier.annotator import run_annotator
-        db_url = os.environ.get("UU_HOME_DB_URL") or os.environ.get(
-            "IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-        )
+        db_url = os.environ.get("UU_HOME_DB_URL") or home_db_url()
         counts = run_annotator(db_url=db_url, file_paths=touched)
         print(
             f"annotator delta: ticket={ticket_id} files={len(touched)} "
@@ -811,7 +810,7 @@ def _close_igor_goal(ticket_id: str) -> None:
     try:
         import psycopg2
 
-        conn = psycopg2.connect(os.environ.get("UU_HOME_DB_URL") or os.environ["IGOR_HOME_DB_URL"])
+        conn = psycopg2.connect(os.environ.get("UU_HOME_DB_URL") or os.environ["UU_HOME_DB_URL"])
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute(

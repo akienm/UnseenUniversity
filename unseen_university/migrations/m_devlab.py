@@ -29,6 +29,7 @@ Schema:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import logging
 import os
@@ -40,14 +41,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import psycopg2
 
 log = logging.getLogger(__name__)
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    os.environ.get(
-        "IGOR_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    ),
-)
 
 # ── SQL ───────────────────────────────────────────────────────────────────────
 
@@ -86,7 +79,7 @@ _CREATE_INDEXES = [
 
 def migrate() -> None:
     """Execute migration: create schema, tables, and indexes."""
-    conn = psycopg2.connect(_DB_URL)
+    conn = psycopg2.connect(home_db_url())
     conn.autocommit = True
     try:
         with conn.cursor() as cur:
@@ -106,7 +99,7 @@ def migrate() -> None:
 def verify() -> bool:
     """Verify devlab.constraints and devlab.tickets exist."""
     try:
-        conn = psycopg2.connect(_DB_URL)
+        conn = psycopg2.connect(home_db_url())
         conn.autocommit = True
         with conn.cursor() as cur:
             cur.execute(

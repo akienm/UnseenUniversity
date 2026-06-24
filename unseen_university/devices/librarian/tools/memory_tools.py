@@ -1,17 +1,13 @@
 """Memory tools — search, get, and list Igor's memory palace."""
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import os
 
 import psycopg2
 import psycopg2.extras
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 SCHEMAS = [
     {
@@ -66,7 +62,8 @@ SCHEMAS = [
 ]
 
 
-def _q(sql: str, params=(), pg_url: str = _PG_URL) -> list[dict]:
+def _q(sql: str, params=(), pg_url: str = None) -> list[dict]:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     with psycopg2.connect(pg_url) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, params)
@@ -74,8 +71,9 @@ def _q(sql: str, params=(), pg_url: str = _PG_URL) -> list[dict]:
 
 
 def memory_search(
-    query: str, limit: int = 10, memory_type: str | None = None, pg_url: str = _PG_URL
+    query: str, limit: int = 10, memory_type: str | None = None, pg_url: str = None
 ) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     query = query.strip()
     if not query:
         return "No query terms provided."
@@ -103,7 +101,8 @@ def memory_search(
     return "\n".join(lines)
 
 
-def memory_get(memory_id: str, pg_url: str = _PG_URL) -> str:
+def memory_get(memory_id: str, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rows = _q(
         "SELECT id, memory_type, narrative, activation_count, metadata, "
         "parent_id, children_ids, link_ids, timestamp, last_accessed "
@@ -129,8 +128,9 @@ def memory_get(memory_id: str, pg_url: str = _PG_URL) -> str:
 
 
 def memory_list_by_type(
-    memory_type: str, limit: int = 20, pg_url: str = _PG_URL
+    memory_type: str, limit: int = 20, pg_url: str = None
 ) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rows = _q(
         "SELECT id, narrative, activation_count FROM memories "
         "WHERE memory_type = %s ORDER BY activation_count DESC LIMIT %s",
@@ -146,7 +146,8 @@ def memory_list_by_type(
     return "\n".join(lines)
 
 
-def dispatch(name: str, args: dict, pg_url: str = _PG_URL) -> str | None:
+def dispatch(name: str, args: dict, pg_url: str = None) -> str | None:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     if name == "memory_search":
         return memory_search(
             args["query"], args.get("limit", 10), args.get("memory_type"), pg_url

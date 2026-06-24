@@ -17,6 +17,7 @@ Usage:
     python lab/competition/ingest_batch.py --status
 """
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import argparse
 import os
@@ -30,11 +31,6 @@ sys.path.insert(0, str(_REPO / "lab"))
 
 import psycopg2
 
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
-
 CAMPAIGN_ID = "competition-programming-batch-1"
 TARGET_SCHEMA = "competition"
 BUDGET_USD = 5.0
@@ -43,7 +39,7 @@ CHUNK_SIZE = 15
 
 
 def _select_books(limit: int = BOOK_COUNT) -> list[dict]:
-    conn = psycopg2.connect(_DB_URL)
+    conn = psycopg2.connect(home_db_url())
     try:
         with conn.cursor() as cur:
             cur.execute(
@@ -121,7 +117,7 @@ def run_status() -> None:
     print(f"  Blocks by status: {status['blocks_by_status']}")
 
     # Show competition.memories count
-    conn = psycopg2.connect(_DB_URL)
+    conn = psycopg2.connect(home_db_url())
     try:
         with conn.cursor() as cur:
             cur.execute(

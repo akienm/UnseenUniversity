@@ -14,14 +14,13 @@ Idempotent.
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 import logging, os, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import psycopg2
 
 log = logging.getLogger(__name__)
-_DB_URL = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
-
 _ADD_COLUMN = """
 ALTER TABLE vault.credentials
   ADD COLUMN IF NOT EXISTS source_path TEXT NOT NULL DEFAULT '';
@@ -29,7 +28,7 @@ ALTER TABLE vault.credentials
 _ADD_INDEX = "CREATE INDEX IF NOT EXISTS vault_creds_source_path ON vault.credentials (source_path);"
 
 def migrate() -> None:
-    conn = psycopg2.connect(_DB_URL)
+    conn = psycopg2.connect(home_db_url())
     conn.autocommit = True
     try:
         with conn.cursor() as cur:
@@ -41,7 +40,7 @@ def migrate() -> None:
 
 def verify() -> bool:
     try:
-        conn = psycopg2.connect(_DB_URL)
+        conn = psycopg2.connect(home_db_url())
         conn.autocommit = True
         with conn.cursor() as cur:
             cur.execute(

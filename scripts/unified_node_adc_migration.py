@@ -5,6 +5,7 @@ Part of T-unified-node-rollout. Handles adc.* tables separately from
 cortex.py _SCHEMA_MIGRATIONS (which owns clan.* and infra.*).
 """
 import os
+from unseen_university.identity import home_db_url
 import sys
 from pathlib import Path
 
@@ -13,11 +14,6 @@ try:
 except ImportError:
     print("ERROR: psycopg2 not installed — run: pip install psycopg2-binary")
     sys.exit(1)
-
-DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 MIGRATIONS = [
     ("adc.palace tags",
@@ -36,7 +32,7 @@ MIGRATIONS = [
 
 
 def main():
-    conn = psycopg2.connect(DB_URL, connect_timeout=10)
+    conn = psycopg2.connect(home_db_url(), connect_timeout=10)
     conn.autocommit = True
     cur = conn.cursor()
     applied = 0

@@ -8,6 +8,7 @@ All findings logged to datacenter_logs/librarian/curation/curation.jsonl.
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import hashlib
 import json
@@ -18,10 +19,6 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _LOG_ROOT = Path(os.environ.get("ADC_LOG_ROOT", "datacenter_logs"))
 _CURATION_LOG = _LOG_ROOT / "librarian" / "curation" / "curation.jsonl"
 
@@ -108,7 +105,7 @@ SCHEMAS = [
 def _conn():
     import psycopg2
 
-    return psycopg2.connect(_PG_URL)
+    return psycopg2.connect(home_db_url())
 
 
 def _ensure_focus_quality_log(conn) -> None:

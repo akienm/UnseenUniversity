@@ -10,6 +10,7 @@ T-librarian-persistent-inquiry.
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import logging
@@ -24,11 +25,6 @@ WEIGHT_TYPE_VALUES: dict[str, float] = {
     "gap_explanation": 0.6,   # explains a gap in understanding
     "serendipitous": 1.0,     # surprising / unexpected connection
 }
-
-_DEFAULT_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 def _topic_slug(topic: str) -> str:
     """Convert topic string to a safe palace path segment."""
@@ -68,7 +64,7 @@ def become_knowledgeable_about(topic: str, db_url: str | None = None) -> dict:
     """
     import psycopg2
 
-    url = db_url or _DEFAULT_DB_URL
+    url = db_url or home_db_url()
     path = _palace_path(topic)
     title = f"Persistent inquiry: {topic}"
 
@@ -124,7 +120,7 @@ def add_hit(
     """
     import psycopg2
 
-    url = db_url or _DEFAULT_DB_URL
+    url = db_url or home_db_url()
     path = _palace_path(topic)
     weight = _weight_for_type(weight_type)
 
@@ -172,7 +168,7 @@ def get_inquiry(topic: str, db_url: str | None = None) -> dict | None:
     """Return current inquiry state dict, or None if not found."""
     import psycopg2
 
-    url = db_url or _DEFAULT_DB_URL
+    url = db_url or home_db_url()
     path = _palace_path(topic)
 
     conn = psycopg2.connect(url)
@@ -214,7 +210,7 @@ def compress(
     """
     import psycopg2
 
-    url = db_url or _DEFAULT_DB_URL
+    url = db_url or home_db_url()
     path = _palace_path(topic)
 
     conn = psycopg2.connect(url)

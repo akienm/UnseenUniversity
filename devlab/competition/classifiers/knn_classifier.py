@@ -24,6 +24,7 @@ Usage:
     # → ("PROCEDURAL", 0)
 """
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import os
@@ -32,17 +33,12 @@ from typing import Optional
 
 import psycopg2
 
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
-
 K = 5
 FALLBACK_TYPE = "FACTUAL"
 
 
 def _conn():
-    return psycopg2.connect(_DB_URL)
+    return psycopg2.connect(home_db_url())
 
 
 def _embed(text: str) -> Optional[list[float]]:

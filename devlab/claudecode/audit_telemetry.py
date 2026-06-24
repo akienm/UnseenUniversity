@@ -23,6 +23,7 @@ Updated 2026-04-29T00:00:00Z
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import os
 import uuid
@@ -31,10 +32,6 @@ from datetime import datetime, timezone
 from typing import Any
 
 
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _SEARCH_PATH = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
 
 VALID_LEVELS = frozenset(
@@ -108,7 +105,7 @@ class AuditRunRecord:
 
 def _connect():
     import psycopg2
-    conn = psycopg2.connect(_DB_URL)
+    conn = psycopg2.connect(home_db_url())
     conn.autocommit = True
     cur = conn.cursor()
     cur.execute(f"SET search_path TO {_SEARCH_PATH}")

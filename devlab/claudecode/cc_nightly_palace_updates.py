@@ -19,6 +19,7 @@ Flags:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 from unseen_university._uu_root import uu_home
 
 import argparse
@@ -34,12 +35,6 @@ from unseen_university import slate_store
 _UU_ROOT = Path(__file__).resolve().parents[2]
 _DECISIONS_DIR = _UU_ROOT / "devlab" / "runtime" / "memory" / "decisions"
 _IGOR_HOME = Path(uu_home())
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
-)
-
-
 # ── Decision doc parsing ───────────────────────────────────────────────────────
 
 def _parse_decision_doc(path: Path) -> dict | None:
@@ -174,7 +169,7 @@ def write_decision_nodes(docs: list[dict], dry_run: bool = False) -> int:
 
         try:
             import psycopg2
-            conn = psycopg2.connect(_DB_URL)
+            conn = psycopg2.connect(home_db_url())
             _palace_upsert(conn, path, title, content, "decision", metadata)
             conn.commit()
             conn.close()
@@ -246,7 +241,7 @@ def write_session_brief(date: str, decision_count: int, dry_run: bool = False) -
 
     try:
         import psycopg2
-        conn = psycopg2.connect(_DB_URL)
+        conn = psycopg2.connect(home_db_url())
         _palace_upsert(conn, path, title, content, "session_brief", metadata)
         conn.commit()
         conn.close()

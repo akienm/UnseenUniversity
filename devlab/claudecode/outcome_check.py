@@ -10,6 +10,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import os
@@ -20,7 +21,6 @@ from pathlib import Path
 _UU_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_UU_ROOT))
 
-_DB_URL = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 _CC_WORKFLOW_TOOLS = os.environ.get("CC_WORKFLOW_TOOLS", str(_UU_ROOT / "devlab" / "claudecode"))
 
 
@@ -46,7 +46,7 @@ def _decision_palace_node(decision_id: str) -> dict | None:
     try:
         import psycopg2
         import psycopg2.extras
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        conn = psycopg2.connect(home_db_url(), connect_timeout=5)
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 "SELECT path, title, content, metadata FROM adc.palace WHERE path = %s",

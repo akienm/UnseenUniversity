@@ -22,6 +22,7 @@ Patterns detected (keyword → pattern name → palace path):
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import argparse
 import json
@@ -33,11 +34,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECTS_DIR = Path.home() / ".claude" / "projects" / "-home-akien-dev-src-UnseenUniversity"
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
-)
 
 # Pattern definitions: (name, palace_slug, keywords, description)
 # keywords are searched in both user AND assistant messages.
@@ -265,7 +261,7 @@ def write_to_palace(patterns: dict[str, dict], dry_run: bool = False) -> int:
             import psycopg2
             import psycopg2.extras
 
-            conn = psycopg2.connect(_DB_URL)
+            conn = psycopg2.connect(home_db_url())
             with conn.cursor() as cur:
                 cur.execute(
                     """

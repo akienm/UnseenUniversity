@@ -15,6 +15,7 @@ Scope:
   Batch size: 1000 words/transaction.
 """
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import sys
@@ -26,7 +27,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import psycopg2
 import psycopg2.extras
 
-_DB_URL = "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 _BATCH = 1000
 
 
@@ -209,7 +209,7 @@ def _verify(conn) -> int:
 
 def main() -> None:
     print(f"migrate_wg_to_memories — {_ts()}", flush=True)
-    conn = psycopg2.connect(_DB_URL)
+    conn = psycopg2.connect(home_db_url())
     conn.autocommit = False
     try:
         word_to_id = _phase1_create_words(conn)

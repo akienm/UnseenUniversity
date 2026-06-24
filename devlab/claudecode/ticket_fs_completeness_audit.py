@@ -44,9 +44,9 @@ CLOSED_DIR = TICKETS_DIR / "closed"
 def _db_conn():
     import psycopg2
 
-    url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL")
+    url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("UU_HOME_DB_URL")
     if not url:
-        raise RuntimeError("UU_HOME_DB_URL / IGOR_HOME_DB_URL not set")
+        raise RuntimeError("UU_HOME_DB_URL / UU_HOME_DB_URL not set")
     return psycopg2.connect(url, connect_timeout=10)
 
 

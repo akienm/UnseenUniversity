@@ -59,7 +59,7 @@ class _BootstrapPathManager:
         baked-in default credential. The error includes guidance so
         callers know what to fix.
         """
-        url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL")
+        url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("UU_HOME_DB_URL")
         if not url:
             raise RuntimeError(
                 "UU_HOME_DB_URL environment variable not set. "

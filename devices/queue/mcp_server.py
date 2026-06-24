@@ -6,7 +6,7 @@ Wire into Claude Code settings as 'datacenter':
         "datacenter": {
           "command": "python",
           "args": ["-m", "devices.queue.mcp_server"],
-          "env": {"UU_HOME_DB_URL": "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"}
+          "env": {"UU_HOME_DB_URL": "postgresql://igor:<password>@127.0.0.1/Igor-wild-0001"}
         }
       }
     }

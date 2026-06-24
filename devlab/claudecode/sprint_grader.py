@@ -105,7 +105,7 @@ def grade(ticket_id: str, diff: str) -> dict:
         f"Git diff (staged changes):\n{diff[:4000]}"
     )
 
-    db_url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL")
+    db_url = os.environ.get("UU_HOME_DB_URL") or os.environ.get("UU_HOME_DB_URL")
     evaluator = EvaluatorDevice(db_url=db_url)
     rubric_id = _ensure_rubric(evaluator)
 

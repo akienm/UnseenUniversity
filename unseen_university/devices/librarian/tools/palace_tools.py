@@ -1,17 +1,13 @@
 """Palace tools — browse, read, write, and search adc.palace nodes."""
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import os
 
 import psycopg2
 import psycopg2.extras
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 SCHEMAS = [
     {
@@ -101,21 +97,24 @@ SCHEMAS = [
 ]
 
 
-def _q(sql: str, params=(), pg_url: str = _PG_URL) -> list[dict]:
+def _q(sql: str, params=(), pg_url: str = None) -> list[dict]:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     with psycopg2.connect(pg_url) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, params)
             return [dict(r) for r in cur.fetchall()]
 
 
-def _exec(sql: str, params=(), pg_url: str = _PG_URL) -> int:
+def _exec(sql: str, params=(), pg_url: str = None) -> int:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     with psycopg2.connect(pg_url) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
             return cur.rowcount
 
 
-def palace_ls(prefix: str = "", limit: int = 50, pg_url: str = _PG_URL) -> str:
+def palace_ls(prefix: str = "", limit: int = 50, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     if prefix:
         rows = _q(
             "SELECT path, title, node_type, updated_at::date AS date "
@@ -145,7 +144,8 @@ def palace_ls(prefix: str = "", limit: int = 50, pg_url: str = _PG_URL) -> str:
     return "\n".join(lines)
 
 
-def palace_read(path: str, pg_url: str = _PG_URL) -> str:
+def palace_read(path: str, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rows = _q(
         "SELECT path, title, content, node_type, updated_at, metadata "
         "FROM adc.palace WHERE path = %s",
@@ -173,8 +173,9 @@ def palace_write(
     content: str,
     node_type: str = "doc",
     tags: list | None = None,
-    pg_url: str = _PG_URL,
+    pg_url: str = None,
 ) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     metadata = psycopg2.extras.Json({"tags": tags or []})
     with psycopg2.connect(pg_url) as conn:
         with conn.cursor() as cur:
@@ -193,8 +194,9 @@ def palace_write(
 
 
 def palace_search(
-    query: str, tags: list | None = None, limit: int = 10, pg_url: str = _PG_URL
+    query: str, tags: list | None = None, limit: int = 10, pg_url: str = None
 ) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     params: list = []
     where_parts = [
         "to_tsvector('english', coalesce(content,'') || ' ' || coalesce(title,'')) "
@@ -221,7 +223,8 @@ def palace_search(
     return "\n".join(lines)
 
 
-def dispatch(name: str, args: dict, pg_url: str = _PG_URL) -> str | None:
+def dispatch(name: str, args: dict, pg_url: str = None) -> str | None:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     _handlers = {
         "palace_ls":     lambda a: palace_ls(a.get("prefix", ""), a.get("limit", 50), pg_url),
         "palace_read":   lambda a: palace_read(a["path"], pg_url),

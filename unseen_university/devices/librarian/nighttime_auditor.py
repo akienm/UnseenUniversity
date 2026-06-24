@@ -7,6 +7,7 @@ first initialize.
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import logging
 import os
@@ -15,10 +16,6 @@ import time
 
 log = logging.getLogger(__name__)
 
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _CC_SEND_URL = os.environ.get("CC_SEND_URL", "http://localhost:8082/api/cc_send")
 
 _LOOP_INTERVAL_S = 300  # check every 5 min whether we're in the fire window
@@ -34,7 +31,7 @@ _started_lock = threading.Lock()
 def _conn():
     import psycopg2
 
-    return psycopg2.connect(_PG_URL)
+    return psycopg2.connect(home_db_url())
 
 
 def _fetch_window(hours: int = 24) -> list[dict]:

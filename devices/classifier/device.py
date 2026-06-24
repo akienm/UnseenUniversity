@@ -325,7 +325,7 @@ class ClassifierDevice(BaseDevice):
 
     def _db_url(self) -> str:
         import os
-        return os.environ.get("UU_HOME_DB_URL") or os.environ.get("IGOR_HOME_DB_URL", "")
+        return os.environ.get("UU_HOME_DB_URL") or os.environ.get("UU_HOME_DB_URL", "")
 
     def _query_palace_trees(
         self,

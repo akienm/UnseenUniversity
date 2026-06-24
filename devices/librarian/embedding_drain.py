@@ -11,6 +11,7 @@ Call run_once() from a periodic job (Nanny Ogg cron or Librarian run loop).
 D-semantic-indexing-2026-06-09
 """
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import logging
@@ -35,9 +36,7 @@ def _connect(db_url: str):
 
 def run_once(db_url: str | None = None, *, force_fallback: bool = False) -> dict:
     """Process up to _BATCH pending queue entries. Returns stats dict."""
-    db_url = db_url or os.environ.get(
-        "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-    )
+    db_url = db_url or home_db_url()
     try:
         from devices.scraps.embedding_engine import embed
     except ImportError:
@@ -121,9 +120,7 @@ def run_once(db_url: str | None = None, *, force_fallback: bool = False) -> dict
 
 def queue_depth(db_url: str | None = None) -> int:
     """Return count of pending queue entries."""
-    db_url = db_url or os.environ.get(
-        "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-    )
+    db_url = db_url or home_db_url()
     conn = _connect(db_url)
     try:
         with conn.cursor() as cur:

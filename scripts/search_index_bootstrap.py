@@ -7,16 +7,12 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import argparse
 import os
 
 import psycopg2
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 _CREATE_SCHEMA = "CREATE SCHEMA IF NOT EXISTS adc;"
 
@@ -41,7 +37,8 @@ _CREATE_INDEXES = [
 _DROP_TABLE = "DROP TABLE IF EXISTS adc.search_index CASCADE;"
 
 
-def migrate(pg_url: str = _PG_URL) -> None:
+def migrate(pg_url: str = None) -> None:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     conn = psycopg2.connect(pg_url)
     try:
         with conn:
@@ -55,7 +52,8 @@ def migrate(pg_url: str = _PG_URL) -> None:
         conn.close()
 
 
-def rollback(pg_url: str = _PG_URL) -> None:
+def rollback(pg_url: str = None) -> None:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     conn = psycopg2.connect(pg_url)
     try:
         with conn:

@@ -20,6 +20,7 @@ Workflow status lifecycle: pending → running → completed | failed
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import importlib.util
 import json
@@ -38,10 +39,6 @@ _WORKFLOWS_DIR = _GRANNY_HOME / "workflows"
 _UU_ROOT = Path(__file__).resolve().parents[2]
 _CC_QUEUE = _UU_ROOT / "devlab" / "claudecode" / "cc_queue.py"
 _PYTHON = sys.executable
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-)
-
 # Terminal ticket statuses that mean "the step is done"
 _DONE_STATUSES = {"closed", "done"}
 # Terminal statuses that mean "the step failed / needs intervention"
@@ -167,7 +164,7 @@ def _dispatch_step(step_id: str, ticket_id: str, worker: str, workers_cfg: dict)
         capture_output=True,
         text=True,
         timeout=10,
-        env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
+        env={**os.environ, "UU_HOME_DB_URL": home_db_url()},
     )
     if r.returncode != 0:
         log.warning("Workflow: set-worker %s failed for %s/%s: %s", worker_name, step_id, ticket_id, r.stderr[:100])

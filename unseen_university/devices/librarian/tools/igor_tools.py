@@ -1,6 +1,7 @@
 """Igor-specific observability tools — traces, tails, habits, turn logs."""
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import os
@@ -10,11 +11,6 @@ from pathlib import Path
 
 import psycopg2
 import psycopg2.extras
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 SCHEMAS = [
     {
@@ -188,7 +184,8 @@ SCHEMAS = [
 ]
 
 
-def _q(sql: str, params=(), pg_url: str = _PG_URL) -> list[dict]:
+def _q(sql: str, params=(), pg_url: str = None) -> list[dict]:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     with psycopg2.connect(pg_url) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, params)
@@ -196,8 +193,9 @@ def _q(sql: str, params=(), pg_url: str = _PG_URL) -> list[dict]:
 
 
 def traces_recent(
-    limit: int = 10, since_minutes: int | None = None, pg_url: str = _PG_URL
+    limit: int = 10, since_minutes: int | None = None, pg_url: str = None
 ) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     params: list = []
     where = ""
     if since_minutes:
@@ -229,7 +227,8 @@ def traces_recent(
     return "\n".join(lines)
 
 
-def traces_get(trace_id: str, pg_url: str = _PG_URL) -> str:
+def traces_get(trace_id: str, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rows = _q(
         "SELECT id, recorded_at, query, nodes FROM traces WHERE id = %s LIMIT 1",
         (trace_id,),
@@ -267,7 +266,8 @@ def traces_get(trace_id: str, pg_url: str = _PG_URL) -> str:
     return "\n".join(lines)
 
 
-def tail_heat(node_id: str, pg_url: str = _PG_URL) -> str:
+def tail_heat(node_id: str, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rows = _q(
         "SELECT weight, recorded_at FROM tails WHERE node_id = %s "
         "ORDER BY recorded_at DESC LIMIT 50",
@@ -289,7 +289,8 @@ def tail_heat(node_id: str, pg_url: str = _PG_URL) -> str:
     return f"Tail heat for {node_id}: {total:.4f} ({len(rows)} entries)"
 
 
-def hot_nodes(limit: int = 10, since_hours: float = 2.0, pg_url: str = _PG_URL) -> str:
+def hot_nodes(limit: int = 10, since_hours: float = 2.0, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     cutoff = (datetime.now() - timedelta(hours=since_hours)).isoformat()
     rows = _q(
         "SELECT node_id, SUM(weight) as raw_weight, MAX(recorded_at) as last_seen, COUNT(*) as hits "
@@ -319,7 +320,8 @@ def hot_nodes(limit: int = 10, since_hours: float = 2.0, pg_url: str = _PG_URL) 
     return "\n".join(lines)
 
 
-def hot_attractors(limit: int = 10, pg_url: str = _PG_URL) -> str:
+def hot_attractors(limit: int = 10, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rows = _q(
         "SELECT m.id, m.narrative, m.activation_count, m.memory_type, "
         "COUNT(ie.id) as inbound_count "
@@ -344,7 +346,8 @@ def hot_attractors(limit: int = 10, pg_url: str = _PG_URL) -> str:
     return "\n".join(lines)
 
 
-def habit_list(query: str | None = None, limit: int = 30, pg_url: str = _PG_URL) -> str:
+def habit_list(query: str | None = None, limit: int = 30, pg_url: str = None) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     params: list = []
     where = "WHERE metadata->>'trigger' IS NOT NULL "
     if query:
@@ -542,8 +545,9 @@ def consult_sessions_recent(
 
 
 def wg_neighbors(
-    word: str, limit: int = 20, min_score: float = 0.1, pg_url: str = _PG_URL
+    word: str, limit: int = 20, min_score: float = 0.1, pg_url: str = None
 ) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     rows = _q(
         "SELECT word_b as neighbor, score FROM wg_edges "
         "WHERE word_a = %s AND score >= %s "
@@ -567,7 +571,8 @@ def wg_neighbors(
     return "\n".join(lines)
 
 
-def dispatch(name: str, args: dict, pg_url: str = _PG_URL) -> str | None:
+def dispatch(name: str, args: dict, pg_url: str = None) -> str | None:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     _handlers = {
         "traces_recent":         lambda a: traces_recent(a.get("limit", 10), a.get("since_minutes"), pg_url),
         "traces_get":            lambda a: traces_get(a["trace_id"], pg_url),

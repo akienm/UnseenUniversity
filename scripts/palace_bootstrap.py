@@ -10,6 +10,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import argparse
 import os
@@ -18,11 +19,6 @@ from datetime import datetime, timezone
 
 import psycopg2
 import psycopg2.extras
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 # ── SQL ───────────────────────────────────────────────────────────────────────
 
@@ -245,7 +241,7 @@ def _seed_rows() -> list[tuple]:
                 "Igor's palace lives in TheIgors Postgres, table memory_palace (clan schema).\n"
                 "It is NOT merged into this database — federation via pointer only.\n\n"
                 "Query Igor's palace:\n"
-                "  psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 \\\n"
+                "  psql postgresql://igor:<password>@127.0.0.1/Igor-wild-0001 \\\n"
                 "    -c \"SELECT path, title FROM memory_palace WHERE path LIKE 'unseenuniversity/%' ORDER BY path\"\n\n"
                 "Via MCP (when Igor running):\n"
                 "  memory_get(path='unseenuniversity/rules/coding')\n"
@@ -304,7 +300,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--schema", default="adc", help="Target Postgres schema (default: adc)"
     )
-    parser.add_argument("--pg-url", default=_PG_URL, help="Postgres connection URL")
+    parser.add_argument("--pg-url", default=home_db_url(), help="Postgres connection URL")
     args = parser.parse_args(argv)
 
     conn = psycopg2.connect(args.pg_url)

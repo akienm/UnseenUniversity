@@ -13,6 +13,7 @@ Cron entry (add via `crontab -e`):
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import logging
 import os
@@ -35,10 +36,7 @@ _log = logging.getLogger("cron_learning_pipeline")
 def main() -> int:
     _log.info("learning_pipeline: nightly run starting")
 
-    db_url = os.environ.get(
-        "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
+    db_url = home_db_url()
 
     total_stats = {
         "inference_entries": 0,

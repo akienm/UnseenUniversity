@@ -15,6 +15,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import argparse
 import json
@@ -26,10 +27,6 @@ from pathlib import Path
 import psycopg2
 import psycopg2.extras
 
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _PROJECTS_DIR = Path.home() / ".claude" / "projects"
 _ECHO_DIR = Path.home() / ".unseen_university" / "claudecode" / "palace_echo"
 
@@ -130,9 +127,10 @@ def capture(
     session_file: Path,
     summary_text: str | None = None,
     dry_run: bool = False,
-    pg_url: str = _PG_URL,
+    pg_url: str = None,
 ) -> dict:
     """Main entry point. Returns dict with written paths."""
+    pg_url = pg_url if pg_url is not None else home_db_url()
     turns = extract_transcript(session_file)
     if not turns:
         return {"error": "no text turns found in session file"}

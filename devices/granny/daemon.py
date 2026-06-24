@@ -38,6 +38,7 @@ Run as: python -m devices.granny.daemon
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import logging
@@ -53,9 +54,6 @@ log = logging.getLogger(__name__)
 
 _UU_ROOT = Path(__file__).resolve().parents[2]
 _CC_QUEUE = _UU_ROOT / "devlab" / "claudecode" / "cc_queue.py"
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-)
 _PYTHON = sys.executable
 _GRANNY_HOME = Path.home() / ".granny"
 _CONFIG_PATH = _UU_ROOT / "config" / "granny.yaml"
@@ -394,7 +392,7 @@ def _dispatch_akien(ticket: dict) -> bool:
         capture_output=True,
         text=True,
         timeout=10,
-        env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
+        env={**os.environ, "UU_HOME_DB_URL": home_db_url()},
     )
     if r.returncode != 0:
         log.warning("Granny: set-worker akien failed for %s: %s", tid, r.stderr[:100])
@@ -627,7 +625,7 @@ def _reset_stale_inprogress() -> int:
             capture_output=True,
             text=True,
             timeout=10,
-            env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
+            env={**os.environ, "UU_HOME_DB_URL": home_db_url()},
         )
         if r.returncode != 0:
             log.warning("Granny: stale-inprogress reset failed for %s: %s", tid, r.stderr[:80])

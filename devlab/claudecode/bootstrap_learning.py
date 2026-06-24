@@ -17,6 +17,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 from unseen_university._uu_root import uu_home
 
 import argparse
@@ -38,10 +39,6 @@ _PROCESSED_FILE = Path(
     uu_home()
 ) / "claudecode" / "bootstrap_processed_sessions.txt"
 
-DEFAULT_DB_URL = (
-    os.environ.get("UU_HOME_DB_URL")
-    or "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-)
 DEFAULT_CHUNK_SIZE = 10
 
 
@@ -198,7 +195,7 @@ def main() -> None:
                         help="Show processing progress and exit")
     parser.add_argument("--one-chunk", action="store_true",
                         help="Process one chunk then stop (safe for cron/CI)")
-    parser.add_argument("--db-url", default=DEFAULT_DB_URL,
+    parser.add_argument("--db-url", default=home_db_url(),
                         help="Postgres connection URL")
     args = parser.parse_args()
 

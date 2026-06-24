@@ -74,7 +74,7 @@ class IntentExtractorDevice(BaseDevice):
     def requirements(self) -> dict:
         return {
             "deps": ["psycopg2"],
-            "system": ["UU_HOME_DB_URL or IGOR_HOME_DB_URL env var", "inference device reachable"],
+            "system": ["UU_HOME_DB_URL or UU_HOME_DB_URL env var", "inference device reachable"],
         }
 
     def capabilities(self) -> dict:

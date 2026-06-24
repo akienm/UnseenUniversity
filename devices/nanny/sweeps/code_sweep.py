@@ -12,6 +12,7 @@ D-semantic-indexing-2026-06-09
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import ast
 import hashlib
@@ -147,10 +148,7 @@ def run_sweep(
         repo_root = Path(uu_root())
 
     if db_url is None:
-        db_url = os.environ.get(
-            "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
+        db_url = home_db_url()
 
     counters = {"inserted": 0, "updated": 0, "unchanged": 0, "errors": 0}
 
@@ -208,10 +206,7 @@ def run_sweep(
 def queue_depth(db_url: str | None = None) -> int:
     """Return count of code_index rows with no embedding."""
     if db_url is None:
-        db_url = os.environ.get(
-            "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
+        db_url = home_db_url()
     import psycopg2
     conn = psycopg2.connect(db_url)
     try:

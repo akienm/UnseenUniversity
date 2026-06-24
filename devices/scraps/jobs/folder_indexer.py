@@ -10,6 +10,7 @@ Run as a Scraps periodic job or directly:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import logging
 import os
@@ -18,9 +19,6 @@ from typing import Iterator
 
 log = logging.getLogger(__name__)
 
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
-)
 _CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "librarian.yaml"
 _CHUNK_SIZE = int(os.environ.get("LIBRARIAN_CHUNK_SIZE", "800"))
 _MAX_FILES = int(os.environ.get("LIBRARIAN_INDEX_MAX_FILES", "5000"))
@@ -101,7 +99,7 @@ def run_indexer(paths: list[str] | None = None) -> dict:
 
     try:
         import psycopg2
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        conn = psycopg2.connect(home_db_url(), connect_timeout=5)
     except Exception as exc:
         log.warning("folder_indexer: DB connect failed: %s", exc)
         return {"indexed": 0, "skipped": 0, "errors": 1}
@@ -166,7 +164,7 @@ def search_indexed(query: str, limit: int = 10) -> list[dict]:
     try:
         import psycopg2
         import psycopg2.extras
-        conn = psycopg2.connect(_DB_URL, connect_timeout=5)
+        conn = psycopg2.connect(home_db_url(), connect_timeout=5)
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 """SELECT path, chunk_index, chunk_text,

@@ -18,6 +18,7 @@ Availability:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import logging
@@ -34,10 +35,6 @@ log = logging.getLogger(__name__)
 
 _START_TIME = time.time()
 _CC_QUEUE = Path(__file__).resolve().parents[2] / "devlab" / "claudecode" / "cc_queue.py"
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _SKILLS_DIR = Path.home() / ".claude" / "skills"
 _HIGH_INERTIA_TAGS = frozenset({"Security", "Provenance", "Database", "Auth", "Brainstem"})
 
@@ -234,7 +231,7 @@ class DickSimnelDevice(BaseDevice):
                 capture_output=True,
                 text=True,
                 timeout=10,
-                env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
+                env={**os.environ, "UU_HOME_DB_URL": home_db_url()},
             )
             if result.returncode != 0:
                 log.warning("DickSimnel: show failed for %s: %s", ticket_id, result.stderr[:100])
@@ -255,7 +252,7 @@ class DickSimnelDevice(BaseDevice):
                 capture_output=True,
                 text=True,
                 timeout=10,
-                env={**os.environ, "UU_HOME_DB_URL": _DB_URL},
+                env={**os.environ, "UU_HOME_DB_URL": home_db_url()},
             )
             if result.returncode != 0:
                 log.debug("DickSimnel: cc_queue %s failed: %s", args, result.stderr[:200])

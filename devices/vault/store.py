@@ -9,6 +9,7 @@ fall back to their own credential sources (env vars, flat files).
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import logging
 import os
@@ -16,11 +17,6 @@ import stat
 from pathlib import Path
 
 log = logging.getLogger(__name__)
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 _MASTER_KEY_PATH = Path(
     os.environ.get("VAULT_MASTER_KEY_PATH", "~/.unseen_university/vault/master.key")
@@ -64,7 +60,7 @@ def decrypt(ciphertext: bytes) -> str:
 
 def _connect():
     import psycopg2
-    return psycopg2.connect(_DB_URL)
+    return psycopg2.connect(home_db_url())
 
 
 # ── Credential CRUD ───────────────────────────────────────────────────────────

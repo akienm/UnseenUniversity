@@ -12,6 +12,7 @@ All DB interaction uses db_proxy (HOME DB, shared across instances).
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import hashlib
 import json
@@ -59,10 +60,7 @@ def _deposit_to_schema(
     import hashlib as _hl
     import psycopg2 as _pg
 
-    db_url = os.environ.get(
-        "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-    )
+    db_url = home_db_url()
     _MT_MAP = {
         "procedural": "PROCEDURAL",
         "factual": "FACTUAL",

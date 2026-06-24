@@ -17,6 +17,7 @@ D-classifier-device-architecture-2026-06-12
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import hashlib
 import json
@@ -30,10 +31,6 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _OR_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 _HAIKU_MODEL = "anthropic/claude-haiku-4-5"
 _MAX_SYMBOLS_PER_MODULE = 30  # cap to keep prompt small
@@ -239,7 +236,7 @@ def run_annotator(
     """
     import psycopg2
 
-    db_url = db_url or _DB_URL
+    db_url = db_url or home_db_url()
     if file_paths is not None:
         since_hours = None
         log.info("annotator: mode=delta files=%d dry_run=%s", len(file_paths), dry_run)

@@ -21,6 +21,7 @@ Flags:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 from unseen_university._uu_root import uu_home
 
 import argparse
@@ -34,12 +35,6 @@ from pathlib import Path
 from unseen_university import slate_store, ticket_store
 
 _IGOR_HOME = Path(uu_home())
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
-)
-
-
 # ── Slate reading ─────────────────────────────────────────────────────────────
 
 def _read_slate_section(date: str, section: str) -> str:
@@ -109,7 +104,7 @@ def _read_recent_patterns(date: str) -> list[dict]:
     try:
         import psycopg2
         import psycopg2.extras
-        conn = psycopg2.connect(_DB_URL)
+        conn = psycopg2.connect(home_db_url())
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 """
@@ -223,7 +218,7 @@ def write_context_brief(date: str, dry_run: bool = False) -> bool:
 
     try:
         import psycopg2
-        conn = psycopg2.connect(_DB_URL)
+        conn = psycopg2.connect(home_db_url())
         _palace_upsert(conn, path, title, content, "context_brief", metadata)
         conn.commit()
         conn.close()

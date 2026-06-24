@@ -120,7 +120,7 @@ def _api_key() -> str:
 
 
 def _db_url() -> str:
-    return os.environ.get("IGOR_HOME_DB_URL", "")
+    return os.environ.get("UU_HOME_DB_URL", "")
 
 
 def _fetch_or_balance() -> dict | None:
@@ -153,7 +153,7 @@ def _fetch_or_balance() -> dict | None:
 def _burn_trajectory(window_hours: float = 48.0) -> dict:
     db_url = _db_url()
     if not db_url:
-        return {"trend": "no_data", "note": "IGOR_HOME_DB_URL not set"}
+        return {"trend": "no_data", "note": "UU_HOME_DB_URL not set"}
     try:
         import psycopg2
         import psycopg2.extras

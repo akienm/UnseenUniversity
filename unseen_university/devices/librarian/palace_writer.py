@@ -17,6 +17,7 @@ Confidence is never 1.0 — all values are clamped to [0.0, 0.999].
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import hashlib
 import json
@@ -109,10 +110,7 @@ class PalaceWriter:
     ) -> None:
         import os
 
-        self._pg_url = pg_url or os.environ.get(
-            "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
+        self._pg_url = pg_url or home_db_url()
         self._cc_inbox_fn = (
             cc_inbox_fn  # callable(kind, summary, body, urgency) or None
         )

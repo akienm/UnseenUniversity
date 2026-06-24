@@ -11,16 +11,12 @@ Usage:
     python lab/competition/setup_competition_schema.py --drop-recreate
 """
 import argparse
+from unseen_university.identity import home_db_url
 import os
 import sys
 
 import psycopg2
 
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 _CREATE_SCHEMA = "CREATE SCHEMA IF NOT EXISTS competition;"
 
@@ -80,7 +76,7 @@ _DROP_SCHEMA = "DROP SCHEMA IF EXISTS competition CASCADE;"
 
 
 def setup(drop_recreate: bool = False) -> None:
-    conn = psycopg2.connect(_DB_URL)
+    conn = psycopg2.connect(home_db_url())
     conn.autocommit = False
     try:
         with conn.cursor() as cur:

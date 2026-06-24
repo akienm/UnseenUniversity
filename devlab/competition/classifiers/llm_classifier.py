@@ -19,6 +19,7 @@ Usage:
     # → ("PROCEDURAL", 1) first call, ("PROCEDURAL", 0) on repeat
 """
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import hashlib
 import json
@@ -27,11 +28,6 @@ from typing import Optional
 
 import ollama as _ollama
 import psycopg2
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 FALLBACK_TYPE = "FACTUAL"
 _MODEL = os.getenv("OLLAMA_LOCAL_MODEL", "llama3.2:1b")
@@ -91,7 +87,7 @@ def _sha256(text: str) -> str:
 
 
 def _conn():
-    return psycopg2.connect(_DB_URL)
+    return psycopg2.connect(home_db_url())
 
 
 def _ensure_cache_table() -> None:

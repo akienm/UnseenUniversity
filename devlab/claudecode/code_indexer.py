@@ -20,6 +20,7 @@ clan.code_index schema for file_intent rows:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import hashlib
 import json
@@ -31,10 +32,6 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    os.environ.get("IGOR_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
-)
 _OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 _HAIKU_MODEL = "anthropic/claude-haiku-4-5"
 _INTENT_SYMBOL = "__file_intent__"
@@ -263,7 +260,7 @@ def run_sweep(
             repo_root = Path(__file__).resolve().parent.parent.parent
 
     if db_url is None:
-        db_url = _DB_URL
+        db_url = home_db_url()
 
     log.info("CODE_INDEXER|repo_root=%s|dry_run=%s", repo_root, dry_run)
 

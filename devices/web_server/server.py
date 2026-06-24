@@ -36,6 +36,7 @@ Port: ADC_WEB_PORT env var (falls back to IGOR_UC_PORT), default 8080.
 """
 
 import asyncio
+from unseen_university.identity import home_db_url
 import json
 import logging
 import os
@@ -1743,10 +1744,7 @@ async def _api_device_mru(request: Request):
         from bus.connection import make_bus_connection
         bus = make_bus_connection()
         import psycopg2
-        dsn = os.environ.get(
-            "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
+        dsn = home_db_url()
         with psycopg2.connect(dsn) as conn:
             with conn.cursor() as cur:
                 cur.execute(

@@ -12,6 +12,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import argparse
 import os
@@ -22,11 +23,6 @@ from pathlib import Path
 
 import psycopg2
 import psycopg2.extras
-
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _DEFAULT_DECISIONS_DIR = _REPO_ROOT / "devlab" / "design_docs" / "decisions"
@@ -175,7 +171,7 @@ def main() -> None:
         print("Re-run with --write to upsert.")
         return
 
-    conn = psycopg2.connect(_PG_URL)
+    conn = psycopg2.connect(home_db_url())
     count = seed(conn, nodes, schema=args.schema)
     conn.close()
     print(f"Upserted {count} palace.decisions.* nodes into schema '{args.schema}'.")

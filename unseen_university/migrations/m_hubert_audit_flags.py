@@ -24,6 +24,7 @@ Schema:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import logging
 import os
@@ -37,11 +38,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import psycopg2
 
 log = logging.getLogger(__name__)
-
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 # ── SQL ───────────────────────────────────────────────────────────────────────
 
@@ -78,9 +74,9 @@ def _ts() -> str:
 def migrate() -> None:
     """Execute migration: create schema, table, and indexes."""
     try:
-        conn = psycopg2.connect(_DB_URL)
+        conn = psycopg2.connect(home_db_url())
         conn.autocommit = True
-        log.info("Connected to database: %s", _DB_URL)
+        log.info("Connected to database: %s", home_db_url())
 
         with conn.cursor() as cur:
             # Create schema
@@ -113,7 +109,7 @@ def migrate() -> None:
 def verify() -> bool:
     """Verify that the table exists and is queryable."""
     try:
-        conn = psycopg2.connect(_DB_URL)
+        conn = psycopg2.connect(home_db_url())
         conn.autocommit = True
 
         with conn.cursor() as cur:

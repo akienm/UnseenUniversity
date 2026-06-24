@@ -16,6 +16,7 @@ Notes:
 - Never modifies holdout labels.
 """
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import os
 import sys
@@ -23,14 +24,8 @@ from typing import Optional
 
 import psycopg2
 
-_DB_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
-
-
 def _conn():
-    return psycopg2.connect(_DB_URL)
+    return psycopg2.connect(home_db_url())
 
 
 def _fetch_holdout() -> list[tuple[str, str, str]]:

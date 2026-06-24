@@ -23,6 +23,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import logging
@@ -36,11 +37,6 @@ import psycopg2
 from bus.envelope import Envelope
 
 log = logging.getLogger(__name__)
-
-_DEFAULT_DSN = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 
 _SCHEMA_SQL = """
 CREATE SCHEMA IF NOT EXISTS bus;
@@ -98,7 +94,7 @@ class PgBus:
     SHARED_MAILBOX = "Shared"
 
     def __init__(self, dsn: str | None = None) -> None:
-        self._dsn = dsn or _DEFAULT_DSN
+        self._dsn = dsn or home_db_url()
 
     def _connect(self) -> psycopg2.extensions.connection:
         return psycopg2.connect(self._dsn)

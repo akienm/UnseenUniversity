@@ -12,6 +12,7 @@ Usage:
 D-semantic-indexing-2026-06-09
 """
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 from unseen_university._uu_root import uu_home
 
 import os
@@ -26,7 +27,6 @@ import psycopg2
 from unseen_university import slate_store
 
 _IGOR_HOME = Path(uu_home())
-_DB_URL = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 _MAX_CONTENT = 4000
 
 
@@ -55,7 +55,7 @@ def _extract_sections(text: str) -> str:
 
 def deposit(datestamp: str | None = None, db_url: str | None = None) -> dict:
     """Write session content to clan.memories. Returns status dict."""
-    db_url = db_url or _DB_URL
+    db_url = db_url or home_db_url()
     datestamp = datestamp or datetime.now(timezone.utc).strftime("%Y%m%d")
     date_str = f"{datestamp[:4]}-{datestamp[4:6]}-{datestamp[6:]}"
 

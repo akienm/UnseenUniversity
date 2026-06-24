@@ -21,6 +21,7 @@ Human ships:  uu contrib list    — show staged candidates
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import hashlib
 import json
@@ -244,10 +245,7 @@ def scan(
     Returns list of newly staged records (skips already-staged).
     """
     if db_url is None:
-        db_url = os.environ.get(
-            "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-        )
+        db_url = home_db_url()
 
     candidates = detect_candidates(db_url, threshold)
     log.info("archivist.contrib: found %d candidates at threshold=%d", len(candidates), threshold)

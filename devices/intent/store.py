@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 
-_DB_URL_KEYS = ("UU_HOME_DB_URL", "IGOR_HOME_DB_URL")
+_DB_URL_KEYS = ("UU_HOME_DB_URL", "UU_HOME_DB_URL")
 
 _CREATE_SCHEMA = "CREATE SCHEMA IF NOT EXISTS devlab;"
 
@@ -66,7 +66,7 @@ class IntentStore:
             if val:
                 return val
         raise RuntimeError(
-            "No DB URL found — set UU_HOME_DB_URL or IGOR_HOME_DB_URL"
+            "No DB URL found — set UU_HOME_DB_URL or UU_HOME_DB_URL"
         )
 
     def _connect(self):

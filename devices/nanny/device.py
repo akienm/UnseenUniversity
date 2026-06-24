@@ -21,6 +21,7 @@ D-granny-nanny-2026-05-28
 """
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import os
 import threading
@@ -684,10 +685,7 @@ class NannyOggDevice(BaseDevice):
             import os
             from devices.nanny.sweeps.code_sweep import run_sweep
 
-            db_url = os.environ.get(
-                "UU_HOME_DB_URL",
-                "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-            )
+            db_url = home_db_url()
             result = run_sweep(db_url=db_url)
             msg = (
                 f"CODE_SWEEP_RESULT|inserted={result['inserted']}|"
@@ -709,10 +707,7 @@ class NannyOggDevice(BaseDevice):
             import os
             from devices.classifier.annotator import run_annotator
 
-            db_url = os.environ.get(
-                "UU_HOME_DB_URL",
-                "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-            )
+            db_url = home_db_url()
             mode = params.get("mode", "nightly")
             result = run_annotator(db_url=db_url, mode=mode)
             msg = (

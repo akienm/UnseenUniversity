@@ -1,6 +1,7 @@
 """Channel tools — read/write the shared inter-agent message channel."""
 
 from __future__ import annotations
+from unseen_university.identity import home_db_url
 
 import json
 import os
@@ -10,10 +11,6 @@ import urllib.request
 import psycopg2
 import psycopg2.extras
 
-_PG_URL = os.environ.get(
-    "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
-)
 _CC_SEND_URL = os.environ.get("CC_SEND_URL", "http://localhost:8082/api/cc_send")
 
 SCHEMAS = [
@@ -101,7 +98,8 @@ SCHEMAS = [
 ]
 
 
-def _q(sql: str, params=(), pg_url: str = _PG_URL) -> list[dict]:
+def _q(sql: str, params=(), pg_url: str = None) -> list[dict]:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     with psycopg2.connect(pg_url) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, params)
@@ -113,8 +111,9 @@ def channel_read(
     limit: int = 20,
     since_id: int | None = None,
     author: str | None = None,
-    pg_url: str = _PG_URL,
+    pg_url: str = None,
 ) -> str:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     params: list = []
     where_parts = ["channel = %s"]
     params.append(channel)
@@ -178,8 +177,9 @@ def _request_compaction(preserve_instructions: str) -> str:
 
 
 def dispatch(
-    name: str, args: dict, pg_url: str = _PG_URL, cc_send_url: str = _CC_SEND_URL
+    name: str, args: dict, pg_url: str = None, cc_send_url: str = _CC_SEND_URL
 ) -> str | None:
+    pg_url = pg_url if pg_url is not None else home_db_url()
     _handlers = {
         "channel_read":       lambda a: channel_read(
             a.get("channel", "shared"), a.get("limit", 20), a.get("since_id"), a.get("author"), pg_url,

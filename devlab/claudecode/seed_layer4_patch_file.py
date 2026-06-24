@@ -13,7 +13,7 @@ code_ref: pe_chain:pe_implement
 
 Usage:
     cd ~/TheIgors && source venv/bin/activate
-    UU_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 \\
+    UU_HOME_DB_URL=postgresql://igor:<password>@127.0.0.1/Igor-wild-0001 \\
         python claudecode/seed_layer4_patch_file.py
 
 Safe to re-run — upserts on conflict.
