@@ -38,3 +38,6 @@ NONE
 
 ## Done today
 - /sorted LOCKED D-skills-two-products-2026-06-23 (amended for 2026-06-24 design). advisor-reviewed the L. Reconciled (not re-filed): discarded dup T-readfeed-generalizes-readigor; repointed pre-existing T-uu-readfeed -> /device igor feed (gated on device mechanism); rewrote T-device-skills-via-uu-device as DISPATCH MECHANISM (bin/+skills/ failover, unique-name-per-device, /device thin-shim over uu device, igor skills move INTO devices/igor/{bin,skills}/), gated on T-uu-cli-dispatcher; amended T-skills-single-source-flip (per-skill ~/.claude symlinks + collision->system_alarm, fork #1 overrides project-scope-primary); added uu help to dispatcher; amended T-consequence (device collisions + symlink clashes); populated decision spawned_tickets (13) + fixed measurement signal (uu device igor feed). Filed T-cc-queue-list-hides-tickets (visibility bug that made the dup).
+
+## In-flight (pre-compact)
+D-skills-two-products LOCKED (13 tickets) — ready to sprint, nothing mid-work. NEXT when resuming: T-uu-cli-dispatcher (#1, unblocked foundation) + T-skills-prune-deprecated-merge (#8) give working Friday demos; or sprint after the talk. Plus standalone T-cc-queue-list-hides-tickets (the list-hides-tickets bug — fix early, it makes the pre-file check unreliable).
