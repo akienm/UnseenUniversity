@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-uu-igor-home-env-skills-scripts.20260624.135744000829",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-igor-home-env-skills-scripts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-24T19:57:44.000829+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products-2026-06-23"
+    ],
+    "tickets": [
+      "T-uu-igor-home-env-skills-scripts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-igor-home-env-skills-scripts",
+    "title": "[in_progress] Eliminate IGOR_HOME env from skill run-scripts (missed by T-uu-eliminate-igor-home-env)",
+    "size": "S",
+    "tags": [
+      "EnvVars",
+      "Skills"
+    ],
+    "description": "T-uu-eliminate-igor-home-env closed PROVEN but had a scope hole: 4 live skill run-scripts (skills/{context-load,note,savestate,sprint-ticket}/run) still read os.environ['IGOR_HOME']. Two compounding causes: (1) the footprint grep was scoped to unseen_university/ devices/ devlab/claudecode/ — skills/ was never grepped; (2) the proof guard grepped '*.py', but these scripts are named 'run' (no extension), so the guard was structurally blind to them. Surfaced when the post-compact file-reads showed skills/context-load/run:17.\n\nFix: the 4 run-scripts now resolve via uu_home() (env-free); the proof guard (test_no_source_reads_igor_home_env) widened from '*.py' to ALL tracked files (excl tests, *.md, memory store) so extensionless scripts can never slip through again.\n\n**Affected files:** skills/context-load/run, skills/note/run, skills/savestate/run, skills/sprint-ticket/run, tests/test_igor_home_env_eliminated.py\n**Design rules:** test-plan (proof guard), one-canonical-env-var (UU_ROOT; uu_home() derived)\n**Scope boundary:** IN: the 4 executable run-scripts + widening the guard. OUT: SKILL.md doc-snippets (skills/notify/SKILL.md, skills/sorted/SKILL.md) that reference IGOR_HOME in prose/example snippets — those fall to the literal default and are functionally correct; they belong to the skills content-merge phase (theigors->unseenuniversity axis of D-skills-two-products), which sweeps all skill drift uniformly. Boundary named here, not hidden.\n**Test plan:** widened guard test_no_source_reads_igor_home_env asserts zero IGOR_HOME env reads across all tracked live code; red->green proof reverts the run-scripts to their IGOR_HOME-reading state.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-skills-two-products-2026-06-23",
+    "gate": null,
+    "priority": 0.7,
+    "status": "in_progress",
+    "created_at": "2026-06-24T19:57:41.776983+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-24T19:57:41.821410+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "968f697a-a00f-4c3f-b2d8-c3b9ed0a7108"
+  }
+}
