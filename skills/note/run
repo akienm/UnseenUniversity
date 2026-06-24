@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """note — log a milestone, insight, or decision to notes.log and today's slate."""
 import os
+from unseen_university._uu_root import uu_home
 import sys
 from datetime import datetime
 from pathlib import Path
 
 from unseen_university import slate_store
 
-IGOR_HOME     = Path(os.environ.get("IGOR_HOME",     Path.home() / ".unseen_university"))
+IGOR_HOME     = Path(uu_home())
 UU_ROOT = Path(os.environ.get("UU_ROOT", Path.home() / "dev/src/UnseenUniversity"))
 
 

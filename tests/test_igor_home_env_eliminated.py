@@ -32,7 +32,7 @@ def test_no_source_reads_igor_home_env():
     distinct IGOR_HOME_SEARCH_PATH / IGOR_HOMEOSTATIC_* vars)."""
     out = subprocess.run(
         ["git", "-C", str(_REPO), "grep", "-nE", r"environ.*[\"']IGOR_HOME[\"']",
-         "--", "*.py", ":!tests/"],
+         "--", ":!tests/", ":!*.md", ":!devlab/runtime/memory/"],
         capture_output=True, text=True,
     ).stdout
     stray = [l for l in out.splitlines() if "IGOR_HOME_SEARCH" not in l and "IGOR_HOMEOSTATIC" not in l]
