@@ -12,6 +12,7 @@ Usage:
 D-semantic-indexing-2026-06-09
 """
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import os
 import re
@@ -24,7 +25,7 @@ import psycopg2
 
 from unseen_university import slate_store
 
-_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+_IGOR_HOME = Path(uu_home())
 _DB_URL = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
 _MAX_CONTENT = 4000
 

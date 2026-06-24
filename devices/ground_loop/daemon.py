@@ -16,6 +16,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import argparse
 import logging
@@ -30,7 +31,7 @@ import yaml
 
 log = logging.getLogger(__name__)
 
-_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+_IGOR_HOME = Path(uu_home())
 _PLUGIN_DIR = _IGOR_HOME / "ground_loop"
 _FLAGS_DIR = _IGOR_HOME / "flags"
 _DEFAULT_POLL = 15  # seconds

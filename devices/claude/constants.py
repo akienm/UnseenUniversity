@@ -10,6 +10,7 @@ cross-talk. CC.0 is the fallback broadcast when no session is specified.
 """
 
 import os
+from unseen_university._uu_root import uu_home
 import socket
 import subprocess
 from pathlib import Path
@@ -26,7 +27,7 @@ COMPACT_EVERY_N = int(os.environ.get("CC_COMPACT_EVERY_N", "5"))
 
 
 def _igor_home() -> Path:
-    return Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+    return Path(uu_home())
 
 
 def cc_session_path() -> Path:

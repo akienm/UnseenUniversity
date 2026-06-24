@@ -17,7 +17,7 @@ def _demo_interval(monkeypatch):
 
 @pytest.fixture()
 def igor_home(tmp_path, monkeypatch):
-    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    monkeypatch.setattr("unseen_university._uu_root.uu_home", lambda: str(tmp_path))
     return tmp_path
 
 

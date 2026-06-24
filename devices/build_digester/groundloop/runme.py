@@ -11,6 +11,7 @@ AR-009: logs every state change (start, stop, each poll cycle result) at INFO.
 """
 
 import glob
+from unseen_university._uu_root import uu_home
 import json
 import logging
 import os
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 _POLL_INTERVAL_S = int(os.environ.get("BUILD_DIGESTER_POLL_INTERVAL", "30"))
 _RETRY_DELAY_S = int(os.environ.get("BUILD_DIGESTER_RETRY_DELAY", "30"))
 
-_IGOR_HOME = os.environ.get("IGOR_HOME", os.path.expanduser("~/.unseen_university"))
+_IGOR_HOME = uu_home()
 _CURSOR_DIR = os.path.join(_IGOR_HOME, "build_digester")
 _CURSOR_FILE = os.path.join(_CURSOR_DIR, "cursors.json")
 

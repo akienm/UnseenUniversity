@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 
 def _make_device(tmp_path):
-    os.environ["IGOR_HOME"] = str(tmp_path)
+    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
     from devices.vetinari.device import VetinariDevice
     return VetinariDevice(channel_post_fn=lambda m: None)
 
@@ -23,7 +23,7 @@ def _seed_active_directive(v, directive_id="dir-001", child_ids=None):
     # Manually set as active with child_ticket_ids (simulates post-decompose state)
     directives = v.get_pending_directives()
     from pathlib import Path
-    path = Path(os.environ["IGOR_HOME"]) / "vetinari" / "pending_directives.json"
+    path = Path(__import__("devices.vetinari.device", fromlist=["uu_home"]).uu_home()) / "vetinari" / "pending_directives.json"
     for d in directives:
         if d["id"] == directive_id:
             d["status"] = "active"

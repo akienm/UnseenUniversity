@@ -10,6 +10,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import json
 import logging
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 
 _CHANNEL_MESSAGES_TABLE = "channel_messages"
 _JSONL_FALLBACK = (
-    Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+    Path(uu_home())
     / "cc_channel"
     / "messages.jsonl"
 )

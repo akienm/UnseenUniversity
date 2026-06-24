@@ -37,7 +37,6 @@ Restart=on-failure
 RestartSec=10
 
 # Environment
-Environment=IGOR_HOME=/home/akien/.unseen_university
 Environment=UU_ROOT=/home/akien/dev/src/UnseenUniversity
 
 # Logs go to the user journal — view with: journalctl --user -u ground_loop -f

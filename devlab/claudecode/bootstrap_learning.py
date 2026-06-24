@@ -17,6 +17,7 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import argparse
 import json
@@ -34,7 +35,7 @@ from devices.librarian.learning_pipeline import LearningPipeline  # noqa: E402
 _PROJECTS_DIR = Path(os.environ.get("CLAUDE_PROJECTS_DIR", str(Path.home() / ".claude" / "projects")))
 
 _PROCESSED_FILE = Path(
-    os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university"))
+    uu_home()
 ) / "claudecode" / "bootstrap_processed_sessions.txt"
 
 DEFAULT_DB_URL = (

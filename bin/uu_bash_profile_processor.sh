@@ -44,7 +44,7 @@ export CC_WORKFLOW_TOOLS="${CC_WORKFLOW_TOOLS:-${UU_ROOT}/devlab/claudecode}"
 # do NOT block shell init on the DB. Refresh is a documented extension point that
 # no-ops until both (a) bin/uu_shell_secrets.manifest lists secrets and (b) a vault
 # list-and-export-shell-secrets interface exists. That interface is the missing lever.
-_uu_vault_cache="${IGOR_HOME:-$HOME/.unseen_university}/vault/shell_env.cache"
+_uu_vault_cache="$HOME/.unseen_university/vault/shell_env.cache"
 if [ -f "$_uu_vault_cache" ]; then
     # The cache is plain `export VAR=value` lines written by a future refresh step.
     . "$_uu_vault_cache" 2>/dev/null || true

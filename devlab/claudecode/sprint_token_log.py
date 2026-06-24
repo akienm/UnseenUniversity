@@ -18,6 +18,7 @@ Log format (pipe-delimited, append-only):
     timestamp|ticket_id|input_tokens|cache_create|cache_read|output_tokens|model
 """
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import json
 import os
@@ -106,7 +107,7 @@ def main() -> None:
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     log_path = (
-        Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+        Path(uu_home())
         / "claudecode"
         / "sprint_tokens.log"
     )

@@ -27,10 +27,7 @@ from .paths import paths as _igor_paths
 
 _START_TIME = time.time()
 _DEFAULT_SESSION = os.environ.get("IGOR_TMUX_SESSION", "igor")
-_DEFAULT_HOME = os.environ.get(
-    "IGOR_HOME",
-    str(_igor_paths().instance),
-)
+_DEFAULT_HOME = str(_igor_paths().instance)
 
 
 def _now() -> str:

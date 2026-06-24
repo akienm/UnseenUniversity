@@ -25,7 +25,7 @@ from devlab.claudecode.skill_telemetry import (
 @pytest.fixture()
 def tmp_igor_home(tmp_path, monkeypatch):
     """Point IGOR_HOME to a temp directory so tests don't touch real logs."""
-    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    monkeypatch.setattr("devlab.claudecode.skill_telemetry.uu_home", lambda: str(tmp_path))
     (tmp_path / "claudecode").mkdir(parents=True, exist_ok=True)
     return tmp_path
 

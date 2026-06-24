@@ -15,7 +15,7 @@ from unseen_university import system_alarm_notifier as nf
 
 @pytest.fixture(autouse=True)
 def _redirect_home(tmp_path, monkeypatch):
-    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    monkeypatch.setattr("unseen_university.system_alarms.uu_home", lambda: str(tmp_path))
     monkeypatch.delenv("CC_TMUX_SESSION", raising=False)
     return tmp_path
 

@@ -11,13 +11,14 @@ Usage:
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import argparse
 import os
 from pathlib import Path
 
 
-_LOG_ROOT = Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university"))) / "logs"
+_LOG_ROOT = Path(uu_home()) / "logs"
 _DEFAULT_MAX_MB = 10
 
 

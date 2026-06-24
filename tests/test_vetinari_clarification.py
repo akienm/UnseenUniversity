@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 
 def _make_device(tmp_path):
-    os.environ["IGOR_HOME"] = str(tmp_path)
+    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
     from devices.vetinari.device import VetinariDevice
     channel_calls = []
     v = VetinariDevice(channel_post_fn=lambda msg: channel_calls.append(msg))

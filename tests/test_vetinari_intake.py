@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 
 def _make_device(tmp_path):
     """Return a VetinariDevice rooted at tmp_path."""
-    os.environ["IGOR_HOME"] = str(tmp_path)
+    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
     from devices.vetinari.device import VetinariDevice
     return VetinariDevice(channel_post_fn=lambda m: None)
 
@@ -70,7 +70,7 @@ def test_get_pending_directives_survives_restart(tmp_path):
     v1 = _make_device(tmp_path)
     v1.accept_directive(_directive(id="persist-me", text="build the thing"))
     # Create fresh instance (simulates restart)
-    os.environ["IGOR_HOME"] = str(tmp_path)
+    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
     from devices.vetinari.device import VetinariDevice
     v2 = VetinariDevice(channel_post_fn=lambda m: None)
     directives = v2.get_pending_directives()
@@ -166,7 +166,7 @@ def test_listener_process_valid_envelope_persists_directive(tmp_path):
 
 def test_vetinari_shim_starts_without_error(tmp_path):
     """VetinariShim.start() with stub IMAP returns True and thread is alive."""
-    os.environ["IGOR_HOME"] = str(tmp_path)
+    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
     from devices.vetinari.shim import VetinariShim
     stub_imap = MagicMock()
     stub_imap.fetch_unseen.return_value = []
@@ -181,7 +181,7 @@ def test_vetinari_shim_starts_without_error(tmp_path):
 
 
 def test_vetinari_shim_stop_cleans_up_thread(tmp_path):
-    os.environ["IGOR_HOME"] = str(tmp_path)
+    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
     from devices.vetinari.shim import VetinariShim
     stub_imap = MagicMock()
     stub_imap.fetch_unseen.return_value = []

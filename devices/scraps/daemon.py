@@ -17,6 +17,7 @@ Enabling each additional job is a separate, deliberately-verified decision.
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import logging
 import os
@@ -34,7 +35,7 @@ log = logging.getLogger(__name__)
 # the shortest job interval (backfiller = 300s).
 POLL_INTERVAL_S = int(os.environ.get("SCRAPS_POLL_INTERVAL", "30"))
 
-_SCRAPS_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university")) / "scraps"
+_SCRAPS_HOME = Path(uu_home()) / "scraps"
 _PID_FILE = _SCRAPS_HOME / "daemon.pid"
 
 # Explicit job registry — see module docstring on why this is not a directory scan.

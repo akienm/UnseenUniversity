@@ -6,6 +6,7 @@ fires on_failure hook after max_restarts consecutive failures.
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import logging
 import os
@@ -16,7 +17,7 @@ from typing import Optional
 
 log = logging.getLogger(__name__)
 
-_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+_IGOR_HOME = Path(uu_home())
 _FLAGS_DIR = _IGOR_HOME / "flags"
 _STDERR_DIR = _IGOR_HOME / "ground_loop" / "logs"
 _STDERR_TAIL = 30  # lines of plugin stderr to include in CC recovery prompt

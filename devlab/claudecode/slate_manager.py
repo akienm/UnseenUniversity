@@ -24,6 +24,7 @@ Ref: D130, D132, D304
 """
 
 import json
+from unseen_university._uu_root import uu_home
 import os
 import sys
 from datetime import datetime
@@ -33,7 +34,7 @@ from unseen_university import slate_store
 
 DB_URL = os.getenv("UU_HOME_DB_URL") or os.getenv("IGOR_DB_URL")
 
-_IGOR_HOME = Path(os.getenv("IGOR_HOME", Path.home() / ".unseen_university"))
+_IGOR_HOME = Path(uu_home())
 
 
 def _today_slate_path() -> Path:

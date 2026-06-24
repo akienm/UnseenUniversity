@@ -28,6 +28,7 @@ Cache: ~/.unseen_university/critic_cache/<sha256(target)>.json, TTL 3600s.
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import hashlib
 import json
@@ -39,7 +40,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+_IGOR_HOME = Path(uu_home())
 _CACHE_DIR = _IGOR_HOME / "critic_cache"
 _CACHE_TTL = 3600  # 1 hour
 

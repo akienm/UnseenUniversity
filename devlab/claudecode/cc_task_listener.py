@@ -25,6 +25,7 @@ Embedding in a loop:
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import logging
 import os
@@ -39,7 +40,7 @@ _DB_URL = os.environ.get(
 )
 _CC_QUEUE = Path(__file__).parent / "cc_queue.py"
 _HWM_FILE = (
-    Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+    Path(uu_home())
     / "cc_task_listener_hwm.txt"
 )
 _POLL_INTERVAL = int(os.environ.get("CC_TASK_LISTENER_INTERVAL", "15"))

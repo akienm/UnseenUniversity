@@ -17,6 +17,7 @@ AR-009: logs every state transition (start, stop, each heartbeat).
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import logging
 import os
@@ -28,7 +29,7 @@ log = logging.getLogger(__name__)
 
 HEARTBEAT_INTERVAL = int(os.environ.get("DEMO_DAEMON_INTERVAL", "5"))
 _LOG_DIR = (
-    Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+    Path(uu_home())
     / "datacenter_logs"
     / "demo_daemon"
 )

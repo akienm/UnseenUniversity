@@ -15,6 +15,7 @@ systems. External state for factory registry (flat-file JSON) so it restarts
 freely (see feedback_external_state_principle).
 """
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import json
 import logging
@@ -39,17 +40,17 @@ def _now() -> str:
 
 
 def _factory_registry_path() -> Path:
-    root = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+    root = Path(uu_home())
     return root / "vetinari" / "factories.json"
 
 
 def _pending_directives_path() -> Path:
-    root = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+    root = Path(uu_home())
     return root / "vetinari" / "pending_directives.json"
 
 
 def _audit_log_path() -> Path:
-    root = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+    root = Path(uu_home())
     return root / "vetinari" / "audit.jsonl"
 
 
@@ -821,7 +822,7 @@ class VetinariDevice(BaseDevice):
         return list(self._startup_errors)
 
     def logs(self) -> dict:
-        root = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+        root = Path(uu_home())
         return {
             "vetinari": str(root / "logs" / "vetinari" / "vetinari.log"),
         }

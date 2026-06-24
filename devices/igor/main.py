@@ -11,6 +11,7 @@ Updated 2026-04-29T17:08:53Z
 """
 
 import argparse
+from unseen_university._uu_root import uu_home
 import json
 import logging
 import os
@@ -9998,7 +9999,7 @@ def _write_crashdump(exception: Exception, tb_str: str, instance_id: str) -> Pat
     """
     try:
         crashdump_dir = Path(
-            os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university"))
+            uu_home()
         ) / "crashdumps"
         crashdump_dir.mkdir(parents=True, exist_ok=True)
 

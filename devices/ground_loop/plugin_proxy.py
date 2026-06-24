@@ -12,6 +12,7 @@ spawn happen in the request handler, protected by a threading.Lock.
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import logging
 import os
@@ -27,7 +28,7 @@ from urllib.error import HTTPError, URLError
 
 log = logging.getLogger(__name__)
 
-_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+_IGOR_HOME = Path(uu_home())
 _FLAGS_DIR = _IGOR_HOME / "flags"
 _BACKEND_LOG_DIR = _IGOR_HOME / "ground_loop" / "logs"
 

@@ -51,3 +51,22 @@ def uu_root() -> str:
         pass
 
     return str(Path.cwd())
+
+
+def uu_home() -> str:
+    """Return the UnseenUniversity runtime data dir — ``~/.unseen_university``.
+
+    Holds runtime state (logs, flags, device cachedstate, vault) — NOT the
+    repo (that's :func:`uu_root`), NOT the database.
+
+    DERIVED, not an env var: ``UU_ROOT`` is the only canonical env var. This
+    supersedes the ``IGOR_HOME`` env var — a single-repo-era holdover from
+    before the bus / MCP / rack existed (T-uu-eliminate-igor-home-env).
+
+    Read at CALL TIME (no caching) so tests redirect the data dir by
+    monkeypatching this function rather than setting an env var, e.g.::
+
+        monkeypatch.setattr("unseen_university._uu_root.uu_home",
+                            lambda: str(tmp_path))
+    """
+    return str(Path.home() / ".unseen_university")

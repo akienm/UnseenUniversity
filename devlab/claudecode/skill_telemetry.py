@@ -20,6 +20,7 @@ T-skill-telemetry-rollup — surfaces top violations into context-load
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import json
 import os
@@ -31,7 +32,7 @@ from typing import Any
 
 
 def _igor_home() -> Path:
-    return Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+    return Path(uu_home())
 
 
 def violation_log_path() -> Path:

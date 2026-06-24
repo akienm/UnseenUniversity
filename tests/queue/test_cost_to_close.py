@@ -53,7 +53,7 @@ def test_pricing_unknown_defaults_to_sonnet():
 
 @pytest.fixture()
 def igor_home(tmp_path, monkeypatch):
-    monkeypatch.setenv("IGOR_HOME", str(tmp_path))
+    monkeypatch.setattr("cc_queue.uu_home", lambda: str(tmp_path))
     return tmp_path
 
 

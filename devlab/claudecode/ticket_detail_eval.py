@@ -22,6 +22,7 @@ to Phase 2). Below threshold → no evidence to justify Phase 2.
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import json
 import os
@@ -31,7 +32,7 @@ from pathlib import Path
 
 from unseen_university import ticket_store
 
-IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+IGOR_HOME = Path(uu_home())
 SPRINT_LOG = IGOR_HOME / "claudecode" / "sprint_tokens.log"
 
 CORRELATION_THRESHOLD = 0.30

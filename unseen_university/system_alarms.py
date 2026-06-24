@@ -32,6 +32,7 @@ alarms`` view (T-uu-alarms-cli) are separate consumers built on this primitive.
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import json
 import logging
@@ -58,9 +59,9 @@ _SAFE_RE = re.compile(r"[^A-Za-z0-9._-]")
 
 
 def _igor_home() -> Path:
-    """Runtime data dir. ``IGOR_HOME`` env wins (tests redirect it); default
-    ``~/.unseen_university``."""
-    return Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+    """Runtime data dir (``~/.unseen_university``) via :func:`uu_home` — derived,
+    NOT an env var; tests redirect by monkeypatching ``uu_home`` (T-uu-eliminate-igor-home-env)."""
+    return Path(uu_home())
 
 
 def alarms_dir() -> Path:

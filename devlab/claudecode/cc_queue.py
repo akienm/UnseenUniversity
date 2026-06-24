@@ -48,6 +48,7 @@ Usage:
 """
 
 import json
+from unseen_university._uu_root import uu_home
 import logging
 import os
 import re
@@ -545,7 +546,7 @@ def _compute_cost_usd(ticket_id: str) -> float | None:
 
     Returns None if no log entries exist for the ticket.
     """
-    igor_home = Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+    igor_home = Path(uu_home())
     log_path = igor_home / "claudecode" / "sprint_tokens.log"
     if not log_path.exists():
         return None
@@ -572,7 +573,7 @@ def _compute_cost_usd(ticket_id: str) -> float | None:
 
 def _show_token_log(ticket_id: str) -> None:
     """Append per-sprint token consumption from sprint_tokens.log, if any."""
-    igor_home = Path(os.environ.get("IGOR_HOME", str(Path.home() / ".unseen_university")))
+    igor_home = Path(uu_home())
     log_path = igor_home / "claudecode" / "sprint_tokens.log"
     if not log_path.exists():
         return
@@ -763,7 +764,7 @@ def _read_token_counts_from_log(ticket_id: str) -> dict[str, int]:
         from devlab.claudecode.usage_store import _read_sprint_log_entries, _aggregate_entries
         from pathlib import Path
         
-        igor_home = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+        igor_home = Path(uu_home())
         log_path = igor_home / "claudecode" / "sprint_tokens.log"
         
         if not log_path.exists():

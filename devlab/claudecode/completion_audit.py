@@ -13,6 +13,7 @@ Usage:
 Verdicts: pass | fail | cannot-verify
 """
 import argparse
+from unseen_university._uu_root import uu_home
 import json
 import os
 import re
@@ -20,7 +21,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+IGOR_HOME = Path(uu_home())
 AUDIT_LOG = IGOR_HOME / "completion_audit.log"
 _TERMINAL = {"closed", "done"}
 

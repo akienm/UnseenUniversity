@@ -37,10 +37,7 @@ log = logging.getLogger(__name__)
 
 _DEFAULT_SESSION = os.environ.get("IGOR_TMUX_SESSION", "igor")
 _DEFAULT_LAUNCHER = os.environ.get("IGOR_LAUNCHER", "igor")
-_DEFAULT_HOME = os.environ.get(
-    "IGOR_HOME",
-    str(_igor_paths().instance),
-)
+_DEFAULT_HOME = str(_igor_paths().instance)
 _STARTUP_TIMEOUT = 15.0
 
 

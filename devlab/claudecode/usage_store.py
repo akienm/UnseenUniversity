@@ -13,6 +13,7 @@ AR-009: logs the interface crossing when usage is attributed.
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_home
 
 import logging
 import os
@@ -51,7 +52,7 @@ _CREATE_INDEXES = [
     "CREATE INDEX IF NOT EXISTS ticket_usage_closed_at ON devlab.ticket_usage (closed_at DESC);",
 ]
 
-_IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
+_IGOR_HOME = Path(uu_home())
 _SPRINT_TOKENS_LOG = _IGOR_HOME / "claudecode" / "sprint_tokens.log"
 
 
