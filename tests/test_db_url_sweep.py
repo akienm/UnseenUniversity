@@ -16,8 +16,11 @@ Documented exclusions — NOT live-code fallbacks:
   as a legacy alias.
 - devlab/runtime/memory/ — append-only historical records (decisions/tickets/slates); never rewritten.
 - skills/*.md — skill-doc psql examples (separate skills-rework, T-skills-palace-db-to-fs-store).
-- config/profiles/*.yaml — subsystem URLs embedding the password need a config-layer change
-  (the loader must compose them from env); tracked at T-uu-config-profile-db-creds.
+
+config/profiles/*.yaml is no longer an exclusion: the subsystem state_refs now carry
+bare ``#fragment`` relative references composed against UU_HOME_DB_URL at connect time
+(T-uu-config-profile-db-creds). See tests/test_config_profile_db_creds.py, which guards
+the credential SHAPE under config/ so no future profile can re-embed the password.
 """
 from __future__ import annotations
 

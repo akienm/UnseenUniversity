@@ -60,6 +60,27 @@ def home_db_url() -> str:
     return url
 
 
+def compose_state_uri(ref: str) -> str:
+    """Resolve a state-ref into a connectable URI at *connect time*.
+
+    Profiles carry state refs as bare ``#fragment`` relative references (e.g.
+    ``#twm``) rather than full ``postgres://user:pass@host/db#twm`` URLs. The
+    fragment rides the announce manifest (which is serialized and posted across
+    the bus); the live credential must NOT — composing here, only when a caller
+    actually needs to connect, keeps the password in the local env and out of
+    every transmitted/persisted manifest. Raises (via :func:`home_db_url`) when
+    ``UU_HOME_DB_URL`` is unset, which is correct at connect time — you cannot
+    connect without it, and there is no baked default to paper over the gap.
+
+    An ``ref`` that is already a full URI (contains ``://``, e.g. ``file://``) is
+    returned unchanged.
+    """
+    if "://" in ref:
+        return ref
+    fragment = ref.lstrip("#")
+    return f"{home_db_url()}#{fragment}"
+
+
 def swarm_hostname() -> str:
     """This machine's swarm name: env ``IGOR_SWARM_NAME`` if set, else the live
     hostname. Total (never raises) — de-hardcodes 'akiendelllinux' without adding a

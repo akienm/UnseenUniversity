@@ -49,7 +49,11 @@ class ChannelSubscription:
 @dataclass
 class StateRef:
     name: str  # "twm", "ne", "milieu"
-    uri: str  # e.g. "postgres://...#twm" or "file://..."
+    # Relative "#fragment" (e.g. "#twm") resolved against UU_HOME_DB_URL at connect
+    # time via identity.compose_state_uri(); or a full URI ("file://..."). Carries no
+    # credential — this rides the announce manifest across the bus, so a baked
+    # postgres URL would persist the live password in mailboxes.
+    uri: str
     mode: str  # "read_only" | "read_write"
 
 
