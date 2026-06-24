@@ -11,6 +11,7 @@ NONE
 
 ## Done today
 
+- T-context-load-fs-store — context-load resolves UU_ROOT from any cwd + reads fs store (no palace DB) (context-load resolves UU_ROOT via uu_root() (works from any cwd), sorts decisions by emitted_at, Step 3 shows real statu)
 ## Notes
 - Skills-harmony design (D-skills-two-products-2026-06-23) — Akien reading the 2 ref docs; may revise. Ticketed his dispositions 2026-06-24 (pre-/sorted capture):
   - EXPANDED T-skills-prune-deprecated-merge: + retire /recover (supersedes T-recover-skill-message-wording), /question, /concept, /autocompact+uucompactclaude (new Anthropic compact obsoletes it), /migrate-decisions (backfill spent).
@@ -47,3 +48,8 @@ D-skills-two-products LOCKED (13 tickets) — ready to sprint, nothing mid-work.
   - T-day-close-audit-skill-stale-paths (amended): MECHANICAL path-token sweep, ~14 survivors, EXCLUDE retirees (recover/question/concept/autocompact/migrate-decisions/goal/audit-goal/cognition-debug/debug-pe-chain), target repo skills/ (flip inherits), sequence after prune. Delegate-to-cheaper-agent candidate.
   - T-skills-palace-db-to-fs-store (NEW, L): palace-DB->filesystem-store MECHANISM rewrite — context-load Steps 2a-3 + day-close palace.days + audit-audits/hypothesis/smell + eval-run/outcome/weekly-retro. context-load is priority (post-compact entry point; bit us today). Needs CC judgment + advisor.
 - Decision spawned_tickets now 15.
+
+## Done today
+- T-context-load-fs-store CLOSED PROVEN (87f0c9e0 + proof). context-load run executor was already fs-store-based; real bugs: UU_ROOT defaulted to cwd (silently dropped Steps 2a/2b/3 off-root, e.g. post-compact) -> now uu_root(); decisions sorted by emitted_at (was alphabetical); Step 3 shows real status; SKILL.md rewritten to the fs-store executor (dropped psql/palace docs + nonexistent subcommands). Proof: briefing from non-root cwd surfaces recent decisions w/ status.
+- Split from L parent T-skills-palace-db-to-fs-store (back to sprint; 7 survivor skills left: day-close, audit-audits/hypothesis/smell, eval-run, outcome, weekly-retro).
+- Filed T-context-load-violation-summary-missing (pre-existing: run lacks violation_summary() its test expects; 4 tests red at HEAD before my change — confirmed via git show+stash; low pri).
