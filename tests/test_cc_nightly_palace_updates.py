@@ -17,6 +17,7 @@ Tests:
 
 from __future__ import annotations
 
+import json
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -45,8 +46,14 @@ def _redirect_memory_root(tmp_path, monkeypatch):
 
 
 def _write_decision(tmp_path: Path, filename: str, content: str) -> Path:
-    p = tmp_path / filename
-    p.write_text(content, encoding="utf-8")
+    """Write a decision as the canonical JSON envelope (devlab/runtime/memory/
+    decisions/*.json), wrapping the markdown `content` in body.text so the parser's
+    text-fallback exercises the same field extraction. The legacy `.md` name passed
+    by callers is mapped to the namespace slug + a `.json` file."""
+    stem = Path(filename).stem
+    p = tmp_path / f"{stem}.json"
+    envelope = {"namespace": [stem], "category": "decisions", "body": {"text": content}}
+    p.write_text(json.dumps(envelope), encoding="utf-8")
     return p
 
 
