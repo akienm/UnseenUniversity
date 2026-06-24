@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-uu-igor-home-env-skills-scripts",
-    "title": "[in_progress] Eliminate IGOR_HOME env from skill run-scripts (missed by T-uu-eliminate-igor-home-env)",
+    "title": "Eliminate IGOR_HOME env from skill run-scripts (missed by T-uu-eliminate-igor-home-env)",
     "size": "S",
     "tags": [
       "EnvVars",
@@ -30,13 +30,13 @@
     "decision_id": "D-skills-two-products-2026-06-23",
     "gate": null,
     "priority": 0.7,
-    "status": "in_progress",
+    "status": "closed",
     "created_at": "2026-06-24T19:57:41.776983+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Closed the IGOR_HOME scope hole from T-uu-eliminate-igor-home-env: 4 skill run-scripts (context-load/note/savestate/sprint-ticket) now resolve uu_home(); proof guard widened from '*.py' to all tracked files so extensionless scripts can't slip through again. Proof: revert run-scripts -> guard finds IGOR_HOME (red) -> green. SKILL.md doc-snippets (notify, sorted) deferred to skills content-merge phase (boundary named in ticket).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-24T19:58:47.344748+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-24T19:57:41.821410+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "968f697a-a00f-4c3f-b2d8-c3b9ed0a7108"
+    "inferred_intention_id": "968f697a-a00f-4c3f-b2d8-c3b9ed0a7108",
+    "proven": true,
+    "proof_id": "cc.0.skill-run-scripts-no-longer-read-igor-ho.T-uu-igor-home-env-skills-scripts.20260624.135838410241",
+    "proof_commit": "5cd5319d4e57da32c47745f1b55baec040830399",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
