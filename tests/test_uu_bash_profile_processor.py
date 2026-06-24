@@ -14,6 +14,7 @@ current URL is checked by the env-driven round-trip test, which embeds nothing.
 import os
 import re
 import subprocess
+import tempfile
 import time
 import urllib.parse as urlparse
 from pathlib import Path
@@ -22,6 +23,11 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 PROC = REPO / "bin" / "uu_bash_profile_processor.sh"
+
+# The processor now emits $HOME/.unseen_university/uu.env when a URL composes. Point the
+# clean-env HOME at a throwaway dir so that side-effect of the compose-path tests never
+# touches /tmp/.unseen_university (cross-test pollution / parallel-run race).
+_TMP_HOME = tempfile.mkdtemp(prefix="uu_proc_test_home_")
 
 BOOTSTRAP = {
     "UU_DB_USER": "testuser",
@@ -37,7 +43,7 @@ HOSTNAME = subprocess.run(["hostname"], capture_output=True, text=True).stdout.s
 
 def _clean_env(extra):
     # env -i equivalent: only PATH/HOME (so `hostname` resolves) plus the given vars.
-    env = {"PATH": _BASE_PATH, "HOME": "/tmp"}
+    env = {"PATH": _BASE_PATH, "HOME": _TMP_HOME}
     env.update(extra)
     return env
 
@@ -90,6 +96,34 @@ def test_fail_soft_when_bootstrap_absent():
     # And it must NOT have invented a URL out of nothing.
     r2 = _run(f'source "{PROC}"; printf "[%s]" "$UU_HOME_DB_URL"', {})
     assert r2.stdout == "[]"
+
+
+def test_emits_sourceable_env_file_for_noninteractive(tmp_path):
+    """Proof node (one intention): a process with NO login shell, sourcing ONLY the
+    emitted uu.env, resolves UU_HOME_DB_URL. That is the whole point of the env file —
+    systemd units / cron-heartbeat shells / Ground-Loop-woken devices like Nanny that
+    can't source the bash profile still get the composed DB URL (T-uu-env-file-for-noninteractive)."""
+    env_file = tmp_path / ".unseen_university" / "uu.env"
+    r = _run(f'source "{PROC}"', dict(BOOTSTRAP, HOME=str(tmp_path)))
+    assert r.returncode == 0, r.stderr
+    assert env_file.exists(), "processor did not emit uu.env"
+    # chmod 600 — it carries the DB password
+    assert (env_file.stat().st_mode & 0o777) == 0o600, oct(env_file.stat().st_mode & 0o777)
+    # discriminating check: a CLEAN process (no profile, no inherited env, no HOME) that
+    # sources ONLY uu.env resolves the URL.
+    r2 = subprocess.run(
+        ["bash", "-c", f'set -a; . "{env_file}"; printf "%s" "$UU_HOME_DB_URL"'],
+        env={"PATH": _BASE_PATH}, capture_output=True, text=True, timeout=10,
+    )
+    assert r2.stdout == EXPECTED_URL, f"{r2.stdout!r} != {EXPECTED_URL!r}"
+
+
+def test_no_env_file_emitted_without_bootstrap(tmp_path):
+    """No bootstrap => no composed URL => DON'T write the file (never clobber a good
+    uu.env with blanks from a recovery shell). Recovery-safe (CP6)."""
+    r = _run(f'source "{PROC}"', {"HOME": str(tmp_path)})
+    assert r.returncode == 0, r.stderr
+    assert not (tmp_path / ".unseen_university" / "uu.env").exists()
 
 
 def test_round_trip_preserves_current_url():

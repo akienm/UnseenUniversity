@@ -51,5 +51,30 @@ if [ -f "$_uu_vault_cache" ]; then
 fi
 unset _uu_vault_cache
 
+# --- emit a non-interactive env file (systemd EnvironmentFile= / cron-heartbeat source) ---
+# Devices launched WITHOUT a login shell — Nanny (the platform-independent scheduler, which
+# reads UU_HOME_DB_URL), web_server, scraps, anything Ground Loop wakes — can't source this
+# profile, so they'd miss the composed env and fall back to a hardcoded URL. Write a bare
+# KEY='value' file they can read instead: systemd EnvironmentFile= strips the quotes,
+# `set -a; . uu.env` (a heartbeat/cron shell) honors them, and both parse :// @ : safely.
+# Single-quoted => the value is taken literally (a $ or space in a rotated password is safe);
+# the password must be percent-encoded in the URL anyway, which also excludes a literal ' .
+# LOCAL + chmod 600 (carries the DB password); never committed. Only (re)write when we
+# actually composed a URL, so a bootstrap-less recovery shell can't clobber a good file with
+# blanks. Atomic (mktemp+mv) and fully fail-soft — a failure leaves consumers on inherited
+# values, never breaks the shell (CP6).
+if [ -n "${UU_HOME_DB_URL:-}" ]; then
+    _uu_env_file="$HOME/.unseen_university/uu.env"
+    mkdir -p "$HOME/.unseen_university" 2>/dev/null
+    _uu_env_tmp="$(mktemp "${_uu_env_file}.XXXXXX" 2>/dev/null)" && {
+        for _uu_k in UU_ROOT UU_HOME_DB_URL IGOR_SWARM_NAME IGOR_INSTANCE_ID CC_TMUX_SESSION CC_WORKFLOW_TOOLS; do
+            [ -n "${!_uu_k:-}" ] && printf "%s='%s'\n" "$_uu_k" "${!_uu_k}" >> "$_uu_env_tmp"
+        done
+        chmod 600 "$_uu_env_tmp" 2>/dev/null
+        mv -f "$_uu_env_tmp" "$_uu_env_file" 2>/dev/null || rm -f "$_uu_env_tmp" 2>/dev/null
+    } 2>/dev/null
+    unset _uu_env_file _uu_env_tmp _uu_k
+fi
+
 # A sourced profile must never abort the shell.
 return 0 2>/dev/null || true
