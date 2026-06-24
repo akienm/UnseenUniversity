@@ -3,8 +3,9 @@
 cc_nightly_palace_updates.py — Write decision and session nodes to adc.palace.
 
 Two responsibilities:
-  1. Decisions: scan lab/design_docs/decisions/D-*.md, upsert each as a
-     palace.decisions.* node (idempotent — same file → same node).
+  1. Decisions: scan devlab/runtime/memory/decisions/*.json (the canonical
+     store), upsert each as a palace.decisions.* node (idempotent — same
+     decision → same node).
   2. Session brief: read today's slate (Done today section) and write a
      palace.sessions.YYYYMMDD.brief node summarising what happened.
 
@@ -30,7 +31,7 @@ from pathlib import Path
 from unseen_university import slate_store
 
 _UU_ROOT = Path(__file__).resolve().parents[2]
-_DECISIONS_DIR = _UU_ROOT / "devlab" / "design_docs" / "decisions"
+_DECISIONS_DIR = _UU_ROOT / "devlab" / "runtime" / "memory" / "decisions"
 _IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
 _DB_URL = os.environ.get(
     "UU_HOME_DB_URL",
@@ -41,42 +42,51 @@ _DB_URL = os.environ.get(
 # ── Decision doc parsing ───────────────────────────────────────────────────────
 
 def _parse_decision_doc(path: Path) -> dict | None:
-    """Parse a D-*.md decision doc into a structured dict.
+    """Parse a decision JSON envelope (devlab/runtime/memory/decisions/*.json).
 
-    Returns None when the file cannot be parsed or lacks required fields.
+    The envelope is {..., namespace, body}; `body` carries structured fields
+    (decision_id, title, date, status, spawned_tickets) plus `text` — the original
+    decision markdown. Structured body fields win; `text` fills the narrative /
+    hypothesis / measurement sections and back-fills spawned_tickets for migrated
+    records that lack the structured field. Returns None when the file cannot be
+    parsed or lacks required fields.
     """
     try:
-        text = path.read_text(encoding="utf-8")
+        env = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return None
+    if not isinstance(env, dict) or not isinstance(env.get("body"), dict):
+        return None
 
-    doc: dict = {"path": str(path), "slug": path.stem}
+    body = env["body"]
+    text = body.get("text") or ""
+    ns = env.get("namespace") or []
+    slug = (ns[0] if ns else "") or body.get("decision_id") or path.stem
+    doc: dict = {"path": str(path), "slug": slug}
 
-    # Header fields: **title:** / **date:** / **status:** / **spawned_tickets:**
+    # Structured body fields win; fall back to the markdown header in body.text.
     for field in ("title", "date", "status"):
-        m = re.search(rf"\*\*{field}:\*\*\s*(.+)", text, re.IGNORECASE)
-        doc[field] = m.group(1).strip() if m else ""
+        val = body.get(field)
+        if not val:
+            m = re.search(rf"\*\*{field}:\*\*\s*(.+)", text, re.IGNORECASE)
+            val = m.group(1).strip() if m else ""
+        doc[field] = val
 
-    m = re.search(r"\*\*spawned_tickets:\*\*\s*(.+)", text, re.IGNORECASE)
-    if m:
-        raw = m.group(1).strip()
-        # Comma-separated, strip parenthetical notes like "(updated)"
-        tickets = [re.sub(r"\s*\(.*?\)", "", t).strip() for t in raw.split(",")]
-        doc["spawned_tickets"] = [t for t in tickets if t.startswith("T-")]
-    else:
-        doc["spawned_tickets"] = []
+    tickets = body.get("spawned_tickets")
+    if not tickets:
+        m = re.search(r"\*\*spawned_tickets:\*\*\s*(.+)", text, re.IGNORECASE)
+        if m:
+            # Comma-separated, strip parenthetical notes like "(updated)"
+            tickets = [re.sub(r"\s*\(.*?\)", "", t).strip() for t in m.group(1).split(",")]
+    doc["spawned_tickets"] = [t for t in (tickets or []) if isinstance(t, str) and t.startswith("T-")]
 
-    # Decision narrative section
-    m = re.search(r"## Decision narrative\s*\n(.+?)(?=\n## |\Z)", text, re.DOTALL | re.IGNORECASE)
-    doc["narrative"] = m.group(1).strip() if m else ""
-
-    # Hypothesis section
-    m = re.search(r"## Hypothesis\s*\n(.+?)(?=\n## |\Z)", text, re.DOTALL | re.IGNORECASE)
-    doc["hypothesis"] = m.group(1).strip() if m else ""
-
-    # Measurement signal
-    m = re.search(r"## Measurement Signal\s*\n(.+?)(?=\n## |\Z)", text, re.DOTALL | re.IGNORECASE)
-    doc["measurement_signal"] = m.group(1).strip() if m else ""
+    for key, header in (
+        ("narrative", "Decision narrative"),
+        ("hypothesis", "Hypothesis"),
+        ("measurement_signal", "Measurement Signal"),
+    ):
+        m = re.search(rf"## {header}\s*\n(.+?)(?=\n## |\Z)", text, re.DOTALL | re.IGNORECASE)
+        doc[key] = m.group(1).strip() if m else ""
 
     if not doc.get("title") or not doc.get("date"):
         return None
@@ -85,16 +95,16 @@ def _parse_decision_doc(path: Path) -> dict | None:
 
 
 def scan_decision_docs(date_filter: str | None = None, all_docs: bool = False) -> list[dict]:
-    """Scan lab/design_docs/decisions/ and return parsed decision dicts.
+    """Scan devlab/runtime/memory/decisions/ (JSON store) and return parsed dicts.
 
-    When date_filter is set (YYYY-MM-DD), only include docs whose **date:**
-    field matches. When all_docs=True, return everything.
+    When date_filter is set (YYYY-MM-DD), only include docs whose date field
+    matches. When all_docs=True, return everything.
     """
     if not _DECISIONS_DIR.exists():
         return []
 
     docs = []
-    for path in sorted(_DECISIONS_DIR.glob("D-*.md")):
+    for path in sorted(_DECISIONS_DIR.glob("*.json")):
         doc = _parse_decision_doc(path)
         if doc is None:
             continue

@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-cc-nightly-reads-decision-md",
-    "title": "[sprint] cc_nightly_palace_updates scans lab/design_docs/decisions/D-*.md — decisions are JSON now",
+    "title": "[in_progress] cc_nightly_palace_updates scans lab/design_docs/decisions/D-*.md — decisions are JSON now",
     "size": "S",
     "tags": [
       "Memory",
@@ -30,7 +30,7 @@
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
     "gate": null,
     "priority": 0.4,
-    "status": "sprint",
+    "status": "in_progress",
     "created_at": "2026-06-23T23:13:47.113936+00:00",
     "worker": null,
     "created_by": null,
