@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-uu-sweep-db-connection-string",
-    "title": "[sprint] Sweep: replace hardcoded DB connection-string fallbacks with the resolver (lazy)",
+    "title": "Sweep: replace hardcoded DB connection-string fallbacks with the resolver (lazy)",
     "size": "L",
     "tags": [
       "Credentials",
       "Security"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.5,
     "decision_id": "D-uu-config-identity-layer-2026-06-22",
     "gate": null,
@@ -35,14 +35,21 @@
     "created_at": "2026-06-22T23:58:36.112026+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Swept the hardcoded DB-password fallback out of all live code: 89 modules + the uu CLI now resolve via identity.home_db_url() (reads UU_HOME_DB_URL, raises if unset, never a baked cred). All module-scope bindings made call-time/lazy — 0/89 raise at import with env unset. Templates -> placeholder; both cred detectors fragmented/regex'd. GL restarted first so the live rack carries the env (verified web_server+scraps reconnect). Code grep choose_a_password (excl tests/templates/detectors) = ZERO. Proof @ 28e7713c. OUT (named): config/profiles creds (T-uu-config-profile-db-creds), memory-store history, skill-doc psql examples.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-24T22:08:41.974782+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-22T23:58:36.112077+00:00"
+    "scraps_validated": "2026-06-22T23:58:36.112077+00:00",
+    "proven": true,
+    "proof_id": "cc.0.db-password-fallback-removed-from-live-c.T-uu-sweep-db-connection-string.20260624.160704758446",
+    "proof_commit": "28e7713cd560ee67e30604808ca1389b05d275cc",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
