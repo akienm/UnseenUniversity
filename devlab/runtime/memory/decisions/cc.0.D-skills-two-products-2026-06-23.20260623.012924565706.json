@@ -46,7 +46,9 @@
       "T-inference-liveness-and-loud-fail",
       "T-skills-prune-deprecated-merge",
       "T-day-close-audit-skill-stale-paths",
-      "T-skills-palace-db-to-fs-store"
+      "T-skills-palace-db-to-fs-store",
+      "T-context-load-fs-store",
+      "T-context-load-violation-summary-missing"
     ]
   }
 }

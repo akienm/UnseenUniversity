@@ -12,9 +12,14 @@ from datetime import datetime
 from pathlib import Path
 
 from unseen_university import slate_store
+from unseen_university._uu_root import uu_root
 
 IGOR_HOME = Path(os.environ.get("IGOR_HOME", Path.home() / ".unseen_university"))
-UU_ROOT = Path(os.environ.get("UU_ROOT", "."))
+# uu_root() resolves UU_ROOT regardless of cwd (env var first, then the package
+# __file__ chain). The old get("UU_ROOT", ".") default silently no-op'd the
+# decision/memory steps (2a/2b/3) whenever cwd != repo root — e.g. post-compact,
+# when context-load is the first thing run and the cwd is wherever the shell landed.
+UU_ROOT = Path(uu_root())
 CC_WORKFLOW_TOOLS = Path(os.environ.get("CC_WORKFLOW_TOOLS", UU_ROOT / "devlab" / "claudecode"))
 
 
@@ -129,37 +134,41 @@ def step_1_today_slate() -> None:
             print(f"✓ Step 1: Slate ready")
 
 
-# ─── Step 2a: Rules from filesystem ───
-def step_2a_rules() -> None:
-    """Load recent decision titles for orientation."""
-    memory_root = UU_ROOT / "devlab" / "runtime" / "memory"
-    if not memory_root.exists():
-        return
+# ─── shared: decisions newest-first by emitted_at ───
+def _decisions_newest_first(limit: int) -> list:
+    """Return up to `limit` decision records, newest first by emitted_at.
 
-    decisions_dir = memory_root / "decisions"
+    Sorting by emitted_at (not the filename glob) is load-bearing: the glob
+    sorts alphabetically by D-slug, which is NOT chronological — 'recent'
+    would surface the alphabetically-last decisions, defeating orientation.
+    """
+    decisions_dir = UU_ROOT / "devlab" / "runtime" / "memory" / "decisions"
     if not decisions_dir.exists():
-        return
-
-    all_decisions = sorted(decisions_dir.glob("*.json"))
-    if not all_decisions:
-        print(f"✓ Step 2a: Decisions (none yet)")
-        return
-
-    # Show last 3 decisions with titles
-    recent = all_decisions[-3:]
-    print(f"✓ Step 2a: Recent decisions:")
-    for dec_file in reversed(recent):
+        return []
+    records = []
+    for f in decisions_dir.glob("*.json"):
         try:
-            data = json.loads(dec_file.read_text(encoding="utf-8"))
-            # Extract D-id from namespace
-            namespace = data.get("namespace", [])
-            dec_id = namespace[0] if namespace else dec_file.stem
-            # Extract date from emitted_at (YYYY-MM-DD format)
-            emitted = data.get("emitted_at", "unknown")
-            date_str = emitted.split("T")[0] if emitted != "unknown" else "unknown"
-            print(f"  • {dec_id} ({date_str})")
+            data = json.loads(f.read_text(encoding="utf-8"))
+            records.append((data.get("emitted_at", ""), data))
         except Exception:
             pass
+    records.sort(key=lambda r: r[0], reverse=True)
+    return [data for _, data in records[:limit]]
+
+
+# ─── Step 2a: Recent decision titles (filesystem store) ───
+def step_2a_rules() -> None:
+    """Surface the 3 most-recent decisions (by date) for orientation."""
+    recent = _decisions_newest_first(3)
+    if not recent:
+        print("✓ Step 2a: Decisions (none yet)")
+        return
+    print("✓ Step 2a: Recent decisions:")
+    for data in recent:
+        namespace = data.get("namespace", [])
+        dec_id = namespace[0] if namespace else "?"
+        date_str = (data.get("emitted_at", "") or "unknown").split("T")[0]
+        print(f"  • {dec_id} ({date_str})")
 
 
 # ─── Step 2b: Memory structure ───
@@ -171,37 +180,23 @@ def step_2b_memory_palace() -> None:
         if subdirs:
             print(f"✓ Step 2b: Memory ({', '.join(sorted(subdirs))})")
         else:
-            print(f"✓ Step 2b: Memory structure (empty)")
+            print("✓ Step 2b: Memory structure (empty)")
 
 
-# ─── Step 3: Active decisions (last 5 with status) ───
+# ─── Step 3: Active decisions (last 5, with status) ───
 def step_3_decisions() -> None:
-    """Show recent decisions with status for quick orientation."""
-    decisions_dir = UU_ROOT / "devlab" / "runtime" / "memory" / "decisions"
-    if not decisions_dir.exists():
+    """Show the 5 most-recent decisions with their status for orientation."""
+    recent = _decisions_newest_first(5)
+    if not recent:
         return
-
-    all_decisions = sorted(decisions_dir.glob("*.json"))
-    if not all_decisions:
-        return
-
-    recent = all_decisions[-5:] if len(all_decisions) > 5 else all_decisions
-    print(f"✓ Step 3: Active decisions:")
-    for dec_file in reversed(recent):
-        try:
-            data = json.loads(dec_file.read_text(encoding="utf-8"))
-            # Extract D-id from namespace
-            namespace = data.get("namespace", [])
-            dec_id = namespace[0] if namespace else dec_file.stem
-            # Extract kind/status from data
-            kind = data.get("kind", "unknown")
-            # Extract tags if present in body
-            body = data.get("body", {})
-            tags = body.get("tags", []) if isinstance(body, dict) else []
-            tag_str = f" [{', '.join(tags[:2])}]" if tags else ""
-            print(f"  • {dec_id} — {kind}{tag_str}")
-        except Exception:
-            pass
+    print("✓ Step 3: Active decisions:")
+    for data in recent:
+        namespace = data.get("namespace", [])
+        dec_id = namespace[0] if namespace else "?"
+        body = data.get("body", {}) if isinstance(data.get("body"), dict) else {}
+        status = body.get("status", "?")
+        date_str = (body.get("date") or (data.get("emitted_at", "") or "").split("T")[0]) or "?"
+        print(f"  • {dec_id} [{status}] ({date_str})")
 
 
 # ─── Step 4: Channel (recent posts for context) ───
