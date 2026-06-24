@@ -1,0 +1,106 @@
+{
+  "id": "cc.0.igor-home-env-var-eliminated-data-dir-de.T-uu-eliminate-igor-home-env.20260624.134641127017",
+  "emitter": "cc.0",
+  "namespace": [
+    "igor-home-env-var-eliminated-data-dir-de",
+    "T-uu-eliminate-igor-home-env"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-24T13:46:41.127017",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-eliminate-igor-home-env"
+    ],
+    "commits": [
+      "5e828ee857d2b789471315a521be57a6fbd9b111"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "IGOR_HOME env var eliminated; data dir derived via uu_home()",
+    "intention": "the runtime data dir ignores the retired IGOR_HOME env var",
+    "test": "tests/test_igor_home_env_eliminated.py::test_data_dir_ignores_retired_igor_home_env",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_igor_home_env_eliminated.py::test_data_dir_ignores_retired_igor_home_env",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x76b7d940fc50>\n\n    def test_data_dir_ignores_retired_igor_home_env(monkeypatch):\n        \"\"\"Proof node (one intention): the data dir no longer honors IGOR_HOME.\"\"\"\n        monkeypatch.setenv(\"IGOR_HOME\", \"/tmp/uu-bogus-igor-home-should-be-ignored\")\n        import unseen_university.system_alarms as sa\n        root = str(sa._igor_home())\n>       assert \"uu-bogus\" not in root, f\"_root() still honors the retired IGOR_HOME env: {root}\"\nE       AssertionError: _root() still honors the retired IGOR_HOME env: /tmp/uu-bogus-igor-home-should-be-ignored\nE       assert 'uu-bogus' not in '/tmp/uu-bog...d-be-ignored'\nE         \nE         'uu-bogus' is contained here:\nE           /tmp/uu-bogus-igor-home-should-be-ignored\nE         ?      ++++++++\n\ntests/test_igor_home_env_eliminated.py:26: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_igor_home_env_eliminated.py::test_data_dir_ignores_retired_igor_home_env\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "5e828ee857d2b789471315a521be57a6fbd9b111",
+    "impl_paths": [
+      "CLAUDE.md",
+      "bin/uu_bash_profile_processor.sh",
+      "devices/build_digester/groundloop/runme.py",
+      "devices/claude/constants.py",
+      "devices/claude/rack_supervisor.py",
+      "devices/demo_daemon/groundloop/runme.py",
+      "devices/ground_loop/daemon.py",
+      "devices/ground_loop/plugin_daemon.py",
+      "devices/ground_loop/plugin_proxy.py",
+      "devices/hubert/repo_auditor.py",
+      "devices/igor/device.py",
+      "devices/igor/main.py",
+      "devices/igor/shim.py",
+      "devices/scraps/daemon.py",
+      "devices/scraps/debug_extractor.py",
+      "devices/vetinari/device.py",
+      "devlab/claudecode/bootstrap_learning.py",
+      "devlab/claudecode/cc_nightly_context_prep.py",
+      "devlab/claudecode/cc_nightly_palace_updates.py",
+      "devlab/claudecode/cc_queue.py",
+      "devlab/claudecode/cc_task_listener.py",
+      "devlab/claudecode/completion_audit.py",
+      "devlab/claudecode/critic_core.py",
+      "devlab/claudecode/rotate_logs.py",
+      "devlab/claudecode/session_memory_deposit.py",
+      "devlab/claudecode/skill_telemetry.py",
+      "devlab/claudecode/slate_manager.py",
+      "devlab/claudecode/sprint_token_log.py",
+      "devlab/claudecode/ticket_detail_eval.py",
+      "devlab/claudecode/usage_store.py",
+      "systemd/ground_loop.service",
+      "systemd/ground_loop.user.service",
+      "tests/igor/test_skill_telemetry.py",
+      "tests/queue/test_cost_to_close.py",
+      "tests/test_demo_daemon.py",
+      "tests/test_inference_dead_path_and_alarm.py",
+      "tests/test_skill_telemetry_igor.py",
+      "tests/test_system_alarm_notifier.py",
+      "tests/test_system_alarms.py",
+      "tests/test_vetinari_audit.py",
+      "tests/test_vetinari_clarification.py",
+      "tests/test_vetinari_decompose.py",
+      "tests/test_vetinari_device.py",
+      "tests/test_vetinari_intake.py",
+      "tests/test_vetinari_progress.py",
+      "tests/test_vetinari_signal.py",
+      "tests/test_web_alarms_panel.py",
+      "unseen_university/_uu_root.py",
+      "unseen_university/channel.py",
+      "unseen_university/system_alarms.py"
+    ],
+    "ticket": "T-uu-eliminate-igor-home-env",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
