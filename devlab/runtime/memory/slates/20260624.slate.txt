@@ -41,3 +41,9 @@ NONE
 
 ## In-flight (pre-compact)
 D-skills-two-products LOCKED (13 tickets) — ready to sprint, nothing mid-work. NEXT when resuming: T-uu-cli-dispatcher (#1, unblocked foundation) + T-skills-prune-deprecated-merge (#8) give working Friday demos; or sprint after the talk. Plus standalone T-cc-queue-list-hides-tickets (the list-hides-tickets bug — fix early, it makes the pre-file check unreliable).
+
+## Notes — stale-skill cleanup (2026-06-24, Akien spotted via context-load)
+- Skills predate the canonical-memory consolidation. Two work items, both under D-skills-two-products:
+  - T-day-close-audit-skill-stale-paths (amended): MECHANICAL path-token sweep, ~14 survivors, EXCLUDE retirees (recover/question/concept/autocompact/migrate-decisions/goal/audit-goal/cognition-debug/debug-pe-chain), target repo skills/ (flip inherits), sequence after prune. Delegate-to-cheaper-agent candidate.
+  - T-skills-palace-db-to-fs-store (NEW, L): palace-DB->filesystem-store MECHANISM rewrite — context-load Steps 2a-3 + day-close palace.days + audit-audits/hypothesis/smell + eval-run/outcome/weekly-retro. context-load is priority (post-compact entry point; bit us today). Needs CC judgment + advisor.
+- Decision spawned_tickets now 15.

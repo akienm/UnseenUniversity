@@ -26,8 +26,8 @@
     ],
     "status": "sprint",
     "priority": 0.4,
-    "description": "**Problem:** The /day-close-audit skill is written for the OLD architecture — its steps grep/psql against `wild_igor/igor/`, `lab/claudecode/...`, `IGOR_HOME_DB_URL`, and tools that no longer exist (`docs_sync.py`, `github_sync.py` are gone post-migration; `prune_emissions` import path moved). On the 2026-06-19 day-close most static steps returned empty or errored and had to be hand-adapted to `devices/igor/`, `unseen_university/`, and `devlab/claudecode/`. Other skills likely share the same dead refs.\n\n**Proposed shape:** Sweep the skills under ~/.claude/skills/ (canonical source is repo skills/) for retired path tokens (`wild_igor/igor`, `lab/claudecode`, `lab/design_docs_for_igor`, `THEIGORS_HOME`, removed tools docs_sync/github_sync) and repoint to current locations or delete the obsolete step. Prioritize day-close-audit (it's the mandatory day-close gate and is currently mostly inert).\n\n**Affected files:** ~/.claude/skills/day-close-audit/SKILL.md (+ repo skills/ mirror); audit step scripts; sweep other SKILL.md for the same tokens.\n**Design rules:** skills-live-in-repo (repo skills/ is canonical); filesystem-memory-store (devlab/runtime/memory).\n**Scope boundary:** IN — repoint/remove dead path+tool refs in day-close-audit and any skill with the same tokens; verify each step runs against current architecture. OUT — redesigning the audit's check set; the slate-location work (T-slate-location-canonical-devlab).\n**Test plan:** Run each day-close-audit step against the live repo; assert no step errors on a missing path/tool. Grep skills/ for the retired tokens → 0 after fix.\n**Completion criteria:** grep of skills/ for `wild_igor/igor`, `lab/claudecode`, `docs_sync.py`, `github_sync.py` returns 0 live refs; day-close-audit runs end-to-end with no path/tool errors.",
-    "decision_id": null,
+    "description": "**Problem:** The /day-close-audit skill is written for the OLD architecture — its steps grep/psql against `wild_igor/igor/`, `lab/claudecode/...`, `IGOR_HOME_DB_URL`, and tools that no longer exist (`docs_sync.py`, `github_sync.py` are gone post-migration; `prune_emissions` import path moved). On the 2026-06-19 day-close most static steps returned empty or errored and had to be hand-adapted to `devices/igor/`, `unseen_university/`, and `devlab/claudecode/`. Other skills likely share the same dead refs.\n\n**Proposed shape:** Sweep the skills under ~/.claude/skills/ (canonical source is repo skills/) for retired path tokens (`wild_igor/igor`, `lab/claudecode`, `lab/design_docs_for_igor`, `THEIGORS_HOME`, removed tools docs_sync/github_sync) and repoint to current locations or delete the obsolete step. Prioritize day-close-audit (it's the mandatory day-close gate and is currently mostly inert).\n\n**Affected files:** ~/.claude/skills/day-close-audit/SKILL.md (+ repo skills/ mirror); audit step scripts; sweep other SKILL.md for the same tokens.\n**Design rules:** skills-live-in-repo (repo skills/ is canonical); filesystem-memory-store (devlab/runtime/memory).\n**Scope boundary:** IN — repoint/remove dead path+tool refs in day-close-audit and any skill with the same tokens; verify each step runs against current architecture. OUT — redesigning the audit's check set; the slate-location work (T-slate-location-canonical-devlab).\n**Test plan:** Run each day-close-audit step against the live repo; assert no step errors on a missing path/tool. Grep skills/ for the retired tokens → 0 after fix.\n**Completion criteria:** grep of skills/ for `wild_igor/igor`, `lab/claudecode`, `docs_sync.py`, `github_sync.py` returns 0 live refs; day-close-audit runs end-to-end with no path/tool errors.\n\n## Akien 2026-06-24 — scoped + linked to D-skills-two-products\nThis is the MECHANICAL token sweep (lab/, wild_igor/igor, old slate path ~/.unseen_university/claudecode/*.slate, dead tools docs_sync.py/github_sync.py, moved prune_emissions import). Measured survivors needing the sweep (~14): audit-audits, audit-day, audit-precode, audit-regression, audit-smell, audit-ticket, available, critic, day-close-audit, export-chat, query-ticket, readinbox, sprint-ticket, stall-check.\nEXCLUDE skills slated for retirement — don't fix paths in skills we're deleting: recover, question, concept, autocompact, migrate-decisions (T-skills-prune-deprecated-merge), goal, audit-goal (T-skills-goals-to-intentions), cognition-debug, debug-pe-chain.\nTarget the REPO skills/ (canonical); the per-skill symlink flip (T-skills-single-source-flip) makes ~/.claude inherit — no separate ~/.claude sweep. So sequence AFTER prune (know the survivors) and pair with the flip.\nMechanical → good DELEGATE-to-cheaper-agent candidate: give it the survivor list + the retired-token list + the exclusion list (blind sed is the trap). The palace-DB->fs-store MECHANISM rewrite is split out to T-skills-palace-db-to-fs-store (needs judgment, stays with CC).",
+    "decision_id": "D-skills-two-products-2026-06-23",
     "gate": null,
     "created_at": "2026-06-20T17:08:31.646496+00:00",
     "worker": null,
@@ -41,6 +41,15 @@
     "intention": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-20T17:08:31.689991+00:00"
+    "scraps_validated": "2026-06-20T17:08:31.689991+00:00",
+    "links": {
+      "goals": [],
+      "decisions": [],
+      "tickets": [
+        "T-day-close-audit-skill-stale-paths"
+      ],
+      "commits": [],
+      "whys": []
+    }
   }
 }

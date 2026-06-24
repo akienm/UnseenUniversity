@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-skills-palace-db-to-fs-store.20260624.113725387452",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-palace-db-to-fs-store"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-24T17:37:25.387452+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products-2026-06-23"
+    ],
+    "tickets": [
+      "T-skills-palace-db-to-fs-store"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-palace-db-to-fs-store",
+    "title": "[sprint] Skills read the filesystem memory store, not the Postgres palace (context-load + audit/daily)",
+    "size": "L",
+    "tags": [
+      "Skills",
+      "Memory",
+      "Consolidation"
+    ],
+    "decision_id": "D-skills-two-products-2026-06-23",
+    "gate": null,
+    "priority": 0.55,
+    "status": "sprint",
+    "intention": "I intend that no skill reads memory from the retired Postgres palace — they read the canonical filesystem store.",
+    "description": "**Problem:** the canonical-memory consolidation moved memory to the filesystem store (devlab/runtime/memory/), but ~14 skills still `psql` the old `memory_palace` / `adc.palace` tables (and read `.dsb` logs). context-load Steps 2a-3 (rules, palace tree, ADC snapshot, decisions) ARE the old Postgres palace; day-close writes palace.days.* via psql; audit-audits/hypothesis/smell, eval-run, outcome, weekly-retro all query the palace. These return empty or error post-consolidation. This is a MECHANISM rewrite, not the path-token swap (that's T-day-close-audit-skill-stale-paths). **Shape:** rewrite each palace-DB read to read the filesystem store — slate via slate_store, decisions via grep devlab/runtime/memory/decisions/*.json, tickets via the store, rules wherever they now live. context-load is the priority (it's the post-compact entry point and the one that bit us today). **Affected files (repo skills/):** context-load(+/run), day-close, audit-audits, audit-hypothesis, audit-smell, eval-run, outcome, weekly-retro. **Design rules:** filesystem memory store is canonical (D-canonical-memory-consolidation / D-filesystem-memory-store); NO new ~/.unseen_university paths without Akien. **Scope boundary:** IN — survivor skills' palace-DB reads -> filesystem store. OUT — skills slated for retirement (goal/question/concept/audit-goal etc.); the mechanical path-token sweep (separate ticket). **Test plan:** context-load runs end-to-end with ZERO psql calls and surfaces slate + recent decisions from the filesystem store (red: it errors/empties on palace psql today); `grep -rlE 'memory_palace|adc.palace' skills/` returns only retired-and-deleted skills. **Completion criteria:** the 8 survivor skills read the filesystem store; context-load post-compact orientation works without the palace DB. **NOTE (L):** advisor() before sprint.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-24T17:37:23.031556+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-24T17:37:23.077182+00:00"
+  }
+}

@@ -44,7 +44,9 @@
       "T-uu-readfeed",
       "T-skills-views-retire-to-cli",
       "T-inference-liveness-and-loud-fail",
-      "T-skills-prune-deprecated-merge"
+      "T-skills-prune-deprecated-merge",
+      "T-day-close-audit-skill-stale-paths",
+      "T-skills-palace-db-to-fs-store"
     ]
   }
 }
