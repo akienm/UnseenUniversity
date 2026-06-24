@@ -47,6 +47,8 @@ def _genuine_lab_ref_files() -> set:
          ":!devlab/runtime/memory/rules/path_moves.json",
          ":!tests/test_skill_write_paths_canonical.py", ":!tests/test_path_moves_monitor.py",
          ":!tests/test_lab_designdocs_ref_sweep.py",  # this proof's own fixture literals
+         ":!tests/test_cc_queue_rollup_no_lab_write.py",   # proof fixture describes the retired path
+         ":!tests/test_cc_nightly_reads_json_decisions.py",  # proof fixture describes the retired path
          ":!skills/migrate-decisions/"],
         capture_output=True, text=True,
     ).stdout
