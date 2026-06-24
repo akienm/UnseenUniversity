@@ -20,29 +20,35 @@
   },
   "body": {
     "id": "T-uu-env-coverage-audit",
-    "title": "[sprint] Pre-rotation: audit that every DB-connecting process has the env before fallbacks are gone",
+    "title": "Pre-rotation: audit that every DB-connecting process has the env before fallbacks are gone",
     "size": "S",
     "tags": [
       "Security",
       "Config"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.5,
     "decision_id": "D-uu-config-identity-layer-2026-06-22",
-    "gate": "T-uu-sweep-db-connection-string",
+    "gate": null,
     "intention": "Before any rotation, we have a verified list that every service/cron/launcher gets UU_HOME_DB_URL from its environment — so removing the fallbacks drops no connections.",
     "description": "**Problem:** Once the hardcoded fallbacks are gone, any process whose env lacks UU_HOME_DB_URL loses DB access. Audit coverage BEFORE rotating.\n\n**Shape:** Enumerate every DB-connecting process (devices via shims/systemd --user units, crons/Nanny, launchers, CC/sprint tooling) and confirm each sources the config layer / has UU_HOME_DB_URL in its env. Produce a checklist with the env source per process; fix any gaps.\n\n**Affected files:** none (audit) + any unit/launcher missing the env (fix inline or sub-ticket).\n**Design rules:** none apply.\n**Scope boundary:** IN — the coverage checklist + closing gaps. OUT — the rotation itself.\n**Test plan:** for each enumerated process, show it resolves UU_HOME_DB_URL from env (not a fallback).\n**Completion criteria:** a checklist exists listing every DB-connecting process with its confirmed env source; zero rely on a code fallback.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n[error] PATTERN-004: Flat-File Registry (Atomic Write): The skeleton must never depend on Postgres — skeleto — applies: tags: pattern, pattern-004 (source: docs/design_patterns_inventory.md#PATTERN-004: Flat-File Registry (Atomic Write))\n…and 37 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-06-22T23:58:36.347078+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Audited every DB-connecting process class for UU_HOME_DB_URL env coverage. Checklist emitted (notes/env-coverage-audit-2026-06-24). Finding: the composed URL reaches only interactive shells; ground_loop.service (UU_ROOT/IGOR_HOME only), 8 crons, and 25 IGOR_HOME_DB_URL readers all rely on the code fallback. Filed T-uu-env-file-for-noninteractive (the env-delivery mechanism) + T-uu-dburl-name-unify; corrected the inverted gate (sweep+rotate now gate on the mechanism).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-24T18:38:49.555960+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-22T23:58:36.347121+00:00"
+    "scraps_validated": "2026-06-22T23:58:36.347121+00:00",
+    "proven": false,
+    "unproven_reason": "An audit's output is a checklist + gap-tickets, not a code change, so there is no impl-revert to red→green. The falsifiable proof — every non-interactive process resolves UU_HOME_DB_URL from env with fallbacks gone — cannot pass until the env-file mechanism (T-uu-env-file-for-noninteractive) ships; proof deferred there.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

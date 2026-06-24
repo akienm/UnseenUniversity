@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-uu-dburl-name-unify.20260624.123818451089",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-dburl-name-unify"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-24T18:38:18.451089+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-config-identity-layer-2026-06-22"
+    ],
+    "tickets": [
+      "T-uu-dburl-name-unify"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-dburl-name-unify",
+    "title": "[sprint] Unify IGOR_HOME_DB_URL -> UU_HOME_DB_URL (25 refs read a name nothing exports)",
+    "size": "M",
+    "tags": [
+      "UU",
+      "Config",
+      "Env",
+      "Sweep"
+    ],
+    "decision_id": "D-uu-config-identity-layer-2026-06-22",
+    "gate": null,
+    "priority": 0.55,
+    "status": "sprint",
+    "intention": "I intend that DB-connecting code reads ONE env-var name, the one the processor actually exports.",
+    "description": "**Problem (from T-uu-env-coverage-audit):** ~25 files read IGOR_HOME_DB_URL (devices/intent, classifier, hubert, build_digester, igor/paths.py, librarian, migrations, ...) but the processor only exports UU_HOME_DB_URL — so those readers ALWAYS hit the fallback even in a correctly-configured shell. **Shape:** replace IGOR_HOME_DB_URL reads with UU_HOME_DB_URL (or have the processor export both during a deprecation window). Mechanical sweep — good delegate-to-cheaper-agent candidate (clear pattern + exclusion list). **Affected files:** the ~25 IGOR_HOME_DB_URL readers. **Design rules:** filesystem store canonical; no hardcoded fallbacks (pairs with T-uu-sweep-db-connection-string). **Scope boundary:** IN — the name unification. OUT — the connection-string fallback removal (sibling sweep). **Test plan:** grep shows zero live IGOR_HOME_DB_URL reads (or only behind the deprecation alias); a process with only UU_HOME_DB_URL set connects. **Completion criteria:** no live code depends on IGOR_HOME_DB_URL being set independently of UU_HOME_DB_URL.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-24T18:38:16.349133+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-24T18:38:16.349307+00:00"
+  }
+}

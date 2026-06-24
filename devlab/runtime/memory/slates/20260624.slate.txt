@@ -12,6 +12,7 @@ NONE
 ## Done today
 
 - T-context-load-fs-store — context-load resolves UU_ROOT from any cwd + reads fs store (no palace DB) (context-load resolves UU_ROOT via uu_root() (works from any cwd), sorts decisions by emitted_at, Step 3 shows real statu)
+- T-uu-env-coverage-audit — Pre-rotation: audit that every DB-connecting process has the env before fallbacks are gone (Audited every DB-connecting process class for UU_HOME_DB_URL env coverage. Checklist emitted (notes/env-coverage-audit-2)
 ## Notes
 - Skills-harmony design (D-skills-two-products-2026-06-23) — Akien reading the 2 ref docs; may revise. Ticketed his dispositions 2026-06-24 (pre-/sorted capture):
   - EXPANDED T-skills-prune-deprecated-merge: + retire /recover (supersedes T-recover-skill-message-wording), /question, /concept, /autocompact+uucompactclaude (new Anthropic compact obsoletes it), /migrate-decisions (backfill spent).
@@ -53,3 +54,6 @@ D-skills-two-products LOCKED (13 tickets) — ready to sprint, nothing mid-work.
 - T-context-load-fs-store CLOSED PROVEN (87f0c9e0 + proof). context-load run executor was already fs-store-based; real bugs: UU_ROOT defaulted to cwd (silently dropped Steps 2a/2b/3 off-root, e.g. post-compact) -> now uu_root(); decisions sorted by emitted_at (was alphabetical); Step 3 shows real status; SKILL.md rewritten to the fs-store executor (dropped psql/palace docs + nonexistent subcommands). Proof: briefing from non-root cwd surfaces recent decisions w/ status.
 - Split from L parent T-skills-palace-db-to-fs-store (back to sprint; 7 survivor skills left: day-close, audit-audits/hypothesis/smell, eval-run, outcome, weekly-retro).
 - Filed T-context-load-violation-summary-missing (pre-existing: run lacks violation_summary() its test expects; 4 tests red at HEAD before my change — confirmed via git show+stash; low pri).
+
+## Done today
+- T-uu-env-coverage-audit CLOSED shipped-unproven. Env-vars work is now TOP priority (Akien: skills depend on env being right). Checklist: notes/env-coverage-audit-2026-06-24. FINDING: composed UU_HOME_DB_URL reaches only interactive shells; GAPS = ground_loop.service (no DB URL, can't source bash profile), 8 crons (no .bashrc; several on retired TheIgors/lab/tmp paths), 25 IGOR_HOME_DB_URL readers (processor never sets that name). Filed T-uu-env-file-for-noninteractive (env-delivery mechanism = sweep blocker) + T-uu-dburl-name-unify. Corrected inverted gate: sweep+rotate now gate on the env-file mechanism. Three sweeps remain (db-connection-string L, instance-name L, hostname M) = delegate-to-cheaper-agent.
