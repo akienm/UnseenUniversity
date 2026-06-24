@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.cc-queue-decision-rollup-writes-no-file.T-cc-queue-rollup-misfiles-lab.20260623.175954446557",
+  "emitter": "cc.0",
+  "namespace": [
+    "cc-queue-decision-rollup-writes-no-file",
+    "T-cc-queue-rollup-misfiles-lab"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T17:59:54.446557",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-rollup-misfiles-lab"
+    ],
+    "commits": [
+      "643f9bd3368447438a29436249be273c66bb8439"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "cc_queue decision-rollup writes no file to retired lab/",
+    "intention": "_decision_rollup writes no rollup file and does not reference the retired lab/design_docs tree, while keeping the un-gate of dependents",
+    "test": "tests/test_cc_queue_rollup_no_lab_write.py::test_decision_rollup_writes_no_file_to_retired_lab",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_cc_queue_rollup_no_lab_write.py::test_decision_rollup_writes_no_file_to_retired_lab",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        \"\"\"Proof node (one intention): _decision_rollup writes no rollup file and does\n        not reference the retired lab/design_docs tree.\"\"\"\n        src = _rollup_src()\n>       assert \"lab/design_docs\" not in src, \"_decision_rollup still references retired lab/design_docs\"\nE       AssertionError: _decision_rollup still references retired lab/design_docs\nE       assert 'lab/design_docs' not in 'def _decisi...n        )\\n'\nE         \nE         'lab/design_docs' is contained here:\nE           location: lab/design_docs/decisions/<decision-id>.md (file-stub until\nE         ?           +++++++++++++++\nE               T-decisions-into-palace-subtree moves this into the palace).\nE               \"\"\"\nE               if not decision_id:...\nE         \nE         ...Full output truncated (79 lines hidden), use '-vv' to show\n\ntests/test_cc_queue_rollup_no_lab_write.py:32: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_cc_queue_rollup_no_lab_write.py::test_decision_rollup_writes_no_file_to_retired_lab\n1 failed in 0.10s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "643f9bd3368447438a29436249be273c66bb8439",
+    "impl_paths": [
+      "devlab/claudecode/cc_queue.py",
+      "devlab/runtime/memory/tickets/cc.0.T-cc-queue-rollup-misfiles-lab.20260623.171349065374.json"
+    ],
+    "ticket": "T-cc-queue-rollup-misfiles-lab",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
