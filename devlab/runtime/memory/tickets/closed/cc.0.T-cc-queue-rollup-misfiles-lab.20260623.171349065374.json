@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-cc-queue-rollup-misfiles-lab",
-    "title": "[in_progress] cc_queue decision-rollup writes .md stub to retired lab/design_docs/ — disable or re-emit JSON",
+    "title": "cc_queue decision-rollup writes .md stub to retired lab/design_docs/ — disable or re-emit JSON",
     "size": "S",
     "tags": [
       "Memory",
@@ -30,13 +30,13 @@
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
     "gate": null,
     "priority": 0.55,
-    "status": "in_progress",
+    "status": "closed",
     "created_at": "2026-06-23T23:13:44.665036+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Stripped the .md rollup write to retired lab/design_docs/decisions/ from cc_queue._decision_rollup (was a surviving misfiler recreating a retired dir, wrong format). Decision close+outcome run through the /outcome flow (outcome_check.py); kept the load-bearing un-gate of dependents. Proof: tests/test_cc_queue_rollup_no_lab_write.py::test_decision_rollup_writes_no_file_to_retired_lab (red->green).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-24T00:00:04.747866+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-23T23:13:44.716542+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "c5038344-6ffb-479f-907a-a47511c6e7aa"
+    "inferred_intention_id": "c5038344-6ffb-479f-907a-a47511c6e7aa",
+    "proven": true,
+    "proof_id": "cc.0.cc-queue-decision-rollup-writes-no-file.T-cc-queue-rollup-misfiles-lab.20260623.175954446557",
+    "proof_commit": "643f9bd3368447438a29436249be273c66bb8439",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
