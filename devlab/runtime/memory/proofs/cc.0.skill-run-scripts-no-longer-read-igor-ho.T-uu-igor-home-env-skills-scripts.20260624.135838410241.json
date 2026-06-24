@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.skill-run-scripts-no-longer-read-igor-ho.T-uu-igor-home-env-skills-scripts.20260624.135838410241",
+  "emitter": "cc.0",
+  "namespace": [
+    "skill-run-scripts-no-longer-read-igor-ho",
+    "T-uu-igor-home-env-skills-scripts"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-24T13:58:38.410241",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-igor-home-env-skills-scripts"
+    ],
+    "commits": [
+      "5cd5319d4e57da32c47745f1b55baec040830399"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "skill run-scripts no longer read IGOR_HOME; guard covers extensionless scripts",
+    "intention": "no tracked live-code file reads the retired IGOR_HOME env var",
+    "test": "tests/test_igor_home_env_eliminated.py::test_no_source_reads_igor_home_env",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_igor_home_env_eliminated.py::test_no_source_reads_igor_home_env",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "    def test_no_source_reads_igor_home_env():\n        \"\"\"Guard: no live source reads os.environ['IGOR_HOME'] (excludes the\n        distinct IGOR_HOME_SEARCH_PATH / IGOR_HOMEOSTATIC_* vars).\"\"\"\n        out = subprocess.run(\n            [\"git\", \"-C\", str(_REPO), \"grep\", \"-nE\", r\"environ.*[\\\"']IGOR_HOME[\\\"']\",\n             \"--\", \":!tests/\", \":!*.md\", \":!devlab/runtime/memory/\"],\n            capture_output=True, text=True,\n        ).stdout\n        stray = [l for l in out.splitlines() if \"IGOR_HOME_SEARCH\" not in l and \"IGOR_HOMEOSTATIC\" not in l]\n>       assert stray == [], f\"source still reads the IGOR_HOME env var: {stray}\"\nE       AssertionError: source still reads the IGOR_HOME env var: ['skills/context-load/run:17:IGOR_HOME = Path(os.environ.get(\"IGOR_HOME\", Path.home() / \".unseen_university\"))', 'skills/note/run:10:IGOR_HOME     = Path(os.environ.get(\"IGOR_HOME\",     Path.home() / \".unseen_university\"))', 'skills/savestate/run:15:IGOR_HOME = Path(os.environ.get(\"IGOR_HOME\", Path.home() / \".unseen_university\"))', 'skills/sprint-ticket/run:16:IGOR_HOME     = Path(os.environ.get(\"IGOR_HOME\",     Path.home() / \".unseen_university\"))']\nE       assert ['skills/cont...niversity\"))'] == []\nE         \nE         Left contains 4 more items, first extra item: 'skills/context-load/run:17:IGOR_HOME = Path(os.environ.get(\"IGOR_HOME\", Path.home() / \".unseen_university\"))'\nE         Use -v to get more diff\n\ntests/test_igor_home_env_eliminated.py:39: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_igor_home_env_eliminated.py::test_no_source_reads_igor_home_env\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "5cd5319d4e57da32c47745f1b55baec040830399",
+    "impl_paths": [
+      "skills/context-load/run",
+      "skills/note/run",
+      "skills/savestate/run",
+      "skills/sprint-ticket/run"
+    ],
+    "ticket": "T-uu-igor-home-env-skills-scripts",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
