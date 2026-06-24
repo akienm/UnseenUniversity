@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.cc-nightly-reads-json-decisions-from-the.T-cc-nightly-reads-decision-md.20260623.180325172135",
+  "emitter": "cc.0",
+  "namespace": [
+    "cc-nightly-reads-json-decisions-from-the",
+    "T-cc-nightly-reads-decision-md"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-23T18:03:25.172135",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-nightly-reads-decision-md"
+    ],
+    "commits": [
+      "cc40e612b1bd2df5e4568f89fdb3eed38ce3bc08"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "cc_nightly reads JSON decisions from the store",
+    "intention": "scan_decision_docs reads JSON decision envelopes from devlab/runtime/memory/decisions/ and parses their fields; legacy .md is not the source",
+    "test": "tests/test_cc_nightly_reads_json_decisions.py::test_scan_reads_json_decisions_from_store",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_cc_nightly_reads_json_decisions.py::test_scan_reads_json_decisions_from_store",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        (tmp_path / \"cc.0.D-fixture-2026-06-23.20260623.000000000000.json\").write_text(\n            json.dumps(envelope), encoding=\"utf-8\"\n        )\n        # A legacy .md in the same dir must NOT be the source (decisions are JSON now):\n        (tmp_path / \"D-legacy-2026-06-01.md\").write_text(\n            \"**title:** legacy\\n**date:** 2026-06-01\\n\", encoding=\"utf-8\"\n        )\n    \n        monkeypatch.setattr(m, \"_DECISIONS_DIR\", tmp_path)\n        docs = m.scan_decision_docs(all_docs=True)\n        slugs = {d[\"slug\"] for d in docs}\n    \n>       assert \"D-fixture-2026-06-23\" in slugs, f\"JSON decision not scanned: {slugs}\"\nE       AssertionError: JSON decision not scanned: {'D-legacy-2026-06-01'}\nE       assert 'D-fixture-2026-06-23' in {'D-legacy-2026-06-01'}\n\ntests/test_cc_nightly_reads_json_decisions.py:55: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_cc_nightly_reads_json_decisions.py::test_scan_reads_json_decisions_from_store\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "cc40e612b1bd2df5e4568f89fdb3eed38ce3bc08",
+    "impl_paths": [
+      "devlab/claudecode/cc_nightly_palace_updates.py",
+      "devlab/runtime/memory/tickets/cc.0.T-cc-nightly-reads-decision-md.20260623.171349188629.json"
+    ],
+    "ticket": "T-cc-nightly-reads-decision-md",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
