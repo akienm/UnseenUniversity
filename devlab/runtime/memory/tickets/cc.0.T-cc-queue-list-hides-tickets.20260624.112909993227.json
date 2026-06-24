@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-cc-queue-list-hides-tickets.20260624.112909993227",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-cc-queue-list-hides-tickets"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-24T17:29:09.993227+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-cc-queue-list-hides-tickets"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-cc-queue-list-hides-tickets",
+    "title": "[sprint] BUG: cc_queue.py list hides tickets that show/store have (manufactures duplicates)",
+    "size": "M",
+    "tags": [
+      "Tooling",
+      "Bug",
+      "Queue"
+    ],
+    "gate": null,
+    "priority": 0.62,
+    "status": "sprint",
+    "intention": "I intend that cc_queue.py list shows every ticket the store holds, so the check-before-file step can't miss one.",
+    "description": "**Problem:** `cc_queue.py list` returned 0 matches for T-uu-readfeed while `cc_queue.py show T-uu-readfeed` found it and the store file exists. So `list` silently omits some tickets — which defeats the 'grep list before filing' pre-check in /ticket and /sorted and manufactured a duplicate (T-readfeed-generalizes-readigor, now discarded). **Shape:** find why list drops tickets show/store have (status filter? cap/pagination? a stale index vs the filesystem store?). list must reflect the canonical filesystem store. **Affected files:** devlab/claudecode/cc_queue.py (list/cmd_list path + whatever index it reads). **Design rules:** filesystem memory store is canonical — list reads the store, not a stale cache. **Scope boundary:** IN — make list complete + consistent with the store/show. OUT — list formatting/sorting changes. **Test plan:** seed a store ticket, assert it appears in `list` output (red->green); assert list count == store ticket count (modulo documented status filters). **Completion criteria:** every store ticket of a listable status appears in `cc_queue.py list`; list count reconciles with the store.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-24T17:29:07.584182+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-24T17:29:07.638910+00:00"
+  }
+}

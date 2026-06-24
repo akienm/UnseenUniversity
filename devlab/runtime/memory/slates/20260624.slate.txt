@@ -22,3 +22,19 @@ NONE
 ## Planned
 - /sorted reconcile D-skills-two-products once Akien finishes the 2nd doc (lock revisions + resolve readfeed/device tension + advisor on the L ticket)
 - Skills cluster sprint order (after lock): prune-deprecated, workflow-index+uu-help, dispositions-investigate, then readfeed/device-skills/goals-to-intentions/audit-proportionality
+
+## Notes — Akien amendments to skills-harmony (2026-06-24, post-2nd-doc)
+- 'new agent' = the new-agent skill (exists; resolves the unknown).
+- Igor skills go WITH igor (into igor device space), NOT local in ~/.claude. The doc'''s 'keep igor skills local' idea is WRONG — it would rebuild the split-home canonical-memory just killed.
+- /device <dev> <verb> [<noun>] for ALL devices (confirmed). Each device'''s shim has a bin/ folder = that device'''s executor scripts only. uu device <dev> <verb> -> devices/<dev>/bin/<verb>.
+- skills-sync: NO two-way sync — DIRECTORY LINKS only (symlink). Two-way sync was the drift engine.
+- Akien has ZERO local skills -> clean symlink replacement. Others might have local skills; on conflict drop a system_alarm (operations/system_alarms/) and ask. That conflict-resolution is the ONLY non-scriptable part.
+- RESOLVED tension: readfeed folds into /device <dev> feed (device model wins).
+
+## Notes — fork #1 resolved (2026-06-24)
+- Symlink granularity: PER-SKILL links (not folder). Flip iterates repo skills/, links ~/.claude/skills/<skill> -> repo each. Local-only skills coexist untouched; same-name collision with a repo skill -> system_alarm, ask user. (only non-scriptable part)
+- /device igor feed [channel] = winning format; readfeed folds into the device model.
+- Fork #2 (device bin/: all verbs vs zero-inference only) — Akien replying separately; HOLD device-skills ticket rewrite until then.
+
+## Done today
+- /sorted LOCKED D-skills-two-products-2026-06-23 (amended for 2026-06-24 design). advisor-reviewed the L. Reconciled (not re-filed): discarded dup T-readfeed-generalizes-readigor; repointed pre-existing T-uu-readfeed -> /device igor feed (gated on device mechanism); rewrote T-device-skills-via-uu-device as DISPATCH MECHANISM (bin/+skills/ failover, unique-name-per-device, /device thin-shim over uu device, igor skills move INTO devices/igor/{bin,skills}/), gated on T-uu-cli-dispatcher; amended T-skills-single-source-flip (per-skill ~/.claude symlinks + collision->system_alarm, fork #1 overrides project-scope-primary); added uu help to dispatcher; amended T-consequence (device collisions + symlink clashes); populated decision spawned_tickets (13) + fixed measurement signal (uu device igor feed). Filed T-cc-queue-list-hides-tickets (visibility bug that made the dup).
