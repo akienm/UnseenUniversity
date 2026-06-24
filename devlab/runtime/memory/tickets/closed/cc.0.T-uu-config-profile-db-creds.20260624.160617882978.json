@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-uu-config-profile-db-creds",
-    "title": "[sprint] config/profiles/*.yaml embed the DB password in subsystem URLs — loader must compose from env",
+    "title": "config/profiles/*.yaml embed the DB password in subsystem URLs — loader must compose from env",
     "size": "M",
     "tags": [
       "EnvVars",
@@ -31,13 +31,13 @@
     "decision_id": "D-uu-config-identity-layer-2026-06-22",
     "gate": null,
     "priority": 0.6,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-06-24T22:06:15.297323+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "igor.yaml state_refs carry bare #fragment; compose_state_uri() resolves against UU_HOME_DB_URL at connect time. Last live hardcoded DB credential removed from source; password no longer rides announce manifests.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-24T23:14:40.434911+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -46,6 +46,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-24T22:06:15.341435+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "a0617366-5f8e-42d3-90de-760e6cc70565"
+    "inferred_intention_id": "a0617366-5f8e-42d3-90de-760e6cc70565",
+    "proven": true,
+    "proof_id": "cc.0.config-profiles-carries-no-db-credential.T-uu-config-profile-db-creds.20260624.171432712137",
+    "proof_commit": "782c55ed96217c049a72bf4e680d72e0a7ff62bb",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
