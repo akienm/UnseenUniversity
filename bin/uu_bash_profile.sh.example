@@ -12,11 +12,12 @@
 # (D-uu-config-identity-layer-2026-06-22 — T-uu-config-profile-layer.)
 
 # --- bootstrap secrets / identity (edit these) ------------------------------
-export UU_DB_USER=CHANGE_ME            # DB role (the rotation ticket moves this off "igor")
+export UU_DB_USER=CHANGE_ME            # DB role / login (substrate-owned, e.g. unseen_university)
 export UU_DB_PASSWORD=CHANGE_ME        # DB password — the only secret here
 export UU_DB_IP=127.0.0.1              # DB host for this machine
-# export UU_HOME_DB_IP=10.0.0.1        # set ONLY if the home Igor DB lives on another host
-export IGOR_NAME=Igor-wild-0001        # this instance / home DB name
+# export UU_HOME_DB_IP=10.0.0.1        # set ONLY if the home DB lives on another host
+export IGOR_NAME=Igor-wild-0001        # this igor instance / tenant identity (the on-disk instance folder)
+export UU_HOME_DB_NAME=unseen_university  # home DB name (substrate-owned; decoupled from IGOR_NAME)
 
 # --- repo location (override only if auto-detection is wrong) ----------------
 export UU_ROOT="$HOME/dev/src/UnseenUniversity"
