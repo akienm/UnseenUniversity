@@ -29,8 +29,12 @@ if [ -n "${UU_DB_USER:-}" ] && [ -n "${UU_DB_PASSWORD:-}" ] && [ -n "${IGOR_NAME
     _uu_db_host="${UU_HOME_DB_IP:-${UU_DB_IP:-127.0.0.1}}"
     _uu_db_cred="${UU_DB_USER}"
     _uu_db_cred="${_uu_db_cred}:${UU_DB_PASSWORD}"
-    export UU_HOME_DB_URL="postgresql://${_uu_db_cred}@${_uu_db_host}/${IGOR_NAME}"
-    unset _uu_db_host _uu_db_cred
+    # DB name is decoupled from IGOR_NAME (the tenant identity): the home DB belongs
+    # to the substrate, not the igor instance. UU_HOME_DB_NAME carries it; fall back to
+    # IGOR_NAME so installs predating the rename keep their old behavior. (T-uu-rename-role-and-db)
+    _uu_db_name="${UU_HOME_DB_NAME:-${IGOR_NAME}}"
+    export UU_HOME_DB_URL="postgresql://${_uu_db_cred}@${_uu_db_host}/${_uu_db_name}"
+    unset _uu_db_host _uu_db_cred _uu_db_name
 fi
 
 # --- hostname-derived names (de-hardcodes the old baked machine name) -------
