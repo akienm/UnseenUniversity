@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-device-skills-via-uu-device.20260624.101233357614",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-device-skills-via-uu-device"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-24T16:12:33.357614+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products-2026-06-23"
+    ],
+    "tickets": [
+      "T-device-skills-via-uu-device"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-device-skills-via-uu-device",
+    "title": "[triage] Device skills fold into uu device <dev> <verb> [<noun>] + /device <dev> <verb>",
+    "size": "L",
+    "tags": [
+      "Skills",
+      "Devices",
+      "Architecture"
+    ],
+    "decision_id": "D-skills-two-products-2026-06-23",
+    "gate": null,
+    "priority": 0.5,
+    "status": "triage",
+    "intention": "I intend that device-specific behavior lives with the device, reached by a uniform device verb, not as bespoke top-level skills.",
+    "description": "**Problem:** device-specific skills (readigor, map-igor, igor-diagnose, critic-launch, ...) clutter the top-level skill space; each device reinvents its own skill surface. **Shape:** uniform dispatch — `uu device <devicename> <verb> [<noun>]` and `/device <devicename> <verb> [<noun>]`. At the scripting level `uu` points at a folder of subcommands; `uu device <dev>` points at a subcommand folder in THAT device's own space. Device behaviors move out of the shared skills dir into the device. Subsumes readfeed-as-/device-igor-feed, igor-diagnose, critic-launch. **Affected files:** uu CLI entry point + per-device subcommand folders (devices/<dev>/...); skills/ device-specific dirs (migrate then delete); skills/manifest.json. **Design rules:** device.py/shim.py are the design center — device verbs dispatch through the device, not standalone functions; devices/ one subdir per device. **Scope boundary:** IN — the dispatch mechanism + migrating igor's device verbs as the pilot. OUT — migrating every device at once (incremental per device). **Test plan:** `uu device igor <verb>` and `/device igor <verb>` resolve to the device's subcommand; a removed top-level device skill no longer exists. **Completion criteria:** the device-verb dispatch works for igor (pilot) via both uu CLI and /device; >=1 former device-skill migrated + its top-level copy deleted. **NOTE (L):** needs advisor() review + design lock in /sorted before sprinting (per /sorted Step 3.5).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-24T16:12:28.434953+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-24T16:12:28.435046+00:00"
+  }
+}

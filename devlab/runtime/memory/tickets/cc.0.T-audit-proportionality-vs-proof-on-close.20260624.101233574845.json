@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-audit-proportionality-vs-proof-on-close.20260624.101233574845",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-audit-proportionality-vs-proof-on-close"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-24T16:12:33.574845+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products-2026-06-23"
+    ],
+    "tickets": [
+      "T-audit-proportionality-vs-proof-on-close"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-audit-proportionality-vs-proof-on-close",
+    "title": "[triage] Audit-layer proportionality: re-justify each audit against proof-on-close",
+    "size": "M",
+    "tags": [
+      "Skills",
+      "Audit",
+      "Proportionality"
+    ],
+    "decision_id": "D-skills-two-products-2026-06-23",
+    "gate": null,
+    "priority": 0.4,
+    "status": "triage",
+    "intention": "I intend that every surviving audit earns its keep now that proof-on-close exists.",
+    "description": "**Problem:** the audit family (audit-goal/-hypothesis/-design/-ticket/-precode/-smell/-debris/-day/-audits/-expert) grew before proof-on-close. Some may now be redundant nuisance. **Shape:** re-justify EACH audit against proof-on-close: what failure does it catch that proof-on-close does not? Keep, merge, or retire each on that basis. (audit-goal already slated -> audit-intentions on T-skills-goals-to-intentions.) Likely its own design conversation. **Affected files:** skills/audit-*/; skills/manifest.json. **Design rules:** CP4 (suck-less) + proof-on-close rationale (CLAUDE.md). **Scope boundary:** IN — the re-justification pass + verdict per audit. OUT — implementing the merges (follow-on tickets per verdict). **Test plan:** no tests because this is a design/justification pass; output is a per-audit keep/merge/retire verdict with the proof-on-close gap each fills. **Completion criteria:** every audit skill has a recorded verdict + rationale vs proof-on-close.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-24T16:12:31.001072+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-24T16:12:31.001184+00:00"
+  }
+}

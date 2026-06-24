@@ -1,0 +1,24 @@
+# Slate 2026-06-24
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+## Notes
+- Skills-harmony design (D-skills-two-products-2026-06-23) — Akien reading the 2 ref docs; may revise. Ticketed his dispositions 2026-06-24 (pre-/sorted capture):
+  - EXPANDED T-skills-prune-deprecated-merge: + retire /recover (supersedes T-recover-skill-message-wording), /question, /concept, /autocompact+uucompactclaude (new Anthropic compact obsoletes it), /migrate-decisions (backfill spent).
+  - EXPANDED T-skills-goals-to-intentions: + retire /goal skill, /audit-goal->/audit-intentions.
+  - NEW: T-readfeed-generalizes-readigor, T-device-skills-via-uu-device (L, needs advisor), T-workflow-index-and-uu-help, T-audit-proportionality-vs-proof-on-close, T-skill-dispositions-investigate.
+  - OPEN TENSION for /sorted: readfeed as top-level /readfeed <dev> vs folded into /device <dev> feed. Pick one surface.
+  - ~/.claude was missed by the repo path-sweep (separate non-git dir) -> single-source flip is the permanent fix.
+
+## Planned
+- /sorted reconcile D-skills-two-products once Akien finishes the 2nd doc (lock revisions + resolve readfeed/device tension + advisor on the L ticket)
+- Skills cluster sprint order (after lock): prune-deprecated, workflow-index+uu-help, dispositions-investigate, then readfeed/device-skills/goals-to-intentions/audit-proportionality
