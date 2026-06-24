@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-uu-eliminate-igor-home-env.20260624.125520595613",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-eliminate-igor-home-env"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-24T18:55:20.595613+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-config-identity-layer-2026-06-22"
+    ],
+    "tickets": [
+      "T-uu-eliminate-igor-home-env"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-eliminate-igor-home-env",
+    "title": "[sprint] Eliminate IGOR_HOME env var — UU_ROOT is the only canonical env var; data dir via resolver",
+    "size": "M",
+    "tags": [
+      "UU",
+      "Config",
+      "Env",
+      "Sweep"
+    ],
+    "decision_id": "D-uu-config-identity-layer-2026-06-22",
+    "gate": null,
+    "priority": 0.58,
+    "status": "sprint",
+    "intention": "I intend that UU_ROOT is the ONE canonical env var; the runtime data dir (~/.unseen_university) is derived, not configured via IGOR_HOME.",
+    "description": "**Problem (Akien 2026-06-24):** two canonical env vars is one too many. UU_ROOT stays; IGOR_HOME goes away. The runtime data dir is always ~/.unseen_university — make it a derived resolver, not a configurable env var. **Shape:** add `uu_home()` to unseen_university (sibling of `uu_root()`; returns ~/.unseen_university; NO env var) and replace the 18 python `os.environ[...IGOR_HOME...]` / `${IGOR_HOME:-...}` reads with it. For shell contexts (bin/uu_bash_profile_processor.sh, ~/bin/_igor_common.sh, the ground_loop.service unit) use `$HOME/.unseen_university` directly and drop the IGOR_HOME export/Environment line. Update CLAUDE.md: 'Two canonical env vars' -> ONE (UU_ROOT); IGOR_HOME row -> 'derived via uu_home(), not an env var'. **Affected files:** unseen_university/_uu_root.py (or sibling — add uu_home()); 18 py readers; bin/uu_bash_profile_processor.sh; ~/bin/_igor_common.sh; ground_loop.service unit; CLAUDE.md. **Design rules:** mirror uu_root() resolver pattern; CP6 recovery-safe (resolver never errors). **Scope boundary:** IN — the resolver + IGOR_HOME removal + CLAUDE.md contract. OUT — the env-file mechanism (T-uu-env-file-for-noninteractive — which now carries one fewer var). **Test plan:** add unseen_university; grep shows zero live IGOR_HOME env reads (resolver only); uu_home() returns ~/.unseen_university with IGOR_HOME unset (red before: code depended on the env var/default). **Completion criteria:** no live code or unit depends on an IGOR_HOME env var; uu_home() is the single source for the data dir; CLAUDE.md documents one canonical env var.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-24T18:55:18.364315+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-24T18:55:18.408342+00:00"
+  }
+}
