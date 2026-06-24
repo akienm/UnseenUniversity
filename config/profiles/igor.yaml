@@ -45,10 +45,14 @@ default_channels:
   - igor-cc
 
 # State references — where Igor's cognition state lives so it can reattach after restart.
+# Relative #fragments resolved against UU_HOME_DB_URL at connect time via
+# unseen_university.identity.compose_state_uri(). NEVER embed the live credential
+# here — this profile rides every announce manifest across the bus (listener posts
+# manifest.to_dict()), so a baked URL would persist the live password in mailboxes.
 state_refs:
-  twm: "postgres://igor:choose_a_password@127.0.0.1/Igor-wild-0001#twm"
-  ne: "postgres://igor:choose_a_password@127.0.0.1/Igor-wild-0001#narrative_engine"
-  milieu: "postgres://igor:choose_a_password@127.0.0.1/Igor-wild-0001#milieu_state"
+  twm: "#twm"
+  ne: "#narrative_engine"
+  milieu: "#milieu_state"
 
 # Permissions: who may send to Igor, who Igor may send to.
 acl:
