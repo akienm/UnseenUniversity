@@ -1,0 +1,62 @@
+{
+  "id": "cc.0.context-load-reads-fs-store-from-any-cwd.T-context-load-fs-store.20260624.114930282377",
+  "emitter": "cc.0",
+  "namespace": [
+    "context-load-reads-fs-store-from-any-cwd",
+    "T-context-load-fs-store"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-24T11:49:30.282377",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-context-load-fs-store"
+    ],
+    "commits": [
+      "87f0c9e0d42586a9a92bc4e5485651e3457fb7ea"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "context-load reads fs store from any cwd",
+    "intention": "context-load surfaces recent decisions with status from a non-root cwd with no palace DB",
+    "test": "tests/test_context_load_reads_fs_store.py::test_context_load_surfaces_decisions_from_any_cwd",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_context_load_reads_fs_store.py::test_context_load_surfaces_decisions_from_any_cwd",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        ).stdout\n    \n>       assert \"Recent decisions:\" in out, f\"Step 2a dropped (no decisions surfaced):\\n{out}\"\nE       AssertionError: Step 2a dropped (no decisions surfaced):\nE         Loading context...\nE         \nE         ✓ Step 0: CC.0 availability (none cached, unavailable)\nE         ✓ Step 0.5: Debug flag set\nE         ✓ Step 1: Slate ready\nE         ✓ Step 4: Channel (quiet)\nE         ✓ Step 5: No pending approvals\nE         \nE         ✅ Context loaded. Ready to work.\nE         \nE       assert 'Recent decisions:' in 'Loading context...\\n\\n✓ Step 0: CC.0 availability (none cached, unavailable)\\n✓ Step 0.5: Debug flag set\\n✓ Step 1: Slate ready\\n✓ Step 4: Channel (quiet)\\n✓ Step 5: No pending approvals\\n\\n✅ Context loaded. Ready to work.\\n'\n\ntests/test_context_load_reads_fs_store.py:36: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_context_load_reads_fs_store.py::test_context_load_surfaces_decisions_from_any_cwd\n1 failed in 0.58s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.58s"
+          }
+        }
+      }
+    ],
+    "commit": "87f0c9e0d42586a9a92bc4e5485651e3457fb7ea",
+    "impl_paths": [
+      "devlab/runtime/memory/decisions/cc.0.D-skills-two-products-2026-06-23.20260623.012924565706.json",
+      "devlab/runtime/memory/tickets/cc.0.T-context-load-fs-store.20260624.114850174944.json",
+      "devlab/runtime/memory/tickets/cc.0.T-context-load-violation-summary-missing.20260624.114850296575.json",
+      "devlab/runtime/memory/tickets/cc.0.T-skills-palace-db-to-fs-store.20260624.113725387452.json",
+      "skills/context-load/SKILL.md",
+      "skills/context-load/run"
+    ],
+    "ticket": "T-context-load-fs-store",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
