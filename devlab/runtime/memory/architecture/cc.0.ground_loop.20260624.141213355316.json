@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.ground_loop.20260624.141213355316",
+  "emitter": "cc.0",
+  "namespace": [
+    "ground_loop"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-24T14:12:13.355316",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "ground_loop",
+    "kind": "liveness-watchdog",
+    "title": "Ground Loop — the minimal always-alive waker/recoverer (NOT a supervisor)",
+    "summary": "Ground Loop's ONLY job is keeping ITSELF alive so it can wake others as needed: wake a thing up when it is called for, recover things from crashes, and launch Claude to repair when something is broken. It is the bottom-most liveness floor of the rack, deliberately tiny so it is the one thing that is always up. Akien's correction (2026-06-24): it is NOT a process supervisor and the word 'supervisor' in older notes/decisions (D-ground-loop-2026-06-13) is the wrong frame — it does not own or hold a fixed set of long-lived children, it wakes/recovers them on demand. Scheduling does NOT live here (that is Nanny Ogg); Ground Loop at most provides a heartbeat that kicks the scheduler. Reading the descriptor-scan + plugin_proxy/plugin_daemon behavior through this lens: those are wake-and-keep-reachable mechanics, not a long-term child-supervision contract.",
+    "key_concepts": [
+      {
+        "name": "prime directive",
+        "what": "keep ITSELF alive — that is the whole point; everything else is downstream of always being up to wake/recover others"
+      },
+      {
+        "name": "wake on demand",
+        "what": "bring a device/plugin up when it is called for; do not hold a fixed roster of running children"
+      },
+      {
+        "name": "crash recovery",
+        "what": "restart a thing that died; for code-level breakage, launch Claude to repair"
+      },
+      {
+        "name": "not the scheduler",
+        "what": "the schedule lives in Nanny Ogg; Ground Loop or the OS crontab only emit a heartbeat to tick her"
+      }
+    ],
+    "anti_patterns": [
+      "Calling Ground Loop a 'supervisor' / assuming it holds children in its own process tree forever.",
+      "Putting schedules or cron logic in Ground Loop — that is Nanny Ogg's job (platform-independent scheduling).",
+      "Growing Ground Loop with features — every added responsibility risks the one thing it must never lose: staying alive."
+    ],
+    "implementing_files": [
+      "devices/ground_loop/daemon.py",
+      "devices/ground_loop/plugin_proxy.py",
+      "devices/ground_loop/plugin_daemon.py",
+      "systemd/ground_loop.user.service",
+      "config/ground_loop/"
+    ],
+    "reference_docs": [],
+    "related": [
+      "[[nanny]]",
+      "[[device-shim]]"
+    ]
+  }
+}

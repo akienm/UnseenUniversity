@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.nanny.20260624.141213398214",
+  "emitter": "cc.0",
+  "namespace": [
+    "nanny"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-24T14:12:13.398214",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "nanny",
+    "kind": "scheduler",
+    "title": "Nanny Ogg — the platform-independent scheduler (cron without the OS crontab)",
+    "summary": "Nanny Ogg owns ALL scheduling. The point (Akien, 2026-06-24): by routing every scheduled job through Nanny instead of the OS crontab, the system gets a platform-independent cron — this has to run on Windows, where there is no crontab. So the schedule STORE is Nanny's {condition, action} registry, NOT the OS crontab. The OS crontab (or Ground Loop) contributes at most a single heartbeat that ticks Nanny; it is not where jobs live. Conditions: cron | gate_date | ticket_closed | threshold | external. Actions: dispatch_ticket | fire_consequence | route_world_ticket | post_to_channel. Nanny connects to the home DB (UU_HOME_DB_URL) for gate-date monitoring and queue polling, so as a non-interactive device she needs that env delivered without a login shell (the env-file work, T-uu-env-file-for-noninteractive).",
+    "key_concepts": [
+      {
+        "name": "platform independence",
+        "what": "scheduling lives in Nanny so the same schedules run on Linux and Windows — distance from the OS scheduler implementation"
+      },
+      {
+        "name": "schedule store is Nanny, not crontab",
+        "what": "jobs are {condition, action} rows Nanny owns; the OS crontab is not the source of truth"
+      },
+      {
+        "name": "heartbeat-driven tick",
+        "what": "crontab or Ground Loop sends a heartbeat to wake Nanny; which one does not matter — the heartbeat carries no schedule, it just kicks her"
+      },
+      {
+        "name": "DB-connecting device",
+        "what": "device.py reads UU_HOME_DB_URL for gate monitoring / queue polling — needs the non-interactive env file when launched outside an interactive shell"
+      }
+    ],
+    "anti_patterns": [
+      "Adding scheduled jobs as OS crontab lines — that re-couples to the OS scheduler and breaks the Windows path; register them with Nanny instead.",
+      "Letting individual devices schedule themselves — scheduling is centralized in Nanny so it stays portable and observable.",
+      "Treating a crontab entry as anything more than a heartbeat to kick Nanny."
+    ],
+    "implementing_files": [
+      "devices/nanny/device.py",
+      "devices/nanny/cron_backend.py",
+      "devices/nanny/shim.py",
+      "devices/nanny/sweeps/"
+    ],
+    "reference_docs": [],
+    "related": [
+      "[[ground_loop]]",
+      "[[device-shim]]"
+    ]
+  }
+}
