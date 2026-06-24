@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.processor-emits-a-non-interactive-uu-env.T-uu-env-file-for-noninteractive.20260624.142906130472",
+  "emitter": "cc.0",
+  "namespace": [
+    "processor-emits-a-non-interactive-uu-env",
+    "T-uu-env-file-for-noninteractive"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-24T14:29:06.130472",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-env-file-for-noninteractive"
+    ],
+    "commits": [
+      "c370c65d6b1944832c6af547dfea95768da1f744"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "processor emits a non-interactive uu.env that delivers UU_HOME_DB_URL without a login shell",
+    "intention": "a clean process sourcing only uu.env resolves UU_HOME_DB_URL",
+    "test": "tests/test_uu_bash_profile_processor.py::test_emits_sourceable_env_file_for_noninteractive",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_uu_bash_profile_processor.py::test_emits_sourceable_env_file_for_noninteractive",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "tmp_path = PosixPath('/tmp/pytest-of-akien/pytest-61/test_emits_sourceable_env_file0')\n\n    def test_emits_sourceable_env_file_for_noninteractive(tmp_path):\n        \"\"\"Proof node (one intention): a process with NO login shell, sourcing ONLY the\n        emitted uu.env, resolves UU_HOME_DB_URL. That is the whole point of the env file —\n        systemd units / cron-heartbeat shells / Ground-Loop-woken devices like Nanny that\n        can't source the bash profile still get the composed DB URL (T-uu-env-file-for-noninteractive).\"\"\"\n        env_file = tmp_path / \".unseen_university\" / \"uu.env\"\n        r = _run(f'source \"{PROC}\"', dict(BOOTSTRAP, HOME=str(tmp_path)))\n        assert r.returncode == 0, r.stderr\n>       assert env_file.exists(), \"processor did not emit uu.env\"\nE       AssertionError: processor did not emit uu.env\nE       assert False\nE        +  where False = exists()\nE        +    where exists = PosixPath('/tmp/pytest-of-akien/pytest-61/test_emits_sourceable_env_file0/.unseen_university/uu.env').exists\n\ntests/test_uu_bash_profile_processor.py:109: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_uu_bash_profile_processor.py::test_emits_sourceable_env_file_for_noninteractive\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.08s"
+          }
+        }
+      }
+    ],
+    "commit": "c370c65d6b1944832c6af547dfea95768da1f744",
+    "impl_paths": [
+      "bin/uu_bash_profile_processor.sh"
+    ],
+    "ticket": "T-uu-env-file-for-noninteractive",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
