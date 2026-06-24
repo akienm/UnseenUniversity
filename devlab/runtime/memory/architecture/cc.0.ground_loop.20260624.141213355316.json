@@ -18,7 +18,7 @@
     "subsystem": "ground_loop",
     "kind": "liveness-watchdog",
     "title": "Ground Loop — the minimal always-alive waker/recoverer (NOT a supervisor)",
-    "summary": "Ground Loop's ONLY job is keeping ITSELF alive so it can wake others as needed: wake a thing up when it is called for, recover things from crashes, and launch Claude to repair when something is broken. It is the bottom-most liveness floor of the rack, deliberately tiny so it is the one thing that is always up. Akien's correction (2026-06-24): it is NOT a process supervisor and the word 'supervisor' in older notes/decisions (D-ground-loop-2026-06-13) is the wrong frame — it does not own or hold a fixed set of long-lived children, it wakes/recovers them on demand. Scheduling does NOT live here (that is Nanny Ogg); Ground Loop at most provides a heartbeat that kicks the scheduler. Reading the descriptor-scan + plugin_proxy/plugin_daemon behavior through this lens: those are wake-and-keep-reachable mechanics, not a long-term child-supervision contract.",
+    "summary": "Ground Loop's ONLY job is keeping ITSELF alive so it can wake others as needed: wake a thing up when it is called for, recover things from crashes, and launch Claude to repair when something is broken. It is the bottom-most liveness floor of the rack, deliberately tiny so it is the one thing that is always up. Akien's correction (2026-06-24): it is NOT a process supervisor and the word 'supervisor' in older notes/decisions (D-ground-loop-2026-06-13) is the wrong frame — it does not own or hold a fixed set of long-lived children, it wakes/recovers them on demand. Scheduling does NOT live here (that is Nanny Ogg); Ground Loop at most provides a heartbeat that kicks the scheduler. Reading the descriptor-scan + plugin_proxy/plugin_daemon behavior through this lens: those are wake-and-keep-reachable mechanics, not a long-term child-supervision contract. LAUNCH + ENVIRONMENT MODEL (Akien, 2026-06-24): GL walks device to device sending a heartbeat to a target that lives in each device's SHIM. A device's shim is ALSO its front door — it receives that device's requests/messages; on a request, if the device is down the shim launches it as its own process, then forwards. Environment inheritance is the load-bearing rule: a device launched BY ITS SHIM (in response to a heartbeat/message — the non-interactive path) inherits GROUND LOOP's environment; a device launched by an INTERACTIVE launcher (e.g. the `igor` command) inherits the CALLER's environment (the launcher first ensures GL is up, then the rack, then launches). So GL's environment is the ROOT inherited by the entire non-interactive (shim-launched) tree — web_server, scraps, Nanny, igor-when-pinged. That is why delivering an env var to the whole fleet is ONE line on GL's unit (EnvironmentFile=), not a per-device sweep (T-uu-env-file-for-noninteractive). It also ports to Windows: no systemd-as-supervisor, no crontab.",
     "key_concepts": [
       {
         "name": "prime directive",
@@ -35,6 +35,18 @@
       {
         "name": "not the scheduler",
         "what": "the schedule lives in Nanny Ogg; Ground Loop or the OS crontab only emit a heartbeat to tick her"
+      },
+      {
+        "name": "shim = three roles",
+        "what": "each device's shim is the heartbeat target, the device's front door (request receiver), AND its lazy launcher (starts the device on demand if down, then forwards) — liveness/routing/start converge in one component per device"
+      },
+      {
+        "name": "environment inheritance",
+        "what": "shim-launched (non-interactive, via heartbeat/message) device inherits GROUND LOOP's env; interactive-launcher-launched device inherits the CALLER's env. GL's env is therefore the root of the non-interactive launch tree."
+      },
+      {
+        "name": "one-line fleet config",
+        "what": "to give every non-interactively-launched device an env var, set it once on GL's unit (EnvironmentFile=); the launch tree propagates it. cf. T-uu-env-file-for-noninteractive."
       }
     ],
     "anti_patterns": [
@@ -43,16 +55,20 @@
       "Growing Ground Loop with features — every added responsibility risks the one thing it must never lose: staying alive."
     ],
     "implementing_files": [
+      "config/ground_loop/",
+      "devices/*/shim.py (heartbeat target + front door + lazy launcher)",
       "devices/ground_loop/daemon.py",
-      "devices/ground_loop/plugin_proxy.py",
       "devices/ground_loop/plugin_daemon.py",
-      "systemd/ground_loop.user.service",
-      "config/ground_loop/"
+      "devices/ground_loop/plugin_proxy.py",
+      "devices/igor/shim.py",
+      "devices/nanny/shim.py",
+      "devices/web_server/shim.py",
+      "systemd/ground_loop.user.service"
     ],
     "reference_docs": [],
     "related": [
-      "[[nanny]]",
-      "[[device-shim]]"
+      "[[device-shim]]",
+      "[[nanny]]"
     ]
   }
 }
