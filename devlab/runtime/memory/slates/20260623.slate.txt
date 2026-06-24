@@ -74,3 +74,4 @@
 
 ## In-flight
 NONE
+- Post-compact: closed 2 consolidation follow-ups PROVEN: T-cc-queue-rollup-misfiles-lab (stripped .md rollup write to retired lab/, kept un-gate) + T-cc-nightly-reads-decision-md (scans JSON store not dead D-*.md). Tightened ref-sweep allowlist (both no longer offend). Remaining follow-up: T-architecture-points-more-subsystems (M, incremental). NEXT: skills-harmony design for Friday (T-skills-location-audit triage + D-skills-two-products).

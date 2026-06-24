@@ -23,10 +23,9 @@ from pathlib import Path
 _REPO = Path(__file__).resolve().parents[1]
 
 # Files that legitimately keep a genuine (non-devlab) lab/ reference:
+# (cc_queue.py + cc_nightly_palace_updates.py were here until T-cc-queue-rollup-misfiles-lab
+#  and T-cc-nightly-reads-decision-md fixed their lab/ refs — dropped from the allowlist.)
 ALLOWLIST = {
-    # Deferred to their own tickets — logic fixes, not read-refs:
-    "devlab/claudecode/cc_queue.py",                    # T-cc-queue-rollup-misfiles-lab (write-path bug)
-    "devlab/claudecode/cc_nightly_palace_updates.py",   # T-cc-nightly-reads-decision-md (reads .md, decisions are JSON)
     # Historical records / legacy tooling — the mention is accurate-as-history:
     "devlab/claudecode/pending/handoff-2026-05-20-windows-session.md",  # historical handoff note
     "devlab/runtime/memory/SPEC.md",                    # migration-provenance prose (what the store ingested FROM)
