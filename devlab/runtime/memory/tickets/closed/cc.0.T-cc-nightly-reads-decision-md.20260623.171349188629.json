@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-cc-nightly-reads-decision-md",
-    "title": "[in_progress] cc_nightly_palace_updates scans lab/design_docs/decisions/D-*.md — decisions are JSON now",
+    "title": "cc_nightly_palace_updates scans lab/design_docs/decisions/D-*.md — decisions are JSON now",
     "size": "S",
     "tags": [
       "Memory",
@@ -30,13 +30,13 @@
     "decision_id": "D-canonical-memory-consolidation-2026-06-23",
     "gate": null,
     "priority": 0.4,
-    "status": "in_progress",
+    "status": "closed",
     "created_at": "2026-06-23T23:13:47.113936+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Repointed cc_nightly_palace_updates decision scan from dead lab/design_docs/decisions/D-*.md to the JSON store (devlab/runtime/memory/decisions/*.json); _parse_decision_doc reads the envelope body (decision_id/title/date/status/spawned_tickets) with body.text back-filling sections + migrated-record tickets. Proof: tests/test_cc_nightly_reads_json_decisions.py::test_scan_reads_json_decisions_from_store (red->green).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-24T00:03:37.215028+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -45,6 +45,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-23T23:13:47.114003+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "1799a291-3ca2-49f9-807a-8d2a71fcb3fd"
+    "inferred_intention_id": "1799a291-3ca2-49f9-807a-8d2a71fcb3fd",
+    "proven": true,
+    "proof_id": "cc.0.cc-nightly-reads-json-decisions-from-the.T-cc-nightly-reads-decision-md.20260623.180325172135",
+    "proof_commit": "cc40e612b1bd2df5e4568f89fdb3eed38ce3bc08",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
