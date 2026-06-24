@@ -83,3 +83,11 @@ NONE
 
 ## In-flight
 NONE — clean baseline; skills-harmony design is teed up (next), not mid-work.
+
+## Done today (2026-06-23) — detail in "Session close (2050h)" above
+- D-canonical-memory-consolidation FULLY SHIPPED: 6 work tickets (skill-write-paths, path-moves-monitor, ref-sweep, architecture-intention-points, retire-decision-folders, retire-designdocs-architecture). lab/ + design_docs[_for_igor]/ deleted; monitor 109->0; 7 decisions backfilled by verify-before-delete.
+- 2 consolidation follow-up bugs PROVEN: T-cc-queue-rollup-misfiles-lab, T-cc-nightly-reads-decision-md. Regression caught+fixed (cc_nightly suite migrated to JSON fixtures; ref-sweep allowlist tightened). cc_queue(48)+cc_nightly(18) green.
+- Fixed user-flagged ~/TheIgors/lab dead CC_WORKFLOW_TOOLS fallback (3 skills, repo+running); deleted retired deep-audit.
+- Day-close test gate: 8356 collect clean; 54 touched-suite tests pass. All pushed, tree clean.
+
+✅ CLOSED
