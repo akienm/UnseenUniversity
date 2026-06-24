@@ -75,3 +75,4 @@
 ## In-flight
 NONE
 - Post-compact: closed 2 consolidation follow-ups PROVEN: T-cc-queue-rollup-misfiles-lab (stripped .md rollup write to retired lab/, kept un-gate) + T-cc-nightly-reads-decision-md (scans JSON store not dead D-*.md). Tightened ref-sweep allowlist (both no longer offend). Remaining follow-up: T-architecture-points-more-subsystems (M, incremental). NEXT: skills-harmony design for Friday (T-skills-location-audit triage + D-skills-two-products).
+- Regression caught+fixed same session: cc_nightly rewrite (md->json) broke its own 18-test suite + 2 new proof fixtures tripped the ref-sweep allowlist guard. Migrated _write_decision helper to JSON envelopes (18 green); excluded the 2 fixtures from ref-sweep grep. cc_queue(48)+cc_nightly(18) suites green. Lesson: run the changed module/guard suite, not just the targeted proof. NEXT: skills-harmony design for Friday.
