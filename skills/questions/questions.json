@@ -1,0 +1,57 @@
+{
+  "_meta": {
+    "name": "questions",
+    "title": "Canonical corpus — questions we teach the AI to ask",
+    "what": "The cognitive/design heuristics a good thinker asks themselves while working. This is the SINGLE canonical source; consumers (Igor's reading extractor, skills, future training) draw from here rather than hardcoding their own copy.",
+    "why": "Akien asks these constantly while designing ('how might I do this better? could I find an easier way?'). The goal is to teach AI to ask them too — as reading-extraction lenses, as node-construction prompts, and as training signal. (2026-06-25, forming design — node-construction insight pending.)",
+    "distinct_from": {
+      "Q-xxx open-questions": "RETIRED parking-lot experiment (the /question skill). These are NOT project-specific things-not-yet-decided.",
+      "CP1-CP6 core values": "Separate frozen contract in diagnostic_base/core_values.py — referenced, not duplicated here."
+    },
+    "seeded_from": "devices/igor/tools/ebook_reader.py :: _INTERP_CANDIDATES (the PROC_HEURISTIC_* entries). That hardcoded list should later READ from this file (Igor wiring — deferred, igor = last priority).",
+    "status": "seed v1 — open to reshaping once the node-construction insight lands"
+  },
+  "questions": [
+    {
+      "id": "PROC_HEURISTIC_HOW_MUST",
+      "question": "How must this work?",
+      "lens": "derive from necessity"
+    },
+    {
+      "id": "PROC_HEURISTIC_EASIER_WAY",
+      "question": "If I did this differently, could I find an easier way? How might I do this better?",
+      "lens": "optimization & simplification — challenge the current approach, seek a simpler/better path",
+      "added": "2026-06-25 (Akien — the designer question he noticed himself asking constantly)"
+    },
+    {
+      "id": "PROC_HEURISTIC_FIRST_RESPONSE",
+      "question": "What's the first thing I say?",
+      "lens": "introspection tool"
+    },
+    {
+      "id": "PROC_HEURISTIC_ALIGNMENT",
+      "question": "Which choice aligns with who I'd most like to be?",
+      "lens": "values alignment"
+    },
+    {
+      "id": "PROC_HEURISTIC_FITS_HERE",
+      "question": "What looks like it would fit there?",
+      "lens": "pattern completion"
+    },
+    {
+      "id": "PROC_HEURISTIC_WORKAROUND",
+      "question": "How could we get around that?",
+      "lens": "obstacle navigation"
+    },
+    {
+      "id": "PROC_HEURISTIC_LEVER",
+      "question": "Where is the lever?",
+      "lens": "leverage-point scan"
+    },
+    {
+      "id": "PROC_HEURISTIC_MONKEY_PROOF",
+      "question": "How will humans screw this up?",
+      "lens": "failure simulation"
+    }
+  ]
+}
