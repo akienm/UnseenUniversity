@@ -1,28 +1,33 @@
 """
-Backends — per-platform skill deploy primitives.
+Backends — skill deploy primitive.
 
-Each backend exposes the same interface so the installer orchestrator
-(shim.py) can pick at runtime without conditionals everywhere. rsync is
-the Linux/Mac choice; Windows will get a separate backend (probably
-robocopy or a Python copy_tree wrapper) when the first Windows box is
-brought up.
+A "deploy" links a managed skill from the master repo (`skills/<name>`) into the
+target dir (`~/.claude/skills/<name>`) via a **symlink** — never a copy. Copies
+drift: a stale `~/.claude/skills` copy diverged from the repo and broke day-close
+(2026-06-25). A link can't drift — it always resolves to the one canonical source
+(D-skills-two-products / T-skills-single-source-flip).
+
+The backend is a Protocol so the orchestrator (shim.py) stays platform-neutral.
+`os.symlink` covers Linux/macOS directly; Windows supports directory symlinks too
+(junction / mklink) — a Windows host, when one exists, gets a backend here without
+the orchestrator changing.
 """
 
 from __future__ import annotations
 
-import platform
+import os
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Protocol
 
 
 class DeployBackend(Protocol):
-    """Per-platform contract for deploying a single skill directory."""
+    """Contract for deploying a single skill directory."""
 
     def deploy_skill(self, src: Path, dst: Path) -> None:
-        """Mirror src directory contents into dst, deleting in-dst files
-        that no longer exist in src. dst is created if absent."""
+        """Ensure dst is a symlink pointing at src. Idempotent: a dst that is
+        already the correct link is a no-op; a real dir (stale copy) or wrong
+        link at dst is replaced. dst's parent is created if absent."""
         ...
 
     def is_available(self) -> bool:
@@ -30,65 +35,32 @@ class DeployBackend(Protocol):
         ...
 
 
-class RsyncBackend:
-    """rsync-backed deploy. Used on Linux + macOS."""
+class SymlinkBackend:
+    """Symlink-backed deploy — the single-source mechanism on every platform."""
 
     def is_available(self) -> bool:
-        return shutil.which("rsync") is not None
+        return hasattr(os, "symlink")
 
     def deploy_skill(self, src: Path, dst: Path) -> None:
         if not src.exists():
             raise FileNotFoundError(f"source skill dir missing: {src}")
-        dst.mkdir(parents=True, exist_ok=True)
-        # Trailing slashes matter for rsync: "src/" copies CONTENTS of src
-        # into dst (rather than creating dst/src/). --delete removes files
-        # in dst that no longer exist in src — only safe because we scope
-        # to ONE skill's dir at a time, never the whole skills/ root.
-        # --checksum forces content-based comparison: a local edit that
-        # happens to match size+mtime should still be overwritten by
-        # master, since master is the source of truth for managed skills.
-        # Cost is fine — skill files are small markdown.
-        cmd = [
-            "rsync",
-            "-a",
-            "--checksum",
-            "--delete",
-            f"{src}/",
-            f"{dst}/",
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            raise RuntimeError(f"rsync failed for {src} -> {dst}: {result.stderr}")
-
-
-class WindowsBackend:
-    """shutil-backed deploy. Used on Windows.
-
-    Uses rmtree + copytree to achieve the same mirror semantics as
-    rsync --checksum --delete: master always wins, dst files not in src
-    are removed. Safe because we scope to ONE skill dir at a time.
-    """
-
-    def is_available(self) -> bool:
-        return platform.system() == "Windows"
-
-    def deploy_skill(self, src: Path, dst: Path) -> None:
-        if not src.exists():
-            raise FileNotFoundError(f"source skill dir missing: {src}")
-        if dst.exists():
-            shutil.rmtree(dst)
-        shutil.copytree(src, dst)
+        src = src.resolve()
+        # Idempotent: already the correct link → nothing to do.
+        if dst.is_symlink() and dst.resolve() == src:
+            return
+        # Replace whatever is there: a stale copy (real dir) or a wrong link.
+        if dst.is_symlink() or dst.exists():
+            if dst.is_dir() and not dst.is_symlink():
+                shutil.rmtree(dst)
+            else:
+                dst.unlink()
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.symlink_to(src, target_is_directory=True)
 
 
 def select_backend() -> DeployBackend:
-    """Pick the right backend for this host. Raises if none works."""
-    if platform.system() == "Windows":
-        backend = WindowsBackend()
-    else:
-        backend = RsyncBackend()
+    """Pick the deploy backend for this host. Raises if none works."""
+    backend = SymlinkBackend()
     if not backend.is_available():
-        raise RuntimeError(
-            f"selected backend {type(backend).__name__} is not available "
-            f"on this host"
-        )
+        raise RuntimeError("SymlinkBackend is not available on this host")
     return backend

@@ -4,8 +4,8 @@
 Usage:
   python run status                   # show managed vs local-only
   python run diff                     # show content differences
-  python run deploy                   # deploy master → local (destructive for managed skills)
-  python run copy-to-repo <name>      # copy a local-only skill back to master
+  python run deploy                   # link each managed skill: ~/.claude/skills/<name> -> repo (never copies)
+  python run copy-to-repo <name>      # promote a local-only skill into the repo (one-way, to make it canonical)
 """
 import shutil
 import sys

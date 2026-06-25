@@ -1,50 +1,359 @@
 {
   "version": 1,
-  "_comment": "Master skill manifest. Listed skills are managed by the installer; unlisted skills in the deploy target are left alone. category is informational. machines: ['*'] = all hosts. deploy: false keeps the entry for record-keeping while skipping this run. igor-internal skills are tracked here for completeness but never deployed from ADC — they live in ~/.claude/skills/ on Igor machines only.",
+  "_comment": "Master skill manifest. Listed skills are managed by the installer, which deploys each as a SYMLINK ~/.claude/skills/<name> -> repo skills/<name> (never a copy \u2014 copies drift; D-skills-two-products / T-skills-single-source-flip). Unlisted dirs in the target are left alone (Igor-runtime local-only skills). category is informational; machines ['*']=all hosts; deploy:false skips this run. The managed set is generated from the repo skills/ dirs \u2014 repo is the one source.",
   "skills": {
-    "audit-audits":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-day":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-debris":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-design":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-expert":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-goal":        {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-hypothesis":  {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-precode":     {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-smell":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "audit-ticket":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "autocompact":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "commit":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "context-load":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "day-close":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "day-close-audit":   {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "deep-audit":        {"category": "machine-agnostic", "machines": ["*"], "deploy": false},
-    "design":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "eval-run":          {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "export-chat":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "fixit":             {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "goal":              {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "mytickets":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "new-agent":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "note":              {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "notify":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "opentickets":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "outcome":           {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "query-ticket":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "readinbox":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "savestate":         {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "savestateauto":     {"category": "machine-agnostic", "machines": ["*"], "deploy": false},
-    "skills-sync":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "sprint":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "stall-check":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "sprint-batch":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "sprint-loop":       {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "sprint-ticket":     {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "test-fix":          {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "ticket":            {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "weekly-retro":      {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-    "workflow":          {"category": "machine-agnostic", "machines": ["*"], "deploy": true},
-
-    "map-igor":          {"category": "igor-internal", "machines": [], "deploy": false},
-    "readigor":          {"category": "igor-internal", "machines": [], "deploy": false}
+    "audit-audits": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-day": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-debris": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-design": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-expert": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-feedback": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-goal": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-hypothesis": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-precode": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-regression": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-smell": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-ticket": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "audit-workspace": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "autocompact": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "available": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "commit": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "context-load": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "critic": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "day-close": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "day-close-audit": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "design": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "dream": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "eval-run": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "export-chat": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "factory-create": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "fixit": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "goal": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "mytickets": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "new-agent": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "note": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "notify": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "opentickets": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "outcome": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "query-ticket": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "questions": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "readinbox": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "research": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "savestate": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "skills-sync": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "sorted": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "sprint": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "sprint-batch": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "sprint-loop": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "sprint-ticket": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "stall-check": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "test-fix": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "ticket": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "weekly-retro": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "workflow": {
+      "category": "machine-agnostic",
+      "machines": [
+        "*"
+      ],
+      "deploy": true
+    },
+    "map-igor": {
+      "category": "igor-internal",
+      "machines": [],
+      "deploy": false
+    },
+    "readigor": {
+      "category": "igor-internal",
+      "machines": [],
+      "deploy": false
+    }
   }
 }

@@ -3,16 +3,13 @@ Unit tests for the Installer: deploy_skills(), manifest loader, and backends.
 
 InstallerDevice.device.py is currently empty — these tests cover the shim
 (deploy_skills), manifest (load_manifest / SkillEntry.deploys_here), and
-backends (RsyncBackend, select_backend).
+backends (SymlinkBackend, select_backend).
 """
 
 from __future__ import annotations
 
 import json
-import platform
-import shutil
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -260,32 +257,33 @@ def test_deploy_status_reports_missing_in_target(
     assert "sprint" in status["missing_in_target"]
 
 
-# ── RsyncBackend ──────────────────────────────────────────────────────────────
+# ── SymlinkBackend ─────────────────────────────────────────────────────────────
 
 
-@pytest.mark.skipif(not shutil.which("rsync"), reason="rsync not available")
-class TestRsyncBackend:
-    def test_is_available_when_rsync_present(self):
-        from devices.installer.backends import RsyncBackend
+class TestSymlinkBackend:
+    def test_is_available(self):
+        from devices.installer.backends import SymlinkBackend
 
-        assert RsyncBackend().is_available() is True
+        assert SymlinkBackend().is_available() is True
 
-    def test_deploy_skill_mirrors_contents(self, tmp_path):
-        from devices.installer.backends import RsyncBackend
+    def test_deploy_skill_links_to_master(self, tmp_path):
+        from devices.installer.backends import SymlinkBackend
 
         src = tmp_path / "src_skill"
         src.mkdir()
         (src / "skill.md").write_text("# test skill")
         dst = tmp_path / "dst_skill"
 
-        RsyncBackend().deploy_skill(src, dst)
-        assert (dst / "skill.md").exists()
+        SymlinkBackend().deploy_skill(src, dst)
+        assert dst.is_symlink()
+        assert dst.resolve() == src.resolve()
+        assert (dst / "skill.md").read_text() == "# test skill"
 
     def test_deploy_skill_raises_on_missing_source(self, tmp_path):
-        from devices.installer.backends import RsyncBackend
+        from devices.installer.backends import SymlinkBackend
 
         with pytest.raises(FileNotFoundError):
-            RsyncBackend().deploy_skill(tmp_path / "nonexistent", tmp_path / "dst")
+            SymlinkBackend().deploy_skill(tmp_path / "nonexistent", tmp_path / "dst")
 
 
 # ── select_backend ────────────────────────────────────────────────────────────
@@ -298,9 +296,7 @@ def test_select_backend_returns_backend():
     assert backend.is_available() is True
 
 
-@pytest.mark.skipif(platform.system() == "Windows", reason="Linux/Mac only")
-def test_select_backend_is_rsync_on_linux_mac():
-    from devices.installer.backends import RsyncBackend, select_backend
+def test_select_backend_is_symlink():
+    from devices.installer.backends import SymlinkBackend, select_backend
 
-    if shutil.which("rsync"):
-        assert isinstance(select_backend(), RsyncBackend)
+    assert isinstance(select_backend(), SymlinkBackend)

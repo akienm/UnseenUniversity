@@ -3,25 +3,24 @@ test_skill_deploy.py — installer/shim.py + backends.py regression tests.
 
 Covers:
   - deploy is idempotent (deploy twice → same result, no churn)
+  - deploy links each managed skill (dst is a symlink to master, not a copy)
   - manifest-unlisted skills in target are LEFT ALONE (preserves user-added)
   - manifest-listed but missing-source skills are reported, not crashed on
   - per-host filtering: skill listed for other hosts is skipped here
-  - WindowsBackend.deploy_skill raises NotImplementedError (stub safety)
-  - select_backend picks RsyncBackend on non-Windows
+  - SymlinkBackend.deploy_skill raises on missing source
+  - select_backend picks SymlinkBackend
 """
 
 from __future__ import annotations
 
 import json
-import platform
 from pathlib import Path
 
 import pytest
 
 from devices.installer import deploy_skills, deploy_status
 from devices.installer.backends import (
-    RsyncBackend,
-    WindowsBackend,
+    SymlinkBackend,
     select_backend,
 )
 from devices.installer.manifest import load_manifest
@@ -124,16 +123,28 @@ def test_deploy_skips_disabled_skills(fake_skill_tree):
     assert not (target / "disabled_one").exists()
 
 
-def test_deploy_overwrites_stale_target_content(fake_skill_tree):
+def test_deploy_replaces_stale_copy_with_link(fake_skill_tree):
     master, manifest, target = fake_skill_tree
+    # A stale real-dir copy (the drift disease) at the target.
     (target / "alpha").mkdir()
     (target / "alpha" / "SKILL.md").write_text("# OLD CONTENT\n")
-    (target / "alpha" / "stale_extra.md").write_text("# should be removed\n")
+    (target / "alpha" / "stale_extra.md").write_text("# should be gone\n")
 
     deploy_skills(master_root=master, target=target, manifest_path=manifest)
 
+    # Now a symlink to master: content is canonical, the stale extra is gone.
+    assert (target / "alpha").is_symlink()
+    assert (target / "alpha").resolve() == (master / "alpha").resolve()
     assert (target / "alpha" / "SKILL.md").read_text() == "# alpha skill\n"
     assert not (target / "alpha" / "stale_extra.md").exists()
+
+
+def test_deploy_creates_symlink_not_copy(fake_skill_tree):
+    master, manifest, target = fake_skill_tree
+    deploy_skills(master_root=master, target=target, manifest_path=manifest)
+    for name in ("alpha", "beta"):
+        assert (target / name).is_symlink(), f"{name} should be a symlink, not a copy"
+        assert (target / name).resolve() == (master / name).resolve()
 
 
 def test_deploy_status_shape(fake_skill_tree):
@@ -149,18 +160,25 @@ def test_deploy_status_shape(fake_skill_tree):
     assert "my_local_skill" in info["local_only"]
 
 
-def test_windows_backend_deploy_raises_on_missing_source(tmp_path):
+def test_symlink_backend_raises_on_missing_source(tmp_path):
     with pytest.raises(FileNotFoundError, match="source skill dir missing"):
-        WindowsBackend().deploy_skill(tmp_path / "nonexistent", tmp_path / "dst")
+        SymlinkBackend().deploy_skill(tmp_path / "nonexistent", tmp_path / "dst")
 
 
-@pytest.mark.skipif(
-    platform.system() == "Windows",
-    reason="non-Windows hosts only",
-)
-def test_select_backend_picks_rsync_on_posix():
-    backend = select_backend()
-    assert isinstance(backend, RsyncBackend)
+def test_symlink_backend_is_idempotent(tmp_path):
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "SKILL.md").write_text("# s\n")
+    dst = tmp_path / "dst"
+    be = SymlinkBackend()
+    be.deploy_skill(src, dst)
+    be.deploy_skill(src, dst)  # second call is a no-op, must not raise
+    assert dst.is_symlink()
+    assert dst.resolve() == src.resolve()
+
+
+def test_select_backend_picks_symlink():
+    assert isinstance(select_backend(), SymlinkBackend)
 
 
 def test_load_manifest_rejects_unknown_version(tmp_path):
