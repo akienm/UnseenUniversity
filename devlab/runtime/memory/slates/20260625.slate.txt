@@ -16,6 +16,7 @@ NONE
 - T-day-close-audit-skill-stale-paths — BUG: day-close-audit (+ other skills) reference retired wild_igor/igor + lab/ paths (Repo skills/ swept correct; guard green.)
 - T-skills-single-source-flip — Flip survivor skills to single-source (project-scope .claude/skills) (Single-source flip LIVE + door closed. 49 managed skills flipped from drifted real-dir copies to symlinks into repo skil)
 - T-skills-content-merge-survivors — One-time content merge of drifted survivor skills to canonical (Resolved to repo-canonical: repo skills/ verified as the clean fs-store rewrite (D-canonical-memory-consolidation); loca)
+- T-skills-prune-deprecated-merge — Delete deprecated skills; fold sprint; reconcile igor-diagnose (Deprecated cognition-debug + debug-pe-chain already deleted from repo + ~/.claude/skills + manifest (verified gone from )
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
@@ -95,3 +96,16 @@ Done: Single-source flip COMPLETE & PROVEN. 49 managed skills ~/.claude/skills/ 
 Next: T-skills-prune-deprecated-merge (fold /sprint→query-ticket+sprint-ticket, igor-diagnose vs
   diagnose) + Phase B uu CLI (T-uu-cli-dispatcher). Skills still front-burner (Friday work demo).
   Priority order unchanged: skills → DickSimnel → Granny → cleanup → igor LAST.
+
+## Skills prune-merge CLOSED PROVEN (2026-06-25, post-flip)
+T-skills-prune-deprecated-merge closed proven (commits 00bb3fad fold+guard, d1fb5c9c proof).
+- /sprint folded → thin alias: selection now via /query-ticket (canonical), no more raw
+  cc_queue.py list grep. Guard: tests/test_skills_hygiene.py::test_sprint_selects_via_query_ticket (red→green).
+- igor-diagnose: KEPT DISTINCT — self-deprecated redirect already superseded by /diagnose igor
+  (invariant preserved in /diagnose Steps 1-3); LOCAL-ONLY Igor-runtime, left per two-tier,
+  deletion deferred to igor phase (igor=last). Not deleted (would violate two-tier + igor-last).
+- Deprecated cognition-debug/debug-pe-chain confirmed gone from repo+local+manifest; no stray
+  slash-refs (2 cognition-debug hits = MCP-capability/ticket refs, not the skill).
+Skills set now tidy for Friday demo. REMAINING D-skills-two-products: Phase B uu CLI view-layer
+(T-uu-cli-dispatcher M → device-skills → readfeed/alarms → views-retire) + housekeeping
+(T-skills-deadstep-followup, T-skill-dispositions-investigate, T-workflow-index-and-uu-help).

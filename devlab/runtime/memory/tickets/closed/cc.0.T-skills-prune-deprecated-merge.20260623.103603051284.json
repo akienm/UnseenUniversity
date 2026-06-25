@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-skills-prune-deprecated-merge",
-    "title": "[sprint] Delete deprecated skills; fold sprint; reconcile igor-diagnose",
+    "title": "Delete deprecated skills; fold sprint; reconcile igor-diagnose",
     "size": "S",
     "tags": [
       "Skills",
@@ -31,18 +31,25 @@
     "priority": 0.55,
     "intention": "I intend that no dead or redundant skill remains in either location.",
     "description": "**Problem:** dead + redundant skills. Delete deprecated; fold the sprint wrapper; reconcile igor-diagnose vs diagnose.\n\n**Shape:** Delete cognition-debug + debug-pe-chain (both self-labeled 'DEPRECATED — use /diagnose'). Fold `sprint` (= query-ticket + sprint-ticket) into a 2-line alias or delete it. Diff igor-diagnose vs diagnose; merge if redundant, else record why kept distinct.\n\n**Affected files:** skills/ + ~/.claude/skills/ (cognition-debug, debug-pe-chain, sprint, igor-diagnose); skills/manifest.json.\n**Design rules:** none apply (cleanup).\n**Scope boundary:** IN — delete the 2 deprecated, resolve sprint + igor-diagnose. OUT — the view/workflow split.\n**Test plan:** no tests because cleanup-only; verify manifest.json stays valid JSON and no surviving skill/doc references the deleted ones.\n**Completion criteria:** cognition-debug + debug-pe-chain gone from BOTH locations + manifest; `sprint` resolved (deleted or thin alias, recorded which); igor-diagnose verdict recorded (merged into diagnose, or kept-distinct with reason).\n\n## Akien 2026-06-24 — expanded retire list (unused / superseded skills)\nAlso retire these (each dead or superseded — confirm no surviving refs, then delete from repo skills/ + ~/.claude/skills/ + manifest):\n- **/recover** — superseded by Anthropic's new built-in compact (we no longer drive the rewind-reorient flow). SUPERSEDES T-recover-skill-message-wording (that ticket becomes moot — discard it).\n- **/question** — goal/question/concept tracking experiment retired; unused.\n- **/concept** — same; unused.\n- **/autocompact** (skill) + **devlab/claudecode/uucompactclaude** (shell script) — Anthropic's new compact removes the need; the tmux send-keys dance is obsolete. Check callers (savestate/day-close/sprint-batch reference /autocompact — repoint to the native compact or drop the call).\n- **/migrate-decisions** — already self-labeled 'RETIRED as routine'; post-canonical-memory-consolidation decisions emit JSON directly via memory_emit, so even the one-time backfill is spent. Full retire.\n(/goal retire + /audit-goal->/audit-intentions tracked on T-skills-goals-to-intentions.)\nNOTE: retiring /autocompact has cross-skill blast radius (savestate/day-close/sprint-batch end-of-block calls) — sequence after confirming the native compact covers those exit points.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-06-23T16:36:02.191232+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Deprecated cognition-debug + debug-pe-chain already deleted from repo + ~/.claude/skills + manifest (verified gone from all three). /sprint folded to a thin alias: selection now routes through /query-ticket (canonical), not a raw cc_queue.py list grep — guard test_sprint_selects_via_query_ticket (red->green proof 00bb3fad). igor-diagnose verdict: kept distinct — it is a self-deprecated redirect already superseded by /diagnose igor (the 'no hypothesis before traces' invariant is preserved in /diagnose Steps 1-3); it is a LOCAL-ONLY Igor-runtime skill, left in place per the two-tier rule, deletion deferred to the igor phase (igor = last priority). manifest.json valid JSON; no surviving skill references the deleted slash-commands (the two cognition-debug hits are MCP-capability/ticket refs, not the skill).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-25T19:36:52.319635+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-23T16:36:02.191276+00:00"
+    "scraps_validated": "2026-06-23T16:36:02.191276+00:00",
+    "proven": true,
+    "proof_id": "cc.0.sprint-skill-selection-path.T-skills-prune-deprecated-merge.20260625.133643173724",
+    "proof_commit": "00bb3fad4155f988c8fa8c0e0757c888a0fc79fd",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
