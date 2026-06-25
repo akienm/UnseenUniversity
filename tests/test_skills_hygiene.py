@@ -83,3 +83,15 @@ def test_no_missing_script_refs():
     # Scripts referenced by skills that have never existed anywhere in the repo.
     v = _violations(r"validate_files\.py|github_sync\.py|docs_sync\.py")
     assert not v, "refs to never-built scripts (remove the step):\n" + "\n".join(v)
+
+
+def test_sprint_selects_via_query_ticket():
+    # /sprint is a thin alias: selection MUST route through /query-ticket, the
+    # canonical "what's next" entry point — never a raw cc_queue.py list grep
+    # (CLAUDE.md workflow rule; T-skills-prune-deprecated-merge fold). Scoped to
+    # the sprint skill so legitimate cc_queue.py list callers (ticket, etc.) pass.
+    sprint = (_SKILLS / "sprint" / "SKILL.md").read_text()
+    assert "/query-ticket" in sprint, "/sprint must select via /query-ticket"
+    assert "cc_queue.py list" not in sprint, (
+        "/sprint must not grep cc_queue.py list to pick work — use /query-ticket"
+    )
