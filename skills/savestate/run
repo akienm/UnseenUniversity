@@ -2,8 +2,9 @@
 """savestate — flush in-flight state to today's slate.
 
 Usage:
-  python run midstream "<hypothesis>"   # mid-session flush
-  python run close "<hypothesis>"       # end-of-session flush + session_capture
+  python run midstream "<hypothesis>"                  # mid-session flush
+  python run close "<hypothesis>"                      # end-of-session flush + session_capture
+  python run close-header "<date>" "<done>" "<next>"   # append session-close summary (SKILL Step 1)
 """
 import json
 import os
@@ -12,16 +13,28 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-IGOR_HOME = Path(uu_home())
+# Resolve the runtime home/root at module scope. The import is guarded so a flush
+# never hard-fails outside the repo (recovery shell / cwd off-repo) — CP6: a
+# savestate must always be able to write the slate. (The previous version called
+# uu_home() at module scope while only importing it inside _cc_tools() — a NameError
+# that broke EVERY `run close`/`midstream`/`close-header`.)
+try:
+    from unseen_university._uu_root import uu_home, uu_root
+except Exception:  # package not importable — fall back, don't break the flush
+    def uu_home() -> str:
+        return str(Path.home() / ".unseen_university")
+
+    def uu_root() -> str:
+        return os.environ.get("UU_ROOT") or str(Path.home() / "dev/src/UnseenUniversity")
+
+UU_HOME = Path(uu_home())
+
 
 def _cc_tools() -> Path:
     if val := os.environ.get("CC_WORKFLOW_TOOLS", "").strip():
         return Path(val)
-    try:
-        from unseen_university._uu_root import uu_home, uu_root
-        return Path(uu_root()) / "lab" / "claudecode"
-    except Exception:
-        return Path("")
+    # devlab/claudecode is the canonical tools dir (lab/claudecode is retired).
+    return Path(uu_root()) / "devlab" / "claudecode"
 
 CC_TOOLS = _cc_tools()
 
@@ -49,7 +62,7 @@ def _save_availability_state() -> None:
         return
 
     device_id = cc_instance.lower().replace(".", "_")  # 'CC.1' → 'cc_1'
-    cachedstate = IGOR_HOME / "devices" / device_id / "cachedstate"
+    cachedstate = UU_HOME / "devices" / device_id / "cachedstate"
     cachedstate.mkdir(parents=True, exist_ok=True)
 
     # Move whichever file exists (.true or .false) to cachedstate
@@ -95,8 +108,26 @@ def _update_in_flight(hypothesis: str) -> None:
         f.write(f"\n## In-flight: {hypothesis}\n")
 
 
+def _close_header(date_str: str, done: str, nxt: str) -> None:
+    """Append a session-close summary (Done/Next) to today's slate (SKILL Step 1)."""
+    slate = _slate_path()
+    slate.parent.mkdir(parents=True, exist_ok=True)
+    with slate.open("a", encoding="utf-8") as f:
+        f.write(f"\n## Session close {date_str}\nDone: {done}\nNext: {nxt}\n")
+
+
 def main() -> None:
-    mode       = sys.argv[1] if len(sys.argv) > 1 else "midstream"
+    mode = sys.argv[1] if len(sys.argv) > 1 else "midstream"
+
+    if mode == "close-header":
+        # python run close-header "<date>" "<done>" "<next>"
+        date_str = sys.argv[2] if len(sys.argv) > 2 else datetime.now().strftime("%Y-%m-%d")
+        done = sys.argv[3] if len(sys.argv) > 3 else ""
+        nxt = sys.argv[4] if len(sys.argv) > 4 else ""
+        _close_header(date_str, done, nxt)
+        print(f"savestate (close-header): {date_str}")
+        return
+
     hypothesis = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else "NONE"
 
     # Step 1: Save CC.x availability state (file semaphore → cachedstate)
