@@ -152,3 +152,24 @@ reworded. Live-file grep akiendelllinux=0 (tests/+memory records excluded, per d
 NEXT (env-vars phase, last item): T-uu-sweep-instance-name (L, ~238 files, HIGH-inertia config
 flagged for approval) — standalone Igor-wild-0001 -> IGOR_NAME resolver, value-preserving.
 Then env phase DONE -> skills cluster (D-skills-two-products, Friday) -> launchers.
+
+## Savestate (T-uu-sweep-instance-name close, ~21:13) — ENV-VARS PHASE COMPLETE
+In-flight: NONE. T-uu-sweep-instance-name CLOSED PROVEN (proof c8010712, red=AssertionError
+green=passed; RED 5768e4fe -> GREEN c8477b6a -> proof -> close cddbba64 -> decision reconcile 11d3959a).
+New portable resolver identity.instance_id() (IGOR_INSTANCE_ID override, call-time, total default);
+8 behavioral baked-literal sites routed (web_server/scraps/dicksimnel/claude/devlab x4). Arbiter =
+audit_check_hardcoded_instance.py (PASS); devices/igor/ untouched (settled exempt canonical home);
+residual Igor-wild-0001 in exempt home is BY DESIGN (decision measurement-signal reconciled, 11d3959a).
+Advisor steered: route to identity.instance_id() not igor_name()(raises)/paths()(device-coupling+cached).
+
+>>> ENV-VARS PHASE (env var grand cleanup) IS COMPLETE. <<<
+All closed today: eliminate-igor-home(+skills-scripts), env-file-for-noninteractive, dburl-name-unify,
+sweep-db-connection-string, rotate-db-password, config-profile-db-creds, rename-role-and-db,
+sweep-doc-example-db-strings, sweep-hostname, sweep-instance-name.
+
+NEXT PHASE: skills cluster (D-skills-two-products, Friday 2026-06-26 work presentation) — tickets:
+content-merge-survivors, single-source-flip, device-skills-via-uu-device, views-retire-to-cli, plus
+T-uu-sweep-skill-psql-creds (filed today, gated behind content-merge: skill psql still on dead
+igor:choose_a_password). THEN launchers (bin/ bootstrap: superclaude shell still has Igor-wild-0001
+defaults — deferred to launcher phase, noted out-of-scope of the runtime sweep).
+Loose sibling (not phase-blocking): T-uu-bashrc-openrouter-key (triage; OPENROUTER_API_KEY in bashrc).
