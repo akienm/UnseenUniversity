@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-db-scrub-build-artifacts.20260625.145853114356",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-db-scrub-build-artifacts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T20:58:53.114356+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products"
+    ],
+    "tickets": [
+      "T-db-scrub-build-artifacts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-db-scrub-build-artifacts",
+    "title": "[triage] Scrub build artifacts from DB; leave redirect note",
+    "size": "M",
+    "tags": [
+      "Database",
+      "Architecture"
+    ],
+    "decision_id": "D-skills-two-products",
+    "gate": null,
+    "priority": 0.7,
+    "description": "Build artifacts (tickets, decisions, slates) are now canonical in the filesystem store (devlab/runtime/memory/), not the DB. If stale copies linger in clan.memories or related tables, tools querying the DB will read old data and bypass the authoritative fs-store. This ticket scrubs those artifacts from the DB and ensures a clear redirect message appears when anything queries for them.\n\n**Affected files:** DB schema (clan.memories + any views/functions holding build artifacts), possibly db_proxy.py or query-layer hooks for redirect logic.\n**Design rules:** no-sqlite (N/A — this IS postgres); hard-rule that DB is not source of truth for build artifacts; redirect must be observable (not silent) so tools get a clear signal to migrate.\n**Scope boundary:** IN — identify & remove stale build artifacts from the DB, add a redirect/moved message for lookups. OUT — rewriting all tools to use fs-store (that's ongoing; this ticket just unblocks it by making the DB lookups fail clearly).\n**Test plan:** Query the DB for a ticket/decision/slate by ID (one that now lives ONLY in the fs-store) and verify: (1) no stale DB result is returned, (2) a clear 'moved to devlab/runtime/memory/<type>' message appears so a tool knows where to look next.\n**Completion criteria:** clan.memories has no build-artifact rows (tickets, decisions, slates); a query for any such row returns a redirect message pointing to the fs-store; no tool can mistakenly rely on the DB for canonical artifacts.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "triage",
+    "created_at": "2026-06-25T20:58:50.807990+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T20:58:50.856566+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f5a4c575-79b2-4350-8e4b-79541a3ebb9c"
+  }
+}

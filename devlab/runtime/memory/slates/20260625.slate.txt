@@ -156,3 +156,4 @@ map→devices/igor/bin/map vs fs-store.
 Ungated: T-uu-readfeed (M). REMAINING chain: readfeed (uu device igor feed [channel], retires
 readigor — the last igor local-only device skill) → views-retire (M) → workflow-index (S, do LAST
 so it documents the final command set). Then D-skills-two-products fully wrapped.
+- T-db-scrub-build-artifacts: Scrub stale build artifacts from DB; leave redirect
