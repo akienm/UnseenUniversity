@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-decisions-as-guards-convention.20260625.114821973253",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-decisions-as-guards-convention"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T17:48:21.973253+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-decisions-as-guards-anchors-2026-06-25"
+    ],
+    "tickets": [
+      "T-decisions-as-guards-convention"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-decisions-as-guards-convention",
+    "title": "[sprint] Decision invariants/rejected-alts become executable guards",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Process"
+    ],
+    "decision_id": "D-decisions-as-guards-anchors-2026-06-25",
+    "gate": null,
+    "priority": 0.55,
+    "status": "sprint",
+    "intention": "I intend that a decision's checkable invariant or rejected alternative is encoded as an executable guard (immediate test) — distinct from the consequence ticket (delayed outcome test) — so re-proposing a rejected mechanism FAILS LOUDLY instead of slipping into a proposal.",
+    "description": "**Problem (2026-06-25):** decisions carry their invariants/rejected-alternatives only as prose. CC re-derived a rejected mechanism (skills-sync) despite the decision existing, because nothing tested it at the moment of work. Consequence tickets test the *outcome* weeks later; they don't catch the *immediate* re-proposal.\n\n**Shape:** Add a /sorted step: when a decision has a checkable invariant or a rejected alternative, file an executable guard (a pytest in tests/ or an audit check via audit_add.py) as one of the decision's tickets. Exemplar: tests/test_skills_hygiene.py (RED on the drift, GREEN after). Two-clock framing recorded: immediate guard vs delayed consequence ticket.\n\n**Affected files:** skills/sorted/SKILL.md (new step), docs note; pattern only — no infra.\n**Design rules:** proof-on-close (a guard IS a proof a hollow build can't pass).\n**Scope boundary:** IN — the convention + /sorted step + 'what guard encodes this?' prompt. OUT — auto-generating guards.\n**Test plan:** guard for THIS ticket = a check that /sorted output includes a guard-or-why-not line; or shipped-unproven naming the lever.\n**Completion criteria:** /sorted asks 'what guard encodes this decision?'; at least the skills-hygiene exemplar is cited; the immediate-vs-delayed distinction is recorded.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-25T17:48:15.258362+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T17:48:15.302296+00:00"
+  }
+}

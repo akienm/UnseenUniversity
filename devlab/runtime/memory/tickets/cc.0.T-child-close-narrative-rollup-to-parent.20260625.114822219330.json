@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-child-close-narrative-rollup-to-parent.20260625.114822219330",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-child-close-narrative-rollup-to-parent"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T17:48:22.219330+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-decisions-as-guards-anchors-2026-06-25"
+    ],
+    "tickets": [
+      "T-child-close-narrative-rollup-to-parent"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-child-close-narrative-rollup-to-parent",
+    "title": "[sprint] On child close, distilled narrative rolls up to the parent decision",
+    "size": "M",
+    "tags": [
+      "Workflow",
+      "Process"
+    ],
+    "decision_id": "D-decisions-as-guards-anchors-2026-06-25",
+    "gate": "T-sorted-decompose-by-intention-gate",
+    "priority": 0.45,
+    "status": "sprint",
+    "intention": "I intend that closing a child ticket rolls a DISTILLED 'what happened' line up to its parent decision (Part x of y: T-foo did a,b,c + gotchas/deviations), so the parent decision becomes the living anchor a fresh executor reads first — distilled to 'what the next child needs to know', never a raw log.",
+    "description": "**Problem:** the parent decision is static after filing; the cross-child narrative (issues hit, things tried-and-rejected) lives only in scattered closes. A fresh executor of child N+1 has no consolidated anchor.\n\n**Shape:** On child ticket close (cc_queue close / done-slate), append a distilled narrative line to the parent decision record: 'Part x of y: T-foo (child of D-x) did a, b, c; gotcha: ...; rejected: ...'. DISCIPLINE: distilled = what the next child needs to know, not a transcript (else the parent bloats into the noise we are escaping — this 'what would the next one need to know?' filter is itself a questions-corpus heuristic).\n\n**Affected files:** cc_queue.py close path; decision record writer (memory_emit).\n**Design rules:** distilled-not-raw; single source for the narrative.\n**Scope boundary:** IN — rollup on close + the distillation discipline. OUT — the decompose-gate (its own ticket).\n**Test plan:** closing a child with decision_id appends a Part-x-of-y line to the parent record; RED before, GREEN after.\n**Completion criteria:** a child close writes a distilled Part-x-of-y narrative line to its parent decision record; raw-log dumps are rejected/avoided by the distillation step.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-25T17:48:18.049766+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T17:48:18.049829+00:00"
+  }
+}

@@ -56,3 +56,12 @@ NEXT (skills, still front-burner, the COMPLETE end-intent, order CC's choice):
   (T-skills-prune-deprecated-merge still open).
 - Phase B view-layer: T-uu-cli-dispatcher -> device-skills -> readfeed/alarms -> views-retire -> content-merge.
 PRIORITY UNCHANGED: skills -> DickSimnel -> Granny -> cleanup -> igor LAST. Igor-wild-0001 = archived Wild0.
+
+- D-decisions-as-guards-anchors-2026-06-25: decisions carry executable guards (immediate test) + parent-narrative anchor (decompose-by-intention, N-of-M, stamped parent invariant/rejected-alt, distilled rollup-on-close) so fresh contexts re-orient without a look-back instruction — T-decisions-as-guards-convention, T-sorted-decompose-by-intention-gate, T-child-close-narrative-rollup-to-parent, T-consequence-decisions-as-guards
+
+## Session close 2026-06-25 (skills Phase A + meta-design)
+Done: (1) Skills Phase A — correctness sweep + prune, guard-green (tests/test_skills_hygiene.py), pushed ec7ae52d/2a4dcb53; 3 tickets closed.
+(2) Canonical questions corpus seeded — skills/questions/questions.json (84127d20).
+(3) HARD CORRECTION recorded: NO SKILLS SYNC EVER; single-source = directory SYMLINK (memory feedback_no_skills_sync_symlink; spec T-skills-single-source-flip).
+(4) Meta-design /sorted -> D-decisions-as-guards-anchors-2026-06-25 (4 tickets): decisions carry executable guards (immediate test, vs consequence=delayed) + parent-narrative anchor (decompose-by-intention, N-of-M, stamped parent invariant/rejected-alt, distilled rollup-on-close) so fresh contexts re-orient WITHOUT a look-back instruction.
+Next: skills STILL front-burner. The move that makes Phase A fixes live + permanently kills the dual-location bug = SYMLINK single-source flip (T-skills-single-source-flip) — NOT sync, Akien sign-off. Then prune remainder (fold /sprint, igor-diagnose vs diagnose) + Phase B uu CLI (T-uu-cli-dispatcher -> device-skills -> readfeed/alarms -> views-retire -> content-merge). Decisions-as-guards tickets ready when picked. Priority unchanged: skills -> DickSimnel -> Granny -> cleanup -> igor LAST.

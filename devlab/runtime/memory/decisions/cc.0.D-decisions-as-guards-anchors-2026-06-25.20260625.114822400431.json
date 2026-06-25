@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.D-decisions-as-guards-anchors-2026-06-25.20260625.114822400431",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-decisions-as-guards-anchors-2026-06-25"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-25T11:48:22.400431",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-decisions-as-guards-anchors-2026-06-25",
+    "title": "Decisions carry their own guards + a parent-narrative anchor, so fresh contexts re-orient without a look-back instruction",
+    "status": "open",
+    "date": "2026-06-25",
+    "source": "design conversation 2026-06-25 (post-skills-Phase-A; triggered by CC repeatedly drifting from durable decisions despite having them loaded)",
+    "spawned_tickets": [
+      "T-decisions-as-guards-convention",
+      "T-sorted-decompose-by-intention-gate",
+      "T-child-close-narrative-rollup-to-parent",
+      "T-consequence-decisions-as-guards"
+    ],
+    "hypothesis": "After this ships, a multi-ticket decision can't be filed without intention-children; each child carries the parent's invariant + rejected-alternative + an N-of-M marker (stamped from one source, not copied); on close a distilled narrative rolls up to the parent; and decisions with checkable invariants ship an executable guard. A fresh/post-compact/minion context working a child re-orients from the parent anchor without reading the conversation.",
+    "measurement_signal": "A fresh-context worker cites the parent invariant/rejected-alternative without being told to look back; a regression re-proposing a rejected mechanism is caught by a RED guard (test/audit finding) instead of reaching a proposal. Tracked via: guards filed per decision, children carrying stamped parent anchors, and the consequence ticket checking drift-recurrence.",
+    "goal_link": "none (process meta-improvement) — serves the standing self-improving-process direction: the build process re-orients without drift (CP4 make-it-suck-less; observability/narrative-visibility north star).",
+    "text": "PROBLEM: CC drifted from decisions it already had (re-extended a sweep onto archived Wild0; nearly re-proposed skills-sync — the exact mechanism a decision had rejected). The info was loaded; signal lost to conversational noise. INSIGHT: don't add a 'look back' instruction (skippable); make the anchor unavoidable on the work path. TWO COMPLEMENTARY MOVES: (1) Decisions-as-guards — a checkable invariant or rejected-alternative becomes an EXECUTABLE guard (test/audit check), the immediate decision-test, distinct from the consequence ticket which is the delayed outcome-test. Exemplar: tests/test_skills_hygiene.py. (2) Parent-narrative anchor — a decision is an intention raised to hypothesis level; a multi-ticket decision is gated until decomposed by intention; children are stamped 'Part N of M, parent=D-x' + the parent invariant + rejected-alternative (stamped from the single source, never hand-copied — copying is the drift disease); on child close a DISTILLED 'what happened' narrative rolls up to the parent, which becomes the anchor a fresh executor reads first. WHY IT WORKS: narrow fresh context (minion, or post-compact CC) anchored by a self-carrying ticket = the same noise-filter as Akien's double-compact observation; strip accumulated reasoning, keep the durable skeleton. Minions-do-the-build is gated on free inference; near-term the executable form is 'crystallize at the design->build boundary, execute in narrow /sprint-ticket context, not freeform'. The distillation filter ('what would the next child need to know?') is itself a questions-corpus heuristic — structure and taught-question converge."
+  }
+}
