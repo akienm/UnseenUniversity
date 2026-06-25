@@ -173,3 +173,20 @@ FILED (all decision_id=D-skills-two-products):
   - T-uu-readfeed AMENDED + GATED on T-per-device-log-hierarchy: personal=webchat, info/warn/debug=log-hier, warn added,
     private deferred; CLI mirror of the web feed buttons.
 NEW chain to wrap Phase B: T-per-device-log-hierarchy → (readfeed CLI ‖ web-feed-buttons) → views-retire → workflow-index.
+
+## Session close 2026-06-25 (Phase B — dispatcher + device-skills L, /savestate for compact)
+Done: Phase B of D-skills-two-products advanced hard. (1) uu CLI dispatcher (M) DONE+PROVEN — bin/uu
+  zero-inference `uu <verb>` reading the FS STORE (not DB); first-token+passthrough convention. (2)
+  device-skills mechanism (L) DONE+PROVEN — uu device/<device> dispatch, bin/skills failover,
+  unique-name load check; igor pilot migrated OUT of ~/.claude into devices/igor/{bin,skills}/
+  (diagnose+map skills, state bin), ~/.claude copies deleted. (3) Filed T-db-scrub-build-artifacts
+  (stale build artifacts must be scrubbed from DB + redirect-to-fs-store). (4) Readfeed design
+  clarified with Akien: personal=existing webchat channel; info/warn/debug=unbuilt per-device log
+  home ~/.unseen_university/logs/<device>/; private deferred; warn added; shim owns web page
+  (console pane retires for per-channel buttons). Filed T-per-device-log-hierarchy +
+  T-device-web-feed-channel-buttons; amended+gated T-uu-readfeed. 8 commits, tree clean, pushed (HEAD bdea579a).
+Next: T-per-device-log-hierarchy (M) — unified per-device log home + info/warn/debug + CLAUDE.md reconcile
+  (datacenter_logs→~/.unseen_university/logs). Unblocks readfeed CLI ‖ web-feed-buttons → views-retire →
+  workflow-index = D-skills-two-products fully wrapped. Priority unchanged: skills → DickSimnel → Granny → cleanup → igor LAST.
+NOTE: skills/savestate/run is BROKEN (NameError: uu_home not defined — missing import); the /savestate
+  close path errors. Flushed to slate manually. Worth a quick fix ticket.
