@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-savestate-run-nameerror-fix.20260625.151957879574",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-savestate-run-nameerror-fix"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T21:19:57.879574+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products"
+    ],
+    "tickets": [
+      "T-savestate-run-nameerror-fix"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-savestate-run-nameerror-fix",
+    "title": "[in_progress] Fix savestate run: module-level NameError + stale holdovers",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "BugFix"
+    ],
+    "decision_id": "D-skills-two-products",
+    "gate": null,
+    "priority": 0.65,
+    "intention": "I intend that the canonical /savestate close path runs without crashing, so session state always flushes to the slate.",
+    "description": "skills/savestate/run called uu_home() at module scope (line 15) while only importing it inside _cc_tools() — a NameError that crashed EVERY `python run close/midstream/close-header` before main() ran, breaking the canonical /savestate close path. Plus stale holdovers: var named IGOR_HOME, _cc_tools pointed at retired lab/claudecode, and the documented close-header mode was unimplemented (would garble in_flight).\n\n**Affected files:** skills/savestate/run; tests/test_savestate_run.py.\n**Design rules:** CP6 (a flush must never hard-fail — guarded import fallback); devlab not lab; canonical /savestate path must work.\n**Scope boundary:** IN — module-level import w/ resilient fallback, IGOR_HOME→UU_HOME, lab→devlab/claudecode, implement close-header mode. OUT — broader savestate redesign.\n**Test plan:** subprocess-run the script hermetically (UU_MEMORY_ROOT→tmp): close-header exits 0 + writes Done/Next; midstream exits 0 with no NameError. Red on the broken script, green on the fix.\n**Completion criteria:** `python run close/midstream/close-header` all run without NameError; close-header writes a session-close summary to the slate; proof red->green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "in_progress",
+    "created_at": "2026-06-25T21:19:55.304589+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T21:19:55.350636+00:00"
+  }
+}
