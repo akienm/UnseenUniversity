@@ -75,3 +75,14 @@ def test_swarm_hostname_prefers_env_then_hostname(monkeypatch):
     assert identity.swarm_hostname() == "swarm-x"
     monkeypatch.delenv("IGOR_SWARM_NAME", raising=False)
     assert identity.swarm_hostname() == socket.gethostname()
+
+
+def test_instance_id_prefers_env_then_canonical_default(monkeypatch):
+    # T-uu-sweep-instance-name: the portable instance-folder resolver follows the
+    # IGOR_INSTANCE_ID override at CALL time, and falls back to the canonical default
+    # when unset (total — it resolves a path, not a credential, so it never raises).
+    from unseen_university import identity
+    monkeypatch.setenv("IGOR_INSTANCE_ID", "Igor-proof-9999")
+    assert identity.instance_id() == "Igor-proof-9999"
+    monkeypatch.delenv("IGOR_INSTANCE_ID", raising=False)
+    assert identity.instance_id() == "Igor-wild-0001"

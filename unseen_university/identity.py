@@ -87,3 +87,8 @@ def swarm_hostname() -> str:
     failure mode, since the hostname is always discoverable.
     """
     return os.environ.get("IGOR_SWARM_NAME") or socket.gethostname()
+
+
+def instance_id() -> str:
+    # STUB (stub-first proof, T-uu-sweep-instance-name) — becomes the IGOR_INSTANCE_ID read in the fix commit.
+    return "Igor-wild-0001"
