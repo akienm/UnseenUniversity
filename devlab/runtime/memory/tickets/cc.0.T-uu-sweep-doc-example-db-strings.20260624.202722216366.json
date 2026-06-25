@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-uu-sweep-doc-example-db-strings.20260624.202722216366",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-sweep-doc-example-db-strings"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T02:27:22.216366+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-uu-config-identity-layer-2026-06-22"
+    ],
+    "tickets": [
+      "T-uu-sweep-doc-example-db-strings"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-sweep-doc-example-db-strings",
+    "title": "[sprint] Update illustrative DB-connection-string doc-examples to unseen_university identity",
+    "size": "S",
+    "tags": [
+      "Migration",
+      "Docs"
+    ],
+    "decision_id": "D-uu-config-identity-layer-2026-06-22",
+    "gate": null,
+    "priority": 0.3,
+    "status": "sprint",
+    "intention": "I intend that illustrative DB-connection-string examples in source reflect the post-rename substrate identity (unseen_university), so a reader copying an example reaches the real role/DB and is not misled by the retired igor/Igor-wild-0001 name.",
+    "description": "**Problem:** ~18 non-test source files carried illustrative DB-connection-string examples (`postgresql://igor:<password>@.../Igor-wild-0001`) that predate the role/DB rename to unseen_university. These are doc-examples with `<password>`/`...` placeholders, distinct from (a) instance-folder identity `Igor-wild-0001` which must STAY, and (b) executable skill psql (separate ticket T-uu-sweep-skill-psql-creds).\n\n**Shape:** In connection-string context only, `igor:` -> `unseen_university:` and the host-suffixed `/Igor-wild-0001` -> `/unseen_university`; keep `<password>`/`<instance-db>` placeholders; leave every instance-identity `Igor-wild-0001` (IGOR_INSTANCE_ID, `~/.unseen_university/Igor-wild-0001`, instance-folder docstrings) untouched.\n\n**Affected files:** devices/igor/paths.py (line 68 only), devices/queue/mcp_server.py, devlab/claudecode/slate_manager.py, devlab/claudecode/seed_layer3_*.py + seed_layer4_*.py (13), docs/palace_schema.md, scripts/palace_bootstrap.py.\n**Design rules:** no live creds in source; preserve instance-identity (negative check).\n**Scope boundary:** IN — illustrative examples with placeholders. OUT — tests/ (dead fallback, harmless), skill executable psql (T-uu-sweep-skill-psql-creds), historical handoff .md, *.template/*.example.\n**Test plan:** no red/green lever for illustrative text -> shipped-unproven. Verification: positive `grep -rn 'postgres(ql)?://igor:'` over the Category-1 files = zero; negative — instance-identity Igor-wild-0001 lines intact.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-25T02:27:19.991845+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T02:27:20.037884+00:00"
+  }
+}

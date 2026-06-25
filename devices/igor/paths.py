@@ -65,7 +65,7 @@ class _BootstrapPathManager:
                 "UU_HOME_DB_URL environment variable not set. "
                 "Export it to the Postgres connection string for this "
                 "instance (e.g. "
-                "postgresql://igor:<password>@127.0.0.1/<instance-db>)."
+                "postgresql://unseen_university:<password>@127.0.0.1/<instance-db>)."
             )
         return url
 

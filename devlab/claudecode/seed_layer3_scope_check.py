@@ -17,7 +17,7 @@ with the execution loop.
 
 Usage:
     cd ~/TheIgors && source venv/bin/activate
-    UU_HOME_DB_URL=postgresql://igor:<password>@127.0.0.1/Igor-wild-0001 \\
+    UU_HOME_DB_URL=postgresql://unseen_university:<password>@127.0.0.1/unseen_university \\
         python claudecode/seed_layer3_scope_check.py
 
 Verify:

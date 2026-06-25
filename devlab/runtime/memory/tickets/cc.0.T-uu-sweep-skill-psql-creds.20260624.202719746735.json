@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-uu-sweep-skill-psql-creds.20260624.202719746735",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-uu-sweep-skill-psql-creds"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T02:27:19.746735+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products-2026-06-23"
+    ],
+    "tickets": [
+      "T-uu-sweep-skill-psql-creds"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-uu-sweep-skill-psql-creds",
+    "title": "[sprint] De-hardcode dead DB creds in skill SKILL.md psql commands",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Migration",
+      "Security"
+    ],
+    "decision_id": "D-skills-two-products-2026-06-23",
+    "gate": "T-skills-content-merge-survivors",
+    "priority": 0.35,
+    "status": "sprint",
+    "intention": "I intend that no skill embeds a live-or-dead DB credential literal: every skill psql command reads the connection string from $UU_HOME_DB_URL (or the skill's home_db_url() equivalent), so a future password rotation or role rename never breaks or re-leaks through a skill.",
+    "description": "**Problem (orphaned scope — nobody owns it):** ~12 skills/*/SKILL.md embed EXECUTABLE psql commands carrying the now-dead `postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001`. After the 2026-06-24 role/DB rename (igor/Igor-wild-0001 -> unseen_university) these commands are BROKEN, and they still carry a dead credential literal in source. The closed T-uu-sweep-db-connection-string explicitly named 'skill-doc psql' as OUT of scope; T-skills-content-merge-survivors explicitly defers env-var de-hardcoding to 'the T-uu-sweep-* sweeps' — so this falls between the two. This ticket gives it an owner. It is effectively the 5th drift axis (DB-connection-string) on the skills harmonization, not captured by the recorded 4 (theigors->uu, /decided->/sorted, .dsb->fs-store, ~/TheIgors->UU).\n\n**Shape:** In each skill's run-script / SKILL.md psql, replace the hardcoded URL with an env read: `psql \"$UU_HOME_DB_URL\"` (shell) or `identity.home_db_url()` (python snippets) — NEVER write the new live password into source (that re-leaks exactly what the rotation killed). Do this DURING the skills-rework so it is not double-work; gated behind T-skills-content-merge-survivors so it lands on the final survivor set.\n\n**Affected files:** skills/{day-close,goal,outcome,audit-day,audit-goal,audit-hypothesis,concept,day-close-audit,eval-run,question,sprint-batch,weekly-retro}/SKILL.md (the executable-psql carriers; exact set via `git grep -ln 'igor:choose_a_password' skills/`).\n**Design rules:** no live keys or passwords in source (CLAUDE.md hard rule); behavior-preserving (command must still run, now via env).\n**Scope boundary:** IN — skill psql commands read creds from env. OUT — the illustrative `<password>`-placeholder doc-examples in devices/devlab/docs/scripts (already done, T-uu-sweep-doc-example-db-strings); the broader content-merge axes.\n**Test plan:** `git grep -n 'igor:choose_a_password' skills/` returns zero; spot-run one converted skill psql against the live DB (connects as unseen_university).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-25T02:27:17.459621+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T02:27:17.507837+00:00"
+  }
+}

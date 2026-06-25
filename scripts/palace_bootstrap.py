@@ -241,7 +241,7 @@ def _seed_rows() -> list[tuple]:
                 "Igor's palace lives in TheIgors Postgres, table memory_palace (clan schema).\n"
                 "It is NOT merged into this database — federation via pointer only.\n\n"
                 "Query Igor's palace:\n"
-                "  psql postgresql://igor:<password>@127.0.0.1/Igor-wild-0001 \\\n"
+                "  psql postgresql://unseen_university:<password>@127.0.0.1/unseen_university \\\n"
                 "    -c \"SELECT path, title FROM memory_palace WHERE path LIKE 'unseenuniversity/%' ORDER BY path\"\n\n"
                 "Via MCP (when Igor running):\n"
                 "  memory_get(path='unseenuniversity/rules/coding')\n"
@@ -250,7 +250,7 @@ def _seed_rows() -> list[tuple]:
             node_type="pointer",
             tags=["theigors", "projects"],
             extra={
-                "pointer_to": "postgresql://igor@127.0.0.1/Igor-wild-0001 clan.memory_palace unseenuniversity/*"
+                "pointer_to": "postgresql://unseen_university@127.0.0.1/unseen_university clan.memory_palace unseenuniversity/*"
             },
         ),
     ]

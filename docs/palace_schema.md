@@ -274,7 +274,7 @@ Igor's palace lives in TheIgors postgres. It is **not merged** into this databas
 ```
 palace.projects.theigors
   title: TheIgors — federated palace pointer
-  content: Igor's palace is at postgresql://igor:...@127.0.0.1/Igor-wild-0001,
+  content: Igor's palace is at postgresql://unseen_university:...@127.0.0.1/unseen_university,
            table memory_palace, root path "unseenuniversity/".
            Query via: psql -c "SELECT path, title FROM memory_palace WHERE path LIKE 'unseenuniversity/%' ORDER BY path"
            Or via MCP tools when Igor is running: mcp__igor__memory_get(path=...)
