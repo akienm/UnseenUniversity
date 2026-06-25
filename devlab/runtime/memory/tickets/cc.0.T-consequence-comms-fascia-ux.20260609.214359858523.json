@@ -21,7 +21,7 @@
   },
   "body": {
     "id": "T-consequence-comms-fascia-ux",
-    "gate": "2026-06-23",
+    "gate": null,
     "role": "apprentice",
     "size": "S",
     "tags": [
@@ -45,6 +45,7 @@
     "required_files": [],
     "scraps_validated": "2026-06-09T21:43:59.858552+00:00",
     "target_difficulty": 1,
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "dispatched_at": null
   }
 }

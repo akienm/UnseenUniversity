@@ -23,7 +23,7 @@
   },
   "body": {
     "id": "T-consequence-concept-layer-and-tags",
-    "gate": "2026-06-09",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -47,6 +47,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "d7db5ad1-49c9-448a-b88f-5decdbc723a5",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

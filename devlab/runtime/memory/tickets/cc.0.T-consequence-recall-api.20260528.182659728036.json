@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-recall-api",
-    "gate": "2026-06-11",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -44,6 +44,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "906b9889-7ac7-4171-b18b-339d1b620250",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

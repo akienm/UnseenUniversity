@@ -21,7 +21,7 @@
   },
   "body": {
     "id": "T-consequence-memory-scope",
-    "gate": "2026-06-15",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -44,6 +44,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "51ad43cc-f194-4d6f-a08b-221a4850fd17",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

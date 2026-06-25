@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-uu-launcher",
-    "gate": "2026-06-11",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -44,6 +44,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "5be0c133-9dda-45bc-8f4f-2dcf00854bd4",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

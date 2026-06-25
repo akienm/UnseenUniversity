@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-reader-device",
-    "gate": "2026-06-11",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -44,6 +44,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "3143b179-d397-475a-9c9d-42e4fcbc7a7b",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-debug-skill",
-    "gate": "2026-06-11",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -44,6 +44,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "36e131f0-b958-4d24-9972-0e279e5ec5bf",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

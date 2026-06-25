@@ -21,7 +21,7 @@
   },
   "body": {
     "id": "T-consequence-D-granny-worker-registry",
-    "gate": "2026-06-16",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -48,6 +48,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "fcbc42d6-7615-4a5f-abda-9e3e921770ad",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

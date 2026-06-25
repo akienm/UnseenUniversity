@@ -11,6 +11,9 @@ NONE
 
 ## Done today
 
+- T-remove-autocompact-calls — Remove all /autocompact CALLS (skill itself stays) (Repo skills/ swept correct; guard green.)
+- T-uu-sweep-skill-psql-creds — De-hardcode dead DB creds in skill SKILL.md psql commands (Repo skills/ swept correct; guard green.)
+- T-day-close-audit-skill-stale-paths — BUG: day-close-audit (+ other skills) reference retired wild_igor/igor + lab/ paths (Repo skills/ swept correct; guard green.)
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via

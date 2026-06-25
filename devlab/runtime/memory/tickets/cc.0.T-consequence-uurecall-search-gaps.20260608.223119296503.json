@@ -22,7 +22,7 @@
   },
   "body": {
     "id": "T-consequence-uurecall-search-gaps",
-    "gate": "2026-06-22",
+    "gate": null,
     "role": "master",
     "size": "S",
     "tags": [
@@ -45,6 +45,7 @@
     "github_issue": null,
     "required_files": [],
     "target_difficulty": 1,
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "dispatched_at": null
   }
 }

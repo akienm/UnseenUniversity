@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-agent-notification-system",
-    "gate": "2026-06-21",
+    "gate": null,
     "role": "master",
     "size": "S",
     "tags": [
@@ -45,6 +45,7 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "204364fc-ecaa-4648-9953-0819f4b77715",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "dispatched_at": null
   }
 }

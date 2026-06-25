@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-cc-shim-assignment",
-    "gate": "2026-06-20",
+    "gate": null,
     "role": "master",
     "size": "S",
     "tags": [
@@ -46,6 +46,7 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "b68b014c-b7c4-4790-8126-2f23020d0b4a",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "dispatched_at": null
   }
 }

@@ -22,7 +22,7 @@
   },
   "body": {
     "id": "T-consequence-repo-auditor-device",
-    "gate": "2026-06-24",
+    "gate": null,
     "role": "apprentice",
     "size": "S",
     "tags": [
@@ -46,6 +46,7 @@
     "required_files": [],
     "scraps_validated": "2026-06-10T17:33:45.265500+00:00",
     "target_difficulty": 1,
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "dispatched_at": null
   }
 }

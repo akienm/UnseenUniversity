@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-D-constraints",
-    "gate": "2026-06-14",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -43,6 +43,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "09068651-2f2d-4e40-ad1d-f6f7f6ef2cfe",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

@@ -21,7 +21,7 @@
   },
   "body": {
     "id": "T-consequence-archivist-inference",
-    "gate": "2026-06-15",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -44,6 +44,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "ff86b27d-9129-4d26-b0ef-d85d1a5153c0",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

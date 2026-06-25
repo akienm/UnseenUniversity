@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-D-minion-escalation",
-    "gate": "2026-06-14",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -43,6 +43,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "2bcd0204-166a-4f2f-807c-ef4f14ed09cd",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

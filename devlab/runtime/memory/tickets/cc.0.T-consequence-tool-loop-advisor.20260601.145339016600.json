@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-tool-loop-advisor",
-    "gate": "2026-06-15",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -43,6 +43,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "7075aec3-e5cf-446d-8e58-17cddf66b093",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

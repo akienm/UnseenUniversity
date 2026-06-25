@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-role-ladder",
-    "gate": "2026-06-17",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -43,6 +43,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "ae7000e5-6af0-4847-83ff-fe1013caf611",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

@@ -23,7 +23,7 @@
   },
   "body": {
     "id": "T-consequence-prescient-agents",
-    "gate": "2026-06-15",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -46,6 +46,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "ec622f92-f59a-4b2b-9c49-3716d5c72aa7",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

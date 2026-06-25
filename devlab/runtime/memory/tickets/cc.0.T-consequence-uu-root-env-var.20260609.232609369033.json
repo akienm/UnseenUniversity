@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-uu-root-env-var",
-    "gate": "2026-06-23",
+    "gate": null,
     "role": "master",
     "size": "S",
     "tags": [
@@ -47,6 +47,7 @@
     "required_files": [],
     "purpose_category": "fact",
     "target_difficulty": 1,
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "dispatched_at": null
   }
 }

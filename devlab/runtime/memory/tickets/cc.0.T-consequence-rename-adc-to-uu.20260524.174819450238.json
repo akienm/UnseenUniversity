@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-rename-adc-to-uu",
-    "gate": "2026-06-07",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -44,6 +44,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "f31ecf7d-f17d-478c-bb9b-ffe3641a1575",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

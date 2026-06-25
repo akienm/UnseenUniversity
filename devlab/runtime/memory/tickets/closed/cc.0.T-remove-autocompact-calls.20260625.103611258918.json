@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-remove-autocompact-calls.20260625.103611258918",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-autocompact-calls"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T16:36:11.258918+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products-2026-06-23"
+    ],
+    "tickets": [
+      "T-remove-autocompact-calls"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-autocompact-calls",
+    "title": "Remove all /autocompact CALLS (skill itself stays)",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Cleanup"
+    ],
+    "decision_id": "D-skills-two-products-2026-06-23",
+    "gate": null,
+    "priority": 0.45,
+    "status": "closed",
+    "intention": "I intend that no skill fires /autocompact or uucompactclaude at block-end, because the CC platform's native compact is better and self-managing; the autocompact skill file remains for reference but nothing calls it.",
+    "description": "**Problem (Akien 2026-06-25):** skills call /autocompact (and the uucompactclaude tmux dance) at end-of-block. The native CC compact supersedes it — better and self-managing. Remove the CALLS; KEEP the autocompact skill file itself.\n\n**Shape:** In repo skills/ (canonical), remove the /autocompact invocation step from: savestate, day-close, sprint-batch, sprint-loop, sprint, sprint-ticket, fixit, available, context-load, and any workflow.md reference. Leave skills/autocompact/ intact. Where a skill's flow ended with 'then /autocompact', replace with a note that compaction is now native/self-managed (no call).\n\n**Affected files:** skills/{savestate,day-close,sprint-batch,sprint-loop,sprint,sprint-ticket,fixit,available,context-load}/SKILL.md, skills/workflow.md. NOT skills/autocompact/ (stays).\n**Design rules:** none apply (skill-text cleanup).\n**Scope boundary:** IN — remove calls in repo skills. OUT — the autocompact skill file; ~/.claude/skills copies (handled by the single-source flip).\n**Test plan:** guard test asserts no repo skill (excluding autocompact/) invokes /autocompact or uucompactclaude.\n**Completion criteria:** grep for /autocompact + uucompactclaude across skills/ (excl skills/autocompact/) returns zero invocation lines; autocompact skill file still present.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-25T16:36:09.187415+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "Repo skills/ swept correct; guard green.",
+    "dispatched_at": null,
+    "completed_at": "2026-06-25T17:17:16.756022+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T16:36:09.246905+00:00",
+    "proven": false,
+    "unproven_reason": "Verified by tests/test_skills_hygiene.py (ec7ae52d): RED on the drift in-session, GREEN after the sweep, runs in day-close. Missing lever: commit-bound red->green not captured (guard + sweep landed in one pass).",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}

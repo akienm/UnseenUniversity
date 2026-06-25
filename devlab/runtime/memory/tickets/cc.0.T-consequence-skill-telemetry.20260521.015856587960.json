@@ -21,7 +21,7 @@
   },
   "body": {
     "id": "T-consequence-skill-telemetry",
-    "gate": "2026-06-19",
+    "gate": null,
     "size": "S",
     "tags": [
       "Consequence",
@@ -46,6 +46,8 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "9c39a9d3-d650-4180-9fc6-1e4d36257660",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "role": "master",
+    "dispatched_at": null
   }
 }

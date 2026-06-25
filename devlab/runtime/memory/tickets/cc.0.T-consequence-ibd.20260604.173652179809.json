@@ -21,7 +21,7 @@
   },
   "body": {
     "id": "T-consequence-ibd",
-    "gate": "2026-06-18",
+    "gate": null,
     "role": "master",
     "size": "S",
     "tags": [
@@ -45,6 +45,7 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "6a790e5e-b028-40d6-aeba-84582635a066",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "dispatched_at": null
   }
 }
