@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.sprint-skill-selection-path.T-skills-prune-deprecated-merge.20260625.133643173724",
+  "emitter": "cc.0",
+  "namespace": [
+    "sprint-skill-selection-path",
+    "T-skills-prune-deprecated-merge"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-25T13:36:43.173724",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skills-prune-deprecated-merge"
+    ],
+    "commits": [
+      "00bb3fad4155f988c8fa8c0e0757c888a0fc79fd"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "/sprint skill selection path",
+    "intention": "Running /sprint selects the next ticket via /query-ticket (the canonical entry point), not by grepping cc_queue.py list directly",
+    "test": "tests/test_skills_hygiene.py::test_sprint_selects_via_query_ticket",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_skills_hygiene.py::test_sprint_selects_via_query_ticket",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____________________ test_sprint_selects_via_query_ticket _____________________\n\n    def test_sprint_selects_via_query_ticket():\n        # /sprint is a thin alias: selection MUST route through /query-ticket, the\n        # canonical \"what's next\" entry point — never a raw cc_queue.py list grep\n        # (CLAUDE.md workflow rule; T-skills-prune-deprecated-merge fold). Scoped to\n        # the sprint skill so legitimate cc_queue.py list callers (ticket, etc.) pass.\n        sprint = (_SKILLS / \"sprint\" / \"SKILL.md\").read_text()\n>       assert \"/query-ticket\" in sprint, \"/sprint must select via /query-ticket\"\nE       AssertionError: /sprint must select via /query-ticket\nE       assert '/query-ticket' in '---\\nname: sprint\\ndescription: Claim a ticket, work it, commit, close it. Args: \"last\", ticket ID, or empty (next in...\\n- All execution logic (inertia check, build, test, commit, close) is in /sprint-ticket — don\\'t duplicate it here.\\n'\n\ntests/test_skills_hygiene.py:94: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_skills_hygiene.py::test_sprint_selects_via_query_ticket - A...\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "00bb3fad4155f988c8fa8c0e0757c888a0fc79fd",
+    "impl_paths": [
+      "skills/sprint/SKILL.md"
+    ],
+    "ticket": "T-skills-prune-deprecated-merge",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
