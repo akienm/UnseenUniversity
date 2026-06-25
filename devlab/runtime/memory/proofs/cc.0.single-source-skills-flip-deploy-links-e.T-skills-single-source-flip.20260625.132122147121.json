@@ -1,0 +1,61 @@
+{
+  "id": "cc.0.single-source-skills-flip-deploy-links-e.T-skills-single-source-flip.20260625.132122147121",
+  "emitter": "cc.0",
+  "namespace": [
+    "single-source-skills-flip-deploy-links-e",
+    "T-skills-single-source-flip"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-25T13:21:22.147121",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-skills-single-source-flip"
+    ],
+    "commits": [
+      "60c72cdc58089ca05b0ae3d0aa626374d9be2fb9"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "single-source skills flip — deploy links each managed skill to repo master",
+    "intention": "deploy_skills links each managed skill as a symlink to the repo master instead of copying it, so the repo and ~/.claude/skills cannot drift",
+    "test": "tests/test_skills_single_source_proof.py::test_deploy_links_managed_skill_to_master",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_skills_single_source_proof.py::test_deploy_links_managed_skill_to_master",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "                    },\n                }\n            )\n        )\n    \n        target = tmp_path / \"claude_skills\"\n        deploy_skills(master_root=master, target=target, manifest_path=manifest)\n    \n        # The cure: deploy LINKS, it does not COPY. A copy would be a real dir and\n        # would drift; a link always resolves to the one canonical source.\n>       assert (target / \"alpha\").is_symlink(), \"deploy must link the skill, not copy it\"\nE       AssertionError: deploy must link the skill, not copy it\nE       assert False\nE        +  where False = is_symlink()\nE        +    where is_symlink = (PosixPath('/tmp/pytest-of-akien/pytest-84/test_deploy_links_managed_skil0/claude_skills') / 'alpha').is_symlink\n\ntests/test_skills_single_source_proof.py:48: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_skills_single_source_proof.py::test_deploy_links_managed_skill_to_master\n1 failed in 0.14s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "60c72cdc58089ca05b0ae3d0aa626374d9be2fb9",
+    "impl_paths": [
+      "devices/installer/backends.py",
+      "skills/manifest.json",
+      "skills/skills-sync/run",
+      "tests/installer/test_installer_shim.py",
+      "tests/test_skill_deploy.py"
+    ],
+    "ticket": "T-skills-single-source-flip",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
