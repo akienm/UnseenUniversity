@@ -124,3 +124,19 @@ held stale creds — they die with the kill. Fresh session gets clean MCP env.
 
 ## In-flight
 NONE (rename closed). Fresh-session TODO = the 2 OWED items above.
+
+## Session 3 (post-compact 2026-06-24 ~20:30) — owed-items cleared
+DONE (pushed origin/main @ a8530877):
+- Doc-example sweep CLOSED shipped-unproven (T-uu-sweep-doc-example-db-strings, df3620c2):
+  18 non-test source files' illustrative DB-string examples igor:->unseen_university: /
+  /Igor-wild-0001->/unseen_university (conn-string context ONLY). Placeholders + every
+  instance-identity Igor-wild-0001 left intact. Positive grep zero + negative check clean.
+- Decision amend (append-only) D-uu-config-identity-layer-2026-06-22: role+DB landed
+  substrate-owned unseen_university (NOT akien/${IGOR_NAME}); rename done now not deferred.
+- FILED T-uu-sweep-skill-psql-creds (advisor catch — the orphaned 5th drift axis): executable
+  skill psql still on dead igor:choose_a_password; owned by neither the closed conn-string
+  sweep nor content-merge. Gated behind T-skills-content-merge-survivors -> Friday skills-rework,
+  env-based fix (NEVER write the live pw into source).
+NEXT (env-vars phase tail, then Friday): T-uu-sweep-instance-name + T-uu-sweep-hostname
+(instance-folder routing-to-resolver, still OPEN) -> then skills cluster D-skills-two-products
+(Friday presentation) -> then launchers.
