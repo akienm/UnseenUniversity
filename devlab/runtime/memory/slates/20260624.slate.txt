@@ -21,6 +21,7 @@
 - T-uu-rename-role-and-db — Rename DB role igor->akien (employer) + DB Igor-wild-0001->${IGOR_NAME} (deferrable) (Live rename igor/Igor-wild-0001 -> unseen_university (role+DB), password reset, pg_hba LAN line fixed; verified: new ide)
 - T-uu-sweep-doc-example-db-strings — Update illustrative DB-connection-string doc-examples to unseen_university identity (Updated 18 non-test source files' illustrative DB-string examples (igor:->unseen_university:, /Igor-wild-0001->/unseen_u)
 - T-uu-sweep-hostname — Sweep: akiendelllinux → hostname resolver; fix tree_index.py:38 baked default (akiendelllinux de-hardcoded to identity.swarm_hostname() resolver: tree_index._machine_id() + seed_persistent_relationsh)
+- T-uu-sweep-instance-name — Sweep: standalone Igor-wild-0001 → IGOR_NAME resolver (value-preserving) (Added portable identity.instance_id() (IGOR_INSTANCE_ID override, call-time, total/canonical default); routed 8 behavior)
 ## Notes
 - Skills-harmony design (D-skills-two-products-2026-06-23) — Akien reading the 2 ref docs; may revise. Ticketed his dispositions 2026-06-24 (pre-/sorted capture):
   - EXPANDED T-skills-prune-deprecated-merge: + retire /recover (supersedes T-recover-skill-message-wording), /question, /concept, /autocompact+uucompactclaude (new Anthropic compact obsoletes it), /migrate-decisions (backfill spent).

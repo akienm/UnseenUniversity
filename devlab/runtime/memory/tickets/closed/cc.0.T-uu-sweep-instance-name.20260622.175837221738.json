@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-uu-sweep-instance-name",
-    "title": "[in_progress] Sweep: standalone Igor-wild-0001 → IGOR_NAME resolver (value-preserving)",
+    "title": "Sweep: standalone Igor-wild-0001 → IGOR_NAME resolver (value-preserving)",
     "size": "L",
     "tags": [
       "Config",
       "Portability"
     ],
-    "status": "in_progress",
+    "status": "closed",
     "priority": 0.5,
     "decision_id": "D-uu-config-identity-layer-2026-06-22",
     "gate": null,
@@ -35,14 +35,21 @@
     "created_at": "2026-06-22T23:58:36.190823+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Added portable identity.instance_id() (IGOR_INSTANCE_ID override, call-time, total/canonical default); routed 8 behavioral baked-literal sites outside devices/igor/ to it (web_server/scraps/dicksimnel/claude/devlab x4). Proof c8010712 red=AssertionError green=passed. RESIDUAL Igor-wild-0001 in live files is BY DESIGN: audit_check_hardcoded_instance.py (the arbiter, scans devices/igor/) stays PASS — all devices/igor/ refs are the settled exempt canonical home (paths.py/node_id/docstrings); the literal also lives once in identity.instance_id() as the portable canonical default. Docstrings/templates/bootstrap-shell/UI-defaults left illustrative. NOT routed to igor_name() (raises; IGOR_INSTANCE_ID is the documented override tests set) nor paths().instance_id (device-coupling). Value-preserving on this box. Pre-existing integration failures (circuit_breaker/announce — live IMAP/skeleton) confirmed on clean baseline, not mine.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-25T03:11:15.547911+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-22T23:58:36.190869+00:00"
+    "scraps_validated": "2026-06-22T23:58:36.190869+00:00",
+    "proven": true,
+    "proof_id": "cc.0.identity-instance-id-resolver-t-uu-sweep.T-uu-sweep-instance-name.20260624.211102865499",
+    "proof_commit": "c80107125741245f40d985e126cd0019ffa875b7",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
