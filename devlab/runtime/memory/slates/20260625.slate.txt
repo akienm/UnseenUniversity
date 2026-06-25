@@ -21,6 +21,7 @@ NONE
 - T-skills-deadstep-followup — Decide fate of 3 never-built day-close helper scripts (All 3 never-built helper-script intents RETIRED — each superseded by an existing mechanism, no capability lost, nothing )
 - T-uu-cli-dispatcher — uu <verb> dispatcher — zero-inference view/control CLI (Built bin/uu — zero-inference uu <verb> dispatcher. First-token dispatch + shift + "$@" passthrough (the convention the )
 - T-device-skills-via-uu-device — Device skills fold into uu device <dev> <verb> [<noun>] + /device <dev> <verb> (Built the uu device <dev> <verb> dispatch mechanism (the two-products split at the device boundary) + /device CC-facing )
+- T-savestate-run-nameerror-fix — Fix savestate run: module-level NameError + stale holdovers (Fixed skills/savestate/run: (1) module-level NameError — uu_home() was called at module scope while imported only inside)
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
