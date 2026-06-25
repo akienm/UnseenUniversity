@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-uu-sweep-hostname",
-    "title": "[sprint] Sweep: akiendelllinux → hostname resolver; fix tree_index.py:38 baked default",
+    "title": "[in_progress] Sweep: akiendelllinux → hostname resolver; fix tree_index.py:38 baked default",
     "size": "M",
     "tags": [
       "Config",
       "Portability"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.5,
     "decision_id": "D-uu-config-identity-layer-2026-06-22",
     "gate": null,
