@@ -84,3 +84,14 @@ The drift cure is LIVE. No more two-copies. Commits f3a2d44d (cure) · e17611f1 
 REMAINING (D-skills-two-products): T-skills-prune-deprecated-merge (deprecated deleted ✓; STILL TODO: fold
   /sprint→query-ticket+sprint-ticket, resolve igor-diagnose vs diagnose). Phase B uu CLI view-layer
   (T-uu-cli-dispatcher → device-skills → readfeed/alarms → views-retire). recover repo-status = Phase-A follow-up.
+
+## Session close 2026-06-25 (skills single-source flip, post-compact, "do it right now")
+Done: Single-source flip COMPLETE & PROVEN. 49 managed skills ~/.claude/skills/ flipped from drifted
+  copies → symlinks into repo (f3a2d44d cure). Installer deploy converted copy→symlink so drift can't
+  return (e17611f1 door). Proof: test_skills_single_source_proof.py red→green (60c72cdc + 0776144c).
+  Deprecated cognition-debug/debug-pe-chain deleted. Igor-runtime/view skills preserved local-only.
+  Closed T-skills-single-source-flip (proven) & T-skills-content-merge-survivors (shipped-unproven:
+  repo-canonical verified). Tree clean. All 5 commits pushed.
+Next: T-skills-prune-deprecated-merge (fold /sprint→query-ticket+sprint-ticket, igor-diagnose vs
+  diagnose) + Phase B uu CLI (T-uu-cli-dispatcher). Skills still front-burner (Friday work demo).
+  Priority order unchanged: skills → DickSimnel → Granny → cleanup → igor LAST.
