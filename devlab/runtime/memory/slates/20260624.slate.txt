@@ -3,8 +3,7 @@
 ## Notes
 
 ## In-flight
-NONE
-
+NONE — T-uu-config-profile-db-creds closed (proven). Env-vars phase: rename-role-and-db or profile-loader remaining. Tree CLEAN.
 ## Planned
 
 ## Ad hoc
@@ -49,8 +48,7 @@ NONE
 - /sorted LOCKED D-skills-two-products-2026-06-23 (amended for 2026-06-24 design). advisor-reviewed the L. Reconciled (not re-filed): discarded dup T-readfeed-generalizes-readigor; repointed pre-existing T-uu-readfeed -> /device igor feed (gated on device mechanism); rewrote T-device-skills-via-uu-device as DISPATCH MECHANISM (bin/+skills/ failover, unique-name-per-device, /device thin-shim over uu device, igor skills move INTO devices/igor/{bin,skills}/), gated on T-uu-cli-dispatcher; amended T-skills-single-source-flip (per-skill ~/.claude symlinks + collision->system_alarm, fork #1 overrides project-scope-primary); added uu help to dispatcher; amended T-consequence (device collisions + symlink clashes); populated decision spawned_tickets (13) + fixed measurement signal (uu device igor feed). Filed T-cc-queue-list-hides-tickets (visibility bug that made the dup).
 
 ## In-flight (pre-compact)
-D-skills-two-products LOCKED (13 tickets) — ready to sprint, nothing mid-work. NEXT when resuming: T-uu-cli-dispatcher (#1, unblocked foundation) + T-skills-prune-deprecated-merge (#8) give working Friday demos; or sprint after the talk. Plus standalone T-cc-queue-list-hides-tickets (the list-hides-tickets bug — fix early, it makes the pre-file check unreliable).
-
+NONE — T-uu-config-profile-db-creds closed (proven). Env-vars phase: rename-role-and-db or profile-loader remaining. Tree CLEAN.
 ## Notes — stale-skill cleanup (2026-06-24, Akien spotted via context-load)
 - Skills predate the canonical-memory consolidation. Two work items, both under D-skills-two-products:
   - T-day-close-audit-skill-stale-paths (amended): MECHANICAL path-token sweep, ~14 survivors, EXCLUDE retirees (recover/question/concept/autocompact/migrate-decisions/goal/audit-goal/cognition-debug/debug-pe-chain), target repo skills/ (flip inherits), sequence after prune. Delegate-to-cheaper-agent candidate.
@@ -66,9 +64,7 @@ D-skills-two-products LOCKED (13 tickets) — ready to sprint, nothing mid-work.
 - T-uu-env-coverage-audit CLOSED shipped-unproven. Env-vars work is now TOP priority (Akien: skills depend on env being right). Checklist: notes/env-coverage-audit-2026-06-24. FINDING: composed UU_HOME_DB_URL reaches only interactive shells; GAPS = ground_loop.service (no DB URL, can't source bash profile), 8 crons (no .bashrc; several on retired TheIgors/lab/tmp paths), 25 IGOR_HOME_DB_URL readers (processor never sets that name). Filed T-uu-env-file-for-noninteractive (env-delivery mechanism = sweep blocker) + T-uu-dburl-name-unify. Corrected inverted gate: sweep+rotate now gate on the env-file mechanism. Three sweeps remain (db-connection-string L, instance-name L, hostname M) = delegate-to-cheaper-agent.
 
 ## In-flight (restart-ready)
-T-uu-eliminate-igor-home-env [in_progress, L] — FULLY SPEC'D IN THE TICKET, ready to execute. Plan: add uu_home() to unseen_university/_uu_root.py (env-free, CALL-TIME so the test seam = monkeypatch uu_home); convert 16 source IGOR_HOME readers -> uu_home() / igor shim+device -> _igor_paths().instance (drop env override); update ~15 test isolation seams (setenv IGOR_HOME -> monkeypatch uu_home — ALL rack/infra, none deleted; SKIP test_context_load_violation_summary = owned by T-context-load-violation-summary-missing); CLAUDE.md two->one canonical env var; processor + ~/bin/_igor_common.sh + ground_loop.service unit drop IGOR_HOME. EXCLUDE IGOR_HOME_SEARCH_PATH + IGOR_HOMEOSTATIC_*. Then proof (uu_home returns data dir + ignores IGOR_HOME env; affected suites green) + close. NOTE: devices/igor/<instance> runtime restructure is a SEPARATE coming ticket.
-ENV-VARS PHASE remaining after this: T-uu-env-file-for-noninteractive (sweep blocker), T-uu-dburl-name-unify, then the 3 big delegate-sweeps (db-connection-string/instance-name/hostname), rotate, rename.
-
+NONE — T-uu-config-profile-db-creds closed (proven). Env-vars phase: rename-role-and-db or profile-loader remaining. Tree CLEAN.
 ## Done today (2026-06-24 session 2)
 - T-uu-eliminate-igor-home-env CLOSED PROVEN (5e828ee8 + proof). uu_home() env-free/call-time resolver replaces the IGOR_HOME env var across 30 source readers (unseen_university/ + devices/ + devlab/claudecode/ — initial grep missed devlab/claudecode, caught via skill_telemetry/cost_to_close still passing); igor shim/device -> _igor_paths().instance. 18 test isolation seams moved setenv(IGOR_HOME) -> monkeypatch(uu_home), ALL rack/infra (none deleted, none were igor-self-programming). CLAUDE.md two->one canonical env var. processor + ground_loop units (repo + installed ~/.config copy) drop IGOR_HOME. Excludes IGOR_HOME_SEARCH_PATH + IGOR_HOMEOSTATIC_*. NOTE: installed ground_loop unit edited but daemon-reload not needed (uu_home env-free = the line was inert). devices/igor/<instance> runtime restructure = SEPARATE coming ticket.
 - Dogfooded: post-restart venv active (launcher fix works); context-load fix surfaced decisions from the executor. Confirmed ~/.claude/skills/context-load still STALE (single-source flip needed — Skill tool loads the old psql copy).
