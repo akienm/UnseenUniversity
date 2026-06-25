@@ -26,6 +26,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+from unseen_university.identity import instance_id
 
 
 def _adc_home() -> Path:
@@ -43,7 +44,7 @@ def _session_name() -> str:
 def target_log_path(now: datetime, adc_home: Path | None = None) -> Path:
     """Compute the expected console log path for the given date."""
     home = adc_home or _adc_home()
-    return home / "logs" / "Igor-wild-0001" / f"{now.strftime('%Y-%m-%d')}.console.md"
+    return home / "logs" / instance_id() / f"{now.strftime('%Y-%m-%d')}.console.md"
 
 
 def tmux_session_exists(session: str) -> bool:

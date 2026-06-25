@@ -15,6 +15,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from unseen_university.identity import instance_id
 
 import psycopg2
 
@@ -22,7 +23,7 @@ from devices.scraps.purpose_classifier import classify_purpose
 
 _log = logging.getLogger(__name__)
 
-_CHATS_ROOT = Path.home() / ".unseen_university" / "Igor-wild-0001" / "chats"
+_CHATS_ROOT = Path.home() / ".unseen_university" / instance_id() / "chats"
 _MAX_TURN_LEN = 2000  # Skip very long turns (likely not training data)
 
 

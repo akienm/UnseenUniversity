@@ -42,13 +42,14 @@ import sys
 import time
 import uuid
 from pathlib import Path
+from unseen_university.identity import instance_id
 
 # ── Path setup ────────────────────────────────────────────────────────────────
 REPO = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO))
 
 # Load config: try installer's cfg loader first, fall back to .env
-_instance_dir = Path.home() / ".unseen_university" / "Igor-wild-0001"
+_instance_dir = Path.home() / ".unseen_university" / instance_id()
 try:
     from installer import load_cfg
 
@@ -101,7 +102,7 @@ from devices.igor.tools.ebook_reader import DRM_FAILED, open_book, read_chunk
 
 DB_PATH = Path(
     os.environ.get(
-        "IGOR_DB_PATH", Path.home() / ".unseen_university" / "Igor-wild-0001" / "wild-0001.db"
+        "IGOR_DB_PATH", Path.home() / ".unseen_university" / instance_id() / "wild-0001.db"
     )
 )
 UU_HOME_DB_URL = os.environ["UU_HOME_DB_URL"]

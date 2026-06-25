@@ -22,6 +22,7 @@ import argparse
 import os
 import re
 import sys
+from unseen_university import identity
 from pathlib import Path
 
 
@@ -112,7 +113,7 @@ def run_wiring_check(
         runtime = Path(
             os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".unseen_university")
         )
-        instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
+        instance_id = identity.instance_id()
         cfg_path = runtime / instance_id / "igor.switches.cfg"
 
     if source_dir is None:

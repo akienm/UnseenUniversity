@@ -36,7 +36,7 @@ Port: ADC_WEB_PORT env var (falls back to IGOR_UC_PORT), default 8080.
 """
 
 import asyncio
-from unseen_university.identity import home_db_url
+from unseen_university.identity import home_db_url, instance_id
 import json
 import logging
 import os
@@ -123,7 +123,7 @@ _RUNTIME_ROOT = Path(
     or os.environ.get("IGOR_RUNTIME_ROOT")
     or Path.home() / ".unseen_university"
 )
-_INSTANCE_DIR = _RUNTIME_ROOT / os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
+_INSTANCE_DIR = _RUNTIME_ROOT / instance_id()
 # Web UI dist: env var override, or default to UU sibling (dev layout).
 _DIST_DIR = Path(
     os.environ.get("ADC_WEB_UI_DIST")

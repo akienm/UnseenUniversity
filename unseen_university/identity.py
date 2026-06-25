@@ -1,9 +1,11 @@
 """Canonical call-time resolvers for install identity.
 
 This is the single import target for de-hardcoding the install's identity across the
-repo: the instance / home-DB name (was 'Igor-wild-0001'), the home DB URL, and the
-machine/swarm name (previously a hardcoded host literal). The three sweep tickets point their files
-here.
+repo: the instance / tenant name (was 'Igor-wild-0001'), the instance-folder name, the
+home DB URL, and the machine/swarm name (previously a hardcoded host literal). The
+sweep tickets point their files here. (The home-DB *name* was decoupled from the tenant
+identity to the substrate-owned 'unseen_university' — see UU_HOME_DB_NAME; igor_name is
+the tenant name only.)
 
 Contract (the lazy-vs-eager discriminator):
   * Every value resolves at CALL time from the environment — there is NO module-scope
@@ -28,11 +30,13 @@ import socket
 
 
 def igor_name() -> str:
-    """This instance / home-DB name, from env ``IGOR_NAME``. Raises if unset.
+    """This instance / tenant name, from env ``IGOR_NAME``. Raises if unset.
 
     The current value is ``Igor-wild-0001`` — but it lives in config
-    (~/.unseen_university/uu_bash_profile.sh), not in code. The later rename ticket
-    changes the value; this resolver makes that a one-line config edit.
+    (~/.unseen_university/uu_bash_profile.sh), not in code. This is the *tenant*
+    identity; the home-DB name is separate (substrate-owned ``unseen_university``,
+    composed from ``UU_HOME_DB_NAME``). The rename ticket changes the value; this
+    resolver makes that a one-line config edit.
     """
     name = os.environ.get("IGOR_NAME")
     if not name:
@@ -90,5 +94,16 @@ def swarm_hostname() -> str:
 
 
 def instance_id() -> str:
-    # STUB (stub-first proof, T-uu-sweep-instance-name) — becomes the IGOR_INSTANCE_ID read in the fix commit.
-    return "Igor-wild-0001"
+    """This install's on-disk instance-folder name: env ``IGOR_INSTANCE_ID`` if set,
+    else the canonical default ``Igor-wild-0001``. Total (never raises) — unlike
+    :func:`igor_name` this resolves a *path component*, not a credential, and the
+    default preserves the long-standing behavior.
+
+    ``IGOR_INSTANCE_ID`` is a documented independent override (the bootstrap profile
+    sets it from ``IGOR_NAME``; launchers and tests set it directly). This is the
+    PORTABLE twin of ``devices/igor/paths.Paths.instance_id`` — the same env+default
+    pattern, but importable by non-igor code without coupling to the igor device
+    (CLAUDE.md device-independence). The literal default lives here and in paths.py as
+    the two settled canonical homes; everything else delegates. (T-uu-sweep-instance-name.)
+    """
+    return os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")

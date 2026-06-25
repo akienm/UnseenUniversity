@@ -24,10 +24,11 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
+from unseen_university.identity import instance_id
 
 log = logging.getLogger(__name__)
 
-_LOGS_ROOT = Path.home() / ".unseen_university" / "Igor-wild-0001" / "datacenter_logs" / "inference"
+_LOGS_ROOT = Path.home() / ".unseen_university" / instance_id() / "datacenter_logs" / "inference"
 
 
 @dataclass

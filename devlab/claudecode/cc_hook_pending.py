@@ -24,6 +24,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from unseen_university.identity import instance_id
 
 CURSOR_DIR = Path.home() / ".unseen_university"
 COMPACT_PENDING_FILE = CURSOR_DIR / "cc_compact_pending.txt"
@@ -40,7 +41,7 @@ def _db_url():
     url = os.environ.get("UU_HOME_DB_URL")
     if url:
         return url
-    env_file = Path.home() / ".unseen_university" / "Igor-wild-0001" / ".env"
+    env_file = Path.home() / ".unseen_university" / instance_id() / ".env"
     if env_file.exists():
         for line in env_file.read_text().splitlines():
             if line.startswith("UU_HOME_DB_URL="):

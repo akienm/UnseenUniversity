@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import os
 import sys
+from unseen_university.identity import instance_id
 
 
 def _get_imap_server():
@@ -91,7 +92,7 @@ def _check_jsonl_fallback(mailbox: str) -> list[str]:
         import json
 
         cc_inbox_path = os.path.expanduser(
-            "~/.unseen_university/Igor-wild-0001/cc_inbox.jsonl"
+            f"~/.unseen_university/{instance_id()}/cc_inbox.jsonl"
         )
         if not os.path.exists(cc_inbox_path):
             return []
