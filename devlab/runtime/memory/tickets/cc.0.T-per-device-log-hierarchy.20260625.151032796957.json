@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-per-device-log-hierarchy.20260625.151032796957",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-per-device-log-hierarchy"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T21:10:32.796957+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products"
+    ],
+    "tickets": [
+      "T-per-device-log-hierarchy"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-per-device-log-hierarchy",
+    "title": "[triage] Unified per-device log home (~/.unseen_university/logs/<device>/)",
+    "size": "M",
+    "tags": [
+      "Logging",
+      "Architecture"
+    ],
+    "decision_id": "D-skills-two-products",
+    "gate": null,
+    "priority": 0.6,
+    "intention": "I intend that every rack device's logs land in one canonical per-device home, split by level (info/warn/debug), so a device's comm feeds and web page have a single place to read from.",
+    "description": "Akien (2026-06-25): ALL logs for EVERYTHING go in /home/akien/.unseen_university/logs, BY DEVICE — and this isn't built yet. The comm-channel feeds info/warn/debug (T-uu-readfeed) and the shim-owned web feed buttons (T-device-web-feed-channel-buttons) have nothing to read until this exists. Build the unified per-device log hierarchy: ~/.unseen_university/logs/<device>/ with separate info/warn/debug streams per device, so every device logs to one canonical, greppable, per-level home.\n\nReconcile the conflict: CLAUDE.md currently names datacenter_logs/<device>/<subsystem>/ as THE log hierarchy, but Akien's canonical location is ~/.unseen_university/logs/<device>/. Resolve which is canonical (Akien: the latter) and update CLAUDE.md + any writers pointing at the old root.\n\n**Affected files:** logging setup (BaseDevice/shim log config), CLAUDE.md (datacenter_logs rule), any device writing to datacenter_logs/ or a flat ~/.unseen_university/logs file; new per-device/per-level routing.\n**Design rules:** log every state change + interface crossing; never a flat root log file; flat-file (no DB) for logs; reconcile the datacenter_logs vs ~/.unseen_university/logs rule.\n**Scope boundary:** IN — the unified per-device log home + info/warn/debug per-level split + CLAUDE.md reconciliation. OUT — the readfeed CLI reader and the web feed buttons (separate tickets that CONSUME this).\n**Test plan:** a device emits an info, a warn, and a debug record; assert each lands under ~/.unseen_university/logs/<device>/ in the right per-level stream; assert no device writes to a flat root log file.\n**Completion criteria:** every device's logs route to ~/.unseen_university/logs/<device>/ split by info/warn/debug; CLAUDE.md log-home rule reconciled to this location; a test proves per-level routing for >=1 device.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "triage",
+    "created_at": "2026-06-25T21:10:30.408109+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T21:10:30.452948+00:00"
+  }
+}

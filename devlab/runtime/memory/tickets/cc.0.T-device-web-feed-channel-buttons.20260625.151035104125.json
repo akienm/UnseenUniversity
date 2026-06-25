@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-device-web-feed-channel-buttons.20260625.151035104125",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-device-web-feed-channel-buttons"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T21:10:35.104125+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products"
+    ],
+    "tickets": [
+      "T-device-web-feed-channel-buttons"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-device-web-feed-channel-buttons",
+    "title": "[triage] Device web feed: per-channel buttons (console pane retires)",
+    "size": "M",
+    "tags": [
+      "WebUI",
+      "Architecture"
+    ],
+    "decision_id": "D-skills-two-products",
+    "gate": "T-per-device-log-hierarchy",
+    "priority": 0.5,
+    "intention": "I intend that each device's web page shows one feed pane with a button per comm channel, so Akien can drill from what a device said (personal) into the info/warn/debug behind it without a separate console pane.",
+    "description": "Akien (2026-06-25): the device's web page is owned by the device's SHIM (via templating); it's the shim's job to gather the log entries presented on each comm feed. Today the page has a feed pane with a console pane below it. Change it: the console pane GOES AWAY; the feed pane acquires a BUTTON per comm channel for that device (personal / info / warn / debug; private later). Click personal to see what the device said; click console(=info) to see behind it; click debug to go deeper. The shim gathers per-channel entries: personal from the existing webchat channel (web server chat store), info/warn/debug from the per-device log hierarchy.\n\n**Affected files:** each device's shim (web page templating + per-channel gather); devices/web_server/server.py + devices/<dev>/web/ (feed/console UI → feed + channel buttons); igor as pilot.\n**Design rules:** device.py/shim.py are the design center (shim owns the page); Murderbot feed metaphor; reads the per-device log hierarchy; read-only display.\n**Scope boundary:** IN — shim-owned feed pane with per-channel buttons (personal/info/warn/debug), console pane removed, per-channel gather via templating, igor pilot. OUT — building the log hierarchy (T-per-device-log-hierarchy); the private channel (deferred/undesigned); the CLI mirror (T-uu-readfeed).\n**Test plan:** igor's web page renders a feed pane + buttons for personal/info/warn/debug and no separate console pane; clicking a button shows that channel's entries gathered by the shim; private button absent or shows a not-designed notice.\n**Completion criteria:** >=1 device (igor) web page shows a feed pane with per-channel buttons (personal/info/warn/debug), console pane gone, each button rendering its channel via the shim's gather; coherent with the CLI uu device <dev> feed <channel>.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "triage",
+    "created_at": "2026-06-25T21:10:33.035187+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T21:10:33.079142+00:00"
+  }
+}

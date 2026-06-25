@@ -157,3 +157,19 @@ Ungated: T-uu-readfeed (M). REMAINING chain: readfeed (uu device igor feed [chan
 readigor — the last igor local-only device skill) → views-retire (M) → workflow-index (S, do LAST
 so it documents the final command set). Then D-skills-two-products fully wrapped.
 - T-db-scrub-build-artifacts: Scrub stale build artifacts from DB; leave redirect
+
+## READFEED design clarified (Akien 2026-06-25) — sources + prerequisites captured
+The "small hole" in readfeed = it sits on two UNBUILT pieces. Comm channels (uniform per device):
+  personal = EXISTING webchat channel (web server chat store; the chat window Akien has w/ device) — BUILT
+  private  = planned, NOT designed, intentionally un-ticketed → 'not yet designed' notice
+  info/warn/debug = per-device log hierarchy at ~/.unseen_university/logs/<device>/ — NOT built (warn was missing, now added)
+The device SHIM owns the device web page (templating) + gathers per-channel entries. UI change: console pane
+RETIRES; feed pane gains a BUTTON per channel (personal/info/warn/debug). Click info→behind it; debug→deeper.
+NOTE: CLAUDE.md says datacenter_logs/<device>/<subsystem>/ but Akien's canonical log home is
+~/.unseen_university/logs/<device>/ — reconcile (the latter wins).
+FILED (all decision_id=D-skills-two-products):
+  - T-per-device-log-hierarchy (M) — unified per-device log home + info/warn/debug split + CLAUDE.md reconcile. PREREQUISITE.
+  - T-device-web-feed-channel-buttons (M, gate=T-per-device-log-hierarchy) — shim web feed buttons, console retires.
+  - T-uu-readfeed AMENDED + GATED on T-per-device-log-hierarchy: personal=webchat, info/warn/debug=log-hier, warn added,
+    private deferred; CLI mirror of the web feed buttons.
+NEW chain to wrap Phase B: T-per-device-log-hierarchy → (readfeed CLI ‖ web-feed-buttons) → views-retire → workflow-index.
