@@ -10,3 +10,23 @@ NONE
 ## Ad hoc
 
 ## Done today
+
+## Day-close summary (2026-06-24 final)
+**Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
+CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
+UU_HOME_DB_NAME. All supporting pieces (rotate password, config-profile, dburl-unify, etc.) closed
+(10+ tickets).
+
+**Lesson learned:** Igor-wild-0001 was misnamed substrate-home-DB (not just an igor instance folder).
+The DB rename was RIGHT and valuable. The instance-folder sweep was scope creep / rabbit hole — igor
+is LAST priority; don't pour care into de-hardcoding an archived instance. That work (T-uu-sweep-instance-name)
+is left value-preserving; it waits for the igor phase.
+
+**Next sprint (priority order):** SKILLS (D-skills-two-products, Friday 2026-06-26 presentation) →
+DickSimnel → Granny → cleanup → igor (last). Scoped but NOT EXECUTED: content-merge-survivors (4-axis
+drift), skill-psql-creds (dead creds + DB name). Deferred: single-source flip (destructive, holds for
+Akien approval).
+
+## In-flight (day-close)
+NONE. All work from the env-vars phase is durable (committed, pushed). Fresh post-compact session will
+sprint skills.
