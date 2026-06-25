@@ -1,0 +1,66 @@
+{
+  "id": "cc.0.per-device-log-hierarchy-info-warn-debug.T-per-device-log-hierarchy.20260625.171807660718",
+  "emitter": "cc.0",
+  "namespace": [
+    "per-device-log-hierarchy-info-warn-debug",
+    "T-per-device-log-hierarchy"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-25T17:18:07.660718",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-per-device-log-hierarchy"
+    ],
+    "commits": [
+      "2e12e75a181a061d59dc5f3d780c5c4cb5f0ec67"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "per-device log hierarchy info/warn/debug streams",
+    "intention": "A DiagnosticBase device's records route to <root>/<device>/<stream>/ by level (info/warn/debug; WARNING+ collapse to warn), not the legacy <device>/log/json/ layout",
+    "test": "tests/test_per_device_log_hierarchy.py::TestPerLevelRouting::test_levels_route_to_streams",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_per_device_log_hierarchy.py::TestPerLevelRouting::test_levels_route_to_streams",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        _emit(root, \"router\", \"error\", \"an error record\")\n        _emit(root, \"router\", \"debug\", \"a debug record\")\n    \n        dev_dir = root / \"router\"\n>       assert list((dev_dir / \"info\").glob(\"*_info.json\")), \"info record not in info/\"\nE       AssertionError: info record not in info/\nE       assert []\nE        +  where [] = list(<generator object Path.glob at 0x76f0d44c8d00>)\nE        +    where <generator object Path.glob at 0x76f0d44c8d00> = glob('*_info.json')\nE        +      where glob = (PosixPath('/tmp/pytest-of-akien/pytest-104/test_levels_route_to_streams0/logs/router') / 'info').glob\n\ntests/test_per_device_log_hierarchy.py:75: AssertionError\n----------------------------- Captured stderr call -----------------------------\n2026-06-25 17:18:07.230 | INFO     | diagnostic_base.tagged_logger:info:31 - an info record\n2026-06-25 17:18:07.280 | WARNING  | diagnostic_base.tagged_logger:warning:34 - a warn record\n2026-06-25 17:18:07.331 | ERROR    | diagnostic_base.tagged_logger:error:37 - an error record\n2026-06-25 17:18:07.383 | DEBUG    | diagnostic_base.tagged_logger:debug:28 - a debug record\n=========================== short test summary info ============================\nFAILED tests/test_per_device_log_hierarchy.py::TestPerLevelRouting::test_levels_route_to_streams\n1 failed in 0.35s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.30s"
+          }
+        }
+      }
+    ],
+    "commit": "2e12e75a181a061d59dc5f3d780c5c4cb5f0ec67",
+    "impl_paths": [
+      "CLAUDE.md",
+      "devices/web_server/device.py",
+      "diagnostic_base/base.py",
+      "docs/TheoryOfOperation.md",
+      "docs/getting_started.md",
+      "docs/state_inventory.md",
+      "tests/conftest.py",
+      "tests/test_diagnostic_base.py",
+      "unseen_university/shim.py",
+      "unseen_university/skeleton/container_shim.py"
+    ],
+    "ticket": "T-per-device-log-hierarchy",
+    "narrative": "",
+    "why": "The comm feeds (T-uu-readfeed) and shim web buttons (T-device-web-feed-channel-buttons) read from one canonical per-device/per-stream home; the base JSON sink does the routing so no device hand-rolls a path.",
+    "bootstrap": false
+  }
+}
