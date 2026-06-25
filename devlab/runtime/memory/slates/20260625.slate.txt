@@ -191,3 +191,9 @@ Next: T-per-device-log-hierarchy (M) — unified per-device log home + info/warn
   workflow-index = D-skills-two-products fully wrapped. Priority unchanged: skills → DickSimnel → Granny → cleanup → igor LAST.
 NOTE: skills/savestate/run is BROKEN (NameError: uu_home not defined — missing import); the /savestate
   close path errors. Flushed to slate manually. Worth a quick fix ticket.
+
+## Session close 2026-06-25
+Done: Phase B dispatcher(M)+device-skills(L) proven; readfeed design clarified+ticketed (log-hierarchy prereq); FIXED savestate run NameError + close-header (was crashing the close path).
+Next: T-per-device-log-hierarchy (M) — unblocks readfeed CLI + web-feed buttons → views-retire → workflow-index = D-skills-two-products wrapped.
+
+## In-flight: NONE — all durable: pushed, tree clean. Phase B foundation (dispatcher+device-skills) proven; readfeed prereqs filed; savestate skill repaired.
