@@ -32,6 +32,7 @@ uu — zero-inference views/controls (no CC process). Usage: uu <verb> [args]
   opentickets       all open tickets, salience-ordered
   recall <query>    librarian full-text recall
   research <query>  librarian research-and-summarize
+  device <dev> <verb>  run a device's zero-inference verb (see /device for skills)
   help              this list
 
 Add a verb: one case in bin/uu + one line here (CLI mirror of /workflow).
@@ -46,6 +47,7 @@ case "$verb" in
     opentickets)      exec python3 "$TOOLS/uu_tickets.py" "$@" ;;
     recall)           exec python3 "$TOOLS/uurecall.py" "$@" ;;
     research)         exec python3 "$TOOLS/uuresearch.py" "$@" ;;
+    device)           exec python3 "$TOOLS/uu_device.py" "$@" ;;
     help|-h|--help)   _uu_help ;;
     *)
         echo "uu: unknown verb '$verb'" >&2
