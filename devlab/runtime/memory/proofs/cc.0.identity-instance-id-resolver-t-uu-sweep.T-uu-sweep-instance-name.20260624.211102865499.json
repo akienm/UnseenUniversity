@@ -1,0 +1,66 @@
+{
+  "id": "cc.0.identity-instance-id-resolver-t-uu-sweep.T-uu-sweep-instance-name.20260624.211102865499",
+  "emitter": "cc.0",
+  "namespace": [
+    "identity-instance-id-resolver-t-uu-sweep",
+    "T-uu-sweep-instance-name"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-24T21:11:02.865499",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-sweep-instance-name"
+    ],
+    "commits": [
+      "c80107125741245f40d985e126cd0019ffa875b7"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "identity.instance_id resolver (T-uu-sweep-instance-name)",
+    "intention": "the portable instance-folder resolver follows the IGOR_INSTANCE_ID override at call time, never a frozen baked literal (total: canonical default when unset)",
+    "test": "tests/test_identity_resolvers.py::test_instance_id_prefers_env_then_canonical_default",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_identity_resolvers.py::test_instance_id_prefers_env_then_canonical_default",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "_____________ test_instance_id_prefers_env_then_canonical_default ______________\n\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a2271312540>\n\n    def test_instance_id_prefers_env_then_canonical_default(monkeypatch):\n        # T-uu-sweep-instance-name: the portable instance-folder resolver follows the\n        # IGOR_INSTANCE_ID override at CALL time, and falls back to the canonical default\n        # when unset (total — it resolves a path, not a credential, so it never raises).\n        from unseen_university import identity\n        monkeypatch.setenv(\"IGOR_INSTANCE_ID\", \"Igor-proof-9999\")\n>       assert identity.instance_id() == \"Igor-proof-9999\"\nE       AssertionError: assert 'Igor-wild-0001' == 'Igor-proof-9999'\nE         \nE         - Igor-proof-9999\nE         + Igor-wild-0001\n\ntests/test_identity_resolvers.py:86: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_identity_resolvers.py::test_instance_id_prefers_env_then_canonical_default\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "c80107125741245f40d985e126cd0019ffa875b7",
+    "impl_paths": [
+      "devices/claude/ygm_check.py",
+      "devices/dicksimnel/simulator.py",
+      "devices/scraps/chat_classifier.py",
+      "devices/web_server/server.py",
+      "devlab/claudecode/book_learner.py",
+      "devlab/claudecode/cc_hook_pending.py",
+      "devlab/claudecode/rotate_igor_console.py",
+      "devlab/claudecode/wiring_check.py",
+      "devlab/runtime/memory/tickets/cc.0.T-uu-sweep-instance-name.20260622.175837221738.json",
+      "unseen_university/identity.py"
+    ],
+    "ticket": "T-uu-sweep-instance-name",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
