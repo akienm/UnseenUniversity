@@ -20,6 +20,7 @@ NONE
 - T-skill-dispositions-investigate — Determine disposition of unclear skills (map-igor, outcome, eval-run, weekly-retro, factory-create, critic, new) (Disposition table recorded. map-igor: KEEP local-only — Igor-runtime full-state snapshot tool (Haiku, writes ~/.unseen_u)
 - T-skills-deadstep-followup — Decide fate of 3 never-built day-close helper scripts (All 3 never-built helper-script intents RETIRED — each superseded by an existing mechanism, no capability lost, nothing )
 - T-uu-cli-dispatcher — uu <verb> dispatcher — zero-inference view/control CLI (Built bin/uu — zero-inference uu <verb> dispatcher. First-token dispatch + shift + "$@" passthrough (the convention the )
+- T-device-skills-via-uu-device — Device skills fold into uu device <dev> <verb> [<noun>] + /device <dev> <verb> (Built the uu device <dev> <verb> dispatch mechanism (the two-products split at the device boundary) + /device CC-facing )
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
@@ -140,3 +141,18 @@ Proof: tests/test_uu_dispatcher.py (hermetic).
 Ungated by this close: T-device-skills-via-uu-device (L), T-uu-alarms-cli.
 NEXT: T-workflow-index-and-uu-help (S, now unblocked) → then device-skills (L, igor-touching, heaviest
 — surface to Akien). readfeed (M) + views-retire (M) are gated BEHIND device-skills.
+
+## PHASE B — device-skills L DONE+PROVEN (2026-06-25, Akien chose "full L now")
+T-uu-cli-dispatcher (done, 84fc8f64) → T-device-skills-via-uu-device (done, e4697361).
+Mechanism: bin/uu `device` case → uu_device.py resolves devices/<dev>/{bin,skills}/ (bin→exec;
+skills-only from bare CLI→point to /device; BOTH→unique-name load error; unknown→list). /device =
+thin CC shim (skills then bin failover). igor PILOT migrated OUT of ~/.claude:
+  devices/igor/skills/diagnose (← igor-diagnose, cleaned creds/paths, dropped debug-pe-chain),
+  devices/igor/skills/map (← map-igor, BROKEN/rebuild stamp — map_igor.py never existed),
+  devices/igor/bin/state (NEW genuine zero-inference igor liveness view).
+Deleted ~/.claude/{igor-diagnose,map-igor}. Generic /diagnose stays top-level. Proof:
+tests/test_uu_device.py (62b1194e). Igor-last follow-ons: deep content-merge of diagnose, rebuild
+map→devices/igor/bin/map vs fs-store.
+Ungated: T-uu-readfeed (M). REMAINING chain: readfeed (uu device igor feed [channel], retires
+readigor — the last igor local-only device skill) → views-retire (M) → workflow-index (S, do LAST
+so it documents the final command set). Then D-skills-two-products fully wrapped.

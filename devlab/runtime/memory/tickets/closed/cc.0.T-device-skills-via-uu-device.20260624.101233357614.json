@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-device-skills-via-uu-device",
-    "title": "[triage] Device skills fold into uu device <dev> <verb> [<noun>] + /device <dev> <verb>",
+    "title": "Device skills fold into uu device <dev> <verb> [<noun>] + /device <dev> <verb>",
     "size": "L",
     "tags": [
       "Skills",
@@ -30,20 +30,27 @@
     "decision_id": "D-skills-two-products-2026-06-23",
     "gate": null,
     "priority": 0.5,
-    "status": "triage",
+    "status": "closed",
     "intention": "I intend that device-specific behavior lives with the device, reached by a uniform device verb, not as bespoke top-level skills.",
     "description": "**Problem:** device-specific skills (readigor, igor-diagnose, critic-launch, ...) clutter the top-level skill space; each device reinvents its own surface, and igor's skills wrongly sit in ~/.claude instead of with igor.\n\n**Shape (DISPATCH MECHANISM — first verb is separate):** uniform `uu device <dev> <verb> [<noun>]` (zero-inference CLI) and `/device <dev> <verb> [<noun>]` (CC-facing). `/device` is a THIN SHIM over `uu device` for the script case — one dispatch path. Each device's shim carries two folders:\n  - `devices/<dev>/bin/`  — zero-inference executor scripts (the view layer at the device boundary)\n  - `devices/<dev>/skills/` — reasoning-bearing skills the CC executes (workflow layer)\nFAILOVER RESOLUTION: caller gives ONE verb; dispatcher resolves it — `/device` checks skills/ then bin/; `uu device` serves bin/ only (a skills/-only verb from the bare CLI errors with a pointer to /device). Caller never says 'skill' vs 'command'. UNIQUE-NAME RULE: a verb name must be unique across bin/+skills/ per device — dispatcher errors at load if a name is in both (no silent precedence). igor skills MOVE OUT of ~/.claude INTO devices/igor/{bin,skills}/ (skills travel with the device; devices/ one-subdir-per-device, independently deployable). This is the two-products split scoped to the device boundary.\n\n**Affected files:** uu CLI dispatcher (extends T-uu-cli-dispatcher with a `device` verb); devices/<dev>/{bin,skills}/ (igor as pilot); /device skill (thin shim); skills/ device-specific dirs (migrate then delete).\n**Design rules:** device.py/shim.py are the design center — device verbs dispatch through the device; devices/ one subdir per device, independently deployable.\n**Scope boundary:** IN — the dispatch mechanism (uu device + /device shim + bin/skills failover + unique-name load check) and migrating igor's folder structure as pilot. OUT — individual verbs (feed = T-uu-readfeed, gated on this; diagnose/critic = follow-ons).\n**Test plan:** a trivial probe verb in devices/igor/bin/ resolves via `uu device igor <probe>`; a probe in devices/igor/skills/ resolves via `/device igor <probe>`; a name placed in BOTH folders makes the dispatcher error at load (unique-name proof, red->green).\n**Completion criteria:** uu device + /device dispatch works for igor (pilot) across bin/ and skills/; unique-name collision errors at load; >=1 former device-skill's structure migrated into devices/igor/.\n**NOTE (L):** advisor() reviewed 2026-06-24 — design (bin/+skills/+failover+unique-name) confirmed sound.",
     "created_at": "2026-06-24T16:12:28.434953+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Built the uu device <dev> <verb> dispatch mechanism (the two-products split at the device boundary) + /device CC-facing shim. uu_device.py resolves a verb against devices/<dev>/{bin,skills}/: bin/ → exec the zero-inference script; skills/-only from the bare CLI → error pointing at /device (needs CC); verb in BOTH → load error (unique-name rule, no silent precedence); unknown → error listing verbs. bin/uu gained a 'device' case (inherits first-token + $@ passthrough). /device skill = thin shim (skills/ then bin/ failover, one dispatch path). igor PILOT migrated out of ~/.claude into devices/igor/: skills/diagnose (← igor-diagnose, cleaned of dead creds/paths + dropped /debug-pe-chain), skills/map (← map-igor, BROKEN/rebuild stamp — its map_igor.py never existed), bin/state (NEW genuine zero-inference liveness view). Deleted ~/.claude copies of igor-diagnose + map-igor. Live-verified: 'uu device igor state' runs (bin/), diagnose/map resolve as skills, a both-folders clash is a load error. readigor left for T-uu-readfeed (its owner). DEFERRED (igor-last follow-ons): deep content-merge of diagnose, rebuild of map as devices/igor/bin/map against the fs store. Proof: tests/test_uu_device.py (hermetic dispatch contract incl. unique-name red->green @ 62b1194e).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-25T20:49:59.050132+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-24T16:12:28.435046+00:00"
+    "scraps_validated": "2026-06-24T16:12:28.435046+00:00",
+    "proven": true,
+    "proof_id": "cc.0.uu-device-dispatch-mechanism.T-device-skills-via-uu-device.20260625.144947249457",
+    "proof_commit": "62b1194ea86d40455f389d8aec088c6e0dda48d7",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
