@@ -33,3 +33,26 @@ Akien approval).
 ## In-flight (day-close)
 NONE. All work from the env-vars phase is durable (committed, pushed). Fresh post-compact session will
 sprint skills.
+
+## SKILLS — PHASE A DONE + pre-compact handoff (2026-06-25 ~mid-day; context degraded -> Akien compacting)
+Pushed: ec7ae52d (sweep+prune), 2a4dcb53 (bookkeeping). Repo skills/ correctness GREEN under
+tests/test_skills_hygiene.py (7 checks: dead-creds->$UU_HOME_DB_URL, instance-paths->$IGOR_INSTANCE_ID,
+/decided->/sorted, THEIGORS_HOME->UU_ROOT, /autocompact CALLS removed [skill kept], dead-script steps
+removed, audit-workspace + scanner-needles exempted). Pruned: question/concept/migrate-decisions/recover
++ manifest. Closed: T-remove-autocompact-calls, T-uu-sweep-skill-psql-creds, T-day-close-audit-skill-stale-paths.
+Filed: T-skills-deadstep-followup. NEW canonical corpus: skills/questions/questions.json (84127d20).
+
+⛔ HARD CORRECTION (Akien, emphatic): **NO SKILLS SYNC. EVER.** Copy-sync between repo skills/ and
+~/.claude/skills IS the drift disease that broke day-close. I almost re-proposed it — DO NOT. See memory
+feedback_no_skills_sync_symlink. Single-source mechanism = DIRECTORY SYMLINK (spec in T-skills-single-source-flip):
+committed in-repo .claude/skills -> skills (project scope) + fallback per-skill ~/.claude/skills/<name> -> repo;
+two-tier canonical(repo-symlink)/local-only(Igor-runtime real dirs); skills-sync/run deploy = ensure-symlink, NOT copy.
+
+NEXT (skills, still front-burner, the COMPLETE end-intent, order CC's choice):
+- Make fixes take effect LOCALLY via the SYMLINK flip (T-skills-single-source-flip) — NOT sync. This is the
+  daily-tooling cure (repo fixes only protect us once ~/.claude/skills links to repo). Destructive-ish (clears
+  managed local copies) -> Akien sign-off when executing.
+- Remaining prune sub-parts: fold /sprint -> query-ticket+sprint-ticket; resolve igor-diagnose vs diagnose
+  (T-skills-prune-deprecated-merge still open).
+- Phase B view-layer: T-uu-cli-dispatcher -> device-skills -> readfeed/alarms -> views-retire -> content-merge.
+PRIORITY UNCHANGED: skills -> DickSimnel -> Granny -> cleanup -> igor LAST. Igor-wild-0001 = archived Wild0.
