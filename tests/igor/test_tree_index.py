@@ -243,3 +243,19 @@ def _delete_tree(db_url: str, name: str) -> None:
         conn.close()
     except Exception:
         pass
+
+
+def test_machine_id_resolves_hostname_not_baked_literal(monkeypatch):
+    """T-uu-sweep-hostname: tree_index resolves machine_id from the live hostname
+    (identity.swarm_hostname) at CALL time, never a baked 'akiendelllinux' literal.
+
+    On this box socket.gethostname()=='akiendelllinux', so the baked default was
+    invisible; monkeypatching a different hostname (with IGOR_SWARM_NAME unset)
+    exposes whether the value follows the host or is frozen to the old literal.
+    """
+    import devices.igor.memory.tree_index as ti
+
+    monkeypatch.delenv("IGOR_SWARM_NAME", raising=False)
+    monkeypatch.setattr("socket.gethostname", lambda: "proof-host-xyz")
+    assert ti._machine_id() == "proof-host-xyz"
+    assert ti._machine_id() != "akiendelllinux"

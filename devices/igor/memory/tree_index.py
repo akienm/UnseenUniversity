@@ -35,7 +35,11 @@ from pathlib import Path
 _log = logging.getLogger(__name__)
 
 _DB_URL = _paths().home_db_url
-_MACHINE_ID = os.getenv("IGOR_SWARM_NAME", "akiendelllinux")
+
+
+def _machine_id() -> str:
+    # STUB (stub-first proof, T-uu-sweep-hostname) — becomes swarm_hostname() in the fix commit.
+    return "akiendelllinux"
 
 _LOG_DIR = Path.home() / ".unseen_university" / "logs"
 
@@ -112,7 +116,7 @@ class TreeIndex(IgorBase):
                         facia_id,
                         json.dumps(merged_rules),
                         description,
-                        _MACHINE_ID,
+                        _machine_id(),
                     ),
                 )
 
