@@ -1,0 +1,62 @@
+{
+  "id": "cc.0.uu-device-dispatch-mechanism.T-device-skills-via-uu-device.20260625.144947249457",
+  "emitter": "cc.0",
+  "namespace": [
+    "uu-device-dispatch-mechanism",
+    "T-device-skills-via-uu-device"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-25T14:49:47.249457",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-device-skills-via-uu-device"
+    ],
+    "commits": [
+      "62b1194ea86d40455f389d8aec088c6e0dda48d7"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "uu device dispatch mechanism",
+    "intention": "Running 'uu device <dev> <verb>' for a bin/ verb dispatches and runs the executor (zero-inference), and a verb defined in both bin/ and skills/ is a load error",
+    "test": "tests/test_uu_device.py::test_bin_verb_is_dispatched_and_runs",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_uu_device.py::test_bin_verb_is_dispatched_and_runs",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": ">       assert r.returncode == 0, f\"bin verb should run (exit 0): {r.stderr}\"\nE       AssertionError: bin verb should run (exit 0): uu: unknown verb 'device'\nE         \nE         uu — zero-inference views/controls (no CC process). Usage: uu <verb> [args]\nE         \nE           mytickets         tickets assigned to Akien, salience-ordered\nE           opentickets       all open tickets, salience-ordered\nE           recall <query>    librarian full-text recall\nE           research <query>  librarian research-and-summarize\nE           help              this list\nE         \nE         Add a verb: one case in bin/uu + one line here (CLI mirror of /workflow).\nE         \nE       assert 1 == 0\nE        +  where 1 = CompletedProcess(args=['/home/akien/dev/src/UnseenUniversity/bin/uu', 'device', 'igor', 'probe'], returncode=1, stdout...mmarize\\n  help              this list\\n\\nAdd a verb: one case in bin/uu + one line here (CLI mirror of /workflow).\\n\").returncode\n\ntests/test_uu_device.py:52: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_uu_device.py::test_bin_verb_is_dispatched_and_runs - Assert...\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.10s"
+          }
+        }
+      }
+    ],
+    "commit": "62b1194ea86d40455f389d8aec088c6e0dda48d7",
+    "impl_paths": [
+      "bin/uu",
+      "devices/igor/bin/state",
+      "devices/igor/skills/diagnose/SKILL.md",
+      "devices/igor/skills/map/SKILL.md",
+      "devlab/claudecode/uu_device.py",
+      "skills/device/SKILL.md"
+    ],
+    "ticket": "T-device-skills-via-uu-device",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
