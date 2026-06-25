@@ -58,7 +58,7 @@ bus/               — IMAP bus (comms:// routing, pub/sub)
 skeleton/          — MCP aggregator + flat-file device registry
 devices/           — one directory per device (postgres, igor, claude, ...)
 config/            — DeviceConfig dataclass, per-device policy
-logging/           — log hierarchy (datacenter_logs/<device>/<subsystem>/)
+logging/           — log hierarchy (~/.unseen_university/logs/<device>/<stream>/, stream ∈ info|warn|debug)
 tests/             — test suite + fixtures
 docs/              — design decisions + workflow guides
 ```

@@ -18,7 +18,7 @@ Security invariant: docker.sock is never mountable (raises ValueError on
 start) — mounting it grants full Docker API access = container escape.
 
 All tool calls routed through dispatch() are traced automatically to
-datacenter_logs/shim/trace/YYYYMMDD.jsonl via BaseShim.dispatch().
+logs/shim/trace/YYYYMMDD.jsonl via BaseShim.dispatch().
 
 Lifecycle: start() on announce, stop() on deregister. The rack caller is
 responsible for wiring these events; ContainerShim does not hook into the

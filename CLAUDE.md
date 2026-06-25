@@ -76,9 +76,20 @@ ever differ, the file wins — fix this shim.**
   *Why: skeleton must boot before the DB is up; a Postgres dependency in skeleton would make cold-start impossible.*
 - **devices/** contains one subdirectory per device; each is independently deployable.
   *Why: blast radius containment — a broken device import can't crash the whole rack on import.*
-- **datacenter_logs/<device>/<subsystem>/** is the log hierarchy. Never write to a flat
-  root log file.
-  *Why: flat root logs from multiple devices are ungreppable without knowing which device wrote what; hierarchy makes per-device debugging self-contained.*
+- **`~/.unseen_university/logs/<device>/<stream>/`** is the canonical log hierarchy —
+  ONE per-device home under the runtime dir (`uu_home()`), split into exactly three
+  feed-aligned streams: **`info/ warn/ debug/`** (WARNING and above collapse to
+  `warn`; the exact level stays on each record). Every `DiagnosticBase` device routes
+  there automatically via the base JSON sink — the design center does the routing, so
+  no device hand-rolls a log path. Never write to a flat root log file; never write to
+  the retired `datacenter_logs/` root. The default resolves at call time
+  (`UU_LOG_ROOT` override for hermetic tests, else `uu_home()/logs`).
+  *Why: flat root logs from multiple devices are ungreppable without knowing which
+  device wrote what; one per-device/per-level home makes a device's feeds and web page
+  read from a single greppable place (T-uu-readfeed, T-device-web-feed-channel-buttons
+  consume this). This supersedes the old `datacenter_logs/<device>/<subsystem>/` rule
+  — a single-repo-era convention that wrote to a cwd-relative root; reconciled to the
+  canonical runtime location 2026-06-25, T-per-device-log-hierarchy.*
 - **Log every state change and every interface crossing.** State changes: ticket status
   transitions, device lifecycle events (start/stop/restart/halt), routing decisions,
   auth/trust events. Interface crossings: channel post/read, DB write/read, subprocess

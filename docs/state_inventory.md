@@ -39,7 +39,7 @@ This document is the orthogonal view: per-state-kind on the durability×readines
 | 15 | "What's next" mid-sprint | next step when sprint is interrupted | **Ephemeral** unless /savestate called | Raw | **YES — LEAK** (partial: captured by step-checkpoint) |
 | 16 | Live working set | files being edited but not yet committed | **Ephemeral** (git working tree, uncommitted) | Raw | **Partial** — committed = durable; uncommitted lost on crash |
 | 17 | Nag state | dispatch nag timers per ticket | **Flat file** (~/.granny/nag_state/) | Structured | No |
-| 18 | Raw datacenter logs | per-device JSONL event streams | **Flat files** (datacenter_logs/, not git-tracked) | Raw | **Partial** — durable but raw; consumed by build_digester |
+| 18 | Raw per-device logs | per-device per-level event streams (info/warn/debug) | **Flat files** (~/.unseen_university/logs/<device>/<stream>/, not git-tracked) | Raw | **Partial** — durable but raw; consumed by build_digester |
 | 19 | Session memory (semantic) | Done+Notes content, semantically embedded | **Postgres** (clan.memories, auto-embed pipeline) | Predigested | No — `session_memory_deposit.py` writes it |
 | 20 | Violation log | skill drift events for reinforcement | **Flat file** (not git-tracked) | Structured | No |
 | 21 | Cursor state (build_digester) | log read positions for restart | **Flat file** (~/.unseen_university/build_digester/cursors.json) | Structured | No |

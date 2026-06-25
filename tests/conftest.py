@@ -31,6 +31,20 @@ def _restore_sqlite3():
 
 
 @pytest.fixture(autouse=True)
+def _redirect_log_root(tmp_path, monkeypatch):
+    """Redirect default per-device log output to a tmp dir (T-per-device-log-hierarchy).
+
+    DiagnosticBase devices that don't pin their own _log_root default to the
+    canonical ~/.unseen_university/logs. Without this, instantiating any such device
+    in a test would write JSON log files into the user's real home. UU_LOG_ROOT is
+    the hermetic-redirect knob (mirrors UU_MEMORY_ROOT). Tests that need the real
+    default path delenv it explicitly.
+    """
+    monkeypatch.setenv("UU_LOG_ROOT", str(tmp_path / "uu_logs"))
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _preserve_igor_home_db_url():
     """Preserve UU_HOME_DB_URL across tests.
 

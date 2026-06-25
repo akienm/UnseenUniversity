@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import gc
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,8 +26,51 @@ from .tagged_logger import TaggedLogger
 from .perf import Stopwatch
 from .logging_bridge import install_stdlib_intercept
 
-# Per-class logger cache so subclasses see their own class name in log records
-_logger_cache: dict[type, TaggedLogger] = {}
+# Per-(class, log_root) logger cache so subclasses see their own class name in log
+# records AND a class logged under two different roots (e.g. across tests with a
+# monkeypatched home) does not pin the first-resolved root for the rest of the run.
+_logger_cache: dict[tuple, TaggedLogger] = {}
+
+# Coarse per-device log streams (Akien 2026-06-25, T-per-device-log-hierarchy):
+# every device's records route to ~/.unseen_university/logs/<device>/<stream>/,
+# where <stream> is one of exactly three feed-aligned streams — info / warn / debug.
+# The precise loguru level stays ON the record (filename suffix + payload "level"),
+# so collapsing WARNING/ERROR/CRITICAL into "warn" loses no information — the stream
+# is just the coarse routing the comm feeds + web buttons read (T-uu-readfeed,
+# T-device-web-feed-channel-buttons).
+_LEVEL_STREAMS = {
+    "TRACE": "debug", "DEBUG": "debug",
+    "INFO": "info", "SUCCESS": "info",
+    "WARNING": "warn", "ERROR": "warn", "CRITICAL": "warn",
+}
+
+
+def _level_stream(level_name: str) -> str:
+    """Map a loguru level name to its coarse feed stream (info/warn/debug)."""
+    return _LEVEL_STREAMS.get(level_name.upper(), "info")
+
+
+def _default_log_root() -> Path:
+    """Canonical per-device log home — ``~/.unseen_university/logs`` (UU_HOME/logs).
+
+    Resolution order (all at CALL TIME, so test redirection takes effect and the
+    suite never writes into the real home):
+      1. ``UU_LOG_ROOT`` env override — the hermetic-test knob, mirroring
+         ``UU_MEMORY_ROOT`` / ``UU_DEVICES_ROOT``.
+      2. ``uu_home()/logs`` — the canonical runtime location (lazy import keeps
+         diagnostic_base layer-independent of unseen_university).
+      3. ``~/.unseen_university/logs`` fallback if the import is mid-cycle on
+         first boot (same canonical path).
+    """
+    env = os.environ.get("UU_LOG_ROOT")
+    if env:
+        return Path(env)
+    try:
+        from unseen_university._uu_root import uu_home
+
+        return Path(uu_home()) / "logs"
+    except Exception:
+        return Path.home() / ".unseen_university" / "logs"
 
 # Registered once on first DiagnosticBase instantiation
 _json_sink_id: int | None = None
@@ -45,14 +89,16 @@ def _json_file_sink(message) -> None:
         if "device_id" not in extra:
             return
         device_id = extra["device_id"]
-        log_root = Path(extra.get("log_root", "datacenter_logs"))
+        log_root = Path(extra["log_root"]) if extra.get("log_root") else _default_log_root()
 
         ts = record["time"]
         ts_str = ts.strftime("%Y%m%d-%H%M%S-") + f"{ts.microsecond:06d}"
         level = record["level"].name.lower()
         logger_name = (record["name"] or "unknown").replace(".", "_")[:40]
 
-        out_dir = log_root / device_id / "log" / "json"
+        # Canonical layout: <log_root>/<device>/<stream>/ — one file per record,
+        # stream ∈ {info, warn, debug}. The exact level stays in the filename + payload.
+        out_dir = log_root / device_id / _level_stream(record["level"].name)
         out_dir.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -84,25 +130,24 @@ def prune_json_logs(log_root: Path | str | None = None, days: int = 30) -> int:
     """
     import time as _time
 
-    root = Path(log_root) if log_root else Path("datacenter_logs")
+    root = Path(log_root) if log_root else _default_log_root()
     if not root.exists():
         return 0
     cutoff = _time.time() - days * 86400
     deleted = 0
-    for f in root.rglob("log/json/*.json"):
-        try:
-            if f.stat().st_mtime < cutoff:
-                f.unlink()
-                deleted += 1
-        except Exception:
-            pass
-    for f in root.rglob("trace/*.jsonl"):
-        try:
-            if f.stat().st_mtime < cutoff:
-                f.unlink()
-                deleted += 1
-        except Exception:
-            pass
+    # Canonical per-level streams + legacy log/json layout + dispatch traces.
+    for pattern in (
+        "info/*.json", "warn/*.json", "debug/*.json",
+        "log/json/*.json",  # legacy layout — prune leftover files from before the split
+        "trace/*.jsonl",
+    ):
+        for f in root.rglob(pattern):
+            try:
+                if f.stat().st_mtime < cutoff:
+                    f.unlink()
+                    deleted += 1
+            except Exception:
+                pass
     return deleted
 
 
@@ -123,9 +168,6 @@ class DiagnosticBase:
                 super().__init__(device_id="my_device", **kwargs)
     """
 
-    # Subclasses may override to redirect log files
-    _log_root: Path = Path("datacenter_logs")
-
     def __init__(
         self,
         *,
@@ -135,6 +177,9 @@ class DiagnosticBase:
         **kwargs: Any,
     ):
         global _json_sink_id, _intercept_installed
+        # Per-instance log-root override (set via the _log_root setter or kwargs);
+        # None means "use the canonical default", resolved at call time.
+        self.__log_root_override: Path | None = None
         self._device_id = device_id or type(self).__name__.lower()
         self._parent = parent
         # Explicit name wins; gc lookup is a best-effort fallback for module/class-scope vars
@@ -190,17 +235,40 @@ class DiagnosticBase:
     # ── Logging ──────────────────────────────────────────────────────────────
 
     @property
+    def _log_root(self) -> Path:
+        """Where this instance's log files land.
+
+        Defaults to the canonical per-device home (``~/.unseen_university/logs``),
+        resolved at CALL TIME so test monkeypatching of uu_home takes effect and the
+        suite never writes into the real home. A subclass may pin a different root by
+        assigning a class attribute ``_log_root = <path>`` (which shadows this
+        property), and a single instance may pin one via ``obj._log_root = <path>``
+        (handled by the setter below).
+        """
+        if self.__log_root_override is not None:
+            return self.__log_root_override
+        return _default_log_root()
+
+    @_log_root.setter
+    def _log_root(self, value: Path | str | None) -> None:
+        self.__log_root_override = None if value is None else Path(value)
+
+    @property
     def logger(self) -> TaggedLogger:
-        """Lazy per-class TaggedLogger bound with class, device, and log_root context."""
+        """Lazy per-(class, root) TaggedLogger bound with class, device, and log_root."""
         cls = type(self)
-        if cls not in _logger_cache:
+        root_str = str(self._log_root)
+        key = (cls, root_str)
+        cached = _logger_cache.get(key)
+        if cached is None:
             bound = _root_logger.bind(
                 class_name=cls.__name__,
                 device_id=self._device_id,
-                log_root=str(self._log_root),
+                log_root=root_str,
             )
-            _logger_cache[cls] = TaggedLogger(bound)
-        return _logger_cache[cls]
+            cached = TaggedLogger(bound)
+            _logger_cache[key] = cached
+        return cached
 
     def debug(self, msg: str, *args, **kwargs) -> None:
         self.logger.debug(msg, *args, **kwargs)

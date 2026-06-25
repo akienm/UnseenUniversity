@@ -33,7 +33,9 @@ _RUNTIME_ROOT = Path(
     or Path.home() / ".unseen_university"
 )
 _PID_FILE = _RUNTIME_ROOT / "web_server.pid"
-_LOG_FILE = _RUNTIME_ROOT / "logs" / "web_server.log"
+# Per-device log home (T-per-device-log-hierarchy): nested under logs/<device>/,
+# never a flat file directly in the logs root.
+_LOG_FILE = _RUNTIME_ROOT / "logs" / "web_server" / "web_server.log"
 _SERVER_PY = Path(__file__).parent / "server.py"
 _PORT = int(os.environ.get("ADC_WEB_PORT") or os.environ.get("IGOR_UC_PORT", "8080"))
 _HTTP_PORT = int(
@@ -107,7 +109,7 @@ class WebServerDevice(BaseDevice):
             log.info("[web-server] already running on port %d", _PORT)
             return
         _RUNTIME_ROOT.mkdir(parents=True, exist_ok=True)
-        (_RUNTIME_ROOT / "logs").mkdir(parents=True, exist_ok=True)
+        _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         try:
             log_fp = open(_LOG_FILE, "ab")  # noqa: SIM115
             self._proc = subprocess.Popen(

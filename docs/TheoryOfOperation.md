@@ -141,7 +141,7 @@ The rack uses a two-tier execution model. Tier determines the security perimeter
 
 **Tier 1 — Trusted agents (Igor, CC, Librarian, Granny, Nanny)**
 
-Enforcement: policy gate (`devices/policy/gate.py`) + path sandbox. All tool calls route through `BaseShim.dispatch()`, which traces every call to `datacenter_logs/shim/trace/YYYYMMDD.jsonl`. The policy gate runs before each dispatch and allows/denies based on the agent's manifest and the calling context.
+Enforcement: policy gate (`devices/policy/gate.py`) + path sandbox. All tool calls route through `BaseShim.dispatch()`, which traces every call to `~/.unseen_university/logs/shim/trace/YYYYMMDD.jsonl`. The policy gate runs before each dispatch and allows/denies based on the agent's manifest and the calling context.
 
 These agents run as host processes. The rack trusts them at the same level as any same-UID process on the machine — because they are same-UID processes. Prompt injection is the in-scope threat; process escape is not.
 
@@ -603,7 +603,7 @@ This document is also an alignment artifact. Review each section against the cod
 3. **Do the memory node types match what's actually in the DB?** Run: `SELECT memory_type, count(*) FROM clan.memories GROUP BY memory_type` and compare to §3.5.
 4. **Are the safety gates actually filesystem-only?** Run: `SELECT id FROM clan.memories WHERE id IN ('SYSCFG_IGOR_TIER5_ENABLED', 'SYSCFG_IGOR_ARBITER_ENABLED', 'SYSCFG_IGOR_SELF_EDIT_ENABLED')` — should return 0 rows.
 5. **Does the BaseDevice contract exist in practice?** Verify `start`, `stop`, `health`, `self_test` appear in at least 3 concrete device classes in `devices/`.
-6. **Is the log hierarchy respected?** Check that `datacenter_logs/` contains only `<device>/<subsystem>/` paths — no flat files or mystery device names.
+6. **Is the log hierarchy respected?** Check that `~/.unseen_university/logs/` contains only `<device>/<stream>/` paths (stream ∈ info|warn|debug) — no flat files or mystery device names.
 
 Gaps found in this review become tickets. That is the intended use of this document.
 
@@ -655,6 +655,6 @@ Inspected `unseen_university/device.py`: the abstract base defines `health`, `re
 
 **Check 6 — log hierarchy:**
 
-`datacenter_logs/` contains: `queue/log/json/` ✓, `librarian/curation.jsonl` ✗ (flat file, no subsystem dir), `d/log/json/` ✗ (single-char device name — test debris), `_minimaldevice/log/json/` ✗ (test scaffold debris), `unknown/log/json/` ✗ (fallback name — a device ran without `DEVICE_ID` set).
+`~/.unseen_university/logs/` contains: `queue/info/` ✓, `librarian/curation.jsonl` ✗ (flat file, no stream dir), `d/info/` ✗ (single-char device name — test debris), `_minimaldevice/info/` ✗ (test scaffold debris), `unknown/info/` ✗ (fallback name — a device ran without `DEVICE_ID` set). (Layout reconciled to `<device>/<stream>/` 2026-06-25, T-per-device-log-hierarchy; pre-reconciliation debris used the old `<device>/log/json/` layout under a cwd-relative `datacenter_logs/`.)
 
 **GAP:** `librarian` bypasses the subsystem level; three mystery device directories indicate test debris or missing `DEVICE_ID`. Filed: T-theory-log-hierarchy-anomalies.

@@ -145,7 +145,7 @@ class TestLogger:
 
 class TestJsonLogSink:
     def test_info_writes_json_file(self, tmp_path):
-        """Each log call produces one JSON file in <log_root>/<device_id>/log/json/."""
+        """Each log call produces one JSON file in <log_root>/<device_id>/<stream>/."""
         import time as _time
         from diagnostic_base.base import _logger_cache
 
@@ -158,7 +158,7 @@ class TestJsonLogSink:
         obj.info("hello from test")
         _time.sleep(0.05)  # let loguru flush (enqueue=False so near-instant)
 
-        out_dir = tmp_path / "testdev" / "log" / "json"
+        out_dir = tmp_path / "testdev" / "info"
         files = list(out_dir.glob("*.json"))
         assert len(files) >= 1, f"expected JSON file in {out_dir}, got none"
 
@@ -182,7 +182,7 @@ class TestJsonLogSink:
         import time as _time
 
         _time.sleep(0.05)
-        out_dir = tmp_path / "dev2" / "log" / "json"
+        out_dir = tmp_path / "dev2" / "warn"
         files = list(out_dir.glob("*_warning.json"))
         assert files, "expected a *_warning.json file"
         assert re.match(r"\d{8}-\d{6}-\d{6}_", files[0].name)
