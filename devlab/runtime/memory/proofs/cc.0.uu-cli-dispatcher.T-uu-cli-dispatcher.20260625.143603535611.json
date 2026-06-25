@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.uu-cli-dispatcher.T-uu-cli-dispatcher.20260625.143603535611",
+  "emitter": "cc.0",
+  "namespace": [
+    "uu-cli-dispatcher",
+    "T-uu-cli-dispatcher"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-25T14:36:03.535611",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-cli-dispatcher"
+    ],
+    "commits": [
+      "088e5384c341e7e29e36f9b89e67ec9a78251468"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "uu CLI dispatcher",
+    "intention": "Running 'uu' with no verb lists the dispatcher's verbs and exits 0; the dispatcher is built and runnable",
+    "test": "tests/test_uu_dispatcher.py::test_no_verb_lists_verbs_and_exits_zero",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_uu_dispatcher.py::test_no_verb_lists_verbs_and_exits_zero",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nargs = ()\n@py_assert1 = <bound method Path.exists of PosixPath('/home/akien/dev/src/UnseenUniversity/bin/uu')>\n@py_assert3 = False\n@py_format5 = \"uu dispatcher not built: /home/akien/dev/src/UnseenUniversity/bin/uu\\n>assert False\\n{False = exists\\n{exists = PosixPath('/home/akien/dev/src/UnseenUniversity/bin/uu').exists\\n}()\\n}\"\n\n    def _run(*args: str) -> subprocess.CompletedProcess:\n        # Behavioral red pre-impl: a missing dispatcher fails as a clean assertion\n        # (not an uncaught FileNotFoundError the emitter might read as collateral).\n>       assert _UU.exists(), f\"uu dispatcher not built: {_UU}\"\nE       AssertionError: uu dispatcher not built: /home/akien/dev/src/UnseenUniversity/bin/uu\nE       assert False\nE        +  where False = exists()\nE        +    where exists = PosixPath('/home/akien/dev/src/UnseenUniversity/bin/uu').exists\n\ntests/test_uu_dispatcher.py:25: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_uu_dispatcher.py::test_no_verb_lists_verbs_and_exits_zero\n1 failed in 0.07s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "088e5384c341e7e29e36f9b89e67ec9a78251468",
+    "impl_paths": [
+      "bin/uu",
+      "bin/uu_bash_profile_processor.sh",
+      "devlab/claudecode/uu_tickets.py"
+    ],
+    "ticket": "T-uu-cli-dispatcher",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
