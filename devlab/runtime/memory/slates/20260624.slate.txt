@@ -141,3 +141,13 @@ DONE (pushed origin/main @ a8530877):
 NEXT (env-vars phase tail, then Friday): T-uu-sweep-instance-name + T-uu-sweep-hostname
 (instance-folder routing-to-resolver, still OPEN) -> then skills cluster D-skills-two-products
 (Friday presentation) -> then launchers.
+
+## Savestate (post T-uu-sweep-hostname close, ~20:48)
+In-flight: NONE. T-uu-sweep-hostname CLOSED PROVEN (proof e40c6110, red=AssertionError
+green=passed; commits a6401c0c RED -> 841f1dae GREEN -> a9470587 proof -> eb36f128 close).
+akiendelllinux de-hardcoded to identity.swarm_hostname(): tree_index._machine_id() +
+seed_persistent_relationships machine_id now call-time; ~12 docstring/comment examples
+reworded. Live-file grep akiendelllinux=0 (tests/+memory records excluded, per decision signal).
+NEXT (env-vars phase, last item): T-uu-sweep-instance-name (L, ~238 files, HIGH-inertia config
+flagged for approval) — standalone Igor-wild-0001 -> IGOR_NAME resolver, value-preserving.
+Then env phase DONE -> skills cluster (D-skills-two-products, Friday) -> launchers.
