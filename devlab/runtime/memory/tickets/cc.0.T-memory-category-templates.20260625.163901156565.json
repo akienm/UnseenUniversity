@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-memory-category-templates.20260625.163901156565",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-memory-category-templates"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-25T22:39:01.156565+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-filesystem-memory-store-2026-06-16"
+    ],
+    "tickets": [
+      "T-memory-category-templates"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-memory-category-templates",
+    "title": "[sprint] Add !CategoryTemplate.json to each memory-type root (self-documenting field schema)",
+    "size": "S",
+    "tags": [
+      "Memory",
+      "Documentation"
+    ],
+    "intention": "I intend that each devlab/runtime/memory/<category>/ root carries a !CategoryTemplate.json naming every field and its purpose, so the emission shape is self-documenting at the point of use.",
+    "description": "Akien (2026-06-25): it'd be nice to have each memory type carry, in its root, a !CategoryTemplate.json documenting all the fields and what each is used for. The '!' prefix sorts it to the top of the directory listing so it's the first thing a reader (human or CC) sees when opening a category dir. One template per category under devlab/runtime/memory/ (decisions, tickets, slates, sessions, rules, proofs, design_patterns, notes, projects, architecture, builder_feedback, judge, librarian, boot, artifacts). Each template documents the shared envelope fields (id, emitter, namespace, category, kind, emitted_at, links) plus the category-specific body fields, each with a one-line 'what it's for'. Source of truth is the emission shape produced by memory_emit.py + devlab/runtime/memory/SPEC.md; the templates are a derived, human-facing reference (ideally generated from the same field definitions so they can't drift).\n\n**Affected files:** new devlab/runtime/memory/<category>/!CategoryTemplate.json per category; possibly a small generator in devlab/claudecode/ that emits them from memory_emit.py field defs + SPEC.md; no change to memory_emit.py write path.\n**Design rules:** flat-file (no DB); canonical memory home is devlab/runtime/memory/ (one home, no exceptions); writes normally go through memory_emit.py — these templates are static reference docs, not emissions, so they are the documented exception (like SPEC.md).\n**Scope boundary:** IN — one !CategoryTemplate.json per existing category root + the field documentation; optionally a generator so they regenerate rather than drift. OUT — changing the emission schema itself, validation/enforcement that emissions match the template, retrofitting historical files.\n**Test plan:** assert every category dir under devlab/runtime/memory/ that memory_emit.py can write to has a !CategoryTemplate.json; assert each template lists the shared envelope fields. If a generator is built, assert it reproduces the committed templates idempotently (red→green a hollow build couldn't pass).\n**Completion criteria:** every active memory category root contains a !CategoryTemplate.json documenting its fields; a test proves presence + envelope-field coverage for >=1 category (ideally all).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-filesystem-memory-store-2026-06-16",
+    "gate": null,
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-06-25T22:38:59.140179+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-25T22:38:59.186083+00:00"
+  }
+}

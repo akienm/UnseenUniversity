@@ -22,6 +22,7 @@ NONE
 - T-uu-cli-dispatcher — uu <verb> dispatcher — zero-inference view/control CLI (Built bin/uu — zero-inference uu <verb> dispatcher. First-token dispatch + shift + "$@" passthrough (the convention the )
 - T-device-skills-via-uu-device — Device skills fold into uu device <dev> <verb> [<noun>] + /device <dev> <verb> (Built the uu device <dev> <verb> dispatch mechanism (the two-products split at the device boundary) + /device CC-facing )
 - T-savestate-run-nameerror-fix — Fix savestate run: module-level NameError + stale holdovers (Fixed skills/savestate/run: (1) module-level NameError — uu_home() was called at module scope while imported only inside)
+- T-per-device-log-hierarchy — Unified per-device log home (~/.unseen_university/logs/<device>/) (Per-device log hierarchy shipped: DiagnosticBase JSON sink routes every device's records to ~/.unseen_university/logs/<d)
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
@@ -197,3 +198,9 @@ Done: Phase B dispatcher(M)+device-skills(L) proven; readfeed design clarified+t
 Next: T-per-device-log-hierarchy (M) — unblocks readfeed CLI + web-feed buttons → views-retire → workflow-index = D-skills-two-products wrapped.
 
 ## In-flight: NONE — all durable: pushed, tree clean. Phase B foundation (dispatcher+device-skills) proven; readfeed prereqs filed; savestate skill repaired.
+- T-per-device-log-hierarchy: Unified per-device log home (~/.unseen_university/logs/<device>/ info/warn/debug)
+- T-memory-category-templates: !CategoryTemplate.json per memory-type root (self-documenting field schema)
+
+## In-flight: T-per-device-log-hierarchy BUILT but NOT yet committed/proven/closed (in_progress). Impl: diagnostic_base/base.py routes every DiagnosticBase device to <log_root>/<device>/<stream>/ (info/warn/debug; WARNING+→warn, exact level kept on record); call-time _default_log_root() honoring UU_LOG_ROOT else uu_home()/logs; (cls,root) logger-cache key; property+setter _log_root. Also fixed web_server flat log→logs/web_server/, shim trace→logs/shim/trace, CLAUDE.md hard-rule reconciled + 5 doc mentions. Proof test tests/test_per_device_log_hierarchy.py (8) + 2 updated diagnostic_base tests; logging(39)+shim/perf(98) green. Autouse conftest _redirect_log_root added (UU_LOG_ROOT→tmp, global). FULL SUITE running in background bg-id bnzry300o to verify the global conftest change. RESUME: confirm suite green -> commit impl+tests -> emit red->green proof against pre-impl parent-ref (HEAD before commit) -> commit proof -> close proven. Tree DIRTY (uncommitted). Also filed T-memory-category-templates (S, sprint, !CategoryTemplate.json per memory-type root).
+
+## In-flight: T-per-device-log-hierarchy CLOSED PROVEN (proof cc.0.per-device-log-hierarchy @ 2e12e75a; impl 2e12e75a + proof c2b3e0a5). DiagnosticBase JSON sink now routes every device to ~/.unseen_university/logs/<device>/{info,warn,debug}/; ungated T-uu-readfeed + T-device-web-feed-channel-buttons. Bookkeeping commit pending (slate + ticket moves + 2 newly-filed tickets: T-memory-category-templates, T-test-skill-filter-dead-seed-path). Full suite is hygiene-only (env-var log redirect blast radius = log-path-asserting tests, all green; 1 pre-existing unrelated fail ticketed).
