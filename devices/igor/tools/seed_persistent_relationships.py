@@ -25,6 +25,7 @@ import sys
 from datetime import datetime, timezone
 
 from ..paths import paths as _paths
+from unseen_university.identity import swarm_hostname
 DB_URL = _paths().home_db_url
 
 
@@ -54,7 +55,7 @@ def _upsert_tree(cur, tree_id: str, name: str, facia_id: str, description: str) 
         SET facia_id = EXCLUDED.facia_id,
             description = EXCLUDED.description
         """,
-        (tree_id, name, facia_id, json.dumps({}), description, "akiendelllinux"),
+        (tree_id, name, facia_id, json.dumps({}), description, swarm_hostname()),
     )
 
 

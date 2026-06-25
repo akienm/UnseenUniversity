@@ -576,7 +576,7 @@ registry.register(
     Tool(
         name="read_system_file",
         description=(
-            "Read any file on akiendelllinux's filesystem (read-only). "
+            "Read any file on the local filesystem (read-only). "
             "Absolute path required (e.g. /etc/hostname, /proc/cpuinfo, /home/akien/.bashrc). "
             "Use this to learn about the machine, installed software, config files, and OneDrive share paths."
         ),
@@ -595,7 +595,7 @@ registry.register(
     Tool(
         name="list_system_dir",
         description=(
-            "List a directory anywhere on akiendelllinux's filesystem (read-only). "
+            "List a directory anywhere on the local filesystem (read-only). "
             "Absolute path required (e.g. /home/akien, /mnt, /etc). "
             "Use this to discover mount points, installed packages, OneDrive share location, etc."
         ),

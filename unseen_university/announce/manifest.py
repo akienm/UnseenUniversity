@@ -69,7 +69,7 @@ class ACL:
 class Manifest:
     schema_version: str
     issued_at: str  # ISO 8601 UTC
-    issued_by: str  # "skeleton@akiendelllinux.1"
+    issued_by: str  # "skeleton@myhost.1"
     issued_to: dict  # echo of IdentityEnvelope (agent_id, instance, box, box_n)
     manifest_id: str  # uuid4
 
@@ -78,8 +78,8 @@ class Manifest:
     state_refs: list[StateRef]
     acl: ACL
 
-    surface_addresses: dict  # {"console": "comms://akiendelllinux.1.console", ...}
-    primary_address: str  # "comms://akiendelllinux.1"
+    surface_addresses: dict  # {"console": "comms://myhost.1.console", ...}
+    primary_address: str  # "comms://myhost.1"
 
     profile_version: str
     profile_etag: str  # SHA-256 of the profile YAML

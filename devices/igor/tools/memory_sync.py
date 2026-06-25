@@ -2,16 +2,16 @@
 memory_sync.py — T-memory-sync #293: swarm-wide memory synchronization.
 
 Each Igor instance syncs its portable memories against IGOR_SWARM_DB
-(akiendelllinux's Postgres). Hub-and-spoke: every box pushes local changes
+(the home box's Postgres). Hub-and-spoke: every box pushes local changes
 to the swarm home and pulls new/updated memories from it.
 
 Gate: IGOR_MEMORY_SYNC_ENABLED=true  (default false)
-Env:  IGOR_SWARM_DB     — Postgres URL for the swarm home (akiendelllinux)
+Env:  IGOR_SWARM_DB     — Postgres URL for the swarm home (the home box)
       UU_HOME_DB_URL  — this instance's local Postgres
 
 Instance self-registration:
   On every sync, this instance upserts a SWARM_{instance_id} memory node
-  into the swarm DB so akiendelllinux knows who is alive.
+  into the swarm DB so the home box knows who is alive.
 
 Scope:
   Synced:     memories WHERE portable=1

@@ -16,7 +16,7 @@ Machine priority (inference_rank):
   1  akienyoga9i   — fastest CPU, wifi
   2  akiendell     — wired, desk hours blocked 0600-1800
   3  akienyogai7   — slowest CPU, living room hours blocked 1700-2100
-  4  akiendelllinux — Igor home + DB host, last resort, never blocked by hours
+  4  <home-host> — Igor home + DB host, last resort, never blocked by hours
 """
 
 from __future__ import annotations

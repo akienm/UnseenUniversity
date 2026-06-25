@@ -40,7 +40,7 @@ class IdentityEnvelope:
     # Mandatory
     agent_id: str  # logical type, e.g. "igor", "cc", "research-orca"
     instance: str  # this-process identifier, e.g. "wild-0001"
-    box: str  # hostname, e.g. "akiendelllinux"
+    box: str  # hostname, e.g. "myhost"
     box_n: int  # instance number on this box (0-indexed)
     pid: int  # OS pid for liveness debugging
     interface_version: str  # matches BaseDevice.INTERFACE_VERSION
@@ -59,15 +59,15 @@ class IdentityEnvelope:
 
     @property
     def primary_mailbox(self) -> str:
-        """Flat mailbox name for this agent's primary inbox, e.g. 'akiendelllinux.0'."""
+        """Flat mailbox name for this agent's primary inbox, e.g. 'myhost.0'."""
         return f"{self.box}.{self.box_n}"
 
     def surface_mailbox(self, surface: str) -> str:
-        """Suffix-style surface mailbox, e.g. 'akiendelllinux.0.console'."""
+        """Suffix-style surface mailbox, e.g. 'myhost.0.console'."""
         return f"{self.primary_mailbox}.{surface}"
 
     def coa_mailbox(self, coa_id: str | None = None) -> str:
-        """COA mailbox, e.g. 'akiendelllinux.0.coa-2'."""
+        """COA mailbox, e.g. 'myhost.0.coa-2'."""
         c = coa_id or self.coa_id
         if not c:
             raise ValueError("coa_id required for coa_mailbox")

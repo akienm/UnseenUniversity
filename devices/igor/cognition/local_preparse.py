@@ -13,7 +13,7 @@ on local hardware.
 ## Local-only constraint (load-bearing)
 
 Akien explicitly removed web-LLM preparse (gpt5mini) from akiendell
-and akiendelllinux — the latency was unacceptable on the critical
+and the home box — the latency was unacceptable on the critical
 path. This fallback must NEVER call cloud inference. If the local
 Ollama is unreachable, the caller falls through to cortex.search (or
 whatever the next tier is); we don't pivot to OpenRouter or Anthropic.

@@ -5,7 +5,7 @@ Decision:
   Walk machines by inference_rank (from DB via machine_manager).
   Skip in-use (in_use_hours window or override) and unhealthy (Ollama down).
   Return first suitable (host_url, model).
-  Return (None, None) only if every machine — including akiendelllinux — is unreachable.
+  Return (None, None) only if every machine — including the home box — is unreachable.
 
 Callers treat (None, None) as "use cloud" via the tier ladder.
 

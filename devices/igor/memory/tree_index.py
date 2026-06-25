@@ -26,9 +26,9 @@ Forensic log: ~/.unseen_university/logs/tree_index.log
 
 import json
 import logging
-import os
 from ..paths import paths as _paths
 from ..igor_base import IgorBase
+from unseen_university.identity import swarm_hostname
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -38,8 +38,10 @@ _DB_URL = _paths().home_db_url
 
 
 def _machine_id() -> str:
-    # STUB (stub-first proof, T-uu-sweep-hostname) — becomes swarm_hostname() in the fix commit.
-    return "akiendelllinux"
+    """This machine's swarm name, resolved at call time (IGOR_SWARM_NAME or live
+    hostname) — never a baked literal, so the trees.machine_id column follows the
+    host on any box. (T-uu-sweep-hostname; resolver is identity.swarm_hostname.)"""
+    return swarm_hostname()
 
 _LOG_DIR = Path.home() / ".unseen_university" / "logs"
 

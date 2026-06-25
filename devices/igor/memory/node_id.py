@@ -108,7 +108,7 @@ def new_node_id(suffix: str | None = None) -> str:
                 Pass None (default) to use the process-level suffix from env vars.
 
     Returns:
-        e.g. "20260329143022123456" or "20260329143022123456.akiendelllinux"
+        e.g. "20260329143022123456" or "20260329143022123456.myhost"
     """
     us = _next_unique_us()
     ts = str(us)  # already 20 digits: YYYYMMDDHHMMSSuuuuuu

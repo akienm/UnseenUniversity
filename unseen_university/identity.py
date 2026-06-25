@@ -2,7 +2,7 @@
 
 This is the single import target for de-hardcoding the install's identity across the
 repo: the instance / home-DB name (was 'Igor-wild-0001'), the home DB URL, and the
-machine/swarm name (was 'akiendelllinux'). The three sweep tickets point their files
+machine/swarm name (previously a hardcoded host literal). The three sweep tickets point their files
 here.
 
 Contract (the lazy-vs-eager discriminator):
@@ -83,7 +83,7 @@ def compose_state_uri(ref: str) -> str:
 
 def swarm_hostname() -> str:
     """This machine's swarm name: env ``IGOR_SWARM_NAME`` if set, else the live
-    hostname. Total (never raises) — de-hardcodes 'akiendelllinux' without adding a
+    hostname. Total (never raises) — de-hardcodes the previously-baked host literal without adding a
     failure mode, since the hostname is always discoverable.
     """
     return os.environ.get("IGOR_SWARM_NAME") or socket.gethostname()

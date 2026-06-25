@@ -1117,7 +1117,7 @@ registry.register(
 
 
 _RUN_TESTS_TIMEOUT_SEC = (
-    600  # suite takes ~280s on akiendelllinux CPU-only; 300 was too tight
+    600  # suite takes ~280s on this box CPU-only; 300 was too tight
 )
 
 # Tests excluded from run_tests — network-calling or shared-state-flaky tests.

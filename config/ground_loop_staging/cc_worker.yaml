@@ -35,7 +35,7 @@ start_env:
   PYTHONPATH: /home/akien/dev/src/UnseenUniversity
   # CC_TMUX_SESSION: override if the target tmux session name differs from the
   # CCWorkerListener default (<hostname>.cc.0).
-  # CC_TMUX_SESSION: akiendelllinux.cc.0
+  # CC_TMUX_SESSION: myhost.cc.0
 
 # Poll every 30s; restart up to 3 times before tripping the circuit breaker.
 poll_interval: 30

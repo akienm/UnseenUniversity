@@ -13,7 +13,7 @@ URI shape:
 
 The mailbox_name is the registered IMAP folder. Optional dot-separated
 suffix segments after a registered mailbox name carry surface qualifiers
-(e.g. comms://akiendelllinux.1.console resolves to mailbox akiendelllinux.1
+(e.g. comms://myhost.1.console resolves to mailbox myhost.1
 with surface='console'). The router peels suffixes longest-prefix-wins
 until a registered mailbox matches.
 
@@ -22,8 +22,8 @@ Examples:
     comms://CC.0                         → mailbox CC.0
     comms://igor-wild-0001               → mailbox igor-wild-0001
     comms://igor-wild-0001.console       → mailbox igor-wild-0001 (surface=console)
-    comms://akiendelllinux.1             → mailbox akiendelllinux.1
-    comms://akiendelllinux.1.inference   → mailbox akiendelllinux.1 (surface=inference)
+    comms://myhost.1             → mailbox myhost.1
+    comms://myhost.1.inference   → mailbox myhost.1 (surface=inference)
 """
 
 from __future__ import annotations
