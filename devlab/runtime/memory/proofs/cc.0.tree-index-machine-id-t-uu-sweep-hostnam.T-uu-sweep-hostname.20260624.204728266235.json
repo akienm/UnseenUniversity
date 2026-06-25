@@ -1,0 +1,71 @@
+{
+  "id": "cc.0.tree-index-machine-id-t-uu-sweep-hostnam.T-uu-sweep-hostname.20260624.204728266235",
+  "emitter": "cc.0",
+  "namespace": [
+    "tree-index-machine-id-t-uu-sweep-hostnam",
+    "T-uu-sweep-hostname"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-24T20:47:28.266235",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-sweep-hostname"
+    ],
+    "commits": [
+      "e40c6110806b8881fdd1388d3a3ecbdf8a1c4ae3"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "tree_index machine_id (T-uu-sweep-hostname)",
+    "intention": "tree_index resolves machine_id from the live hostname (identity.swarm_hostname) at call time, never the baked 'akiendelllinux' literal",
+    "test": "tests/igor/test_tree_index.py::test_machine_id_resolves_hostname_not_baked_literal",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_tree_index.py::test_machine_id_resolves_hostname_not_baked_literal",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        On this box socket.gethostname()=='akiendelllinux', so the baked default was\n        invisible; monkeypatching a different hostname (with IGOR_SWARM_NAME unset)\n        exposes whether the value follows the host or is frozen to the old literal.\n        \"\"\"\n        import devices.igor.memory.tree_index as ti\n    \n        monkeypatch.delenv(\"IGOR_SWARM_NAME\", raising=False)\n        monkeypatch.setattr(\"socket.gethostname\", lambda: \"proof-host-xyz\")\n>       assert ti._machine_id() == \"proof-host-xyz\"\nE       AssertionError: assert 'akiendelllinux' == 'proof-host-xyz'\nE         \nE         - proof-host-xyz\nE         + akiendelllinux\n\ntests/igor/test_tree_index.py:260: AssertionError\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-24 20:47:27.982 | WARNING  | logging:callHandlers:1762 - slow query 257ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_tree_index.py::test_machine_id_resolves_hostname_not_baked_literal\n1 failed in 1.52s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.49s"
+          }
+        }
+      }
+    ],
+    "commit": "e40c6110806b8881fdd1388d3a3ecbdf8a1c4ae3",
+    "impl_paths": [
+      "config/ground_loop_staging/cc_worker.yaml",
+      "devices/igor/cognition/cluster_router.py",
+      "devices/igor/cognition/local_preparse.py",
+      "devices/igor/memory/node_id.py",
+      "devices/igor/memory/tree_index.py",
+      "devices/igor/tools/filesystem.py",
+      "devices/igor/tools/machine_manager.py",
+      "devices/igor/tools/memory_sync.py",
+      "devices/igor/tools/ops.py",
+      "devices/igor/tools/seed_persistent_relationships.py",
+      "devlab/runtime/memory/tickets/cc.0.T-uu-sweep-hostname.20260622.175837319702.json",
+      "unseen_university/announce/envelope.py",
+      "unseen_university/announce/manifest.py",
+      "unseen_university/bus/router.py",
+      "unseen_university/identity.py"
+    ],
+    "ticket": "T-uu-sweep-hostname",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
