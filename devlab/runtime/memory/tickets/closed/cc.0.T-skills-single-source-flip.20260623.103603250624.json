@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-skills-single-source-flip",
-    "title": "[sprint] Flip survivor skills to single-source (project-scope .claude/skills)",
+    "title": "Flip survivor skills to single-source (project-scope .claude/skills)",
     "size": "M",
     "tags": [
       "Skills",
@@ -31,18 +31,25 @@
     "priority": 0.4,
     "intention": "I intend that each managed skill has exactly one editable copy (the repo), so drift cannot recur.",
     "description": "**Problem:** two copies still exist; flip survivors to single-source so drift can't recur. Merge-before-flip is the load-bearing invariant (gated behind the content-merge ticket).\n\n**Shape:** CHOSEN mechanism = project-scope `.claude/skills/` — a committed in-repo symlink `<repo>/.claude/skills -> skills` so CC auto-loads canonical skills when working in the repo (verified: loader follows symlinks; project scope is a real load path). Per-skill ~/.claude/skills/<name> -> $UU_ROOT/skills/<name> symlinks are the FALLBACK if project-scope precedence is wrong. Clear the personal (~/.claude/skills) copies of MANAGED skills so they can't shadow the repo (confirm project-vs-personal precedence first). Two-tier rule: canonical = repo (symlink/project-scope); local-only = real dir in ~/.claude/skills (Igor-runtime: diagnose/debug/dream/igor-diagnose). Update skills/skills-sync/run: deploy = 'ensure symlink / leave local-only alone', drop the destructive copy-overwrite. NOTE: a newly-created skill symlink needs a CC restart to be watched.\n\n**Affected files:** repo .claude/skills symlink (new); ~/.claude/skills/ (remove managed copies); skills/manifest.json (semantics: symlink not copy); skills/skills-sync/run.\n**Design rules:** single-source; two-tier (canonical=repo / local-only=Igor); UU_ROOT-resolved; portable across machines.\n**Scope boundary:** IN — flip managed survivors to project-scope single-source + update skills-sync + restart note + clear shadowing personal copies. OUT — skill content (done prior); Igor-local skills (untouched).\n**Test plan:** after flip + CC restart, editing a repo SKILL.md changes the loaded skill; ~/.claude/skills has no managed-skill copies (only Igor-local real dirs); Igor-local skills still load; the drift audit (comm + per-skill diff) returns zero.\n**Completion criteria:** exactly one editable copy of each managed skill (the repo); drift audit returns zero; Igor-local skills unaffected; skills-sync deploys via symlink, not destructive copy; project-vs-personal precedence confirmed so no stale personal copy shadows.\n\n## Akien 2026-06-24 — fork #1 resolution (OVERRIDES the project-scope-primary choice above)\nCHOSEN mechanism = PER-SKILL symlinks: for each repo skill, link `~/.claude/skills/<name> -> $UU_ROOT/skills/<name>`. NOT a folder link. Local-only skills (no repo counterpart) are left UNTOUCHED (coexist). A real (non-symlink) dir colliding with a repo-skill name -> drop a system_alarm (operations/system_alarms/, canonical name system_alarm) and ASK the user — the ONLY non-scriptable step. Akien has ZERO local skills, so for him the flip is clean. NO two-way sync — sync was the drift engine; links only. (Project-scope <repo>/.claude/skills symlink may ALSO be added for in-repo auto-load, but the per-skill global links are the chosen primary.)\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set",
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-06-23T16:36:02.359530+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Single-source flip LIVE + door closed. 49 managed skills flipped from drifted real-dir copies to symlinks into repo skills/; in-repo .claude/skills -> ../skills committed (f3a2d44d); installer deploy converted copy->symlink so drift can't return (e17611f1); deprecated cognition-debug/debug-pe-chain deleted; Igor-runtime/view skills preserved local-only (two-tier). Proof: tests/test_skills_single_source_proof.py (red copy->dir, green link).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-25T19:21:32.295083+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-23T16:36:02.359584+00:00"
+    "scraps_validated": "2026-06-23T16:36:02.359584+00:00",
+    "proven": true,
+    "proof_id": "cc.0.single-source-skills-flip-deploy-links-e.T-skills-single-source-flip.20260625.132122147121",
+    "proof_commit": "60c72cdc58089ca05b0ae3d0aa626374d9be2fb9",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

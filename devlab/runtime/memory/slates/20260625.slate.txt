@@ -14,6 +14,8 @@ NONE
 - T-remove-autocompact-calls — Remove all /autocompact CALLS (skill itself stays) (Repo skills/ swept correct; guard green.)
 - T-uu-sweep-skill-psql-creds — De-hardcode dead DB creds in skill SKILL.md psql commands (Repo skills/ swept correct; guard green.)
 - T-day-close-audit-skill-stale-paths — BUG: day-close-audit (+ other skills) reference retired wild_igor/igor + lab/ paths (Repo skills/ swept correct; guard green.)
+- T-skills-single-source-flip — Flip survivor skills to single-source (project-scope .claude/skills) (Single-source flip LIVE + door closed. 49 managed skills flipped from drifted real-dir copies to symlinks into repo skil)
+- T-skills-content-merge-survivors — One-time content merge of drifted survivor skills to canonical (Resolved to repo-canonical: repo skills/ verified as the clean fs-store rewrite (D-canonical-memory-consolidation); loca)
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
@@ -65,3 +67,20 @@ Done: (1) Skills Phase A — correctness sweep + prune, guard-green (tests/test_
 (3) HARD CORRECTION recorded: NO SKILLS SYNC EVER; single-source = directory SYMLINK (memory feedback_no_skills_sync_symlink; spec T-skills-single-source-flip).
 (4) Meta-design /sorted -> D-decisions-as-guards-anchors-2026-06-25 (4 tickets): decisions carry executable guards (immediate test, vs consequence=delayed) + parent-narrative anchor (decompose-by-intention, N-of-M, stamped parent invariant/rejected-alt, distilled rollup-on-close) so fresh contexts re-orient WITHOUT a look-back instruction.
 Next: skills STILL front-burner. The move that makes Phase A fixes live + permanently kills the dual-location bug = SYMLINK single-source flip (T-skills-single-source-flip) — NOT sync, Akien sign-off. Then prune remainder (fold /sprint, igor-diagnose vs diagnose) + Phase B uu CLI (T-uu-cli-dispatcher -> device-skills -> readfeed/alarms -> views-retire -> content-merge). Decisions-as-guards tickets ready when picked. Priority unchanged: skills -> DickSimnel -> Granny -> cleanup -> igor LAST.
+
+## SKILLS SINGLE-SOURCE FLIP — DONE + PROVEN (2026-06-25, post-compact, Akien: "do it right NOW")
+The drift cure is LIVE. No more two-copies. Commits f3a2d44d (cure) · e17611f1 (door) · 0776144c (proof).
+- FLIP: ~/.claude/skills/<name> flipped from drifted real-dir COPIES → symlinks into repo skills/ for all 49
+  managed skills. In-repo .claude/skills -> ../skills (relative) committed = project-scope canonical load.
+  Verified: live skills resolve to repo content; loader follows symlinks.
+- DOOR CLOSED: installer deploy_skills converted copy→SYMLINK (SymlinkBackend; rsync/copytree backends gone).
+  Idempotent ensure-link; unlisted dirs left alone (two-tier). manifest.json regenerated from real repo dirs.
+  skills-sync/run docstring corrected. Installer tests updated + dst-is-symlink regression test. 38 tests green.
+- DELETED deprecated: cognition-debug, debug-pe-chain (decision step 3). Backup at scratchpad/skills_local_backup_*.tar.gz.
+- LOCAL-ONLY PRESERVED (two-tier, untouched): concept, debug, diagnose, health, igor-diagnose, map-igor,
+  migrate-decisions, question, readigor, recall, recover.
+- Closed: T-skills-single-source-flip (PROVEN: tests/test_skills_single_source_proof.py), 
+  T-skills-content-merge-survivors (shipped-unproven: resolved to repo-canonical, no superset-harness yet).
+REMAINING (D-skills-two-products): T-skills-prune-deprecated-merge (deprecated deleted ✓; STILL TODO: fold
+  /sprint→query-ticket+sprint-ticket, resolve igor-diagnose vs diagnose). Phase B uu CLI view-layer
+  (T-uu-cli-dispatcher → device-skills → readfeed/alarms → views-retire). recover repo-status = Phase-A follow-up.
