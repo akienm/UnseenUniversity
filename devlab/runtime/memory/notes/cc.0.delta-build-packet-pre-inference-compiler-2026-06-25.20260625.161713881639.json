@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.delta-build-packet-pre-inference-compiler-2026-06-25.20260625.161713881639",
+  "emitter": "cc.0",
+  "namespace": [
+    "delta-build-packet-pre-inference-compiler-2026-06-25"
+  ],
+  "category": "notes",
+  "kind": "milestone",
+  "emitted_at": "2026-06-25T16:17:13.881639",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-skills-two-products"
+    ],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "MILESTONE — Delta's pre-inference compiler measured at 51% token reduction (build_packet.v1)",
+    "date": "2026-06-25",
+    "source": "Akien shared from Delta day-job (NOT mirrored into UU; informs it). Information only.",
+    "headline": "First empirical proof that helper-first / pre-inference packaging pays for itself in tokens. Real isolated run: baseline 709 -> helper-first 347 tokens. Reduction 362 tokens / 51.06%. Status: improved. One step complete and tested in isolation.",
+    "what_it_is": "build_packet.json (schema build.packet.v1, stage pre-inference): a DETERMINISTIC artifact that packages intent, constraints, and context BEFORE the LLM, so the model gets a cleaner input and is reserved for generation quality only.",
+    "why_milestone": "The compiled-inference north star (move deterministic work out of inference; intent-driven build without LLM restart) rested on a BET that pre-inference packaging is net token-positive. This measures the bet at half. Bet -> data.",
+    "packet_shape_mirrors_uu_workflow_stack": [
+      "intent (confidence-scored) -> hypothesis-extraction",
+      "constraints.hard_constraints -> Design rules + scope boundary",
+      "framing.success_definition / verification_focus -> completion criteria",
+      "context_shortlist (scored, with reasons) -> Librarian / symbols-table retrieval, deterministic",
+      "sufficiency_gate (pass/fail + missing_fields) -> CP1 'I don't know' made STRUCTURAL; refuses handoff when fields thin; cheapest piece to port (pure field-presence logic, no model call)",
+      "proof_plan.token_measurement -> proof-on-close as a first-class output; per-packet baseline-vs-helper-first count; compilation-depth metric accretes automatically, one packet at a time",
+      "consequence_check (risk_level, recommended_action) -> consequence-check ticket promoted to a packet field",
+      "determinism.fingerprint_sha256 -> same input -> same packet; what makes it a COMPILER not a prompt"
+    ],
+    "convergence": "Delta split deterministic-helpers vs LLM-generation; UU split zero-inference uu-CLI views vs reasoning skills (D-skills-two-products, Friday 2026-06-26). Same architecture, two directions, same week. The uu CLI is UU's first beachhead of the same principle.",
+    "direction_of_travel": "UU's reasoning-bearing workflow skills are progressive-compilation candidates -> packet-builders that do deterministically what CC now does by hand. sufficiency_gate first (cheapest, most aligned with proof-on-close).",
+    "disposition": "Information only per Akien. No UU ticket filed. Recorded as milestone for memory."
+  }
+}
