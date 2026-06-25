@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.home-db-name-decoupled-from-igor-name-co.T-uu-rename-role-and-db.20260624.180014914482",
+  "emitter": "cc.0",
+  "namespace": [
+    "home-db-name-decoupled-from-igor-name-co",
+    "T-uu-rename-role-and-db"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-24T18:00:14.914482",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-rename-role-and-db"
+    ],
+    "commits": [
+      "887245a1db5e5fb350780604b539f714069b08c5"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "home DB name decoupled from IGOR_NAME; composed from UU_HOME_DB_NAME",
+    "intention": "the processor composes UU_HOME_DB_URL's DB component from UU_HOME_DB_NAME (not the IGOR_NAME tenant identity)",
+    "test": "tests/test_uu_home_db_name_compose.py::test_db_name_comes_from_uu_home_db_name",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_uu_home_db_name_compose.py::test_db_name_comes_from_uu_home_db_name",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________________ test_db_name_comes_from_uu_home_db_name ____________________\n\ntmp_path = PosixPath('/tmp/pytest-of-akien/pytest-68/test_db_name_comes_from_uu_hom0')\n\n    def test_db_name_comes_from_uu_home_db_name(tmp_path):\n        \"\"\"The DB component is UU_HOME_DB_NAME, not the IGOR_NAME tenant identity.\"\"\"\n        url = _compose({\"UU_HOME_DB_NAME\": \"substrate_db\"}, tmp_path)\n>       assert url.endswith(\"/substrate_db\"), url\nE       AssertionError: postgresql://role_x:pw_x@10.9.9.9/tenant_inst\nE       assert False\nE        +  where False = <built-in method endswith of str object at 0x771e98d20870>('/substrate_db')\nE        +    where <built-in method endswith of str object at 0x771e98d20870> = 'postgresql://role_x:pw_x@10.9.9.9/tenant_inst'.endswith\n\ntests/test_uu_home_db_name_compose.py:45: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_uu_home_db_name_compose.py::test_db_name_comes_from_uu_home_db_name\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "887245a1db5e5fb350780604b539f714069b08c5",
+    "impl_paths": [
+      "bin/uu_bash_profile_processor.sh",
+      "devlab/runtime/memory/slates/20260624.slate.txt"
+    ],
+    "ticket": "T-uu-rename-role-and-db",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
