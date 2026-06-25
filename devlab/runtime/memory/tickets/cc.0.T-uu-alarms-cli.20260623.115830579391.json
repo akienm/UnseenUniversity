@@ -27,7 +27,7 @@
       "CLI"
     ],
     "decision_id": "D-system-alarms-and-tier-requests-2026-06-23",
-    "gate": "T-uu-cli-dispatcher",
+    "gate": null,
     "priority": 0.45,
     "status": "sprint",
     "intention": "I intend that Akien can see and clear system alarms with a zero-inference command.",

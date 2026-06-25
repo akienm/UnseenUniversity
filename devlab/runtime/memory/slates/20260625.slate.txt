@@ -19,6 +19,7 @@ NONE
 - T-skills-prune-deprecated-merge — Delete deprecated skills; fold sprint; reconcile igor-diagnose (Deprecated cognition-debug + debug-pe-chain already deleted from repo + ~/.claude/skills + manifest (verified gone from )
 - T-skill-dispositions-investigate — Determine disposition of unclear skills (map-igor, outcome, eval-run, weekly-retro, factory-create, critic, new) (Disposition table recorded. map-igor: KEEP local-only — Igor-runtime full-state snapshot tool (Haiku, writes ~/.unseen_u)
 - T-skills-deadstep-followup — Decide fate of 3 never-built day-close helper scripts (All 3 never-built helper-script intents RETIRED — each superseded by an existing mechanism, no capability lost, nothing )
+- T-uu-cli-dispatcher — uu <verb> dispatcher — zero-inference view/control CLI (Built bin/uu — zero-inference uu <verb> dispatcher. First-token dispatch + shift + "$@" passthrough (the convention the )
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
@@ -125,3 +126,17 @@ T-skills-deadstep-followup (shipped-unproven, retire-intent): all 3 RETIRED, eac
 DEFERRED (gated on Phase B dispatcher): T-workflow-index-and-uu-help — `uu help` needs the
   uu CLI dispatcher (T-uu-cli-dispatcher); /workflow reframe would advertise non-existent
   device/view families. Waits until after Friday with the rest of Phase B.
+
+## PHASE B started — uu CLI dispatcher DONE+PROVEN (2026-06-25, Akien: wrap skills completely ASAP)
+T-uu-cli-dispatcher closed proven (commits 088e5384 impl+test, 84fc8f64 proof).
+bin/uu — zero-inference `uu <verb>` dispatcher; first-token dispatch + shift + "$@" passthrough
+(chain inherits: uu device/readfeed nest additively). Verbs: mytickets/opentickets read the
+CANONICAL FS STORE via ticket_store+ticket_status (⛔ DB is NOT source of truth for any build
+artifact — Akien correction; also NOT cc_queue.py list which hides tickets); recall/research →
+librarian scripts; help/no-verb lists verbs; bogus → help+nonzero. bin/ on PATH via versioned
+profile processor (idempotent); `command -v uu` verified in fresh sourced shell. ⚠️ AKIEN: re-source
+your profile (or new shell) for `uu` to appear; ~/bin uu* retirement is yours (no collision).
+Proof: tests/test_uu_dispatcher.py (hermetic).
+Ungated by this close: T-device-skills-via-uu-device (L), T-uu-alarms-cli.
+NEXT: T-workflow-index-and-uu-help (S, now unblocked) → then device-skills (L, igor-touching, heaviest
+— surface to Akien). readfeed (M) + views-retire (M) are gated BEHIND device-skills.

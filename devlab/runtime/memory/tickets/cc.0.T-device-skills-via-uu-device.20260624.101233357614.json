@@ -28,7 +28,7 @@
       "Architecture"
     ],
     "decision_id": "D-skills-two-products-2026-06-23",
-    "gate": "T-uu-cli-dispatcher",
+    "gate": null,
     "priority": 0.5,
     "status": "triage",
     "intention": "I intend that device-specific behavior lives with the device, reached by a uniform device verb, not as bespoke top-level skills.",
