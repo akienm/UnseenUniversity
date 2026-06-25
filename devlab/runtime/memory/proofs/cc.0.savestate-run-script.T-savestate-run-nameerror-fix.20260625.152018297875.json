@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.savestate-run-script.T-savestate-run-nameerror-fix.20260625.152018297875",
+  "emitter": "cc.0",
+  "namespace": [
+    "savestate-run-script",
+    "T-savestate-run-nameerror-fix"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-25T15:20:18.297875",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-savestate-run-nameerror-fix"
+    ],
+    "commits": [
+      "7f458cffac40e6716a59c29d871bf752a11d4561"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "savestate run script",
+    "intention": "The savestate run script executes without a module-level NameError and close-header writes a session-close summary to the slate",
+    "test": "tests/test_savestate_run.py::test_close_header_runs_and_writes_summary",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_savestate_run.py::test_close_header_runs_and_writes_summary",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "__________________ test_close_header_runs_and_writes_summary ___________________\n\ntmp_path = PosixPath('/tmp/pytest-of-akien/pytest-92/test_close_header_runs_and_wri0')\n\n    def test_close_header_runs_and_writes_summary(tmp_path: Path):\n        r = _run(tmp_path, \"close-header\", \"2026-06-25\", \"DONE_MARKER\", \"NEXT_MARKER\")\n>       assert r.returncode == 0, f\"close-header crashed: {r.stderr}\"\nE       AssertionError: close-header crashed: Traceback (most recent call last):\nE           File \"/home/akien/dev/src/UnseenUniversity/skills/savestate/run\", line 15, in <module>\nE             IGOR_HOME = Path(uu_home())\nE                              ^^^^^^^\nE         NameError: name 'uu_home' is not defined\nE         \nE       assert 1 == 0\nE        +  where 1 = CompletedProcess(args=['/home/akien/dev/src/UnseenUniversity/.venv/bin/python3', '/home/akien/dev/src/UnseenUniversity...<module>\\n    IGOR_HOME = Path(uu_home())\\n                     ^^^^^^^\\nNameError: name \\'uu_home\\' is not defined\\n').returncode\n\ntests/test_savestate_run.py:33: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_savestate_run.py::test_close_header_runs_and_writes_summary\n1 failed in 0.11s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.10s"
+          }
+        }
+      }
+    ],
+    "commit": "7f458cffac40e6716a59c29d871bf752a11d4561",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-savestate-run-nameerror-fix.20260625.151957879574.json",
+      "skills/savestate/run"
+    ],
+    "ticket": "T-savestate-run-nameerror-fix",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
