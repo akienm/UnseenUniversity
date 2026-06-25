@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-uu-sweep-instance-name",
-    "title": "[sprint] Sweep: standalone Igor-wild-0001 → IGOR_NAME resolver (value-preserving)",
+    "title": "[in_progress] Sweep: standalone Igor-wild-0001 → IGOR_NAME resolver (value-preserving)",
     "size": "L",
     "tags": [
       "Config",
       "Portability"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.5,
     "decision_id": "D-uu-config-identity-layer-2026-06-22",
     "gate": null,
