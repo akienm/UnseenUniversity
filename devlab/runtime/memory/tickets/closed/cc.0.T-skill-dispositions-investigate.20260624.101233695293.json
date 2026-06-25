@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-skill-dispositions-investigate",
-    "title": "[sprint] Determine disposition of unclear skills (map-igor, outcome, eval-run, weekly-retro, factory-create, critic, new)",
+    "title": "Determine disposition of unclear skills (map-igor, outcome, eval-run, weekly-retro, factory-create, critic, new)",
     "size": "S",
     "tags": [
       "Skills",
@@ -29,20 +29,26 @@
     "decision_id": "D-skills-two-products-2026-06-23",
     "gate": null,
     "priority": 0.45,
-    "status": "sprint",
+    "status": "closed",
     "intention": "I intend that no skill survives by default — each unclear one gets a keep/fold/retire recommendation.",
     "description": "**Problem:** several skills have unclear disposition; decide keep/fold/retire for each. **Shape:** read each SKILL.md, report one-line purpose + recommendation:\n- map-igor — exists ONLY in ~/.claude (drifted orphan); what is it, retire or migrate?\n- outcome, eval-run, weekly-retro — Akien has never explicitly run weekly-retro; provisional: FOLD the weekly tracks into the daily (day-close) rather than separate skills. Confirm what each does first.\n- factory-create, critic — repo-only; Akien only vaguely knows (critic likely 'launch the critic against a ticket'). Clarify + recommend (note: critic likely folds into /device <dev> critic per T-device-skills-via-uu-device).\n- 'new' / 'new agent' — no such skill exists in repo or ~/.claude; get a pointer from Akien on what was meant.\n**Affected files:** none (investigation); output is a disposition table. **Design rules:** none apply. **Scope boundary:** IN — read + recommend. OUT — executing the dispositions (follow-on tickets). **Test plan:** no tests because investigation-only; output is a disposition table feeding the /sorted lock. **Completion criteria:** each listed skill has a recorded purpose + keep/fold/retire recommendation.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] datacenter_logs/<device>/<subsystem>/ is the log hierarchy. Never write to a flat — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] PATTERN-001: BaseDevice / BaseShim Lifecycle: `rollback()` must be idempotent — safe to call even if — applies: tags: pattern, pattern-001 (source: docs/design_patterns_inventory.md#PATTERN-001: BaseDevice / BaseShim Lifecycle)\n…and 38 more (lower-severity or capped) — query constraints_get for the full set\n\n## Akien 2026-06-24 — resolved via intention_review (docs/skills_intention_review_20260623.md)\n§F SCAFFOLDING — KEEP (no investigation needed): **new-agent, factory-create, critic** (and skills-sync, whose role shrinks to the symlink-flip + conflict-alarm — tracked with the single-source work).\n§E already-deleted 2026-06-23: ADCHelp, decided. cognition-debug + debug-pe-chain DELETE (tracked on T-skills-prune-deprecated-merge).\nREMAINING open dispositions for THIS ticket: only **map-igor** (~/.claude-only orphan — what is it, retire or migrate to igor's bin/) and the weekly-tracks question (**outcome / eval-run / weekly-retro** — fold into daily/day-close vs keep separate).",
     "created_at": "2026-06-24T16:12:31.990651+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Disposition table recorded. map-igor: KEEP local-only — Igor-runtime full-state snapshot tool (Haiku, writes ~/.unseen_university/maps/), same tier as diagnose/igor-diagnose; correctly stays local-only per two-tier (not a managed workflow skill), candidate to fold into 'uu device <dev>' view in Phase B. outcome: KEEP — core reasoning-bearing workflow skill that closes the hypothesis/learning loop at decision close; NOT a weekly track. eval-run + weekly-retro: FOLD (recommendation) — they already auto-fire only inside day-close's Friday branch and are never run standalone; keep as the day-close Friday implementation, do not promote as standalone workflow verbs. Actual fold deferred to follow-on (would touch frozen day-close; skills frozen for Friday demo). new-agent/factory-create/critic/skills-sync already resolved KEEP (scaffolding) per intention_review §F.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-25T20:15:48.053383+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-24T16:12:31.990702+00:00"
+    "scraps_validated": "2026-06-24T16:12:31.990702+00:00",
+    "proven": false,
+    "unproven_reason": "Investigation/disposition ticket — no red->green lever for keep/fold/retire recommendations; the recommendations ARE the deliverable, follow-on execution tickets are separate.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

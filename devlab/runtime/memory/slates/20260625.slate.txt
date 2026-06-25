@@ -17,6 +17,8 @@ NONE
 - T-skills-single-source-flip — Flip survivor skills to single-source (project-scope .claude/skills) (Single-source flip LIVE + door closed. 49 managed skills flipped from drifted real-dir copies to symlinks into repo skil)
 - T-skills-content-merge-survivors — One-time content merge of drifted survivor skills to canonical (Resolved to repo-canonical: repo skills/ verified as the clean fs-store rewrite (D-canonical-memory-consolidation); loca)
 - T-skills-prune-deprecated-merge — Delete deprecated skills; fold sprint; reconcile igor-diagnose (Deprecated cognition-debug + debug-pe-chain already deleted from repo + ~/.claude/skills + manifest (verified gone from )
+- T-skill-dispositions-investigate — Determine disposition of unclear skills (map-igor, outcome, eval-run, weekly-retro, factory-create, critic, new) (Disposition table recorded. map-igor: KEEP local-only — Igor-runtime full-state snapshot tool (Haiku, writes ~/.unseen_u)
+- T-skills-deadstep-followup — Decide fate of 3 never-built day-close helper scripts (All 3 never-built helper-script intents RETIRED — each superseded by an existing mechanism, no capability lost, nothing )
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
@@ -109,3 +111,17 @@ T-skills-prune-deprecated-merge closed proven (commits 00bb3fad fold+guard, d1fb
 Skills set now tidy for Friday demo. REMAINING D-skills-two-products: Phase B uu CLI view-layer
 (T-uu-cli-dispatcher M → device-skills → readfeed/alarms → views-retire) + housekeeping
 (T-skills-deadstep-followup, T-skill-dispositions-investigate, T-workflow-index-and-uu-help).
+
+## Skills S-housekeeping CLOSED (2026-06-25, Akien: freeze skills + low-risk polish for Friday)
+T-skill-dispositions-investigate (shipped-unproven, investigation):
+  map-igor=KEEP local-only (Igor-runtime snapshot, two-tier; fold to `uu device` later);
+  outcome=KEEP (core learning-loop workflow skill, not a weekly track);
+  eval-run+weekly-retro=FOLD recommendation (already only auto-fire in day-close Friday; don't
+  promote as standalone verbs) — actual fold deferred (touches frozen day-close).
+T-skills-deadstep-followup (shipped-unproven, retire-intent): all 3 RETIRED, each superseded —
+  docs_sync.py→fs-store; validate_files.py→path_moves_monitor.py (day-close-audit 18.8);
+  github_sync.py→redundant (tickets are committed+pushed files = already cloud-backed).
+  Enforcement = standing guard test_no_missing_script_refs.
+DEFERRED (gated on Phase B dispatcher): T-workflow-index-and-uu-help — `uu help` needs the
+  uu CLI dispatcher (T-uu-cli-dispatcher); /workflow reframe would advertise non-existent
+  device/view families. Waits until after Friday with the rest of Phase B.
