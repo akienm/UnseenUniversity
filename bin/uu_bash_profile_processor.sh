@@ -20,6 +20,15 @@
 : "${UU_ROOT:=$HOME/dev/src/UnseenUniversity}"
 export UU_ROOT
 
+# --- put the repo bin/ on PATH (the `uu` zero-inference dispatcher lives there) ---
+# Idempotent: only prepend when bin/ isn't already on PATH, so re-sourcing the
+# profile doesn't stack duplicates. Front of PATH so `uu` resolves to the repo
+# dispatcher (T-uu-cli-dispatcher) over any stale shadow.
+case ":${PATH}:" in
+    *":${UU_ROOT}/bin:"*) : ;;                       # already present — no-op
+    *) export PATH="${UU_ROOT}/bin:${PATH}" ;;
+esac
+
 # --- compose the home DB URL from bootstrap parts (only if we have them) ----
 # Preserve, don't clobber: if the parts are missing we leave UU_HOME_DB_URL as-is
 # (inherited or unset) so a recovery shell that already has it keeps working.

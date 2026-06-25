@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# uu — zero-inference view/control dispatcher for UnseenUniversity.
+#
+# The view half of D-skills-two-products: looking at system state (tickets,
+# feeds, health, inbox) must cost ZERO inference — you don't spin up CC to read
+# your own queue. `uu <verb> [args]` routes to the scripts that already back
+# each view; CC shells out to the SAME dispatcher when it needs the data, so
+# there is one code path, not two. (T-uu-cli-dispatcher.)
+#
+# CONTRACT (CP6): a view must never need a running agent and must fail soft.
+# No `set -e`; an unknown verb prints help and exits nonzero; a verb's own
+# script owns its failures.
+#
+# DISPATCH CONVENTION (load-bearing — the whole Phase-B chain inherits it):
+# dispatch on the FIRST token ($1), `shift` it off, and pass the REST through
+# (`"$@"`) to the handler. That is what lets later verbs nest additively without
+# a rewrite — `uu device <dev> <verb>` (T-device-skills-via-uu-device) and
+# `uu readfeed <device> [channel]` (T-uu-readfeed) are each ONE new case here,
+# their args reaching the handler untouched.
+#
+# ADDING A VERB: add one `name) ... ;;` case below AND one line to _uu_help.
+# Keep the two in sync — _uu_help is the CLI-side mirror of /workflow.
+
+: "${UU_ROOT:=$HOME/dev/src/UnseenUniversity}"
+TOOLS="${CC_WORKFLOW_TOOLS:-$UU_ROOT/devlab/claudecode}"
+
+_uu_help() {
+    cat <<EOF
+uu — zero-inference views/controls (no CC process). Usage: uu <verb> [args]
+
+  mytickets         tickets assigned to Akien, salience-ordered
+  opentickets       all open tickets, salience-ordered
+  recall <query>    librarian full-text recall
+  research <query>  librarian research-and-summarize
+  help              this list
+
+Add a verb: one case in bin/uu + one line here (CLI mirror of /workflow).
+EOF
+}
+
+verb="${1:-help}"
+[ "$#" -gt 0 ] && shift   # drop the verb; "$@" is now the verb's own args
+
+case "$verb" in
+    mytickets)        exec python3 "$TOOLS/uu_tickets.py" --mine "$@" ;;
+    opentickets)      exec python3 "$TOOLS/uu_tickets.py" "$@" ;;
+    recall)           exec python3 "$TOOLS/uurecall.py" "$@" ;;
+    research)         exec python3 "$TOOLS/uuresearch.py" "$@" ;;
+    help|-h|--help)   _uu_help ;;
+    *)
+        echo "uu: unknown verb '$verb'" >&2
+        echo >&2
+        _uu_help >&2
+        exit 1
+        ;;
+esac
