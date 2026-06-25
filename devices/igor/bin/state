@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""uu device igor state — zero-inference liveness/identity snapshot of the Igor device.
+
+A small, correct subset of the (to-be-rebuilt) `map` snapshot: who the live
+instance is, where its home lives, whether it's running, and its most-recent log
+activity. Read-only, no inference, no DB — runs in a bare shell. The bin/ (view)
+half of the igor device surface (devices/igor/bin/, D-skills-two-products).
+"""
+from __future__ import annotations
+
+import datetime
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+
+def _tmux_running(session: str) -> bool:
+    tmux = shutil.which("tmux")
+    if not tmux:
+        return False
+    return subprocess.run(
+        [tmux, "has-session", "-t", session], capture_output=True
+    ).returncode == 0
+
+
+def main() -> int:
+    instance = os.environ.get("IGOR_INSTANCE_ID", "Igor-Wild1")
+    home = Path.home() / ".unseen_university" / instance
+    logs = Path.home() / ".unseen_university" / "logs" / instance
+
+    print("Igor device — state")
+    print(f"  instance : {instance}")
+    print(f"  home     : {home}  [{'present' if home.is_dir() else 'MISSING'}]")
+    print(f"  tmux     : {'running' if _tmux_running('igor') else 'not running'} (session 'igor')")
+
+    if logs.is_dir():
+        recent = sorted(logs.glob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)[:3]
+        if recent:
+            for p in recent:
+                mt = datetime.datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+                print(f"  log      : {p.name}  (last write {mt})")
+        else:
+            print(f"  logs     : {logs}  [empty]")
+    else:
+        print(f"  logs     : {logs}  [MISSING]")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
