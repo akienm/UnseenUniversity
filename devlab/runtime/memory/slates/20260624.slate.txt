@@ -2,8 +2,7 @@
 
 ## Notes
 
-## In-flight
-NONE — T-uu-config-profile-db-creds closed (proven). Env-vars phase: rename-role-and-db or profile-loader remaining. Tree CLEAN.
+
 ## Planned
 
 ## Ad hoc
@@ -88,3 +87,39 @@ Env-vars phase progress today: eliminate-igor-home + skills-scripts-miss, env-fi
 NEXT (env-vars, near-done): T-uu-rename-role-and-db (rename igor role + Igor-wild-0001 DB; set password AFTER rename — md5 hashes username) OR T-uu-config-profile-db-creds (so Igor can start cleanly — config/profiles/igor.yaml still on dead choose_a_password). Akien to pick.
 WATCH: choose_a_password now DEAD — config/profiles/igor.yaml + ~/.claude skill psql cmds will fail until fixed (skills-rework Friday). THIS session env has OLD UU_HOME_DB_URL (launch-time); post-compact is same process so still old — new shells get new pw from profile.
 - T-uu-config-profile-db-creds CLOSED (proven, 8814233b): igor.yaml state_refs now bare #fragment; identity.compose_state_uri() resolves against UU_HOME_DB_URL at connect time — last live hardcoded DB credential out of source, no longer rides announce manifests.
+
+## SESSION HANDOFF (pre-kill savestate — 2026-06-24 ~18:05)
+
+ALL running claude sessions have STALE igor creds (started before the DB rename). Both are
+named akiendelllinux_cc_RESCUE: PID 3163181 (13:31) and PID 3798552 (17:29 — the session
+writing this). Plan: kill BOTH, relaunch ONE canonical session (cc_0, NOT cc_RESCUE) that
+sources ~/.unseen_university/uu_bash_profile.sh -> new identity unseen_university@unseen_university.
+
+DONE TODAY (durable in git, pushed to origin/main @ 71bad6a2):
+- T-uu-config-profile-db-creds CLOSED proven (f8a90948): igor.yaml state_refs -> bare #fragment;
+  identity.compose_state_uri() resolves against UU_HOME_DB_URL at connect time.
+- T-uu-rename-role-and-db CLOSED proven (71bad6a2): LIVE rename igor/Igor-wild-0001 ->
+  unseen_university (role+DB) via sudo-relay; password reset (same rotated string
+  AThpareHandWhereNeeded1!); pg_hba LAN line 133 -> unseen_university/scram + reload.
+  Config: bootstrap UU_DB_USER=unseen_university + new UU_HOME_DB_NAME=unseen_university;
+  processor composes DB name from UU_HOME_DB_NAME (fallback IGOR_NAME). IGOR_NAME stays
+  Igor-wild-0001 (tenant identity / on-disk instance folder — KEPT). uu.env regenerated.
+  ground_loop+scraps+web_server(8082) on new identity; proxy 8078 -> 200 e2e. All schemas intact.
+
+OWED on the rename (NOT yet done — fresh session pick up):
+1. Doc-example string sweep ("update them too", Akien): ~17 files have docstring/comment examples
+   `postgresql://igor:<password>@.../Igor-wild-0001` -> update to unseen_university:.../unseen_university.
+   CRITICAL nuance: KEEP every `Igor-wild-0001` that is the instance-folder/tenant identity
+   (IGOR_INSTANCE_ID, os.getenv("IGOR_INSTANCE_ID","Igor-wild-0001"), ~/.unseen_university/Igor-wild-0001).
+   Only change DB-CONNECTION-STRING contexts. Exclude tests/, devlab/runtime/memory/, *.template/*.example,
+   audit_check_hardcoded_instance.py (the detector). Delegate to a cheaper agent with these exclusion rules.
+   (T-uu-sweep-instance-name + T-uu-sweep-hostname still OPEN — the instance-folder routing-to-resolver work.)
+2. Decision-record update: D-uu-config-identity-layer-2026-06-22 said role -> akien; it LANDED as
+   unseen_university (more portable; akien refs in code are vault credential-OWNERSHIP, orthogonal to PG role),
+   and the DB rename happened NOW (decision had marked it deferrable). Amend the narrative.
+
+ALSO: this session's + the other RESCUE session's MCP servers (librarian/queue/auditor PIDs 3163xxx, 3798xxx)
+held stale creds — they die with the kill. Fresh session gets clean MCP env.
+
+## In-flight
+NONE (rename closed). Fresh-session TODO = the 2 OWED items above.
