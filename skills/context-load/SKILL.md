@@ -31,7 +31,7 @@ that was the bug fixed in T-skills-palace-db-to-fs-store.)
 |------|-------|----------|
 | 0 | `~/.granny/available/` ← device cachedstate | Restores this CC's availability flag |
 | 0.25 | `slate_store` prior-day slate | Warns if the previous day's slate has open items and no `✅ CLOSED` |
-| 0.5 | `IGOR_HOME/Igor-wild-0001/` | Sets the debug session flag |
+| 0.5 | `IGOR_HOME/$IGOR_INSTANCE_ID/` | Sets the debug session flag |
 | 1 | `slate_store.today_slate_path()` | Ensures today's slate exists; prints its `## Summary` |
 | 2a | `devlab/runtime/memory/decisions/*.json` | 3 most-recent decisions **by `emitted_at`** (not filename order) |
 | 2b | `devlab/runtime/memory/` | Lists the memory subdirs (decisions, tickets, slates, …) |

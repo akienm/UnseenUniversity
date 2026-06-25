@@ -1,26 +1,26 @@
 ---
 name: audit-design
-description: Filing-time decision audit. Called by /decided after the decision summary, before tickets are drafted. Catches a "decision" that isn't actually decided — vague goals, unobservable success criteria, conflicts with prior decisions or palace rules, undecomposed scope, missing executor assignment. Returns PASS / AMEND. Standalone invocation also supported via `/audit-design <decision-id>` for re-checking an already-filed decision.
+description: Filing-time decision audit. Called by /sorted after the decision summary, before tickets are drafted. Catches a "decision" that isn't actually decided — vague goals, unobservable success criteria, conflicts with prior decisions or palace rules, undecomposed scope, missing executor assignment. Returns PASS / AMEND. Standalone invocation also supported via `/audit-design <decision-id>` for re-checking an already-filed decision.
 model: opus
 ---
 
 # audit-design — Decision-time positive checks
 
-Fires between `/decided` Step 2 (summarize) and Step 3 (draft tickets).
+Fires between `/sorted` Step 2 (summarize) and Step 3 (draft tickets).
 Reviews the decision narrative + scope context against nine positive
 checks. Cheap relative to the cost of filing tickets that don't survive
 their first sprint.
 
 This audit operates on the *decision*, not on individual tickets — the
 ticket-level checks live in `audit-ticket` (called per ticket in
-/decided Step 4).
+/sorted Step 4).
 
 ---
 
 ## Inputs
 
-- **Decision narrative**: the 1–2 sentence summary written in /decided Step 2.
-- **Scope context**: the conversation turns since the most recent `DESIGN_START`, prior `/decided`, or session start.
+- **Decision narrative**: the 1–2 sentence summary written in /sorted Step 2.
+- **Scope context**: the conversation turns since the most recent `DESIGN_START`, prior `/sorted`, or session start.
 - **Optional arg**: `<decision-id>` to audit an already-filed decision retroactively.
 
 ---
@@ -87,10 +87,10 @@ narrative must name that constraint. See `unseenuniversity/rules/safeguards`."
 were asked at design time and produced concrete content — additions, corrections,
 or explicit "nothing else" with reasoning.
 
-**Fail when:** the conversation jumped from initial framing to /decided without
+**Fail when:** the conversation jumped from initial framing to /sorted without
 the closing-question pass.
 
-**AMEND:** "Run the closing pass before /decided: 'What am I missing? What could
+**AMEND:** "Run the closing pass before /sorted: 'What am I missing? What could
 we do better?' These two questions reliably surface gaps. Akien's standing
 practice — see `unseenuniversity/rules/collaboration`."
 
@@ -124,7 +124,7 @@ direction?"
 
 **AMEND:** "Decision conflicts with `<rule>`: `<specific gap>`. Either honor the
 rule or document why this decision is the explicit exception (rare — exceptions
-need their own /decided)."
+need their own /sorted)."
 
 ### Check 8 — Scope decomposed into atomic ticketable units
 
@@ -136,7 +136,7 @@ schema piece of subsystem X" + "build the helper piece of subsystem X" etc.
 decomposition.
 
 **AMEND:** "Decision is too coarse for ticketing. Decompose into atomic units
-(one PR each) before filing. Sketch the unit list inline so /decided Step 3
+(one PR each) before filing. Sketch the unit list inline so /sorted Step 3
 has discrete drafts to work with."
 
 ### Check 9 — Per-piece executor + inertia tier named
@@ -182,8 +182,8 @@ AMEND items:
 Telemetry: unseenuniversity/audits/design/runs/<timestamp>
 ```
 
-When invoked from `/decided`: AMEND blocks Step 3 (drafting) until the
-decider applies the amendments and re-runs `/decided` (or the audit is
+When invoked from `/sorted`: AMEND blocks Step 3 (drafting) until the
+decider applies the amendments and re-runs `/sorted` (or the audit is
 explicitly overridden inline).
 
 ---
@@ -192,7 +192,7 @@ explicitly overridden inline).
 
 ### 1. Read inputs
 
-When called from `/decided`: the decision summary + scope are passed in
+When called from `/sorted`: the decision summary + scope are passed in
 the parent context. When called standalone with `<decision-id>`: read the
 decision JSON at `devlab/runtime/memory/decisions/*<decision-id>*.json` (the
 narrative is in `body.text`) plus recent decisions from the same directory.
@@ -219,7 +219,7 @@ complete in one round.
 When the decision narrative names files in HIGH-inertia areas
 (`brainstem/`, `memory/models.py`, `cognition/reasoners/base.py`) or any
 file flagged HIGH in the subsystem index, surface inline for Akien
-pre-approval before /decided proceeds. The HIGH-inertia mention is not an
+pre-approval before /sorted proceeds. The HIGH-inertia mention is not an
 AMEND — it's a separate gate.
 
 ### 5. Write watch-for notes
@@ -260,7 +260,7 @@ notes: <free text>
 
 Until `audit_telemetry.emit_run_record()` ships, the run record is described
 in this step but not yet emitted programmatically. Until then, the audit's
-PASS/AMEND verdict stands as its own record in the parent /decided output.
+PASS/AMEND verdict stands as its own record in the parent /sorted output.
 
 ### 7. Challenge (always — advisory, never blocks PASS)
 
@@ -279,7 +279,7 @@ This fires on every run, PASS or AMEND, no exceptions.
 
 ### 8. Return verdict
 
-PASS or AMEND, in the output shape above. /decided gates Step 3 on this
+PASS or AMEND, in the output shape above. /sorted gates Step 3 on this
 return.
 
 ---
@@ -308,7 +308,7 @@ of the time is probably mis-shaped).
 - Always surface HIGH-inertia file mentions inline for Akien pre-approval.
 - Always emit a run record (or document the verdict equivalently until the
   telemetry helper lands).
-- An AMEND from this audit blocks /decided Step 3 until applied or
+- An AMEND from this audit blocks /sorted Step 3 until applied or
   explicitly overridden.
 
 ---
@@ -333,6 +333,6 @@ ticket fields. The judgment calls — does this success criterion count as
 "observable in runtime"? Does this pass the conflict check against a
 30-day window of prior decisions? — are exactly the work where Sonnet
 tends to either rubber-stamp or over-flag. Opus runs cost more per
-invocation, but `/decided` only fires a few times per day, and the
+invocation, but `/sorted` only fires a few times per day, and the
 downstream cost of bad-decision tickets is much higher than this audit's
 token bill.

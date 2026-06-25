@@ -93,18 +93,7 @@ When code changed: `/commit`.
 cat ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/<closing-day>.slate.txt
 ```
 
-### 7. Push tickets to GitHub
-
-Always sync pending tickets to GitHub so Akien has the cloud backup:
-```bash
-python3 ${CC_WORKFLOW_TOOLS}/github_sync.py push-queue
-```
-
-### 8. Sync docs DB
-```bash
-DB=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
-UU_HOME_DB_URL=$DB python3 ${CC_WORKFLOW_TOOLS}/docs_sync.py sync
-```
+<!-- (removed: GitHub ticket-backup + docs-DB-sync steps — those helper scripts were never built; dropped functionality tracked in T-skills-deadstep-followup) -->
 
 ### 9. Update affected DSBs
 
@@ -148,7 +137,7 @@ python3 - <<'EOF'
 import os, json, psycopg2, psycopg2.extras
 from datetime import datetime, timezone
 
-pg = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+pg = os.environ["UU_HOME_DB_URL"]
 closing_date = os.environ.get("CLOSING_DATE", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
 datestamp = closing_date.replace("-", "")
 done_section = os.environ.get("DONE_SECTION", "(see slate)")
@@ -191,7 +180,7 @@ Also write a flat-file echo (file is secondary — palace is canonical):
 mkdir -p ${IGOR_HOME:-~/.unseen_university}/claudecode/palace_echo
 python3 -c "
 import os, psycopg2, psycopg2.extras
-pg = os.environ.get('UU_HOME_DB_URL','postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
+pg = os.environ['UU_HOME_DB_URL']
 datestamp = '${DATESTAMP}'
 conn = psycopg2.connect(pg)
 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -248,10 +237,6 @@ fi
 This is the deliberate end-of-session close. Include the session-close
 summary (Step 1 of /savestate) — Done and Next lines — so the durable
 record has full context when post-compact CC reads it.
-
-### 15. /autocompact
-
-Release debug flag and fire /compact. This is the block-end signal.
 
 ## Hard rules
 - Every day has a slate — Step 1 always runs, even when day-close fires before context-load on the new day.

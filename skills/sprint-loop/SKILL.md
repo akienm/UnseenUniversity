@@ -8,7 +8,7 @@ model: sonnet
 
 Runs /sprint-batch in a self-rescheduling loop until the queue is empty.
 The wakeup is scheduled *before* the batch starts — this is the key invariant.
-If /autocompact fires mid-sprint, the scheduled wakeup is already in place and
+If the native compact fires mid-sprint, the scheduled wakeup is already in place and
 the loop resumes when CC is next idle.
 
 ## Args
@@ -62,7 +62,7 @@ Pass the same selector through verbatim. If no selector was given, pass
 ```
 
 Pass the selector through. /sprint-batch handles everything per-ticket:
-claim → build → test → commit → close → savestate. /autocompact fires
+claim → build → test → commit → close → savestate. the native compact fires
 at batch end.
 
 ### 5. Loop

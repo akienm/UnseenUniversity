@@ -38,12 +38,12 @@ when active goals change.
 ```bash
 # From flight recorder logs
 grep -h "pe_chain\|HYPOTHESIZE\|commit_result" \
-  ~/.unseen_university/Igor-wild-0001/logs/*.log 2>/dev/null | \
+  ~/.unseen_university/$IGOR_INSTANCE_ID/logs/*.log 2>/dev/null | \
   grep "$(date -d '7 days ago' +%Y-%m-%d)\|$(date +%Y-%m-%d)" | \
   tail -100
 
 # From cc_queue: tickets closed by Igor this week
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT id, metadata->>'title', metadata->>'closed_by'
    FROM clan.memories
    WHERE parent_id='TICKETS_ROOT'
@@ -62,11 +62,11 @@ psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
 **Data source:**
 ```bash
 # Channel messages about stuck NE
-grep "\[NE\].*stuck" ~/.unseen_university/Igor-wild-0001/logs/*.log 2>/dev/null | \
+grep "\[NE\].*stuck" ~/.unseen_university/$IGOR_INSTANCE_ID/logs/*.log 2>/dev/null | \
   awk -F'T' '{print $1}' | sort | uniq -c | tail -14
 
 # Psych log valence trend
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT date_trunc('day', to_timestamp(ts)) as day,
           AVG(valence) as avg_v, COUNT(*) as cycles
    FROM instance.ring_memory
@@ -84,7 +84,7 @@ psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
 
 **Data source:**
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT source_module, kind, COUNT(*), MAX(created_at)
    FROM instance.proposals
    WHERE source_module != 'test'
@@ -102,7 +102,7 @@ psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
 
 **Data source:**
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT metadata->>'status', COUNT(*) FROM clan.memories
    WHERE parent_id='TICKETS_ROOT' GROUP BY 1 ORDER BY 2 DESC"
 ```
@@ -131,7 +131,7 @@ for e in entries[:10]:
 
 # Channel escalations
 grep -h "SCOPE_GUARD\|BLOCKED\|stuck\|escalat" \
-  ~/.unseen_university/Igor-wild-0001/logs/*.log 2>/dev/null | \
+  ~/.unseen_university/$IGOR_INSTANCE_ID/logs/*.log 2>/dev/null | \
   grep "$(date -d '7 days ago' +%Y-%m-%d)\|$(date +%Y-%m-%d)" | \
   grep -v "test\|TEST" | wc -l
 ```
@@ -150,7 +150,7 @@ Run each eval's data query, compute the answer, note trend direction.
 
 For each active goal, identify which eval(s) measure its KRs:
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT path, title, metadata->>'key_results'
    FROM adc.palace WHERE path LIKE 'palace.goals.%' AND metadata->>'status' = 'active'"
 ```
@@ -200,4 +200,4 @@ queries listed in the goal's palace node under `## Eval Queries`.
 
 - Evals answer capability questions; they do not re-run unit tests.
 - Trend direction is required for every eval — raw numbers without direction are half the answer.
-- If a data source is unavailable (log format changed, table missing): mark as `UNAVAILABLE` and file a /question about why.
+- If a data source is unavailable (log format changed, table missing): mark as `UNAVAILABLE` and /note why.

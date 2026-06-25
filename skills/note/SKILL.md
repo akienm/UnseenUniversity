@@ -1,6 +1,6 @@
 ---
 name: note
-description: Log a milestone, insight, or decision to notes.log and the slate. Replaces /decided for non-ticket items.
+description: Log a milestone, insight, or decision to notes.log and the slate. Replaces /sorted for non-ticket items.
 model: haiku
 ---
 
@@ -11,7 +11,7 @@ Run:
 python run "<note text and any related ticket IDs>"
 ```
 
-The script writes a timestamped line to `THEIGORS_HOME/lab/notes.log` and
+The script writes a timestamped line to `UU_ROOT/lab/notes.log` and
 appends `- note: <text>` to today's slate. No DB writes, no decision pipeline.
 
 **Examples:**
@@ -21,5 +21,5 @@ python run "Decided to defer scraps migration until after palace merge"
 ```
 
 **Env vars** (set by superclaude / .env):
-- `THEIGORS_HOME` — repo root (default: `~/dev/src/UnseenUniversity`)
+- `UU_ROOT` — repo root (default: `~/dev/src/UnseenUniversity`)
 - `IGOR_HOME` — runtime dir (default: `~/.unseen_university`)

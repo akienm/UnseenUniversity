@@ -6,8 +6,8 @@ model: sonnet
 
 # /sprint — Claim, work, ship
 
-Thin orchestrator: select a ticket, run /sprint-ticket, then /autocompact.
-All execution logic lives in /sprint-ticket.
+Thin orchestrator: select a ticket, run /sprint-ticket. All execution logic
+lives in /sprint-ticket. (Compaction is native and self-managed — no explicit call.)
 
 ## Args
 - `/sprint last` — sprint the thing just discussed (must be ticketed)
@@ -29,11 +29,6 @@ Always sprint from a ticket. When no ticket exists yet, stop here and run
 
 Run the full single-ticket execution unit. All build/test/commit/close logic
 lives there, including /savestate on close.
-
-### 3. /autocompact
-
-Fire at sprint end — releases debug flag, emits preserve string, fires
-/compact via tmux.
 
 ## Hard rules
 - Always sprint from a ticket — run /ticket first when one doesn't exist.

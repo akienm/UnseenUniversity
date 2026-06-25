@@ -20,7 +20,7 @@ python3 ${CC_WORKFLOW_TOOLS}/debug_session_cli.py release
 
 Fallback:
 ```bash
-rm -f ${IGOR_HOME:-$HOME/.unseen_university}/Igor-wild-0001/debug_session.flag
+rm -f ${IGOR_HOME:-$HOME/.unseen_university}/$IGOR_INSTANCE_ID/debug_session.flag
 ```
 
 ### 1.3. Deposit session content to clan.memories (T-cc-log-session-memory)

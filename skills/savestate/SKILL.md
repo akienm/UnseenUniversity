@@ -8,7 +8,7 @@ model: haiku
 
 Records what's in-flight to the slate. Called at every state change: after
 filing a ticket, after closing a ticket, at session close. Does NOT release
-the debug flag or fire compact — those are /autocompact.
+the debug flag or fire compact — those are the native compact.
 
 ## Steps
 
@@ -42,4 +42,4 @@ Session close (also triggers `session_capture.py` for palace node):
 python run close "<hypothesis from step 2>"
 ```
 
-No debug flag release. No compact. Those are /autocompact.
+No debug flag release. No compact. Those are the native compact.

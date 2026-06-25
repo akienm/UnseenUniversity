@@ -23,7 +23,7 @@ Weekly-retro covers the question neither asks: **are we making the right bets?**
 ### 1. Pull this week's decision outcomes
 
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT path, title, metadata->>'outcome', metadata->>'outcome_date'
    FROM adc.palace
    WHERE path LIKE 'palace.decisions.%'
@@ -33,7 +33,7 @@ psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
 
 Also list decisions that closed this week but have no outcome yet:
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT path, title FROM adc.palace
    WHERE path LIKE 'palace.decisions.%'
      AND metadata->>'outcome' IS NULL
@@ -44,7 +44,7 @@ psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
 ### 2. Pull goal KR snapshots
 
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT path, title, metadata->>'key_results', metadata->>'last_kr_update'
    FROM adc.palace
    WHERE path LIKE 'palace.goals.%'

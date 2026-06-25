@@ -43,7 +43,7 @@ Optional:
 
 Derive from the target statement: `G-<2-4-word-kebab>`. Check for collision:
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT path FROM adc.palace WHERE path = 'palace.goals.<slug>'"
 ```
 If collision, append a disambiguator.
@@ -54,7 +54,7 @@ If collision, append a disambiguator.
 import psycopg2, psycopg2.extras, json
 from datetime import datetime, timezone
 
-pg = "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+pg = os.environ["UU_HOME_DB_URL"]
 conn = psycopg2.connect(pg)
 goal_id = "<G-slug>"
 content = f"""## Target
@@ -122,7 +122,7 @@ Run /audit-goal G-xxx to validate.
 
 ```python
 import psycopg2, psycopg2.extras
-pg = "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+pg = os.environ["UU_HOME_DB_URL"]
 conn = psycopg2.connect(pg)
 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
     cur.execute("""

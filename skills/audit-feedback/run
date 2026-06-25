@@ -76,7 +76,7 @@ PROPERTIES: dict[str, dict] = {
         ],
     },
     "learning-preservation": {
-        "description": "A learned fix is captured durably (SKILL.md update, palace node, or /decided)",
+        "description": "A learned fix is captured durably (SKILL.md update, palace node, or /sorted)",
         "run_patterns": [
             r"palace",
             r"decision",
@@ -87,7 +87,7 @@ PROPERTIES: dict[str, dict] = {
             r"\bamend\b",
             r"palace",
             r"record.{0,15}fix",
-            r"/decided",
+            r"/sorted",
             r"update.{0,20}skill",
             r"\bdurable\b",
         ],

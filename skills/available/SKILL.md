@@ -48,6 +48,6 @@ python3 ${CC_WORKFLOW_TOOLS}/cc_available.py ${1:-on}
 
 ## Note
 
-`/context-load` Step 0 already presses `on` at session start, and `/autocompact`
+`/context-load` Step 0 already presses `on` at session start, and `the native compact`
 presses `off` before a compact. This skill is the on-demand version for
 mid-session use.

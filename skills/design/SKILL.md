@@ -1,12 +1,12 @@
 ---
 name: design
-description: Mark the start of a design-mode block. Optional — /decided can infer scope retroactively without this. Use when you want to explicitly bracket a design session so /decided knows exactly where to start looking back.
+description: Mark the start of a design-mode block. Optional — /sorted can infer scope retroactively without this. Use when you want to explicitly bracket a design session so /sorted knows exactly where to start looking back.
 model: haiku
 ---
 
 # /design — Design-mode session marker
 
-Lightweight boundary marker. Design conversations usually don't need this — /decided infers scope from "last N turns since previous /decided or session start." But sometimes you want to say explicitly "ok, from THIS point on we're designing, not building" — that's what /design is for.
+Lightweight boundary marker. Design conversations usually don't need this — /sorted infers scope from "last N turns since previous /sorted or session start." But sometimes you want to say explicitly "ok, from THIS point on we're designing, not building" — that's what /design is for.
 
 ## What it does
 
@@ -18,7 +18,7 @@ Lightweight boundary marker. Design conversations usually don't need this — /d
 
 - Does not block other commands.
 - Does not enforce anything — this is a marker, not a gate.
-- Does not auto-close — the block ends at the next /decided or end of day.
+- Does not auto-close — the block ends at the next /sorted or end of day.
 
 ## Usage
 
@@ -38,11 +38,11 @@ Lightweight boundary marker. Design conversations usually don't need this — /d
    ```bash
    echo '{"design_mode":true,"started_at":"'$(date -Iseconds)'"}' > ${IGOR_HOME:-~/.unseen_university}/cc_channel/design_mode.json
    ```
-4. Acknowledge: "Design mode on, scope begins now. Use /decided to close the block and ticketize."
+4. Acknowledge: "Design mode on, scope begins now. Use /sorted to close the block and ticketize."
 
 ## Ending the block
 
-- **/decided** — ticketizes since DESIGN_START; clears design_mode flag.
+- **/sorted** — ticketizes since DESIGN_START; clears design_mode flag.
 - **End of day** — flag ages out.
 - **Explicit:** `/design end` — clears the flag without filing tickets.
 

@@ -21,7 +21,7 @@ UU_ROOT = Path(os.environ.get("UU_ROOT", Path.home() / "dev/src/UnseenUniversity
 def cmd_test() -> None:
     result = subprocess.run(
         ["uv", "run", "pytest", "tests/", "-x", "-q"],
-        cwd=THEIGORS_HOME,
+        cwd=UU_ROOT,
         capture_output=True,
         text=True,
     )

@@ -1,18 +1,18 @@
 ---
 name: audit-hypothesis
-description: Hypothesis-time audit — 5 checks before /decided files tickets. Catches untestable claims, unobservable measurements, invalid goal links, contradictions with recent falsified hypotheses, and missing time horizons. Returns PASS / AMEND. Model: Opus.
+description: Hypothesis-time audit — 5 checks before /sorted files tickets. Catches untestable claims, unobservable measurements, invalid goal links, contradictions with recent falsified hypotheses, and missing time horizons. Returns PASS / AMEND. Model: Opus.
 model: opus
 ---
 
 # /audit-hypothesis — Hypothesis quality gate
 
 A hypothesis is only useful if it can be tested. This audit runs between
-hypothesis extraction (in /decided Step 2.6) and ticket filing (Step 3).
+hypothesis extraction (in /sorted Step 2.6) and ticket filing (Step 3).
 A vague hypothesis produces no outcome data — it's a bet with no payoff.
 
 ## Invocation
 
-Called automatically by /decided after hypothesis extraction. Also standalone:
+Called automatically by /sorted after hypothesis extraction. Also standalone:
 ```
 /audit-hypothesis          — audit the hypothesis just extracted in conversation
 /audit-hypothesis D-xxx    — audit the hypothesis stored on a filed decision
@@ -69,7 +69,7 @@ python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('tex
 
 Read recent decision outcomes:
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT path, title, metadata->>'outcome', metadata->>'hypothesis'
    FROM adc.palace
    WHERE path LIKE 'palace.decisions.%'
@@ -142,5 +142,5 @@ CHALLENGE: <challenge question>
 
 - Run all 5 checks — don't stop at first failure.
 - Challenge always runs.
-- AMEND blocks /decided ticket-filing the same way audit-design does.
+- AMEND blocks /sorted ticket-filing the same way audit-design does.
 - "goal: none" is a valid explicit choice — but it must be stated, not defaulted.

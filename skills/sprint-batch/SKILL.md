@@ -7,7 +7,7 @@ model: sonnet
 # /sprint-batch — Multi-ticket sprint
 
 Shared setup once, per-ticket loop via /sprint-ticket, shared teardown.
-Use when /decided just filed a batch, or when you're clearing a slate.
+Use when /sorted just filed a batch, or when you're clearing a slate.
 
 ## Selectors (positional arg)
 
@@ -46,7 +46,7 @@ Always run setup once at batch start — per-ticket re-setup just burns time:
 ```bash
 cd ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}
 git pull --rebase origin main
-export UU_HOME_DB_URL=postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001
+: "${UU_HOME_DB_URL:?set by ~/.unseen_university/uu_bash_profile.sh}"
 ```
 
 Print the ordered plan:
@@ -84,11 +84,9 @@ mismatch), always prompt:
 
 Once all tickets complete (or the batch aborts):
 1. Print recap: N done, M skipped, P failed, ticket ids + commit hashes.
-2. Run /autocompact — releases debug flag, fires compact.
 
 Note: /savestate was already called per-ticket inside /sprint-ticket.
-The teardown does NOT call /savestate again — /autocompact is all that's
-needed here.
+Compaction is native and self-managed — the batch fires no explicit compact.
 
 ## Invariants
 
@@ -98,9 +96,9 @@ needed here.
 
 ## Flow integration
 
-Right after /decided:
+Right after /sorted:
 ```
-/decided <topic>
+/sorted <topic>
   → T-a, T-b, T-c filed (all share decision_id)
 /sprint-batch decision:D-<topic-id>
   → ships all three in dep order
@@ -122,7 +120,7 @@ At start of day:
 ## Related
 
 - **/sprint-ticket** — the per-ticket execution unit; handles claim → build → close → savestate.
-- **/decided** — files tickets that this skill consumes.
-- **/fixit** — /decided + /sprint-batch on the just-filed set.
+- **/sorted** — files tickets that this skill consumes.
+- **/fixit** — /sorted + /sprint-batch on the just-filed set.
 - **T-sync-on-close-not-dayend** (gated) — handles the palace/GitHub/file echo on each close action.
 - **T-decision-rollup-on-last-ticket-close** (gated) — when /sprint-batch closes the last ticket of a decision, the decision auto-rolls-up with outcome.

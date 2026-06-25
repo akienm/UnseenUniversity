@@ -1,6 +1,6 @@
 ---
 name: audit-ticket
-description: Filing-time ticket audit — quality gate for every ticket before it lands in the queue. Runs duplicate detection, already-done check, scope/size/HIGH-inertia checks, palace design-rules, build-tightness grade, plus validation steps, remediation plan, rollback (HIGH-inertia), logging requirements, observability assertion, and split test. Called by /decided on each drafted ticket. Returns PASS / AMEND / SPLIT / DISCARD. Model: Haiku.
+description: Filing-time ticket audit — quality gate for every ticket before it lands in the queue. Runs duplicate detection, already-done check, scope/size/HIGH-inertia checks, palace design-rules, build-tightness grade, plus validation steps, remediation plan, rollback (HIGH-inertia), logging requirements, observability assertion, and split test. Called by /sorted on each drafted ticket. Returns PASS / AMEND / SPLIT / DISCARD. Model: Haiku.
 model: haiku
 ---
 

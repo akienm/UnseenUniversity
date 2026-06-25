@@ -36,7 +36,7 @@ source defeats the cost model.
 
 Eight analyzers. Each produces zero or more candidate outputs (rule
 promotions, retirements, rebalances, expirations). Akien gates the
-candidates through `/decided` before any palace write fires.
+candidates through `/sorted` before any palace write fires.
 
 ### Analyzer 1 — Recurring smell promotion
 
@@ -60,7 +60,7 @@ draft_check_body: |
   failure_message: <inferred>
 ```
 
-`/decided` then files the promotion as a ticket.
+`/sorted` then files the promotion as a ticket.
 
 ### Analyzer 2 — Upstream-miss accumulation
 
@@ -245,14 +245,14 @@ Sort by `(severity, expected_impact)` descending. Severity here means:
 ### 5. Write metric updates
 
 For Analyzer 7 (habit health), update SensorTree counters at
-`unseenuniversity/metrics/audit_health/*` directly. No `/decided` gate — these
+`unseenuniversity/metrics/audit_health/*` directly. No `/sorted` gate — these
 are observations, not changes.
 
 ### 6. Write candidate proposals
 
 For Analyzers 1, 2, 4, 5, 6, 8: write each candidate to
 `unseenuniversity/audits/audits/candidates/<YYYY-MM-DD-HHMMSS>-<id>` palace
-nodes. These are drafts — `/decided` reads them and decides whether to
+nodes. These are drafts — `/sorted` reads them and decides whether to
 file as tickets, override, or discard.
 
 ### 7. Emit run record
@@ -276,7 +276,7 @@ Metric updates: <count> counters, <count> history rows
 Watch-for: <promoted>, <expired>, <aged>
 Telemetry: unseenuniversity/audits/audits/runs/<timestamp>
 
-Next: review candidates at unseenuniversity/audits/audits/candidates/* via /decided.
+Next: review candidates at unseenuniversity/audits/audits/candidates/* via /sorted.
 ```
 
 ---
@@ -321,7 +321,7 @@ class Candidate:
     audit_layer: str       # which layer this concerns
     window_evidence: dict  # the data supporting this candidate
     proposal: str          # human-readable proposal
-    draft_payload: dict    # YAML body for /decided to consume
+    draft_payload: dict    # YAML body for /sorted to consume
 ```
 
 The engine inherits from IgorBase per
@@ -373,7 +373,7 @@ compounds heavily.
 ## What this layer does NOT do
 
 - **Does not write to palace rules directly.** All proposals go through
-  `/decided`. Akien stays in the loop on rule changes.
+  `/sorted`. Akien stays in the loop on rule changes.
 - **Does not read source code.** The corpus is structured telemetry;
   any grep/walk of source belongs in audit-day or audit-expert.
 - **Does not retire its own checks.** If audit-audits' analyzers become
@@ -388,8 +388,8 @@ compounds heavily.
 
 - Always run all eight analyzers; don't stop on first material finding.
 - Always emit candidates as palace nodes (drafts), never as filed
-  tickets. /decided is the gate.
-- Always update habit-health metrics directly (no /decided) — those are
+  tickets. /sorted is the gate.
+- Always update habit-health metrics directly (no /sorted) — those are
   observations, not changes.
 - Always emit a self-run record (recursion ends at 1 level).
 - Always read from telemetry corpus only; no codebase reads.
@@ -422,6 +422,6 @@ suddenly silent).
   earns its tokens here. Cadence is monthly, so cost is bounded.
 
 Tickets / proposals filed by audit-audits are themselves audited at
-filing time by audit-design (via `/decided`) and audit-ticket. The
+filing time by audit-design (via `/sorted`) and audit-ticket. The
 pyramid checks audit-audits' output the same way it checks any other
 decision.

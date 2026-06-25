@@ -13,10 +13,6 @@ THE TRACKING STACK
     /audit-goal         ← 7 checks + "better way?" challenge
     Stored: palace.goals.*
 
-  Open Questions (Q-xxx)           ← things not ready to decide yet
-    /question "text" | /questions | /question promote Q-xxx
-    Stored: palace.questions.*
-
   Hypothesis                       ← extracted at /sorted time (3 questions)
     /audit-hypothesis   ← 5 checks + "better hypothesis?" challenge
     Stored on: decision record
@@ -28,7 +24,6 @@ THE TRACKING STACK
     /sorted             ← summarize → extract hypothesis → audit-hypothesis
                            → audit-design → draft tickets → audit-ticket
                            → file tickets → write palace node → log
-    /migrate-decisions  ← project decision markdown into the fs memory store
     /audit-design       ← 9 checks + "better architecture?" challenge
     /audit-ticket       ← 16 checks + "simpler implementation?" challenge
 
@@ -61,8 +56,6 @@ DAILY
   /day-close           ← end of day: savestate → close slate → audit → docs → push
   /day-close-audit     ← 20-step code health check (runs inside day-close)
   /savestate           ← flush in-flight state to slate (mid-session or session-close)
-  /autocompact         ← release debug flag + fire /compact (end of work block)
-  /recover             ← re-orient after a /rewind (read slate + git, trust them)
 
 AUDIT FAMILY
   /audit-goal          ← goal quality gate (7 checks)
@@ -91,8 +84,7 @@ OTHER SKILLS
 WHERE AM I? — QUICK GUIDE
 
   "I have a new idea"
-    → /question "idea" to park it, OR
-    → /design → /sorted to turn it into tickets immediately
+    → /design → /sorted to turn it into tickets
 
   "I want to start work"
     → /context-load (if session start)

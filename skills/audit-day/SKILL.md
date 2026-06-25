@@ -101,7 +101,7 @@ don't call `cortex.twm_push()` = flag as TWM coverage gap.
 python3 -c "
 import os, sys
 sys.path.insert(0, '.')
-os.environ.setdefault('UU_HOME_DB_URL', 'postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001')
+# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
 from wild_igor.igor.tools.registry import registry
 import wild_igor.igor.tools
 import psycopg2
@@ -131,7 +131,7 @@ python3 ${CC_WORKFLOW_TOOLS}/scan_for_rest_drafter.py \
   --output /tmp/scan-for-rest-<func>.json
 ```
 
-The JSON lands in `/tmp/` — never auto-files. Surfaces in next `/decided` session.
+The JSON lands in `/tmp/` — never auto-files. Surfaces in next `/sorted` session.
 
 ### Step 9 — Emit telemetry
 

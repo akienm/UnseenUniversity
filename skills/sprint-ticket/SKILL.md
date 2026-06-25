@@ -7,7 +7,7 @@ model: sonnet
 # /sprint-ticket — Single-ticket sprint
 
 The atomic sprint unit. Takes a ticket ID, runs it from claim to close,
-writes savestate on completion. Does NOT fire /autocompact — that's the
+writes savestate on completion. Does NOT fire the native compact — that's the
 caller's job at block-end.
 
 ## Args

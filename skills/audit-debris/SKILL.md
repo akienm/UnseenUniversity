@@ -60,11 +60,7 @@ psql $UU_HOME_DB_URL -c "
 ```
 Live rows in `test_*` schemas = AMEND (conftest teardown missed them).
 
-### 7. File placement
-```bash
-python3 ${CC_WORKFLOW_TOOLS}/validate_files.py 2>/dev/null | head -20
-```
-Any misplaced file = AMEND. Code under `wild_igor/`, runtime under `~/.unseen_university/`.
+<!-- (removed: file-placement validation step — its helper script was never built; see T-skills-deadstep-followup) -->
 
 ### 8. Docstring rot (load-bearing touched files)
 ```bash

@@ -20,13 +20,13 @@ unmeasurable goal produces vague decisions and untestable hypotheses.
 
 Read the goal from palace:
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT title, content, metadata FROM adc.palace WHERE path = 'palace.goals.<slug>'"
 ```
 
 Also read active goals list for conflict detection:
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT path, title, metadata->>'tensions' FROM adc.palace WHERE path LIKE 'palace.goals.%' AND metadata->>'status' = 'active'"
 ```
 

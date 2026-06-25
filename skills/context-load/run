@@ -80,7 +80,7 @@ def step_0_25_stale_slate_check() -> None:
 # ─── Step 0.5: Debug flag ───
 def step_0_5_debug_flag() -> None:
     """Set debug session flag for observability."""
-    flag_dir = IGOR_HOME / "Igor-wild-0001"
+    flag_dir = IGOR_HOME / os.environ.get("IGOR_INSTANCE_ID", "")
     flag_dir.mkdir(parents=True, exist_ok=True)
     (flag_dir / "debug_session.flag").touch()
     print("✓ Step 0.5: Debug flag set")

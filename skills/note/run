@@ -21,7 +21,7 @@ def main() -> None:
     ts   = datetime.now().isoformat(timespec="seconds")
     line = f"{ts} | {text}"
 
-    notes_log = THEIGORS_HOME / "lab" / "notes.log"
+    notes_log = UU_ROOT / "lab" / "notes.log"
     notes_log.parent.mkdir(parents=True, exist_ok=True)
     with notes_log.open("a", encoding="utf-8") as f:
         f.write(line + "\n")

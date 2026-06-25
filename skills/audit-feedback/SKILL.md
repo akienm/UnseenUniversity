@@ -37,7 +37,7 @@ python run check-all             — summary table for all skills
    reads and reports the output — not just "write to file and move on".
 
 5. **Learning preservation** — is a learned fix captured durably?
-   Evidence: AMEND step that writes to SKILL.md, palace node, or /decided; or explicit
+   Evidence: AMEND step that writes to SKILL.md, palace node, or /sorted; or explicit
    "record fix" or "durable" language.
 
 ## Steps
@@ -90,7 +90,7 @@ AMEND items:
   failure-surface: add sys.exit(1) on error path and print the error before exiting
     e.g. `except Exception as e: print(f"error: {e}", file=sys.stderr); sys.exit(1)`
   learning-preservation: add an AMEND step to SKILL.md that describes how to record
-    fixes durably — /decided for design changes, palace node for operational rules
+    fixes durably — /sorted for design changes, palace node for operational rules
 ```
 
 AMEND items should be specific enough to apply without further design. When a property

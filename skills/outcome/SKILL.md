@@ -41,11 +41,11 @@ If the decision predates hypothesis tracking (no `## Hypothesis` section), note 
 
 ### 2. Gather observable evidence
 
-Based on the measurement signal stated at /decided time, collect current data. Common patterns:
+Based on the measurement signal stated at /sorted time, collect current data. Common patterns:
 
 ```bash
 # NE cycle health
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT date_trunc('day', created_at), COUNT(*) as cycles,
           AVG((metadata->>'valence')::float) as avg_valence
    FROM clan.memories WHERE memory_type='NE_CYCLE'
@@ -53,16 +53,16 @@ psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
    GROUP BY 1 ORDER BY 1"
 
 # pe_chain success rate (from flight recorder logs)
-grep "HYPOTHESIZE" ~/.unseen_university/Igor-wild-0001/logs/*.log 2>/dev/null | \
+grep "HYPOTHESIZE" ~/.unseen_university/$IGOR_INSTANCE_ID/logs/*.log 2>/dev/null | \
   grep -c "success\|error" | head -20
 
 # proposals accumulation
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT source_module, COUNT(*) FROM instance.proposals
    WHERE source_module != 'test' GROUP BY 1"
 
 # done:closed ratio trend
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT metadata->>'status', COUNT(*) FROM clan.memories
    WHERE parent_id='TICKETS_ROOT' GROUP BY 1 ORDER BY 2 DESC"
 ```
@@ -149,7 +149,7 @@ If **too_early**: set a calendar note or slate entry for the re-check date.
 ## Steps — /outcome (list mode)
 
 ```bash
-psql postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001 -tAc \
+psql "$UU_HOME_DB_URL" -tAc \
   "SELECT path, title, metadata->>'date'
    FROM adc.palace
    WHERE path LIKE 'palace.decisions.%'

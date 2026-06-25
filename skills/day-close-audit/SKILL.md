@@ -24,13 +24,7 @@ If tests fail: **STOP**. Fix before proceeding. Offer to run `/test-fix`.
 
 ---
 
-## Step 2 — File placement
-
-```bash
-python3 ${CC_WORKFLOW_TOOLS}/validate_files.py 2>/dev/null | head -30
-```
-
-Note any misplaced files. Small fixes now; large restructures → ticket.
+<!-- (removed: file-placement validation step — its helper script was never built; see T-skills-deadstep-followup) -->
 
 ---
 
@@ -71,7 +65,7 @@ For each finding: is there a log call in the except block? If not → add one no
 ```bash
 cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import sys, os
-os.environ.setdefault("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
 )
 sys.path.insert(0, ".")
 from wild_igor.igor.tools.registry import registry
@@ -131,7 +125,7 @@ Safe to call on every day-close — silent when all logs are under 10MB.
 cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os, sys
 sys.path.insert(0, ".")
-os.environ.setdefault("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
 from wild_igor.igor.tools.budget import get_balance_trajectory
 print(get_balance_trajectory(window_hours=48))
 EOF
@@ -146,7 +140,7 @@ EOF
 ```bash
 cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os
-os.environ.setdefault("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
 import psycopg2
 conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
 cur = conn.cursor()
@@ -249,7 +243,7 @@ Check against registry, NOT source text (string-search produces false positives)
 cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import os, sys, json
 sys.path.insert(0, ".")
-os.environ.setdefault("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
 )
 
 from wild_igor.igor.tools.registry import registry
@@ -450,7 +444,7 @@ Exit code 0 = all OK. Any UNREFERENCED or STUB_NEAR_GATE findings → ticket or 
 
 `~/dev/src/UnseenUniversity/docs/capability_map.md` is the "what's built today vs planned vs broken" doc. It rots fast. When it's >7 days old, the audit always re-verifies §1 (live), §2 (gated off), and §4 (known broken) against:
 - Palace `unseenuniversity/subsystem_index/*` for live subsystems
-- `~/.unseen_university/Igor-wild-0001/igor.switches.cfg` for gate state
+- `~/.unseen_university/$IGOR_INSTANCE_ID/igor.switches.cfg` for gate state
 - `cc_queue.py list` for in_progress / pending / awaiting_approval status
 - Latest `pytest` summary for known failures
 
