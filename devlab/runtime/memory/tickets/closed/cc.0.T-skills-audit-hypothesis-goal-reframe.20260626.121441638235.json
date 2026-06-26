@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-skills-audit-hypothesis-goal-reframe.20260626.121441638235",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-audit-hypothesis-goal-reframe"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T18:14:41.638235+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-goals-purge-remaining-skills-2026-06-26"
+    ],
+    "tickets": [
+      "T-skills-audit-hypothesis-goal-reframe"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-audit-hypothesis-goal-reframe",
+    "title": "Remove G-xxx goal-link check from audit-hypothesis (Check 3)",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Cleanup"
+    ],
+    "intention": "I intend that audit-hypothesis no longer validates G-xxx goal links or references palace.goals.* — Check 3 becomes an intention-link check or is dropped.",
+    "description": "skills/audit-hypothesis/SKILL.md Check 3 is 'Goal link is valid and active' — it validates G-xxx against palace.goals.* and checks KR plausibility. Goals are retired (IBD); the hypothesis now carries 'goal: none' and Check 3 currently allows that but retains all the G-xxx vocabulary. The check should either (a) be dropped (since 'none' is always the answer now) or (b) reframed to validate the intention statement is present and non-empty.\n\n**Affected files:** skills/audit-hypothesis/SKILL.md only.\n**Design rules:** goals-being-retired, delete-after-successful-merge.\n**Scope boundary:** IN - reframe or drop Check 3 in audit-hypothesis; remove G-xxx/palace.goals refs. OUT - other audit checks. OUT - the hypothesis input format (that changes in T-skills-goals-to-intentions via /sorted).\n**Test plan:** grep skills/audit-hypothesis/SKILL.md for G-xxx, palace.goals, goal link -> 0. Skill still returns PASS/AMEND on a valid hypothesis.\n**Completion criteria:** grep -ic 'G-xxx|palace.goals|goal link|goal.*KR' skills/audit-hypothesis/SKILL.md = 0.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-goals-purge-remaining-skills-2026-06-26",
+    "gate": null,
+    "priority": 0.65,
+    "status": "closed",
+    "created_at": "2026-06-26T18:14:39.375208+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "Check 3 reframed to 'Intention is present and well-formed'; all G-xxx/palace.goals/goal-link vocabulary removed. grep = 0.",
+    "dispatched_at": null,
+    "completed_at": "2026-06-26T18:33:18.272622+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T18:14:39.419180+00:00",
+    "proven": false,
+    "unproven_reason": "skill-text edit; no executable harness for skill content",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}
