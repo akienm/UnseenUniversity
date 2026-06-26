@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.uu-device-feed-reader-log-level-channels.T-uu-readfeed.20260625.185155294057",
+  "emitter": "cc.0",
+  "namespace": [
+    "uu-device-feed-reader-log-level-channels",
+    "T-uu-readfeed"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-25T18:51:55.294057",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-uu-readfeed"
+    ],
+    "commits": [
+      "612c88d1c61900dc95cfbaf7c14e11df0dbc3845"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "uu device feed reader — log-level channels",
+    "intention": "A log-level feed channel (warn) routes to the device's per-device log stream and returns the records written there",
+    "test": "tests/test_uu_feed.py::TestLogChannels::test_warn_channel_reads_warn_stream",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_uu_feed.py::TestLogChannels::test_warn_channel_reads_warn_stream",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\nself = <tests.test_uu_feed.TestLogChannels object at 0x7e52ad9cce00>\ntmp_path = PosixPath('/tmp/pytest-of-akien/pytest-109/test_warn_channel_reads_warn_s0')\n\n    def test_warn_channel_reads_warn_stream(self, tmp_path):\n        \"\"\"warn — the channel added 2026-06-25 — routes to the warn stream.\"\"\"\n        root = tmp_path / \"logs\"\n        _write_record(\n            root, \"dev1\", \"warn\", \"20260625-100000-000001_x_warning.json\",\n            {\"ts\": \"2026-06-25T10:00:00\", \"level\": \"WARNING\", \"message\": \"a warning\"},\n        )\n        recs = uu_feed.read_log_stream(\"dev1\", \"warn\", log_root=root)\n>       assert recs, \"warn stream returned nothing\"\nE       AssertionError: warn stream returned nothing\nE       assert []\n\ntests/test_uu_feed.py:43: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_uu_feed.py::TestLogChannels::test_warn_channel_reads_warn_stream\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "612c88d1c61900dc95cfbaf7c14e11df0dbc3845",
+    "impl_paths": [
+      "devlab/claudecode/uu_feed.py"
+    ],
+    "ticket": "T-uu-readfeed",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
