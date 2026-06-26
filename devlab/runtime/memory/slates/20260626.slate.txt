@@ -66,3 +66,7 @@ Done: Done: goals→intentions floorboard solid (5 skills + schema.goals removed
 Next: Next: T-mcp-finish-igor-librarian-migration + T-mcp-dispatch-by-addressee (MCP homogenization, 2 decisions filed).
 
 ## In-flight: Goals→intentions batch complete (shipped-unproven with proof_emitter lever filed). MCP-surface homogenization queued. No work in progress.
+
+## In-flight: T-mcp-finish-igor-librarian-migration closed (shipped-unproven); live mcp__igor__ refs repointed to librarian + ~/.mcp.json igor block deleted. T-mcp-dispatch-by-addressee (L) now ungated — the dispatch-server redesign is next.
+
+## In-flight: Skills floorboard solid; MCP migration M closed (igor→librarian repointed + ~/.mcp.json igor block deleted). Captured class-vs-instance addressing model + 'wait-for-the-better-lever' lesson + current debt (web=igor, granny inconsistent) onto the dispatch ticket. NEXT: T-mcp-dispatch-by-addressee (L, ungated, annotated) — design-heavy rack-dispatch redesign; warrants a /design pass.
