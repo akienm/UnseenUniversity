@@ -1,6 +1,6 @@
 # The Ownership Gap: Compiled Inference and the New Economics of AI Development
 
-*Akien Maciain (With help from Claude)*
+*Akien MacIain and Claude*
 
 ---
 
@@ -18,11 +18,15 @@
 
 ## Versioning
 
-Each file carries a footer: `Version yyyy.mm.dd.hh.mm.MT — Latest: github.com/akienm/UnseenUniversity/tree/main/lab/docs/the_ownership_gap/`
+Each file carries a footer: `Version yyyy.mm.dd.hh.mm.MT — Latest: github.com/akienm/UnseenUniversity/tree/main/docs/the_ownership_gap/`
 All versions are Mountain Time (MT). Update the stamp whenever the file is meaningfully revised.
 
 ## Source material
 
-- `lab/docs/Compiled_Inference.md` — Chapter 2 source, nearly publication-ready
-- `lab/docs/Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.md` — Chapters 3–5 source, needs updating
-- `lab/docs/QE_in_the_Age_of_AI.md` — quarry; pieces feed the brief and opening
+The original source drafts have been folded into the chapters above and largely
+superseded. Surviving quarry material lives under `docs/`:
+
+- `docs/QE_in_the_Age_of_AI.md` — quarry; pieces feed the brief and opening
+- The compiled-inference and levers drafts (formerly `lab/docs/Compiled_Inference.md`
+  and the deterministic-levers draft) are retired — `lab/` is no longer a valid
+  path; their content now lives in chapters 1–3.

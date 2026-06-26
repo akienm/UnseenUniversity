@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-theigors-archive-artifact-freeze.20260625.180312707784",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-theigors-archive-artifact-freeze"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T00:03:12.707784+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-theigors-archive-artifact-freeze"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-theigors-archive-artifact-freeze",
+    "title": "[sprint] Freeze/dedup retired TheIgors* build-artifact copies (archive tidiness)",
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Memory"
+    ],
+    "description": "I intend that the retired pre-UU build-artifact stashes are clearly frozen read-only archives with no redundant binary duplicates, so they cannot be mistaken for a live source of truth.\n\nA filesystem sweep found build-artifact debt OUTSIDE the UU repo: (1) TheIgorsProject/design_docs/ and TheIgorsProject/lab/design_docs/ are binary-identical copies of each other (same mod times, decisions/ 117 vs 115 — a merge artifact); (2) TheIgorsProject still carries live (writable) design_docs/ and design_docs_for_igor/ + .dsb trees that CLAUDE.md marks retired; these should be frozen archive only. UU proper is clean (no .dsb, JSON-only) — the debt is entirely in the ~/TheIgors* trees.\n\n**Affected files:** none in the UU repo — operates on ~/TheIgorsProject, ~/TheIgors.archive, ~/TheIgors-cert-walks (external archive dirs). **Design rules:** look at the target before deleting/overwriting (these are historical archives — do NOT blind-delete; verify each is a true duplicate and nothing live references it first). **Scope boundary:** IN — confirm the design_docs/ vs lab/design_docs/ copies are byte-identical, collapse to one, mark the TheIgors* archive trees read-only/clearly-frozen. OUT — touching anything under the UU repo; deleting any unique (non-duplicate) decision/ticket file (the full corpus is the substantiation for the book's '500+ decisions' claim — preserve all distinct records). **Test plan:** no automated test (out-of-repo archive housekeeping) because: this is one-time filesystem tidiness on frozen archives; verification is a manual diff + a re-run of the discovery sweep showing the duplicate pair collapsed.\n**Completion criteria:** the design_docs/ vs lab/design_docs/ binary duplicate pair is collapsed to one copy; ~/TheIgors* artifact trees are read-only; a re-run of the artifact sweep no longer reports the duplication anomaly. No distinct decision/ticket record is lost.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.2,
+    "status": "sprint",
+    "created_at": "2026-06-26T00:02:52.109771+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T00:02:52.154546+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "eb8067d4-1b0f-4eef-94ea-41080031ab97"
+  },
+  "title": "Merge distinct records, then DELETE superseded TheIgors* artifact copies",
+  "description": "I intend that the retired pre-UU build-artifact stashes hold only DISTINCT records that haven't been migrated, and that every record already merged into the canonical store has its old copy DELETED — so the corpus lives in exactly one home and we never stumble over scattered duplicates again.\n\nA sweep found the same decision/ticket corpus spread across five locations (TheIgorsProject x2, TheIgors.archive, TheIgors-cert-walks, current UU) — ~1,300 raw decision files, mostly duplicates, because prior migrations copied-forward but never removed-behind. Akien's rule (2026-06-25): when artifacts are successfully merged/migrated into canonical, DELETE the old copies. See feedback_delete_after_successful_merge.\n\nOrder is verify-merged -> then delete, never blind delete. (1) Identify which archived decisions/tickets are DISTINCT and not yet in devlab/runtime/memory/. (2) Migrate those distinct records into canonical and VERIFY they landed. (3) Then delete the redundant/superseded copies across the TheIgors* trees (including the byte-identical design_docs/ vs lab/design_docs/ pair) so one home survives. No distinct record is lost; every confirmed duplicate is removed.\n\n**Affected files:** none in the UU repo for the delete step — operates on ~/TheIgorsProject, ~/TheIgors.archive, ~/TheIgors-cert-walks; migration step writes into devlab/runtime/memory/ via memory_emit.py. **Design rules:** look at the target before deleting (confirm true duplicate / confirm merged first); one-home-no-exceptions; delete-after-successful-merge (feedback). **Scope boundary:** IN — diff archives vs canonical, migrate distinct records, verify, delete confirmed-duplicate/superseded copies, collapse the binary-identical design_docs pair. OUT — deleting any record that is distinct and NOT yet merged (migrate it first); touching the UU repo's own tracked files. **Test plan:** no automated test (out-of-repo archive housekeeping) because verification is: a diff showing every deleted file's content exists in canonical, plus a re-run of the artifact sweep reporting zero duplicate stashes.\n**Completion criteria:** re-running the artifact discovery sweep reports a single canonical decision/ticket home with no duplicate archives; every record that was deleted is provably present in devlab/runtime/memory/; the design_docs/ vs lab/design_docs/ duplicate pair is gone."
+}

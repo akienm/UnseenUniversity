@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-palace-echo-write-path-converge.20260625.180251858792",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-palace-echo-write-path-converge"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T00:02:51.858792+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [
+      "T-palace-echo-write-path-converge"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-palace-echo-write-path-converge",
+    "title": "[sprint] Converge palace_echo write path to one canonical home; drop eliminated IGOR_HOME ref",
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Infrastructure",
+      "Workflow"
+    ],
+    "description": "I intend that palace_echo content (day rollups + session transcripts/sessions) is written to exactly ONE canonical home, and that no writer keys off the eliminated IGOR_HOME env var.\n\nA filesystem sweep found palace_echo split across two locations: devlab/runtime/memory/slates/palace_echo/ holds 1 file (day_20260624.md), while ~/.unseen_university/claudecode/palace_echo/ holds 2,075 files (palace_transcripts_*, palace_sessions_* from session_capture.py). The day-close skill writes via ${IGOR_HOME:-~/.unseen_university}/claudecode/palace_echo/ — IGOR_HOME was eliminated (T-uu-eliminate-igor-home-env); runtime dir is derived via uu_home(). So the echo path references a retired env var and lands in a non-canonical, split location. This is exactly the 'one home, no exceptions' rule from CLAUDE.md being violated by a stray write-path.\n\nDecide the canonical home (uu_home()/claudecode/palace_echo as runtime cache, OR devlab/runtime/memory/ as dev-process artifact — pick one and document why), point both writers (scripts/session_capture.py and skills/day-close/SKILL.md) at it via uu_home() not IGOR_HOME, and reconcile the stray devlab copy.\n\n**Affected files:** scripts/session_capture.py, skills/day-close/SKILL.md (and the ~/.claude symlinked copy follows automatically). **Design rules:** no new ~/.unseen_university path without approval (uu_home() is the derived home, already approved); one-home-no-exceptions; docs-live-in-code. **Scope boundary:** IN — pick canonical palace_echo home, replace IGOR_HOME with uu_home() in both writers, document the choice, reconcile the stray copy. OUT — migrating the 2,075 existing files (separate one-time move if needed); changing what session_capture captures. **Test plan:** test asserts (a) no writer references IGOR_HOME for palace_echo, (b) the resolved palace_echo dir derives from uu_home() and is monkeypatchable in a hermetic test, (c) day-close + session_capture write to the same resolved dir. Proof: red where a writer still hits IGOR_HOME / a second location; green when both resolve to one uu_home()-derived path.\n**Completion criteria:** grep shows zero IGOR_HOME references in session_capture.py and day-close SKILL.md; both writers resolve palace_echo via uu_home(); a test pins single-home resolution red->green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": null,
+    "gate": null,
+    "priority": 0.4,
+    "status": "sprint",
+    "created_at": "2026-06-26T00:02:50.683165+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T00:02:50.730349+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cd62eed0-d3c0-4fc6-b154-5c4e7909ce96"
+  }
+}
