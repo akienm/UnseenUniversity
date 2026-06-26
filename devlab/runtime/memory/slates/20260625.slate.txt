@@ -23,6 +23,7 @@ NONE
 - T-device-skills-via-uu-device — Device skills fold into uu device <dev> <verb> [<noun>] + /device <dev> <verb> (Built the uu device <dev> <verb> dispatch mechanism (the two-products split at the device boundary) + /device CC-facing )
 - T-savestate-run-nameerror-fix — Fix savestate run: module-level NameError + stale holdovers (Fixed skills/savestate/run: (1) module-level NameError — uu_home() was called at module scope while imported only inside)
 - T-per-device-log-hierarchy — Unified per-device log home (~/.unseen_university/logs/<device>/) (Per-device log hierarchy shipped: DiagnosticBase JSON sink routes every device's records to ~/.unseen_university/logs/<d)
+- T-uu-readfeed — uu readfeed <device> [channel] — generalize/retire readigor (Generalized /readigor to uu device <dev> feed [channel] (/device <dev> feed): personal default (webchat), private stub, )
 ## Day-close summary (2026-06-24 final)
 **Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
 CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
@@ -210,3 +211,4 @@ Next: T-per-device-log-hierarchy (M) — unblocks readfeed CLI + web-feed button
 - ownership_gap docs: full update pass (numbers current + new-reality + 51% run + footers)
 - T-palace-echo-write-path-converge: converge palace_echo home + drop IGOR_HOME (cleanup)
 - T-theigors-archive-artifact-freeze: freeze/dedup retired TheIgors* artifact copies (cleanup)
+- ✅ T-uu-readfeed CLOSED PROVEN (uu device feed reader; readigor retired; @612c88d1; ungated T-skills-views-retire-to-cli)
