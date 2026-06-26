@@ -33,7 +33,7 @@ UU_HOME = Path(uu_home())
 def _cc_tools() -> Path:
     if val := os.environ.get("CC_WORKFLOW_TOOLS", "").strip():
         return Path(val)
-    # devlab/claudecode is the canonical tools dir (lab/claudecode is retired).
+    # devlab/claudecode is the canonical tools dir (the old top-level path is retired).
     return Path(uu_root()) / "devlab" / "claudecode"
 
 CC_TOOLS = _cc_tools()
