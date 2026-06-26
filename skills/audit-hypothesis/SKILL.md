@@ -1,6 +1,6 @@
 ---
 name: audit-hypothesis
-description: Hypothesis-time audit — 5 checks before /sorted files tickets. Catches untestable claims, unobservable measurements, invalid goal links, contradictions with recent falsified hypotheses, and missing time horizons. Returns PASS / AMEND. Model: Opus.
+description: Hypothesis-time audit — 5 checks before /sorted files tickets. Catches untestable claims, unobservable measurements, missing/malformed intention, contradictions with recent falsified hypotheses, and missing time horizons. Returns PASS / AMEND. Model: Opus.
 model: opus
 ---
 
@@ -22,7 +22,7 @@ Called automatically by /sorted after hypothesis extraction. Also standalone:
 
 - **hypothesis text** — the testable claim ("what should be observably different after these tickets ship?")
 - **measurement signal** — how we'll know ("the metric / behavior / log line")
-- **goal link** — G-xxx this serves
+- **intention** — the "I intend that..." statement this serves
 - **time horizon** — when we'd check the outcome
 
 For standalone on a filed decision:
@@ -55,13 +55,13 @@ python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('tex
 
 ---
 
-### Check 3 — Goal link is valid and active
+### Check 3 — Intention is present and well-formed
 
-**Look for:** G-xxx names a goal that exists in palace and has status=active. The hypothesis plausibly advances one of that goal's KRs.
+**Look for:** a named intention in "I intend that..." shape — a positive observable target the hypothesis plausibly advances. The hypothesis and the intention are about the same change.
 
-**Fail when:** goal doesn't exist, is retired, is blocked, or the hypothesis doesn't plausibly connect to the goal's KRs.
+**Fail when:** the intention is missing, is a vague hope rather than an observable target, or the hypothesis doesn't plausibly connect to the stated intention.
 
-**AMEND:** "Goal link G-xxx is invalid (not found / retired / blocked). Either link to an active goal or acknowledge this decision is ungated (explicit `goal: none` with reason)."
+**AMEND:** "Intention is missing or malformed. State it as 'I intend that <observable target>', and confirm the hypothesis advances it. The intention is the driver (Intention-Based Development)."
 
 ---
 
@@ -99,9 +99,9 @@ psql "$UU_HOME_DB_URL" -tAc \
 ## Challenge (always, after all 5 checks)
 
 ```
-CHALLENGE: Is there a better hypothesis for achieving this goal?
+CHALLENGE: Is there a better hypothesis for this intention?
   - Is there a simpler prediction that would tell you the same thing?
-  - Is there a more direct path to the goal's KR that this decision doesn't address?
+  - Is there a more direct path to the intention that this decision doesn't address?
   - Could the measurement signal be stronger (less proxy, more direct)?
 ```
 
@@ -118,7 +118,7 @@ audit-hypothesis: PASS
 Checks: 5/5 passed
 Hypothesis: "<hypothesis text>"
 Signal: <measurement signal>
-Goal: G-xxx
+Intention: <the "I intend that..." statement>
 Outcome check: <time horizon>
 CHALLENGE: <challenge note or "hypothesis looks well-formed">
 ```
@@ -143,4 +143,4 @@ CHALLENGE: <challenge question>
 - Run all 5 checks — don't stop at first failure.
 - Challenge always runs.
 - AMEND blocks /sorted ticket-filing the same way audit-design does.
-- "goal: none" is a valid explicit choice — but it must be stated, not defaulted.
+- The intention must be stated explicitly ("I intend that..."), not defaulted or left blank.
