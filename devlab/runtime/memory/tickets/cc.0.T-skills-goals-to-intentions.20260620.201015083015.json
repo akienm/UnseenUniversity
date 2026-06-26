@@ -20,13 +20,13 @@
   },
   "body": {
     "id": "T-skills-goals-to-intentions",
-    "title": "[sprint] Skills track intentions, not goals (drop G-xxx goal-tracking)",
+    "title": "[in_progress] Skills track intentions, not goals (drop G-xxx goal-tracking)",
     "size": "L",
     "tags": [
       "Workflow",
       "Skills"
     ],
-    "status": "sprint",
+    "status": "in_progress",
     "priority": 0.45,
     "intention": "Goal-tracking is fully removed, not deprecated: no skill, schema, or reader references G-xxx goals; the only tracked linkage unit is the intention, and the 3 former links.goals readers are rebuilt to be intention-native.",
     "decision_id": "D-proof-on-close-2026-06-20",
