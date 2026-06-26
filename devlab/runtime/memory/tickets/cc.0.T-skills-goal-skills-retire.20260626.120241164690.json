@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-skills-goal-skills-retire.20260626.120241164690",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-goal-skills-retire"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T18:02:41.164690+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-goals-purge-remaining-skills-2026-06-26"
+    ],
+    "tickets": [
+      "T-skills-goal-skills-retire"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-goal-skills-retire",
+    "title": "[sprint] Delete /goal and /audit-goal skills + remove from manifest",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Cleanup"
+    ],
+    "intention": "I intend that the /goal and /audit-goal skills are gone — not deprecated-in-place, deleted — and the manifest.json no longer lists them as active skills.",
+    "description": "skills/goal/ and skills/audit-goal/ are live skill directories that still provide the retired G-xxx goal-management surface. goals are retired per D-intention-based-development-2026-06-04 and the 'delete-after-successful-merge' principle — these skill files are the remove-behind, not already-deleted artifacts. They must go.\n\n**Affected files:** skills/goal/ (directory + contents), skills/audit-goal/ (directory + contents), skills/manifest.json (remove their entries — or mark 'retired: see intention field on tickets').\n**Design rules:** delete-after-successful-merge, goals-being-retired, rip-out-over-deprecate-in-place.\n**Scope boundary:** IN - delete skills/goal/ and skills/audit-goal/ directories entirely; remove their entries from manifest.json. OUT - the actual goal-language inside other skill files (those have their own tickets). OUT - historical records in devlab/runtime/memory/ (frozen, append-only). OUT - skills symlinks in ~/.claude/skills/ — check if they're symlinks to skills/ (per NO-skills-sync-symlink-only rule) and handle accordingly (delete the symlink if deleting the canonical).\n**Test plan:** ls skills/goal skills/audit-goal -> both absent. grep skills/manifest.json for 'goal' and 'audit-goal' -> 0 active entries. No broken symlinks under ~/.claude/skills/ referencing deleted directories.\n**Completion criteria:** `ls skills/goal/ 2>&1` exits non-zero; `ls skills/audit-goal/ 2>&1` exits non-zero; `grep -c '\"goal\"\\|\"audit-goal\"' skills/manifest.json` returns 0 active entries.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-goals-purge-remaining-skills-2026-06-26",
+    "gate": null,
+    "priority": 0.7,
+    "status": "sprint",
+    "created_at": "2026-06-26T18:02:33.863928+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T18:02:33.863989+00:00"
+  }
+}

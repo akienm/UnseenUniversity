@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-skills-workflow-goal-purge.20260626.120241052292",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-workflow-goal-purge"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T18:02:41.052292+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-goals-purge-remaining-skills-2026-06-26"
+    ],
+    "tickets": [
+      "T-skills-workflow-goal-purge"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-workflow-goal-purge",
+    "title": "[sprint] Remove Goals(G-xxx) block from skills/workflow.md",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Cleanup"
+    ],
+    "intention": "I intend that the /workflow skill map no longer references the retired G-xxx goal system anywhere — no Goals block, no /goal, no /audit-goal, no palace.goals.*, no KR references.",
+    "description": "skills/workflow.md is the master skill map CC reads. It still shows a full 'Goals (G-xxx)' tracking stack (lines 11-14: /goal, /audit-goal, palace.goals.*), 'Goal KRs updated' as an outcome action, 'I want to check goal progress -> /goal list' in WHERE AM I, and 'goal -> audit-goal challenge' in the bottom summary. All of these are vestigial scaffolding from before Intention-Based Development (D-intention-based-development-2026-06-04). Remove them.\n\n**Affected files:** skills/workflow.md only.\n**Design rules:** delete-after-successful-merge (this is the remove-behind for the goals->IBD migration), goals-being-retired (the directive).\n**Scope boundary:** IN - remove all goal-system references from workflow.md. OUT - the sorted/context-load/day-close skill files (those are in sibling T-skills-goals-to-intentions). OUT - any other skill files (each has its own ticket). OUT - historical memory store records.\n**Test plan:** grep skills/workflow.md for 'G-xxx', 'palace.goals', '/goal', 'audit-goal', 'KR' -> 0 matches. Read the file to confirm the remaining map is coherent without the goal block.\n**Completion criteria:** `grep -c 'G-xxx\\|palace\\.goals\\|audit-goal\\|/goal list\\|goal.*KR\\|KR.*goal' skills/workflow.md` returns 0.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-goals-purge-remaining-skills-2026-06-26",
+    "gate": null,
+    "priority": 0.7,
+    "status": "sprint",
+    "created_at": "2026-06-26T18:02:31.661674+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T18:02:31.711662+00:00"
+  }
+}

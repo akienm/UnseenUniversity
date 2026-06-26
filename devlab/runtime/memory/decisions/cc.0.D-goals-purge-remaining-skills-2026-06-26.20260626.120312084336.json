@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-goals-purge-remaining-skills-2026-06-26.20260626.120312084336",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-goals-purge-remaining-skills-2026-06-26"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-26T12:03:12.084336",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-goals-purge-remaining-skills-2026-06-26",
+    "title": "Goals->intentions remove-behind: purge goal language from remaining 8 skill files",
+    "status": "open",
+    "date": "2026-06-26",
+    "spawned_tickets": [
+      "T-skills-workflow-goal-purge",
+      "T-skills-goal-skills-retire",
+      "T-skills-audit-design-goal-reframe",
+      "T-skills-kr-references-purge",
+      "T-consequence-goals-purge-remaining-skills"
+    ],
+    "text": "# D-goals-purge-remaining-skills-2026-06-26\n**title:** Goals->intentions remove-behind: purge goal language from remaining 8 skill files\n**date:** 2026-06-26\n**status:** open\n**spawned_tickets:** T-skills-workflow-goal-purge, T-skills-goal-skills-retire, T-skills-audit-design-goal-reframe, T-skills-kr-references-purge, T-consequence-goals-purge-remaining-skills\n\n## Intention (root)\nI intend that skills (CC's substrate) no longer reference the retired G-xxx goal system anywhere in live prompts — leaving only historical records intact.\n\n## Decision narrative\nThe goals->IBD migration (D-intention-based-development-2026-06-04) captured the decision but ran only the copy-forward (intention field added). The remove-behind never ran. T-skills-goals-to-intentions (L, already filed under D-proof-on-close-2026-06-20) covers sorted/context-load/day-close + schema. THIS decision covers the 8 remaining skill files with live goal-language: workflow.md (goals tracking block), audit-design (Check 1 'goal'), audit-goal+goal (whole skills, delete), outcome/eval-run/weekly-retro (KR references). Design constraint from this session: goals' 3 functions are REDISTRIBUTED not renamed — (1) provable/disprovable is already in intention+proof-on-close; (2) KR progress tracking is DROPPED (weekly things weren't happening; intentions as living entities handle evolution differently); (3) capability snapshot (eval-run) survives but decoupled from G-xxx. The 'intentions as living entities' architecture (compete/merge/fold) is captured in memory [[intentions-as-living-entities]] and is a SEPARATE future design.\n\n## Hypothesis\nAfter these ship, grep -rl 'G-xxx|Which goal|palace.goals|/audit-goal|audit-goal challenge' skills/ returns 0 live-prompt matches; /workflow has no Goals block; /goal and /audit-goal skills don't exist; audit-design Check 1 prompts for intention not goal.\n\n## Measurement Signal\ngrep -rIl 'G-xxx|palace.goals|audit-goal' skills/ -> 0. Bash-checkable post-sprint in 2 seconds.\n\n## Goal Link\nnone: goals are retired — this IS the goal-retirement remove-behind."
+  }
+}
