@@ -9,7 +9,7 @@ Usage:
   python3 debug_session_cli.py query [handle]  → prints log lines
 
 Skills call this instead of `touch debug_session.flag` / `rm debug_session.flag`.
-When mcp__igor__cognition_debug is available, skills will call that instead.
+When mcp__librarian__cognition_debug is available, skills will call that instead.
 """
 
 import json

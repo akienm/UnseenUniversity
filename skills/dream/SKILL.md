@@ -40,7 +40,7 @@ done
 
 Or via MCP:
 ```
-mcp__igor__channel_read(limit=10)
+mcp__librarian__channel_read(limit=10)
 ```
 Filter messages received after the trigger timestamp. Stop polling when a
 dreaming summary appears.

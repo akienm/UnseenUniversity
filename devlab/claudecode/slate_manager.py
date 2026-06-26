@@ -313,9 +313,9 @@ def cmd_render():
     lines += [
         "## Tools",
         "Skills: /sprint /deep-audit /decided /commit /savestate /fixit /context-load /day-close /day-close-audit /probe /notethat /slateclose /readigor",
-        "MCP: mcp__igor__memory_get(id) · mcp__igor__cc_send(text) · mcp__igor__channel_read(limit=N)",
+        "MCP: mcp__librarian__memory_get(id) · mcp__librarian__cc_send(text) · mcp__librarian__channel_read(limit=N)",
         "DB: psql postgresql://unseen_university:<password>@127.0.0.1/unseen_university",
-        "Design decisions: devlab/runtime/memory/decisions/ or mcp__igor__memory_get('D304')",
+        "Design decisions: devlab/runtime/memory/decisions/ or mcp__librarian__memory_get('D304')",
         "Epics: Claude · Cognition · Training · Operations · Database · Swarm · Productization",
         "",
         "## Design thread",

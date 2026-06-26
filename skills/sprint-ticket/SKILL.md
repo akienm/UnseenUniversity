@@ -24,11 +24,11 @@ surface the delegate option as a one-line command **before** the claim.
 The prompt is mandatory; the delegate action is not — Akien decides.
 
 Capability surface to scan:
-- Available MCP tools (deferred tool list — `mcp__igor__*`, `mcp__datacenter__*`) — names tell you what minions/devices are reachable.
+- Available MCP tools (deferred tool list — `mcp__librarian__*`, `mcp__datacenter__*`) — names tell you what minions/devices are reachable.
 - `mcp__datacenter__datacenter_manifest` — full per-device capability map if you need detail beyond tool names.
 
 Matching heuristics (when any match, surface the option):
-- Ticket tag includes `Database` → `mcp__igor__db_query`
+- Ticket tag includes `Database` → `mcp__librarian__db_query`
 - Ticket tag includes `Cognition` / `Debug` → Igor cognition-debug capability
 - Ticket tag includes `Reading` / `Memory` → Igor memory tools
 - Affected files under `wild_igor/igor/` AND ticket scope is "implement inside Igor" → consider Igor self-coding via cc_send
@@ -90,7 +90,7 @@ before proceeding. When `"stale": false` and no warnings — proceed without com
 ### 3. Select executor
 - **CC inline**: default for code changes in this repo
 - **Haiku subagent**: mechanical/checklist work (use the Agent tool, subagent_type=general-purpose with a Haiku model override)
-- **Igor**: delegate via `mcp__igor__cc_send` for Igor-domain work (cognition debugging, memory curation, palace edits)
+- **Igor**: delegate via `mcp__librarian__cc_send` for Igor-domain work (cognition debugging, memory curation, palace edits)
 
 ### 4. Review the plan
 

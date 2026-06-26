@@ -62,7 +62,7 @@ Bash, Read, Edit, Write. Working directory: ~/dev/src/UnseenUniversity
   memory_get(path="P")
     → Bash: psql $UU_HOME_DB_URL -tAc "SELECT content FROM memory_palace WHERE path='P'"
 
-  mcp__igor__* / mcp__datacenter__* / mcp__librarian__*
+  mcp__datacenter__* / mcp__librarian__*
     → SKIP — MCP not wired yet; continue to the next step
 
   /audit-precode, /audit-hypothesis, /audit-ticket (sub-skill invocations)

@@ -46,7 +46,7 @@ Each GAP entry includes the blocker and, if available, the ticket that will clos
 
 ### mcp__* Tools
 - **Status**: GAP
-- **Details**: DS does not have access to MCP (Multi-Core Processor) tools such as `mcp__igor__*`, `mcp__datacenter__*`, and `mcp__librarian__*`.
+- **Details**: DS does not have access to MCP (Multi-Core Processor) tools such as `mcp__datacenter__*` and `mcp__librarian__*`.
 - **Blocker**: MCP tools are not yet wired for DS.
 - **Ticket**: T-dicksimnel-mcp-wrappers (not yet filed).
 
