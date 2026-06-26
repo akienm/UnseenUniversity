@@ -8,11 +8,6 @@ file — never duplicate the map elsewhere.
 THE TRACKING STACK
 ══════════════════════════════════════════════════════════════
 
-  Goals (G-xxx)
-    /goal new|list|update|block|retire
-    /audit-goal         ← 7 checks + "better way?" challenge
-    Stored: palace.goals.*
-
   Hypothesis                       ← extracted at /sorted time (3 questions)
     /audit-hypothesis   ← 5 checks + "better hypothesis?" challenge
     Stored on: decision record
@@ -20,7 +15,7 @@ THE TRACKING STACK
   Design conversation
     /design             ← optional framing opener, writes DESIGN_START marker
 
-  Decision (D-xxx)                 ← design call + hypothesis + goal link
+  Decision (D-xxx)                 ← design call + hypothesis + intention
     /sorted             ← summarize → extract hypothesis → audit-hypothesis
                            → audit-design → draft tickets → audit-ticket
                            → file tickets → write palace node → log
@@ -42,13 +37,11 @@ THE TRACKING STACK
     /outcome D-xxx      ← review hypothesis vs evidence → confirmed/falsified
     Stored on: decision record + palace node
 
-  Goal KRs updated                 ← /outcome writes KR progress to G-xxx
-
 ══════════════════════════════════════════════════════════════
 WEEKLY TRACKS (Fridays in day-close, or standalone)
 
-  /eval-run            ← 5 capability questions → feeds goal KRs
-  /weekly-retro        ← hypothesis confirmation rate + goal progress
+  /eval-run            ← 5 capability questions (standalone capability snapshot)
+  /weekly-retro        ← hypothesis confirmation rate + priority synthesis
   /audit-expert        ← 3 random experts (weekly) or full 11 (monthly, 1st Monday)
 
 DAILY
@@ -58,7 +51,6 @@ DAILY
   /savestate           ← flush in-flight state to slate (mid-session or session-close)
 
 AUDIT FAMILY
-  /audit-goal          ← goal quality gate (7 checks)
   /audit-hypothesis    ← hypothesis quality gate (5 checks)
   /audit-design        ← decision quality gate (9 checks)
   /audit-ticket        ← ticket quality gate (16 checks)
@@ -113,13 +105,11 @@ WHERE AM I? — QUICK GUIDE
   "I don't know what's in the queue"
     → /query-ticket, or python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list
 
-  "I want to check goal progress"
-    → /goal list
-    → /eval-run (current capability snapshot)
+  "I want a capability snapshot"
+    → /eval-run (5 capability questions)
 
 ══════════════════════════════════════════════════════════════
 THE QUESTION AT EVERY STEP: Is there a better way?
-  goal → audit-goal challenge
   hypothesis → audit-hypothesis challenge
   design → audit-design challenge
   ticket → audit-ticket challenge
