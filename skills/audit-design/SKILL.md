@@ -1,6 +1,6 @@
 ---
 name: audit-design
-description: Filing-time decision audit. Called by /sorted after the decision summary, before tickets are drafted. Catches a "decision" that isn't actually decided — vague goals, unobservable success criteria, conflicts with prior decisions or palace rules, undecomposed scope, missing executor assignment. Returns PASS / AMEND. Standalone invocation also supported via `/audit-design <decision-id>` for re-checking an already-filed decision.
+description: Filing-time decision audit. Called by /sorted after the decision summary, before tickets are drafted. Catches a "decision" that isn't actually decided — vague intention, unobservable success criteria, conflicts with prior decisions or palace rules, undecomposed scope, missing executor assignment. Returns PASS / AMEND. Standalone invocation also supported via `/audit-design <decision-id>` for re-checking an already-filed decision.
 model: opus
 ---
 
@@ -30,17 +30,17 @@ ticket-level checks live in `audit-ticket` (called per ticket in
 Each check has a positive shape (what to look for) and an AMEND message
 (what to ask the decider when the check fails).
 
-### Check 1 — Goal stated as positive target
+### Check 1 — Intention stated as observable target
 
-**Look for:** the decision summary names a thing to move *toward*, in approach-frame
-shape (`unseenuniversity/rules/approach-frame`). One sentence beginning with a verb that
-describes the desired state.
+**Look for:** the decision summary (or root intention field) names a thing to move
+*toward*, in approach-frame shape (`unseenuniversity/rules/approach-frame`). Phrased
+as "I intend that..." or a verb describing the desired observable state.
 
 **Fail when:** the summary opens with `no`, `don't`, `never`, `avoid`, `stop`,
 `prevent`, or names only an absence with no positive target.
 
-**AMEND:** "Decision summary names a prohibition without naming what to do
-instead. Reframe to a positive target — `<rewrite suggestion based on context>`.
+**AMEND:** "Decision names a prohibition without naming what to do instead.
+Reframe to a positive observable target — `<rewrite suggestion based on context>`.
 See `unseenuniversity/rules/approach-frame`."
 
 ### Check 2 — Success condition observable in the runtime
@@ -129,7 +129,7 @@ need their own /sorted)."
 ### Check 8 — Scope decomposed into atomic ticketable units
 
 **Look for:** the decision implies units of work that fit in one PR each.
-Each unit has a clear single goal — not "build subsystem X" but "build the
+Each unit has a clear single intention — not "build subsystem X" but "build the
 schema piece of subsystem X" + "build the helper piece of subsystem X" etc.
 
 **Fail when:** scope is one monolithic "do the whole thing" with no
