@@ -80,7 +80,19 @@ def read_log_stream(
     device: str, stream: str, limit: int = DEFAULT_LIMIT, log_root: Path | None = None
 ) -> list[dict]:
     """Most-recent records from <log_root>/<instance>/<stream>/*.json (oldest→newest)."""
-    return []  # STUB — log-stream routing implemented in the next commit
+    log_root = log_root or _log_root()
+    inst = resolve_instance(device, log_root)
+    stream_dir = log_root / inst / stream
+    if not stream_dir.is_dir():
+        return []
+    files = sorted(stream_dir.glob("*.json"), key=lambda p: p.name)[-limit:]
+    records: list[dict] = []
+    for f in files:
+        try:
+            records.append(json.loads(f.read_text()))
+        except (json.JSONDecodeError, OSError):
+            continue  # a single corrupt record never breaks the feed (fail-soft)
+    return records
 
 
 def read_personal(
