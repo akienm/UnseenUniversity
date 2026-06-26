@@ -212,3 +212,5 @@ Next: T-per-device-log-hierarchy (M) — unblocks readfeed CLI + web-feed button
 - T-palace-echo-write-path-converge: converge palace_echo home + drop IGOR_HOME (cleanup)
 - T-theigors-archive-artifact-freeze: freeze/dedup retired TheIgors* artifact copies (cleanup)
 - ✅ T-uu-readfeed CLOSED PROVEN (uu device feed reader; readigor retired; @612c88d1; ungated T-skills-views-retire-to-cli)
+
+## In-flight: NONE in-flight — T-uu-readfeed CLOSED PROVEN (uu device feed reader @612c88d1) + ownership_gap docs refresh committed. All on local main, UNPUSHED. Next: promote+sprint T-device-web-feed-channel-buttons (reuse uu_feed.py reader; annotated).
