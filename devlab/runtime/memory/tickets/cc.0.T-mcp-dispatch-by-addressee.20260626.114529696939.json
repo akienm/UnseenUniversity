@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-mcp-dispatch-by-addressee.20260626.114529696939",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-dispatch-by-addressee"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T17:45:29.696939+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-mcp-surface-homogenization-2026-06-26"
+    ],
+    "tickets": [
+      "T-mcp-dispatch-by-addressee"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-dispatch-by-addressee",
+    "title": "[sprint] Homogenize MCP surface to rack dispatch(to, verb, args)",
+    "size": "L",
+    "tags": [
+      "MCP",
+      "Architecture"
+    ],
+    "intention": "I intend that every rack verb is reached through one dispatch tool by addressee (dispatch(to, verb, args)), so adding a device or reasoner adds zero new tool-name entries.",
+    "description": "Per-device MCP namespaces re-flatten the whole verb catalog under every device name. The bus already routes by `to_device` (envelope); the tool layer should mirror it. Replace the per-verb tool surface with one `rack` dispatch server - `dispatch(to, verb, args)` + a `manifest` tool for discovery - so the addressee is a parameter, not a namespace.\n\n**Four strata (all reached the same way):** (1) universal baseline - budget/channel/manifest/health; (2) graph-tree MEMORY substrate - memory_*/wg_neighbors/palace_*, fronted by the Librarian (the MCP/memory device); (3) reasoning-layer verbs - traces/tail_heat/habit_list/turn_trace/hot_nodes/attractors - REASONER-CLASS, reached by `to=<reasoner>` (igor=instance #1; NOT igor-namespaced, NOT deleted - routed as-is); (4) genuine role-verbs - librarian_curate/propose_change->Librarian, scraps_*->Scraps. Reuse the already-addressee-based devices/queue/mcp_server.py (send_to/dispatch_ticket) pattern. Server-side validates (to, verb).\n\n**Affected files:** new rack dispatch server module; unseen_university/devices/librarian/tools/__init__.py (SCHEMAS + dispatch); unseen_university/devices/librarian/mcp_server.py; ~/.mcp.json; align with devices/queue/mcp_server.py.\n**Design rules:** homogeneity-over-special-case, bus-envelope mirror, igor-graph-tree-reasoner-instance-one (cognition verbs = reasoner-class, addressee-routed, not redesigned), delete-after-successful-merge (the per-verb entries must be DEREGISTERED, not left alongside dispatch). **Inertia: librarian aggregator + mcp_server.py + .mcp.json are design-center/MEDIUM-HIGH - pre-approved by Akien in the design conversation 2026-06-26.**\n**Scope boundary:** IN - dispatch+manifest surface, strata mapping, addressee resolution (to=igor -> the running instance, cf. uu_feed.resolve_instance), the single full sweep of LIVE refs -> dispatch, and DEREGISTERING the per-verb tools. OUT - deep cognition/memory-layer redesign (reasoner verbs are ROUTED as-is, behavior unchanged); OUT - what any verb does; OUT - historical append-only store.\n**Test plan:** (1) parity - dispatch(to='igor', verb='traces_recent') returns what mcp__igor__traces_recent did; (2) manifest lists the four strata/verbs; (3) REMOVE-BEHIND (machine-verifiable): the per-verb tool entries are no longer individually registered - registered/SCHEMAS tool count <= N (small fixed set: dispatch + manifest + any genuinely-kept). A hollow build that adds dispatch ALONGSIDE the 43 FAILS this; (4) adding a fake device adds zero new tool-name entries; (5) the deferred-tool count drops (the hypothesis meter).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] \u26d4 NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory \u2014 one home, no exceptions. Every dev-process artifact \u2014 \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy \u2014 \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven \u2014 no discriminator. A ticket that \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n\u2026and 39 more (lower-severity or capped) \u2014 query constraints_get for the full set\n\n**Completion criteria:**\n- `dispatch(to, verb, args)` + `manifest` tools exist; round-trip (to='igor', verb='traces_recent') returns parity output.\n- REMOVE-BEHIND (machine-verifiable): registered/SCHEMAS per-verb tool count <= N (dispatch + manifest + any genuinely-kept) \u2014 the 43 per-verb entries are DEREGISTERED, not left alongside dispatch. A hollow build adding dispatch beside the 43 FAILS this.\n- Adding a fake device adds zero new tool-name entries.\n- `/context` deferred MCP tool-name count drops from ~86 toward the small fixed set (the hypothesis meter).",
+    "decision_id": "D-mcp-surface-homogenization-2026-06-26",
+    "gate": "T-mcp-finish-igor-librarian-migration",
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-06-26T17:45:25.849794+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T17:45:25.849856+00:00"
+  }
+}

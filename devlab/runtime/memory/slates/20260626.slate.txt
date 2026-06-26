@@ -51,3 +51,4 @@ TICKETS TO DRAFT under the new decision:
 REFS: memory git-stash-is-hidden-divergent-state; day-close SKILL step 4.6.
 
 - D-git-stash-attribution-hygiene-2026-06-26: git-stash attribution+hygiene — T-git-stash-attribution-wrapper, T-stash-ticket-close-check, T-stash-orphan-sweep-alarm, T-consequence-git-stash-attribution
+- D-mcp-surface-homogenization-2026-06-26: collapse per-device MCP namespaces to dispatch-by-addressee (B finish igor->librarian remove-behind, C rack dispatch) — T-mcp-finish-igor-librarian-migration, T-mcp-dispatch-by-addressee, T-consequence-mcp-surface-homogenization

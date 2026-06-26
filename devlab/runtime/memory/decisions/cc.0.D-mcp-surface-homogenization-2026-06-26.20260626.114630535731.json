@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-mcp-surface-homogenization-2026-06-26.20260626.114630535731",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-mcp-surface-homogenization-2026-06-26"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-26T11:46:30.535731",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-mcp-surface-homogenization-2026-06-26",
+    "title": "MCP-surface homogenization: collapse per-device tool namespaces to dispatch-by-addressee",
+    "status": "open",
+    "date": "2026-06-26",
+    "spawned_tickets": [
+      "T-mcp-finish-igor-librarian-migration",
+      "T-mcp-dispatch-by-addressee",
+      "T-consequence-mcp-surface-homogenization"
+    ],
+    "text": "# D-mcp-surface-homogenization-2026-06-26\n**title:** MCP-surface homogenization: collapse per-device tool namespaces to dispatch-by-addressee\n**date:** 2026-06-26\n**status:** open\n**spawned_tickets:** T-mcp-finish-igor-librarian-migration, T-mcp-dispatch-by-addressee, T-consequence-mcp-surface-homogenization\n\n## Intention (root)\nI intend that the rack's tool surface is reached uniformly by addressee, so no device is a special case and adding a device or reasoner costs zero new tool entries. (Homogeneity over special-case: the bus already routes by to_device; the tool layer should mirror it.)\n\n## Decision narrative\nThe MCP tool surface drifted from the bus design: `~/.mcp.json` registers the librarian server twice (`igor` + `librarian`, byte-identical, both run unseen_university.devices.librarian.mcp_server), and every device re-flattens the whole 43-verb catalog under its own namespace. Root cause: the May-8 igor->librarian migration (D-librarian-rack-agent-2026-05-08) shipped the copy-forward and skipped the remove-behind. Fix in two scopes: (B) finish that migration — delete the duplicate `igor` alias + minimal live-site repoint of mcp__igor__* (NOT the append-only historical store); (C) homogenize the surface to one rack dispatch(to, verb, args) + manifest so the addressee is a parameter not a namespace, with the catalog organized in FOUR STRATA all reached the same way: (1) universal baseline (budget/channel/manifest/health); (2) graph-tree MEMORY substrate (memory_*/wg_neighbors/palace_*) fronted by the Librarian; (3) reasoning-layer verbs (traces/heat/habits/hot_nodes) — REASONER-CLASS, addressed by to=<reasoner>, igor=instance #1, routed-as-is NOT igor-namespaced NOT deleted; (4) genuine role-verbs on their one device. Deep cognition/memory-layer redesign is explicitly OUT of scope (next focus, after stabilization). A=Gmail/Calendar/Drive connector disconnect (~26k) is a noted free pre-step — an Akien-side CC connector toggle, not in repo scope.\n\n## Advisor amendments (2026-06-06 probe, applied)\n- C completion criteria now ASSERT the remove-behind: per-verb tool entries deregistered (registered count <= N), not merely that dispatch is added alongside the 43 (a hollow build would have passed the original 'fake device adds zero' criterion while the count went UP).\n- B grep-to-zero scoped to LIVE invocation sites only; the append-only historical store (closed slates/decisions/proofs/tickets) is excluded — rewriting a closed record falsifies history.\n- B scoped to alias-delete + minimal repoint; C owns the single full homogenization sweep (no double-sweeping every skill).\n- ~/.mcp.json is non-repo (no repo .mcp.json exists) — the alias-deletion half is observation-verified via /context, not a repo test (close observation-verified or shipped-unproven naming the missing lever).\n\n## Hypothesis\nAfter these ship, CC's context no longer carries a duplicate mcp__igor__* 43-tool block; every device verb is reached through one dispatch(to=..., verb=...) tool instead of a per-device namespace; adding a new device adds no new tool-name entries.\n\n## Measurement Signal\nDirectly in /context: after B the mcp__igor__* namespace is gone (~8k reclaimed) and ~/.mcp.json no longer double-registers the librarian server; after C the deferred MCP tool-name count drops from ~86 (igor+librarian) toward a small fixed set (dispatch + manifest). Checkable in the /context token breakdown and the deferred-tool list.\n\n## Goal Link\nnone: goals are retired (Intention-Based Development); the root intention above is the driver, not a G-xxx."
+  }
+}
