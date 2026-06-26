@@ -48,7 +48,7 @@ CATEGORIES = {
     "rules", "tickets", "proofs",
 }
 
-LINK_KINDS = ("goals", "decisions", "tickets", "commits", "whys")
+LINK_KINDS = ("decisions", "tickets", "commits", "whys")
 _STAMP_RE = re.compile(r"^\d{8}\.\d{12}$")
 
 
@@ -123,7 +123,7 @@ def emit(category, emitter, body, *, kind=None, namespace=None, links=None,
     kind       semantic record kind ('decision', 'ticket', 'slate', 'chat', ...).
     namespace  optional lower-order namespace segments (list).
     links      dict subset of LINK_KINDS -> list of SEMANTIC ids (D-..., T-...,
-               commit sha, goal id, why id). Links use semantic ids, not filenames.
+               commit sha, why id). Links use semantic ids, not filenames.
     stamp      'yyyymmdd.hhmmssuuuuuu'. Pass the record's ORIGINAL time when
                migrating (idempotent). Defaults to now for live hook writes.
     """

@@ -48,7 +48,7 @@ rolled up or traced back from the tickets it spawned.
 Always ask Akien these three questions before proceeding. They are not optional.
 The hypothesis must be extracted and stored on the decision record before audit-design runs.
 
-**Question 1:** "Which goal does this serve?" — answer with G-xxx, or explicit `none` with one-sentence reason.
+**Question 1:** "Which intention does this serve?" — the "I intend that..." statement this decision advances (one sentence). Goals are retired (Intention-Based Development); the intention is the driver.
 
 **Question 2:** "What should be observably different after these tickets ship?" — the testable claim in plain English. One sentence.
 
@@ -62,8 +62,8 @@ Store answers in the decision JSON `body.text` (these sections are emitted in St
 ## Measurement Signal
 <Question 3 answer>
 
-## Goal Link
-<G-xxx or "none: <reason>">
+## Intention
+<the "I intend that..." statement from Question 1>
 ```
 
 If Akien can't answer Question 2 in one falsifiable sentence, the design may not be ready to ticket yet — surface that and offer to continue designing.
@@ -73,7 +73,7 @@ Then run `/audit-hypothesis` on the extracted hypothesis. If AMEND: apply fixes 
 ### 2.5. Audit the design (audit-design)
 
 Always invoke `audit-design` on the decision summary + scope context before
-drafting tickets. The audit runs nine positive checks (positive-target goal,
+drafting tickets. The audit runs nine positive checks (positive-target intention,
 runtime-observable success, alternatives considered, constraints named,
 "what am I missing" pass, conflicts with last-30d decisions, palace-rule
 conflicts, scope decomposition, executor + inertia per piece) and returns:
@@ -203,7 +203,7 @@ cat > /tmp/decision_body_<id>.json <<'JSON'
   "status": "open",
   "date": "YYYY-MM-DD",
   "spawned_tickets": ["T-x", "T-y", "T-z"],
-  "text": "# D-<id>\n**title:** <summary>\n**date:** YYYY-MM-DD\n**status:** open\n**spawned_tickets:** T-x, T-y, T-z\n\n## Decision narrative\n<1-2 sentences from step 2 + scope context>\n\n## Hypothesis\n<Q2 answer>\n\n## Measurement Signal\n<Q3 answer>\n\n## Goal Link\n<G-xxx or 'none: <reason>'>"
+  "text": "# D-<id>\n**title:** <summary>\n**date:** YYYY-MM-DD\n**status:** open\n**spawned_tickets:** T-x, T-y, T-z\n\n## Decision narrative\n<1-2 sentences from step 2 + scope context>\n\n## Hypothesis\n<Q2 answer>\n\n## Measurement Signal\n<Q3 answer>\n\n## Intention\n<the 'I intend that...' statement from Q1>"
 }
 JSON
 python3 "${CC_WORKFLOW_TOOLS}/memory_emit.py" \

@@ -60,7 +60,7 @@ log = logging.getLogger(__name__)
 WORKABLE_STATUSES = {"sprint", "assigned"}
 
 # Default envelope link buckets (mirrors memory_emit).
-_LINK_KEYS = ("goals", "decisions", "tickets", "commits", "whys")
+_LINK_KEYS = ("decisions", "tickets", "commits", "whys")
 
 
 # ── Paths (env read dynamically so tests can point UU_MEMORY_ROOT at a tmp dir) ──
