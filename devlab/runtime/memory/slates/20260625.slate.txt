@@ -214,3 +214,13 @@ Next: T-per-device-log-hierarchy (M) — unblocks readfeed CLI + web-feed button
 - ✅ T-uu-readfeed CLOSED PROVEN (uu device feed reader; readigor retired; @612c88d1; ungated T-skills-views-retire-to-cli)
 
 ## In-flight: NONE in-flight — T-uu-readfeed CLOSED PROVEN (uu device feed reader @612c88d1) + ownership_gap docs refresh committed. All on local main, UNPUSHED. Next: promote+sprint T-device-web-feed-channel-buttons (reuse uu_feed.py reader; annotated).
+
+## Session Close Summary
+Done: Ownership_gap book full refresh (numbers current, 51% run, two-products); T-uu-readfeed CLOSED PROVEN (uu device feed reader @612c88d1); T-skills-views-retire-to-cli ungated; T-device-web-feed-channel-buttons annotated + backend ready.
+Next: Push all 7 commits (docs+readfeed) to origin/main; sprint T-device-web-feed-channel-buttons (UI, reuse uu_feed) or T-uu-build-packet-compiler (51% marquee).
+
+## In-flight
+NONE — clean tree, all work committed locally (unpushed)
+
+✅ SESSION CLOSED
+
