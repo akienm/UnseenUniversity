@@ -44,5 +44,6 @@
     "target_difficulty": 1,
     "role": "apprentice",
     "scraps_validated": "2026-06-25T21:10:33.079142+00:00"
-  }
+  },
+  "description": "\n\n## CC.0 2026-06-25 — backend reader shipped, REUSE it\nThe CLI sibling T-uu-readfeed is CLOSED PROVEN. Its reader — devlab/claudecode/uu_feed.py — already gathers per-channel entries device-agnostically: uu_feed.read_log_stream(device, stream) for info/warn/debug (honors UU_LOG_ROOT else uu_home()/logs, resolves device->instance), and uu_feed.read_personal(device) for the webchat channel. The shim's per-channel gather should CALL these functions, not re-derive the paths — that is what keeps the web buttons coherent-by-construction with `uu device <dev> feed <channel>` (a stated completion criterion). Remaining work is purely the UI: drop the console pane, add personal/info/warn/debug buttons to the feed pane, wire each button to the shim gather. Ready to promote from triage."
 }
