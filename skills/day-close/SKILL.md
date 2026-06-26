@@ -80,6 +80,32 @@ python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py sweep-gates
 
 Log the count from the output. No action needed when count is 0.
 
+### 4.6. Stash hygiene — analyze + clear stale git stashes
+
+A lingering `git stash` is hidden divergent state. It survives across sessions
+invisibly, and the next `git stash pop`/`stash -u` dance resurrects it onto the
+wrong base — conflict markers in tracked files, orphaned untracked files, a
+working tree that looks corrupt. (This bit us 2026-06-25: a 841-commit-old stash
+popped during a baseline check and looked like a SyntaxError in shim.py.) The
+rule: **the stash list ends the day empty.**
+
+```bash
+git -C "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}" stash list
+```
+
+For each entry: preserve, analyze, then drop.
+1. **Preserve** — `git stash show -p "stash@{N}" > <scratchpad>/stash_N.patch`
+   (never drop without a saved patch first).
+2. **Analyze** — note the base commit and how stale it is
+   (`git rev-list --count <base>..HEAD`); check whether the content already
+   landed in main (`git apply --check` fails ⇒ diverged/superseded).
+3. **Drop** — once preserved + analyzed, `git stash drop "stash@{N}"`
+   (or `git stash clear` when all are confirmed stale). Report what was cleared.
+
+Never run `stash pop`/`stash -u` to test at an old commit — use `git worktree`
+or `git show <ref>:<path>` instead, so a stale stash is never resurrected onto
+the live tree. (See memory [[git-stash-is-hidden-divergent-state]].)
+
 ### 5. Fix small day-close-audit findings + commit
 
 Always triage each finding:
