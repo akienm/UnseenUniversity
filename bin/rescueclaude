@@ -1,0 +1,33 @@
+#!/bin/bash
+# rescueclaude — the "everything's borked" recovery launcher.
+#
+# CONTRACT: must start Claude Code even when the DB is down/absent, our services
+# are dead, our package won't import, or the repo dir is missing. It is the path
+# back to a working system, so it depends on NOTHING of ours but the claude CLI.
+# No DB check, no service check, no python import, no `set -e`.
+#
+# NO injected credentials. UU_HOME_DB_URL comes from the environment (bashrc /
+# credential manager) or not at all — if it's absent, claude still starts so it
+# can fix things. Baking a connection string in here would (a) defeat the
+# start-even-without-the-DB contract and (b) commit a credential to the repo. Both no.
+
+CC_TMUX_SESSION=akiendelllinux_cc_RESCUE
+# Best-effort cd; fall back to HOME so claude still launches if the repo is gone.
+cd /home/akien/dev/src/UnseenUniversity 2>/dev/null || cd "$HOME" || true
+# Best-effort venv activation so CC's Bash subshells inherit it (venv python,
+# pytest, editable package, cwd-independent imports). GUARDED to honor the rescue
+# contract: if the venv is absent/broken, claude still launches. The launcher
+# carries it into CC's process env, which every Bash subshell then inherits.
+# Sets only VIRTUAL_ENV/PATH — no credentials (cf. the superclaude 401 incident).
+[ -f /home/akien/dev/src/UnseenUniversity/.venv/bin/activate ] && \
+  source /home/akien/dev/src/UnseenUniversity/.venv/bin/activate || true
+# Default: resume the RESCUE conversation (the picker, scoped to this name).
+# `rescueclaude --new` starts a FRESH session instead — same display name and
+# remote-control name (still the RESCUE instance), just a new conversation, so
+# it boots with current tools instead of an old session's stale tool set.
+RESUME_ARGS=(--resume "$CC_TMUX_SESSION")
+if [ "$1" = "--new" ]; then
+  RESUME_ARGS=()
+  shift
+fi
+exec claude --dangerously-skip-permissions "${RESUME_ARGS[@]}" -n "$CC_TMUX_SESSION" --remote-control "$CC_TMUX_SESSION" "$@"
