@@ -41,7 +41,7 @@
     "required_files": [],
     "related_to": null,
     "github_issue": null,
-    "intention": null,
+    "intention": "I intend that closing a ticket surfaces — never silently leaves — a dangling stash that belongs to that same agent and that same ticket.",
     "target_difficulty": 1,
     "role": "apprentice",
     "scraps_validated": "2026-06-26T16:44:42.421932+00:00",

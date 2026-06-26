@@ -41,7 +41,7 @@
     "required_files": [],
     "related_to": null,
     "github_issue": null,
-    "intention": null,
+    "intention": "I intend that every git stash a dev agent creates is attributed (agent:T-Ticket:WIP or RESCUE:) — never anonymous — without the agent needing any new discipline.",
     "target_difficulty": 1,
     "role": "apprentice",
     "scraps_validated": "2026-06-26T16:44:40.474412+00:00",

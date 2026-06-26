@@ -41,7 +41,7 @@
     "required_files": [],
     "related_to": null,
     "github_issue": null,
-    "intention": null,
+    "intention": "I intend that a stash whose owning ticket is closed or unknown (or is anonymous) is caught and surfaced as a system_alarm, never left to silently rot into divergent state.",
     "target_difficulty": 1,
     "role": "apprentice",
     "scraps_validated": "2026-06-26T16:44:44.242040+00:00",
