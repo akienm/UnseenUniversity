@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-architecture-points-carry-intent.20260626.175746198732",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-architecture-points-carry-intent"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T23:57:46.198732+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-architecture-points-carry-intent"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-architecture-points-carry-intent",
+    "title": "[triage] Architecture intention-points must carry their why, not just mechanism — audit all 8",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Observability"
+    ],
+    "status": "triage",
+    "priority": 0.5,
+    "description": "The architecture/ intention-points record MECHANISM but not the load-bearing INTENT they're supposed to carry (Theory-of-Operation rule: every point carries its why).\n\n**Discovered** 2026-06-26 while sprinting T-mcp-dispatch-by-addressee: the canonical bus message model had to be reconstructed by grepping tickets/decisions because architecture/cc.0.bus.*.json captures only transport-decoupling + IDLE-push, and omits the three concepts that actually govern the bus:\n- the Envelope as the canonical message shape (rigid keywords {from_device,to_device,sent_at,schema_version} + open payload) -> bus/envelope.py (T-adc-message-envelope)\n- the typed-field reply principle (RESULT/ERRORCLASS/ERRORNUMBER, ProseVersion-when-present) -> D-json-envelope-principle-2026-06-12\n- the inspectability *why* (feeds = the visibility surface; the whole reason the bus exists) -> devices/web_server/server.py consumes feeds/<receiver>\n\n**Suspected systemic:** all 8 points were emitted in one batch 2026-06-23 (timestamp 172406...) projected from the old mechanism-description docs, so device-shim/skeleton/memory-graph-tree/etc. likely share the intent-light defect.\n\n**Scope:**\nIN: audit each of the 8 architecture intention-points for a stated WHY + intent->implementation pointers; re-emit (memory_emit.py --category architecture --kind intention-point) any that are mechanism-only, adding the missing why + pointers. The bus point's own backfill rides T-mcp-dispatch-by-addressee's doc-update-on-close (envelope shape, typed replies, inspectability why, dispatch+manifest+handler) -- this ticket covers the OTHER 7 and establishes the audit.\nOUT: building/changing any subsystem code; the bus point's dispatch-surface update (that rides the dispatch ticket).\n\n**Test plan:** for each of the 8 points, grep the re-emitted JSON for a non-empty why/intent field and at least one implementing-file pointer; assert none is mechanism-only. Proof-lever: an audit script that fails when an architecture point lacks a why.\n\n**Why:** the architecture folder is supposed to be the FIRST place you read to learn a subsystem; when it carries only mechanism, the next session reconstructs intent by grep -- the exact failure that cost a full design session on 2026-06-26.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-26T23:57:43.852292+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T23:57:43.896514+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "486b2beb-a182-47d4-8dbd-09ac96afb363"
+  }
+}
