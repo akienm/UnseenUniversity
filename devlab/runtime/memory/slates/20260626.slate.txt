@@ -49,3 +49,5 @@ TICKETS TO DRAFT under the new decision:
   (c) orphan-stash sweep → system_alarm (wire into ticket-close + day-close + periodic)
   (d) consequence-check ticket
 REFS: memory git-stash-is-hidden-divergent-state; day-close SKILL step 4.6.
+
+- D-git-stash-attribution-hygiene-2026-06-26: git-stash attribution+hygiene — T-git-stash-attribution-wrapper, T-stash-ticket-close-check, T-stash-orphan-sweep-alarm, T-consequence-git-stash-attribution

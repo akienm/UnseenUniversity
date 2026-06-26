@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-git-stash-attribution-wrapper.20260626.104448068420",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-git-stash-attribution-wrapper"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T16:44:48.068420+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-git-stash-attribution-hygiene-2026-06-26"
+    ],
+    "tickets": [
+      "T-git-stash-attribution-wrapper"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-git-stash-attribution-wrapper",
+    "title": "[sprint] PATH-override git wrapper: auto-tag stash-create as agent:T-Ticket:WIP",
+    "size": "M",
+    "tags": [
+      "DevProcess",
+      "Safety",
+      "Observability"
+    ],
+    "decision_id": "D-git-stash-attribution-hygiene-2026-06-26",
+    "gate": null,
+    "priority": 0.6,
+    "status": "sprint",
+    "description": "I intend that every git stash a dev agent creates is attributed — never anonymous — without the agent needing any new discipline.\n\nA PATH-override `git` wrapper (a tiny shim named `git`, earlier on PATH than real git) intercepts ONLY stash-create (`git stash push`/`save`) and rewrites/injects the `-m` message to the canonical format `agent:T-Ticket:WIP[:any other args]`. Everything else — `stash list/show/pop/drop`, all other git — falls straight through to REAL git (located by skipping the shim's own PATH entry, so it never recurses into itself). agent = from the launch env (already set in the agent's call); ticket = from the sprint-claim context (this agent's in-progress ticket); when there is no current ticket → the `RESCUE:` namespace. Bare `git stash` with no `-m` is the lazy reflexive path and MUST be tagged too (inject `-m \"agent:...:WIP\"`), else it escapes attribution via git's default 'WIP on main' message. Idempotent: never double-prefix an already-tagged message. Design-for-ease: PATH-override makes the safe path the reflexive path (`git` IS the wrapper) — telling agents to 'use the special git' depends on discipline and fails.\n\nWhy: a git stash is hidden cross-session divergent state; in multi-agent, refs/stash is shared across all worktrees, so an anonymous stash is a global footgun (it bit us 2026-06-25 — an 841-commit-old stash popped as phantom conflict markers). Attribution makes downstream checks (ticket-close scoping, orphan sweep) unambiguous.\n\n**Affected files:** NEW shim dir + `git` script (e.g. devlab/githooks/git-shim/git); bin/superclaude + DS startup under devices/dicksimnel/ (prepend shim dir to PATH for the agent session — TBD exact lines, discovery in sprint); bin/uu_bash_profile_processor.sh (reference for PATH wiring); NEW tests/test_git_stash_shim.py.\n**Design rules:** design-for-ease (PATH-override, no agent discipline); as-simple-as-possible (~12-20 lines, intercept only stash-create); no-escape-hatches (RESCUE is an attributed, audited namespace — not a silent bypass); docs-live-in-code.\n**Scope boundary:** IN — the shim (intercept stash push/save; exec real git for everything else without recursion; auto-tag agent:ticket:WIP incl bare-stash; idempotent; RESCUE namespace), PATH injection in superclaude + DS startup, hermetic tests. OUT — ticket-close check (T-stash-ticket-close-check); orphan sweep (T-stash-orphan-sweep-alarm); non-agent / human shells (intentionally unaffected); catching absolute /usr/bin/git or full-path python subprocess calls (known best-effort limit — the orphan sweep is the backstop).\n**Test plan:** tests/test_git_stash_shim.py in a temp git repo with agent env set — (1) `git stash push -m \"x\"` → stored message starts `agent:`; (2) bare `git stash` (no -m) → stored message starts `agent:` (injected); (3) already `agent:...` message not double-prefixed; (4) `RESCUE: ...` passes through unchanged; (5) `git status`/other git execs real git unchanged; (6) no recursion (shim resolves real git). Proof: red where the shim is absent/passes a message through anonymous → green where the create lands tagged.\n**Completion criteria:** through the shim with agent env set, EVERY stash-create (incl bare `git stash`) lands a message matching `^(<agent>|RESCUE):`; non-stash git is byte-identical to real git; test red->green on the bare-stash + tagging discriminator.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-26T16:44:40.428177+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T16:44:40.474412+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "15c3f236-253e-4523-9a5a-5a5e96c86e5f"
+  }
+}

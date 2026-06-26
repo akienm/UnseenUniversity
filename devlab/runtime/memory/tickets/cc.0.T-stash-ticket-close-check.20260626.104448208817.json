@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-stash-ticket-close-check.20260626.104448208817",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stash-ticket-close-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T16:44:48.208817+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-git-stash-attribution-hygiene-2026-06-26"
+    ],
+    "tickets": [
+      "T-stash-ticket-close-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stash-ticket-close-check",
+    "title": "[sprint] Ticket-close: scoped stash check on own agent:ticket: tag (surface, not block)",
+    "size": "S",
+    "tags": [
+      "DevProcess",
+      "Queue",
+      "Safety"
+    ],
+    "decision_id": "D-git-stash-attribution-hygiene-2026-06-26",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "description": "I intend that closing a ticket surfaces — never silently leaves — a dangling stash that belongs to THAT agent and THAT ticket.\n\nOn `cc_queue.py` close of T-x by agent A, grep `git stash list` for the scoped tag `A:T-x:` only. If a match exists, surface it loudly (warning + a system_alarm naming the dangling stash) — the agent is closing a ticket with its own WIP still parked. It does NOT hard-block the close (surface-never-block): the scoping makes it safe to act on (it is the closing agent's own stash, never a sibling's), but a hard gate adds friction for a recoverable situation. Multi-agent-safe by construction: A's close never inspects or touches B's `B:T-y:` stashes.\n\n**Affected files:** devlab/claudecode/cc_queue.py (close path, near _proof_gate ~L998); NEW tests/test_stash_close_check.py.\n**Design rules:** surface-never-block (a close gate could disrupt legit flow); scoped-by-attribution (depends on the agent:ticket: format from T-git-stash-attribution-wrapper); system_alarm canonical name.\n**Scope boundary:** IN — at close, detect same-agent same-ticket dangling stash, surface (warn + system_alarm). OUT — hard-blocking the close; touching other agents'/tickets' stashes; the wrapper; the broad orphan sweep (separate ticket).\n**Test plan:** tests/test_stash_close_check.py — (1) plant `A:T-x:WIP` stash, close T-x as A → warning + one system_alarm; (2) close T-x as A with no matching stash → silent; (3) plant `B:T-y:WIP`, close T-x as A → silent (no false positive on sibling tag). Proof: red where close ignores a same-tag dangling stash → green where it surfaces it.\n**Completion criteria:** close of T-x by A surfaces (warn + alarm) iff an `A:T-x:` stash exists; never fires on a sibling agent/ticket tag; test red->green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-26T16:44:42.421878+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T16:44:42.421932+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b9e34a91-35aa-4299-bd8b-ef91faacc6f4"
+  }
+}

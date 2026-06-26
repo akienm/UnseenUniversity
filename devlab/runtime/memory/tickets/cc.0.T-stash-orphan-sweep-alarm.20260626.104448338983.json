@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.T-stash-orphan-sweep-alarm.20260626.104448338983",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stash-orphan-sweep-alarm"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T16:44:48.338983+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-git-stash-attribution-hygiene-2026-06-26"
+    ],
+    "tickets": [
+      "T-stash-orphan-sweep-alarm"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stash-orphan-sweep-alarm",
+    "title": "[sprint] Orphan-stash sweep -> system_alarm on closed/unknown-ticket stashes",
+    "size": "M",
+    "tags": [
+      "DevProcess",
+      "Safety",
+      "Observability"
+    ],
+    "decision_id": "D-git-stash-attribution-hygiene-2026-06-26",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "description": "I intend that a stash whose owning ticket is closed or unknown is caught and surfaced as a system_alarm — never left to silently rot into divergent state.\n\nA sweep (modeled on devlab/claudecode/path_moves_monitor.py) parses each `git stash list` entry's `agent:T-Ticket:WIP` tag, resolves the ticket via ticket_store; if the ticket is closed or unknown, emit ONE system_alarm naming the orphan (agent, ticket, age). RESCUE: stashes are exempt (or aged past a threshold). Surface-never-block. Wired to run at ticket-close, in day-close (alongside the shipped step 4.6 analyze+clear), and on a periodic hook. The wrapper guarantees attribution; this sweep is the reliable backstop that catches anonymous/absolute-git escapes too (an untagged stash is itself an orphan → alarm).\n\n**Affected files:** NEW devlab/claudecode/stash_orphan_sweep.py; emits via unseen_university/system_alarms.py (model: path_moves_monitor.py); wired into skills/day-close (step ref) + cc_queue.py close + a periodic/Nanny hook (TBD exact wiring, discovery); NEW tests/test_stash_orphan_sweep.py.\n**Design rules:** surface-never-block; system_alarm canonical (operations/system_alarms/); reference path_moves_monitor pattern.\n**Scope boundary:** IN — parse tags, resolve ticket status, alarm on closed/unknown/anonymous (one per orphan), RESCUE exemption/aging, wire into day-close + ticket-close. OUT — auto-dropping stashes (human/day-close clears); the wrapper; the scoped same-ticket close check (separate).\n**Test plan:** tests/test_stash_orphan_sweep.py (hermetic temp repo + stubbed ticket_store) — (1) stash tagged with a CLOSED ticket → exactly one system_alarm; (2) stash tagged with an OPEN ticket → no alarm; (3) anonymous/untagged stash → alarm (orphan); (4) RESCUE: stash → no alarm (exempt). Proof: red where a closed-ticket stash yields no alarm → green where it yields exactly one.\n**Completion criteria:** sweep emits exactly one system_alarm per closed/unknown/anonymous stash and none for live-ticket or RESCUE stashes; runs in day-close + ticket-close; test red->green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-26T16:44:44.241968+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T16:44:44.242040+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d8707ea1-4297-4f44-ab55-cd160fe9d5ed"
+  }
+}

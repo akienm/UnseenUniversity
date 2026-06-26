@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-git-stash-attribution-hygiene-2026-06-26.20260626.104519525364",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-git-stash-attribution-hygiene-2026-06-26"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-26T10:45:19.525364",
+  "links": {
+    "goals": [],
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-git-stash-attribution-hygiene-2026-06-26",
+    "title": "Git-stash attribution + hygiene",
+    "status": "open",
+    "date": "2026-06-26",
+    "spawned_tickets": [
+      "T-git-stash-attribution-wrapper",
+      "T-stash-ticket-close-check",
+      "T-stash-orphan-sweep-alarm",
+      "T-consequence-git-stash-attribution"
+    ],
+    "text": "# D-git-stash-attribution-hygiene-2026-06-26\n**title:** Git-stash attribution + hygiene — PATH-override wrapper auto-tags agent:T-Ticket:WIP; scoped close check; orphan sweep -> system_alarm\n**date:** 2026-06-26\n**status:** open\n**spawned_tickets:** T-git-stash-attribution-wrapper, T-stash-ticket-close-check, T-stash-orphan-sweep-alarm, T-consequence-git-stash-attribution\n\n## Decision narrative\nA git stash is hidden cross-session divergent state; in multi-agent, refs/stash is SHARED across all worktrees of a repo, so an anonymous stash is a global footgun (it bit us 2026-06-25 — an 841-commit-old stash popped as phantom conflict markers read as a SyntaxError in shim.py). Principle: attribute, don't forbid; and design for ease — make the safe path the reflexive path. Mechanism: a PATH-override `git` wrapper (deployed by superclaude + DS startup prepending a shim dir to PATH, so plain `git` IS the wrapper — zero agent discipline) auto-tags every stash-create to `agent:T-Ticket:WIP[:args]` (agent from launch env, ticket from sprint-claim context, RESCUE: namespace when no ticket, bare `git stash` tagged too, idempotent, fall-through+no-recursion for all non-create git). Ticket-close does a SCOPED check on its own `agent:ticket:` tag (multi-agent-safe — never touches a sibling's stash), surfacing (not blocking) a dangling same-ticket stash. An orphan sweep (ticket-close + day-close + periodic) drops a system_alarm on any stash whose ticket is closed/unknown (or is anonymous) — surface, never block. Alternatives rejected: forbid-all-stash (too blunt; loses legit stash use); agent-name-only tag (loses ticket relevance/scoping); require-and-reject (adds friction vs frictionless auto-inject); a hard close-gate (could nuke a sibling agent's tree in multi-agent). Why agent AND ticket in the tag: ticket field -> relevance/scoping; agent field -> per-builder stash-FREQUENCY telemetry (a builder-health signal). Complements the shipped day-close step 4.6 (analyze+clear) and memory git-stash-is-hidden-divergent-state.\n\n## Hypothesis\nEvery stash a dev agent creates carries `agent:T-Ticket:WIP` attribution — no anonymous stashes can exist — and an orphaned stash (closed/unknown ticket) raises a system_alarm instead of silently corrupting a future working tree.\n\n## Measurement Signal\n(a) every `git stash list` entry matches `^(<agent>|RESCUE):` — zero anonymous; (b) planting an orphan stash fires exactly one system_alarm; (c) the ticket-close check flags a same-ticket dangling stash; (d) stash-frequency is greppable per agent.\n\n## Goal Link\nnone: goals are being retired (open ticket on goal-removal). This is a cross-cutting CP6 dev-process safety guardrail with an observability sub-benefit (per-builder stash telemetry)."
+  }
+}
