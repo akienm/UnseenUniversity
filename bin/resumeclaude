@@ -1,0 +1,16 @@
+#!/bin/bash
+cd /home/akien/dev/src/UnseenUniversity
+# Activate the project venv so CC's Bash-tool subshells INHERIT it (process env
+# is inherited by children; a per-call `source` is not). Gives every shell the
+# venv python + pytest + editable unseen_university, cwd-independent. Guarded —
+# launch proceeds if the venv is absent. Sets only VIRTUAL_ENV/PATH, no creds.
+[ -f .venv/bin/activate ] && source .venv/bin/activate
+# Default: resume the CC.0 conversation (the resume picker, scoped to this name).
+# `resumeclaude --new` starts a FRESH session instead — drops --resume so claude
+# boots with the current tool set instead of an old session's stale tools.
+RESUME_ARGS=(--resume "akiendelllinux_cc_0")
+if [ "$1" = "--new" ]; then
+  RESUME_ARGS=()
+  shift
+fi
+exec claude "${RESUME_ARGS[@]}" --dangerously-skip-permissions "$@"

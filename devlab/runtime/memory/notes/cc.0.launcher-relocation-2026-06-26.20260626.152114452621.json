@@ -1,0 +1,27 @@
+{
+  "id": "cc.0.launcher-relocation-2026-06-26.20260626.152114452621",
+  "emitter": "cc.0",
+  "namespace": [
+    "launcher-relocation-2026-06-26"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-06-26T15:21:14.452621",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "rescueclaude/resumeclaude launchers were never moved into the repo — fake completion",
+    "text": "The CC-launcher scripts `rescueclaude` and `resumeclaude` lived only as untracked plain files in ~/bin/ — never relocated into the repo, despite prior work (the identity-layer ticket era) referencing rescueclaude's recovery contract as if it were a repo artifact. Sibling launchers (superclaude, uu, adc) live in repo bin/ and win by PATH precedence (repo/bin is on PATH ahead of ~/bin), so the canonical home was unambiguous; these two just slipped through. Relocated 2026-06-26 to bin/rescueclaude + bin/resumeclaude (git-tracked, shadow ~/bin copies deleted) and both gained a `--new` flag that drops --resume so claude boots a FRESH session with current tools instead of only offering the resume picker (which loaded an old session's stale tool set — the bug Akien hit). Pattern worth watching: a ticket can close 'done' while the concrete artifact never lands where it was supposed to — the deliverable was the relocation, and only the surrounding references moved. Verification half (does the file actually exist at the claimed path?) was missing. Relates to the consequence-checking gap and proof-on-close culture.",
+    "tags": [
+      "launcher",
+      "fake-completion",
+      "repo-hygiene",
+      "rescueclaude",
+      "resumeclaude"
+    ]
+  }
+}
