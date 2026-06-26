@@ -1,6 +1,6 @@
 ---
 name: eval-run
-description: Weekly capability snapshot — 5 behavioral questions about what Igor can actually do, independent of ticket velocity. Feeds goal KR progress. Run Fridays as part of day-close, or standalone. Output to palace.evals.YYYYMMDD.
+description: Weekly capability snapshot — 5 behavioral questions about what Igor can actually do, independent of ticket velocity. Run Fridays as part of day-close, or standalone. Output to palace.evals.YYYYMMDD.
 model: sonnet
 ---
 
@@ -18,7 +18,6 @@ Run Fridays. Takes ~5 minutes. Five questions, observable data, one screen.
 
 ```
 /eval-run              — run the standard weekly eval set
-/eval-run --goal G-xxx — run only evals relevant to a specific goal
 ```
 
 ---
@@ -146,26 +145,15 @@ grep -h "SCOPE_GUARD\|BLOCKED\|stuck\|escalat" \
 
 Run each eval's data query, compute the answer, note trend direction.
 
-### 2. Map to goal KRs
-
-For each active goal, identify which eval(s) measure its KRs:
-```bash
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT path, title, metadata->>'key_results'
-   FROM adc.palace WHERE path LIKE 'palace.goals.%' AND metadata->>'status' = 'active'"
-```
-
-Note whether each KR is trending toward or away from its target.
-
-### 3. Write to palace
+### 2. Write to palace
 
 ```python
 datestamp = datetime.now().strftime("%Y%m%d")
 path = f"palace.evals.{datestamp}"
-# Write eval results + KR mapping to adc.palace
+# Write eval results to adc.palace
 ```
 
-### 4. Report
+### 3. Report
 
 ```
 /eval-run — YYYY-MM-DD
@@ -174,25 +162,14 @@ NE stuck:  N events | avg valence: X.XX | trend: ↑/→/↓
 Dreaming:  N proposals | status: active/cold-start
 Done:closed gap: N awaiting vs M closed | delta: +N/-N
 Autonomy:  N interventions | trend: ↑/→/↓
-
-Goal KR impacts:
-  G-xxx: KR "<kr>" — <moving toward/flat/moving away>
-  G-yyy: KR "<kr>" — <moving toward/flat/moving away>
 ```
 
 ---
 
 ## Updating the standard evals
 
-When active goals change, update the eval set. The 5 evals should always answer
-the question: "are we making progress on what we said matters?"
-
-To add a custom eval for a specific goal:
-```
-/eval-run --goal G-xxx
-```
-This runs only the evals whose KRs map to that goal, plus any goal-specific
-queries listed in the goal's palace node under `## Eval Queries`.
+The 5 evals answer: "what can the system actually do right now?" Update them
+when capability claims change, not when intentions change.
 
 ---
 

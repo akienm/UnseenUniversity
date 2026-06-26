@@ -1,6 +1,6 @@
 ---
 name: outcome
-description: Review a decision's hypothesis against observable evidence and record whether it confirmed, falsified, or needs more time. Triggered at last-ticket close or manually. Updates the goal's KR progress. This is what closes the learning loop.
+description: Review a decision's hypothesis against observable evidence and record whether it confirmed, falsified, or needs more time. Triggered at last-ticket close or manually. This is what closes the learning loop.
 model: sonnet
 ---
 
@@ -73,7 +73,7 @@ Use whatever data source the hypothesis named. If no specific source was named, 
 
 Compare the hypothesis claim against the evidence. Choose one:
 
-- **confirmed** — evidence clearly supports the claim. KR moved in the right direction.
+- **confirmed** — evidence clearly supports the claim.
 - **partially_confirmed** — some evidence supports it; other aspects didn't move or are unclear.
 - **falsified** — evidence contradicts the claim. The expected change didn't happen.
 - **too_early** — insufficient time has passed or data accumulated to tell. Set a re-check date.
@@ -93,7 +93,6 @@ OUTCOME=$(cat <<EOF
 ## Outcome — $(date +%Y-%m-%d)
 **Verdict:** <confirmed / partially_confirmed / falsified / too_early / inconclusive>
 **Evidence:** <1-3 sentences summarizing what the data showed>
-**KR impact:** <did the linked goal's KR move? By how much?>
 **Learning:** <one sentence: what does this outcome teach us about this kind of decision?>
 **Re-check:** <if too_early: when to check again>
 EOF
@@ -121,22 +120,12 @@ Also update the palace node:
 # Update metadata: outcome, outcome_date, verdict
 ```
 
-### 5. Update goal KR progress
-
-If verdict is confirmed or partially_confirmed, note the KR progress on the linked goal's palace node:
-
-```python
-# Read G-xxx palace node, append KR progress note to content
-# Update metadata->>'last_kr_update' = today
-```
-
-### 6. Surface to Akien
+### 5. Surface to Akien
 
 ```
 /outcome D-xxx — <verdict>
 Hypothesis: "<hypothesis text>"
 Evidence: <summary>
-KR impact: <goal G-xxx — <kr_note>>
 Learning: <learning>
 ```
 
