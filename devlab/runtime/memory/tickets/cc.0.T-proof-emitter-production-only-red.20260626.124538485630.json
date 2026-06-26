@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-proof-emitter-production-only-red.20260626.124538485630",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proof-emitter-production-only-red"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T18:45:38.485630+00:00",
+  "links": {
+    "decisions": [
+      "D-goals-purge-remaining-skills-2026-06-26"
+    ],
+    "tickets": [
+      "T-proof-emitter-production-only-red"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proof-emitter-production-only-red",
+    "title": "[sprint] proof_emitter: production-only revert mode for test+impl-in-one-commit",
+    "size": "M",
+    "tags": [
+      "Tooling",
+      "Proof"
+    ],
+    "intention": "I intend that proof_emitter can isolate an authentic red when the test assertion and the implementation are committed together — by inverting only the non-test (production) portion of parent..HEAD, not the whole diff.",
+    "description": "proof_emitter generates red by inverting the parent..HEAD diff in place (proof_emitter.py ~line 40-42). When a test's new assertion and the production change that satisfies it land in the SAME commit (the common case — code + its test together), inverting the whole commit reverts both, so old-test + old-code agree and the red comes back GREEN ('could not generate authentic red — test passes in pre-implementation state'). This blocks proven-close for an entire class of legitimate single-commit changes (e.g. T-skills-goals-to-intentions: removing links.goals from the schema + updating the schema-assertion test — manual red→green confirmed real: goals in _LINK_KEYS makes test_envelope_schema_matches_memory_emit fail 'Extra items: goals', removed it passes).\n\n**Proposed shape:** add a revert mode that inverts only the PRODUCTION (non-test) files in parent..HEAD, leaving the current (new) test on disk during the red window — yielding new-test + old-production = authentic red. Detect test files by path (tests/ or test_*.py) or by an explicit --production-paths arg. Keep the existing whole-diff invert as default; the new mode is opt-in for bundled test+impl commits.\n\n**Affected files:** devlab/claudecode/proof_emitter.py (_git_inplace_red and prove()); tests/test_proof_emitter.py (add a bundled-commit case).\n**Design rules:** proof-on-close (this widens the set of provable closes — earns gate removal), prove-what's-load-bearing.\n**Scope boundary:** IN - production-only revert mode + its test. OUT - multi-commit thing-spanning red (separate known limitation, proof_emitter.py line 64-67).\n**Test plan:** a test where assertion+impl are one commit; assert prove() generates authentic red via production-only revert and emits a HEAD-bound proof.\n**Completion criteria:** proof_emitter, run on a single commit bundling a test assertion change with the production change that satisfies it, emits a valid red->green proof (no 'could not generate authentic red').\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-goals-purge-remaining-skills-2026-06-26",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-06-26T18:45:36.270010+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T18:45:36.317898+00:00"
+  }
+}

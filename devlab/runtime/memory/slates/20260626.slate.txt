@@ -16,6 +16,7 @@ NONE
 - T-skills-audit-design-goal-reframe — Reframe audit-design Check 1 from 'goal' to 'intention' (Check 1 reframed: 'Intention stated as observable target'. grep -ic for 'which goal|G-xxx|goal stated' = 0.)
 - T-skills-kr-references-purge — Purge goal-KR machinery from outcome, eval-run, weekly-retro skills (Dropped KR machinery from outcome (Step 5 removed), eval-run (KR mapping removed), weekly-retro (Q2 goal KR removed). gr)
 - T-skills-audit-hypothesis-goal-reframe — Remove G-xxx goal-link check from audit-hypothesis (Check 3) (Check 3 reframed to 'Intention is present and well-formed'; all G-xxx/palace.goals/goal-link vocabulary removed. grep = )
+- T-skills-goals-to-intentions — Skills track intentions, not goals (drop G-xxx goal-tracking) (Removed links.goals from the live emission schema (LINK_KINDS in memory_emit.py, _LINK_KEYS in ticket_store.py) + update)
 ## FIRST UP — /sorted: git-stash attribution + hygiene (design DONE 2026-06-26 ~06:30 w/ Akien)
 
 PROBLEM: stale/anonymous git stashes are hidden cross-session divergent state. Bit us
