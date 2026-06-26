@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-mcp-finish-igor-librarian-migration.20260626.114529576086",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-mcp-finish-igor-librarian-migration"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-26T17:45:29.576086+00:00",
+  "links": {
+    "goals": [],
+    "decisions": [
+      "D-mcp-surface-homogenization-2026-06-26"
+    ],
+    "tickets": [
+      "T-mcp-finish-igor-librarian-migration"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-mcp-finish-igor-librarian-migration",
+    "title": "Finish igor->librarian MCP migration: delete the duplicate `igor` alias",
+    "size": "M",
+    "tags": [
+      "MCP",
+      "Cleanup"
+    ],
+    "intention": "I intend that the rack exposes the librarian tool server under exactly one name - the duplicate `igor` alias and the live `mcp__igor__*` references are gone, finishing the May-8 migration's remove-behind.",
+    "description": "`~/.mcp.json` registers the librarian MCP server twice - `igor` and `librarian` are byte-identical entries both running `unseen_university.devices.librarian.mcp_server`. The May-8 migration (D-librarian-rack-agent-2026-05-08, T-igor-mcp-deprecate/-delete) moved the code igor->librarian but never deleted the `igor` alias or repointed the `mcp__igor__*` references. Result: a duplicate 43-tool surface (~8k of CC context). Finish the remove-behind: delete the `igor` block from `~/.mcp.json`, plus the MINIMAL repoint of LIVE invocation sites so nothing breaks at runtime.\n\n**Affected files:** ~/.mcp.json (non-repo); live sites only - devices/dicksimnel/device.py, devlab/claudecode/slate_manager.py, devlab/claudecode/debug_session_cli.py, skills/dream/SKILL.md, skills/sprint-ticket/SKILL.md, docs/palace_schema.md, docs/dicksimnel_parity.md (re-grep at sprint time to confirm the set).\n**Design rules:** delete-after-successful-merge (this IS the remove-behind), homogeneity-over-special-case, sweep-guard-extensionless-scripts (grep ALL tracked files, not just *.py).\n**Scope boundary:** IN - delete the `igor` alias + minimal live-site repoint mcp__igor__*->mcp__librarian__*. OUT - the historical append-only store (devlab/runtime/memory/ closed slates/decisions/proofs/tickets; ~20 files) must NOT be rewritten (rewriting a closed record falsifies what happened). OUT - the full homogenization sweep and dispatch redesign (that is T-mcp-dispatch-by-addressee, which owns the single full sweep). OUT - librarian server code unchanged.\n**Test plan:** grep red->green over LIVE sites only - before: N `mcp__igor__` refs in active skills+code; after: 0. The alias-deletion half lives in ~/.mcp.json (non-repo, non-diff) so it cannot be proven by a repo test - verify it by the Q3 `/context` observation (the `mcp__igor__*` namespace disappears, ~8k reclaimed); close that half observation-verified, or shipped-unproven naming the missing lever (no repo-committable MCP config surface).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Completion criteria:**\n- `~/.mcp.json` has no `igor` key (only `librarian`, `datacenter`, `auditor` remain).\n- grep over LIVE sites (active skills + code, excluding devlab/runtime/memory/) returns 0 `mcp__igor__` refs.\n- `/context` shows the `mcp__igor__*` namespace gone (~8k reclaimed) — observation-verified for the non-repo (~/.mcp.json) half.",
+    "decision_id": "D-mcp-surface-homogenization-2026-06-26",
+    "gate": null,
+    "priority": 0.6,
+    "status": "closed",
+    "created_at": "2026-06-26T17:45:23.740266+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "Repointed all 10 live mcp__igor__ refs across 7 files to mcp__librarian__ (1:1 rename; igor/librarian were byte-identical servers — same 43 tools). Namespace-list lines that already had librarian dropped the redundant igor entry. grep over live sites: 0 mcp__igor__ refs (was 10), historical store (24 files) untouched. Deleted the byte-identical igor block from ~/.mcp.json (guarded by an identity assertion); servers now [librarian, datacenter, auditor], backed up to ~/.mcp.json.bak. Commit 1f871bb8.",
+    "dispatched_at": null,
+    "completed_at": "2026-06-26T19:14:24.896180+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-26T17:45:23.786230+00:00",
+    "proven": false,
+    "unproven_reason": "The binding half (~/.mcp.json igor-block deletion) is non-repo, so no committable test can prove it — verify by /context observation (mcp__igor__* namespace gone, ~8k reclaimed) after the next MCP reload. Live-site half IS grep-verified (0 refs). Missing lever: no repo-committable MCP-config surface to bind the alias deletion to a test.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}

@@ -17,6 +17,7 @@ NONE
 - T-skills-kr-references-purge — Purge goal-KR machinery from outcome, eval-run, weekly-retro skills (Dropped KR machinery from outcome (Step 5 removed), eval-run (KR mapping removed), weekly-retro (Q2 goal KR removed). gr)
 - T-skills-audit-hypothesis-goal-reframe — Remove G-xxx goal-link check from audit-hypothesis (Check 3) (Check 3 reframed to 'Intention is present and well-formed'; all G-xxx/palace.goals/goal-link vocabulary removed. grep = )
 - T-skills-goals-to-intentions — Skills track intentions, not goals (drop G-xxx goal-tracking) (Removed links.goals from the live emission schema (LINK_KINDS in memory_emit.py, _LINK_KEYS in ticket_store.py) + update)
+- T-mcp-finish-igor-librarian-migration — Finish igor->librarian MCP migration: delete the duplicate `igor` alias (Repointed all 10 live mcp__igor__ refs across 7 files to mcp__librarian__ (1:1 rename; igor/librarian were byte-identica)
 ## FIRST UP — /sorted: git-stash attribution + hygiene (design DONE 2026-06-26 ~06:30 w/ Akien)
 
 PROBLEM: stale/anonymous git stashes are hidden cross-session divergent state. Bit us
@@ -59,3 +60,9 @@ REFS: memory git-stash-is-hidden-divergent-state; day-close SKILL step 4.6.
 - D-git-stash-attribution-hygiene-2026-06-26: git-stash attribution+hygiene — T-git-stash-attribution-wrapper, T-stash-ticket-close-check, T-stash-orphan-sweep-alarm, T-consequence-git-stash-attribution
 - D-mcp-surface-homogenization-2026-06-26: collapse per-device MCP namespaces to dispatch-by-addressee (B finish igor->librarian remove-behind, C rack dispatch) — T-mcp-finish-igor-librarian-migration, T-mcp-dispatch-by-addressee, T-consequence-mcp-surface-homogenization
 - D-goals-purge-remaining-skills-2026-06-26: purge goal(G-xxx) language from 8 remaining skill files (workflow/audit-design/goal/audit-goal/outcome/eval-run/weekly-retro) — T-skills-workflow-goal-purge, T-skills-goal-skills-retire, T-skills-audit-design-goal-reframe, T-skills-kr-references-purge, T-consequence-goals-purge-remaining-skills
+
+## Session close 2026-06-26
+Done: Done: goals→intentions floorboard solid (5 skills + schema.goals removed); 5 tickets closed; proof_emitter gap surfaced. MCP-surface work filed and ready.
+Next: Next: T-mcp-finish-igor-librarian-migration + T-mcp-dispatch-by-addressee (MCP homogenization, 2 decisions filed).
+
+## In-flight: Goals→intentions batch complete (shipped-unproven with proof_emitter lever filed). MCP-surface homogenization queued. No work in progress.
