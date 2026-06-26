@@ -1,0 +1,51 @@
+# Slate 2026-06-26
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+## FIRST UP — /sorted: git-stash attribution + hygiene (design DONE 2026-06-26 ~06:30 w/ Akien)
+
+PROBLEM: stale/anonymous git stashes are hidden cross-session divergent state. Bit us
+2026-06-25 — an 841-commit-old stash popped during a baseline check → phantom "SyntaxError"
+(conflict markers) in shim.py. Multi-agent makes it worse: refs/stash is SHARED across all
+worktrees of a repo, so one agent's stash is globally visible/poppable.
+
+PRINCIPLE: attribute, don't forbid. Design for ease — make the safe path the reflexive path.
+
+DESIGN (all agreed; how-to left to builder):
+1. PATH-OVERRIDE WRAPPER. superclaude startup + DS startup PREPEND the shim dir to PATH so
+   plain `git` IS the wrapper (agents call `git` by reflex — zero new discipline required).
+   Wrapper intercepts ONLY stash-create (push/save); everything else (list/show/pop/drop,
+   all other git) falls straight through to REAL git (found by skipping its own PATH entry
+   to avoid recursing into itself).
+2. AUTO-TAG to canonical message format:  agent:T-Ticket:WIP[:any other args]
+   - agent  = from launch env (already set in the agent's call)
+   - ticket = from sprint-claim context (this agent's in-progress ticket)
+   - no current ticket → RESCUE: namespace (never anonymous)
+   - HANDLE BARE `git stash` (no -m): inject -m, else the lazy reflexive path escapes attribution
+   - idempotent: don't double-prefix if already agent:... or RESCUE:
+   WHY this format: ticket field → relevance/scoping (tie stash to ticket status/files);
+   agent field → per-builder stash-FREQUENCY telemetry (is one builder leaving WIP more
+   than another = builder-health signal). Colon-delimited → parseable by field (cut -d:).
+3. RESCUE: = reserved override namespace for operator/non-ticket/recovery work.
+4. TICKET-CLOSE = scoped check (now multi-agent-safe BECAUSE attributed): close of T-x greps
+   its own `agent:T-x:` tag; dangling → ticket not really done. Never touches a sibling
+   agent's stash. (This is what your ticket-name idea unlocked — a global check was unsafe.)
+5. ORPHAN SWEEP (ticket-close + day-close + periodic): any stash whose ticket is closed or
+   unknown → drop a system_alarm. SURFACE, NEVER BLOCK (a hard gate could nuke a sibling's tree).
+6. day-close step 4.6 (already shipped dc9d1840) keeps the analyze→preserve→clear human pass.
+
+TICKETS TO DRAFT under the new decision:
+  (a) git-stash wrapper shim + PATH injection in superclaude + DS startup
+  (b) ticket-close scoped stash check (grep own agent:ticket: tag)
+  (c) orphan-stash sweep → system_alarm (wire into ticket-close + day-close + periodic)
+  (d) consequence-check ticket
+REFS: memory git-stash-is-hidden-divergent-state; day-close SKILL step 4.6.
