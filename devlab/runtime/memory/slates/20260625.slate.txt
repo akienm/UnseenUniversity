@@ -1,226 +1,44 @@
 # Slate 2026-06-25
 
-## Notes
-
-## In-flight
-NONE
-
-## Planned
-
-## Ad hoc
-
 ## Done today
 
-- T-remove-autocompact-calls — Remove all /autocompact CALLS (skill itself stays) (Repo skills/ swept correct; guard green.)
-- T-uu-sweep-skill-psql-creds — De-hardcode dead DB creds in skill SKILL.md psql commands (Repo skills/ swept correct; guard green.)
-- T-day-close-audit-skill-stale-paths — BUG: day-close-audit (+ other skills) reference retired wild_igor/igor + lab/ paths (Repo skills/ swept correct; guard green.)
-- T-skills-single-source-flip — Flip survivor skills to single-source (project-scope .claude/skills) (Single-source flip LIVE + door closed. 49 managed skills flipped from drifted real-dir copies to symlinks into repo skil)
-- T-skills-content-merge-survivors — One-time content merge of drifted survivor skills to canonical (Resolved to repo-canonical: repo skills/ verified as the clean fs-store rewrite (D-canonical-memory-consolidation); loca)
-- T-skills-prune-deprecated-merge — Delete deprecated skills; fold sprint; reconcile igor-diagnose (Deprecated cognition-debug + debug-pe-chain already deleted from repo + ~/.claude/skills + manifest (verified gone from )
-- T-skill-dispositions-investigate — Determine disposition of unclear skills (map-igor, outcome, eval-run, weekly-retro, factory-create, critic, new) (Disposition table recorded. map-igor: KEEP local-only — Igor-runtime full-state snapshot tool (Haiku, writes ~/.unseen_u)
-- T-skills-deadstep-followup — Decide fate of 3 never-built day-close helper scripts (All 3 never-built helper-script intents RETIRED — each superseded by an existing mechanism, no capability lost, nothing )
-- T-uu-cli-dispatcher — uu <verb> dispatcher — zero-inference view/control CLI (Built bin/uu — zero-inference uu <verb> dispatcher. First-token dispatch + shift + "$@" passthrough (the convention the )
-- T-device-skills-via-uu-device — Device skills fold into uu device <dev> <verb> [<noun>] + /device <dev> <verb> (Built the uu device <dev> <verb> dispatch mechanism (the two-products split at the device boundary) + /device CC-facing )
-- T-savestate-run-nameerror-fix — Fix savestate run: module-level NameError + stale holdovers (Fixed skills/savestate/run: (1) module-level NameError — uu_home() was called at module scope while imported only inside)
-- T-per-device-log-hierarchy — Unified per-device log home (~/.unseen_university/logs/<device>/) (Per-device log hierarchy shipped: DiagnosticBase JSON sink routes every device's records to ~/.unseen_university/logs/<d)
-- T-uu-readfeed — uu readfeed <device> [channel] — generalize/retire readigor (Generalized /readigor to uu device <dev> feed [channel] (/device <dev> feed): personal default (webchat), private stub, )
-## Day-close summary (2026-06-24 final)
-**Done:** Env-vars grand-cleanup phase complete. T-uu-sweep-hostname + T-uu-sweep-instance-name both
-CLOSED PROVEN today. DB renamed (Igor-wild-0001→unseen_university), decoupled from tenant via
-UU_HOME_DB_NAME. All supporting pieces (rotate password, config-profile, dburl-unify, etc.) closed
-(10+ tickets).
+A big day on D-skills-two-products (Friday demo prep) — skills wrapped through
+Phase B, plus the ownership_gap book. All proven, all pushed.
 
-**Lesson learned:** Igor-wild-0001 was misnamed substrate-home-DB (not just an igor instance folder).
-The DB rename was RIGHT and valuable. The instance-folder sweep was scope creep / rabbit hole — igor
-is LAST priority; don't pour care into de-hardcoding an archived instance. That work (T-uu-sweep-instance-name)
-is left value-preserving; it waits for the igor phase.
+**Skills (D-skills-two-products):**
+- T-remove-autocompact-calls, T-uu-sweep-skill-psql-creds, T-day-close-audit-skill-stale-paths — Phase A correctness sweep, guard-green (ec7ae52d/2a4dcb53)
+- T-skills-single-source-flip — CLOSED PROVEN. Drift cure LIVE: 49 managed skills flipped from drifted copies → symlinks into repo; installer deploy converted copy→symlink so drift can't return (f3a2d44d/e17611f1/0776144c). NO SKILLS SYNC EVER.
+- T-skills-content-merge-survivors — shipped-unproven (resolved repo-canonical)
+- T-skills-prune-deprecated-merge — CLOSED PROVEN (/sprint folded→/query-ticket; igor-diagnose kept distinct; deprecated gone) (00bb3fad/d1fb5c9c)
+- T-skill-dispositions-investigate, T-skills-deadstep-followup — shipped-unproven (dispositions recorded; 3 dead-steps retired)
+- T-uu-cli-dispatcher — CLOSED PROVEN. bin/uu zero-inference `uu <verb>` reading the FS STORE (088e5384/84fc8f64)
+- T-device-skills-via-uu-device (L) — CLOSED PROVEN. uu device/<dev> dispatch; igor pilot migrated into devices/igor/{bin,skills}/ (e4697361/62b1194e)
+- T-per-device-log-hierarchy — CLOSED PROVEN. DiagnosticBase routes every device to ~/.unseen_university/logs/<device>/{info,warn,debug}/ (2e12e75a/c2b3e0a5/45b55d36)
+- T-uu-readfeed — CLOSED PROVEN. uu device <dev> feed [channel] (personal/private/info/warn/debug); readigor retired; reuses per-device logs (e640d106/612c88d1/debf9d42/3d33b49e). Ungated T-skills-views-retire-to-cli.
 
-**Next sprint (priority order):** SKILLS (D-skills-two-products, Friday 2026-06-26 presentation) →
-DickSimnel → Granny → cleanup → igor (last). Scoped but NOT EXECUTED: content-merge-survivors (4-axis
-drift), skill-psql-creds (dead creds + DB name). Deferred: single-source flip (destructive, holds for
-Akien approval).
+**Book:**
+- ownership_gap full 8-chapter refresh — numbers current, the measured 51% pre-inference run woven into Ch1+Ch6, two-products section in Ch4, proof-on-close in Ch3, Archivist honestly reframed, byline "Akien MacIain and Claude", all footers/paths fixed (d249b8c0)
 
-## In-flight (day-close)
-NONE. All work from the env-vars phase is durable (committed, pushed). Fresh post-compact session will
-sprint skills.
+**Filed (not started):** T-uu-build-packet-compiler (L — port the 51% compiler to UU), T-palace-echo-write-path-converge (M — kill split write-path + dead IGOR_HOME), T-theigors-archive-artifact-freeze (S — merge-distinct→delete superseded archive copies), T-memory-category-templates (S), T-test-skill-filter-dead-seed-path (S), T-db-scrub-build-artifacts.
 
-## SKILLS — PHASE A DONE + pre-compact handoff (2026-06-25 ~mid-day; context degraded -> Akien compacting)
-Pushed: ec7ae52d (sweep+prune), 2a4dcb53 (bookkeeping). Repo skills/ correctness GREEN under
-tests/test_skills_hygiene.py (7 checks: dead-creds->$UU_HOME_DB_URL, instance-paths->$IGOR_INSTANCE_ID,
-/decided->/sorted, THEIGORS_HOME->UU_ROOT, /autocompact CALLS removed [skill kept], dead-script steps
-removed, audit-workspace + scanner-needles exempted). Pruned: question/concept/migrate-decisions/recover
-+ manifest. Closed: T-remove-autocompact-calls, T-uu-sweep-skill-psql-creds, T-day-close-audit-skill-stale-paths.
-Filed: T-skills-deadstep-followup. NEW canonical corpus: skills/questions/questions.json (84127d20).
+**Decisions:** D-decisions-as-guards-anchors-2026-06-25 (decisions carry executable guards + parent-narrative anchor) — 4 tickets ready.
 
-⛔ HARD CORRECTION (Akien, emphatic): **NO SKILLS SYNC. EVER.** Copy-sync between repo skills/ and
-~/.claude/skills IS the drift disease that broke day-close. I almost re-proposed it — DO NOT. See memory
-feedback_no_skills_sync_symlink. Single-source mechanism = DIRECTORY SYMLINK (spec in T-skills-single-source-flip):
-committed in-repo .claude/skills -> skills (project scope) + fallback per-skill ~/.claude/skills/<name> -> repo;
-two-tier canonical(repo-symlink)/local-only(Igor-runtime real dirs); skills-sync/run deploy = ensure-symlink, NOT copy.
+**Memory saved:** delete-after-successful-merge (verify-merged → delete old copies; don't leave shadow duplicates).
 
-NEXT (skills, still front-burner, the COMPLETE end-intent, order CC's choice):
-- Make fixes take effect LOCALLY via the SYMLINK flip (T-skills-single-source-flip) — NOT sync. This is the
-  daily-tooling cure (repo fixes only protect us once ~/.claude/skills links to repo). Destructive-ish (clears
-  managed local copies) -> Akien sign-off when executing.
-- Remaining prune sub-parts: fold /sprint -> query-ticket+sprint-ticket; resolve igor-diagnose vs diagnose
-  (T-skills-prune-deprecated-merge still open).
-- Phase B view-layer: T-uu-cli-dispatcher -> device-skills -> readfeed/alarms -> views-retire -> content-merge.
-PRIORITY UNCHANGED: skills -> DickSimnel -> Granny -> cleanup -> igor LAST. Igor-wild-0001 = archived Wild0.
+## Notes
 
-- D-decisions-as-guards-anchors-2026-06-25: decisions carry executable guards (immediate test) + parent-narrative anchor (decompose-by-intention, N-of-M, stamped parent invariant/rejected-alt, distilled rollup-on-close) so fresh contexts re-orient without a look-back instruction — T-decisions-as-guards-convention, T-sorted-decompose-by-intention-gate, T-child-close-narrative-rollup-to-parent, T-consequence-decisions-as-guards
+- Decision corpus lives across 5 archives (~500+ distinct) — substantiates the book's "500+ decisions". Not lost, just scattered; merge-then-delete via T-theigors-archive-artifact-freeze.
+- Phase-B remaining to fully wrap D-skills-two-products: T-skills-views-retire-to-cli (now ungated) + T-device-web-feed-channel-buttons (backend ready, reuse uu_feed.py — annotated) + T-workflow-index-and-uu-help (do last, documents final command set).
 
-## Session close 2026-06-25 (skills Phase A + meta-design)
-Done: (1) Skills Phase A — correctness sweep + prune, guard-green (tests/test_skills_hygiene.py), pushed ec7ae52d/2a4dcb53; 3 tickets closed.
-(2) Canonical questions corpus seeded — skills/questions/questions.json (84127d20).
-(3) HARD CORRECTION recorded: NO SKILLS SYNC EVER; single-source = directory SYMLINK (memory feedback_no_skills_sync_symlink; spec T-skills-single-source-flip).
-(4) Meta-design /sorted -> D-decisions-as-guards-anchors-2026-06-25 (4 tickets): decisions carry executable guards (immediate test, vs consequence=delayed) + parent-narrative anchor (decompose-by-intention, N-of-M, stamped parent invariant/rejected-alt, distilled rollup-on-close) so fresh contexts re-orient WITHOUT a look-back instruction.
-Next: skills STILL front-burner. The move that makes Phase A fixes live + permanently kills the dual-location bug = SYMLINK single-source flip (T-skills-single-source-flip) — NOT sync, Akien sign-off. Then prune remainder (fold /sprint, igor-diagnose vs diagnose) + Phase B uu CLI (T-uu-cli-dispatcher -> device-skills -> readfeed/alarms -> views-retire -> content-merge). Decisions-as-guards tickets ready when picked. Priority unchanged: skills -> DickSimnel -> Granny -> cleanup -> igor LAST.
+## Next
 
-## SKILLS SINGLE-SOURCE FLIP — DONE + PROVEN (2026-06-25, post-compact, Akien: "do it right NOW")
-The drift cure is LIVE. No more two-copies. Commits f3a2d44d (cure) · e17611f1 (door) · 0776144c (proof).
-- FLIP: ~/.claude/skills/<name> flipped from drifted real-dir COPIES → symlinks into repo skills/ for all 49
-  managed skills. In-repo .claude/skills -> ../skills (relative) committed = project-scope canonical load.
-  Verified: live skills resolve to repo content; loader follows symlinks.
-- DOOR CLOSED: installer deploy_skills converted copy→SYMLINK (SymlinkBackend; rsync/copytree backends gone).
-  Idempotent ensure-link; unlisted dirs left alone (two-tier). manifest.json regenerated from real repo dirs.
-  skills-sync/run docstring corrected. Installer tests updated + dst-is-symlink regression test. 38 tests green.
-- DELETED deprecated: cognition-debug, debug-pe-chain (decision step 3). Backup at scratchpad/skills_local_backup_*.tar.gz.
-- LOCAL-ONLY PRESERVED (two-tier, untouched): concept, debug, diagnose, health, igor-diagnose, map-igor,
-  migrate-decisions, question, readigor, recall, recover.
-- Closed: T-skills-single-source-flip (PROVEN: tests/test_skills_single_source_proof.py), 
-  T-skills-content-merge-survivors (shipped-unproven: resolved to repo-canonical, no superset-harness yet).
-REMAINING (D-skills-two-products): T-skills-prune-deprecated-merge (deprecated deleted ✓; STILL TODO: fold
-  /sprint→query-ticket+sprint-ticket, resolve igor-diagnose vs diagnose). Phase B uu CLI view-layer
-  (T-uu-cli-dispatcher → device-skills → readfeed/alarms → views-retire). recover repo-status = Phase-A follow-up.
-
-## Session close 2026-06-25 (skills single-source flip, post-compact, "do it right now")
-Done: Single-source flip COMPLETE & PROVEN. 49 managed skills ~/.claude/skills/ flipped from drifted
-  copies → symlinks into repo (f3a2d44d cure). Installer deploy converted copy→symlink so drift can't
-  return (e17611f1 door). Proof: test_skills_single_source_proof.py red→green (60c72cdc + 0776144c).
-  Deprecated cognition-debug/debug-pe-chain deleted. Igor-runtime/view skills preserved local-only.
-  Closed T-skills-single-source-flip (proven) & T-skills-content-merge-survivors (shipped-unproven:
-  repo-canonical verified). Tree clean. All 5 commits pushed.
-Next: T-skills-prune-deprecated-merge (fold /sprint→query-ticket+sprint-ticket, igor-diagnose vs
-  diagnose) + Phase B uu CLI (T-uu-cli-dispatcher). Skills still front-burner (Friday work demo).
-  Priority order unchanged: skills → DickSimnel → Granny → cleanup → igor LAST.
-
-## Skills prune-merge CLOSED PROVEN (2026-06-25, post-flip)
-T-skills-prune-deprecated-merge closed proven (commits 00bb3fad fold+guard, d1fb5c9c proof).
-- /sprint folded → thin alias: selection now via /query-ticket (canonical), no more raw
-  cc_queue.py list grep. Guard: tests/test_skills_hygiene.py::test_sprint_selects_via_query_ticket (red→green).
-- igor-diagnose: KEPT DISTINCT — self-deprecated redirect already superseded by /diagnose igor
-  (invariant preserved in /diagnose Steps 1-3); LOCAL-ONLY Igor-runtime, left per two-tier,
-  deletion deferred to igor phase (igor=last). Not deleted (would violate two-tier + igor-last).
-- Deprecated cognition-debug/debug-pe-chain confirmed gone from repo+local+manifest; no stray
-  slash-refs (2 cognition-debug hits = MCP-capability/ticket refs, not the skill).
-Skills set now tidy for Friday demo. REMAINING D-skills-two-products: Phase B uu CLI view-layer
-(T-uu-cli-dispatcher M → device-skills → readfeed/alarms → views-retire) + housekeeping
-(T-skills-deadstep-followup, T-skill-dispositions-investigate, T-workflow-index-and-uu-help).
-
-## Skills S-housekeeping CLOSED (2026-06-25, Akien: freeze skills + low-risk polish for Friday)
-T-skill-dispositions-investigate (shipped-unproven, investigation):
-  map-igor=KEEP local-only (Igor-runtime snapshot, two-tier; fold to `uu device` later);
-  outcome=KEEP (core learning-loop workflow skill, not a weekly track);
-  eval-run+weekly-retro=FOLD recommendation (already only auto-fire in day-close Friday; don't
-  promote as standalone verbs) — actual fold deferred (touches frozen day-close).
-T-skills-deadstep-followup (shipped-unproven, retire-intent): all 3 RETIRED, each superseded —
-  docs_sync.py→fs-store; validate_files.py→path_moves_monitor.py (day-close-audit 18.8);
-  github_sync.py→redundant (tickets are committed+pushed files = already cloud-backed).
-  Enforcement = standing guard test_no_missing_script_refs.
-DEFERRED (gated on Phase B dispatcher): T-workflow-index-and-uu-help — `uu help` needs the
-  uu CLI dispatcher (T-uu-cli-dispatcher); /workflow reframe would advertise non-existent
-  device/view families. Waits until after Friday with the rest of Phase B.
-
-## PHASE B started — uu CLI dispatcher DONE+PROVEN (2026-06-25, Akien: wrap skills completely ASAP)
-T-uu-cli-dispatcher closed proven (commits 088e5384 impl+test, 84fc8f64 proof).
-bin/uu — zero-inference `uu <verb>` dispatcher; first-token dispatch + shift + "$@" passthrough
-(chain inherits: uu device/readfeed nest additively). Verbs: mytickets/opentickets read the
-CANONICAL FS STORE via ticket_store+ticket_status (⛔ DB is NOT source of truth for any build
-artifact — Akien correction; also NOT cc_queue.py list which hides tickets); recall/research →
-librarian scripts; help/no-verb lists verbs; bogus → help+nonzero. bin/ on PATH via versioned
-profile processor (idempotent); `command -v uu` verified in fresh sourced shell. ⚠️ AKIEN: re-source
-your profile (or new shell) for `uu` to appear; ~/bin uu* retirement is yours (no collision).
-Proof: tests/test_uu_dispatcher.py (hermetic).
-Ungated by this close: T-device-skills-via-uu-device (L), T-uu-alarms-cli.
-NEXT: T-workflow-index-and-uu-help (S, now unblocked) → then device-skills (L, igor-touching, heaviest
-— surface to Akien). readfeed (M) + views-retire (M) are gated BEHIND device-skills.
-
-## PHASE B — device-skills L DONE+PROVEN (2026-06-25, Akien chose "full L now")
-T-uu-cli-dispatcher (done, 84fc8f64) → T-device-skills-via-uu-device (done, e4697361).
-Mechanism: bin/uu `device` case → uu_device.py resolves devices/<dev>/{bin,skills}/ (bin→exec;
-skills-only from bare CLI→point to /device; BOTH→unique-name load error; unknown→list). /device =
-thin CC shim (skills then bin failover). igor PILOT migrated OUT of ~/.claude:
-  devices/igor/skills/diagnose (← igor-diagnose, cleaned creds/paths, dropped debug-pe-chain),
-  devices/igor/skills/map (← map-igor, BROKEN/rebuild stamp — map_igor.py never existed),
-  devices/igor/bin/state (NEW genuine zero-inference igor liveness view).
-Deleted ~/.claude/{igor-diagnose,map-igor}. Generic /diagnose stays top-level. Proof:
-tests/test_uu_device.py (62b1194e). Igor-last follow-ons: deep content-merge of diagnose, rebuild
-map→devices/igor/bin/map vs fs-store.
-Ungated: T-uu-readfeed (M). REMAINING chain: readfeed (uu device igor feed [channel], retires
-readigor — the last igor local-only device skill) → views-retire (M) → workflow-index (S, do LAST
-so it documents the final command set). Then D-skills-two-products fully wrapped.
-- T-db-scrub-build-artifacts: Scrub stale build artifacts from DB; leave redirect
-
-## READFEED design clarified (Akien 2026-06-25) — sources + prerequisites captured
-The "small hole" in readfeed = it sits on two UNBUILT pieces. Comm channels (uniform per device):
-  personal = EXISTING webchat channel (web server chat store; the chat window Akien has w/ device) — BUILT
-  private  = planned, NOT designed, intentionally un-ticketed → 'not yet designed' notice
-  info/warn/debug = per-device log hierarchy at ~/.unseen_university/logs/<device>/ — NOT built (warn was missing, now added)
-The device SHIM owns the device web page (templating) + gathers per-channel entries. UI change: console pane
-RETIRES; feed pane gains a BUTTON per channel (personal/info/warn/debug). Click info→behind it; debug→deeper.
-NOTE: CLAUDE.md says datacenter_logs/<device>/<subsystem>/ but Akien's canonical log home is
-~/.unseen_university/logs/<device>/ — reconcile (the latter wins).
-FILED (all decision_id=D-skills-two-products):
-  - T-per-device-log-hierarchy (M) — unified per-device log home + info/warn/debug split + CLAUDE.md reconcile. PREREQUISITE.
-  - T-device-web-feed-channel-buttons (M, gate=T-per-device-log-hierarchy) — shim web feed buttons, console retires.
-  - T-uu-readfeed AMENDED + GATED on T-per-device-log-hierarchy: personal=webchat, info/warn/debug=log-hier, warn added,
-    private deferred; CLI mirror of the web feed buttons.
-NEW chain to wrap Phase B: T-per-device-log-hierarchy → (readfeed CLI ‖ web-feed-buttons) → views-retire → workflow-index.
-
-## Session close 2026-06-25 (Phase B — dispatcher + device-skills L, /savestate for compact)
-Done: Phase B of D-skills-two-products advanced hard. (1) uu CLI dispatcher (M) DONE+PROVEN — bin/uu
-  zero-inference `uu <verb>` reading the FS STORE (not DB); first-token+passthrough convention. (2)
-  device-skills mechanism (L) DONE+PROVEN — uu device/<device> dispatch, bin/skills failover,
-  unique-name load check; igor pilot migrated OUT of ~/.claude into devices/igor/{bin,skills}/
-  (diagnose+map skills, state bin), ~/.claude copies deleted. (3) Filed T-db-scrub-build-artifacts
-  (stale build artifacts must be scrubbed from DB + redirect-to-fs-store). (4) Readfeed design
-  clarified with Akien: personal=existing webchat channel; info/warn/debug=unbuilt per-device log
-  home ~/.unseen_university/logs/<device>/; private deferred; warn added; shim owns web page
-  (console pane retires for per-channel buttons). Filed T-per-device-log-hierarchy +
-  T-device-web-feed-channel-buttons; amended+gated T-uu-readfeed. 8 commits, tree clean, pushed (HEAD bdea579a).
-Next: T-per-device-log-hierarchy (M) — unified per-device log home + info/warn/debug + CLAUDE.md reconcile
-  (datacenter_logs→~/.unseen_university/logs). Unblocks readfeed CLI ‖ web-feed-buttons → views-retire →
-  workflow-index = D-skills-two-products fully wrapped. Priority unchanged: skills → DickSimnel → Granny → cleanup → igor LAST.
-NOTE: skills/savestate/run is BROKEN (NameError: uu_home not defined — missing import); the /savestate
-  close path errors. Flushed to slate manually. Worth a quick fix ticket.
-
-## Session close 2026-06-25
-Done: Phase B dispatcher(M)+device-skills(L) proven; readfeed design clarified+ticketed (log-hierarchy prereq); FIXED savestate run NameError + close-header (was crashing the close path).
-Next: T-per-device-log-hierarchy (M) — unblocks readfeed CLI + web-feed buttons → views-retire → workflow-index = D-skills-two-products wrapped.
-
-## In-flight: NONE — all durable: pushed, tree clean. Phase B foundation (dispatcher+device-skills) proven; readfeed prereqs filed; savestate skill repaired.
-- T-per-device-log-hierarchy: Unified per-device log home (~/.unseen_university/logs/<device>/ info/warn/debug)
-- T-memory-category-templates: !CategoryTemplate.json per memory-type root (self-documenting field schema)
-
-## In-flight: T-per-device-log-hierarchy BUILT but NOT yet committed/proven/closed (in_progress). Impl: diagnostic_base/base.py routes every DiagnosticBase device to <log_root>/<device>/<stream>/ (info/warn/debug; WARNING+→warn, exact level kept on record); call-time _default_log_root() honoring UU_LOG_ROOT else uu_home()/logs; (cls,root) logger-cache key; property+setter _log_root. Also fixed web_server flat log→logs/web_server/, shim trace→logs/shim/trace, CLAUDE.md hard-rule reconciled + 5 doc mentions. Proof test tests/test_per_device_log_hierarchy.py (8) + 2 updated diagnostic_base tests; logging(39)+shim/perf(98) green. Autouse conftest _redirect_log_root added (UU_LOG_ROOT→tmp, global). FULL SUITE running in background bg-id bnzry300o to verify the global conftest change. RESUME: confirm suite green -> commit impl+tests -> emit red->green proof against pre-impl parent-ref (HEAD before commit) -> commit proof -> close proven. Tree DIRTY (uncommitted). Also filed T-memory-category-templates (S, sprint, !CategoryTemplate.json per memory-type root).
-
-## In-flight: T-per-device-log-hierarchy CLOSED PROVEN (proof cc.0.per-device-log-hierarchy @ 2e12e75a; impl 2e12e75a + proof c2b3e0a5). DiagnosticBase JSON sink now routes every device to ~/.unseen_university/logs/<device>/{info,warn,debug}/; ungated T-uu-readfeed + T-device-web-feed-channel-buttons. Bookkeeping commit pending (slate + ticket moves + 2 newly-filed tickets: T-memory-category-templates, T-test-skill-filter-dead-seed-path). Full suite is hygiene-only (env-var log redirect blast radius = log-path-asserting tests, all green; 1 pre-existing unrelated fail ticketed).
-
-## In-flight: NONE in-flight — T-per-device-log-hierarchy CLOSED PROVEN and pushed (impl 2e12e75a + proof c2b3e0a5 + bookkeeping 45b55d36, all on origin/main). Tree clean. Ungated + READY: T-uu-readfeed, T-device-web-feed-channel-buttons (next Phase-B build path under D-skills-two-products). Also filed (sprint): T-memory-category-templates (S), T-test-skill-filter-dead-seed-path (S, pre-existing unrelated test fail).
-- T-uu-build-packet-compiler: Build-packet pre-inference compiler (port Delta 51% result to UU)
-- ownership_gap docs: full update pass (numbers current + new-reality + 51% run + footers)
-- T-palace-echo-write-path-converge: converge palace_echo home + drop IGOR_HOME (cleanup)
-- T-theigors-archive-artifact-freeze: freeze/dedup retired TheIgors* artifact copies (cleanup)
-- ✅ T-uu-readfeed CLOSED PROVEN (uu device feed reader; readigor retired; @612c88d1; ungated T-skills-views-retire-to-cli)
-
-## In-flight: NONE in-flight — T-uu-readfeed CLOSED PROVEN (uu device feed reader @612c88d1) + ownership_gap docs refresh committed. All on local main, UNPUSHED. Next: promote+sprint T-device-web-feed-channel-buttons (reuse uu_feed.py reader; annotated).
-
-## Session Close Summary
-Done: Ownership_gap book full refresh (numbers current, 51% run, two-products); T-uu-readfeed CLOSED PROVEN (uu device feed reader @612c88d1); T-skills-views-retire-to-cli ungated; T-device-web-feed-channel-buttons annotated + backend ready.
-Next: Push all 7 commits (docs+readfeed) to origin/main; sprint T-device-web-feed-channel-buttons (UI, reuse uu_feed) or T-uu-build-packet-compiler (51% marquee).
+Friday demo (2026-06-26) is D-skills-two-products. Strongest threads:
+- T-device-web-feed-channel-buttons (M, UI; reuse uu_feed.py reader) — finishes the feed surface
+- T-skills-views-retire-to-cli (M, newly ungated)
+- T-uu-build-packet-compiler (L) — the 51% marquee follow-up
+Priority order unchanged: skills → DickSimnel → Granny → cleanup → igor LAST.
 
 ## In-flight
-NONE — clean tree, all work committed locally (unpushed)
+NONE — all work committed and pushed to origin/main (HEAD 615ba4e2). Tree clean.
 
-✅ SESSION CLOSED
-
+✅ CLOSED
