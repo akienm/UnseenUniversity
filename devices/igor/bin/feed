@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+"""uu device igor feed [channel] — zero-inference reader for Igor's feed channels.
+
+The bin/ (view) half of the igor device surface (devices/igor/bin/,
+D-skills-two-products). Thin wrapper over the shared, device-agnostic reader in
+devlab/claudecode/uu_feed.py — the device name is fixed to `igor` because this
+script lives under devices/igor/bin/. Channels: personal (default), private,
+info/warn/debug. Read-only; runs in a bare shell.
+"""
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+UU_ROOT = os.environ.get("UU_ROOT") or str(Path(__file__).resolve().parents[3])
+sys.path.insert(0, str(Path(UU_ROOT) / "devlab" / "claudecode"))
+
+import uu_feed  # noqa: E402
+
+raise SystemExit(uu_feed.main(["feed", "igor", *sys.argv[1:]]))

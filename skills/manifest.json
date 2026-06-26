@@ -349,11 +349,6 @@
       "category": "igor-internal",
       "machines": [],
       "deploy": false
-    },
-    "readigor": {
-      "category": "igor-internal",
-      "machines": [],
-      "deploy": false
     }
   }
 }

@@ -109,7 +109,7 @@ Rule of thumb: if the one-liner shows anything, mention it. If it's empty, silen
 
 ## Related
 
-- **/readigor** — reads Igor's channel messages (different channel, different purpose).
+- **/device igor feed** — reads a device's feed channels (different channel, different purpose).
 - **/context-load** — auto-calls readinbox at session start (see that skill).
 - **T-cc-inbox-producer** — the Igor-side hooks that fill this inbox.
 
