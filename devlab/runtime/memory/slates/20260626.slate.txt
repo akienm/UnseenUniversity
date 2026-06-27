@@ -21,6 +21,7 @@ NONE
 - T-context-load-slate-is-entry-point — [awaiting_validation] context-load starts the session by reading the slate, not /query-ticket (Fixed: SKILL.md hard-stop banner makes the slate the session entry point (not /query-ticket); Step 1 of run now surfaces)
 - T-remove-adc-launcher — [awaiting_validation] Remove the dead ADC-named launcher wrappers (bin/adc, bin/adc.ps1) (Removed bin/adc + bin/adc.ps1 (dead ADC bootstrap wrappers). Proof: git ls-files grep for adc launcher files is empty; w)
 - T-launcher-help-and-1m-flags — [awaiting_validation] superclaude/rescueclaude gain --help and --1m flags; root scripts become bin/ pass-throughs (Implemented --1m (ANTHROPIC_MODEL=opus[1m], off by default, flag consumed) + --help (wrapper flags then claude --help) o)
+- T-launcher-unfailable-recovery — [awaiting_validation] Launchers must always reach exec claude — unfailable recovery contract (venv best-effort, no fatal interject) (Unfailable launch contract shipped. rescueclaude: best-effort venv-shell create (no pip install), UU_RESCUE_DIR override)
 ## FIRST UP — /sorted: git-stash attribution + hygiene (design DONE 2026-06-26 ~06:30 w/ Akien)
 
 PROBLEM: stale/anonymous git stashes are hidden cross-session divergent state. Bit us
@@ -83,3 +84,5 @@ Next: Next: /sprint T-mcp-dispatch-by-addressee (L, sprint-ready — full design
 ## In-flight: Context-load skill floorboard fixed (awaiting_validation); ready for /sprint T-mcp-dispatch-by-addressee (L, sprint-ready, design resolved).
 
 ## In-flight: Launcher --1m/--help + root pass-throughs shipped (T-launcher-help-and-1m-flags, awaiting_validation). --1m relaunch is the forgetfulness A/B lever — Akien to test.
+
+## In-flight: Unfailable launch contract shipped + proven (7/7 chaos). Surfaced stale core.hooksPath debt (T-stale-core-hookspath-rename-debt). Next: address /clear+/context-load forgetfulness data; Windows recovery scope question open.
