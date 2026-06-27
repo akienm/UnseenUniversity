@@ -237,6 +237,33 @@ HELP
 done
 set -- ${_UU_PASS_ARGS[@]+"${_UU_PASS_ARGS[@]}"}
 
+# ─ Unfailable launch contract (T-launcher-unfailable-recovery) ────────────────
+# From here to `exec claude`, NOTHING may abort the launch. `set -e`/`set -u` are
+# the structural threat: in a recovery scenario env vars are unset and commands
+# fail, and the prime directive is to ALWAYS reach claude so CC can help rebuild.
+# Dropping them across the launch path means no future edit can interject a fatal.
+set +eu
+
+# Best-effort venv SHELL creation if missing (fast, offline). We NEVER `pip
+# install` here — a network install can hang for minutes, and a hang is a launch
+# failure. The rack server (best-effort) and CC perform the actual rebuild once
+# started — "start ready to help get it built out". Guarded so a missing
+# python3/timeout, or any broken box, still falls through to launch.
+_UU_VENV="${THEIGORS_DIR}/.venv"
+if [ ! -f "${_UU_VENV}/bin/activate" ] && command -v python3 >/dev/null 2>&1; then
+    echo "superclaude: no venv at ${_UU_VENV} — attempting to create the shell..."
+    if command -v timeout >/dev/null 2>&1; then
+        timeout 60 python3 -m venv "${_UU_VENV}" >/dev/null 2>&1 || true
+    else
+        python3 -m venv "${_UU_VENV}" >/dev/null 2>&1 || true
+    fi
+    if [ -f "${_UU_VENV}/bin/activate" ]; then
+        echo "superclaude: venv shell created (run 'pip install -e .' inside to finish the rebuild)."
+    else
+        echo "superclaude: could not create venv — starting anyway; CC can rebuild once up." >&2
+    fi
+fi
+
 # Load .env (sets ANTHROPIC_API_KEY and other env vars if available)
 require_api_key
 

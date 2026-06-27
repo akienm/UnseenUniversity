@@ -12,15 +12,38 @@
 # start-even-without-the-DB contract and (b) commit a credential to the repo. Both no.
 
 CC_TMUX_SESSION=akiendelllinux_cc_RESCUE
+# Repo dir is overridable ONLY for hermetic chaos-testing of the recovery path;
+# defaults to the real location. A read-only path select with a safe default —
+# it cannot make the launch fail. (T-launcher-unfailable-recovery)
+UU_DIR="${UU_RESCUE_DIR:-/home/akien/dev/src/UnseenUniversity}"
+RECOVERY_NOTES=()
+
 # Best-effort cd; fall back to HOME so claude still launches if the repo is gone.
-cd /home/akien/dev/src/UnseenUniversity 2>/dev/null || cd "$HOME" || true
-# Best-effort venv activation so CC's Bash subshells inherit it (venv python,
-# pytest, editable package, cwd-independent imports). GUARDED to honor the rescue
-# contract: if the venv is absent/broken, claude still launches. The launcher
-# carries it into CC's process env, which every Bash subshell then inherits.
-# Sets only VIRTUAL_ENV/PATH — no credentials (cf. the superclaude 401 incident).
-[ -f /home/akien/dev/src/UnseenUniversity/.venv/bin/activate ] && \
-  source /home/akien/dev/src/UnseenUniversity/.venv/bin/activate || true
+cd "$UU_DIR" 2>/dev/null || cd "$HOME" 2>/dev/null || true
+
+# Best-effort venv so CC's Bash subshells inherit it (venv python, pytest,
+# editable package, cwd-independent imports). UNFAILABLE: every step is guarded so
+# a missing venv / python3 / timeout — or any broken box — still reaches claude.
+#   1. activate if present;
+#   2. else TRY to create the venv SHELL (python3 -m venv — fast, offline). We
+#      NEVER `pip install` here: a network install can hang for minutes and a hang
+#      is a launch failure. The actual package rebuild is CC's job once started.
+#   3. still absent -> record a note, reported to the terminal just before launch.
+# Sets only VIRTUAL_ENV/PATH on activate — no credentials (cf. superclaude 401).
+_venv="${UU_DIR}/.venv"
+if [ ! -f "${_venv}/bin/activate" ] && command -v python3 >/dev/null 2>&1; then
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 60 python3 -m venv "${_venv}" >/dev/null 2>&1 || true
+  else
+    python3 -m venv "${_venv}" >/dev/null 2>&1 || true
+  fi
+fi
+if [ -f "${_venv}/bin/activate" ]; then
+  # shellcheck disable=SC1090
+  source "${_venv}/bin/activate" 2>/dev/null || true
+else
+  RECOVERY_NOTES+=("venv unavailable at ${_venv} (python3 missing or venv creation failed). CC is starting anyway — rebuild from inside, e.g.  python3 -m venv .venv && pip install -e .")
+fi
 # ── Wrapper flags (consumed here, never forwarded to claude) ──────────────────
 # --new : start a FRESH RESCUE conversation instead of resuming the picker —
 #         same display/remote-control name (still the RESCUE instance), just a new
@@ -56,4 +79,16 @@ HELP
   esac
 done
 set -- "${PASS_ARGS[@]}"
+
+# Report anything we couldn't fix — best-effort, never blocks or fails the launch.
+if [ "${#RECOVERY_NOTES[@]}" -gt 0 ]; then
+  {
+    echo ""
+    echo "──────────────── rescueclaude: recovery notes ────────────────"
+    for _n in "${RECOVERY_NOTES[@]}"; do echo "  ⚠ ${_n}"; done
+    echo "──────────────────────────────────────────────────────────────"
+    echo ""
+  } >&2 || true
+fi
+
 exec claude --dangerously-skip-permissions "${RESUME_ARGS[@]}" -n "$CC_TMUX_SESSION" --remote-control "$CC_TMUX_SESSION" "$@"
