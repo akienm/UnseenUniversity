@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.skills-substrate-cleanup-2026-06-27.20260627.125629074866",
+  "emitter": "cc.0",
+  "namespace": [
+    "skills-substrate-cleanup-2026-06-27"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-06-27T12:56:29.074866",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Skills/CLAUDE.md/MCP substrate cleanup + next-session handoff (2026-06-27)",
+    "text": "SESSION CONTEXT (carries what compaction won't):\n\"Opus felt like Haiku\" was diagnosed to TWO causes:\n(1) a single session run 10 days / 124 compactions -> recursive context rot (fixed by starting fresh);\n(2) a self-contradicting instruction surface -> CLAUDE.md said flat-file memory / no-TheIgors /\nUU_ROOT-only, while ~30 skills still said palace / wild_igor / IGOR_HOME / CC_WORKFLOW_TOOLS. The\ncontradiction is what made the model stop trusting its own instructions and improvise (e.g. the\n\"rebuild the MCP bus from scratch, it's not there\" rabbit hole, despite the CLAUDE.md guard that has\nexisted since 2026-05-31 — present but drowned out by the degraded context).\n\nWHAT WAS FIXED (3 commits on main, all bash -n / py_compile clean):\n- 1b01e022 docs: CLAUDE.md self-contradiction (the /sorted -> /migrate-decisions design-workflow\n  section pointed at the DELETED /migrate-decisions skill + retired lab/design_docs/); manifest.json\n  dropped the deleted goal + audit-goal skills.\n- ecd8da20 palace -> flat-file store + TheIgors-cognition gut: day-close Step 12 (palace.days write\n  -> flat-file day roll-up note; dropped dead DSB/docs_sync step); outcome / weekly-retro /\n  audit-hypothesis (palace decision queries -> glob over devlab/runtime/memory/decisions/*.json);\n  audit-audits (marked UNBUILT design-spec; IgorBase -> BaseDevice); eval-run (TheIgors-cognition\n  evals marked deferred; ticket eval -> flat-file; output -> notes/); day-close-audit (gutted 4\n  wild_igor steps, fixed 2 Python syntax errors, schema check -> memory-dir check); audit-day\n  (retired 2 TheIgors-cognition steps); audit-smell (Check 8 palace guidance -> flat-file;\n  SmellEngine(IgorBase) -> BaseDevice).\n- b564910d env-var elimination (CC_WORKFLOW_TOOLS/IGOR_HOME -> ${UU_ROOT:-...}/devlab/claudecode and\n  uu_home() across ~25 skills); TheIgors path purge (query-ticket sourced TheIgors/venv — hard-rule\n  violation — removed; wild_igor/igor -> devices/; dropped retired lab/ from grep targets); stripped\n  model: pins (-> inherit session Opus) from load-bearing skills (context-load, sorted, sprint,\n  sprint-batch, sprint-ticket, audit-precode, audit-ticket, critic; audit-design + audit-hypothesis\n  kept explicit opus); phantom/stale fixes (ticket /savestateauto -> /savestate; audit-ticket\n  skill-consumer path .claude/skills -> repo skills/; audit-expert --area keys synced to run map;\n  commit + sprint-ticket trailer Opus 4.6 -> 4.8; readinbox/sprint-ticket hardcoded paths -> UU_ROOT).\nAlso: ~/.mcp.json emptied (the three dead Igor-wild-0001 servers removed; not a repo file).\n\nFIRST ACTION NEXT SESSION — verify the restore actually works (don't assume):\nconfirm UU skills load (/context-load, /sorted available), you're on Opus, and spot-run one rewritten\nskill that used to hit Postgres (e.g. /outcome list-mode or /weekly-retro Step 1) to confirm the\nflat-file glob returns with no psql/adc.palace error.\n\nDEFERRED BACKLOG — /sorted these (cleanup commits closed UNPROVEN: grep-verified, not\nproof-on-close; a decision capturing this reconciliation is worth filing too):\n1. audit-audits + eval-run are now honestly-marked unbuilt/partially-deferred design specs — they\n   assume a UU telemetry/cognition substrate that doesn't exist. Ticket the substrate, not a fake.\n2. context-load/run instance internals: local var named IGOR_HOME (assigned from uu_home(),\n   functional) + IGOR_INSTANCE_ID-based resolution -> reconcile to canonical CC_TMUX_SESSION\n   instance-id resolution during the substrate pass. Left working, not churned blind.\n3. day-close-audit Step 18.6 reads $IGOR_INSTANCE_ID/igor.switches.cfg gate-state; notify keeps the\n   CC-wild-0001 instance string — functional-but-TheIgors-shaped; confirm or canonicalize.\n4. MCP: re-add bus/storage servers only when one runs against a live credential.\n5. THE BIG DEFERRED THREAD (Akien is doing this next on purpose): gather all dev-process artifacts\n   onto the one canonical substrate (devlab/runtime/memory/) so tools and skills operate on the same\n   ground.\n\nOPERATING CHANGE TO KEEP: do not run a multi-day session. Start fresh daily; treat /compact as a\nwithin-session stopgap; if you've compacted more than a handful of times, a fresh /context-load beats\nanother compaction. Consider a tripwire around ~20 compactions.",
+    "tags": [
+      "handoff",
+      "skills",
+      "substrate-cleanup",
+      "palace-retired",
+      "theigors-purge",
+      "model-pins",
+      "compaction-rot",
+      "deferred-backlog"
+    ]
+  }
+}
