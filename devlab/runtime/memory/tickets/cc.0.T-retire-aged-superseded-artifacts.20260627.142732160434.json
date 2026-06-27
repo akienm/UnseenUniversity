@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-retire-aged-superseded-artifacts.20260627.142732160434",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retire-aged-superseded-artifacts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-27T20:27:32.160434+00:00",
+  "links": {
+    "decisions": [
+      "D-canonical-substrate-consolidation-2026-06-27"
+    ],
+    "tickets": [
+      "T-retire-aged-superseded-artifacts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retire-aged-superseded-artifacts",
+    "title": "[dependency] Retention tier for aged + superseded dev-process artifacts (noise-floor control)",
+    "size": "M",
+    "tags": [
+      "Substrate",
+      "Memory"
+    ],
+    "description": "**Problem (Akien, 2026-06-27):** The canonical store accumulates artifacts that are past effective value. When decision A is later superseded by B, keeping A around a few weeks is useful — but very old superseded decisions and very old closed tickets raise the NOISE FLOOR of every grep/recall over the store. There is currently no retirement/archive tier; everything stays in the active dirs forever.\n**Proposed shape:** A supersession-and-age-aware retention policy + mechanism: (a) when a decision is marked superseded, it ages out of the active set after a grace window (~weeks); (b) very old closed tickets age out similarly; (c) retired artifacts move to an archive tier — candidate destinations: an `archived/` subdir under each devlab/runtime/memory/<cat>/, OR the TheIgorsProject history repo (NOTE: TheIgorsProject is the intended history repository but is currently unorganized — 'whatever made sense at the time'; its own reorg is a separate, later effort and is OUT OF SCOPE here). Archive must stay grep-reachable on demand but be excluded from default recall. Preserve distinct records; never delete (archive, don't destroy).\n**Affected files:** devlab/runtime/memory/** (new archive tier); recall/context-load readers (exclude archive by default); possibly memory_emit.py / *_store retention helpers\n**Design rules:** One home no exceptions (archive is a tier WITHIN the home, not a new scattered location); preserve distinct records; check with Akien before any new ~/ path.\n**Scope boundary:** Design + mechanism for retiring aged/superseded artifacts. Does NOT reorganize TheIgorsProject. Does NOT delete anything (archive only).\n**Test plan:** A superseded decision older than the grace window lands in the archive tier and no longer appears in default recall/context-load, but is still grep-findable; noise-floor (active-store artifact count) measurably drops after a retention pass.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-canonical-substrate-consolidation-2026-06-27",
+    "gate": "T-substrate-artifact-consolidation",
+    "priority": 0.35,
+    "status": "dependency",
+    "created_at": "2026-06-27T20:27:29.626217+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-27T20:27:29.677835+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "b077e225-2917-42e3-80f0-f967023d2d7d"
+  }
+}

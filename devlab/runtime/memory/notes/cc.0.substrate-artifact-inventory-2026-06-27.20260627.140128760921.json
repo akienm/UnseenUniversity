@@ -1,0 +1,23 @@
+{
+  "id": "cc.0.substrate-artifact-inventory-2026-06-27.20260627.140128760921",
+  "emitter": "cc.0",
+  "namespace": [
+    "substrate-artifact-inventory-2026-06-27"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-06-27T14:01:28.760921",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "note_id": "substrate-artifact-inventory-2026-06-27",
+    "title": "Substrate artifact inventory — 2026-06-27 (8 stray files; split far smaller than feared)",
+    "ticket": "T-substrate-artifact-inventory",
+    "decision_id": "D-canonical-substrate-consolidation-2026-06-27",
+    "text": "# Substrate artifact inventory — 2026-06-27\nTicket: T-substrate-artifact-inventory (D-canonical-substrate-consolidation-2026-06-27)\nMethod: `rg --files` over ~ (reach hidden+ignored), skip build/cache noise + ~/.unseen_university/akien,\nkeep dev-artifact filename signatures (*.slate.txt, decisions|tickets|slates|sessions|proofs|rules|\ndesign_patterns|notes|projects|architecture dirs, cc.N.{T,D,S,Q,C,G}-*.json). Sweep file + remainder in\nsession scratchpad.\n\n## Totals (7980 artifact-signature files)\n| Category | Count | Disposition |\n|---|---|---|\n| CANONICAL — devlab/runtime/memory/ | 2478 | already home ✓ |\n| TheIgors-family (TheIgorsProject, TheIgors.archive, TheIgors-cert-walks, .TheIgors) | 4380 | governed by **T-theigors-archive-artifact-freeze** — NOT UU artifacts to migrate |\n| .claude harness store (subagents, tool-results, memory/) | 1110 | EXEMPT (separate product) |\n| Trash/.vscode (incl. pylance \"rules\" false-pos) | 66 | EXEMPT/noise |\n| **REMAINDER — true candidates** | **8** | see below |\n\n## The 8 true candidates (everything outside canonical/TheIgors/.claude/noise)\n### A) repo docs/decisions/ — 3 files\n- docs/decisions/imap-impl.md, mailbox-naming.md, installer-bootstrap.md\n- All carry decision_id **D-adc-phase-0-2026-04-27**, status locked/resolved, dated 2026-04-27.\n- CLAUDE.md note: ADC phase decisions pre-date the FS migration, live outside the store, \"treat as\n  historical spec.\" So these are acknowledged-historical, not accidental drift.\n- PROPOSED: exempt-with-reason (historical ADC spec) OR convert to architecture/ intention-points. Akien's call.\n\n### B) ~/.unseen_university/cc_channel/notes/ — 5 files\n- 2026-03-26 {ebooks-root-path, lost-reading-list, phase2-list-origin, reboot-inprogress},\n  2026-04-03 igor-queue-loop-broken.\n- Stale 2026-03/04 operational scratch in the uu_home() runtime dir (reading-list rebuild; a queue bug).\n- PROPOSED: drop/archive (obsolete runtime-era scratch, not load-bearing) OR migrate to notes/ if any\n  historical value. Akien's call.\n\n## Conclusion\nThe source-of-truth split is far smaller than feared: only 8 stray files, both clusters arguably\nexempt-by-default (ADC historical-spec per CLAUDE.md; runtime-era scratch under uu_home). The gated\nconsolidation (T-substrate-artifact-consolidation) is near-trivial once Akien picks treatment for A and B.\nThis informs D-canonical-substrate-consolidation's hypothesis: the home-wide store is already ~clean.\n"
+  }
+}

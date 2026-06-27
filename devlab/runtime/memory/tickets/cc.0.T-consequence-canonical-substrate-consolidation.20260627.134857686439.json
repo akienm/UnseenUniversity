@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-canonical-substrate-consolidation.20260627.134857686439",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-canonical-substrate-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-27T19:48:57.686439+00:00",
+  "links": {
+    "decisions": [
+      "D-canonical-substrate-consolidation-2026-06-27"
+    ],
+    "tickets": [
+      "T-consequence-canonical-substrate-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-canonical-substrate-consolidation",
+    "title": "[sprint] Consequence check: all dev-artifacts consolidated onto devlab/runtime/memory/",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** Migrated all dev-process artifacts from scattered ~/ paths onto the single canonical substrate devlab/runtime/memory/, deleting verified sources.\n**Predicted unintended effects:** (1) A tool/skill with a hardcoded old artifact path could break silently after its source is deleted — grep for readers of each migrated path BEFORE delete. (2) Over-broad keyword match could sweep in a non-artifact file (e.g. a user doc containing 'project') and migrate it wrongly. (3) Deleting a source that was actually distinct (not a dup) loses data — verify-before-delete must hold. (4) Exempted paths (.TheIgors/certs) could be migrated by mistake if the exemption list is not honored.\n**Signals to watch:** No skill/tool errors referencing a vanished artifact path post-migration; context-load + day-close still read slates/decisions correctly; no user (non-artifact) file landed in the store; exempted paths untouched.\n**Gate condition:** Check by 2026-07-11 or when T-substrate-artifact-consolidation closes.\n**Overlap flag:** Verify TOGETHER with the still-open T-consequence-canonical-memory-consolidation (D-canonical-memory-consolidation-2026-06-23, same 'one home' intention, repo-internal axis) — two consequence tickets for two same-intention decisions; check them as a pair, not in isolation.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-canonical-substrate-consolidation-2026-06-27",
+    "gate": "2026-07-11",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-06-27T19:48:55.419765+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-27T19:48:55.419827+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4d48013f-88e6-4cdb-a801-1a05247197ab"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-canonical-substrate-consolidation-2026-06-27.20260627.134953869908",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-canonical-substrate-consolidation-2026-06-27"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-27T13:49:53.869908",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-canonical-substrate-consolidation-2026-06-27",
+    "title": "Gather all dev-process artifacts onto the one canonical substrate devlab/runtime/memory/",
+    "status": "open",
+    "date": "2026-06-27",
+    "spawned_tickets": [
+      "T-substrate-artifact-inventory",
+      "T-substrate-artifact-consolidation",
+      "T-consequence-canonical-substrate-consolidation"
+    ],
+    "text": "# D-canonical-substrate-consolidation-2026-06-27\n**title:** Gather all dev-process artifacts onto the one canonical substrate devlab/runtime/memory/\n**date:** 2026-06-27\n**status:** open\n**spawned_tickets:** T-substrate-artifact-inventory, T-substrate-artifact-consolidation, T-consequence-canonical-substrate-consolidation\n\n## Decision narrative\nThe next major thread (deferred on purpose from the 2026-06-27 cleanup): gather ALL dev-process artifacts onto the single canonical substrate devlab/runtime/memory/ so tools and skills operate on the same ground (CLAUDE.md: one home, no exceptions). Shape: an inventory ticket runs the Akien-specified home-wide sweep (artifact keywords x {md,json,txt} under ~/) with an explicit exempt-by-default set (uu_home() runtime state, ~/.claude harness store, credentials, .git, .TheIgors/certs) to produce a worklist; then a gated, HIGH-inertia consolidation ticket migrates+verifies+quarantines (not hard-deletes) each path and re-runs the sweep to prove it clean.\n\n**Conflict with prior decision (audit Check-6):** D-canonical-memory-consolidation-2026-06-23 carries the same 'devlab/runtime/memory/ is the sole home' intention and its consequence ticket is still in sprint = UNVERIFIED. This is filed as a SEPARATE decision, not a re-bet, on a real discriminating axis: 06-23 governed REPO-INTERNAL paths (lab/, devlab/design_docs[_for_igor]/, skill write-paths); THIS decision sweeps HOME-WIDE ~/ for stray artifacts outside the repo. The two consequence tickets must be verified TOGETHER (flagged on T-consequence-canonical-substrate-consolidation). Acknowledged: we are re-betting an as-yet-unverified hypothesis 4 days later — the home-wide axis is the justification, not a fresh claim.\n\n## Hypothesis\nAfter consolidation, a sweep across ~/ for dev-artifact patterns finds NO artifacts outside devlab/runtime/memory/ (minus the exempt-by-default set).\n\n## Measurement Signal\nThe Akien-specified grep — (slate|ticket|goal|session|project|proof|rule) x (md|json|txt) under ~/, minus the exempt set (uu_home() / ~/.claude / ~/.unseen_university/akien* / .git / .TheIgors/certs / credentials) — returns empty outside devlab/runtime/memory/. Akien's stated acceptance test: 'I can't find any dev artifacts anymore except in devlab/runtime/memory/.'\n\n## Intention\nI intend that all dev-process artifacts live on one canonical substrate so tools and skills operate on the same ground (CLAUDE.md: canonical dev-process memory, one home, no exceptions)."
+  }
+}

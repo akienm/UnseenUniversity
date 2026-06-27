@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-skills-psql-residue-purge.20260627.134851220654",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-psql-residue-purge"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-27T19:48:51.220654+00:00",
+  "links": {
+    "decisions": [
+      "D-substrate-debt-cleanup-2026-06-27"
+    ],
+    "tickets": [
+      "T-skills-psql-residue-purge"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-psql-residue-purge",
+    "title": "[sprint] Purge vestigial palace/home-DB psql write-paths from sprint-ticket + audit-debris",
+    "size": "S",
+    "tags": [
+      "Skills",
+      "Cleanup"
+    ],
+    "description": "**Problem:** Two skills still reference retired Postgres paths written before the palace->flat-file cutover: sprint-ticket:199 says 'INSERT via psql after approval' for storing palace nodes (the palace is retired; the canonical writer is memory_emit.py to the flat-file store), and audit-debris:54 runs 'psql $UU_HOME_DB_URL' for test-DB cleanup against a home DB that is vestigial. Akien confirmed both are vestigial ('the ticket was written before the change... we do it right and cleanup all the things').\n**Proposed shape:** sprint-ticket — CLEAR-CUT: replace the 'INSERT via psql' palace-node path with the flat-file memory_emit.py path (or, if palace-node capture is itself retired, drop the step). audit-debris — CONTESTED, verify-before-delete: UU_HOME_DB_URL is still COMPOSED in the shell profile (bin/uu_bash_profile_processor.sh:45 builds postgresql://...), so the var is not dead; the question is only whether the test-schema-cleanup check is still meaningful (Akien: vestigial). BLOCKING precondition: confirm with Akien that no live home DB carries test schemas before deleting the check; if a home DB is live, keep it. (Separately note: unseen_university/__init__.py:3-6 is a botched no-op self-rename shim 'UU_HOME_DB_URL → UU_HOME_DB_URL' — out of scope here, flag for a follow-up.)\n**Affected files:** skills/sprint-ticket/SKILL.md, skills/audit-debris/SKILL.md\n**Design rules:** Filesystem memory store is canonical; memory_emit.py is the one write chokepoint. NOTE: Postgres-for-shared-state is still ALLOWED per CLAUDE.md — only the retired palace/home-DB-that-no-longer-exists paths are in scope here, not a blanket psql ban.\n**Scope boundary:** Only the two named residual psql references; do not touch legit Postgres usage elsewhere.\n**Test plan:** grep -rn 'psql' skills/sprint-ticket/SKILL.md skills/audit-debris/SKILL.md returns only intentional/negative refs (or 0); the palace-node path now routes through memory_emit.py.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-substrate-debt-cleanup-2026-06-27",
+    "gate": null,
+    "priority": 0.4,
+    "status": "sprint",
+    "created_at": "2026-06-27T19:48:45.656722+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-27T19:48:45.656825+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4cbf83b7-68ad-4f12-bd59-aa867a96180b"
+  }
+}

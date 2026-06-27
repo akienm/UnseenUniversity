@@ -1,0 +1,25 @@
+{
+  "id": "cc.0.D-adc-phase-0-mailbox-naming-2026-04-27.20260627.142643404700",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-adc-phase-0-mailbox-naming-2026-04-27"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-27T14:26:43.404700",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-adc-phase-0-mailbox-naming-2026-04-27",
+    "title": "Claude Mailbox Naming (CC.0 global + CC.<session>)",
+    "status": "locked",
+    "date": "2026-04-27",
+    "lineage": "D-adc-phase-0-2026-04-27",
+    "spawned_tickets": [],
+    "text": "# Decision: Claude Mailbox Naming\n\n**date:** 2026-04-27  \n**status:** locked  \n**decision_id:** D-adc-phase-0-2026-04-27\n\n---\n\n## Naming scheme\n\n| Mailbox | Purpose |\n|---|---|\n| `CC.0` | Global/broadcast — always present, default delivery target |\n| `CC.<session_id>` | Per-session — isolated mailbox for multi-CC deployments |\n\n## Rationale\n\nMulti-CC scenarios exist (4-machine swarm tested in April 2026). Without\nper-session mailboxes, messages intended for one CC instance would be visible\nto all, causing:\n- Spurious context injection\n- Confusion about who a YGM message is for\n- Double-processing when multiple CC instances share the bus\n\n`CC.0` is the legacy-compatible broadcast. Any CC that doesn't set\n`CLAUDE_SESSION_ID` defaults to reading from `CC.0` — safe for single-instance\ndeployments and backward compatible with pre-mailbox channel patterns.\n\n## Implementation\n\n```python\n# devices/claude/constants.py\nGLOBAL_MAILBOX = \"CC.0\"\nSESSION_MAILBOX_PREFIX = \"CC.\"\nSESSION_ID_ENV_VAR = \"CLAUDE_SESSION_ID\"\n\ndef get_session_mailbox() -> str:\n    session_id = os.environ.get(SESSION_ID_ENV_VAR, \"\").strip()\n    if session_id:\n        return f\"{SESSION_MAILBOX_PREFIX}{session_id}\"\n    return GLOBAL_MAILBOX\n```\n\n## Delivery semantics\n\n- Default delivery target: `CC.0`\n- Explicit target: caller passes `session_id` to address a specific CC instance\n- YGM/Nudge pipeline: pushes to `CC.0` for global nudges; per-session nudges\n  address `CC.<session_id>` of the target CC\n\n## Related tickets\n\n- `T-adc-claude-device-mcp-native` (Phase 3) — Claude device registers using this naming\n- `T-adc-ygm-nudge-pipeline` (Phase 3) — YGM delivers to CC.0 by default\n\n\n---\n*Migrated 2026-06-27 from repo docs/decisions/mailbox-naming.md into the canonical store (T-substrate-artifact-consolidation). Facet of phase-0 decision D-adc-phase-0-2026-04-27; preserved verbatim above. Source removed post-migration.*"
+  }
+}

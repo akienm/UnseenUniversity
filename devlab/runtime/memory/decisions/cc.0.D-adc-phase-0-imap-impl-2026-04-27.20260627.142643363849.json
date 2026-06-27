@@ -1,0 +1,25 @@
+{
+  "id": "cc.0.D-adc-phase-0-imap-impl-2026-04-27.20260627.142643363849",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-adc-phase-0-imap-impl-2026-04-27"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-27T14:26:43.363849",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-adc-phase-0-imap-impl-2026-04-27",
+    "title": "IMAP Bus Implementation (Dovecot prod / Python stub test)",
+    "status": "locked",
+    "date": "2026-04-27",
+    "lineage": "D-adc-phase-0-2026-04-27",
+    "spawned_tickets": [],
+    "text": "# Decision: IMAP Bus Implementation\n\n**date:** 2026-04-27  \n**status:** locked  \n**decision_id:** D-adc-phase-0-2026-04-27\n\n---\n\n## Decision\n\n**Production:** Dovecot  \n**Test fixtures:** Python stub (~80-line asyncio server)\n\n---\n\n## Options evaluated\n\n### Option A: Dovecot\n\n- System dep: `apt install dovecot-imapd dovecot-core` (available, version 2.3.21 on Ubuntu 24.04)\n- Mature IDLE support (RFC 2177)\n- Expire plugin for 24hr message retention (config: `mail_plugins = expire`)\n- Text-file config (`/etc/dovecot/`) — reasonably inspectable\n- Maildir storage: no SQLite, no embedded DB\n- Requires system privileges at install time (package install + service user)\n- Works at work: portable across ubuntu/macOS (macOS via Homebrew)\n- Multi-device pub/sub via IDLE works natively — standard IMAP semantics\n\n### Option B: Pure Python IMAP server\n\n- Spike conducted 2026-04-27: asyncio-based server in ~80 lines handles:\n  - CAPABILITY, LOGIN, SELECT, APPEND, IDLE, DONE, LOGOUT\n  - In-memory message storage (no SQLite — uses `defaultdict(list)`)\n  - IDLE notification via `asyncio.Event`\n- Verified: APPEND via imaplib client succeeds\n- No system dep, controllable from inside the package, testable in-process\n- **Not chosen for production**: no persistence, no TLS, no auth, not a real IMAP implementation. Maintenance burden would grow as we need more RFC compliance.\n\n---\n\n## Tradeoffs\n\n| | Dovecot | Python stub |\n|---|---|---|\n| IDLE | native, RFC-compliant | asyncio.Event (works for tests) |\n| 24hr retention | Expire plugin | not needed (in-memory) |\n| System dep | yes (apt/brew) | none |\n| TLS | built-in | not implemented |\n| Auth | PAM / passwd file | skip (test-only) |\n| Persistence | Maildir on disk | in-memory only |\n| Maintenance | zero (mature project) | grows with RFC coverage |\n\n---\n\n## Architecture\n\nThe bus layer (`bus/`) will:\n1. Try to connect to a running Dovecot instance (localhost:143 or configured port)\n2. If not reachable, use the Python stub **for tests only** (stub raises `TestOnlyError` if called in non-test context)\n3. Never fall back silently — startup fails loudly if Dovecot unreachable in production mode\n\nThe Python stub lives at `tests/fixtures/imap_stub.py`. A starting reference is in `TheIgors/lab/spikes/imap_stub_spike.py`.\n\n---\n\n## What this means for Phase 1\n\n`T-adc-imap-server-embedded` will:\n- Ship Dovecot install + config helper (called by `agentctl init` in Phase 4)\n- Ship `tests/fixtures/imap_stub.py` for in-process test fixtures\n- Bus connection code detects `AGENT_DATACENTER_TEST_MODE=1` and uses stub\n\nNo SQLite at any layer. Dovecot uses Maildir (flat files). Python stub uses `defaultdict`.\n\n---\n\n## Related tickets\n\n- `T-adc-imap-server-embedded` (Phase 1) — Dovecot install helper + Python stub\n- `T-adc-imap-mailbox-lifecycle` (Phase 1) — mailbox create/delete per device lifecycle\n- `T-adc-imap-24hr-retention` (Phase 1) — Dovecot Expire plugin config\n- `T-adc-portable-bootstrap` (Phase 1) — `agentctl init` eventually calls Dovecot setup\n\n\n---\n*Migrated 2026-06-27 from repo docs/decisions/imap-impl.md into the canonical store (T-substrate-artifact-consolidation). Facet of phase-0 decision D-adc-phase-0-2026-04-27; preserved verbatim above. Source removed post-migration.*"
+  }
+}

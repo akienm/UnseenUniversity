@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-compact-memory-index.20260626.213222816863",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-compact-memory-index"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-27T03:32:22.816863+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-compact-memory-index"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-compact-memory-index",
+    "title": "[sprint] Compact MEMORY.md index — nearing the 24.4KB read limit (~20KB, ~100 entries)",
+    "size": "S",
+    "priority": 6,
+    "status": "sprint",
+    "intention": "MEMORY.md stays well under the read limit so the memory index always loads at session start (an over-limit index silently stops loading — directly worsening the forgetfulness it exists to fight).",
+    "description": "MEMORY.md is ~20KB against a 24.4KB read limit (PostToolUse hook flagged it 2026-06-26). Compact to under ~17KB: one line per entry, merge/drop genuinely stale or superseded entries (e.g. duplicate /sorted-vs-/decided naming notes, retired-goal entries once goal purge is fully done), shorten the longest hook descriptions, and push any over-long detail into the topic files. Must NOT drop a live, distinct fact — review each candidate against its topic file before merging/removing (see [[feedback_delete_after_successful_merge]]). Careful judgment task, not a blind trim.\n\n**Affected files:** ~/.claude/projects/-home-akien-dev-src-UnseenUniversity/memory/MEMORY.md (+ topic files if detail moves)\n**Design rules:** none apply (CC auto-memory upkeep; not repo code).\n**Scope boundary:** IN — shrink the index under the limit without losing distinct facts. OUT — rewriting topic-file bodies wholesale; auditing every memory for correctness (separate).\n**Test plan:** After: `wc -c MEMORY.md` < 17400; spot-check that every pre-compaction topic file still has an index line (or was intentionally merged with a note); no live fact lost.\n**Completion criteria:** MEMORY.md under ~17KB, one line per surviving entry, no distinct fact dropped, reviewed with Akien if any entry is removed rather than merged.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-27T03:32:20.526956+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-27T03:32:20.575768+00:00"
+  }
+}

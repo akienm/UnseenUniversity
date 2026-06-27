@@ -1,0 +1,26 @@
+# Slate — 2026-06-27
+
+## Rewound? (read this if you were rewound, not compacted)
+A rewind rolls your CONVERSATION back but NOT git/this slate — so your memory is now BEHIND reality. Read this slate + `git log --oneline -10`, trust slate+git over your memory, and `git status` for working-tree divergence (a code-rewind can delete committed files — `git restore` fixes it) before acting.
+
+## Summary
+(empty — session just started)
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+- D-substrate-debt-cleanup-2026-06-27: clean TheIgors/palace residue in skills (instance-id, MCP re-add, palace-psql, audit blocked-banners) — T-canonical-instance-id-resolution, T-mcp-bus-storage-servers-live-cred, T-skills-psql-residue-purge, T-audit-specs-blocked-on-telemetry-substrate, T-consequence-substrate-debt-cleanup
+- D-canonical-substrate-consolidation-2026-06-27: gather all dev-process artifacts onto devlab/runtime/memory/ (home-wide; distinct from repo-internal 06-23) — T-substrate-artifact-inventory, T-substrate-artifact-consolidation (gated), T-consequence-canonical-substrate-consolidation
+
+## Session close 2026-06-27
+Done: Done: /sorted'd substrate-cleanup backlog (2 decisions, 8 tickets, audit-amended); ran artifact inventory live (only 8 true UU strays — migrated 3 ADC phase-0 decisions to JSON, quarantined 5 stale notes, re-sweep clean); filed T-retire-aged-superseded-artifacts + T-reconcile-split-package-trees (root vs unseen_university/ Sonnet split-brain); compacted MEMORY index 20.4->15.2KB; saved fresh-start-daily + one-lineage memories.
+Next: Next: re-capture EXPANDED all-generations consolidation via /sorted (TheIgors/UC/ADC/UU = ONE project, absorb all ~14.5G into devlab/runtime/memory/, deep-freeze dead->TheIgorsProject, laptop-wide noise reduction) — then full discovery across all generations, then sequence absorb->freeze->delete. Also: T-reconcile-split-package-trees Q1 (canonical layout) needs Akien.
+
+## In-flight: All-generations artifact consolidation is the next major thread (expands D-canonical-substrate-consolidation): one project across TheIgors/UC/ADC/UU → absorb all into devlab/runtime/memory/, deep-freeze dead→TheIgorsProject. SCOPE: target = /home/akien ONLY; EXCLUDE ~/.unseen_university/akien (→onedrive); ~/.unseen_university itself in scope. METHOD: Haiku generates per-path migrate/archive/delete rec-list → Akien+CC review before acting. Today's substrate work done+durable, pending commit.

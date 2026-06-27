@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-substrate-artifact-consolidation.20260627.134857550618",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-substrate-artifact-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-27T19:48:57.550618+00:00",
+  "links": {
+    "decisions": [
+      "D-canonical-substrate-consolidation-2026-06-27"
+    ],
+    "tickets": [
+      "T-substrate-artifact-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-substrate-artifact-consolidation",
+    "title": "[dependency] Migrate all dev-process artifacts onto devlab/runtime/memory/; prove the sweep clean",
+    "size": "L",
+    "tags": [
+      "Substrate",
+      "Memory"
+    ],
+    "description": "**Problem:** Once the inventory (T-substrate-artifact-inventory) lists artifacts living outside devlab/runtime/memory/, they must be reconciled onto the one canonical substrate so tools and skills operate on the same ground. Until then, grep-based readers and the write-path are split.\n**Proposed shape:** For each path on the inventory worklist: migrate into the correct devlab/runtime/memory/ subdir (decisions/tickets/slates/sessions/rules/proofs/design_patterns/notes/projects/architecture) via the canonical writer (memory_emit.py / the relevant *_store), VERIFY the migrated copy, then QUARANTINE the source (move to a holding dir, NOT hard-delete) until the end-of-ticket clean-sweep proof passes — only then un-quarantine (delete). **ROLLBACK (HIGH-inertia, non-negotiable):** do the whole migration as ONE git commit so `git revert` restores it, and the quarantine (not hard-delete) means a wrong move is recoverable until the sweep proves clean. Quarantine resolves the tension with the 'no shadow duplicates' lesson — it is temporary (deleted once proven), not a permanent shadow. **SPLIT option (flagged to Akien, not forced):** this can split into (a) migrate+verify+quarantine and (b) delete-quarantine gated on (a)'s clean sweep — decide at sprint time. Honor the inventory's exempt-by-default set (uu_home() runtime state / ~/.claude harness store / ~/.unseen_university/akien* / .git / .TheIgors/certs / credential-shaped files) — record each exemption, do not move blind. Re-run the inventory sweep at the end to prove it returns empty outside the canonical store + recorded exemptions.\n**Affected files:** devlab/runtime/memory/** (destination); various source paths under ~/ (per inventory). HIGH-inertia — touches the memory substrate broadly; requires Akien pre-approval before the migration/delete step.\n**Design rules:** One home no exceptions; memory_emit.py is the write chokepoint; migrate->VERIFY->delete (no shadow dups); preserve distinct records, delete only confirmed dups; check with Akien before touching .TheIgors/certs or any ~/.unseen_university path.\n**Scope boundary:** Only artifacts on the inventory worklist. Each move: verify-then-delete-source. Exemptions recorded, not silently skipped.\n**Test plan:** After migration, the Akien sweep — (slate|ticket|goal|session|project|proof|rule)x(md|json|txt) under ~/ minus the exempt-by-default set (uu_home() / ~/.claude / ~/.unseen_university/akien* / .git / .TheIgors/certs / credentials) — returns empty outside devlab/runtime/memory/. Akien's stated acceptance: 'I can't find any dev artifacts anymore except in devlab/runtime/memory/.' Spot-check a migrated record is readable via its canonical store.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-canonical-substrate-consolidation-2026-06-27",
+    "gate": "T-substrate-artifact-inventory",
+    "priority": 0.45,
+    "status": "dependency",
+    "created_at": "2026-06-27T19:48:53.505929+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-27T19:48:53.506035+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8f1e5830-5e4f-4d32-b6bc-903a4cc92209"
+  }
+}

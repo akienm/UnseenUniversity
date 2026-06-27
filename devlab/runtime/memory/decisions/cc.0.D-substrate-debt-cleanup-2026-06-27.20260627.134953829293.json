@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-substrate-debt-cleanup-2026-06-27.20260627.134953829293",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-substrate-debt-cleanup-2026-06-27"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-27T13:49:53.829293",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-substrate-debt-cleanup-2026-06-27",
+    "title": "Clean TheIgors/palace-shaped residue from skills surfaced by the 2026-06-27 de-contradiction pass",
+    "status": "open",
+    "date": "2026-06-27",
+    "spawned_tickets": [
+      "T-canonical-instance-id-resolution",
+      "T-mcp-bus-storage-servers-live-cred",
+      "T-skills-psql-residue-purge",
+      "T-audit-specs-blocked-on-telemetry-substrate",
+      "T-consequence-substrate-debt-cleanup"
+    ],
+    "text": "# D-substrate-debt-cleanup-2026-06-27\n**title:** Clean TheIgors/palace-shaped residue from skills surfaced by the 2026-06-27 de-contradiction pass\n**date:** 2026-06-27\n**status:** open\n**spawned_tickets:** T-canonical-instance-id-resolution, T-mcp-bus-storage-servers-live-cred, T-skills-psql-residue-purge, T-audit-specs-blocked-on-telemetry-substrate, T-consequence-substrate-debt-cleanup\n\n## Decision narrative\nThe 2026-06-27 skills/CLAUDE.md/MCP de-contradiction pass (commits 1b01e022, ecd8da20, b564910d) closed unproven / grep-verified and left a residue tail of functional-but-TheIgors-shaped surfaces in skills. This decision captures four concrete cleanups: (1) one canonical instance-id resolution (CC_TMUX_SESSION via the SHIPPED unseen_university/identity.py resolvers from D-uu-config-identity-layer-2026-06-22) across context-load/run, day-close-audit Step 18.6, and notify; (2) record the live-credential precondition for re-adding bus/storage MCP servers (the old three were dead Igor-wild-0001); (3) purge retired palace/home-DB psql write-paths from sprint-ticket (palace INSERT -> memory_emit.py, clear-cut) and audit-debris (home-DB test-schema check, verify-before-delete since UU_HOME_DB_URL is still composed in the shell profile); (4) standardize the ALREADY-EXISTING blocked banners on audit-audits/eval-run and cite the precise blocker (unwired telemetry emission, NOT a missing ticket — T-audit-telemetry-shape is done).\n\n**Rejected alternative:** a blind-sed repo-wide sweep of the residue patterns. Rejected because instance-id resolution and the home-DB psql check need per-site judgment (igor.switches.cfg gate-state may have no canonical equivalent; UU_HOME_DB_URL is still live) — a blind sed would churn working code and could delete a live check. Chosen: deliberate per-site edits, left working at every step (the 'wait for the better lever' / no-blind-churn discipline).\n\n## Hypothesis\nAfter these tickets ship, grep across skills/ for TheIgors residue (IGOR_INSTANCE_ID, IGOR_HOME, CC-wild-0001 hardcodes, retired-palace psql write-paths, dead-credential MCP re-adds) returns zero FUNCTIONAL call sites — only canonical CC_TMUX_SESSION / memory_emit.py / flat-file paths remain, and the audit-audits/eval-run blocked-banners name their precise blocker.\n\n## Measurement Signal\ngrep -rn the residue patterns in skills/ = 0 functional hits; audit-audits + eval-run carry consistent blocked-banner wording naming the unwired-emission gap. (Note: the audit found the blocked-banners already largely exist — the signal is partly satisfied at filing; the ticket standardizes rather than adds.)\n\n## Intention\nI intend that the instruction surface (skills + CLAUDE.md + runtime) is internally consistent, so the model trusts its own instructions — the root cause diagnosed for the 2026-06-26 'Opus felt like Haiku' degradation."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-substrate-artifact-inventory.20260627.134857435458",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-substrate-artifact-inventory"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-27T19:48:57.435458+00:00",
+  "links": {
+    "decisions": [
+      "D-canonical-substrate-consolidation-2026-06-27"
+    ],
+    "tickets": [
+      "T-substrate-artifact-inventory"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-substrate-artifact-inventory",
+    "title": "[sprint] Inventory: grep ~/ for dev-process artifacts living outside devlab/runtime/memory/",
+    "size": "M",
+    "tags": [
+      "Substrate",
+      "Memory"
+    ],
+    "description": "**Problem:** Dev-process artifacts (slates, tickets, goals, sessions, projects, proofs, rules, decisions, notes) may still live in paths other than the one canonical substrate devlab/runtime/memory/. CLAUDE.md mandates one home, no exceptions; a renamed store with surviving write-paths silently splits the source of truth. Before migrating we need the worklist.\n**Proposed shape:** Run the Akien-specified sweep across ~/ : for each artifact type keyword (slate, ticket, goal, session, project, proof, rule, decision, note, design_pattern, architecture) cross filename/content with md / json / txt; scope to ~/ . **WHAT MOVES vs WHAT STAYS (critical — encode this, don't rediscover it mid-migration):** only canonical dev-process artifact TYPES migrate. EXEMPT-BY-DEFAULT (these match keywords but are NOT UU dev artifacts — they must NOT migrate): (1) uu_home() runtime state — all of ~/.unseen_university/ (logs, flags, device cachedstate, vault, palace_echo); CLAUDE.md: uu_home is 'not the repo'. (2) The harness's own store ~/.claude/ (its MEMORY.md + project_*/feedback_*/session files — a separate product). (3) Akien's personal area ~/.unseen_university/akien*. (4) .git/ anywhere. (5) /home/akien/.TheIgors/certs (Akien-flagged). (6) Any credential-shaped file (no-keys-in-repo rule — the sweep pulls arbitrary ~/ files toward a git-tracked dir). This is the artifact-vs-runtime-state line CLAUDE.md draws between devlab/runtime/memory/ and uu_home(). Produce a categorized worklist: path -> artifact-type -> in-canonical-store? -> proposed action (migrate / exempt-with-reason / already-canonical). Write the inventory to devlab/runtime/memory/notes/.\n**Affected files:** devlab/runtime/memory/notes/substrate-artifact-inventory.YYYYMMDD.md (output only)\n**Design rules:** Canonical dev-process memory — one home (CLAUDE.md); artifact-types move, uu_home()/~/.claude/credentials runtime state STAYS; delete old copies only AFTER verified migration (separate ticket); check with Akien before touching .TheIgors/certs.\n**Cross-ref:** Coordinate with the OPEN T-theigors-archive-artifact-freeze — it already governs the TheIgors archive dirs under ~/. The inventory must NOT re-propose moving anything that freeze-ticket covers; tag those paths 'governed by T-theigors-archive-artifact-freeze' rather than 'migrate'.\n**Scope boundary:** Discovery + worklist ONLY. Do not move, delete, or migrate anything in this ticket.\n**Test plan:** The inventory note exists and lists every artifact-bearing path under ~/ outside devlab/runtime/memory/ (minus excludes), each tagged with a proposed action. This inventory IS the baseline measurement for the consolidation hypothesis.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set\n\n**Provenance / method (Akien, 2026-06-27):** This grep-by-artifact-type approach REPLACES an abandoned folder-by-folder enumeration — Akien started listing folders to review, the list exploded, so he switched to grepping for the artifact TYPES directly and found all the artifacts that way. So: do NOT try to enumerate directories first (that path dead-ends); sweep by type. Use `rg` (ripgrep 14.1.0 is installed) — faster than grep -r and respects .gitignore, with explicit -uu / --no-ignore when you need to reach dotfiles and ignored paths under ~/. Honor the exempt-by-default set above.",
+    "decision_id": "D-canonical-substrate-consolidation-2026-06-27",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-06-27T19:48:51.712831+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-27T19:48:51.758629+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "ee4a7069-23fa-4f39-84e6-e81d458a6151"
+  }
+}
