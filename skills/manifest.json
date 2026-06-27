@@ -44,13 +44,6 @@
       ],
       "deploy": true
     },
-    "audit-goal": {
-      "category": "machine-agnostic",
-      "machines": [
-        "*"
-      ],
-      "deploy": true
-    },
     "audit-hypothesis": {
       "category": "machine-agnostic",
       "machines": [
@@ -178,13 +171,6 @@
       "deploy": true
     },
     "fixit": {
-      "category": "machine-agnostic",
-      "machines": [
-        "*"
-      ],
-      "deploy": true
-    },
-    "goal": {
       "category": "machine-agnostic",
       "machines": [
         "*"

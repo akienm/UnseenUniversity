@@ -187,19 +187,13 @@ touch ~/.granny/available/CC.0.available.true
 
 ---
 
-## Design workflow: /sorted → /migrate-decisions
+## Design workflow: /sorted writes straight to the memory store
 
-**After filing decisions with `/sorted`**, decisions are written to `lab/design_docs/decisions/D-*.md` but not yet visible to `/context-load` or other tools that read the filesystem memory store. 
-
-**Next step: run `/migrate-decisions`** to project the decision markdown into `devlab/runtime/memory/decisions/` as JSON:
-
-```
-/sorted <summary>                    # File decision + tickets
-/migrate-decisions                   # Project decision to memory store
-/context-load                        # Now sees the new decision
-```
-
-The projection is fail-open (migration errors never block `/sorted`). Run it immediately after `/sorted` completes so recent decisions appear in the next `/context-load`.
+`/sorted` files the decision JSON directly into `devlab/runtime/memory/decisions/`
+(and tickets into `tickets/`) — there is no projection step. It is visible to
+`/context-load` and every grep-based reader immediately. *(The old
+`/migrate-decisions` projection out of `lab/design_docs/` is retired — `/migrate-decisions`
+is deleted and `lab/` is not a write target; see Structural rules.)*
 
 ---
 
