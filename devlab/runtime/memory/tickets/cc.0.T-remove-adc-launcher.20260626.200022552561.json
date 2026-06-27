@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-remove-adc-launcher.20260626.200022552561",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-adc-launcher"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-27T02:00:22.552561+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-remove-adc-launcher"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-adc-launcher",
+    "title": "[in_progress] Remove the dead ADC-named launcher wrappers (bin/adc, bin/adc.ps1)",
+    "size": "S",
+    "priority": 7,
+    "status": "in_progress",
+    "intention": "No 'adc' (Agent Data Center) launcher artifact survives anywhere in the repo; the name is a dead migration stage (Igor -> Utility Closet -> Agent Data Center -> Unseen University).",
+    "description": "ADC (Agent Data Center) is a retired migration stage of this project; the `adc` launcher name is wrong wherever it appears. bin/adc and bin/adc.ps1 are the only operational adc artifacts — POSIX + Windows bootstrap wrappers that create a venv then delegate to the still-live `agentctl` CLI. uu (bin/uu) is the current view/control dispatcher. Remove both adc wrappers. agentctl itself stays (live console_scripts entry in pyproject.toml, documented installer CLI in README) — it is not 'adc'. Historical memory records (T-adc-*), the retired adc.palace Postgres schema, and CLAUDE.md phase-decision references are legitimate history and out of scope.\n\n**Affected files:** bin/adc (delete), bin/adc.ps1 (delete)\n**Design rules:** none apply (deleting dead launcher scripts; no memory-shape, no persistence, no sqlite). delete-after-successful-merge pattern: uu already replaced adc, so this is the remove-behind step.\n**Scope boundary:** IN — delete bin/adc + bin/adc.ps1. OUT — agentctl (live), adc.palace schema, historical T-adc-* memory records, CLAUDE.md phase refs, and the separate stale root superclaude/superclaude.ps1 duplicates (different issue, flagged separately).\n**Test plan:** After deletion: `git ls-files | grep -E '(^|/)adc(\\.|$)'` returns empty; `which adc` no longer resolves into the repo; `pip install -e .` still succeeds (adc was not a packaged entry point — only agentctl is). No automated test for launcher-script presence exists.\n**Completion criteria:** bin/adc and bin/adc.ps1 are gone from the tree, the grep above is empty, and the removal is committed referencing this ticket.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-27T02:00:20.234571+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-27T02:00:20.278669+00:00"
+  }
+}
