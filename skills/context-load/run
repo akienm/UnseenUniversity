@@ -112,26 +112,62 @@ def step_1_today_slate() -> None:
         )
         print(f"✓ Step 1: Slate created")
     else:
-        # Read and surface the summary for orientation
+        # Surface the LIVE hand-off for orientation. The slate accumulates
+        # appended `## In-flight` and `## Session close` sections over the day —
+        # the LAST of each is the live hand-off (the `Next:` line is what you act
+        # on, NOT /query-ticket). Summary is shown only as a fallback.
         content = slate.read_text(encoding="utf-8")
         lines = content.split("\n")
-        in_summary = False
-        summary_lines = []
-        for line in lines:
-            if line.startswith("## Summary"):
-                in_summary = True
-                continue
-            if line.startswith("##") and in_summary:
-                break
-            if in_summary and line.strip():
-                summary_lines.append(line.rstrip())
 
-        if summary_lines:
-            print(f"✓ Step 1: Slate (today's summary):")
-            for line in summary_lines[:5]:  # cap at 5 lines
+        def last_section(header_prefix):
+            """Body lines of the LAST section matching header_prefix.
+
+            Handles both slate styles: a header on its own line with body lines
+            below (`## In-flight\\nNONE`), and an inline header that carries its
+            text after a colon (`## In-flight: Launchers...`).
+            """
+            captured = []
+            cur, in_sec = [], False
+            for line in lines:
+                if line.startswith("## "):
+                    if in_sec:
+                        captured = cur
+                    in_sec = line.startswith(header_prefix)
+                    # Inline-header style: text rides on the header line after a
+                    # colon (`## In-flight: ...`). A space-separated suffix like a
+                    # date (`## Session close 2026-06-26`) is NOT inline content.
+                    rest = line[len(header_prefix):]
+                    inline = rest.split(":", 1)[1].strip() if rest.startswith(":") else ""
+                    cur = [inline] if (in_sec and inline) else []
+                    continue
+                if in_sec and line.strip():
+                    cur.append(line.rstrip())
+            if in_sec:  # section ran to EOF
+                captured = cur
+            return captured
+
+        inflight = last_section("## In-flight")
+        close = last_section("## Session close")
+        summary = last_section("## Summary")
+
+        printed = False
+        if inflight and inflight != ["NONE"]:
+            print("✓ Step 1: Slate — latest In-flight (the live hand-off):")
+            for line in inflight[:6]:
                 print(f"  {line}")
-        else:
-            print(f"✓ Step 1: Slate ready")
+            printed = True
+        if close:
+            print("✓ Step 1: Slate — last Session close (act on `Next:`):")
+            for line in close[:4]:
+                print(f"  {line}")
+            printed = True
+        if not printed:
+            if summary and summary != ["(empty — session just started)"]:
+                print("✓ Step 1: Slate (summary):")
+                for line in summary[:5]:
+                    print(f"  {line}")
+            else:
+                print("✓ Step 1: Slate ready (no hand-off — read it whole before /query-ticket)")
 
 
 # ─── shared: decisions newest-first by emitted_at ───

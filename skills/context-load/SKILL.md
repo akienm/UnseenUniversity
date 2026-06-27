@@ -6,6 +6,14 @@ model: haiku
 
 # context-load — Session startup
 
+> ## ⛔ THE SESSION ALWAYS STARTS BY READING THE SLATE.
+> The first move of every session is **Read The Slate for the Day** (today's, or
+> yesterday's if today has none yet) — read it **whole**, especially the bottom
+> `## In-flight` and `## Session close → Next` lines, which carry the live hand-off.
+> **`/query-ticket` is NOT the entry point and never starts a session** — proposing
+> it first is an error. The slate's `Next:` line is what you act on; `/query-ticket`
+> is only for picking *new* work once the slate's hand-off is exhausted.
+
 **Entry point after compaction.** Reads from the canonical **filesystem memory
 store** (`devlab/runtime/memory/`) — NOT the retired Postgres palace. There is no
 `psql`, no `memory_palace` / `adc.palace`, no `.dsb` anywhere in this flow
@@ -32,7 +40,7 @@ that was the bug fixed in T-skills-palace-db-to-fs-store.)
 | 0 | `~/.granny/available/` ← device cachedstate | Restores this CC's availability flag |
 | 0.25 | `slate_store` prior-day slate | Warns if the previous day's slate has open items and no `✅ CLOSED` |
 | 0.5 | `IGOR_HOME/$IGOR_INSTANCE_ID/` | Sets the debug session flag |
-| 1 | `slate_store.today_slate_path()` | Ensures today's slate exists; prints its `## Summary` |
+| 1 | `slate_store.today_slate_path()` | Ensures today's slate exists; surfaces the **live hand-off** — last `## In-flight` + last `## Session close` (`Next:`). Read the slate whole; act on `Next:`, not `/query-ticket`. |
 | 2a | `devlab/runtime/memory/decisions/*.json` | 3 most-recent decisions **by `emitted_at`** (not filename order) |
 | 2b | `devlab/runtime/memory/` | Lists the memory subdirs (decisions, tickets, slates, …) |
 | 3 | `devlab/runtime/memory/decisions/*.json` | 5 most-recent decisions with **status** (`[open]`, `[superseded…]`, …) |

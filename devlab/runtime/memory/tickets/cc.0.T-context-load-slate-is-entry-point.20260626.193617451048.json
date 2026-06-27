@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.T-context-load-slate-is-entry-point.20260626.193617451048",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-context-load-slate-is-entry-point"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-27T01:36:17.451048+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-context-load-slate-is-entry-point"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-context-load-slate-is-entry-point",
+    "title": "[in_progress] context-load starts the session by reading the slate, not /query-ticket",
+    "size": "S",
+    "priority": 7,
+    "status": "in_progress",
+    "intention": "A resumed session reflexively reads the day's slate whole and acts on its Next: hand-off; /query-ticket is never the first move.",
+    "description": "context-load never named the slate as the session entry point, and Step 1 of the `run` script only extracted `## Summary` — a section today's slates don't carry — so context-load surfaced nothing actionable and CC defaulted to proposing /query-ticket first (an error). Two-part fix: (1) SKILL.md gains a hard-stop banner — the session ALWAYS starts by reading the day's slate whole (today's, or yesterday's if none); /query-ticket is NOT the entry point; act on the slate's `Next:` line. (2) Step 1 surfaces the live hand-off (last `## In-flight` + last `## Session close` `Next:`) instead of `## Summary`, handling both slate styles (body-below and inline `## In-flight: ...`), and suppressing space-separated header suffixes (dates) from inline capture.\n\n**Affected files:** skills/context-load/SKILL.md, skills/context-load/run\n**Design rules:** none apply (skill-doc + read-only orientation script; no memory-shape or persistence change, no sqlite). test-plan-or-why-not satisfied below.\n**Scope boundary:** IN — context-load SKILL.md banner + Step 1 hand-off surfacing in `run`. OUT — changing slate format/schema, day-close, /query-ticket itself, or any other skill.\n**Test plan:** Exec `step_1_today_slate()` against the 20260626 slate and confirm it emits the launcher `## In-flight` note + the `Next: /sprint T-mcp-dispatch-by-addressee` line, with no date-suffix noise from the `## Session close 2026-06-26` header. (Done — verified manually this session; no automated test harness exists for context-load `run` steps.)\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-27T01:36:15.048075+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-27T01:36:15.094158+00:00"
+  }
+}
