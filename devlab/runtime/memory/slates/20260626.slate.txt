@@ -18,6 +18,7 @@ NONE
 - T-skills-audit-hypothesis-goal-reframe — Remove G-xxx goal-link check from audit-hypothesis (Check 3) (Check 3 reframed to 'Intention is present and well-formed'; all G-xxx/palace.goals/goal-link vocabulary removed. grep = )
 - T-skills-goals-to-intentions — Skills track intentions, not goals (drop G-xxx goal-tracking) (Removed links.goals from the live emission schema (LINK_KINDS in memory_emit.py, _LINK_KEYS in ticket_store.py) + update)
 - T-mcp-finish-igor-librarian-migration — Finish igor->librarian MCP migration: delete the duplicate `igor` alias (Repointed all 10 live mcp__igor__ refs across 7 files to mcp__librarian__ (1:1 rename; igor/librarian were byte-identica)
+- T-context-load-slate-is-entry-point — [awaiting_validation] context-load starts the session by reading the slate, not /query-ticket (Fixed: SKILL.md hard-stop banner makes the slate the session entry point (not /query-ticket); Step 1 of run now surfaces)
 ## FIRST UP — /sorted: git-stash attribution + hygiene (design DONE 2026-06-26 ~06:30 w/ Akien)
 
 PROBLEM: stale/anonymous git stashes are hidden cross-session divergent state. Bit us
