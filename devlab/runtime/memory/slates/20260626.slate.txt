@@ -20,6 +20,7 @@ NONE
 - T-mcp-finish-igor-librarian-migration — Finish igor->librarian MCP migration: delete the duplicate `igor` alias (Repointed all 10 live mcp__igor__ refs across 7 files to mcp__librarian__ (1:1 rename; igor/librarian were byte-identica)
 - T-context-load-slate-is-entry-point — [awaiting_validation] context-load starts the session by reading the slate, not /query-ticket (Fixed: SKILL.md hard-stop banner makes the slate the session entry point (not /query-ticket); Step 1 of run now surfaces)
 - T-remove-adc-launcher — [awaiting_validation] Remove the dead ADC-named launcher wrappers (bin/adc, bin/adc.ps1) (Removed bin/adc + bin/adc.ps1 (dead ADC bootstrap wrappers). Proof: git ls-files grep for adc launcher files is empty; w)
+- T-launcher-help-and-1m-flags — [awaiting_validation] superclaude/rescueclaude gain --help and --1m flags; root scripts become bin/ pass-throughs (Implemented --1m (ANTHROPIC_MODEL=opus[1m], off by default, flag consumed) + --help (wrapper flags then claude --help) o)
 ## FIRST UP — /sorted: git-stash attribution + hygiene (design DONE 2026-06-26 ~06:30 w/ Akien)
 
 PROBLEM: stale/anonymous git stashes are hidden cross-session divergent state. Bit us
@@ -80,3 +81,5 @@ Done: Done: rescueclaude + resumeclaude moved into repo bin/, gained --new flag,
 Next: Next: /sprint T-mcp-dispatch-by-addressee (L, sprint-ready — full design resolved)
 
 ## In-flight: Context-load skill floorboard fixed (awaiting_validation); ready for /sprint T-mcp-dispatch-by-addressee (L, sprint-ready, design resolved).
+
+## In-flight: Launcher --1m/--help + root pass-throughs shipped (T-launcher-help-and-1m-flags, awaiting_validation). --1m relaunch is the forgetfulness A/B lever — Akien to test.
