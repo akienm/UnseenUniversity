@@ -44,27 +44,12 @@ If the decision predates hypothesis tracking (no `## Hypothesis` section), note 
 Based on the measurement signal stated at /sorted time, collect current data. Common patterns:
 
 ```bash
-# NE cycle health
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT date_trunc('day', created_at), COUNT(*) as cycles,
-          AVG((metadata->>'valence')::float) as avg_valence
-   FROM clan.memories WHERE memory_type='NE_CYCLE'
-     AND created_at > now() - interval '14 days'
-   GROUP BY 1 ORDER BY 1"
+# Whatever the hypothesis named — read it from the canonical substrate.
+# Device logs (canonical hierarchy ~/.unseen_university/logs/<device>/<stream>/):
+grep -rh "HYPOTHESIZE\|<signal>" ~/.unseen_university/logs/*/info/ 2>/dev/null | tail -50
 
-# pe_chain success rate (from flight recorder logs)
-grep "HYPOTHESIZE" ~/.unseen_university/$IGOR_INSTANCE_ID/logs/*.log 2>/dev/null | \
-  grep -c "success\|error" | head -20
-
-# proposals accumulation
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT source_module, COUNT(*) FROM instance.proposals
-   WHERE source_module != 'test' GROUP BY 1"
-
-# done:closed ratio trend
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT metadata->>'status', COUNT(*) FROM clan.memories
-   WHERE parent_id='TICKETS_ROOT' GROUP BY 1 ORDER BY 2 DESC"
+# Tickets / decisions / notes — grep the flat-file memory store directly:
+grep -rl "<signal>" "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/" 2>/dev/null
 ```
 
 Use whatever data source the hypothesis named. If no specific source was named, use the most relevant observable proxy.
@@ -99,7 +84,9 @@ EOF
 )
 OUTCOME="$OUTCOME" python3 - "$DECISION_FILE" <<'PY'
 import json, os, sys, subprocess
-sys.path.insert(0, os.environ["CC_WORKFLOW_TOOLS"])
+from unseen_university._uu_root import uu_root
+TOOLS = str(uu_root() / "devlab" / "claudecode")
+sys.path.insert(0, TOOLS)
 from memory_emit import parse_filename
 path = sys.argv[1]
 rec = json.load(open(path))
@@ -108,17 +95,15 @@ body["text"] = body.get("text", "") + os.environ["OUTCOME"]
 body["outcome_date"] = __import__("datetime").date.today().isoformat()
 open("/tmp/outcome_body.json", "w").write(json.dumps(body))
 stamp = parse_filename(os.path.basename(path))["stamp"]   # reuse → atomic overwrite
-subprocess.run([sys.executable, os.path.join(os.environ["CC_WORKFLOW_TOOLS"], "memory_emit.py"),
+subprocess.run([sys.executable, os.path.join(TOOLS, "memory_emit.py"),
     "--category", "decisions", "--emitter", rec["emitter"], "--kind", "decision",
     "--namespace", body["decision_id"], "--stamp", stamp,
     "--body-file", "/tmp/outcome_body.json"], check=True)
 PY
 ```
 
-Also update the palace node:
-```python
-# Update metadata: outcome, outcome_date, verdict
-```
+The decision JSON now carries the outcome (Step 4 wrote `## Outcome` + `outcome_date`
+into it). No second store to update — the flat-file record is canonical.
 
 ### 5. Surface to Akien
 
@@ -138,14 +123,18 @@ If **too_early**: set a calendar note or slate entry for the re-check date.
 ## Steps — /outcome (list mode)
 
 ```bash
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT path, title, metadata->>'date'
-   FROM adc.palace
-   WHERE path LIKE 'palace.decisions.%'
-     AND metadata->>'outcome' IS NULL
-     AND metadata->>'status' = 'open'
-   ORDER BY updated_at ASC
-   LIMIT 20"
+# Decisions in the flat-file store with no ## Outcome / outcome_date yet.
+python3 - <<'PY'
+import json, glob, os
+root = os.environ.get("UU_ROOT", os.path.expanduser("~/dev/src/UnseenUniversity"))
+rows = []
+for f in glob.glob(f"{root}/devlab/runtime/memory/decisions/*.json"):
+    b = json.load(open(f)).get("body", {})
+    if not b.get("outcome_date") and "## Outcome" not in b.get("text", ""):
+        rows.append((b.get("decision_id", "?"), b.get("title", "")))
+for did, title in sorted(rows)[:20]:
+    print(f"{did}: {title}")
+PY
 ```
 
 Print as:

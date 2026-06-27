@@ -6,6 +6,10 @@ model: sonnet
 
 # audit-audits — Meta-audit over telemetry
 
+> **Status: design spec, not yet built.** The analyzer engine is unimplemented,
+> pending `T-audit-telemetry-shape` and the flat-file telemetry substrate under
+> `devlab/runtime/memory/`. Treat the steps below as intended design until it ships.
+
 The pyramid catches code drift. `audit-audits` catches *audit drift* —
 the system slowly becoming worse at watching itself. Without this layer,
 checks that used to matter become noise; smells that should have been
@@ -217,12 +221,10 @@ SINCE=$(date -d "$WINDOW_DAYS days ago" -Iseconds)
 
 ### 2. Read the corpus
 
-```sql
-SELECT path, content, updated_at
-FROM clan.memory_palace
-WHERE path LIKE 'unseenuniversity/audits/%/runs/%'
-  AND updated_at >= '<since>'
-ORDER BY path
+```bash
+# Audit telemetry lives in the flat-file store (shape locked by T-audit-telemetry-shape).
+find "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/" \
+  -path '*/audits/*/runs/*.json' -newermt "<since>" | sort
 ```
 
 Plus watch_next nodes, plus the overrides_log.
@@ -230,7 +232,7 @@ Plus watch_next nodes, plus the overrides_log.
 ### 3. Run the eight analyzers
 
 Each analyzer is a method on
-`AuditAuditsEngine(IgorBase)`. They run independently — no shared
+`AuditAuditsEngine(BaseDevice)`. They run independently — no shared
 mutable state — and each returns a list of `Candidate` records.
 
 ### 4. Aggregate candidates
@@ -283,55 +285,10 @@ Next: review candidates at unseenuniversity/audits/audits/candidates/* via /sort
 
 ## Helper engine: devlab/claudecode/audit_audits_engine.py
 
-```python
-class AuditAuditsEngine(IgorBase):
-    """Meta-audit analyzer over the telemetry corpus."""
-
-    def __init__(self, since: str):
-        super().__init__()
-        self.since = since
-        self.runs = []          # all run records in window
-        self.watch_notes = []   # active + recently-expired
-        self.overrides = []     # override_log entries
-
-    def load_corpus(self) -> None:
-        """Read run records, watch notes, overrides — one query each."""
-
-    def run_all(self) -> list[Candidate]:
-        """Run all eight analyzers. Sorted by (severity, impact) desc."""
-
-    # One method per analyzer
-    def analyze_recurring_smells(self) -> list[Candidate]: ...
-    def analyze_upstream_miss(self) -> list[Candidate]: ...
-    def analyze_watch_for_roi(self) -> list[Candidate]: ...
-    def analyze_dead_checks(self) -> list[Candidate]: ...
-    def analyze_false_positives(self) -> list[Candidate]: ...
-    def analyze_cost_per_finding(self) -> list[Candidate]: ...
-    def analyze_habit_health(self) -> list[Candidate]: ...
-    def analyze_cross_layer_coherence(self) -> list[Candidate]: ...
-```
-
-`Candidate` is a frozen dataclass:
-
-```python
-@dataclass(frozen=True)
-class Candidate:
-    kind: str              # rule_promotion | layer_rebalance | check_retirement | ...
-    severity: str          # CRITICAL | HIGH | MED | LOW
-    audit_layer: str       # which layer this concerns
-    window_evidence: dict  # the data supporting this candidate
-    proposal: str          # human-readable proposal
-    draft_payload: dict    # YAML body for /sorted to consume
-```
-
-The engine inherits from IgorBase per
-`unseenuniversity/rules/inherit-base-class`.
-
-The engine and its tests land when this skill ships. The schema this
-analyzer reads is locked in `T-audit-telemetry-shape` — even though
-that helper hasn't shipped, the schema is the contract this analyzer
-is built against. Once the helper exists, the analyzer reads its
-output without further changes.
+Not yet built. The engine — `AuditAuditsEngine(BaseDevice)` with one method per
+analyzer (returning frozen `Candidate` records) and its tests — lands when this
+skill ships, against the telemetry schema locked in `T-audit-telemetry-shape`.
+Until then this skill is a design spec, not a runnable tool.
 
 ---
 

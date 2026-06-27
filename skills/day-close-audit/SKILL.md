@@ -35,20 +35,20 @@ cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
 import ast, pathlib
 
 issues = []
-src = pathlib.Path("wild_igor/igor")
-for f in sorted(src.rglob("*.py")):
-    try:
-        tree = ast.parse(f.read_text())
-    except SyntaxError as e:
-        issues.append(f"SYNTAX_ERROR|{f}|{e}")
-        continue
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ExceptHandler):
-            if node.type is None and len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
-                issues.append(f"BARE_EXCEPT_PASS|{f}:{node.lineno}")
-        if isinstance(node, ast.ExceptHandler):
-            if all(isinstance(s, ast.Pass) for s in node.body):
-                issues.append(f"SILENT_EXCEPT|{f}:{node.lineno}")
+for src in [pathlib.Path("unseen_university"), pathlib.Path("devices")]:
+    for f in sorted(src.rglob("*.py")):
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError as e:
+            issues.append(f"SYNTAX_ERROR|{f}|{e}")
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ExceptHandler):
+                if node.type is None and len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
+                    issues.append(f"BARE_EXCEPT_PASS|{f}:{node.lineno}")
+            if isinstance(node, ast.ExceptHandler):
+                if all(isinstance(s, ast.Pass) for s in node.body):
+                    issues.append(f"SILENT_EXCEPT|{f}:{node.lineno}")
 
 for i in issues:
     print(i)
@@ -62,23 +62,7 @@ For each finding: is there a log call in the except block? If not → add one no
 
 ## Step 4 — Registry coherence
 
-```bash
-cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
-import sys, os
-# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
-)
-sys.path.insert(0, ".")
-from wild_igor.igor.tools.registry import registry
-import wild_igor.igor.tools  # noqa
-
-tools = registry._tools.values()
-print(f"Registered tools: {len(list(tools))}")
-for t in sorted(registry._tools.values(), key=lambda x: x.name):
-    print(f"  {t.name}")
-EOF
-```
-
-Check: registered tools whose `fn` no longer exists? Tool functions in files NOT registered?
+*(Retired — was TheIgors-cognition-specific; no UU analog yet.)*
 
 ---
 
@@ -106,7 +90,7 @@ Verify each usage has daemon=True or uses a queue pattern.
 ## Step 7 — Log file sizes
 
 ```bash
-du -sh ~/.unseen_university/logs/*.log 2>/dev/null | sort -rh | head -10
+du -sh ~/.unseen_university/logs/*/ 2>/dev/null | sort -rh | head -10
 ```
 
 Any file > 10MB → rotate automatically:
@@ -121,42 +105,18 @@ Safe to call on every day-close — silent when all logs are under 10MB.
 
 ## Step 8 — OR burn rate
 
-```bash
-cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
-import os, sys
-sys.path.insert(0, ".")
-# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
-from wild_igor.igor.tools.budget import get_balance_trajectory
-print(get_balance_trajectory(window_hours=48))
-EOF
-```
-
-`burning_fast` (>$20/day) or days_remaining < 3 → surface to Akien immediately.
+*(Retired — was TheIgors-cognition-specific; no UU analog yet.)*
 
 ---
 
-## Step 9 — DB schema spot-check
+## Step 9 — Memory store spot-check
 
 ```bash
-cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
-import os
-# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
-import psycopg2
-conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
-cur = conn.cursor()
-cur.execute("""
-    SELECT table_schema || '.' || table_name AS qname
-    FROM information_schema.tables
-    WHERE table_schema IN ('clan', 'instance', 'public')
-""")
-tables = {r[0] for r in cur.fetchall()}
-# Post-D-sqlite-removal: canonical schemas are clan.* (cross-instance) and
-# instance.* (per-instance). public.* is legacy/system only.
-required = {"clan.memories", "clan.interpretive_edges", "instance.ring_memory", "instance.twm_observations"}
-missing = required - tables
-print(f"MISSING: {missing}" if missing else f"Schema OK — {len(tables)} tables across clan/instance/public")
-conn.close()
-EOF
+UU_ROOT="${UU_ROOT:-$HOME/dev/src/UnseenUniversity}"
+for d in decisions tickets slates sessions rules proofs notes; do
+  [ -d "${UU_ROOT}/devlab/runtime/memory/$d" ] || echo "MISSING: $d"
+done
+echo "Memory store check complete."
 ```
 
 ---
@@ -167,8 +127,9 @@ EOF
 cd ~/dev/src/UnseenUniversity && python3 - << 'EOF'
 import pathlib, re
 
-src = pathlib.Path("wild_igor/igor")
-all_py = list(src.rglob("*.py"))
+all_py = []
+for src in [pathlib.Path("unseen_university"), pathlib.Path("devices")]:
+    all_py.extend(src.rglob("*.py"))
 
 # Find .py files that are never imported by anything else in the tree
 all_text = "\n".join(f.read_text(errors="ignore") for f in all_py)
@@ -201,22 +162,23 @@ Flag files that nothing imports — candidates for removal (discuss with Akien f
 cd ~/dev/src/UnseenUniversity && python3 - << 'EOF'
 import pathlib, ast, hashlib, collections
 
-src = pathlib.Path("wild_igor/igor")
+srcs = [pathlib.Path("unseen_university"), pathlib.Path("devices")]
 # Collect function bodies as normalized source blocks (>10 lines)
 blocks = collections.defaultdict(list)
-for f in src.rglob("*.py"):
-    try:
-        tree = ast.parse(f.read_text())
-    except SyntaxError:
-        continue
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            lines = ast.unparse(node).splitlines()
-            if len(lines) > 10:
-                # Normalize: strip name, just body
-                body = "\n".join(lines[1:])
-                h = hashlib.md5(body.encode()).hexdigest()[:8]
-                blocks[h].append(f"{f}:{node.name}:{node.lineno}")
+for src in srcs:
+    for f in src.rglob("*.py"):
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                lines = ast.unparse(node).splitlines()
+                if len(lines) > 10:
+                    # Normalize: strip name, just body
+                    body = "\n".join(lines[1:])
+                    h = hashlib.md5(body.encode()).hexdigest()[:8]
+                    blocks[h].append(f"{f}:{node.name}:{node.lineno}")
 
 dupes = {h: locs for h, locs in blocks.items() if len(locs) > 1}
 if dupes:
@@ -236,64 +198,13 @@ Duplicates → candidates for shared primitive. Flag; ticket if worth abstractin
 
 ## Step 12 — Habit health
 
-NOTE: code_ref dispatch resolves `code_ref.split(":")[-1]` → tool registry lookup.
-Check against registry, NOT source text (string-search produces false positives).
-
-```bash
-cd ~/dev/src/UnseenUniversity && source .venv/bin/activate && python3 - << 'EOF'
-import os, sys, json
-sys.path.insert(0, ".")
-# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
-)
-
-from wild_igor.igor.tools.registry import registry
-import wild_igor.igor.tools  # loads all tools
-registered = set(registry._tools.keys())
-
-import psycopg2
-conn = psycopg2.connect(os.environ["UU_HOME_DB_URL"])
-cur = conn.cursor()
-cur.execute("""
-    SELECT id, metadata->>'code_ref'
-    FROM clan.memories
-    WHERE memory_type='PROCEDURAL'
-      AND jsonb_exists(metadata, 'code_ref')
-""")
-rows = cur.fetchall()
-conn.close()
-
-dead = []
-for id_, code_ref in rows:
-    if not code_ref:
-        continue
-    fn_name = code_ref.split(":")[-1] if ":" in code_ref else code_ref
-    if fn_name not in registered:
-        dead.append(f"  DEAD code_ref: {id_} → {code_ref}  [fn={fn_name}]")
-
-if dead:
-    print(f"{len(dead)} habits reference dead code:")
-    print("\n".join(dead))
-else:
-    print(f"Habit health OK — {len(rows)} code_ref habits checked")
-EOF
-```
-
-Dead `code_ref` habits → update or remove from DB.
+*(Retired — was TheIgors-cognition-specific; no UU analog yet.)*
 
 ---
 
 ## Step 13 — TWM push coverage
 
-```bash
-grep -rn "twm_push\|TWM_PUSH\|PRIM_TWM_PUSH" ~/dev/src/UnseenUniversity/devices/igor/ 2>/dev/null | grep -v "__pycache__" | grep -v "test_"
-echo "---"
-# Flag significant cognitive events missing twm_push:
-grep -rn "def _run_turn\|habit_fired\|ne_cycle\|consolidation_pass\|memory_deposit" \
-    ~/dev/src/UnseenUniversity/devices/igor/ --include="*.py" -l 2>/dev/null
-```
-
-Review: do significant state changes (habit fire, NE completion, memory deposit) push to TWM?
-If not → flag as TWM coverage gap (invisible to cognition).
+*(Retired — was TheIgors-cognition-specific; no UU analog yet.)*
 
 ---
 
@@ -304,7 +215,7 @@ cd ~/dev/src/UnseenUniversity && python3 - << 'EOF'
 import pathlib, re, ast
 
 # Packages declared in requirements.txt
-req_file = pathlib.Path("wild_igor/requirements.txt")
+req_file = pathlib.Path("requirements.txt")
 declared = set()
 if req_file.exists():
     for line in req_file.read_text().splitlines():
@@ -314,24 +225,25 @@ if req_file.exists():
 
 # Top-level imports actually used in source
 used = set()
-for f in pathlib.Path("wild_igor/igor").rglob("*.py"):
-    try:
-        tree = ast.parse(f.read_text())
-    except SyntaxError:
-        continue
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                used.add(alias.name.split(".")[0].lower())
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                used.add(node.module.split(".")[0].lower())
+for src in [pathlib.Path("unseen_university"), pathlib.Path("devices")]:
+    for f in src.rglob("*.py"):
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    used.add(alias.name.split(".")[0].lower())
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    used.add(node.module.split(".")[0].lower())
 
 # Third-party = used but not stdlib (rough heuristic: not in declared and not single-word stdlib)
 import sys
 stdlib = set(sys.stdlib_module_names) if hasattr(sys, "stdlib_module_names") else set()
 unused_declared = declared - used - stdlib
-undeclared_used = used - declared - stdlib - {"wild_igor", "igor", "__future__"}
+undeclared_used = used - declared - stdlib - {"unseen_university", "__future__"}
 
 if unused_declared:
     print(f"Declared but not imported ({len(unused_declared)}): {unused_declared}")
@@ -354,8 +266,7 @@ cd ~/dev/src/UnseenUniversity && grep -rn \
     -e "choose_a_password" \
     -e "api_key\s*=\s*['\"][a-zA-Z0-9_-]\{20,\}" \
     -e "password\s*=\s*['\"][^'\"]\{8,\}" \
-    -e "Igor-wild-0001" \
-    --include="*.py" wild_igor/igor/ 2>/dev/null | grep -v "__pycache__" | grep -v "test_" | grep -v "\.pyc"
+    --include="*.py" unseen_university/ devices/ 2>/dev/null | grep -v "__pycache__" | grep -v "test_" | grep -v "\.pyc"
 ```
 
 Hardcoded instance names → should use `paths().instance_id` or env var.
@@ -368,7 +279,7 @@ Hardcoded credentials → must move to `.env`.
 Scan for partial implementations missing follow-up tickets:
 
 ```bash
-cd ~/dev/src/UnseenUniversity && grep -rn "# POC:\|# TODO:\|# LIMITATION:\|# HACK:" wild_igor/ lab/tools/ devlab/claudecode/ --include="*.py" | grep -v __pycache__ | head -30
+cd ~/dev/src/UnseenUniversity && grep -rn "# POC:\|# TODO:\|# LIMITATION:\|# HACK:" unseen_university/ devices/ devlab/claudecode/ --include="*.py" | grep -v __pycache__ | head -30
 ```
 
 For each hit: verify there's a matching ticket in cc_queue. If not, flag it.
@@ -392,7 +303,7 @@ For each file modified since the last audit, ask:
 
 ```bash
 cd ~/dev/src/UnseenUniversity && git diff --name-only $(git log --format=%H -1 --grep="audit" 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD \
-  | grep "\.py$" | grep "wild_igor/"
+  | grep "\.py$" | grep -E "unseen_university/|devices/"
 ```
 
 Read each changed file briefly. Add simplification candidates to findings report.
@@ -422,7 +333,7 @@ python3 devlab/claudecode/audit_add.py rm "name"
 python3 devlab/claudecode/audit_add.py ack "name" --until 2026-04-30   # silence false positive
 ```
 
-Kinds: `grep` (regex across wild_igor/), `sql` (psql against home DB), `shell` (one-liner; non-empty stdout = fail), `python` (inline expression; truthy = fail).
+Kinds: `grep` (regex across unseen_university/ devices/), `sql` (psql against home DB), `shell` (one-liner; non-empty stdout = fail), `python` (inline expression; truthy = fail).
 
 ---
 
@@ -443,7 +354,7 @@ Exit code 0 = all OK. Any UNREFERENCED or STUB_NEAR_GATE findings → ticket or 
 ## Step 18.6 — Capability map drift check
 
 `~/dev/src/UnseenUniversity/docs/capability_map.md` is the "what's built today vs planned vs broken" doc. It rots fast. When it's >7 days old, the audit always re-verifies §1 (live), §2 (gated off), and §4 (known broken) against:
-- Palace `unseenuniversity/subsystem_index/*` for live subsystems
+- `devlab/runtime/memory/architecture/*` intention-points for live subsystems
 - `~/.unseen_university/$IGOR_INSTANCE_ID/igor.switches.cfg` for gate state
 - `cc_queue.py list` for in_progress / pending / awaiting_approval status
 - Latest `pytest` summary for known failures
@@ -508,7 +419,7 @@ the git file index and raises a system alarm per offending path. Read-only and
 fail-soft — never gates day-close.
 
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/path_moves_monitor.py
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/path_moves_monitor.py
 ```
 
 Clean output = every artifact is in the canonical home. Any finding → a
@@ -536,16 +447,16 @@ AUDIT — YYYY-MM-DD
 Tests:           PASS (N/N) | FAIL (<details>)
 Files:           OK | <N> misplaced
 Code smells:     <N> issues
-Registry:        <N> tools, <N> unregistered
+Registry:        (retired)
 Inertia:         OK | HIGH files without decision: <list>
 Threads:         OK | <N> to verify
 Logs:            OK | <file> over 10MB
-Burn rate:       $X/day (<trend>) — <N>d remaining
-Schema:          OK | MISSING: <tables>
+Burn rate:       (retired)
+Memory store:    OK | MISSING: <dirs>
 Dead code:       OK | <N> orphan modules
 Duplication:     OK | <N> duplicate bodies
-Habit health:    OK | <N> dead code_refs
-TWM coverage:    OK | <N> uncovered events
+Habit health:    (retired)
+TWM coverage:    (retired)
 Dependencies:    OK | unused: <list> | undeclared: <list>
 Credentials:     OK | <N> hardcoded
 Simplification:  <N> candidates — <brief list>

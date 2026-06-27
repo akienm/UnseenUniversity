@@ -66,7 +66,7 @@ Always run `/day-close-audit` — all steps. This is not optional. (Renamed
 from `/audit` on 2026-04-20 to make role clearer: `/day-close-audit` is
 the debris-and-hygiene check.)
 
-Log to: `${IGOR_HOME:-~/.unseen_university}/claudecode/logs/$(date +%Y%m%d).code_maintenance_reviews.log`
+Log to: `$HOME/.unseen_university/logs/day-close/$(date +%Y%m%d).code_maintenance_reviews.log`
 
 ### 4.5. Gate sweep (T-day-close-gate-sweep)
 
@@ -75,7 +75,7 @@ noise from READY tickets. Safe and idempotent. Skips id-token gates (those
 are handled live by gate_clear on ticket close).
 
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py sweep-gates
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py sweep-gates
 ```
 
 Log the count from the output. No action needed when count is 0.
@@ -121,10 +121,7 @@ cat ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/<clo
 
 <!-- (removed: GitHub ticket-backup + docs-DB-sync steps — those helper scripts were never built; dropped functionality tracked in T-skills-deadstep-followup) -->
 
-### 9. Update affected DSBs
-
-For each subsystem touched today: always update the `updated=` date in the
-header, then re-run docs_sync after edits so the DB reflects the change.
+<!-- (removed: Step 9 "Update affected DSBs / docs_sync" — DSBs and docs_sync are retired; the architecture/ intention-points in devlab/runtime/memory/architecture/ are the subsystem record now.) -->
 
 ### 10. Create GitHub Discussion
 
@@ -146,77 +143,31 @@ gh api graphql -f query='mutation {
 Always post the closed slate as a comment on the day's Discussion — that
 makes the slate searchable from GitHub.
 
-### 12. Write palace.days.* node
+### 12. Write the day roll-up to the memory store
 
-Always write a roll-up node for the closing day. Pull summary from the
-slate (Done today section) and any open sessions list:
+Always emit a flat-file roll-up note for the closing day, pulled from the
+slate's `## Done today` section. The closed slate is the source of truth; this
+is the greppable one-line-per-day index in `devlab/runtime/memory/notes/`:
 
 ```bash
 CLOSING_DATE=<YYYY-MM-DD>   # the day being closed
 DATESTAMP=<YYYYMMDD>        # same, no dashes
 SLATE=${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/${DATESTAMP}.slate.txt
-
-# Build content from Done today section of the closing slate
 DONE_SECTION=$(sed -n '/^## Done today/,/^## /p' "$SLATE" | grep "^- " | head -20)
 
-python3 - <<'EOF'
-import os, json, psycopg2, psycopg2.extras
-from datetime import datetime, timezone
-
-pg = os.environ["UU_HOME_DB_URL"]
-closing_date = os.environ.get("CLOSING_DATE", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
-datestamp = closing_date.replace("-", "")
-done_section = os.environ.get("DONE_SECTION", "(see slate)")
-
-# Gather palace.sessions.* nodes for this day (if any)
-conn = psycopg2.connect(pg)
-with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-    cur.execute(
-        "SELECT path, title FROM adc.palace WHERE path LIKE %s ORDER BY path",
-        (f"palace.sessions.{datestamp}%",),
-    )
-    sessions = [dict(r) for r in cur.fetchall()]
-
-session_lines = "\n".join(f"- {s['title']} ({s['path']})" for s in sessions) or "(none recorded)"
-content = f"## Done\n{done_section}\n\n## Sessions\n{session_lines}\n"
-title = f"Day {closing_date}"
-metadata = psycopg2.extras.Json({
-    "tags": ["day", "rollup"],
-    "date": closing_date,
-    "session_count": len(sessions),
-})
-
-with conn.cursor() as cur:
-    cur.execute(
-        """INSERT INTO adc.palace (path, title, content, node_type, updated_at, metadata)
-           VALUES (%s, %s, %s, 'rollup', now(), %s)
-           ON CONFLICT (path) DO UPDATE
-               SET title=EXCLUDED.title, content=EXCLUDED.content,
-                   updated_at=EXCLUDED.updated_at, metadata=EXCLUDED.metadata""",
-        (f"palace.days.{datestamp}", title, content, metadata),
-    )
-conn.commit()
-conn.close()
-print(f"palace.days.{datestamp} written ({len(sessions)} sessions).")
+DONE_SECTION="$DONE_SECTION" CLOSING_DATE="$CLOSING_DATE" python3 - <<'EOF'
+import os, json, subprocess, sys
+from unseen_university._uu_root import uu_root
+closing = os.environ.get("CLOSING_DATE", "")
+done = os.environ.get("DONE_SECTION", "(see slate)")
+body = {"title": f"Day {closing}", "text": f"## Done\n{done}\n"}
+open("/tmp/day_rollup.json", "w").write(json.dumps(body))
+TOOLS = str(uu_root() / "devlab" / "claudecode")
+subprocess.run([sys.executable, f"{TOOLS}/memory_emit.py", "--category", "notes",
+    "--emitter", "cc.0", "--kind", "note", "--namespace",
+    f"day-{closing.replace('-', '')}", "--body-file", "/tmp/day_rollup.json"], check=True)
+print(f"day-{closing.replace('-', '')} roll-up written.")
 EOF
-```
-
-Also write a flat-file echo (file is secondary — palace is canonical):
-```bash
-mkdir -p ${IGOR_HOME:-~/.unseen_university}/claudecode/palace_echo
-python3 -c "
-import os, psycopg2, psycopg2.extras
-pg = os.environ['UU_HOME_DB_URL']
-datestamp = '${DATESTAMP}'
-conn = psycopg2.connect(pg)
-with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-    cur.execute('SELECT content FROM adc.palace WHERE path = %s', (f'palace.days.{datestamp}',))
-    rows = cur.fetchall()
-if rows:
-    open(os.path.expanduser(f'${IGOR_HOME:-~/.unseen_university}/claudecode/palace_echo/day_{datestamp}.md'),'w').write(rows[0]['content'])
-    print('echo written')
-conn.close()
-"
 ```
 
 ### 13. Commit docs
@@ -226,7 +177,7 @@ Always stage doc directories by name (never `git add -A`):
 git add devlab/runtime/memory/ docs/
 git commit -m "docs: day-close YYYY-MM-DD — <theme>
 
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git pull --rebase origin main && git push origin main
 ```
 
@@ -268,5 +219,4 @@ record has full context when post-compact CC reads it.
 - Every day has a slate — Step 1 always runs, even when day-close fires before context-load on the new day.
 - Audit (step 4) always runs — it's the hygiene gate.
 - Commits during day-close are always docs-only; source changes belong in /sprint commits.
-- Always skip steps with nothing to update (e.g. no DSBs touched today → skip step 9).
-- Step 12 (palace.days.*) always runs — even if Done today is empty, the node records the day.
+- Step 12 (day roll-up) always runs — even if Done today is empty, the note records the day.

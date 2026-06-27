@@ -67,15 +67,25 @@ python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['body'].get('tex
 
 ### Check 4 — Doesn't contradict a recently falsified hypothesis
 
-Read recent decision outcomes:
+Read recent decision outcomes from the flat-file store:
 ```bash
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT path, title, metadata->>'outcome', metadata->>'hypothesis'
-   FROM adc.palace
-   WHERE path LIKE 'palace.decisions.%'
-     AND metadata->>'outcome' = 'falsified'
-     AND updated_at > now() - interval '60 days'
-   ORDER BY updated_at DESC LIMIT 10"
+python3 - <<'PY'
+import json, glob, os, datetime
+root = os.environ.get("UU_ROOT", os.path.expanduser("~/dev/src/UnseenUniversity"))
+cut = datetime.date.today() - datetime.timedelta(days=60)
+for f in glob.glob(f"{root}/devlab/runtime/memory/decisions/*.json"):
+    b = json.load(open(f)).get("body", {})
+    od, txt = b.get("outcome_date"), b.get("text", "")
+    if not od or "falsified" not in txt.lower():
+        continue
+    try:
+        if datetime.date.fromisoformat(od) < cut:
+            continue
+    except ValueError:
+        pass
+    hyp = txt.split("## Hypothesis", 1)[1][:200].replace("\n", " ") if "## Hypothesis" in txt else ""
+    print(f"{b.get('decision_id','?')} ({od}): {hyp}")
+PY
 ```
 
 **Look for:** no recently falsified hypothesis made the same or very similar claim.

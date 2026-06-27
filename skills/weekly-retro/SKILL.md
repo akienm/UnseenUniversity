@@ -1,6 +1,6 @@
 ---
 name: weekly-retro
-description: 5-minute Friday retrospective — reviews hypothesis confirmation rate and what changes about next week's priorities. Called automatically by day-close on Fridays. Also callable standalone. Output to palace.retro.YYYYMMDD.
+description: 5-minute Friday retrospective — reviews hypothesis confirmation rate and what changes about next week's priorities. Called automatically by day-close on Fridays. Also callable standalone. Output to devlab/runtime/memory/notes/.
 model: sonnet
 ---
 
@@ -23,22 +23,31 @@ Weekly-retro covers the question neither asks: **are we making the right bets?**
 ### 1. Pull this week's decision outcomes
 
 ```bash
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT path, title, metadata->>'outcome', metadata->>'outcome_date'
-   FROM adc.palace
-   WHERE path LIKE 'palace.decisions.%'
-     AND metadata->>'outcome_date' > (now() - interval '7 days')::date::text
-   ORDER BY metadata->>'outcome_date' DESC"
-```
-
-Also list decisions that closed this week but have no outcome yet:
-```bash
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT path, title FROM adc.palace
-   WHERE path LIKE 'palace.decisions.%'
-     AND metadata->>'outcome' IS NULL
-     AND metadata->>'status' = 'open'
-     AND updated_at > now() - interval '7 days'"
+python3 - <<'PY'
+import json, glob, os, datetime
+root = os.environ.get("UU_ROOT", os.path.expanduser("~/dev/src/UnseenUniversity"))
+cut = datetime.date.today() - datetime.timedelta(days=7)
+reviewed, unreviewed = [], []
+for f in glob.glob(f"{root}/devlab/runtime/memory/decisions/*.json"):
+    b = json.load(open(f)).get("body", {})
+    did, title, txt = b.get("decision_id", "?"), b.get("title", ""), b.get("text", "")
+    od = b.get("outcome_date")
+    if od:
+        try:
+            if datetime.date.fromisoformat(od) >= cut:
+                verdict = next((l for l in txt.splitlines() if "Verdict" in l), "").strip()
+                reviewed.append((od, did, title, verdict))
+        except ValueError:
+            pass
+    elif "## Outcome" not in txt:
+        unreviewed.append((did, title))
+print("# Outcomes recorded this week:")
+for od, did, title, verdict in sorted(reviewed, reverse=True):
+    print(f"  {did} ({od}): {title} — {verdict}")
+print("# Closed/open with no outcome yet:")
+for did, title in sorted(unreviewed):
+    print(f"  {did}: {title}")
+PY
 ```
 
 ### 2. Answer the two questions
@@ -60,25 +69,35 @@ Needs /outcome: D-xxx (shipped N days ago), D-yyy (shipped M days ago)
 ```
 Flag any that are >14 days overdue.
 
-### 4. Write to palace
+### 4. Write the retro to the memory store
 
-```python
-import psycopg2, psycopg2.extras
-from datetime import datetime, timezone
+Emit the retro as a note in the flat-file store (`devlab/runtime/memory/notes/`):
 
-datestamp = datetime.now().strftime("%Y%m%d")
-content = f"""## Week ending {datetime.now().strftime('%Y-%m-%d')}
+```bash
+RETRO=$(cat <<EOF
+## Week ending $(date +%Y-%m-%d)
 
 ### Hypothesis confirmation rate
-{q1_summary}
+${q1_summary}
 
 ### Priority changes for next week
-{q2_summary}
+${q2_summary}
 
 ### Needs /outcome
-{overdue_outcomes or 'none'}
-"""
-# INSERT INTO adc.palace (path='palace.retro.{datestamp}', node_type='retro', ...)
+${overdue_outcomes:-none}
+EOF
+)
+RETRO="$RETRO" python3 - <<'PY'
+import os, json, subprocess, sys, datetime
+from unseen_university._uu_root import uu_root
+stamp = datetime.date.today().strftime("%Y%m%d")
+body = {"title": f"weekly-retro {datetime.date.today()}", "text": os.environ["RETRO"]}
+open("/tmp/retro_body.json", "w").write(json.dumps(body))
+TOOLS = str(uu_root() / "devlab" / "claudecode")
+subprocess.run([sys.executable, f"{TOOLS}/memory_emit.py", "--category", "notes",
+    "--emitter", "cc.0", "--kind", "note", "--namespace", f"weekly-retro-{stamp}",
+    "--body-file", "/tmp/retro_body.json"], check=True)
+PY
 ```
 
 ### 5. Report

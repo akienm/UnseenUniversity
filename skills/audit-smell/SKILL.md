@@ -156,15 +156,15 @@ remove the flag and ship to intent."
 ### Check 8 — New memory table
 
 **Detector**: AST scan for `CREATE TABLE` / migration-runner calls
-introducing tables OR new SQLAlchemy / dataclass models intended for DB
-persistence outside the existing `clan.memories` / `memory_palace` /
-`tickets` tables.
+introducing tables OR new SQLAlchemy / dataclass models intended for a new
+persistence store, instead of the canonical flat-file memory store
+(`devlab/runtime/memory/`) or Postgres for shared device state.
 
-**Severity**: HIGH (palace rule violation: no-new-memory-schemas)
+**Severity**: HIGH (rule violation: no-new-memory-schemas)
 
-**AMEND**: "New memory table `<name>` at `<file>:<line>`. Project rule:
-memory distinctions become tags, not new types. Use `clan.memories`
-metadata tags or `memory_palace` subtree. See `unseenuniversity/rules/memory`."
+**AMEND**: "New memory store `<name>` at `<file>:<line>`. Project rule:
+memory distinctions become tags/subdirs in the flat-file store
+(`devlab/runtime/memory/<category>/`), not new schemas. See `unseenuniversity/rules/memory`."
 
 ### Check 9 — SQLite / file-store fallback
 
@@ -208,14 +208,14 @@ inline the concrete shape."
 ### Check 12 — Class without base-class inheritance
 
 **Detector**: AST scan via `devlab/claudecode/audit_check_igorbase.py`
-(existing tool). Reports new class definitions in `wild_igor/igor/` whose
-bases don't include `IgorBase` / `AgentBase` and aren't in
+(existing tool). Reports new class definitions in `devices/` whose
+bases don't include `BaseDevice` / `BaseShim` and aren't in
 `THIRD_PARTY_BASES` (Pydantic, Enum, ABC, Protocol, dataclass, etc.).
 
 **Severity**: HIGH (palace rule: inherit-base-class)
 
 **AMEND**: "Class `<name>` at `<file>:<line>` doesn't inherit from
-IgorBase (Igor code) or AgentBase (shared/utility). The base class IS
+BaseDevice (device code) or BaseShim (shim code). The base class IS
 the logging+introspection layer. See `unseenuniversity/rules/inherit-base-class`."
 
 ### Check 13 — Shared state across functions without encapsulation
@@ -388,10 +388,10 @@ on this return for HIGH severity findings.
 
 The skill's procedural shell delegates to a Python helper for the
 AST-heavy checks. The helper provides a single class
-`SmellEngine(IgorBase)`:
+`SmellEngine(BaseDevice)`:
 
 ```python
-class SmellEngine(IgorBase):
+class SmellEngine(BaseDevice):
     """Runs the 17 audit-smell checks against a diff + ticket context."""
 
     def __init__(self, diff: str, ticket: dict, palace_ctx: dict):
@@ -426,7 +426,7 @@ class SmellEngine(IgorBase):
 `Finding` is a frozen dataclass: `(check, severity, file, line,
 matched_pattern, amend_message)`.
 
-The helper inherits from `IgorBase` per
+The helper inherits from `BaseDevice` per
 `unseenuniversity/rules/inherit-base-class`. (Yes, the smell-checker class
 inherits from the base class it checks for. That's intentional — the
 audit should pass its own checks.)
@@ -469,7 +469,7 @@ is mis-shaped).
 - LOW findings are warnings; they DO NOT block.
 - Always emit a run record (or document the verdict equivalently until
   the telemetry helper lands).
-- The smell engine itself inherits from IgorBase (eat your own
+- The smell engine itself inherits from BaseDevice (eat your own
   dogfood per `unseenuniversity/rules/inherit-base-class`).
 
 ---

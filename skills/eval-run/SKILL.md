@@ -1,10 +1,12 @@
 ---
 name: eval-run
-description: Weekly capability snapshot — 5 behavioral questions about what Igor can actually do, independent of ticket velocity. Run Fridays as part of day-close, or standalone. Output to palace.evals.YYYYMMDD.
+description: Weekly capability snapshot — 5 behavioral questions about what the system can actually do, independent of ticket velocity. Run Fridays as part of day-close, or standalone. Output to devlab/runtime/memory/notes/eval-run.YYYYMMDD.md.
 model: sonnet
 ---
 
 # /eval-run — Weekly capability snapshot
+
+> **Status: partially deferred.** Several eval questions targeted TheIgors cognition internals (clan.memories, instance.ring_memory, pe_chain) that have no UnseenUniversity analog yet. Those are marked deferred below; the rest read the flat-file store / logs.
 
 Tests verify code correctness. Evals verify capability.
 
@@ -35,22 +37,10 @@ when active goals change.
 
 **Data source:**
 ```bash
-# From flight recorder logs
-grep -h "pe_chain\|HYPOTHESIZE\|commit_result" \
-  ~/.unseen_university/$IGOR_INSTANCE_ID/logs/*.log 2>/dev/null | \
-  grep "$(date -d '7 days ago' +%Y-%m-%d)\|$(date +%Y-%m-%d)" | \
-  tail -100
-
-# From cc_queue: tickets closed by Igor this week
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT id, metadata->>'title', metadata->>'closed_by'
-   FROM clan.memories
-   WHERE parent_id='TICKETS_ROOT'
-     AND metadata->>'status' IN ('done','closed','awaiting_validation')
-     AND updated_at > now() - interval '7 days'"
+# (Deferred: needs UU cognition substrate — no analog yet.)
 ```
 
-**Report as:** `pe_chain: N tickets attempted, M succeeded (X%) | trend: up/flat/down`
+**Eval result:** `deferred`
 
 ---
 
@@ -60,20 +50,10 @@ psql "$UU_HOME_DB_URL" -tAc \
 
 **Data source:**
 ```bash
-# Channel messages about stuck NE
-grep "\[NE\].*stuck" ~/.unseen_university/$IGOR_INSTANCE_ID/logs/*.log 2>/dev/null | \
-  awk -F'T' '{print $1}' | sort | uniq -c | tail -14
-
-# Psych log valence trend
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT date_trunc('day', to_timestamp(ts)) as day,
-          AVG(valence) as avg_v, COUNT(*) as cycles
-   FROM instance.ring_memory
-   WHERE ts > extract(epoch from now() - interval '14 days')
-   GROUP BY 1 ORDER BY 1"
+# (Deferred: needs UU cognition substrate — no analog yet.)
 ```
 
-**Report as:** `NE stuck: N events this week vs M last week | avg valence: X.XX | trend: improving/flat/worsening`
+**Eval result:** `deferred`
 
 ---
 
@@ -83,15 +63,10 @@ psql "$UU_HOME_DB_URL" -tAc \
 
 **Data source:**
 ```bash
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT source_module, kind, COUNT(*), MAX(created_at)
-   FROM instance.proposals
-   WHERE source_module != 'test'
-     AND created_at > now() - interval '7 days'
-   GROUP BY 1, 2 ORDER BY 3 DESC"
+# (Deferred: needs UU cognition substrate — no analog yet.)
 ```
 
-**Report as:** `Dreaming: N proposals this week (source_module=dreaming) | pipeline: active/cold-start/silent`
+**Eval result:** `deferred`
 
 ---
 
@@ -101,12 +76,25 @@ psql "$UU_HOME_DB_URL" -tAc \
 
 **Data source:**
 ```bash
-psql "$UU_HOME_DB_URL" -tAc \
-  "SELECT metadata->>'status', COUNT(*) FROM clan.memories
-   WHERE parent_id='TICKETS_ROOT' GROUP BY 1 ORDER BY 2 DESC"
+python3 - << 'EOF'
+import os, pathlib, json, collections
+UU_ROOT = pathlib.Path(os.environ.get("UU_ROOT", str(pathlib.Path.home() / "dev/src/UnseenUniversity")))
+tickets_dir = UU_ROOT / "devlab/runtime/memory/tickets"
+counts = collections.Counter()
+if tickets_dir.exists():
+    for f in tickets_dir.rglob("*.json"):
+        try:
+            data = json.loads(f.read_text())
+            status = data.get("status", "unknown")
+            counts[status] += 1
+        except Exception:
+            pass
+for status, count in sorted(counts.items(), key=lambda x: -x[1]):
+    print(f"{status}: {count}")
+EOF
 ```
 
-Compare to last week's count (use palace.evals.* from prior week if available).
+Compare to last week's count (use prior eval note from `devlab/runtime/memory/notes/` if available).
 
 **Report as:** `Done:closed gap: N awaiting_validation vs M closed | delta vs last week: +N/-N | trend: narrowing/widening/flat`
 
@@ -129,8 +117,8 @@ for e in entries[:10]:
 "
 
 # Channel escalations
-grep -h "SCOPE_GUARD\|BLOCKED\|stuck\|escalat" \
-  ~/.unseen_university/$IGOR_INSTANCE_ID/logs/*.log 2>/dev/null | \
+grep -rh "SCOPE_GUARD\|BLOCKED\|stuck\|escalat" \
+  ~/.unseen_university/logs/*/info/*.json 2>/dev/null | \
   grep "$(date -d '7 days ago' +%Y-%m-%d)\|$(date +%Y-%m-%d)" | \
   grep -v "test\|TEST" | wc -l
 ```
@@ -145,12 +133,15 @@ grep -h "SCOPE_GUARD\|BLOCKED\|stuck\|escalat" \
 
 Run each eval's data query, compute the answer, note trend direction.
 
-### 2. Write to palace
+### 2. Write results to notes
 
 ```python
-datestamp = datetime.now().strftime("%Y%m%d")
-path = f"palace.evals.{datestamp}"
-# Write eval results to adc.palace
+import os, pathlib, datetime
+datestamp = datetime.datetime.now().strftime("%Y%m%d")
+UU_ROOT = pathlib.Path(os.environ.get("UU_ROOT", str(pathlib.Path.home() / "dev/src/UnseenUniversity")))
+output_path = UU_ROOT / f"devlab/runtime/memory/notes/eval-run.{datestamp}.md"
+# Write eval results to devlab/runtime/memory/notes/
+# e.g.: output_path.write_text(report_text)
 ```
 
 ### 3. Report

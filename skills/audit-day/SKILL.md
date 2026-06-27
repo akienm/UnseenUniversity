@@ -41,7 +41,7 @@ For each changed file, check: did related callers also change?
 git diff HEAD~N..HEAD | grep "^-def \|^-    def " | while read sig; do
   func=$(echo "$sig" | sed 's/^-.*def //' | sed 's/(.*$//')
   echo "--- callers of $func ---"
-  grep -rn "$func(" wild_igor/igor/ lab/ --include="*.py" | grep -v "def $func"
+  grep -rn "$func(" unseen_university/ devices/ --include="*.py" | grep -v "def $func"
 done 2>/dev/null | head -40
 ```
 
@@ -87,44 +87,17 @@ has a pre-approval stamp. Missing stamp = flag.
 
 ### Step 6 — TWM coverage gaps
 
-```bash
-grep -rn "def _run_turn\|habit_fired\|ne_cycle\|consolidation_pass" \
-    wild_igor/igor/ --include="*.py" | grep -v "__pycache__" | head -20
-```
-
-Significant state changes (habit fire, NE completion, memory deposit) that
-don't call `cortex.twm_push()` = flag as TWM coverage gap.
+*(Retired — was TheIgors-cognition-specific; no UU analog yet.)*
 
 ### Step 7 — Habit health
 
-```bash
-python3 -c "
-import os, sys
-sys.path.insert(0, '.')
-# UU_HOME_DB_URL comes from the environment (uu_bash_profile.sh)
-from wild_igor.igor.tools.registry import registry
-import wild_igor.igor.tools
-import psycopg2
-conn = psycopg2.connect(os.environ['UU_HOME_DB_URL'])
-cur = conn.cursor()
-cur.execute(\"SELECT id, metadata->>'code_ref' FROM memories WHERE memory_type='PROCEDURAL' AND jsonb_exists(metadata, 'code_ref')\")
-rows = cur.fetchall()
-conn.close()
-registered = set(registry._tools.keys())
-dead = [(id_, cr) for id_, cr in rows if cr and cr.split(':')[-1] not in registered]
-print(f'{len(dead)} dead code_refs / {len(rows)} total')
-for id_, cr in dead[:5]:
-    print(f'  {id_}: {cr}')
-"
-```
-
-Dead `code_ref` habits → update or remove. More than 5 = HIGH.
+*(Retired — was TheIgors-cognition-specific; no UU analog yet.)*
 
 ### Step 8 — Fix-one-leave-many: auto-draft scan-for-rest tickets
 
 When Step 2 found partial call-graph updates, draft a ticket:
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/scan_for_rest_drafter.py \
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/scan_for_rest_drafter.py \
   --function <func_name> \
   --found-callers <file1,file2> \
   --missing-callers <file3,file4> \
@@ -161,8 +134,8 @@ Fix-one-leave-many: <N> partial updates found | OK
 Watch-for hits:   <N> hit | <M> aged | <P> expired
 Subsystem drift:  OK | <N> renamed primaries
 Inertia tags:     OK | <N> undocumented HIGH-inertia changes
-TWM gaps:         OK | <N> significant events without twm_push
-Habit health:     OK | <N> dead code_refs
+TWM gaps:         (retired)
+Habit health:     (retired)
 Scan-for-rest:    <N> tickets drafted to /tmp/
 
 Fixed now:  <list>
