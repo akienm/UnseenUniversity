@@ -1,82 +1,10 @@
-#!/usr/bin/env python3
-"""superclaude — Claude Code launcher with rack server.
-
-Bootstraps venv, starts the rack server if not running, then launches
-Claude Code with all arguments forwarded.
-
-Delegates to bin/superclaude (bash) on Unix/macOS.
-On Windows, delegates to bin/superclaude.ps1 via PowerShell.
-
-Usage:
-  ./superclaude              # launch Claude Code with rack server
-  ./superclaude --help       # show this help
-  ./superclaude <cc-args>    # all args forwarded to claude
-"""
-
-import os
-import subprocess
-import sys
-from pathlib import Path
-
-UU_ROOT = Path(__file__).resolve().parent
-VENV_DIR = UU_ROOT / ".venv"
-_BIN = "Scripts" if sys.platform == "win32" else "bin"
-_EXT = ".exe" if sys.platform == "win32" else ""
-VENV_PYTHON = VENV_DIR / _BIN / f"python{_EXT}"
-
-
-# ── Bootstrap ─────────────────────────────────────────────────────────────────
-
-
-def _bootstrap() -> None:
-    if VENV_DIR.exists() and VENV_PYTHON.exists():
-        return
-    print("superclaude: first run — bootstrapping venv")
-    try:
-        subprocess.run(["uv", "venv", str(VENV_DIR)], check=True, cwd=UU_ROOT)
-        subprocess.run(
-            ["uv", "pip", "install", "--python", str(VENV_PYTHON), "-e", str(UU_ROOT)],
-            check=True,
-            cwd=UU_ROOT,
-        )
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        subprocess.run([sys.executable, "-m", "venv", str(VENV_DIR)], check=True)
-        subprocess.run(
-            [str(VENV_PYTHON), "-m", "pip", "install", "-e", str(UU_ROOT)], check=True
-        )
-    print("superclaude: bootstrap complete")
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
-
-
-def main() -> None:
-    args = sys.argv[1:]
-
-    if "--help" in args or "-h" in args:
-        print(__doc__)
-        sys.exit(0)
-
-    _bootstrap()
-
-    bin_dir = UU_ROOT / "bin"
-
-    if sys.platform == "win32":
-        launcher = bin_dir / "superclaude.ps1"
-        if launcher.exists():
-            cmd = ["powershell", "-ExecutionPolicy", "Bypass", "-File", str(launcher)] + args
-        else:
-            print(f"superclaude: launcher not found at {launcher}", file=sys.stderr)
-            sys.exit(1)
-    else:
-        launcher = bin_dir / "superclaude"
-        if not launcher.exists():
-            print(f"superclaude: launcher not found at {launcher}", file=sys.stderr)
-            sys.exit(1)
-        cmd = [str(launcher)] + args
-
-    os.execvp(cmd[0], cmd)
-
-
-if __name__ == "__main__":
-    main()
+#!/bin/bash
+# superclaude (root) — thin pass-through to the canonical launcher in bin/.
+#
+# NO logic lives here. All behavior — rack server, venv probing, --1m, --help,
+# tmux session handling — is in bin/superclaude. This shim exists only so that
+# `./superclaude` at the repo root still works; everything, including --help, is
+# forwarded untouched so the bin/ launcher's own flags are authoritative.
+# (T-launcher-help-and-1m-flags; supersedes the prior Python delegator, whose
+# --help interception shadowed the bin/ launcher's flags.)
+exec "$(dirname "$(readlink -f "$0")")/bin/superclaude" "$@"

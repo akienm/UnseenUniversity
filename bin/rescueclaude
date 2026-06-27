@@ -21,13 +21,39 @@ cd /home/akien/dev/src/UnseenUniversity 2>/dev/null || cd "$HOME" || true
 # Sets only VIRTUAL_ENV/PATH — no credentials (cf. the superclaude 401 incident).
 [ -f /home/akien/dev/src/UnseenUniversity/.venv/bin/activate ] && \
   source /home/akien/dev/src/UnseenUniversity/.venv/bin/activate || true
-# Default: resume the RESCUE conversation (the picker, scoped to this name).
-# `rescueclaude --new` starts a FRESH session instead — same display name and
-# remote-control name (still the RESCUE instance), just a new conversation, so
-# it boots with current tools instead of an old session's stale tool set.
+# ── Wrapper flags (consumed here, never forwarded to claude) ──────────────────
+# --new : start a FRESH RESCUE conversation instead of resuming the picker —
+#         same display/remote-control name (still the RESCUE instance), just a new
+#         conversation, so it boots with current tools, not a stale tool set.
+# --1m  : use the 1M-token context window (ANTHROPIC_MODEL=opus[1m]). Off by
+#         default. Opus 1M is auto-included on Max/Team/Enterprise (no credit gate).
+#         The [1m] suffix is Claude Code's documented 1M model alias — not a beta
+#         header. (T-launcher-help-and-1m-flags)
+# --help: print these wrapper flags, then claude's own --help.
+# Flags may appear in any order; everything else is forwarded to claude.
 RESUME_ARGS=(--resume "$CC_TMUX_SESSION")
-if [ "$1" = "--new" ]; then
-  RESUME_ARGS=()
-  shift
-fi
+PASS_ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --new)  RESUME_ARGS=() ;;
+    --1m)   export ANTHROPIC_MODEL="opus[1m]" ;;
+    --help|-h)
+      cat <<'HELP'
+rescueclaude — the "everything's borked" recovery launcher.
+
+  Wrapper flags (consumed by rescueclaude, NOT passed to claude):
+    --new       Start a fresh RESCUE conversation instead of resuming the picker.
+    --1m        Use the 1M-token context window (sets ANTHROPIC_MODEL=opus[1m]).
+                Off by default. Opus 1M is auto-included on Max/Team/Enterprise.
+    --help, -h  Show this message, then claude's own --help below.
+
+  All other arguments are forwarded to claude.
+──────────────────────────────────────────────────────────────────────────────
+HELP
+      exec claude --help
+      ;;
+    *) PASS_ARGS+=("$arg") ;;
+  esac
+done
+set -- "${PASS_ARGS[@]}"
 exec claude --dangerously-skip-permissions "${RESUME_ARGS[@]}" -n "$CC_TMUX_SESSION" --remote-control "$CC_TMUX_SESSION" "$@"
