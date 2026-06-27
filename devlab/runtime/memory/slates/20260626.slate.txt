@@ -78,6 +78,4 @@ Next: Next: T-mcp-finish-igor-librarian-migration + T-mcp-dispatch-by-addressee 
 Done: Done: rescueclaude + resumeclaude moved into repo bin/, gained --new flag, ~/bin shadows deleted, fake-completion pattern noted
 Next: Next: /sprint T-mcp-dispatch-by-addressee (L, sprint-ready — full design resolved)
 
-## In-flight: Context-load skill floorboard fixed (T-context-load-slate-is-entry-point, awaiting_validation) — SKILL.md hard-stop banner + Step 1 surfaces live hand-off (last ## In-flight + ## Session close Next:); slate now the reflexive entry point not /query-ticket. Ready for /sprint T-mcp-dispatch-by-addressee (L, design resolved, sprint-ready).
-
 ## In-flight: Context-load skill floorboard fixed (awaiting_validation); ready for /sprint T-mcp-dispatch-by-addressee (L, sprint-ready, design resolved).
