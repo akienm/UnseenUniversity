@@ -30,11 +30,8 @@ Default worker is `CC.0`. Pass a worker id as the last arg to target another.
 ## Steps
 
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_available.py ${1:-on}
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_available.py ${1:-on}
 ```
-
-`${CC_WORKFLOW_TOOLS}` is `${UU_ROOT}/devlab/claudecode`. If unset, use
-`$(python3 -c 'from unseen_university._uu_root import uu_root; print(uu_root())')/devlab/claudecode/cc_available.py`.
 
 ## When to press it
 

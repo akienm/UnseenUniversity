@@ -20,7 +20,7 @@ IGOR_HOME = Path(uu_home())
 # decision/memory steps (2a/2b/3) whenever cwd != repo root — e.g. post-compact,
 # when context-load is the first thing run and the cwd is wherever the shell landed.
 UU_ROOT = Path(uu_root())
-CC_WORKFLOW_TOOLS = Path(os.environ.get("CC_WORKFLOW_TOOLS", UU_ROOT / "devlab" / "claudecode"))
+CC_WORKFLOW_TOOLS = UU_ROOT / "devlab" / "claudecode"
 
 
 # ─── Step 0: Restore CC.x availability (from cachedstate) ───

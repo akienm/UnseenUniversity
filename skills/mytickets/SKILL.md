@@ -6,7 +6,7 @@ that need Akien's hands — Granny will not dispatch them to CC or DickSimnel.
 ## Steps
 
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/queue_view.py --view mytickets
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/queue_view.py --view mytickets
 ```
 
 The script handles filtering, grouping, and formatting. Output is ready to read — no further processing needed.

@@ -34,7 +34,7 @@ Always check for an existing ticket before drafting a new one — /audit-ticket'
 duplicate check runs at filing time, but a pre-check here saves a round
 trip.
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep -i "<keyword>"
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py list 2>/dev/null | grep -i "<keyword>"
 ```
 
 ### 2. Fill the structured fields
@@ -89,12 +89,12 @@ with existing ticket ids before creating.
 New ticket:
 ```bash
 # Write JSON to /tmp/ticket.json (matching queue.json schema), then:
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py add /tmp/ticket.json
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py add /tmp/ticket.json
 ```
 
 Update existing ticket:
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py done|block|claim <id>
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py done|block|claim <id>
 ```
 
 ### 5. Add to slate
@@ -105,7 +105,7 @@ Always append the ticket ID to today's slate under `## Planned` or `## Ad hoc`
 echo "- <id>: <title>" >> ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/slates/$(date +%Y%m%d).slate.txt
 ```
 
-### 6. Run /savestateauto
+### 6. Run /savestate
 
 Always flush state after ticketing so the session record picks up the new
 ticket id.

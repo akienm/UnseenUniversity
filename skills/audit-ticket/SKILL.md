@@ -1,7 +1,6 @@
 ---
 name: audit-ticket
 description: Filing-time ticket audit — quality gate for every ticket before it lands in the queue. Runs duplicate detection, already-done check, scope/size/HIGH-inertia checks, palace design-rules, build-tightness grade, plus validation steps, remediation plan, rollback (HIGH-inertia), logging requirements, observability assertion, and split test. Called by /sorted on each drafted ticket. Returns PASS / AMEND / SPLIT / DISCARD. Model: Haiku.
-model: haiku
 ---
 
 # audit-ticket — Filing-time ticket quality gate
@@ -111,10 +110,10 @@ one" — pure skill-consumer tickets, OR "is the enforcer, not a consumer" —
 the rule-implementing ticket itself). Note the exemption in output.
 
 **Check:** scan Affected files for both sides:
-- HANDLER paths (any one match): `UnseenUniversity/devices/`,
-  `devlab/claudecode/mcp_*`, `wild_igor/igor/**/device*.py`,
-  `UnseenUniversity/**/capability*.py`
-- SKILL CONSUMER paths (any one match): `/home/akien/.claude/skills/*`
+- HANDLER paths (any one match): `devices/`,
+  `devlab/claudecode/mcp_*`, `unseen_university/**/device*.py`,
+  `unseen_university/**/capability*.py`
+- SKILL CONSUMER paths (any one match): `${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/skills/`
 
 Both sides present → PASS this check.
 
@@ -193,7 +192,7 @@ When `decision_id` is set AND any ticket in the batch is M, L, or XL:
 1. Check whether the batch includes a `T-consequence-{slug}` ticket.
 2. If not: check queue for an already-closed consequence ticket for this decision:
    ```bash
-   python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep "T-consequence" | grep -i "<decision-slug>"
+   python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py list 2>/dev/null | grep "T-consequence" | grep -i "<decision-slug>"
    ```
 3. If neither present → **AMEND**:
    ```

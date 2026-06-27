@@ -1,7 +1,6 @@
 ---
 name: audit-design
 description: Filing-time decision audit. Called by /sorted after the decision summary, before tickets are drafted. Catches a "decision" that isn't actually decided — vague intention, unobservable success criteria, conflicts with prior decisions or palace rules, undecomposed scope, missing executor assignment. Returns PASS / AMEND. Standalone invocation also supported via `/audit-design <decision-id>` for re-checking an already-filed decision.
-model: opus
 ---
 
 # audit-design — Decision-time positive checks
@@ -71,11 +70,11 @@ in hindsight but weren't."
 ### Check 4 — Constraints named
 
 **Look for:** the narrative explicitly names HIGH-inertia files touched (if any),
-gates the work depends on (`IGOR_TIER5_ENABLED`, etc.), dependencies on other
+gates the work depends on (`<a real gate flag>`, etc.), dependencies on other
 pending tickets, and any deadline or freeze-window constraints.
 
-**Fail when:** scope obviously involves HIGH-inertia areas (`brainstem/`,
-`memory/models.py`, `cognition/reasoners/base.py`) or a known gate but the
+**Fail when:** scope obviously involves HIGH-inertia areas (`unseen_university/`,
+`bus/`, `device.py`, `shim.py`) or a known gate but the
 narrative is silent on them.
 
 **AMEND:** "Decision touches `<area>` which is HIGH-inertia / gated by `<flag>` —
@@ -217,7 +216,7 @@ complete in one round.
 ### 4. Detect HIGH-inertia surface
 
 When the decision narrative names files in HIGH-inertia areas
-(`brainstem/`, `memory/models.py`, `cognition/reasoners/base.py`) or any
+(`unseen_university/`, `bus/`, `device.py`, `shim.py`) or any
 file flagged HIGH in the subsystem index, surface inline for Akien
 pre-approval before /sorted proceeds. The HIGH-inertia mention is not an
 AMEND — it's a separate gate.

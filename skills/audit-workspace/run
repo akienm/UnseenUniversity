@@ -103,15 +103,12 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--tier":
         tier_filter = int(sys.argv[2])
 
-    candidates = [
-        "/home/akien/TheIgors",
-        "/home/akien/TheIgors.archive",
-        "/home/akien/TheIgors-cert-walks",
-        "/home/akien/TheIgorsProject",
-        "/home/akien/AcuRite",
-        "/home/akien/agent_datacenter",
-        "/home/akien/dev/src/UnseenUniversity/lab",
-    ]
+    # Dynamic scan: find all dirs under ~/dev/src (maxdepth 2), matching SKILL.md Scan 1
+    scan_result = subprocess.run(
+        "find ~/dev/src -maxdepth 2 -type d 2>/dev/null",
+        shell=True, capture_output=True, text=True
+    )
+    candidates = [line for line in scan_result.stdout.strip().splitlines() if line]
 
     runtime_artifacts = [
         "/home/akien/.unseen_university/blobs",

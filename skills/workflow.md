@@ -18,7 +18,7 @@ THE TRACKING STACK
   Decision (D-xxx)                 ← design call + hypothesis + intention
     /sorted             ← summarize → extract hypothesis → audit-hypothesis
                            → audit-design → draft tickets → audit-ticket
-                           → file tickets → write palace node → log
+                           → file tickets → write to memory store (devlab/runtime/memory/) → log
     /audit-design       ← 9 checks + "better architecture?" challenge
     /audit-ticket       ← 16 checks + "simpler implementation?" challenge
 
@@ -35,7 +35,7 @@ THE TRACKING STACK
 
   Outcomes                         ← closes the learning loop
     /outcome D-xxx      ← review hypothesis vs evidence → confirmed/falsified
-    Stored on: decision record + palace node
+    Stored on: decision record + memory store record
 
 ══════════════════════════════════════════════════════════════
 WEEKLY TRACKS (Fridays in day-close, or standalone)
@@ -45,7 +45,7 @@ WEEKLY TRACKS (Fridays in day-close, or standalone)
   /audit-expert        ← 3 random experts (weekly) or full 11 (monthly, 1st Monday)
 
 DAILY
-  /context-load        ← session startup: slate + rules + palace + channel + inbox
+  /context-load        ← session startup: slate + rules + decisions + channel + inbox
   /day-close           ← end of day: savestate → close slate → audit → docs → push
   /day-close-audit     ← 20-step code health check (runs inside day-close)
   /savestate           ← flush in-flight state to slate (mid-session or session-close)
@@ -103,7 +103,7 @@ WHERE AM I? — QUICK GUIDE
     → /audit-expert (weekly: 3 experts; monthly: all 11)
 
   "I don't know what's in the queue"
-    → /query-ticket, or python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list
+    → /query-ticket, or python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py list
 
   "I want a capability snapshot"
     → /eval-run (5 capability questions)

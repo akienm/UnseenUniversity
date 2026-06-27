@@ -30,7 +30,7 @@ Consumer path: this skill + the context-load auto-read.
 ### 1. Read unread entries
 
 ```bash
-python3 ~/dev/src/UnseenUniversity/devlab/claudecode/cc_inbox.py list
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_inbox.py list
 ```
 
 Output format per entry:
@@ -67,7 +67,7 @@ Inbox: 3 unread (1 high, 2 normal)
 After surfacing them to Akien, mark them read so they don't re-surface:
 
 ```bash
-python3 ~/dev/src/UnseenUniversity/devlab/claudecode/cc_inbox.py mark-all-read
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_inbox.py mark-all-read
 ```
 
 Only do this when the entries were actually shown to Akien. If Akien didn't

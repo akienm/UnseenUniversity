@@ -11,39 +11,9 @@ per-ticket state recording; /autocompact signals "done working for now."
 
 ## Steps
 
-### 1. Release debug flag
+### 1. Pre-compact housekeeping
 
-Preferred (DESIGNED:T-mcp-igor-cognition-debug-capability):
-```bash
-python3 ${CC_WORKFLOW_TOOLS}/debug_session_cli.py release
-```
-
-Fallback:
-```bash
-rm -f ${IGOR_HOME:-$HOME/.unseen_university}/$IGOR_INSTANCE_ID/debug_session.flag
-```
-
-### 1.3. Deposit session content to clan.memories (T-cc-log-session-memory)
-
-Makes today's Done+Notes content semantically searchable via the auto-embed pipeline.
-Non-fatal — autocompact continues even if the deposit fails.
-
-```bash
-python3 ${CC_WORKFLOW_TOOLS}/session_memory_deposit.py 2>/dev/null || true
-```
-
-### 1.5. Mark CC.0 unavailable — prevents Granny dispatch during compact
-
-```bash
-GRANNY_AVAIL=${GRANNY_AVAIL_DIR:-$HOME/.granny/available}
-mkdir -p "$GRANNY_AVAIL"
-rm -f "$GRANNY_AVAIL/CC.0.available.true"
-touch "$GRANNY_AVAIL/CC.0.available.false"
-```
-
-Granny checks `is_available('CC.0')` before dispatching. With `.false` present,
-she defers rather than sending into the void. `/context-load` restores `.true`
-on session resume.
+Pre-compact housekeeping (debug-flag release, session deposit, CC.0-unavailable) is handled by /savestate, not here.
 
 ### 2. Emit preserve string + fire self-compact
 
@@ -76,7 +46,7 @@ concurrent typing (verified 2026-06-05); single-call variants do not fire reliab
 # nohup + & required: the script drives the session via tmux send-keys.
 # Running it directly blocks the Bash tool, creating a deadlock.
 # Detaching lets the tool return immediately; the script runs outside the session.
-nohup ${CC_WORKFLOW_TOOLS}/uucompactclaude &
+nohup ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/uucompactclaude &
 ```
 
 The step-3 return is best-effort (the `sleep 12` must outlast compaction). The

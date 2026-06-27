@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """note — log a milestone, insight, or decision to notes.log and today's slate."""
 import os
-from unseen_university._uu_root import uu_home
 import sys
 from datetime import datetime
 from pathlib import Path
 
 from unseen_university import slate_store
 
-IGOR_HOME     = Path(uu_home())
 UU_ROOT = Path(os.environ.get("UU_ROOT", Path.home() / "dev/src/UnseenUniversity"))
 
 
@@ -21,7 +19,7 @@ def main() -> None:
     ts   = datetime.now().isoformat(timespec="seconds")
     line = f"{ts} | {text}"
 
-    notes_log = UU_ROOT / "lab" / "notes.log"
+    notes_log = UU_ROOT / "devlab" / "runtime" / "memory" / "notes" / "notes.log"
     notes_log.parent.mkdir(parents=True, exist_ok=True)
     with notes_log.open("a", encoding="utf-8") as f:
         f.write(line + "\n")

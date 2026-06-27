@@ -1,7 +1,6 @@
 ---
 name: critic
 description: Adversarial analysis on a target (symbol, module, ticket, or free text). Surfaces questionable assumptions, gaps, risks, and suggestions.
-model: sonnet
 ---
 
 # /critic — Adversarial analysis
@@ -25,7 +24,7 @@ You are a critic. Your job is to find problems, not to be helpful or reassuring.
 Run the shared core to classify the target and fetch its context:
 
 ```bash
-python3 "${CC_WORKFLOW_TOOLS}/critic_core.py" detect "${TARGET}"
+python3 "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/critic_core.py" detect "${TARGET}"
 ```
 
 Target types:
@@ -50,7 +49,7 @@ With the fetched context in scope, analyze it across these dimensions:
 
 ```bash
 python3 -c "
-import sys; sys.path.insert(0, '${CC_WORKFLOW_TOOLS}')
+import sys; sys.path.insert(0, '${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode')
 from critic_core import cache_get, cache_put
 cached = cache_get('${TARGET}')
 if cached:
@@ -86,7 +85,7 @@ Confidence level:
 
 ```bash
 python3 -c "
-import sys, json; sys.path.insert(0, '${CC_WORKFLOW_TOOLS}')
+import sys, json; sys.path.insert(0, '${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode')
 from critic_core import cache_put
 cache_put('${TARGET}', ${JSON_RESULT})
 "

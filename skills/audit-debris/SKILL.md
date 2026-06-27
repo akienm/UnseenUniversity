@@ -32,7 +32,7 @@ Any runtime path or `.db` file staged = AMEND (always stage by name, not `git ad
 
 ### 3. .env changes
 ```bash
-git diff --staged -- .env wild_igor/.env 2>/dev/null
+git diff --staged -- .env 2>/dev/null
 ```
 Any `.env` change = AMEND unless commit message explicitly notes the change and reason.
 Rule: always note what changed and why when editing `.env`.

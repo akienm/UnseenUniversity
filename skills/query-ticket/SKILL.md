@@ -28,14 +28,12 @@ For a specific worker: pass `worker="igor"` or the appropriate name.
 
 **Full pending list** (fallback when MCP unavailable):
 ```bash
-CC_WORKFLOW_TOOLS="${CC_WORKFLOW_TOOLS:-${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode}"
-source "${HOME}/TheIgors/venv/bin/activate" 2>/dev/null || true
-python3 "${CC_WORKFLOW_TOOLS}/cc_queue.py" list 2>/dev/null | head -30
+python3 "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py" list 2>/dev/null | head -30
 ```
 
 **Specific ticket:**
 ```bash
-python3 "${CC_WORKFLOW_TOOLS}/cc_queue.py" show "$TICKET_ID" 2>/dev/null
+python3 "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py" show "$TICKET_ID" 2>/dev/null
 ```
 
 ### 2. Surface to Akien

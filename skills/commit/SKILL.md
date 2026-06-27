@@ -38,7 +38,7 @@ For commits outside of /sprint (one-off fixes, doc edits).
    git commit -m "$(cat <<'EOF'
    feat/fix/docs: description
 
-   Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+   Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
    EOF
    )"
    git pull --rebase origin main && git push origin main

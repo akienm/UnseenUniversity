@@ -1,7 +1,6 @@
 ---
 name: context-load
 description: Session startup — filesystem-store briefing + slate + recent decisions + channel + inbox. 2000-token budget.
-model: haiku
 ---
 
 # context-load — Session startup
@@ -39,7 +38,7 @@ that was the bug fixed in T-skills-palace-db-to-fs-store.)
 |------|-------|----------|
 | 0 | `~/.granny/available/` ← device cachedstate | Restores this CC's availability flag |
 | 0.25 | `slate_store` prior-day slate | Warns if the previous day's slate has open items and no `✅ CLOSED` |
-| 0.5 | `IGOR_HOME/$IGOR_INSTANCE_ID/` | Sets the debug session flag |
+| 0.5 | `~/.unseen_university/<instance_id>/` | Sets the debug session flag |
 | 1 | `slate_store.today_slate_path()` | Ensures today's slate exists; surfaces the **live hand-off** — last `## In-flight` + last `## Session close` (`Next:`). Read the slate whole; act on `Next:`, not `/query-ticket`. |
 | 2a | `devlab/runtime/memory/decisions/*.json` | 3 most-recent decisions **by `emitted_at`** (not filename order) |
 | 2b | `devlab/runtime/memory/` | Lists the memory subdirs (decisions, tickets, slates, …) |
@@ -47,7 +46,7 @@ that was the bug fixed in T-skills-palace-db-to-fs-store.)
 | 4 | `unseen_university.channel` | Last few channel posts (quiet/offline tolerated) |
 | 5 | `cc_queue.py list` | Approval-pending tickets (🟠), closed filtered out |
 | 5.5 | `stall_check.py` | Tickets stuck in_progress >2h |
-| 5.6 | `IGOR_HOME/cc_channel/inbox.jsonl` | Unread inbox, urgency + Granny posts flagged |
+| 5.6 | `~/.unseen_university/cc_channel/inbox.jsonl` | Unread inbox, urgency + Granny posts flagged |
 
 Every step is fail-soft: a missing/empty source prints a quiet status line and the
 briefing continues. The script never gates on any single source.

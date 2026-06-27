@@ -6,7 +6,6 @@ Usage:
   python run done-slate <ticket-id> <summary> # append done line to today's slate
 """
 import os
-from unseen_university._uu_root import uu_home
 import subprocess
 import sys
 from datetime import datetime
@@ -14,7 +13,6 @@ from pathlib import Path
 
 from unseen_university import slate_store
 
-IGOR_HOME     = Path(uu_home())
 UU_ROOT = Path(os.environ.get("UU_ROOT", Path.home() / "dev/src/UnseenUniversity"))
 
 

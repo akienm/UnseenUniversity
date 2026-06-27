@@ -17,7 +17,7 @@ discipline demands?"
 /audit-expert                      # weekly: 3 random experts
 /audit-expert --mode=monthly       # full 11-expert panel
 /audit-expert --experts=safety,ux  # explicit selection
-/audit-expert --area=cognition     # pick experts for recently-touched area
+/audit-expert --area=architecture   # pick experts for recently-touched area
 ```
 
 ## The 11 experts
@@ -61,8 +61,9 @@ Candidate ticket (0-1):
 # Recent commits
 git log --oneline --since="7 days ago"
 # Today's stats
-python3 ${CC_WORKFLOW_TOOLS}/map_igor.py --section=tickets
-python3 ${CC_WORKFLOW_TOOLS}/map_igor.py --section=gates
+# TODO(UU): map_igor.py is TheIgors-only; needs a UU data source
+# python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/map_igor.py --section=tickets
+# python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/map_igor.py --section=gates
 # Prior watch-for notes for expert level
 python3 -c "
 from devlab.claudecode.audit_telemetry import read_watch_next
@@ -85,17 +86,16 @@ Select based on invocation mode:
 python run select weekly .              # 3 day-seeded random experts
 python run select monthly .             # all experts in the loaded panel
 python run select experts:Safety,HCI .  # named experts (partial match)
-python run select area:cognition .      # area-mapped experts (default panel only)
+python run select area:architecture .   # area-mapped experts (see _AREA_MAP in run script)
 ```
 
 - **Weekly**: choose 3 experts at random from the loaded list (day-of-week seed — deterministic within a day).
 - **Monthly**: all experts in the loaded panel.
 - **On-demand with --experts**: the named ones (partial name match).
-- **On-demand with --area** (default 11-expert panel only — area names are Igor-specific):
-  - `cognition` → Cognitive Scientist, ML Engineer, Safety Engineer
-  - `memory` → Data Engineer, Systems Architect, Reliability Engineer
-  - `network` → Distributed Systems, Security Engineer
-  - `tools` → HCI, Process/Meta, Product Manager
+- **On-demand with --area** (maps to `_AREA_MAP` in the run script):
+  - `architecture` → Systems Architect, Security Engineer, Self-Improving Systems
+  - `process` → Process / Meta Engineer, Product Manager, Reliability Engineer
+  - `observability` → Human-Computer Interaction, Evaluator Quality, Observability-First
 
 ### 3. Run each expert (Opus, one at a time)
 For each selected expert, apply their broadest lens to the codebase context.

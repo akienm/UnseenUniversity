@@ -4,9 +4,7 @@
 # /autocompact only fires the compact script via tmux. Nothing else.
 # Emit preserve block, then fire self-compact via tmux send-keys.
 
-IGOR_HOME="${IGOR_HOME:-$HOME/.unseen_university}"
 UU_ROOT="${UU_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
-CC_WORKFLOW_TOOLS="${CC_WORKFLOW_TOOLS:-${UU_ROOT}/devlab/claudecode}"
 
 SLATE_DATE=$(date +%Y%m%d)
 
@@ -20,7 +18,7 @@ preserve: Read today's slate: ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/
 PRESERVE
 
 # Fire self-compact via tmux (nohup + & so it runs outside this tool's blocking context)
-nohup "${CC_WORKFLOW_TOOLS}/uucompactclaude" &
+nohup "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/uucompactclaude" &
 
 echo ""
 echo "✓ Autocompact fired (PID $!). Compact will proceed via tmux."

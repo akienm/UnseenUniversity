@@ -1,7 +1,6 @@
 ---
 name: audit-precode
 description: Pre-edit code quality audit. Invoked by /sprint after plan-review (step 4.5), before the first edit. Catches hallucinated targets (P1 bug context): verifies every file and symbol in the plan exists; gates HIGH-inertia touches; checks for deprecated forms from preferred_paths; validates test plan and docstring plan. Returns PASS / AMEND. Model: Haiku (escalates to Sonnet on HIGH-inertia).
-model: haiku
 ---
 
 # audit-precode — Pre-edit validation
@@ -28,7 +27,7 @@ Missing file = AMEND. The plan must name real files.
 For every named function, class, or constant the plan proposes to call or
 modify:
 ```bash
-grep -rn "<symbol>" wild_igor/igor/ lab/ 2>/dev/null | head -5
+grep -rn "<symbol>" unseen_university/ devices/ 2>/dev/null | head -5
 ```
 Symbol not found = AMEND. "I'll add it" is fine; "I'll modify it" on a
 non-existent symbol is not.
@@ -48,10 +47,10 @@ memory_get(path="unseenuniversity/rules/preferred_paths")
 Then check each child node's `deprecated` field against the plan text.
 Match → AMEND with preferred alternative.
 
-Patterns to watch for even without palace load:
-- `psycopg2.connect` for palace reads → use `memory_get` MCP
+Patterns to watch for even without the rules store loaded:
+- `psycopg2.connect` for memory reads → read the flat-file store (`devlab/runtime/memory/`)
 - `from devlab.claudecode.channel import` → use `_post_to_channel` or MCP
-- `print(` in wild_igor/ → use `self.log.*`
+- `print(` in device code → use `self.log.*`
 - new `MemoryType.` enum value → metadata tag instead
 - new `IGOR_*_ENABLED` flag → build to intent + go-live-when ticket
 

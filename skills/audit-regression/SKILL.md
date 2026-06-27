@@ -26,7 +26,7 @@ trawls, no "is this good?".
 ```bash
 grep -r "import sqlite\|from sqlite\|sqlite3" \
   --include="*.py" --exclude-dir=".git" --exclude-dir="venv" \
-  unseen_university/ devices/ lab/
+  unseen_university/ devices/
 ```
 **PASS**: No matches. **FAIL**: Any import = AMEND.
 

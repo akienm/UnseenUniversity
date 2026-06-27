@@ -16,7 +16,7 @@ Manage SILENT/QUIET/LOUD delivery config for this CC instance.
 
 ## Device home
 
-Config lives at `${CC_DEVICE_HOME:-${IGOR_HOME:-~/.unseen_university}/CC-wild-0001}`.
+Config lives at `${CC_DEVICE_HOME:-$HOME/.unseen_university/CC-wild-0001}`.
 Set `CC_DEVICE_HOME` to override for a non-default instance.
 
 ---
@@ -38,8 +38,9 @@ Set `CC_DEVICE_HOME` to override for a non-default instance.
 python3 -c "
 from pathlib import Path; import os
 from unseen_university.notify import NotificationConfig
+from unseen_university._uu_root import uu_home
 device_home = Path(os.environ.get('CC_DEVICE_HOME') or
-    os.environ.get('IGOR_HOME', str(Path.home() / '.unseen_university')) + '/CC-wild-0001')
+    uu_home() + '/CC-wild-0001')
 cfg = NotificationConfig.load(device_home)
 busy = (Path.home() / '.granny/available/CC.0.available.false').exists()
 state = 'busy (effective default: SILENT)' if busy else 'idle'
@@ -61,8 +62,9 @@ print(f'Config at     : {device_home}/notifications.cfg')
 python3 -c "
 from pathlib import Path; import os
 from unseen_university.notify import NotificationConfig, DeliveryMode
+from unseen_university._uu_root import uu_home
 device_home = Path(os.environ.get('CC_DEVICE_HOME') or
-    os.environ.get('IGOR_HOME', str(Path.home() / '.unseen_university')) + '/CC-wild-0001')
+    uu_home() + '/CC-wild-0001')
 cfg = NotificationConfig.load(device_home)
 old = cfg.default_level.value
 cfg.default_level = DeliveryMode('LEVEL')
@@ -77,8 +79,9 @@ print(f'Default level: {old} → {cfg.default_level.value}')
 python3 -c "
 from pathlib import Path; import os
 from unseen_university.notify import NotificationConfig, DeliveryMode
+from unseen_university._uu_root import uu_home
 device_home = Path(os.environ.get('CC_DEVICE_HOME') or
-    os.environ.get('IGOR_HOME', str(Path.home() / '.unseen_university')) + '/CC-wild-0001')
+    uu_home() + '/CC-wild-0001')
 cfg = NotificationConfig.load(device_home)
 old = cfg.overrides.get('SENDER')
 old_str = old.value if old else '(none)'
@@ -94,8 +97,9 @@ print(f'SENDER: {old_str} → {cfg.overrides[\"SENDER\"].value}')
 python3 -c "
 from pathlib import Path; import os
 from unseen_university.notification_dispatcher import NotificationDispatcher
+from unseen_university._uu_root import uu_home
 device_home = Path(os.environ.get('CC_DEVICE_HOME') or
-    os.environ.get('IGOR_HOME', str(Path.home() / '.unseen_university')) + '/CC-wild-0001')
+    uu_home() + '/CC-wild-0001')
 nd = NotificationDispatcher(device_home=device_home)
 entries = nd.drain_pending()
 if not entries:

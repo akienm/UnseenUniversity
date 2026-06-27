@@ -1,7 +1,6 @@
 ---
 name: sorted
 description: Batch-ticketize conversation decisions. Reads recent conversation turns (since /design marker or prior /sorted), summarizes each decision, drafts tickets per decision, runs /audit-ticket on each ticket filing-time, and writes to queue + slate + session record + Igor memory palace with two-way decision↔ticket backlinks.
-model: sonnet
 ---
 
 # /sorted — Close a design block → batch tickets
@@ -145,7 +144,7 @@ Akien's pre-approval. Stamp the approval into the ticket body before filing
 Write the post-review batch to `/tmp/sorted_batch_<decision-id>.json`, then
 append to the queue:
 ```bash
-python "${CC_WORKFLOW_TOOLS}/cc_queue.py" add /tmp/sorted_batch_<decision-id>.json
+python "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py" add /tmp/sorted_batch_<decision-id>.json
 ```
 `cc_queue.py` is the canonical writer — always go through it so the slate
 echo and session record stay consistent.
@@ -206,7 +205,7 @@ cat > /tmp/decision_body_<id>.json <<'JSON'
   "text": "# D-<id>\n**title:** <summary>\n**date:** YYYY-MM-DD\n**status:** open\n**spawned_tickets:** T-x, T-y, T-z\n\n## Decision narrative\n<1-2 sentences from step 2 + scope context>\n\n## Hypothesis\n<Q2 answer>\n\n## Measurement Signal\n<Q3 answer>\n\n## Intention\n<the 'I intend that...' statement from Q1>"
 }
 JSON
-python3 "${CC_WORKFLOW_TOOLS}/memory_emit.py" \
+python3 "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/memory_emit.py" \
   --category decisions --emitter cc.0 --kind decision \
   --namespace D-<id> --body-file /tmp/decision_body_<id>.json
 ```
@@ -232,8 +231,9 @@ slate.open('a',encoding='utf-8').write('- D-...: <summary> — T-x, T-y, T-z\n')
 
 ```
 python -c "
-from pathlib import Path; import os
-f = Path(os.environ.get('IGOR_HOME', Path.home()/'.unseen_university'))/'cc_channel'/'design_mode.json'
+from pathlib import Path
+from unseen_university._uu_root import uu_home
+f = Path(uu_home())/'cc_channel'/'design_mode.json'
 f.unlink(missing_ok=True)
 "
 ```
@@ -278,7 +278,7 @@ Multiple decisions in one session:
 - /audit-ticket runs on EVERY draft, not just the first or biggest.
 - HIGH-inertia approvals land in the ticket body before filing; they are not kept in CC's conversational memory.
 - Every M/L/XL decision — and every S-only decision where Step 2.6 extracted a behavioral hypothesis — gets a consequence-check ticket (Step 5.5). This is non-negotiable: no M/L/XL decision closes without one.
-- Design status moves to `closed` only when: (a) all spawned_tickets are closed AND (b) at least one T-consequence-{slug} for this decision is also closed. Before re-emitting the decision JSON with `status: closed` (reuse the file's existing stamp — atomic overwrite), verify: `python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep "T-consequence"` for the decision slug shows a closed entry. If not, file the consequence ticket first.
+- Design status moves to `closed` only when: (a) all spawned_tickets are closed AND (b) at least one T-consequence-{slug} for this decision is also closed. Before re-emitting the decision JSON with `status: closed` (reuse the file's existing stamp — atomic overwrite), verify: `python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py list 2>/dev/null | grep "T-consequence"` for the decision slug shows a closed entry. If not, file the consequence ticket first.
 - Any batch containing an L or XL ticket gets an `advisor()` review (Step 3.5) before /audit-ticket runs. S-only batches skip this.
 
 ## Hard rules

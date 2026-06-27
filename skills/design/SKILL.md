@@ -11,7 +11,7 @@ Lightweight boundary marker. Design conversations usually don't need this — /s
 ## What it does
 
 1. **Writes a DESIGN_START marker to the slate** (## Notes section).
-2. **Sets a session tag.** Writes `design_mode: true` to `${IGOR_HOME:-~/.unseen_university}/cc_channel/design_mode.json`.
+2. **Sets a session tag.** Writes `design_mode: true` to `$HOME/.unseen_university/cc_channel/design_mode.json`.
 3. **(Optional nudge on CC's behaviour):** in design mode, bias toward discussion-shape responses — fewer proactive edits, more "what about X?" questions.
 
 ## What it does NOT do
@@ -36,7 +36,7 @@ Lightweight boundary marker. Design conversations usually don't need this — /s
    ```
 3. Write `design_mode.json`:
    ```bash
-   echo '{"design_mode":true,"started_at":"'$(date -Iseconds)'"}' > ${IGOR_HOME:-~/.unseen_university}/cc_channel/design_mode.json
+   echo '{"design_mode":true,"started_at":"'$(date -Iseconds)'"}' > $HOME/.unseen_university/cc_channel/design_mode.json
    ```
 4. Acknowledge: "Design mode on, scope begins now. Use /sorted to close the block and ticketize."
 

@@ -24,7 +24,7 @@ Optional selector (same syntax as /sprint-batch):
 ### 1. Check queue for pending items
 
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py list 2>/dev/null | grep -E "sprint\]|triage\]" | grep -v "\[akien\]" | grep -v "done"
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py list 2>/dev/null | grep -E "sprint\]|triage\]" | grep -v "\[akien\]" | grep -v "done"
 ```
 
 Filter to tickets with status=sprint or triage that are not assigned to akien.

@@ -1,7 +1,6 @@
 ---
 name: sprint-ticket
 description: Single-ticket execution unit — capability check, claim, build, test, commit, close, savestate. Called by /sprint and /sprint-batch. Args: ticket ID.
-model: sonnet
 ---
 
 # /sprint-ticket — Single-ticket sprint
@@ -31,7 +30,7 @@ Matching heuristics (when any match, surface the option):
 - Ticket tag includes `Database` → `mcp__librarian__db_query`
 - Ticket tag includes `Cognition` / `Debug` → Igor cognition-debug capability
 - Ticket tag includes `Reading` / `Memory` → Igor memory tools
-- Affected files under `wild_igor/igor/` AND ticket scope is "implement inside Igor" → consider Igor self-coding via cc_send
+- Affected files under `devices/igor/` AND ticket scope is "implement inside Igor" → consider Igor self-coding via cc_send
 
 Output shape (one line, before Step 2 — Claim):
 ```
@@ -47,7 +46,7 @@ When no match: silent — proceed to Step 2 directly.
 Tickets arrive pre-claimed — cmd_next atomically marks the ticket in_progress
 before handing it to the sprint runner. Verify it is in the expected state:
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py show <id> | grep '"status"'
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py show <id> | grep '"status"'
 ```
 If status is not `in_progress`, something went wrong — do not proceed; surface
 to Akien. Then add the ticket ID to today's slate under `## Planned` or `## Ad hoc`.
@@ -56,8 +55,8 @@ to Akien. Then add the ticket ID to today's slate under `## Planned` or `## Ad h
 
 Run both brief scripts immediately after confirming in_progress — before reading any files:
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/sprint_preflight_brief.py <id>
-python3 ${CC_WORKFLOW_TOOLS}/pre_inference_assemble.py <id>
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/sprint_preflight_brief.py <id>
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/pre_inference_assemble.py <id>
 ```
 
 `sprint_preflight_brief.py` surfaces: reset history, open/closed sibling tickets, file-proximity matches.
@@ -72,7 +71,7 @@ When the ticket description contains `**Builder report:**`, run freshness_check(
 to surface in_flight conflicts and staleness. Non-fatal — skip if no report present.
 
 ```bash
-STORED_REPORT=$(python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py show <id> 2>/dev/null \
+STORED_REPORT=$(python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py show <id> 2>/dev/null \
   | python3 -c "
 import sys,json,re
 d=json.load(sys.stdin)
@@ -97,10 +96,10 @@ before proceeding. When `"stale": false` and no warnings — proceed without com
 First, state the plan in one to three sentences: what files will change,
 what tests will cover it, what the scope boundary is.
 
-Check inertia before touching anything — the authoritative list lives at
-`unseenuniversity/rules/safeguards` in the palace. Read it via:
+Check inertia before touching anything — the authoritative list lives in the
+flat-file rules store. Read it via:
 ```
-memory_get(path="unseenuniversity/rules/safeguards")
+cat "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/runtime/memory/rules/"*safeguards* 2>/dev/null
 ```
 When the plan touches a HIGH-inertia file, always pause and surface it to
 Akien for inline pre-approval before coding. Stamp the approval into the
@@ -118,7 +117,7 @@ After the inertia check, surface a one-screen infrastructure brief for the
 touched areas (MCP tools, proxies, base classes, IMAP buses, channels).
 
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/sprint_infrastructure_brief.py \
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/sprint_infrastructure_brief.py \
   <file1> <file2> ...
 ```
 
@@ -175,7 +174,7 @@ The grader is advisory — it never blocks the close.
 # Extract staged diff and ticket Test plan for grader
 DIFF=$(git diff --staged)
 TICKET_ID="<id>"
-TEST_PLAN=$(python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py show $TICKET_ID | python3 -c "import sys,json,re; d=json.load(sys.stdin); m=re.search(r'\*\*Test plan:\*\*(.+?)(\*\*|$)',d.get('description',''),re.S); print(m.group(1).strip() if m else 'no test plan')")
+TEST_PLAN=$(python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py show $TICKET_ID | python3 -c "import sys,json,re; d=json.load(sys.stdin); m=re.search(r'\*\*Test plan:\*\*(.+?)(\*\*|$)',d.get('description',''),re.S); print(m.group(1).strip() if m else 'no test plan')")
 ```
 
 Pass DIFF + TEST_PLAN to a Haiku subagent:
@@ -207,7 +206,7 @@ git add <specific files>
 git commit -m "$(cat <<'EOF'
 feat/fix/docs: description
 
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 EOF
 )"
 git pull --rebase origin main && git push origin main
@@ -222,7 +221,7 @@ classifier sees the new symbols immediately on the next ticket.
 ```bash
 FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null)
 if [ -n "$FILES" ]; then
-  python3 ${CC_WORKFLOW_TOOLS}/code_indexer.py --files $FILES 2>&1 | tail -1 || true
+  python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/code_indexer.py --files $FILES 2>&1 | tail -1 || true
 fi
 ```
 
@@ -238,18 +237,18 @@ PROOF-LEVER. "Done" is no longer a free claim (CP1). Two honest paths:
 **Proven** — emit a commit-bound proof first (red→green a hollow build couldn't
 produce), commit it, then close:
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/proof_emitter.py \
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/proof_emitter.py \
   --thing "<what>" --intention "<one falsifiable claim>" \
   --test "tests/test_x.py::test_y" --ticket <id>
 git add -A && git commit -m "proof: <id>"   # commit the emitted proof JSON
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py close <id> "what was built"
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py close <id> "what was built"
 ```
 
 **shipped-unproven** — when a proof can't yet be defined (conceptual ticket, or
 the proof step isn't wired for this class), close honestly and name the lever
 we still lack. Visible backlog, never a silent "done":
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/cc_queue.py close <id> "what was built" \
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/cc_queue.py close <id> "what was built" \
   --shipped-unproven "<the proof-lever we still lack — e.g. no harness for <X>>"
 ```
 
@@ -262,7 +261,7 @@ python run done-slate <id> "what was built"
 
 Then check whether closing this ticket completes a decision's spawned_tickets list:
 ```bash
-python3 ~/dev/src/UnseenUniversity/devlab/claudecode/outcome_check.py <id>
+python3 "${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/outcome_check.py" <id>
 ```
 When all spawned_tickets in a decision are now closed, this prints:
 `🏁 Decision D-xxx is fully shipped — run /outcome D-xxx: <hypothesis>`

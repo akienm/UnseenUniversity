@@ -21,7 +21,7 @@ mcp__librarian__channel_send(content="trigger dreaming pass")
 
 Fallback (bash):
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/channel.py send "trigger dreaming pass"
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/channel.py send "trigger dreaming pass"
 ```
 
 ### 2. Poll for response (up to 30s)
@@ -34,7 +34,7 @@ timestamp.
 TRIGGER_TIME=$(date -Iseconds)
 for i in 1 2 3 4 5 6; do
   sleep 5
-  python3 ${CC_WORKFLOW_TOOLS}/channel.py read 10 | grep -i "dream\|synthesized\|proposed" | tail -5
+  python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/channel.py read 10 | grep -i "dream\|synthesized\|proposed" | tail -5
 done
 ```
 

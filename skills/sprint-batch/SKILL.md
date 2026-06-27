@@ -1,7 +1,6 @@
 ---
 name: sprint-batch
 description: Run multiple tickets in one session with one shared setup (git pull, venv, env) instead of per-ticket. Takes a selector — today-slate, slate:planned, slate:ad-hoc, decision:D-..., tag:<tag>, or an explicit ticket list. Filters out gated tickets. Topo-sorts by dependencies.
-model: sonnet
 ---
 
 # /sprint-batch — Multi-ticket sprint

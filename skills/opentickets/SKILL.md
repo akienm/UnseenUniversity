@@ -6,7 +6,7 @@ Use this to get the full picture of what's in flight.
 ## Steps
 
 ```bash
-python3 ${CC_WORKFLOW_TOOLS}/queue_view.py --view opentickets
+python3 ${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devlab/claudecode/queue_view.py --view opentickets
 ```
 
 The script handles grouping, hold suppression (OR-exhausted holds summarised as count only), triage limiting (top 5 shown), and totals line. Output is ready to read.

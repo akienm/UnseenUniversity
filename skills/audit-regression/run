@@ -36,7 +36,7 @@ def main():
     checks = {
         "core-invariants": [
             ("1.1 No SQLite",
-             "grep -r 'import sqlite\\|from sqlite\\|sqlite3' --include='*.py' --exclude-dir=.git --exclude-dir=venv unseen_university/ devices/ lab/ 2>/dev/null",
+             "grep -r 'import sqlite\\|from sqlite\\|sqlite3' --include='*.py' --exclude-dir=.git --exclude-dir=venv unseen_university/ devices/ 2>/dev/null",
              "grep"),
             ("1.2 All devices inherit Base*",
              "! find devices/ -name '*.py' -type f -exec grep -l '^class.*Device\\|^class.*Shim' {} \\; 2>/dev/null | xargs grep -L 'BaseDevice\\|BaseShim' 2>/dev/null | grep .",
