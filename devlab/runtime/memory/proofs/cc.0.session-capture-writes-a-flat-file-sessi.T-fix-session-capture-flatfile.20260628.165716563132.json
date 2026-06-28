@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.session-capture-writes-a-flat-file-sessi.T-fix-session-capture-flatfile.20260628.165716563132",
+  "emitter": "cc.0",
+  "namespace": [
+    "session-capture-writes-a-flat-file-sessi",
+    "T-fix-session-capture-flatfile"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-28T16:57:16.563132",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-fix-session-capture-flatfile"
+    ],
+    "commits": [
+      "e146c4cc0a9818a02ffd2550a01ce50163e1c67c"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "session_capture writes a flat-file session node, no Postgres",
+    "intention": "capture() emits the session summary+transcript as a node under devlab/runtime/memory/sessions/ via memory_emit, with no adc.palace/psycopg2 path",
+    "test": "tests/test_session_capture_flatfile.py::test_session_capture_writes_flatfile_node_no_psql",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_session_capture_flatfile.py::test_session_capture_writes_flatfile_node_no_psql",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        # A node was written under the canonical sessions/ store dir.\n        node = Path(result[\"session_node\"])\n        assert node.exists(), f\"no session node written: {result}\"\n        assert node.parent == tmp_path / \"memory\" / \"sessions\", (\n            f\"session node not in canonical sessions/ store: {node}\"\n        )\n    \n        data = json.loads(node.read_text(encoding=\"utf-8\"))\n        body = data[\"body\"]\n        assert data[\"category\"] == \"sessions\"\n>       assert body[\"summary\"] == \"proof summary line\"\nE       AssertionError: assert '__stub_unimplemented__' == 'proof summary line'\nE         \nE         - proof summary line\nE         + __stub_unimplemented__\n\ntests/test_session_capture_flatfile.py:65: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_session_capture_flatfile.py::test_session_capture_writes_flatfile_node_no_psql\n1 failed in 0.08s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.07s"
+          }
+        }
+      }
+    ],
+    "commit": "e146c4cc0a9818a02ffd2550a01ce50163e1c67c",
+    "impl_paths": [
+      "scripts/session_capture.py"
+    ],
+    "ticket": "T-fix-session-capture-flatfile",
+    "narrative": "Strip dead adc.palace psql INSERT; route session record to the canonical fs session store.",
+    "why": "A wrong-summary stub fails the value assertion (authentic red); green proves the real summary+transcript land in the canonical sessions/ store and the dead psql path is gone.",
+    "bootstrap": false
+  }
+}
