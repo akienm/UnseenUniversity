@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-home-critic-cli-to-devlab.20260628.153909549816",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-home-critic-cli-to-devlab"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T21:39:09.549816+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-home-critic-cli-to-devlab"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-home-critic-cli-to-devlab",
+    "title": "[sprint] Move scripts/critic.py -> devlab/claudecode/ beside critic_core.py",
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Tooling"
+    ],
+    "description": "**Problem:** scripts/critic.py is the /critic adversarial-analysis CLI; its shared core, critic_core.py, already lives in devlab/claudecode/. critic.py reaches it via `sys.path.insert(0, _REPO/'devlab'/'claudecode')` then `from critic_core import ...`. The CLI is dev-process tooling that belongs WITH its core, not floating in root scripts/. (It is NOT the runtime critic device unseen_university/devices/critic/ — that is a separate BaseDevice decision-evaluator; do not conflate.)\n**Proposed shape:** git mv scripts/critic.py -> devlab/claudecode/critic.py. Now co-located with critic_core.py, the `sys.path.insert(.../devlab/claudecode)` hack is redundant — drop it and let the plain `from critic_core import ...` resolve as a sibling (devlab/claudecode is already on pytest pythonpath; for direct `python3 devlab/claudecode/critic.py` invocation the script's own dir is on sys.path[0], so the sibling import works). Verify no caller references the old `scripts/critic.py` path: the /critic skill (skills/critic/SKILL.md) already invokes critic_core.py directly, NOT scripts/critic.py, so the skill is unaffected — confirm with a grep and update any stray reference.\n**Affected files:** scripts/critic.py -> devlab/claudecode/critic.py (move + drop sys.path hack); grep skills/, devlab/, bin/ for 'scripts/critic' and update any hit.\n**Design rules:** one home (dev-tool beside its core in devlab/claudecode); homogeneity (CLI + core together); migrate->VERIFY->delete (confirm import resolves post-move before done).\n**Scope boundary:** IN — relocate critic.py + fix its import + update any path references. OUT — the runtime critic device (untouched); critic_core.py (stays put); any behavior change to the critique logic.\n**Test plan:** (1) `python3 devlab/claudecode/critic.py --help` runs (import of critic_core resolves from the new location). (2) `ls scripts/critic.py` -> absent. (3) `grep -rn 'scripts/critic' skills/ devlab/ bin/ unseen_university/` returns 0 (no stale path ref). (4) /critic skill smoke: `python3 devlab/claudecode/critic_core.py detect <a-symbol>` still works (skill path unchanged).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "sprint",
+    "created_at": "2026-06-28T21:39:01.311837+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T21:39:01.311892+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "062eac42-0d7e-4d15-94fa-82ac044118f5",
+    "priority": 0.5
+  }
+}

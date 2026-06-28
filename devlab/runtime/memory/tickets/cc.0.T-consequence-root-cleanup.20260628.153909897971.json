@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-root-cleanup.20260628.153909897971",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-root-cleanup"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T21:39:09.897971+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-consequence-root-cleanup"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-root-cleanup",
+    "title": "[sprint] Consequence check: post-collapse root cleanup (scripts/critic/session/examples)",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "description": "**What changed:** Deleted dead palace/ADC bootstrap scripts + tests; moved the /critic CLI to devlab/claudecode/; stripped session_capture's dead adc.palace writes (flat-file only); moved examples/ to devlab/prototypes/.\n**Predicted unintended effects:** (1) A skill/tool/cron with a hardcoded `scripts/<deleted>.py` or `scripts/critic.py` path breaks at run time (grep was repo-only; an external launcher or a doc-pasted command could still reference it). (2) Deleting tests/test_lab_designdocs_ref_sweep.py instead of editing it could drop coverage of a still-live ref-sweep behavior. (3) search_index_bootstrap deleted while `adc.search_index` is actually still read by some Librarian/search path -> silent search breakage on a fresh DB bootstrap. (4) session_capture's flat-file record lands in a home no reader consults -> session history silently stops accumulating where context-load/day-close look. (5) examples/chat_agent demo import breaks post-move (low stakes, but noise). (6) The savestate close path errors if session_capture's signature changed.\n**Signals to watch:** no ModuleNotFoundError / 'No such file' for scripts/critic.py or the deleted scripts in any run; pytest colline clean post-purge; /critic skill still returns critique; a real savestate close writes a readable flat-file session record (no psql error); context-load still surfaces recent sessions.\n**Gate condition:** Check by 2026-07-12 or when T-fix-session-capture-flatfile closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "sprint",
+    "created_at": "2026-06-28T21:39:06.804733+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T21:39:06.804783+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "85b4c9ea-8fd7-4008-bb16-e79748542bb2",
+    "priority": 0.5
+  }
+}

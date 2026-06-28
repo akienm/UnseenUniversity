@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-purge-dead-bootstrap-scripts.20260628.153909433757",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-purge-dead-bootstrap-scripts"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T21:39:09.433757+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-purge-dead-bootstrap-scripts"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-purge-dead-bootstrap-scripts",
+    "title": "[sprint] Delete dead palace/ADC bootstrap scripts from scripts/ (+ their tests)",
+    "size": "S",
+    "tags": [
+      "Cleanup",
+      "Substrate"
+    ],
+    "description": "**Problem:** Post single-package collapse, scripts/ at repo root still holds retired-lineage bootstrap scripts that target dead stores: palace_bootstrap.py (45 palace/psql refs), palace_cli.py (23), palace_seed_decisions.py (11), unified_node_adc_migration.py (one-time ADC migration), and search_index_bootstrap.py (creates the `adc.search_index` Postgres table — old ADC schema). The palace is retired (flat-file store is canonical) and none of these have non-test callers. They are root clutter that a future instance could mistake for live setup code.\n**Proposed shape:** DELETE them — do NOT freeze-copy to ~/TheIgorsProject (Akien 2026-06-28: 'dead scripts are in the repo history; don't need extra copies laying around' — git history is the preservation, a freeze-copy would just be the shadow-dup we forbid). Delete the four palace/ADC scripts. For search_index_bootstrap.py: VERIFY-then-delete — confirm `adc.search_index` is dead schema with no live reader (grep for `search_index` table use across unseen_university/; the Librarian search path should not depend on it) before removing; if a live reader exists, keep it and note why. Delete the dedicated tests: tests/test_palace_bootstrap.py, tests/test_palace_cli.py, tests/test_palace_seed_decisions.py. tests/test_lab_designdocs_ref_sweep.py also references palace_seed_decisions — INSPECT it: if it tests broader ref-sweep behavior, EDIT out the dead reference rather than deleting the whole test; if it only tested the dead script, delete it.\n**Affected files:** scripts/palace_bootstrap.py, scripts/palace_cli.py, scripts/palace_seed_decisions.py, scripts/unified_node_adc_migration.py, scripts/search_index_bootstrap.py (verify-first); tests/test_palace_bootstrap.py, tests/test_palace_cli.py, tests/test_palace_seed_decisions.py, tests/test_lab_designdocs_ref_sweep.py (edit-or-delete).\n**Design rules:** no shadow duplicates / migrate(or retire)->VERIFY->delete (git history IS the archive — no freeze-copy); filesystem memory store is canonical (palace retired); CP1 honesty (verify search_index liveness, don't assume).\n**Scope boundary:** IN — the five named dead scripts + their tests only. OUT — critic.py (separate ticket T-home-critic-cli-to-devlab), session_capture.py (T-fix-session-capture-flatfile), any live script. Do NOT touch scripts/ files not named here.\n**Test plan:** (1) `ls scripts/` shows none of the five files. (2) `grep -rn 'adc\\.palace\\|adc\\.search_index' scripts/` returns 0. (3) `pytest --collect-only -q` succeeds with 0 collection errors (no test imports a deleted script). (4) `git log --oneline -1 -- scripts/palace_cli.py` still resolves (history preserved, not rewritten).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "sprint",
+    "created_at": "2026-06-28T21:38:59.379505+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T21:38:59.427304+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "c98782c5-2d82-436a-888d-155d18a229d6",
+    "priority": 0.5
+  }
+}

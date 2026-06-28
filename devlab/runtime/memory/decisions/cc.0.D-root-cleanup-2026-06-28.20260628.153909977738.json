@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-root-cleanup-2026-06-28.20260628.153909977738",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-root-cleanup-2026-06-28"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-28T15:39:09.977738",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-root-cleanup-2026-06-28",
+    "title": "Post-collapse root cleanup: delete dead bootstrap scripts, home critic CLI, fix session_capture, move examples",
+    "status": "open",
+    "date": "2026-06-28",
+    "spawned_tickets": [
+      "T-purge-dead-bootstrap-scripts",
+      "T-home-critic-cli-to-devlab",
+      "T-fix-session-capture-flatfile",
+      "T-examples-to-devlab-prototypes",
+      "T-consequence-root-cleanup"
+    ],
+    "text": "# D-root-cleanup-2026-06-28\n**title:** Post-collapse root cleanup\n**date:** 2026-06-28\n**status:** open\n**spawned_tickets:** T-purge-dead-bootstrap-scripts, T-home-critic-cli-to-devlab, T-fix-session-capture-flatfile, T-examples-to-devlab-prototypes, T-consequence-root-cleanup\n\n## Decision narrative\nFollow-on to D-single-package-reorg: clean the repo root of retired-lineage debris and misplaced dev-tools. (1) DELETE dead palace/ADC bootstrap scripts (palace_bootstrap, palace_cli, palace_seed_decisions, unified_node_adc_migration, verify-then-delete search_index_bootstrap) + their tests — NO freeze-copy, git history is the archive (Akien: 'dead scripts are in the repo history'). (2) Move scripts/critic.py -> devlab/claudecode/ beside its shared core critic_core.py (it is the /critic CLI, NOT the runtime critic device). (3) Strip session_capture.py's dead adc.palace psql writes, keep a flat-file session record. (4) Move examples/ -> devlab/prototypes/. Investigated and LEFT AS-IS (recorded, no action): global_kb/ is LIVE KB seed data consumed by unseen_university/global_kb.py (not debris); systemd/ is deploy config; test_env/ is a stray gitignored venv. run_test.py (dead orphan test runner) already deleted this session (commit bfd3a1a8). Owner: CC — nobody else touches this code, so 'unowned/pre-existing' debris is CC's to fix, not disclaim.\n\n## Hypothesis\nThe repo root has no scripts/palace_* or other dead bootstrap scripts; critic.py lives beside critic_core.py in devlab/claudecode/; examples/ is gone (now devlab/prototypes/); and session_capture no longer writes the nonexistent adc.palace table.\n\n## Measurement Signal\ngrep -r 'adc.palace' scripts/ returns nothing; ls scripts/ shows no palace/critic files; pytest collects clean; a savestate close writes a flat-file session record (not a psql error against adc.palace).\n\n## Intention\nI intend that the repo root contains only live, correctly-homed artifacts — so no instance (or I) mistakes dead palace debris or a misplaced dev-tool for canonical code."
+  }
+}

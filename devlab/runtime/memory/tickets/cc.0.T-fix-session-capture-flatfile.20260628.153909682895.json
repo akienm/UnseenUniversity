@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-fix-session-capture-flatfile.20260628.153909682895",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-fix-session-capture-flatfile"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T21:39:09.682895+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-fix-session-capture-flatfile"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-fix-session-capture-flatfile",
+    "title": "[sprint] session_capture.py: drop dead adc.palace writes, keep flat-file session record",
+    "size": "M",
+    "tags": [
+      "Cleanup",
+      "Memory"
+    ],
+    "description": "**Problem:** scripts/session_capture.py (called by the savestate skill's session-close path) writes a transcript + summary node via psycopg2 INTO the retired `adc.palace` table (INSERT at line 34, SELECT at 104) AND writes flat-file echoes to ~/.unseen_university/claudecode/palace_echo/. The palace table is dead (flat-file store is canonical), so the psql write either errors or writes to a table nothing reads — a dead interface crossing on every session close.\n**Proposed shape:** Strip the psycopg2 / adc.palace path entirely (the INSERT, the LIKE SELECT for numbering, the psycopg2 imports/connect). Keep the session record as a FLAT-FILE write — either the existing palace_echo flat-file (renamed to a non-'palace' path under the canonical store) or routed through the canonical session writer (memory_emit.py / session_store under devlab/runtime/memory/sessions/). Decide at sprint time which flat-file home is canonical for session transcripts+summaries (check what /context-load and day-close actually read for sessions) and write there — do not invent a new ~/.unseen_university path without confirming (CLAUDE.md). Then confirm the savestate skill's call still succeeds end-to-end. NOTE the script also moves to its correct home is OUT of scope here — keep it at scripts/session_capture.py for now (or fold a move into a later pass); this ticket is the dead-write fix only.\n**Affected files:** scripts/session_capture.py (remove psql/palace, keep/repoint flat-file write); possibly skills/savestate/SKILL.md or run (if the call signature/behavior changes); session record home under devlab/runtime/memory/sessions/ (if routing there).\n**Design rules:** filesystem memory store is canonical (no palace); flat-file not Postgres for this path; memory_emit.py is the write chokepoint if routing into the store; check with Akien before any NEW ~/.unseen_university path (reuse an existing canonical home); log the interface crossing (session write) at INFO.\n**Scope boundary:** IN — remove the dead adc.palace psql writes from session_capture; ensure a flat-file session record is written to a canonical home; verify savestate's call works. OUT — relocating session_capture.py out of scripts/; redesigning session-record schema; the other dead scripts (separate ticket).\n**Test plan:** (1) `grep -nE 'psycopg|adc\\.palace' scripts/session_capture.py` returns 0. (2) Run `python3 scripts/session_capture.py --dry-run` (or the savestate close path) and assert it writes a flat-file session record (path printed/exists) with NO psycopg2 connection attempted. (3) A savestate session-close produces a readable flat-file session record, not a psql error. (4) The record is in a canonical home a reader (context-load/day-close) already consults, or the reason it is standalone is noted.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "status": "sprint",
+    "created_at": "2026-06-28T21:39:03.274097+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T21:39:03.274193+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "7c046438-371e-4002-ae51-ed3dae6761d9",
+    "priority": 0.5
+  }
+}
