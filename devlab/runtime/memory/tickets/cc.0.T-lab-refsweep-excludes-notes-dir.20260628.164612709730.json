@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-lab-refsweep-excludes-notes-dir.20260628.164612709730",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-lab-refsweep-excludes-notes-dir"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T22:46:12.709730+00:00",
+  "links": {
+    "decisions": [
+      "D-canonical-substrate-consolidation-2026-06-27"
+    ],
+    "tickets": [
+      "T-lab-refsweep-excludes-notes-dir"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-lab-refsweep-excludes-notes-dir",
+    "title": "[sprint] lab/ ref-sweep test fails: notes/ store dir + hygiene fixture not excluded",
+    "size": "S",
+    "tags": [
+      "Test",
+      "Substrate"
+    ],
+    "status": "sprint",
+    "priority": 0.4,
+    "decision_id": "D-canonical-substrate-consolidation-2026-06-27",
+    "description": "**Problem:** tests/test_lab_designdocs_ref_sweep.py::test_no_live_file_references_retired_lab_paths is FAILING (pre-existing, identical at baseline 26ac6407 — discovered 2026-06-28 during T-purge-dead-bootstrap-scripts). The scan's git-grep excludes the historical store dirs tickets/decisions/sessions/slates/proofs/ but NOT devlab/runtime/memory/notes/ — so two historical note JSONs (cc.0.env-coverage-audit-2026-06-24..., cc.0.skills-substrate-cleanup-2026-06-27...) that legitimately mention retired lab/ paths AS HISTORY trip the scan. Also tests/test_skills_hygiene.py (a test fixture that references the dead path, same category as the already-excluded fixture tests) is flagged.\n**Proposed shape:** Treat notes/ like its sibling store dirs — add `:!devlab/runtime/memory/notes/` to the git-grep pathspec exclusions (notes are historical records, accurate-as-history, not live read-refs — exactly the rationale already documented for tickets/decisions/sessions/slates/proofs). For tests/test_skills_hygiene.py: confirm its lab/ mention is a fixture literal (describing the retired path, not a live read-ref); if so, add it to the fixture-test exclusions alongside test_skill_write_paths_canonical.py / test_path_moves_monitor.py; if it is a genuine live ref, fix the ref instead. Verify the test goes green.\n**Affected files:** tests/test_lab_designdocs_ref_sweep.py (pathspec excludes); possibly tests/test_skills_hygiene.py (only if it holds a genuine live ref rather than a fixture literal).\n**Design rules:** canonical store excludes apply uniformly (notes/ is a store dir like decisions/); CP1 (verify each flagged file is history/fixture vs a genuine live ref before excluding — don't blanket-allowlist a real drift).\n**Scope boundary:** IN — make the lab/ ref-sweep test green by excluding the historical notes/ store dir + classifying the hygiene-test mention. OUT — the broader skills stale-path sweep (T-skills-stale-root-paths-post-reorg); editing the historical note contents.\n**Test plan:** (1) Each flagged file confirmed history/fixture (not a live read-ref) before exclusion — one-line note per file. (2) pytest tests/test_lab_designdocs_ref_sweep.py -> passes. (3) The exclusion is a store-dir pathspec (notes/), not a per-file allowlist entry, so future notes don't re-trip it.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-28T22:46:10.424400+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T22:46:10.471128+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "8cd48740-691c-4e32-85f9-c2d57ed0479b"
+  }
+}
