@@ -30,7 +30,7 @@ ALLOWLIST = {
     "devlab/claudecode/pending/handoff-2026-05-20-windows-session.md",  # historical handoff note
     "devlab/runtime/memory/SPEC.md",                    # migration-provenance prose (what the store ingested FROM)
     "docs/palace_schema.md",                            # legacy Postgres-palace seeding, superseded by the fs store
-    "scripts/palace_seed_decisions.py",                 # legacy Postgres-palace seeding, superseded by the fs store
+    # (scripts/palace_seed_decisions.py deleted in T-purge-dead-bootstrap-scripts 2026-06-28)
 }
 
 
