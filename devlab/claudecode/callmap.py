@@ -19,7 +19,7 @@ query. This tool makes the callmap a durable, audit-checked artifact.
 
 API marking convention:
   - Default: all top-level non-_ functions and class methods in
-    SOURCE_ROOTS (devlab/claudecode/, devices/igor/tools/) count as API
+    SOURCE_ROOTS (devlab/claudecode/, unseen_university/devices/igor/tools/) count as API
   - Override: `__api__ = ['name1', 'name2']` module-level list narrows
     the surface explicitly
   - Annotate: `# API: <one-line>` immediately above a function adds a
@@ -66,13 +66,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # Modules whose top-level non-_ functions/methods count as API by default.
 SOURCE_ROOTS = (
     REPO_ROOT / "devlab" / "claudecode",
-    Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor" / "tools",
+    REPO_ROOT / "unseen_university" / "devices" / "igor" / "tools",
 )
 
 # Files we walk for caller detection (entire repo minus excluded dirs).
 SCAN_ROOTS = (
     REPO_ROOT / "lab",
-    Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor",
+    REPO_ROOT / "unseen_university" / "devices" / "igor",
     REPO_ROOT / "tests",
 )
 
@@ -115,7 +115,7 @@ class ApiEntry:
 
 
 def _module_path_from_file(path: Path) -> str:
-    """Convert /home/.../devices/igor/tools/foo.py → devices.igor.tools.foo.
+    """Convert /home/.../unseen_university/devices/igor/tools/foo.py → unseen_university.devices.igor.tools.foo.
 
     Falls back to the file stem when the path isn't under REPO_ROOT (e.g.
     test fixtures in /tmp).

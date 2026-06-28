@@ -117,7 +117,7 @@ def run_wiring_check(
         cfg_path = runtime / instance_id / "igor.switches.cfg"
 
     if source_dir is None:
-        source_dir = Path(__file__).parent.parent.parent / "devices" / "igor"
+        source_dir = Path(__file__).parent.parent.parent / "unseen_university" / "devices" / "igor"
 
     switches = _load_switches(cfg_path)
     enabled = _find_enabled_switches(switches)

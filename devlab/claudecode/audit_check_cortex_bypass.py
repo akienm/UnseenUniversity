@@ -27,7 +27,7 @@ EXEMPT_FILENAMES: set[str] = {
 
 def main() -> int:
     repo = Path(__file__).resolve().parents[2]
-    src = Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor" / "tools"
+    src = repo / "unseen_university" / "devices" / "igor" / "tools"
 
     if not src.exists():
         print(f"AUDIT ERROR: tools tree not found at {src}")

@@ -110,7 +110,7 @@ one" — pure skill-consumer tickets, OR "is the enforcer, not a consumer" —
 the rule-implementing ticket itself). Note the exemption in output.
 
 **Check:** scan Affected files for both sides:
-- HANDLER paths (any one match): `devices/`,
+- HANDLER paths (any one match): `unseen_university/devices/`,
   `devlab/claudecode/mcp_*`, `unseen_university/**/device*.py`,
   `unseen_university/**/capability*.py`
 - SKILL CONSUMER paths (any one match): `${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/skills/`

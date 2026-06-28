@@ -27,12 +27,12 @@ KNOWN_AREAS = frozenset(
 
 # File-path prefix → area
 _AREA_PREFIXES = [
-    ("devices/igor/brainstem/", "brainstem"),
-    ("devices/igor/cognition/reasoners/", "reasoning"),
-    ("devices/igor/cognition/", "cognition"),
-    ("devices/igor/memory/", "memory"),
-    ("devices/igor/network/", "network"),
-    ("devices/igor/tools/", "tools"),
+    ("unseen_university/devices/igor/brainstem/", "brainstem"),
+    ("unseen_university/devices/igor/cognition/reasoners/", "reasoning"),
+    ("unseen_university/devices/igor/cognition/", "cognition"),
+    ("unseen_university/devices/igor/memory/", "memory"),
+    ("unseen_university/devices/igor/network/", "network"),
+    ("unseen_university/devices/igor/tools/", "tools"),
 ]
 
 

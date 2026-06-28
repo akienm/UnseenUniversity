@@ -30,7 +30,7 @@ Matching heuristics (when any match, surface the option):
 - Ticket tag includes `Database` → `mcp__librarian__db_query`
 - Ticket tag includes `Cognition` / `Debug` → Igor cognition-debug capability
 - Ticket tag includes `Reading` / `Memory` → Igor memory tools
-- Affected files under `devices/igor/` AND ticket scope is "implement inside Igor" → consider Igor self-coding via cc_send
+- Affected files under `unseen_university/devices/igor/` AND ticket scope is "implement inside Igor" → consider Igor self-coding via cc_send
 
 Output shape (one line, before Step 2 — Claim):
 ```

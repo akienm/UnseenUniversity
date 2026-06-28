@@ -45,7 +45,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Directories where the tag is enforced
 ENFORCED_DIRS = (
-    Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor",
+    REPO_ROOT / "unseen_university" / "devices" / "igor",
     REPO_ROOT / "devlab" / "claudecode",
 )
 

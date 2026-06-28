@@ -74,7 +74,7 @@ gates the work depends on (`<a real gate flag>`, etc.), dependencies on other
 pending tickets, and any deadline or freeze-window constraints.
 
 **Fail when:** scope obviously involves HIGH-inertia areas (`unseen_university/`,
-`bus/`, `device.py`, `shim.py`) or a known gate but the
+`unseen_university/devices/bus/`, `device.py`, `shim.py`) or a known gate but the
 narrative is silent on them.
 
 **AMEND:** "Decision touches `<area>` which is HIGH-inertia / gated by `<flag>` —

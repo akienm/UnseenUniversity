@@ -208,7 +208,7 @@ inline the concrete shape."
 ### Check 12 — Class without base-class inheritance
 
 **Detector**: AST scan via `devlab/claudecode/audit_check_igorbase.py`
-(existing tool). Reports new class definitions in `devices/` whose
+(existing tool). Reports new class definitions in `unseen_university/devices/` whose
 bases don't include `BaseDevice` / `BaseShim` and aren't in
 `THIRD_PARTY_BASES` (Pydantic, Enum, ABC, Protocol, dataclass, etc.).
 

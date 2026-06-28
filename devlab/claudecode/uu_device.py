@@ -18,7 +18,7 @@ UNIQUE-NAME RULE: a verb may live in bin/ OR skills/, never both. A name present
 in both is a LOAD-time error (no silent precedence) — caught here before any
 verb runs, so an ambiguous device surface fails loudly instead of guessing.
 
-Devices root resolves from UU_DEVICES_ROOT (test override) else $UU_ROOT/devices.
+Devices root resolves from UU_DEVICES_ROOT (test override) else $UU_ROOT/unseen_university/devices.
 Zero inference; runs in a bare shell.
 """
 from __future__ import annotations
@@ -33,7 +33,7 @@ def _devices_root() -> Path:
     if env:
         return Path(env)
     uu_root = os.environ.get("UU_ROOT") or str(Path(__file__).resolve().parents[2])
-    return Path(uu_root) / "devices"
+    return Path(uu_root) / "unseen_university" / "devices"
 
 
 def _err(msg: str) -> int:

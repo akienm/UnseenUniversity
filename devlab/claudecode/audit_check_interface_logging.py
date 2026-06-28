@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEVICES_ROOT = REPO_ROOT / "devices"
+DEVICES_ROOT = REPO_ROOT / "unseen_university" / "devices"
 
 _SUBPROCESS_NAMES = frozenset({"Popen", "run", "call", "check_output", "check_call"})
 _CHANNEL_POST_NAMES = frozenset({"post_to_channel"})

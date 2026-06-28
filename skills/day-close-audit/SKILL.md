@@ -80,7 +80,7 @@ HIGH-inertia files without a corresponding Dxxx decision → findings gap.
 ## Step 6 — Thread hygiene
 
 ```bash
-grep -rn "ThreadPoolExecutor" ~/dev/src/UnseenUniversity/devices/igor/ 2>/dev/null || echo "None found — OK"
+grep -rn "ThreadPoolExecutor" ~/dev/src/UnseenUniversity/unseen_university/devices/igor/ 2>/dev/null || echo "None found — OK"
 ```
 
 Verify each usage has daemon=True or uses a queue pattern.
@@ -318,11 +318,26 @@ Run any checks registered via `audit_add.py`. These are checks added at the mome
 - `no-bare-except-pass` — silent error swallow detector
 - `primary-classes-must-inherit-igorbase` — D125 enforcement
 
-```bash
-cd ~/dev/src/UnseenUniversity && python3 devlab/claudecode/audit_runner.py --drain 2>&1
-```
+> **NON-FUNCTIONAL — no CLI drain entrypoint exists.** The command this step used to
+> call (`python3 devlab/claudecode/audit_runner.py --drain`) is dead: `audit_runner.py`
+> was never built, and no script anywhere implements a `--drain` flag. The check-running
+> capability itself DOES exist — it lives in the **auditor device**
+> (`unseen_university/devices/auditor/device.py`, `run_all(severity_min, kind)`), which
+> reads the same `audit_checks.json` (`forever` + `next_sweep` lists). What is missing is
+> specifically: (a) the `audit_runner.py` script, (b) a `--drain` CLI flag, and (c) a
+> callable that moves `next_sweep` entries to `history` after a run. The auditor device
+> exposes `run_all` via MCP / as a device, but there is no plain-CLI path to invoke a
+> drain from this skill.
+>
+> # TODO(T-skills-stale-root-paths-post-reorg): no audit_runner.py exists; registered-check
+> # drain (forever + next_sweep, with next_sweep→history move) is unimplemented as a CLI.
+> # Capability lives in unseen_university/devices/auditor/device.py run_all(); wire a CLI
+> # drain entrypoint or repoint this step at the auditor device before relying on it.
 
-The `--drain` flag moves any `next_sweep` entries to history after running so they don't repeat. Add findings to the report alongside the static-step findings. Severity: HIGH = fix or ticket immediately, MED = ticket if not trivial, LOW = note in findings.
+Until a drain entrypoint exists, this step is a no-op — registered `next_sweep` checks are
+NOT auto-run or drained during day-close. Add any manually-run findings to the report
+alongside the static-step findings. Severity: HIGH = fix or ticket immediately, MED = ticket
+if not trivial, LOW = note in findings.
 
 To register a new check during normal work:
 ```bash

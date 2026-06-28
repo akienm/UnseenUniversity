@@ -1,14 +1,14 @@
 ---
 name: new-agent
-description: Scaffold a new device from the template — asks 5 questions, produces devices/<name>/ and a config profile.
+description: Scaffold a new device from the template — asks 5 questions, produces unseen_university/devices/<name>/ and a config profile.
 model: haiku
 ---
 
 # /new-agent — Scaffold a new rack device
 
 Asks 5 questions, then calls `python run scaffold` to produce:
-- `devices/<name>/` — device.py, shim.py, __init__.py (from template)
-- `config/profiles/<name>.yaml` — pre-populated profile
+- `unseen_university/devices/<name>/` — device.py, shim.py, __init__.py (from template)
+- `unseen_university/config/profiles/<name>.yaml` — pre-populated profile
 
 **OUT of scope:** auto-registration on the live rack, automatic test generation.
 
@@ -40,7 +40,7 @@ python run scaffold \
 ```
 
 Note: hyphens in the name are automatically normalised to underscores for the Python
-module directory (e.g. `test-agent` → `devices/test_agent/`). This is required for
+module directory (e.g. `test-agent` → `unseen_university/devices/test_agent/`). This is required for
 valid Python imports.
 
 ### 3. Verify
@@ -52,7 +52,7 @@ pip install -e .
 ```
 
 ```bash
-python -c "import devices.<python_name>.device, devices.<python_name>.shim; print('import OK')"
+python -c "import unseen_university.devices.<python_name>.device, unseen_university.devices.<python_name>.shim; print('import OK')"
 ```
 
 Where `<python_name>` is the answer-1 slug with hyphens replaced by underscores.

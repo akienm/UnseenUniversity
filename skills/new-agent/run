@@ -27,10 +27,10 @@ def find_uu_root() -> Path:
         if p in seen:
             continue
         seen.add(p)
-        if (p / "devices" / "template").exists() and (p / "pyproject.toml").exists():
+        if (p / "unseen_university" / "devices" / "template").exists() and (p / "pyproject.toml").exists():
             return p
     raise RuntimeError(
-        "Cannot find UnseenUniversity root (no devices/template/ + pyproject.toml found). "
+        "Cannot find UnseenUniversity root (no unseen_university/devices/template/ + pyproject.toml found). "
         "Run from the UU repo directory."
     )
 
@@ -52,7 +52,7 @@ def to_display_name(slug: str) -> str:
 
 def cmd_scaffold(args: argparse.Namespace) -> None:
     uu_root = find_uu_root()
-    template_dir = uu_root / "devices" / "template"
+    template_dir = uu_root / "unseen_university" / "devices" / "template"
 
     python_name = to_python_name(args.name)
     camel_name = to_camel_case(args.name)
@@ -70,7 +70,7 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
         else [d.strip() for d in args.deps.split(",") if d.strip()]
     )
 
-    target_dir = uu_root / "devices" / python_name
+    target_dir = uu_root / "unseen_university" / "devices" / python_name
     if target_dir.exists():
         print(f"ERROR: {target_dir} already exists — remove it first.", file=sys.stderr)
         sys.exit(1)
@@ -86,8 +86,8 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
     _patch_shim_py(target_dir / "shim.py", camel_name, python_name, display_name)
     _write_profile(uu_root, python_name, display_name, purpose, services)
 
-    print(f"Scaffolded  devices/{python_name}/")
-    print(f"Profile     config/profiles/{python_name}.yaml")
+    print(f"Scaffolded  unseen_university/devices/{python_name}/")
+    print(f"Profile     unseen_university/config/profiles/{python_name}.yaml")
     print(f"Device ID   {python_name}")
     print(f"Classes     {camel_name}Device  /  {camel_name}Shim")
     if args.name != python_name:
@@ -95,8 +95,8 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
     print()
     print("Next steps:")
     print(f"  pip install -e .")
-    print(f"  python -c 'import devices.{python_name}.device, devices.{python_name}.shim'")
-    print(f"  Fill in stubs in devices/{python_name}/device.py and shim.py")
+    print(f"  python -c 'import unseen_university.devices.{python_name}.device, unseen_university.devices.{python_name}.shim'")
+    print(f"  Fill in stubs in unseen_university/devices/{python_name}/device.py and shim.py")
 
 
 def _patch_device_py(
@@ -154,7 +154,7 @@ def _write_profile(
     purpose: str,
     services: list[str],
 ) -> None:
-    profiles_dir = uu_root / "config" / "profiles"
+    profiles_dir = uu_root / "unseen_university" / "config" / "profiles"
     profiles_dir.mkdir(parents=True, exist_ok=True)
 
     profile_data = {

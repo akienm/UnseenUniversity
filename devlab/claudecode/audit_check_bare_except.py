@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOURCE_ROOT = Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor"
+SOURCE_ROOT = REPO_ROOT / "unseen_university" / "devices" / "igor"
 
 # Skip third-party DRM / vendored code
 SKIP_DIRS = ("ebook_drm",)

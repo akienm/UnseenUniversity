@@ -8,7 +8,7 @@
       "Q-xxx open-questions": "RETIRED parking-lot experiment (the /question skill). These are NOT project-specific things-not-yet-decided.",
       "CP1-CP6 core values": "Separate frozen contract in diagnostic_base/core_values.py — referenced, not duplicated here."
     },
-    "seeded_from": "devices/igor/tools/ebook_reader.py :: _INTERP_CANDIDATES (the PROC_HEURISTIC_* entries). That hardcoded list should later READ from this file (Igor wiring — deferred, igor = last priority).",
+    "seeded_from": "unseen_university/devices/igor/tools/ebook_reader.py :: _INTERP_CANDIDATES (the PROC_HEURISTIC_* entries). That hardcoded list should later READ from this file (Igor wiring — deferred, igor = last priority).",
     "status": "seed v1 — open to reshaping once the node-construction insight lands"
   },
   "questions": [

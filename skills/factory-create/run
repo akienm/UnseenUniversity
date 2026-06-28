@@ -25,17 +25,17 @@ def find_uu_root() -> Path:
         if p in seen:
             continue
         seen.add(p)
-        if (p / "devices" / "installer").exists() and (p / "pyproject.toml").exists():
+        if (p / "unseen_university" / "devices" / "installer").exists() and (p / "pyproject.toml").exists():
             return p
     raise RuntimeError(
-        "Cannot find UnseenUniversity root (no devices/installer/ + pyproject.toml). "
+        "Cannot find UnseenUniversity root (no unseen_university/devices/installer/ + pyproject.toml). "
         "Run from the UU repo directory."
     )
 
 
 def cmd_scaffold(args: argparse.Namespace) -> None:
     uu_root = find_uu_root()
-    factories_dir = uu_root / "config" / "factories"
+    factories_dir = uu_root / "unseen_university" / "config" / "factories"
     factories_dir.mkdir(parents=True, exist_ok=True)
 
     members = [m.strip() for m in args.members.split(",") if m.strip()]
@@ -59,8 +59,8 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
 # Decision: D-agentic-os-platform-2026-05-30 / T-factory-template
 #
 # To instantiate:
-#   python run validate config/factories/{args.name}.yaml
-#   python run instantiate config/factories/{args.name}.yaml
+#   python run validate unseen_university/config/factories/{args.name}.yaml
+#   python run instantiate unseen_university/config/factories/{args.name}.yaml
 
 factory_id: {args.name}
 factory_version: "1.0"
@@ -85,15 +85,15 @@ escalation:
         sys.exit(1)
 
     out.write_text(content)
-    print(f"Scaffolded  config/factories/{args.name}.yaml")
+    print(f"Scaffolded  unseen_university/config/factories/{args.name}.yaml")
     print(f"Owner       {args.owner_id}")
     print(f"Members     {', '.join(members)}")
     print()
     print("Next steps:")
-    print(f"  Review    config/factories/{args.name}.yaml")
-    print(f"  Validate  python run validate config/factories/{args.name}.yaml")
+    print(f"  Review    unseen_university/config/factories/{args.name}.yaml")
+    print(f"  Validate  python run validate unseen_university/config/factories/{args.name}.yaml")
     print(f"  Approve   set status: approved in the YAML")
-    print(f"  Run       python run instantiate config/factories/{args.name}.yaml")
+    print(f"  Run       python run instantiate unseen_university/config/factories/{args.name}.yaml")
 
 
 def cmd_validate(args: argparse.Namespace) -> None:

@@ -26,13 +26,13 @@ trawls, no "is this good?".
 ```bash
 grep -r "import sqlite\|from sqlite\|sqlite3" \
   --include="*.py" --exclude-dir=".git" --exclude-dir="venv" \
-  unseen_university/ devices/
+  unseen_university/
 ```
 **PASS**: No matches. **FAIL**: Any import = AMEND.
 
 #### Check 1.2 — All devices inherit BaseDevice/BaseShim
 ```bash
-find devices/ -name "*.py" -exec grep -l "^class.*Device\|^class.*Shim" {} \; | \
+find unseen_university/devices/ -name "*.py" -exec grep -l "^class.*Device\|^class.*Shim" {} \; | \
 while read f; do
   if ! grep -q "BaseDevice\|BaseShim" "$f"; then
     echo "FAIL: $f does not inherit from Base*"
@@ -45,7 +45,7 @@ done
 ```bash
 # Flag any direct-to-file write operations that should go through DB
 grep -r "\.write\|f\.write\|open(.*, 'w'" \
-  --include="*.py" devices/ | \
+  --include="*.py" unseen_university/devices/ | \
   grep -v "\.log\|log_file\|\.md\|\.txt" | \
   head -20
 ```
@@ -56,7 +56,7 @@ grep -r "\.write\|f\.write\|open(.*, 'w'" \
 # Check for in-memory-only state in devices (no self.state = {...} without persistence)
 # Haiku can't do deep analysis, so this is a spot-check on recent changes
 grep -r "self\._.*= \|self\.state = \|self\.context = " \
-  --include="*.py" devices/ | \
+  --include="*.py" unseen_university/devices/ | \
   grep -v "self\.log\|self\.config" | \
   head -10
 ```
@@ -66,7 +66,7 @@ grep -r "self\._.*= \|self\.state = \|self\.context = " \
 ```bash
 # Flag bare except, silent returns, swallowed errors
 grep -r "except:\|except Exception:" \
-  --include="*.py" devices/ devlab/claudecode/ | \
+  --include="*.py" unseen_university/devices/ devlab/claudecode/ | \
   grep -v "except.*as\|# log\|self.log"
 ```
 **PASS**: No bare except, all exceptions logged/re-raised. **FAIL**: AMEND with "log the error".
@@ -77,7 +77,7 @@ grep -r "except:\|except Exception:" \
 ```bash
 # Search for idle_wait implementations that call blocking ops
 grep -r "def idle_wait\|def run_forever" \
-  --include="*.py" devices/ | \
+  --include="*.py" unseen_university/devices/ | \
   while read file_line; do
     file=$(echo "$file_line" | cut -d: -f1)
     grep -A 20 "def idle_wait\|def run_forever" "$file" | \
@@ -92,15 +92,15 @@ grep -r "def idle_wait\|def run_forever" \
 #### Check 3.1 — dispatch.py CC-spawn functions deleted
 ```bash
 grep -c "def.*cc.*spawn\|_launch_cc\|subprocess.*cc" \
-  devices/granny/dispatch.py 2>/dev/null && \
+  unseen_university/devices/granny/dispatch.py 2>/dev/null && \
   echo "FAIL: dispatch.py still has CC-spawn code" || \
   echo "PASS"
 ```
 **PASS**: No CC-spawn functions. **FAIL**: AMEND "remove dead code".
 
-#### Check 3.2 — No print() in devices/
+#### Check 3.2 — No print() in unseen_university/devices/
 ```bash
-grep -r "^[[:space:]]*print(" --include="*.py" devices/
+grep -r "^[[:space:]]*print(" --include="*.py" unseen_university/devices/
 ```
 **PASS**: No matches. **FAIL**: AMEND "use self.log.* instead".
 
@@ -116,7 +116,7 @@ grep -r "ENABLE_\|EXPERIMENTAL_\|TODO_.*=" \
 ```bash
 # Sample: no psycopg2.connect (use memory_get MCP)
 grep -r "psycopg2\.connect\|from devlab.claudecode.channel import" \
-  --include="*.py" devices/ unseen_university/
+  --include="*.py" unseen_university/
 ```
 **PASS**: No deprecated paths. **FAIL**: AMEND "use preferred path".
 
@@ -156,8 +156,8 @@ PY
 
 #### Check 5.1 — Device boundaries maintained
 ```bash
-# Flag cross-device imports (e.g., devices/granny importing from devices/igor internals)
-grep -r "from.*devices\.[a-z]*\." --include="*.py" devices/ | \
+# Flag cross-device imports (e.g., unseen_university/devices/granny importing from unseen_university/devices/igor internals)
+grep -r "from.*devices\.[a-z]*\." --include="*.py" unseen_university/devices/ | \
   grep -v "from.*bus\|from.*skeleton"
 ```
 **PASS**: Only bus/skeleton cross-device refs. **FAIL**: AMEND "use bus instead".
@@ -166,8 +166,8 @@ grep -r "from.*devices\.[a-z]*\." --include="*.py" devices/ | \
 ```bash
 # Flag direct channel/IMAP access outside bus/
 grep -r "IMAPServer\|imap_client\|\.idle_wait" \
-  --include="*.py" devices/ | \
-  grep -v "devices/bus\|devices/skeleton"
+  --include="*.py" unseen_university/devices/ | \
+  grep -v "unseen_university/devices/bus\|unseen_university/devices/skeleton"
 ```
 **PASS**: Only bus/skeleton touch IMAP. **FAIL**: AMEND.
 
@@ -184,8 +184,8 @@ Failed: 1
 Amends: 1
 
 FAILED CHECKS:
-  [ ] Check 3.2 — print() in devices/
-      Files: devices/igor/brainstem/shell.py:42, devices/librarian/tools/mcp.py:18
+  [ ] Check 3.2 — print() in unseen_university/devices/
+      Files: unseen_university/devices/igor/brainstem/shell.py:42, unseen_university/devices/librarian/tools/mcp.py:18
       AMEND: Replace with self.log.info()
 
   [ ] Check 4.3 — Consequence-check gates

@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEVICES_ROOT = REPO_ROOT / "devices"
+DEVICES_ROOT = REPO_ROOT / "unseen_university" / "devices"
 
 
 def _has_basedevice_class(tree: ast.AST) -> bool:

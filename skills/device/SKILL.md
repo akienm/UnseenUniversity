@@ -9,8 +9,8 @@ model: sonnet
 The CC-facing half of the device two-products split (D-skills-two-products,
 T-device-skills-via-uu-device). Each device carries its surface with it:
 
-- `devices/<dev>/skills/<verb>/SKILL.md` — a reasoning-bearing skill CC executes
-- `devices/<dev>/bin/<verb>` — a zero-inference executor script
+- `unseen_university/devices/<dev>/skills/<verb>/SKILL.md` — a reasoning-bearing skill CC executes
+- `unseen_university/devices/<dev>/bin/<verb>` — a zero-inference executor script
 
 `/device <dev> <verb> [args]` is the ONE entry point. You give a verb; this shim
 resolves it. The bare-CLI mirror is `uu device <dev> <verb>` (bin/ only — a
@@ -35,7 +35,7 @@ surfaced by `uu device`).
 
 ```bash
 DEV="<dev>"; VERB="<verb>"
-ROOT="${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/devices/$DEV"
+ROOT="${UU_ROOT:-$HOME/dev/src/UnseenUniversity}/unseen_university/devices/$DEV"
 if   [ -f "$ROOT/skills/$VERB/SKILL.md" ]; then echo "skill";   # → step 2a
 elif [ -x "$ROOT/bin/$VERB" ];            then echo "bin";      # → step 2b
 else echo "unknown verb '$VERB' for device '$DEV'"; fi
@@ -43,7 +43,7 @@ else echo "unknown verb '$VERB' for device '$DEV'"; fi
 
 ### 2a. skills/ hit — execute the device skill
 
-Read `devices/<dev>/skills/<verb>/SKILL.md` and execute it as you would any
+Read `unseen_university/devices/<dev>/skills/<verb>/SKILL.md` and execute it as you would any
 skill: follow its steps, honoring this conversation's args. The skill travels
 with the device, so its instructions are device-local.
 

@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOURCE_ROOT = Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor"
+SOURCE_ROOT = REPO_ROOT / "unseen_university" / "devices" / "igor"
 
 # Files that legitimately import sqlite3 because they read EXTERNAL
 # SQLite stores Igor doesn't own. NOT exemptions for Igor's own data.

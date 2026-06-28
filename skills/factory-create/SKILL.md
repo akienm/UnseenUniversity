@@ -1,13 +1,13 @@
 ---
 name: factory-create
-description: Scaffold a new factory spec from 6 questions — produces config/factories/<name>.yaml ready for review and instantiation.
+description: Scaffold a new factory spec from 6 questions — produces unseen_university/config/factories/<name>.yaml ready for review and instantiation.
 model: haiku
 ---
 
 # /factory-create — Scaffold a factory spec
 
 Asks 6 questions, then calls `python run scaffold` to produce:
-- `config/factories/<name>.yaml` — pre-populated factory spec
+- `unseen_university/config/factories/<name>.yaml` — pre-populated factory spec
 
 **IN scope:** factory YAML spec from answers, spec validation.
 **OUT of scope:** live instantiation (owner must approve first; then run `python run instantiate`).
@@ -23,7 +23,7 @@ Ask the user these questions in sequence. Wait for each answer before asking the
 1. **Factory name** — slug, lowercase, hyphens OK (e.g. `research-orca`, `budget-gate`)
 2. **Description** — one sentence: what does this factory do?
 3. **Owner ID** — comms:// address of the owner (default: `comms://akien/`; press Enter to accept)
-4. **Member agent types** — comma-separated agent_type slugs that exist in `config/profiles/` (e.g. `librarian,scraps`)
+4. **Member agent types** — comma-separated agent_type slugs that exist in `unseen_university/config/profiles/` (e.g. `librarian,scraps`)
 5. **Eval rubric** — evaluator rubric ID (e.g. `R-factory-output`), or `none`
 6. **Daily budget USD** — daily budget limit (e.g. `5.00`), or `none`
 
@@ -44,7 +44,7 @@ python run scaffold \
 ### 3. Validate the spec
 
 ```bash
-python run validate "config/factories/<name>.yaml"
+python run validate "unseen_university/config/factories/<name>.yaml"
 ```
 
 Report the result. If validation fails, surface the error and ask the user to correct their answers.
@@ -56,5 +56,5 @@ Show the user:
 - Members listed
 - Owner ID
 - Next steps:
-  1. Review `config/factories/<name>.yaml`
-  2. Owner approves → `python run instantiate "config/factories/<name>.yaml"` (or the owner can approve in-channel)
+  1. Review `unseen_university/config/factories/<name>.yaml`
+  2. Owner approves → `python run instantiate "unseen_university/config/factories/<name>.yaml"` (or the owner can approve in-channel)

@@ -1,7 +1,7 @@
 """
 audit_check_hardcoded_instance.py — T-hardcoded-instance-refs audit check
 
-Fails if Igor's runtime code (devices/igor/) reintroduces hardcoded
+Fails if Igor's runtime code (unseen_university/devices/igor/) reintroduces hardcoded
 'Igor-wild-0001' strings or the placeholder DB password outside the
 known-exempt files: paths.py (canonical default), cluster_ssh.py (ssh user
 constant + windows user env default), cognition/{job_manager,response_habituation,
@@ -52,7 +52,7 @@ PATTERNS: list[str] = [
 
 def main() -> int:
     repo = Path(__file__).resolve().parents[2]
-    src = Path("/home/akien/dev/src/UnseenUniversity") / "devices" / "igor"
+    src = repo / "unseen_university" / "devices" / "igor"
 
     if not src.exists():
         print(f"AUDIT ERROR: source tree not found at {src}")
