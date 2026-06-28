@@ -28,6 +28,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from unseen_university._uu_root import uu_config_dir
+
 try:
     import yaml  # type: ignore[import]
 except ImportError as exc:  # pragma: no cover
@@ -38,7 +40,7 @@ log = logging.getLogger(__name__)
 _UU_POLICY_DIR_ENV = "UU_POLICY_DIR"
 _UU_SHIM_TRACE_DIR_ENV = "UU_SHIM_TRACE_DIR"
 
-DEFAULT_POLICIES_DIR = Path(__file__).parent.parent.parent / "config" / "policies"
+DEFAULT_POLICIES_DIR = uu_config_dir() / "policies"
 
 
 def _governance_trace_dir() -> Path:

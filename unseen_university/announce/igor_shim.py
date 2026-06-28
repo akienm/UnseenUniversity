@@ -26,6 +26,7 @@ import os
 import shutil
 from pathlib import Path
 
+from unseen_university._uu_root import uu_config_dir
 from unseen_university.shim import BaseShim
 
 from .client import AnnounceTimeoutError, DatacenterClient
@@ -33,9 +34,7 @@ from .client import AnnounceTimeoutError, DatacenterClient
 log = logging.getLogger(__name__)
 
 # Where the canonical profiles live (read-only repo copy).
-_CANONICAL_PROFILES_DIR = (
-    Path(__file__).resolve().parent.parent / "config" / "profiles"
-)
+_CANONICAL_PROFILES_DIR = uu_config_dir() / "profiles"
 
 
 class IgorShim(BaseShim):

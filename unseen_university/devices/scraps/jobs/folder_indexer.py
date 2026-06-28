@@ -10,6 +10,7 @@ Run as a Scraps periodic job or directly:
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_config_dir
 from unseen_university.identity import home_db_url
 
 import logging
@@ -19,7 +20,7 @@ from typing import Iterator
 
 log = logging.getLogger(__name__)
 
-_CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "librarian.yaml"
+_CONFIG_PATH = uu_config_dir() / "librarian.yaml"
 _CHUNK_SIZE = int(os.environ.get("LIBRARIAN_CHUNK_SIZE", "800"))
 _MAX_FILES = int(os.environ.get("LIBRARIAN_INDEX_MAX_FILES", "5000"))
 

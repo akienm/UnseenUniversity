@@ -38,6 +38,7 @@ Run as: python -m unseen_university.devices.granny.daemon
 """
 
 from __future__ import annotations
+from unseen_university._uu_root import uu_config_dir
 from unseen_university.identity import home_db_url
 
 import json
@@ -56,7 +57,7 @@ _UU_ROOT = Path(__file__).resolve().parents[2]
 _CC_QUEUE = _UU_ROOT / "devlab" / "claudecode" / "cc_queue.py"
 _PYTHON = sys.executable
 _GRANNY_HOME = Path.home() / ".granny"
-_CONFIG_PATH = _UU_ROOT / "config" / "granny.yaml"
+_CONFIG_PATH = uu_config_dir() / "granny.yaml"
 _PID_FILE = _GRANNY_HOME / "daemon.pid"
 
 POLL_INTERVAL_S = int(os.environ.get("GRANNY_POLL_INTERVAL", "60"))

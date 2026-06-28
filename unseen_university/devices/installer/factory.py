@@ -34,6 +34,7 @@ from typing import Callable
 
 import yaml
 
+from unseen_university._uu_root import uu_config_dir
 from unseen_university.announce.manifest import (
     ACL,
     MANIFEST_SCHEMA_VERSION,
@@ -50,7 +51,7 @@ log = logging.getLogger(__name__)
 _REQUIRED_SPEC_FIELDS = ("factory_id", "owner_id", "orchestrator", "members")
 _VALID_STATUSES = frozenset({"pending", "approved", "active", "halted", "archived"})
 _VALID_ORCHESTRATORS = frozenset({"granny-pattern"})
-_PROFILES_DIR = Path(__file__).resolve().parents[2] / "config" / "profiles"
+_PROFILES_DIR = uu_config_dir() / "profiles"
 
 
 def _now_iso() -> str:
