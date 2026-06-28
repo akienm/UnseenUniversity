@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-remove-hardcoded-home-akien-paths.20260628.172739701303",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-remove-hardcoded-home-akien-paths"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T23:27:39.701303+00:00",
+  "links": {
+    "decisions": [
+      "D-single-package-reorg-2026-06-28"
+    ],
+    "tickets": [
+      "T-remove-hardcoded-home-akien-paths"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-remove-hardcoded-home-akien-paths",
+    "title": "[sprint] Remove hardcoded /home/akien paths; use canonical resolvers",
+    "size": "M",
+    "tags": [
+      "Cleanup",
+      "Portability"
+    ],
+    "status": "sprint",
+    "priority": 0.3,
+    "decision_id": "D-single-package-reorg-2026-06-28",
+    "description": "**Problem:** Hardcoded `/home/akien/...` paths appear in 33 .py files across unseen_university/, devices/, devlab/claudecode/, tests/. These break when: (1) the repo or home moves; (2) running on a different machine; (3) testing in isolation. CLAUDE.md requires canonical resolver functions for all path derivation (uu_root(), uu_home(), Path.home()); hardcoded absolutes violate portability.\n**Proposed shape:** Replace all hardcoded `/home/akien` paths with canonical resolvers: (a) repo paths → `uu_root()` (already available post-T-canonical-config-dir-resolver); (b) runtime/home paths → `uu_home()` or `Path.home()` per context; (c) documentation / error messages that reference examples may keep placeholders if they're not used in path logic (but prefer generics like `~` or `<home>`).\n**Affected files:** TBD — grep scan shows 33 matches; files include vault/store.py, devices/igor/tools/filesystem.py, migrations/, thalamus.py, and others.\n**Design rules:** No hardcoded absolute paths in code-path logic (CLAUDE.md portability rule); canonical resolvers (uu_root, uu_home, Path.home) are the single source of truth for paths; documentation/error messages may use examples but should avoid false specificity.\n**Scope boundary:** IN — replace hardcoded /home/akien paths with resolvers or generics. OUT — any other home-directory-relative cleanup; scope is path-literal replacement only.\n**Test plan:** (1) `grep -rn '/home/akien' --include='*.py' unseen_university/ devices/ devlab/claudecode/ tests/ 2>/dev/null | grep -v __pycache__` returns 0 matches (or each is an intentional doc/error example prefixed with a comment /* EXAMPLE */). (2) Affected modules parse and import cleanly. (3) Run a quick sanity check on filesystem/vault tools (examples: `uu.py` instantiate, uu_home() resolves correctly in a test venv).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-28T23:27:37.557264+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T23:27:37.611257+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "27f3cc18-2e6b-4ec1-8a6a-75771751e714"
+  }
+}
