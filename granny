@@ -60,7 +60,7 @@ def _session_exists() -> bool:
 
 def _start_daemon() -> None:
     """Create tmux session and run the daemon inside it."""
-    cmd = f"{VENV_PYTHON} -m devices.granny.daemon"
+    cmd = f"{VENV_PYTHON} -m unseen_university.devices.granny.daemon"
     subprocess.run(
         ["tmux", "new-session", "-d", "-s", TMUX_SESSION, "-x", "220", "-y", "50"],
         check=True,

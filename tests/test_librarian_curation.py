@@ -212,7 +212,7 @@ def test_finds_duplicate_code_refs():
     """Two PROCEDURAL memories sharing same code_ref → archive_action proposal."""
     from unseen_university.devices.librarian.tools.curation_tools import run_curation
 
-    code_ref = f"devices.igor.tools.test_fn:{_unique_id()}"
+    code_ref = f"unseen_university.devices.igor.tools.test_fn:{_unique_id()}"
     id_a = _unique_id()
     id_b = _unique_id()
     _seed_memory(id_a, "PROCEDURAL", f"Habit A with {code_ref}", {"code_ref": code_ref})

@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 
 def _make_device(tmp_path):
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.device import VetinariDevice
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.device import VetinariDevice
     return VetinariDevice(channel_post_fn=lambda m: None)
 
 
@@ -68,7 +68,7 @@ def test_decompose_produces_audit_entry(tmp_path):
         import json
         return json.dumps([{"title": "Do the thing", "description": "d", "tags": ["Build"], "size": "S"}])
 
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=["T-vetinari-do-the-thing"]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=["T-vetinari-do-the-thing"]):
         v.decompose_directive("d-audit", llm_fn=mock_llm)
 
     entries = v.get_audit_log(directive_id="d-audit")

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.nanny.device import (
+from unseen_university.devices.nanny.device import (
     AgentRegistration,
     NannyOggDevice,
     ScheduleEntry,
@@ -516,7 +516,7 @@ def test_recovery_clears_errors_and_restarts():
 
 def test_cc_session_not_active_when_no_flag(tmp_path):
     nanny = NannyOggDevice()
-    with patch("devices.nanny.device.Path") as mock_path_cls:
+    with patch("unseen_university.devices.nanny.device.Path") as mock_path_cls:
         mock_path_cls.home.return_value = tmp_path
         result = nanny._cc_session_active()
     assert result is False
@@ -527,7 +527,7 @@ def test_cc_session_active_when_true_flag_exists(tmp_path):
     flag_dir.mkdir(parents=True)
     (flag_dir / "CC.0.available.true").write_text("true")
     nanny = NannyOggDevice()
-    with patch("devices.nanny.device.Path") as mock_path_cls:
+    with patch("unseen_university.devices.nanny.device.Path") as mock_path_cls:
         mock_path_cls.home.return_value = tmp_path
         result = nanny._cc_session_active()
     assert result is True

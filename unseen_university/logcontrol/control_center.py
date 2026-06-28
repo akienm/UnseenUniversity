@@ -48,7 +48,7 @@ class LoggingControlCenter:
     @classmethod
     def default_root(cls) -> Path:
         """Return the default log root from $UNSEEN_UNIVERSITY_HOME/logs/."""
-        from config.device_config import unseen_university_logs
+        from unseen_university.config.device_config import unseen_university_logs
 
         return unseen_university_logs()
 

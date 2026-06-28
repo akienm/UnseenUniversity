@@ -7,7 +7,7 @@ import os
 import psycopg2
 import pytest
 
-from devices.librarian.persistent_inquiry import (
+from unseen_university.devices.librarian.persistent_inquiry import (
     WEIGHT_TYPE_VALUES,
     _compress_hits,
     _topic_slug,

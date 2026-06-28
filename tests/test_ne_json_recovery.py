@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.igor.cognition.narrative_engine import NarrativeEngine
+from unseen_university.devices.igor.cognition.narrative_engine import NarrativeEngine
 
 
 def _good_json() -> str:
@@ -89,14 +89,14 @@ class TestCallInferenceRecovery:
 
         with (
             patch(
-                "devices.igor.cognition.narrative_engine.reasoning_cache"
+                "unseen_university.devices.igor.cognition.narrative_engine.reasoning_cache"
             ) as mock_cache,
             patch(
-                "devices.igor.cognition.inference_gateway.get_gateway",
+                "unseen_university.devices.igor.cognition.inference_gateway.get_gateway",
                 return_value=mock_gw,
             ),
             patch(
-                "devices.igor.cognition.inference_gateway.make_context",
+                "unseen_university.devices.igor.cognition.inference_gateway.make_context",
                 return_value=mock_ctx,
             ),
         ):
@@ -117,14 +117,14 @@ class TestCallInferenceRecovery:
 
         with (
             patch(
-                "devices.igor.cognition.narrative_engine.reasoning_cache"
+                "unseen_university.devices.igor.cognition.narrative_engine.reasoning_cache"
             ) as mock_cache,
             patch(
-                "devices.igor.cognition.inference_gateway.get_gateway",
+                "unseen_university.devices.igor.cognition.inference_gateway.get_gateway",
                 return_value=mock_gw,
             ),
             patch(
-                "devices.igor.cognition.inference_gateway.make_context",
+                "unseen_university.devices.igor.cognition.inference_gateway.make_context",
                 return_value=mock_ctx,
             ),
         ):

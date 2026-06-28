@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.memory.search_widen import (  # noqa: E402
+from unseen_university.devices.igor.memory.search_widen import (  # noqa: E402
     MIN_TOKEN_LEN,
     _clean_tokens,
     _expand_via_word_graph,

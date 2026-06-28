@@ -8,7 +8,7 @@ from unittest.mock import patch
 def _resolve(env=None, file_content=None, scan_result=None):
     """Call _resolve_session_name() under controlled conditions."""
     import importlib
-    import devices.claude.constants as m
+    import unseen_university.devices.claude.constants as m
 
     env_patch = patch.dict("os.environ", env or {}, clear=False)
     file_read = patch.object(
@@ -34,7 +34,7 @@ class TestResolveSessionName:
         """CC_TMUX_SESSION env var is highest priority."""
         import os
         from unittest.mock import patch
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
 
         with patch.dict(os.environ, {"CC_TMUX_SESSION": "env-session"}, clear=False), \
              patch.object(m, "_find_existing_cc_session", return_value="scan-session"):
@@ -43,7 +43,7 @@ class TestResolveSessionName:
     def test_file_used_when_no_env_var(self, tmp_path, monkeypatch):
         """cc_session.txt is read when CC_TMUX_SESSION is absent."""
         import os
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
 
         session_file = tmp_path / "cc_session.txt"
         session_file.write_text("file-session\n")
@@ -57,7 +57,7 @@ class TestResolveSessionName:
     def test_scan_used_when_no_env_or_file(self, tmp_path, monkeypatch):
         """tmux scan is used when neither env var nor file exists."""
         import os
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
 
         missing_file = tmp_path / "nonexistent.txt"
         monkeypatch.delenv("CC_TMUX_SESSION", raising=False)
@@ -69,7 +69,7 @@ class TestResolveSessionName:
     def test_slot_find_fallback_when_nothing_found(self, tmp_path, monkeypatch):
         """_detect_session_name() runs when all other lookups fail."""
         import os
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
 
         missing_file = tmp_path / "nonexistent.txt"
         monkeypatch.delenv("CC_TMUX_SESSION", raising=False)
@@ -82,7 +82,7 @@ class TestResolveSessionName:
     def test_empty_file_falls_through_to_scan(self, tmp_path, monkeypatch):
         """An empty cc_session.txt is skipped; scan is tried next."""
         import os
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
 
         session_file = tmp_path / "cc_session.txt"
         session_file.write_text("   \n")
@@ -99,7 +99,7 @@ class TestFindExistingCcSession:
         """Returns first hostname.cc.N session found."""
         import socket
         import subprocess
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
         from unittest.mock import MagicMock
 
         hostname = socket.gethostname().split(".")[0].lower()
@@ -112,7 +112,7 @@ class TestFindExistingCcSession:
     def test_falls_back_to_claude_main(self, monkeypatch):
         """Returns claude-main when no hostname.cc.N session found."""
         import subprocess
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
         from unittest.mock import MagicMock
 
         fake = MagicMock(stdout="other-session\nclaude-main\n", returncode=0)
@@ -123,7 +123,7 @@ class TestFindExistingCcSession:
     def test_returns_none_when_nothing_matches(self, monkeypatch):
         """Returns None when no CC session pattern found."""
         import subprocess
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
         from unittest.mock import MagicMock
 
         fake = MagicMock(stdout="unrelated-session\n", returncode=0)
@@ -134,7 +134,7 @@ class TestFindExistingCcSession:
     def test_returns_none_on_exception(self, monkeypatch):
         """Returns None gracefully when tmux is unavailable."""
         import subprocess
-        import devices.claude.constants as m
+        import unseen_university.devices.claude.constants as m
 
         monkeypatch.setattr(subprocess, "run", lambda *a, **kw: (_ for _ in ()).throw(OSError("no tmux")))
 

@@ -32,7 +32,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Iterable, Optional
 
-from devices.igor.igor_base import IgorBase
+from unseen_university.devices.igor.igor_base import IgorBase
 
 # ── tell-phrase libraries ────────────────────────────────────────────────────
 #

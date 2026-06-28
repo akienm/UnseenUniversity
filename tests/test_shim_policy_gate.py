@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from devices.policy.gate import PolicyGate, _write_governance_decision
+from unseen_university.devices.policy.gate import PolicyGate, _write_governance_decision
 from unseen_university.shim import AgentContext, BaseShim, PolicyDeniedError
 
 # ── Minimal concrete shim for testing ────────────────────────────────────────

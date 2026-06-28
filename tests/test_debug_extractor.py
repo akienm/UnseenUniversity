@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
-from devices.scraps.debug_extractor import (
+from unseen_university.devices.scraps.debug_extractor import (
     classify_error,
     extract,
     extract_log_window,
@@ -121,7 +121,7 @@ def test_extract_log_window_returns_lines_in_window(tmp_path):
     log_file.write_text(log_content)
 
     with patch(
-        "devices.scraps.debug_extractor._LOG_DIR",
+        "unseen_university.devices.scraps.debug_extractor._LOG_DIR",
         tmp_path,
     ):
         lines = extract_log_window("general", "2026-05-28T10:05:00", window_minutes=5)
@@ -132,7 +132,7 @@ def test_extract_log_window_returns_lines_in_window(tmp_path):
 
 
 def test_extract_log_window_missing_log_returns_empty(tmp_path):
-    with patch("devices.scraps.debug_extractor._LOG_DIR", tmp_path):
+    with patch("unseen_university.devices.scraps.debug_extractor._LOG_DIR", tmp_path):
         lines = extract_log_window("general", "2026-05-28T10:00:00")
     assert lines == []
 

@@ -150,7 +150,7 @@ def bootstrap(url: str | None = None, local_dir: Path | None = None, db_url: str
         kb_dir = clone_or_update(url)
 
     if db_url is None:
-        from devices.igor.paths import paths
+        from unseen_university.devices.igor.paths import paths
         db_url = paths().home_db_url
 
     return import_records(kb_dir, db_url)

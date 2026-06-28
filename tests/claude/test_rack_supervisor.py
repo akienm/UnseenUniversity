@@ -22,7 +22,7 @@ import yaml
 
 
 def _make_supervisor(tmp_path: Path, slots=None):
-    from devices.claude.rack_supervisor import RackSupervisor
+    from unseen_university.devices.claude.rack_supervisor import RackSupervisor
 
     return RackSupervisor(
         slots=slots if slots is not None else ["CC.0", "CC.1"],
@@ -36,7 +36,7 @@ def _make_supervisor(tmp_path: Path, slots=None):
 
 def test_all_slots_get_a_shim(tmp_path):
     sup = _make_supervisor(tmp_path)
-    with patch("devices.claude.rack_supervisor.CCWorkerShim") as MockShim:
+    with patch("unseen_university.devices.claude.rack_supervisor.CCWorkerShim") as MockShim:
         MockShim.side_effect = lambda slot_id: MagicMock(device_id=slot_id)
         sup.start()
     assert set(sup._shims.keys()) == {"CC.0", "CC.1"}
@@ -44,14 +44,14 @@ def test_all_slots_get_a_shim(tmp_path):
 
 def test_custom_slots_respected(tmp_path):
     sup = _make_supervisor(tmp_path, slots=["CC.1"])
-    with patch("devices.claude.rack_supervisor.CCWorkerShim", return_value=MagicMock()):
+    with patch("unseen_university.devices.claude.rack_supervisor.CCWorkerShim", return_value=MagicMock()):
         sup.start()
     assert list(sup._shims.keys()) == ["CC.1"]
 
 
 def test_empty_slot_list(tmp_path):
     sup = _make_supervisor(tmp_path, slots=[])
-    with patch("devices.claude.rack_supervisor.CCWorkerShim") as MockShim:
+    with patch("unseen_university.devices.claude.rack_supervisor.CCWorkerShim") as MockShim:
         sup.start()
     MockShim.assert_not_called()
     assert sup._shims == {}
@@ -62,7 +62,7 @@ def test_empty_slot_list(tmp_path):
 
 def test_descriptor_written_on_start(tmp_path):
     sup = _make_supervisor(tmp_path, slots=[])
-    with patch("devices.claude.rack_supervisor.CCWorkerShim"):
+    with patch("unseen_university.devices.claude.rack_supervisor.CCWorkerShim"):
         sup.start()
     dest = tmp_path / "ground_loop" / "rack_supervisor.yaml"
     assert dest.exists(), "Ground Loop descriptor must be written on start()"
@@ -75,7 +75,7 @@ def test_descriptor_written_on_start(tmp_path):
 
 def test_descriptor_is_valid_yaml(tmp_path):
     sup = _make_supervisor(tmp_path, slots=[])
-    with patch("devices.claude.rack_supervisor.CCWorkerShim"):
+    with patch("unseen_university.devices.claude.rack_supervisor.CCWorkerShim"):
         sup.start()
     dest = tmp_path / "ground_loop" / "rack_supervisor.yaml"
     cfg = yaml.safe_load(dest.read_text())

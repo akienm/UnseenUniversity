@@ -16,11 +16,11 @@ from pathlib import Path
 
 import pytest
 
-from devices.policy.gate import PolicyGate
-from skeleton.halt_registry import HaltRegistry
+from unseen_university.devices.policy.gate import PolicyGate
+from unseen_university.devices.skeleton.halt_registry import HaltRegistry
 from unseen_university.shim import AgentContext, BaseShim, PolicyDeniedError
-from unseen_university.skeleton.skeleton import Skeleton
-from skeleton.registry import DeviceRegistry
+from unseen_university.devices.skeleton.skeleton import Skeleton
+from unseen_university.devices.skeleton.registry import DeviceRegistry
 
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
@@ -281,7 +281,7 @@ class TestSkeletonKillSwitchTools:
         assert not halted
 
     def test_agent_halt_requires_skeleton_caller(self, tmp_path: Path) -> None:
-        from unseen_university.skeleton.exceptions import AuthError
+        from unseen_university.devices.skeleton.exceptions import AuthError
 
         skel, _, token = self._make_skeleton(tmp_path)
         with pytest.raises(AuthError):
@@ -290,7 +290,7 @@ class TestSkeletonKillSwitchTools:
             )
 
     def test_agent_resume_requires_skeleton_caller(self, tmp_path: Path) -> None:
-        from unseen_university.skeleton.exceptions import AuthError
+        from unseen_university.devices.skeleton.exceptions import AuthError
 
         skel, halt_reg, token = self._make_skeleton(tmp_path)
         halt_reg.set_halted("test-agent", True, "test")
@@ -301,7 +301,7 @@ class TestSkeletonKillSwitchTools:
 
     def test_agent_halt_requires_valid_proof(self, tmp_path: Path) -> None:
         """Supplying a forged from_device='skeleton' without a valid proof is denied."""
-        from unseen_university.skeleton.exceptions import AuthError
+        from unseen_university.devices.skeleton.exceptions import AuthError
 
         skel, _, _ = self._make_skeleton(tmp_path)
         with pytest.raises(AuthError, match="proof token"):
@@ -311,7 +311,7 @@ class TestSkeletonKillSwitchTools:
 
     def test_agent_resume_requires_valid_proof(self, tmp_path: Path) -> None:
         """A prompt-injected agent cannot resume by self-reporting from_device='skeleton'."""
-        from unseen_university.skeleton.exceptions import AuthError
+        from unseen_university.devices.skeleton.exceptions import AuthError
 
         skel, halt_reg, _ = self._make_skeleton(tmp_path)
         halt_reg.set_halted("test-agent", True, "halted")

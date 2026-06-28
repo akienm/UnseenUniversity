@@ -10,8 +10,8 @@ from pathlib import Path
 _UU_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_UU_ROOT))
 
-from devices.dicksimnel.device import DickSimnelDevice
-from devices.critic.agent import CriticAgent, Decision
+from unseen_university.devices.dicksimnel.device import DickSimnelDevice
+from unseen_university.devices.critic.agent import CriticAgent, Decision
 
 # Load ticket
 dsimnel = DickSimnelDevice()

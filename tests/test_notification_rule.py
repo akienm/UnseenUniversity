@@ -131,7 +131,7 @@ def _make_imap_row(envelope_dict: dict):
 
 def test_ygm_broadcast_no_mention_produces_no_senders():
     """Broadcast to shared with no @-mention → zero senders (ticket pass condition)."""
-    from devices.claude.ygm_check import _check_mailbox_imap
+    from unseen_university.devices.claude.ygm_check import _check_mailbox_imap
 
     envelope = {
         "from_device": "igor",
@@ -151,7 +151,7 @@ def test_ygm_broadcast_no_mention_produces_no_senders():
 
 def test_ygm_broadcast_with_mention_produces_one_sender():
     """Broadcast to shared with @cc.0 → one sender (ticket pass condition)."""
-    from devices.claude.ygm_check import _check_mailbox_imap
+    from unseen_university.devices.claude.ygm_check import _check_mailbox_imap
 
     envelope = {
         "from_device": "igor",
@@ -171,7 +171,7 @@ def test_ygm_broadcast_with_mention_produces_one_sender():
 
 def test_ygm_direct_address_produces_sender():
     """Direct address to CC.0 → sender included."""
-    from devices.claude.ygm_check import _check_mailbox_imap
+    from unseen_university.devices.claude.ygm_check import _check_mailbox_imap
 
     envelope = {
         "from_device": "igor",

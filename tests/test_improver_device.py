@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from devices.critic.agent import CriticJudgment, Decision, LearningRule
-from devices.improver.device import ImproverDevice, _IMPROVEMENT_CRITERIA
+from unseen_university.devices.critic.agent import CriticJudgment, Decision, LearningRule
+from unseen_university.devices.improver.device import ImproverDevice, _IMPROVEMENT_CRITERIA
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ def _mock_evaluator_result(score: float = 0.8) -> dict:
 
 
 def _make_device(inference=None, tmp_rules_dir: Path | None = None):
-    with patch("devices.improver.device._RULES_DIR", tmp_rules_dir or Path("/tmp/improver_test")):
+    with patch("unseen_university.devices.improver.device._RULES_DIR", tmp_rules_dir or Path("/tmp/improver_test")):
         dev = ImproverDevice.__new__(ImproverDevice)
         dev._inference = inference
         dev._rules = []
@@ -109,7 +109,7 @@ def test_improve_returns_learning_rules():
 
     dev = _make_device()
 
-    with patch("devices.improver.device.EvaluatorCore", return_value=mock_core):
+    with patch("unseen_university.devices.improver.device.EvaluatorCore", return_value=mock_core):
         rules = dev.improve([_fake_judgment()])
 
     assert len(rules) > 0
@@ -127,7 +127,7 @@ def test_improve_calls_evaluatorcore_with_optimism_plus_one():
 
     dev = _make_device()
 
-    with patch("devices.improver.device.EvaluatorCore", return_value=mock_core):
+    with patch("unseen_university.devices.improver.device.EvaluatorCore", return_value=mock_core):
         dev.improve([_fake_judgment()])
 
     mock_core.evaluate.assert_called_once()
@@ -142,7 +142,7 @@ def test_improve_uses_improvement_criteria():
 
     dev = _make_device()
 
-    with patch("devices.improver.device.EvaluatorCore", return_value=mock_core):
+    with patch("unseen_university.devices.improver.device.EvaluatorCore", return_value=mock_core):
         dev.improve([_fake_judgment()])
 
     criteria_arg = mock_core.evaluate.call_args[0][1]
@@ -160,7 +160,7 @@ def test_improve_clusters_by_pattern():
         _fake_judgment(pattern="slow_progress"),         # different cluster
     ]
 
-    with patch("devices.improver.device.EvaluatorCore", return_value=mock_core):
+    with patch("unseen_university.devices.improver.device.EvaluatorCore", return_value=mock_core):
         dev.improve(patterns)
 
     # Should have called EvaluatorCore once per distinct pattern
@@ -171,13 +171,13 @@ def test_improve_persists_rules(tmp_path):
     mock_core = MagicMock()
     mock_core.evaluate.return_value = _mock_evaluator_result()
 
-    with patch("devices.improver.device._RULES_DIR", tmp_path):
+    with patch("unseen_university.devices.improver.device._RULES_DIR", tmp_path):
         dev = ImproverDevice.__new__(ImproverDevice)
         dev._inference = MagicMock()
         dev._rules = []
         dev._errors = []
 
-        with patch("devices.improver.device.EvaluatorCore", return_value=mock_core):
+        with patch("unseen_university.devices.improver.device.EvaluatorCore", return_value=mock_core):
             dev.improve([_fake_judgment()])
 
         rules_file = tmp_path / "rules.json"
@@ -190,13 +190,13 @@ def test_improve_rules_reloadable(tmp_path):
     mock_core = MagicMock()
     mock_core.evaluate.return_value = _mock_evaluator_result()
 
-    with patch("devices.improver.device._RULES_DIR", tmp_path):
+    with patch("unseen_university.devices.improver.device._RULES_DIR", tmp_path):
         dev1 = ImproverDevice.__new__(ImproverDevice)
         dev1._inference = MagicMock()
         dev1._rules = []
         dev1._errors = []
 
-        with patch("devices.improver.device.EvaluatorCore", return_value=mock_core):
+        with patch("unseen_university.devices.improver.device.EvaluatorCore", return_value=mock_core):
             dev1.improve([_fake_judgment()])
 
         n_rules = len(dev1.get_rules())
@@ -206,7 +206,7 @@ def test_improve_rules_reloadable(tmp_path):
         dev2._inference = None
         dev2._rules = []
         dev2._errors = []
-        with patch("devices.improver.device._RULES_DIR", tmp_path):
+        with patch("unseen_university.devices.improver.device._RULES_DIR", tmp_path):
             dev2._load_rules()
 
         assert len(dev2.get_rules()) == n_rules
@@ -218,7 +218,7 @@ def test_improve_non_fatal_on_core_error():
 
     dev = _make_device()
 
-    with patch("devices.improver.device.EvaluatorCore", return_value=mock_core):
+    with patch("unseen_university.devices.improver.device.EvaluatorCore", return_value=mock_core):
         result = dev.improve([_fake_judgment()])
 
     # Should not raise — returns empty list and logs error
@@ -234,7 +234,7 @@ def test_criterion4_improver_gets_constructive_system_prompt():
     system prompt. Verified by checking that the system prompt built at optimism=+1
     contains constructive framing, not critical framing.
     """
-    from devices.evaluator.core import _build_system
+    from unseen_university.devices.evaluator.core import _build_system
 
     critic_system = _build_system(-1.0)
     improver_system = _build_system(1.0)
@@ -256,7 +256,7 @@ def test_criterion4_improver_gets_constructive_system_prompt():
 def test_criterion4_same_input_different_optimism():
     """Criterion 4 end-to-end: same judgment → Improver calls EvaluatorCore at +1
     while CriticDevice calls EvaluatorCore at -1. The optimism values differ."""
-    from devices.critic.device import CriticDevice
+    from unseen_university.devices.critic.device import CriticDevice
 
     judgment = _fake_judgment()
     captured = []
@@ -277,11 +277,11 @@ def test_criterion4_same_input_different_optimism():
     mock_core.evaluate.side_effect = fake_evaluate
 
     imp_dev = _make_device()
-    with patch("devices.improver.device.EvaluatorCore", return_value=mock_core):
+    with patch("unseen_university.devices.improver.device.EvaluatorCore", return_value=mock_core):
         imp_dev.improve([judgment])
 
-    with patch("devices.critic.device.EvaluatorCore", return_value=mock_core), \
-         patch("devices.critic.device._RULES_DIR", Path("/tmp")):
+    with patch("unseen_university.devices.critic.device.EvaluatorCore", return_value=mock_core), \
+         patch("unseen_university.devices.critic.device._RULES_DIR", Path("/tmp")):
         crit_dev = CriticDevice.__new__(CriticDevice)
         crit_dev._inference = MagicMock()
         crit_dev._agent = MagicMock()

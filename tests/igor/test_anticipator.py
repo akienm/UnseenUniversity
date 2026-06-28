@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from devices.igor.cognition.anticipator import (
+from unseen_university.devices.igor.cognition.anticipator import (
     Anticipation,
     Anticipator,
     AnticipationBus,

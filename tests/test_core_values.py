@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from diagnostic_base.core_values import CORE_VALUES, CoreValue, CoreValuesMixin
+from unseen_university.diagnostic_base.core_values import CORE_VALUES, CoreValue, CoreValuesMixin
 from unseen_university.device import BaseDevice
 from unseen_university.shim import BaseShim
 

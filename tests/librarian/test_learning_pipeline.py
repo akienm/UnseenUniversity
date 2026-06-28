@@ -2,12 +2,12 @@
 
 import json
 import pytest
-from devices.librarian.learning_pipeline import LearningPipeline
+from unseen_university.devices.librarian.learning_pipeline import LearningPipeline
 
 
 @pytest.fixture
 def cortex():
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
     return Cortex()
 
 

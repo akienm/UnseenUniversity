@@ -14,12 +14,12 @@ def no_bus():
 
     _channel_event tries bus first; these tests cover the channel path.
     """
-    with patch("bus.connection.make_bus_connection", side_effect=RuntimeError("no bus in test")):
+    with patch("unseen_university.devices.bus.connection.make_bus_connection", side_effect=RuntimeError("no bus in test")):
         yield
 
 
 def _device():
-    from devices.dicksimnel.device import DickSimnelDevice
+    from unseen_university.devices.dicksimnel.device import DickSimnelDevice
     d = DickSimnelDevice()
     d._shim = MagicMock()
     d._shim.is_blocked.return_value = False
@@ -63,7 +63,7 @@ def test_channel_event_swallows_exception(caplog):
 
 class TestDickSimnelWorkerListenerChannelEvent:
     def _listener(self):
-        from devices.dicksimnel.worker_listener import DickSimnelWorkerListener
+        from unseen_university.devices.dicksimnel.worker_listener import DickSimnelWorkerListener
         device = _device()
         bus = MagicMock()
         bus.fetch_unseen.return_value = []

@@ -20,7 +20,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.tools.system_proxy import (
+from unseen_university.devices.igor.tools.system_proxy import (
     DiskInfo,
     MemoryInfo,
     ProcessInfo,
@@ -128,7 +128,7 @@ class TestHardwareProperty:
     def test_hardware_empty_on_import_failure(self):
         proxy = SystemProxy()
         with patch(
-            "devices.igor.tools.hardware_detect.detect_hardware",
+            "unseen_university.devices.igor.tools.hardware_detect.detect_hardware",
             side_effect=ImportError("nope"),
         ):
             if hasattr(proxy, "_hardware_cache"):

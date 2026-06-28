@@ -14,8 +14,8 @@ def test_dispatch_done_logs_no_status_change():
     imap = MagicMock()
     imap.fetch_unseen.return_value = [_make_envelope("dispatch_done", "T-done-1")]
 
-    with patch("devices.granny.daemon._setstatus_direct") as mock_status:
-        from devices.granny.daemon import _process_handshake_replies
+    with patch("unseen_university.devices.granny.daemon._setstatus_direct") as mock_status:
+        from unseen_university.devices.granny.daemon import _process_handshake_replies
         count = _process_handshake_replies(imap, "granny.0")
 
     assert count == 1
@@ -32,8 +32,8 @@ def test_dispatch_done_mixed_with_other_replies():
     ]
 
     calls = []
-    with patch("devices.granny.daemon._setstatus_direct", side_effect=lambda tid, status, **kw: calls.append((tid, status)) or True):
-        from devices.granny.daemon import _process_handshake_replies
+    with patch("unseen_university.devices.granny.daemon._setstatus_direct", side_effect=lambda tid, status, **kw: calls.append((tid, status)) or True):
+        from unseen_university.devices.granny.daemon import _process_handshake_replies
         count = _process_handshake_replies(imap, "granny.0")
 
     assert count == 3

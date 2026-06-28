@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 
 def test_mark_unavailable_writes_cooldown_file(tmp_path):
-    with patch("devices.granny.availability._AVAILABLE_DIR", tmp_path):
-        from devices.granny.availability import mark_unavailable
+    with patch("unseen_university.devices.granny.availability._AVAILABLE_DIR", tmp_path):
+        from unseen_university.devices.granny.availability import mark_unavailable
         mark_unavailable("DickSimnel.0", cooldown_s=30)
 
     false_flag = tmp_path / "DickSimnel.0.available.false"
@@ -20,8 +20,8 @@ def test_mark_unavailable_writes_cooldown_file(tmp_path):
 
 
 def test_mark_unavailable_without_cooldown_no_file(tmp_path):
-    with patch("devices.granny.availability._AVAILABLE_DIR", tmp_path):
-        from devices.granny.availability import mark_unavailable
+    with patch("unseen_university.devices.granny.availability._AVAILABLE_DIR", tmp_path):
+        from unseen_university.devices.granny.availability import mark_unavailable
         mark_unavailable("DickSimnel.0")
 
     cooldown_file = tmp_path / "DickSimnel.0.cooldown_until"
@@ -29,8 +29,8 @@ def test_mark_unavailable_without_cooldown_no_file(tmp_path):
 
 
 def test_check_and_expire_cooldowns_before_expiry(tmp_path):
-    with patch("devices.granny.availability._AVAILABLE_DIR", tmp_path):
-        from devices.granny.availability import (
+    with patch("unseen_university.devices.granny.availability._AVAILABLE_DIR", tmp_path):
+        from unseen_university.devices.granny.availability import (
             check_and_expire_cooldowns,
             is_available,
             mark_unavailable,
@@ -42,8 +42,8 @@ def test_check_and_expire_cooldowns_before_expiry(tmp_path):
 
 
 def test_check_and_expire_cooldowns_after_expiry(tmp_path):
-    with patch("devices.granny.availability._AVAILABLE_DIR", tmp_path):
-        from devices.granny.availability import (
+    with patch("unseen_university.devices.granny.availability._AVAILABLE_DIR", tmp_path):
+        from unseen_university.devices.granny.availability import (
             check_and_expire_cooldowns,
             is_available,
             mark_unavailable,
@@ -61,8 +61,8 @@ def test_check_and_expire_cooldowns_after_expiry(tmp_path):
 
 
 def test_clear_worker_state_removes_cooldown_file(tmp_path):
-    with patch("devices.granny.availability._AVAILABLE_DIR", tmp_path):
-        from devices.granny.availability import clear_worker_state, mark_unavailable
+    with patch("unseen_university.devices.granny.availability._AVAILABLE_DIR", tmp_path):
+        from unseen_university.devices.granny.availability import clear_worker_state, mark_unavailable
         mark_unavailable("DickSimnel.0", cooldown_s=60)
         clear_worker_state("DickSimnel.0")
 

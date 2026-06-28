@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from devices.inference.models_registry import ModelSpec, ModelsRegistry
+from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
 
 
 def _make_app():
-    import devices.web_server.server as _srv
-    with patch("devices.web_server.server._init_comms"):
+    import unseen_university.devices.web_server.server as _srv
+    with patch("unseen_university.devices.web_server.server._init_comms"):
         return _srv._make_app()
 
 
@@ -45,7 +45,7 @@ class TestApiInferenceModelHistory:
     def test_returns_200(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._inference_registry", return_value=_reg_with_history()):
+        with patch("unseen_university.devices.web_server.server._inference_registry", return_value=_reg_with_history()):
             with TestClient(app) as client:
                 resp = client.get("/api/inference/models/test%2Fmodel-v1/history")
         assert resp.status_code == 200
@@ -53,7 +53,7 @@ class TestApiInferenceModelHistory:
     def test_returns_history_list(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._inference_registry", return_value=_reg_with_history()):
+        with patch("unseen_university.devices.web_server.server._inference_registry", return_value=_reg_with_history()):
             with TestClient(app) as client:
                 data = client.get("/api/inference/models/test%2Fmodel-v1/history").json()
         assert "history" in data
@@ -69,7 +69,7 @@ class TestApiInferenceModelHistory:
             created_at="2026-06-01T00:00:00Z",
         )])
         app = _make_app()
-        with patch("devices.web_server.server._inference_registry", return_value=reg):
+        with patch("unseen_university.devices.web_server.server._inference_registry", return_value=reg):
             with TestClient(app) as client:
                 data = client.get("/api/inference/models/fresh%2Fmodel/history").json()
         assert data["history"] == []
@@ -78,7 +78,7 @@ class TestApiInferenceModelHistory:
     def test_registry_unavailable_returns_empty_gracefully(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._inference_registry", return_value=None):
+        with patch("unseen_university.devices.web_server.server._inference_registry", return_value=None):
             with TestClient(app) as client:
                 data = client.get("/api/inference/models/any%2Fmodel/history").json()
         assert data["history"] == []
@@ -89,7 +89,7 @@ class TestPageInferenceModels:
     def test_returns_200(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._inference_registry", return_value=_reg_with_history()):
+        with patch("unseen_university.devices.web_server.server._inference_registry", return_value=_reg_with_history()):
             with TestClient(app) as client:
                 resp = client.get("/inference/models")
         assert resp.status_code == 200
@@ -98,7 +98,7 @@ class TestPageInferenceModels:
     def test_renders_model_id(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._inference_registry", return_value=_reg_with_history()):
+        with patch("unseen_university.devices.web_server.server._inference_registry", return_value=_reg_with_history()):
             with TestClient(app) as client:
                 html = client.get("/inference/models").text
         assert "test/model-v1" in html
@@ -106,7 +106,7 @@ class TestPageInferenceModels:
     def test_renders_history_section(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._inference_registry", return_value=_reg_with_history()):
+        with patch("unseen_university.devices.web_server.server._inference_registry", return_value=_reg_with_history()):
             with TestClient(app) as client:
                 html = client.get("/inference/models").text
         assert "prior version" in html
@@ -114,7 +114,7 @@ class TestPageInferenceModels:
     def test_registry_unavailable_shows_message(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._inference_registry", return_value=None):
+        with patch("unseen_university.devices.web_server.server._inference_registry", return_value=None):
             with TestClient(app) as client:
                 html = client.get("/inference/models").text
         assert "unavailable" in html.lower()

@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.memory.test_data_lifecycle import (  # noqa: E402
+from unseen_university.devices.igor.memory.test_data_lifecycle import (  # noqa: E402
     DEFAULT_TTL_SECONDS,
     ENV_FLAG,
     cleanup_test_data,
@@ -202,7 +202,7 @@ def test_count_orphan_test_data_filters_by_expiry():
 
 def test_store_auto_tags_in_test_mode(monkeypatch):
     """When IGOR_TEST_MODE=1, cortex.store should stamp test_data=True."""
-    from devices.igor.memory.test_data_lifecycle import (
+    from unseen_university.devices.igor.memory.test_data_lifecycle import (
         is_test_mode,
         stamp_metadata_for_test_mode,
     )

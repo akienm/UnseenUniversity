@@ -13,9 +13,9 @@ from unittest.mock import MagicMock, patch, call
 
 import pytest
 
-from devices.evaluator.device import EvaluatorDevice
-from devices.inference.device import InferenceDevice
-from devices.inference.shim import InferenceResponse
+from unseen_university.devices.evaluator.device import EvaluatorDevice
+from unseen_university.devices.inference.device import InferenceDevice
+from unseen_university.devices.inference.shim import InferenceResponse
 
 _PG_URL = os.environ.get("UU_HOME_DB_URL", "")
 _SKIP_INTEGRATION = pytest.mark.skipif(
@@ -108,7 +108,7 @@ def _make_evaluator(models_responses, with_rubric=False, rubric_criteria=None):
 
 def test_capability_graph_ensure_table_called():
     """ensure_table must execute a CREATE TABLE IF NOT EXISTS."""
-    from devices.inference.capability_graph import ensure_table
+    from unseen_university.devices.inference.capability_graph import ensure_table
 
     conn, cur = _mock_conn()
     with patch("psycopg2.connect", return_value=conn):
@@ -120,7 +120,7 @@ def test_capability_graph_ensure_table_called():
 
 
 def test_capability_graph_insert_result_calls_db():
-    from devices.inference.capability_graph import insert_result
+    from unseen_university.devices.inference.capability_graph import insert_result
 
     conn, cur = _mock_conn()
     with patch("psycopg2.connect", return_value=conn):
@@ -148,7 +148,7 @@ def test_capability_graph_insert_result_calls_db():
 
 
 def test_capability_graph_query_results_returns_list():
-    from devices.inference.capability_graph import query_results
+    from unseen_university.devices.inference.capability_graph import query_results
     from datetime import datetime, timezone
 
     ran = datetime(2026, 5, 31, 12, 0, 0, tzinfo=timezone.utc)
@@ -179,7 +179,7 @@ def test_capability_graph_query_results_returns_list():
 
 
 def test_capability_graph_query_returns_empty_on_error():
-    from devices.inference.capability_graph import query_results
+    from unseen_university.devices.inference.capability_graph import query_results
 
     with patch("psycopg2.connect", side_effect=RuntimeError("no db")):
         result = query_results("postgresql://fake")
@@ -187,7 +187,7 @@ def test_capability_graph_query_returns_empty_on_error():
 
 
 def test_capability_graph_insert_no_op_on_error():
-    from devices.inference.capability_graph import insert_result
+    from unseen_university.devices.inference.capability_graph import insert_result
 
     with patch("psycopg2.connect", side_effect=RuntimeError("no db")):
         # must not raise
@@ -220,8 +220,8 @@ def test_model_eval_run_dispatches_each_model():
     d, inf = _make_evaluator(responses)
 
     with (
-        patch("devices.inference.capability_graph.ensure_table"),
-        patch("devices.inference.capability_graph.insert_result"),
+        patch("unseen_university.devices.inference.capability_graph.ensure_table"),
+        patch("unseen_university.devices.inference.capability_graph.insert_result"),
     ):
         d.model_eval_run("write a hello function", models, task_class="programming")
 
@@ -234,8 +234,8 @@ def test_model_eval_run_returns_run_group_id():
     d, inf = _make_evaluator(responses)
 
     with (
-        patch("devices.inference.capability_graph.ensure_table"),
-        patch("devices.inference.capability_graph.insert_result"),
+        patch("unseen_university.devices.inference.capability_graph.ensure_table"),
+        patch("unseen_university.devices.inference.capability_graph.insert_result"),
     ):
         result = d.model_eval_run("write a hello function", models)
 
@@ -250,8 +250,8 @@ def test_model_eval_run_result_shape_per_model():
     d, inf = _make_evaluator([_fake_resp(model=models[0])])
 
     with (
-        patch("devices.inference.capability_graph.ensure_table"),
-        patch("devices.inference.capability_graph.insert_result"),
+        patch("unseen_university.devices.inference.capability_graph.ensure_table"),
+        patch("unseen_university.devices.inference.capability_graph.insert_result"),
     ):
         result = d.model_eval_run("write a hello function", models)
 
@@ -302,8 +302,8 @@ def test_model_eval_run_evaluates_when_rubric_given():
     d._db_connect = lambda: next(it)
 
     with (
-        patch("devices.inference.capability_graph.ensure_table"),
-        patch("devices.inference.capability_graph.insert_result"),
+        patch("unseen_university.devices.inference.capability_graph.ensure_table"),
+        patch("unseen_university.devices.inference.capability_graph.insert_result"),
     ):
         result = d.model_eval_run("write a hello function", models, rubric_id="R-test")
 
@@ -327,9 +327,9 @@ def test_model_eval_run_records_result_per_model():
 
     insert_calls = []
     with (
-        patch("devices.inference.capability_graph.ensure_table"),
+        patch("unseen_university.devices.inference.capability_graph.ensure_table"),
         patch(
-            "devices.inference.capability_graph.insert_result",
+            "unseen_university.devices.inference.capability_graph.insert_result",
             side_effect=lambda *a, **kw: insert_calls.append(kw),
         ),
     ):
@@ -351,8 +351,8 @@ def test_model_eval_run_handles_dispatch_failure():
 
     models = ["bad-model/v1", "openai/gpt-4o-mini"]
     with (
-        patch("devices.inference.capability_graph.ensure_table"),
-        patch("devices.inference.capability_graph.insert_result"),
+        patch("unseen_university.devices.inference.capability_graph.ensure_table"),
+        patch("unseen_university.devices.inference.capability_graph.insert_result"),
     ):
         result = d.model_eval_run("write a hello function", models)
 
@@ -370,8 +370,8 @@ def test_model_eval_run_skips_evaluate_on_dispatch_failure():
     d._db_connect = lambda: conn
 
     with (
-        patch("devices.inference.capability_graph.ensure_table"),
-        patch("devices.inference.capability_graph.insert_result"),
+        patch("unseen_university.devices.inference.capability_graph.ensure_table"),
+        patch("unseen_university.devices.inference.capability_graph.insert_result"),
         patch.object(d, "evaluate") as mock_eval,
     ):
         d.model_eval_run("task", ["bad-model/v1"], rubric_id="R-test")
@@ -386,8 +386,8 @@ def test_model_eval_run_same_run_group_id_for_all_models():
     d, inf = _make_evaluator(responses)
 
     with (
-        patch("devices.inference.capability_graph.ensure_table"),
-        patch("devices.inference.capability_graph.insert_result"),
+        patch("unseen_university.devices.inference.capability_graph.ensure_table"),
+        patch("unseen_university.devices.inference.capability_graph.insert_result"),
     ):
         result = d.model_eval_run("write a hello function", models)
 
@@ -410,7 +410,7 @@ def test_inference_device_cg_query_delegates_to_module(monkeypatch):
     monkeypatch.setenv("UU_HOME_DB_URL", "postgresql://fake")
     d = InferenceDevice(mode="openrouter")
     with patch(
-        "devices.inference.capability_graph.query_results",
+        "unseen_university.devices.inference.capability_graph.query_results",
         return_value=[{"id": "ME-1"}],
     ) as mock_qr:
         result = d.capability_graph_query(task_class="programming", model="gpt-4o-mini")
@@ -426,7 +426,7 @@ def test_inference_device_cg_query_delegates_to_module(monkeypatch):
 @_SKIP_INTEGRATION
 def test_integration_capability_graph_roundtrip():
     """Write and read back a result from real Postgres."""
-    from devices.inference.capability_graph import (
+    from unseen_university.devices.inference.capability_graph import (
         ensure_table,
         insert_result,
         query_results,
@@ -463,7 +463,7 @@ def test_integration_capability_graph_roundtrip():
 @_SKIP_INTEGRATION
 def test_integration_model_eval_run_three_stacks():
     """Run one task against 3 models with a rubric; verify results queryable."""
-    from devices.inference.capability_graph import ensure_table, query_results
+    from unseen_university.devices.inference.capability_graph import ensure_table, query_results
 
     # Use mocked inference so no live API calls are needed
     models = [

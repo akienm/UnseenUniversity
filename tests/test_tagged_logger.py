@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from diagnostic_base.tagged_logger import TaggedLogger, _TagBoundLogger
+from unseen_university.diagnostic_base.tagged_logger import TaggedLogger, _TagBoundLogger
 
 
 class TestTaggedLogger:

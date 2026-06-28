@@ -20,14 +20,14 @@ from pathlib import Path
 
 import pytest
 
-from bus.envelope import Envelope
-from bus.imap_server import IMAPServer
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.bus.imap_server import IMAPServer
 from unseen_university.announce import (
     ANNOUNCE_EVENTS_MAILBOX,
     ANNOUNCE_MAILBOX,
     IdentityEnvelope,
 )
-from unseen_university.skeleton.skeleton import Skeleton
+from unseen_university.devices.skeleton.skeleton import Skeleton
 
 CANONICAL_PROFILES = Path(__file__).parent.parent.parent / "config" / "profiles"
 

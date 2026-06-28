@@ -91,7 +91,7 @@ def build_memory(engram: GroundingEngram) -> Any:
     Imported lazily so the module loads without cortex's heavy dependencies —
     useful when callers just want GroundingEngram/_validate in isolation.
     """
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     metadata = {
         "deposited_at": datetime.now(timezone.utc).isoformat(),
@@ -180,7 +180,7 @@ def _cli(argv: list[str]) -> int:
     import os
     from pathlib import Path
 
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     db_path_str = os.environ.get("IGOR_DB_PATH")
     if not db_path_str:

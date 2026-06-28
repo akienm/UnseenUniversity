@@ -15,9 +15,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.postgres.device import PostgresDevice
+from unseen_university.devices.postgres.device import PostgresDevice
 from unseen_university.device import INTERFACE_VERSION
-from unseen_university.skeleton.exceptions import DeviceBlockedError
+from unseen_university.devices.skeleton.exceptions import DeviceBlockedError
 
 _PG_URL = (
     os.environ.get("AGENT_DATACENTER_DB_URL")
@@ -83,7 +83,7 @@ def test_startup_errors_is_list(device):
 
 
 def test_logs_has_paths_key(device):
-    with patch("devices.postgres.device._pg_connect", return_value=None):
+    with patch("unseen_university.devices.postgres.device._pg_connect", return_value=None):
         logs = device.logs()
     assert "paths" in logs
 
@@ -95,7 +95,7 @@ def test_update_info_has_required_keys(device):
 
 
 def test_where_and_how_has_required_keys(device):
-    with patch("devices.postgres.device._pg_connect", return_value=None):
+    with patch("unseen_university.devices.postgres.device._pg_connect", return_value=None):
         w = device.where_and_how()
     for key in ("host", "pid", "launch_command"):
         assert key in w
@@ -133,7 +133,7 @@ def test_recovery_starts_shim(device):
 
 
 def test_health_unhealthy_when_no_db(device):
-    with patch("devices.postgres.device._pg_connect", return_value=None):
+    with patch("unseen_university.devices.postgres.device._pg_connect", return_value=None):
         h = device.health()
     assert h["status"] == "unhealthy"
     assert h["connected"] is False
@@ -145,7 +145,7 @@ def test_health_healthy_with_mock_db(device):
     cursor = MagicMock()
     conn.cursor.return_value = cursor
     cursor.fetchone.return_value = (5,)
-    with patch("devices.postgres.device._pg_connect", return_value=conn):
+    with patch("unseen_university.devices.postgres.device._pg_connect", return_value=conn):
         h = device.health()
     assert h["status"] == "healthy"
     assert h["connected"] is True
@@ -157,7 +157,7 @@ def test_health_degraded_on_query_error(device):
     cursor = MagicMock()
     conn.cursor.return_value = cursor
     cursor.execute.side_effect = Exception("query failed")
-    with patch("devices.postgres.device._pg_connect", return_value=conn):
+    with patch("unseen_university.devices.postgres.device._pg_connect", return_value=conn):
         h = device.health()
     assert h["status"] == "degraded"
     assert "query failed" in h["detail"]
@@ -201,7 +201,7 @@ def test_health_raises_device_blocked_error_when_blocked(device_with_registry):
 
 
 def test_uptime_returns_zero_on_no_db(device):
-    with patch("devices.postgres.device._pg_connect", return_value=None):
+    with patch("unseen_university.devices.postgres.device._pg_connect", return_value=None):
         assert device.uptime() == 0.0
 
 
@@ -210,7 +210,7 @@ def test_uptime_returns_positive_with_mock_db(device):
     cursor = MagicMock()
     conn.cursor.return_value = cursor
     cursor.fetchone.return_value = (1234.5,)
-    with patch("devices.postgres.device._pg_connect", return_value=conn):
+    with patch("unseen_university.devices.postgres.device._pg_connect", return_value=conn):
         assert device.uptime() == 1234.5
 
 

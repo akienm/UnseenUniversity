@@ -46,7 +46,7 @@ def main() -> int:
     }
 
     try:
-        from devices.librarian.learning_pipeline import LearningPipeline
+        from unseen_university.devices.librarian.learning_pipeline import LearningPipeline
         pipeline = LearningPipeline(db_url)
         stats = pipeline.run_once()
         if "error" in stats:
@@ -59,7 +59,7 @@ def main() -> int:
         return 1
 
     try:
-        from devices.scraps.chat_classifier import ChatClassifier
+        from unseen_university.devices.scraps.chat_classifier import ChatClassifier
         classifier = ChatClassifier(db_url)
         stats = classifier.run_once()
         if "error" in stats:

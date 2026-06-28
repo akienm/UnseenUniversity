@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("devices.igor.memory.cortex", reason="requires Igor internals")
+pytest.importorskip("unseen_university.devices.igor.memory.cortex", reason="requires Igor internals")
 
 from claudecode.book_learner import _score_attractor_overlap  # noqa: E402
 

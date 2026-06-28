@@ -51,22 +51,22 @@ def contract_device(request, tmp_path):
     name = request.param
 
     if name == "rack_test":
-        from devices.rack_test.device import RackTestDevice
+        from unseen_university.devices.rack_test.device import RackTestDevice
 
         return RackTestDevice()
 
     if name == "sensor":
-        from devices.sensor.device import SensorDevice
+        from unseen_university.devices.sensor.device import SensorDevice
 
         return SensorDevice()
 
     if name == "workspace":
-        from devices.workspace.device import WorkspaceDevice
+        from unseen_university.devices.workspace.device import WorkspaceDevice
 
         return WorkspaceDevice(workspace_root=tmp_path)
 
     if name == "scraps":
-        from devices.scraps.scraps_device import ScrapsDevice
+        from unseen_university.devices.scraps.scraps_device import ScrapsDevice
 
         return ScrapsDevice()
 
@@ -75,35 +75,35 @@ def contract_device(request, tmp_path):
         pytest.skip("granny runs as daemon process, not a BaseDevice subclass")
 
     if name == "postgres":
-        from devices.postgres.device import PostgresDevice
+        from unseen_university.devices.postgres.device import PostgresDevice
 
         return PostgresDevice()
 
     if name == "queue":
         import json
 
-        import devices.queue.device as qdev
-        from devices.queue.device import QueueDevice
+        import unseen_university.devices.queue.device as qdev
+        from unseen_university.devices.queue.device import QueueDevice
 
         gate = tmp_path / "gate.json"
         gate.write_text(json.dumps({"tripped": False}))
         orig_gate = qdev.GATE_FILE
         qdev.GATE_FILE = gate
-        with patch("devices.queue.device._db_conn") as mc:
+        with patch("unseen_university.devices.queue.device._db_conn") as mc:
             mc.return_value.close = MagicMock()
             dev = QueueDevice()
         qdev.GATE_FILE = orig_gate
         return dev
 
     if name == "web_server":
-        from devices.web_server.device import WebServerDevice
+        from unseen_university.devices.web_server.device import WebServerDevice
 
         return WebServerDevice()
 
     if name == "inference":
-        from devices.inference.device import InferenceDevice
-        from devices.inference.sources import SourceRegistry
-        from devices.inference.models_registry import default_registry
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.sources import SourceRegistry
+        from unseen_university.devices.inference.models_registry import default_registry
 
         sources = SourceRegistry()
         dev = InferenceDevice(sources=sources, models=default_registry())
@@ -111,7 +111,7 @@ def contract_device(request, tmp_path):
         return dev
 
     if name == "minion":
-        from devices.minion.device import MinionDevice
+        from unseen_university.devices.minion.device import MinionDevice
 
         inf = MagicMock()
         inf.health.return_value = {"status": "healthy", "detail": "mock"}
@@ -119,8 +119,8 @@ def contract_device(request, tmp_path):
         return MinionDevice(inference=inf)
 
     if name == "archivist":
-        from devices.archivist.device import ArchivistDevice
-        from devices.inference.shim import InferenceResponse
+        from unseen_university.devices.archivist.device import ArchivistDevice
+        from unseen_university.devices.inference.shim import InferenceResponse
 
         inf = MagicMock()
         inf.health.return_value = {"status": "healthy", "detail": "mock"}
@@ -205,9 +205,9 @@ def test_interface_version_matches_constant(contract_device):
 
 def test_health_has_status(contract_device):
     with (
-        patch("devices.postgres.device._pg_connect", return_value=None),
-        patch("devices.inference.device._openrouter_reachable", return_value=False),
-        patch("devices.web_server.device._check_health", return_value=None),
+        patch("unseen_university.devices.postgres.device._pg_connect", return_value=None),
+        patch("unseen_university.devices.inference.device._openrouter_reachable", return_value=False),
+        patch("unseen_university.devices.web_server.device._check_health", return_value=None),
     ):
         h = contract_device.health()
     assert "status" in h
@@ -219,9 +219,9 @@ def test_health_has_status(contract_device):
 
 def test_health_has_detail_and_checked_at(contract_device):
     with (
-        patch("devices.postgres.device._pg_connect", return_value=None),
-        patch("devices.inference.device._openrouter_reachable", return_value=False),
-        patch("devices.web_server.device._check_health", return_value=None),
+        patch("unseen_university.devices.postgres.device._pg_connect", return_value=None),
+        patch("unseen_university.devices.inference.device._openrouter_reachable", return_value=False),
+        patch("unseen_university.devices.web_server.device._check_health", return_value=None),
     ):
         h = contract_device.health()
     assert "detail" in h

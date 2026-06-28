@@ -23,26 +23,26 @@ import queue
 
 
 def test_canonical_session_id_bare_igor():
-    from devices.web_server.server import _canonical_session_id
+    from unseen_university.devices.web_server.server import _canonical_session_id
 
     assert _canonical_session_id("igor") == "comms://igor"
 
 
 def test_canonical_session_id_bare_shared():
-    from devices.web_server.server import _canonical_session_id
+    from unseen_university.devices.web_server.server import _canonical_session_id
 
     assert _canonical_session_id("shared") == "comms://shared"
 
 
 def test_canonical_session_id_already_prefixed():
-    from devices.web_server.server import _canonical_session_id
+    from unseen_university.devices.web_server.server import _canonical_session_id
 
     assert _canonical_session_id("comms://igor") == "comms://igor"
     assert _canonical_session_id("comms://shared") == "comms://shared"
 
 
 def test_canonical_session_id_empty():
-    from devices.web_server.server import _canonical_session_id
+    from unseen_university.devices.web_server.server import _canonical_session_id
 
     assert _canonical_session_id("") == "comms://shared"
 
@@ -59,7 +59,7 @@ class _SyncLoop:
 
 def test_agent_send_routes_to_igor_not_shared(monkeypatch):
     """Reply posted to session='comms://igor' must land on the igor subscriber."""
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     igor_q: queue.Queue = queue.Queue()
     shared_q: queue.Queue = queue.Queue()
@@ -88,7 +88,7 @@ def test_agent_send_routes_to_igor_not_shared(monkeypatch):
 
 def test_agent_send_bare_session_canonicalized(monkeypatch):
     """Bare session name 'igor' (no comms:// prefix) must be canonicalized before routing."""
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     igor_q: queue.Queue = queue.Queue()
 
@@ -110,7 +110,7 @@ def test_agent_send_bare_session_canonicalized(monkeypatch):
 
 def test_agent_send_empty_queue_when_no_subscriber(monkeypatch):
     """Fanout=0 when no subscriber is joined — no crash, no delivery."""
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     with srv._client_lock:
         srv._session_clients.pop("comms://igor", None)
@@ -127,7 +127,7 @@ def test_agent_send_empty_queue_when_no_subscriber(monkeypatch):
 def test_ws_message_always_routes_to_igor_queue():
     """WS chat from any channel tab must land in Igor's per-agent queue with
     session_id='comms://igor', not in the dead global incoming queue."""
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     # Drain Igor's queue so the test starts clean
     q = srv._get_agent_queue("igor")
@@ -167,7 +167,7 @@ def test_ws_message_carries_context_session():
     session_id stays comms://igor for reply routing; context_session carries the
     actual channel so _get_thread_id in Igor can key thread buffers per-channel.
     """
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     q = srv._get_agent_queue("igor")
     while not q.empty():
@@ -192,7 +192,7 @@ def test_ws_message_carries_context_session():
 
 def test_get_thread_id_uses_context_session():
     """_get_thread_id prefers context_session over session_id for web messages."""
-    from devices.igor.main import Igor
+    from unseen_university.devices.igor.main import Igor
     from unittest.mock import MagicMock
 
     class FakeMsg:
@@ -212,7 +212,7 @@ def test_get_thread_id_uses_context_session():
 
 def test_get_thread_id_falls_back_to_session_id_when_no_context_session():
     """_get_thread_id falls back to session_id when context_session absent."""
-    from devices.igor.main import Igor
+    from unseen_university.devices.igor.main import Igor
     from unittest.mock import MagicMock
 
     class FakeMsg:
@@ -229,7 +229,7 @@ def test_get_thread_id_falls_back_to_session_id_when_no_context_session():
 
 def test_get_thread_id_different_channels_get_different_thread_ids():
     """Two messages from different channels get different thread_ids."""
-    from devices.igor.main import Igor
+    from unseen_university.devices.igor.main import Igor
     from unittest.mock import MagicMock
 
     class MsgIgor:

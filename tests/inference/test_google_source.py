@@ -15,11 +15,11 @@ import pytest
 
 class TestGoogleSourceMessageConversion:
     def _source(self, free_tier=False):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         return GoogleSource(free_tier=free_tier)
 
     def _req(self, messages, system="", model="gemini-2.0-flash"):
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.shim import InferenceRequest
         return InferenceRequest(model=model, messages=messages, system=system)
 
     def test_user_message_converts(self):
@@ -62,7 +62,7 @@ class TestGoogleSourceMessageConversion:
         assert src._model_name("gemini-2.0-flash") == "gemini-2.0-flash"
 
     def test_free_tier_name(self):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         assert GoogleSource(free_tier=True).name == "google_free"
         assert GoogleSource(free_tier=False).name == "google"
 
@@ -72,8 +72,8 @@ class TestGoogleSourceMessageConversion:
 
 class TestGoogleSourceApiKey:
     def test_missing_key_raises(self, monkeypatch):
-        import devices.inference.sources as sources
-        from devices.inference.sources import GoogleSource
+        import unseen_university.devices.inference.sources as sources
+        from unseen_university.devices.inference.sources import GoogleSource
         monkeypatch.delenv("GOOGLE_AI_STUDIO_API_KEY", raising=False)
         monkeypatch.delenv("GOOGLE_STUDIO_API_KEY", raising=False)
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
@@ -85,19 +85,19 @@ class TestGoogleSourceApiKey:
             src._api_key()
 
     def test_primary_key_used(self, monkeypatch):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         monkeypatch.setenv("GOOGLE_AI_STUDIO_API_KEY", "primary-key")
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         assert GoogleSource()._api_key() == "primary-key"
 
     def test_alias_key_used_when_primary_absent(self, monkeypatch):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         monkeypatch.delenv("GOOGLE_AI_STUDIO_API_KEY", raising=False)
         monkeypatch.setenv("GEMINI_API_KEY", "alias-key")
         assert GoogleSource()._api_key() == "alias-key"
 
     def test_primary_takes_precedence_over_alias(self, monkeypatch):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         monkeypatch.setenv("GOOGLE_AI_STUDIO_API_KEY", "primary")
         monkeypatch.setenv("GEMINI_API_KEY", "alias")
         assert GoogleSource()._api_key() == "primary"
@@ -130,11 +130,11 @@ def _patch_urlopen(resp_bytes):
 
 class TestGoogleSourceCall:
     def _req(self, content="Hello", model="gemini-2.0-flash"):
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.shim import InferenceRequest
         return InferenceRequest(model=model, messages=[{"role": "user", "content": content}])
 
     def test_returns_normalized_response(self, monkeypatch):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         monkeypatch.setenv("GOOGLE_AI_STUDIO_API_KEY", "test-key")
         src = GoogleSource()
         with _patch_urlopen(_fake_google_response("Hello back")):
@@ -143,7 +143,7 @@ class TestGoogleSourceCall:
         assert result["usage"]["prompt_tokens"] == 20
 
     def test_url_contains_model_key_in_header_not_url(self, monkeypatch):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         monkeypatch.setenv("GOOGLE_AI_STUDIO_API_KEY", "mykey123")
         src = GoogleSource()
         captured_url = []
@@ -170,7 +170,7 @@ class TestGoogleSourceCall:
         assert headers.get("X-goog-api-key") == "mykey123"
 
     def test_cached_tokens_logged_in_usage(self, monkeypatch):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         monkeypatch.setenv("GOOGLE_AI_STUDIO_API_KEY", "key")
         src = GoogleSource()
         with _patch_urlopen(_fake_google_response("answer", cached_tokens=8000)):
@@ -183,7 +183,7 @@ class TestGoogleSourceCall:
 
 class TestModelsRegistryGoogleModels:
     def test_google_free_model_present(self):
-        from devices.inference.models_registry import default_registry
+        from unseen_university.devices.inference.models_registry import default_registry
         spec = default_registry().get("gemini-2.5-flash")
         assert spec is not None
         assert spec.source_name == "google_free"
@@ -191,14 +191,14 @@ class TestModelsRegistryGoogleModels:
         assert "free-tier" in spec.tags
 
     def test_google_paid_model_present_and_cacheable(self):
-        from devices.inference.models_registry import default_registry
+        from unseen_university.devices.inference.models_registry import default_registry
         spec = default_registry().get("gemini-2.0-flash-paid")
         assert spec is not None
         assert spec.source_name == "google"
         assert spec.cacheable
 
     def test_or_gemini_still_present_as_fallback(self):
-        from devices.inference.models_registry import default_registry
+        from unseen_university.devices.inference.models_registry import default_registry
         spec = default_registry().get("google/gemini-2.0-flash")
         assert spec is not None
         assert spec.source_name == "openrouter"
@@ -209,9 +209,9 @@ class TestModelsRegistryGoogleModels:
 
 
 def _make_engine(available_source_names):
-    from devices.inference.models_registry import default_registry
-    from devices.inference.rules_engine import RulesEngine
-    from devices.inference.sources import Source, SourceRegistry
+    from unseen_university.devices.inference.models_registry import default_registry
+    from unseen_university.devices.inference.rules_engine import RulesEngine
+    from unseen_university.devices.inference.sources import Source, SourceRegistry
 
     sreg = SourceRegistry()
     for name in available_source_names:
@@ -258,19 +258,19 @@ class TestDesignerCascade:
 
 class TestDefaultSourceRegistry:
     def test_google_free_registered(self):
-        from devices.inference.sources import default_registry
+        from unseen_university.devices.inference.sources import default_registry
         assert default_registry().get("google_free") is not None
 
     def test_google_paid_registered(self):
         import pytest
-        from devices.inference.sources import default_registry
+        from unseen_university.devices.inference.sources import default_registry
         reg = default_registry()
         if reg.get("google") is None:
             pytest.skip("google paid source not registered — intentionally disabled in current config")
         assert reg.get("google") is not None
 
     def test_anthropic_has_caching_header(self):
-        from devices.inference.sources import AnthropicSource
+        from unseen_university.devices.inference.sources import AnthropicSource
         assert "prompt-caching" in AnthropicSource().BETA_HEADERS
 
 
@@ -279,12 +279,12 @@ class TestDefaultSourceRegistry:
 
 class TestGoogleSource429RateLimit:
     def _source(self, monkeypatch):
-        from devices.inference.sources import GoogleSource
+        from unseen_university.devices.inference.sources import GoogleSource
         monkeypatch.setenv("GOOGLE_AI_STUDIO_API_KEY", "test-key")
         return GoogleSource()
 
     def _req(self):
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.shim import InferenceRequest
         return InferenceRequest(model="gemini-2.0-flash", messages=[{"role": "user", "content": "hi"}])
 
     def _patch_429(self):

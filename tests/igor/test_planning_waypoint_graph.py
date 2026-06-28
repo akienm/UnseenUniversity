@@ -18,7 +18,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition import anticipator, planning
+from unseen_university.devices.igor.cognition import anticipator, planning
 
 
 @pytest.fixture(autouse=True)
@@ -73,14 +73,14 @@ def fake_goal_store(monkeypatch):
     def fake_fetch():
         return [dict(r) for r in store.values()]
 
-    monkeypatch.setattr("devices.igor.tools.goal_graph._resolve_goal", fake_resolve)
+    monkeypatch.setattr("unseen_university.devices.igor.tools.goal_graph._resolve_goal", fake_resolve)
     monkeypatch.setattr(
-        "devices.igor.tools.goal_graph._store_memory", fake_store_memory
+        "unseen_university.devices.igor.tools.goal_graph._store_memory", fake_store_memory
     )
     monkeypatch.setattr(
-        "devices.igor.tools.goal_graph._store_metadata", fake_store_metadata
+        "unseen_university.devices.igor.tools.goal_graph._store_metadata", fake_store_metadata
     )
-    monkeypatch.setattr("devices.igor.tools.goal_graph._fetch_goal_facia", fake_fetch)
+    monkeypatch.setattr("unseen_university.devices.igor.tools.goal_graph._fetch_goal_facia", fake_fetch)
     return store, parent_id
 
 

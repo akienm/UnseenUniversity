@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from devices.workspace.device import WorkspaceDevice
-from devices.workspace.shim import WorkspaceShim
+from unseen_university.devices.workspace.device import WorkspaceDevice
+from unseen_university.devices.workspace.shim import WorkspaceShim
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
 

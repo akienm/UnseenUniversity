@@ -25,8 +25,8 @@ class TestCCToolBypass(unittest.TestCase):
         the CC gate should match and dispatch directly without calling thalamus.process().
         """
         # Mock the Igor instance and components
-        from devices.igor.main import Igor
-        from devices.igor.tools.registry import registry
+        from unseen_university.devices.igor.main import Igor
+        from unseen_university.devices.igor.tools.registry import registry
 
         mock_igor = MagicMock(spec=Igor)
         mock_igor.thalamus = MagicMock()
@@ -53,7 +53,7 @@ class TestCCToolBypass(unittest.TestCase):
         it should call tool_registry.get('run_goal_continuation').execute()
         and return the tool's result directly.
         """
-        from devices.igor.tools.registry import registry
+        from unseen_university.devices.igor.tools.registry import registry
 
         # Verify tool is in registry
         tool = registry.get("run_goal_continuation")
@@ -69,7 +69,7 @@ class TestCCToolBypass(unittest.TestCase):
         When Igor receives 'CC: hot_reload devices/igor/tools/goal_continuation.py',
         the gate should convert the file path to module name and dispatch reload_module.
         """
-        from devices.igor.tools.registry import registry
+        from unseen_university.devices.igor.tools.registry import registry
 
         # Verify reload_module tool exists
         tool = registry.get("reload_module")
@@ -78,7 +78,7 @@ class TestCCToolBypass(unittest.TestCase):
 
         # Verify it can be called with a module name
         # (Use a non-critical module to test; goal_continuation is low inertia)
-        result = tool.execute(module_name="devices.igor.tools.goal_continuation")
+        result = tool.execute(module_name="unseen_university.devices.igor.tools.goal_continuation")
         self.assertIsInstance(result, str)
         # Result should contain "Reloaded" or error message, not a crash
 

@@ -30,11 +30,11 @@ class _Args:
 
 
 def test_cmd_classify_returns_json_keys():
-    from devices.classifier.cli import cmd_classify
+    from unseen_university.devices.classifier.cli import cmd_classify
     args = _Args(title="Fix granny cascade", tags=["Granny"], description="cascade idle routing")
 
-    with patch("devices.classifier.device.ClassifierDevice._db_url", return_value=""), \
-         patch("devices.classifier.device.ClassifierDevice._query_palace_trees",
+    with patch("unseen_university.devices.classifier.device.ClassifierDevice._db_url", return_value=""), \
+         patch("unseen_university.devices.classifier.device.ClassifierDevice._query_palace_trees",
                return_value=([], [])):
         result_code = cmd_classify(args)
 
@@ -42,7 +42,7 @@ def test_cmd_classify_returns_json_keys():
 
 
 def test_cmd_classify_empty_title_returns_empty_report(capsys):
-    from devices.classifier.cli import cmd_classify
+    from unseen_university.devices.classifier.cli import cmd_classify
     args = _Args(title="", tags=[], description="")
     result_code = cmd_classify(args)
     out = capsys.readouterr().out.strip()
@@ -52,10 +52,10 @@ def test_cmd_classify_empty_title_returns_empty_report(capsys):
 
 
 def test_cmd_classify_fails_open_on_exception(capsys):
-    from devices.classifier.cli import cmd_classify
+    from unseen_university.devices.classifier.cli import cmd_classify
     args = _Args(title="something", tags=[], description="")
 
-    with patch("devices.classifier.device.ClassifierDevice.classify",
+    with patch("unseen_university.devices.classifier.device.ClassifierDevice.classify",
                side_effect=RuntimeError("device down")):
         result_code = cmd_classify(args)
 
@@ -69,12 +69,12 @@ def test_cmd_classify_fails_open_on_exception(capsys):
 # ── cmd_freshness ─────────────────────────────────────────────────────────────
 
 def test_cmd_freshness_stale_old_report(capsys):
-    from devices.classifier.cli import cmd_freshness
+    from unseen_university.devices.classifier.cli import cmd_freshness
     old_ts = "2020-01-01T00:00:00+00:00"
     report_json = json.dumps({"ts": old_ts, "relevant_files": [], "stale": False})
     args = _Args(report_json=report_json)
 
-    with patch("devices.classifier.device.ClassifierDevice._check_in_flight_overlap",
+    with patch("unseen_university.devices.classifier.device.ClassifierDevice._check_in_flight_overlap",
                return_value=[]):
         result_code = cmd_freshness(args)
 
@@ -85,7 +85,7 @@ def test_cmd_freshness_stale_old_report(capsys):
 
 
 def test_cmd_freshness_fails_open_on_bad_json(capsys):
-    from devices.classifier.cli import cmd_freshness
+    from unseen_university.devices.classifier.cli import cmd_freshness
     args = _Args(report_json="not_json{{")
     result_code = cmd_freshness(args)
     out = capsys.readouterr().out.strip()
@@ -97,7 +97,7 @@ def test_cmd_freshness_fails_open_on_bad_json(capsys):
 # ── _query_palace_trees ────────────────────────────────────────────────────────
 
 def test_query_palace_trees_returns_file_paths():
-    from devices.classifier.device import ClassifierDevice
+    from unseen_university.devices.classifier.device import ClassifierDevice
 
     mock_cursor = MagicMock()
     mock_cursor.__enter__ = lambda s: s
@@ -112,7 +112,7 @@ def test_query_palace_trees_returns_file_paths():
     mock_conn.__exit__ = MagicMock(return_value=False)
 
     device = ClassifierDevice(llm_fallback=False)
-    with patch("devices.classifier.device.ClassifierDevice._db_url",
+    with patch("unseen_university.devices.classifier.device.ClassifierDevice._db_url",
                return_value="postgresql://test"), \
          patch("psycopg2.connect", return_value=mock_conn):
         files, nodes = device._query_palace_trees(
@@ -124,10 +124,10 @@ def test_query_palace_trees_returns_file_paths():
 
 
 def test_query_palace_trees_empty_on_db_error():
-    from devices.classifier.device import ClassifierDevice
+    from unseen_university.devices.classifier.device import ClassifierDevice
 
     device = ClassifierDevice(llm_fallback=False)
-    with patch("devices.classifier.device.ClassifierDevice._db_url",
+    with patch("unseen_university.devices.classifier.device.ClassifierDevice._db_url",
                return_value="postgresql://test"), \
          patch("psycopg2.connect", side_effect=Exception("db down")):
         files, nodes = device._query_palace_trees(
@@ -139,10 +139,10 @@ def test_query_palace_trees_empty_on_db_error():
 
 
 def test_query_palace_trees_empty_on_no_db_url():
-    from devices.classifier.device import ClassifierDevice
+    from unseen_university.devices.classifier.device import ClassifierDevice
 
     device = ClassifierDevice(llm_fallback=False)
-    with patch("devices.classifier.device.ClassifierDevice._db_url", return_value=""):
+    with patch("unseen_university.devices.classifier.device.ClassifierDevice._db_url", return_value=""):
         files, nodes = device._query_palace_trees(
             [],
             "some task",

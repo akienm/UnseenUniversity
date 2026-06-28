@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.experiment_cascade import (  # noqa: E402
+from unseen_university.devices.igor.cognition.experiment_cascade import (  # noqa: E402
     CascadeResult,
     CascadeSituation,
     CascadeStatus,
@@ -158,7 +158,7 @@ class TestLevel2InterpretiveTraversal:
         cortex = MagicMock()
         cortex.search.return_value = []
         cortex.twm_push.return_value = 1
-        from devices.igor.cognition.experiment_cascade import build_default_cascade
+        from unseen_university.devices.igor.cognition.experiment_cascade import build_default_cascade
 
         cascade = build_default_cascade(cortex)
         level_names = [l.name for l in cascade._levels]

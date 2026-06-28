@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.tools.hardware_detect import (  # noqa: E402
+from unseen_university.devices.igor.tools.hardware_detect import (  # noqa: E402
     _detect_cpu,
     _detect_ip,
     _detect_network,
@@ -55,7 +55,7 @@ class TestDetectHardware:
         assert "hostname" in report
 
     def test_tool_registered(self):
-        from devices.igor.tools.registry import registry
+        from unseen_university.devices.igor.tools.registry import registry
 
         t = registry.get("detect_hardware")
         assert t is not None

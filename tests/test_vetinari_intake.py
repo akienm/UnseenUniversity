@@ -16,8 +16,8 @@ from unittest.mock import MagicMock
 
 def _make_device(tmp_path):
     """Return a VetinariDevice rooted at tmp_path."""
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.device import VetinariDevice
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.device import VetinariDevice
     return VetinariDevice(channel_post_fn=lambda m: None)
 
 
@@ -70,8 +70,8 @@ def test_get_pending_directives_survives_restart(tmp_path):
     v1 = _make_device(tmp_path)
     v1.accept_directive(_directive(id="persist-me", text="build the thing"))
     # Create fresh instance (simulates restart)
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.device import VetinariDevice
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.device import VetinariDevice
     v2 = VetinariDevice(channel_post_fn=lambda m: None)
     directives = v2.get_pending_directives()
     assert any(d["id"] == "persist-me" for d in directives)
@@ -98,7 +98,7 @@ def test_accept_directive_malformed_json_in_file_recovers(tmp_path):
 
 
 def test_parse_directive_from_json_bytes():
-    from devices.vetinari.shim import _parse_directive
+    from unseen_university.devices.vetinari.shim import _parse_directive
     raw = json.dumps({
         "from_device": "akien",
         "to_device": "vetinari",
@@ -113,14 +113,14 @@ def test_parse_directive_from_json_bytes():
 
 
 def test_parse_directive_malformed_raises_value_error():
-    from devices.vetinari.shim import _parse_directive
+    from unseen_university.devices.vetinari.shim import _parse_directive
     import pytest
     with pytest.raises(ValueError):
         _parse_directive(b"not json at all")
 
 
 def test_parse_directive_empty_payload_raises_value_error():
-    from devices.vetinari.shim import _parse_directive
+    from unseen_university.devices.vetinari.shim import _parse_directive
     import pytest
     raw = json.dumps({
         "from_device": "akien",
@@ -135,7 +135,7 @@ def test_parse_directive_empty_payload_raises_value_error():
 
 def test_listener_process_malformed_envelope_does_not_raise(tmp_path):
     """DirectiveListener._process with bad input logs and continues, never raises."""
-    from devices.vetinari.shim import DirectiveListener
+    from unseen_university.devices.vetinari.shim import DirectiveListener
     v = _make_device(tmp_path)
     stub_imap = MagicMock()
     listener = DirectiveListener(device=v, imap=stub_imap)
@@ -144,7 +144,7 @@ def test_listener_process_malformed_envelope_does_not_raise(tmp_path):
 
 
 def test_listener_process_valid_envelope_persists_directive(tmp_path):
-    from devices.vetinari.shim import DirectiveListener
+    from unseen_university.devices.vetinari.shim import DirectiveListener
     v = _make_device(tmp_path)
     stub_imap = MagicMock()
     listener = DirectiveListener(device=v, imap=stub_imap)
@@ -166,8 +166,8 @@ def test_listener_process_valid_envelope_persists_directive(tmp_path):
 
 def test_vetinari_shim_starts_without_error(tmp_path):
     """VetinariShim.start() with stub IMAP returns True and thread is alive."""
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.shim import VetinariShim
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.shim import VetinariShim
     stub_imap = MagicMock()
     stub_imap.fetch_unseen.return_value = []
     shim = VetinariShim(imap=stub_imap)
@@ -181,8 +181,8 @@ def test_vetinari_shim_starts_without_error(tmp_path):
 
 
 def test_vetinari_shim_stop_cleans_up_thread(tmp_path):
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.shim import VetinariShim
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.shim import VetinariShim
     stub_imap = MagicMock()
     stub_imap.fetch_unseen.return_value = []
     shim = VetinariShim(imap=stub_imap)
@@ -192,6 +192,6 @@ def test_vetinari_shim_stop_cleans_up_thread(tmp_path):
 
 
 def test_vetinari_shim_device_id():
-    from devices.vetinari.shim import VetinariShim
+    from unseen_university.devices.vetinari.shim import VetinariShim
     shim = VetinariShim(imap=MagicMock())
     assert shim.device_id == "vetinari"

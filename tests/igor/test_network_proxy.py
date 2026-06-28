@@ -34,7 +34,7 @@ from io import BytesIO
 from pathlib import Path
 
 
-from devices.igor.tools.network_proxy import HostStats, NetworkProxy, _extract_host
+from unseen_university.devices.igor.tools.network_proxy import HostStats, NetworkProxy, _extract_host
 
 # ── HostStats unit tests ──────────────────────────────────────────────────────
 
@@ -262,21 +262,21 @@ class TestNetworkProxyReport(unittest.TestCase):
 
 class TestGetNetworkProxyReportTool(unittest.TestCase):
     def test_returns_string(self):
-        from devices.igor.tools.metrics import _get_network_proxy_report
+        from unseen_university.devices.igor.tools.metrics import _get_network_proxy_report
 
         result = _get_network_proxy_report()
         self.assertIsInstance(result, str)
 
     def test_no_calls_message_via_tool(self):
         """Patching global proxy to a fresh instance verifies the no-calls path."""
-        from devices.igor.tools import metrics as metrics_mod
-        import devices.igor.tools.network_proxy as proxy_mod
+        from unseen_university.devices.igor.tools import metrics as metrics_mod
+        import unseen_university.devices.igor.tools.network_proxy as proxy_mod
 
         fresh_proxy = NetworkProxy()
         original = proxy_mod.proxy
         proxy_mod.proxy = fresh_proxy
         try:
-            from devices.igor.tools.metrics import _get_network_proxy_report
+            from unseen_university.devices.igor.tools.metrics import _get_network_proxy_report
 
             result = _get_network_proxy_report()
             self.assertIn("no outbound calls", result)

@@ -24,21 +24,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
-    from devices.igor.tools import seed_persistent_relationships as _seed
+    from unseen_university.devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
 
 
 def _fresh_source():
-    from devices.igor.cognition.pr_consolidation_source import PRConsolidationSource
+    from unseen_university.devices.igor.cognition.pr_consolidation_source import PRConsolidationSource
 
     return PRConsolidationSource()
 
 
 def _make_quiet_cortex():
     """Build a cortex that reports as 'quiet' (no recent conversation)."""
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex._conversation_active_ts = None  # never had a conversation = quiet
@@ -47,7 +47,7 @@ def _make_quiet_cortex():
 
 def _make_active_cortex():
     """Build a cortex that reports as 'in active conversation'."""
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex._conversation_active_ts = datetime.now()
@@ -81,7 +81,7 @@ def test_push_runs_during_quiet_period():
 def test_push_runs_when_conversation_was_long_ago():
     """If conversation_active_ts is far in the past, push() fires."""
     src = _fresh_source()
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex._conversation_active_ts = datetime.now() - timedelta(hours=2)
@@ -113,7 +113,7 @@ def test_push_rate_limited_within_interval():
 
 def test_push_rate_limit_releases_after_interval():
     """Manually advance _last_run past the rate-limit window — next push() fires."""
-    from devices.igor.cognition.pr_consolidation_source import MIN_INTERVAL_SEC
+    from unseen_university.devices.igor.cognition.pr_consolidation_source import MIN_INTERVAL_SEC
 
     src = _fresh_source()
     cortex = _make_quiet_cortex()
@@ -122,7 +122,7 @@ def test_push_rate_limit_releases_after_interval():
     # Mock pr_consolidate_all so this test isn't timing-sensitive in the full suite
     # (the real call can take >15s after many DB ops in prior tests).
     with patch(
-        "devices.igor.tools.pr_consolidation.pr_consolidate_all",
+        "unseen_university.devices.igor.tools.pr_consolidation.pr_consolidate_all",
         return_value="mocked summary",
     ):
         src._last_run = datetime.now() - timedelta(seconds=MIN_INTERVAL_SEC + 60)
@@ -141,7 +141,7 @@ def test_push_never_raises_when_pr_consolidate_all_fails():
     cortex = _make_quiet_cortex()
 
     with patch(
-        "devices.igor.tools.pr_consolidation.pr_consolidate_all",
+        "unseen_university.devices.igor.tools.pr_consolidation.pr_consolidate_all",
         side_effect=RuntimeError("simulated failure"),
     ):
         try:
@@ -167,7 +167,7 @@ def test_source_has_required_push_source_interface():
 def test_source_registered_in_run_background_sources():
     """The source must be in the lazy-load + dispatch tuple so it actually
     runs in the main loop, not just in tests."""
-    import devices.igor.cognition.push_sources as _ps
+    import unseen_university.devices.igor.cognition.push_sources as _ps
 
     # Module-level slot exists
     assert hasattr(_ps, "pr_consolidation_source")

@@ -17,7 +17,7 @@ import pytest
 
 from unseen_university.announce import Invalidator
 from unseen_university.announce.manifest import INVALIDATE_MAILBOX
-from bus.imap_server import IMAPServer
+from unseen_university.devices.bus.imap_server import IMAPServer
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
 

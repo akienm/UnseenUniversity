@@ -72,9 +72,9 @@ def test_rack_and_devices_are_diagnosticbase() -> None:
     The ground loop is deliberately NOT a device (lightweight resilience anchor),
     so it carries no loguru dependency.
     """
-    from diagnostic_base.base import DiagnosticBase
+    from unseen_university.diagnostic_base.base import DiagnosticBase
     from unseen_university.device import BaseDevice
-    from unseen_university.skeleton.skeleton import Skeleton
+    from unseen_university.devices.skeleton.skeleton import Skeleton
 
     assert issubclass(BaseDevice, DiagnosticBase)
     assert issubclass(Skeleton, DiagnosticBase)

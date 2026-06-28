@@ -69,7 +69,7 @@ class TestScrapsValidateHelper:
 
     def test_offline_returns_true_and_prints_warning(self, capsys):
         with patch(
-            "devices.scraps.scraps_device.ScrapsDevice",
+            "unseen_university.devices.scraps.scraps_device.ScrapsDevice",
             side_effect=Exception("connection refused"),
         ):
             ticket = _make_ticket()
@@ -125,7 +125,7 @@ class TestCmdAddScrapsGate:
     def test_scraps_offline_ticket_still_added(self):
         ticket = _make_ticket()
         with patch(
-            "devices.scraps.scraps_device.ScrapsDevice",
+            "unseen_university.devices.scraps.scraps_device.ScrapsDevice",
             side_effect=Exception("offline"),
         ):
             saved, out = self._run_add(ticket)

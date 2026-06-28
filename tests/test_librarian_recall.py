@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.librarian.recall import (
+from unseen_university.devices.librarian.recall import (
     MemoryHit,
     RecallResult,
     _cosine,
@@ -343,10 +343,10 @@ def test_recall_writeback_includes_derived_from():
     with (
         patch("psycopg2.connect", return_value=conn),
         patch(
-            "devices.librarian.recall._escalate_and_synthesize",
+            "unseen_university.devices.librarian.recall._escalate_and_synthesize",
             return_value="synthesis text",
         ),
-        patch("devices.librarian.memory_writer.write_memory", fake_write_memory),
+        patch("unseen_university.devices.librarian.memory_writer.write_memory", fake_write_memory),
     ):
         result = recall(
             "python async",

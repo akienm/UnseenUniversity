@@ -29,7 +29,7 @@ import pytest
 # red→green via proof_emitter: a module-level import of a net-new symbol would
 # ImportError on the red side, which the proof harness rejects as collateral
 # (not an assertion about behavior). See proof_emitter.py "stub-first convention".
-from diagnostic_base.base import DiagnosticBase, _logger_cache
+from unseen_university.diagnostic_base.base import DiagnosticBase, _logger_cache
 
 
 def _emit(root: Path, device_id: str, level: str, msg: str) -> None:
@@ -45,7 +45,7 @@ def _emit(root: Path, device_id: str, level: str, msg: str) -> None:
 
 class TestLevelStreamMapping:
     def test_three_feed_streams(self):
-        from diagnostic_base.base import _level_stream
+        from unseen_university.diagnostic_base.base import _level_stream
 
         assert _level_stream("DEBUG") == "debug"
         assert _level_stream("TRACE") == "debug"
@@ -57,7 +57,7 @@ class TestLevelStreamMapping:
         assert _level_stream("CRITICAL") == "warn"
 
     def test_unknown_level_defaults_to_info(self):
-        from diagnostic_base.base import _level_stream
+        from unseen_university.diagnostic_base.base import _level_stream
 
         assert _level_stream("NOTAREALLEVEL") == "info"
 
@@ -107,13 +107,13 @@ class TestPerLevelRouting:
 
 class TestCanonicalDefault:
     def test_uu_log_root_override_wins(self, tmp_path, monkeypatch):
-        from diagnostic_base.base import _default_log_root
+        from unseen_university.diagnostic_base.base import _default_log_root
 
         monkeypatch.setenv("UU_LOG_ROOT", str(tmp_path / "override"))
         assert _default_log_root() == tmp_path / "override"
 
     def test_falls_back_to_uu_home_logs(self, tmp_path, monkeypatch):
-        from diagnostic_base.base import _default_log_root
+        from unseen_university.diagnostic_base.base import _default_log_root
 
         monkeypatch.delenv("UU_LOG_ROOT", raising=False)
         monkeypatch.setattr(
@@ -126,7 +126,7 @@ class TestWebServerNested:
     def test_web_server_log_is_under_device_dir(self):
         """The one known bespoke flat-file writer is nested under logs/web_server/,
         not a flat logs/web_server.log."""
-        from devices.web_server import device as ws
+        from unseen_university.devices.web_server import device as ws
 
         log_file = Path(ws._LOG_FILE)
         assert log_file.parent.name == "web_server", f"not nested: {log_file}"

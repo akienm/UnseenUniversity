@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 
-from devices.igor.tools.machine_manager import MachineRecord
+from unseen_university.devices.igor.tools.machine_manager import MachineRecord
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -86,10 +86,10 @@ class TestIsInUse(unittest.TestCase):
         # is_in_use lives in devices.igor.tools.machine_manager. Internal calls to
         # get_machine / _write_override resolve in the canonical module's
         # namespace — patch THERE, not on any re-export shim.
-        from devices.igor.tools.machine_manager import is_in_use
+        from unseen_university.devices.igor.tools.machine_manager import is_in_use
 
-        with patch("devices.igor.tools.machine_manager.get_machine", return_value=m):
-            with patch("devices.igor.tools.machine_manager._write_override"):
+        with patch("unseen_university.devices.igor.tools.machine_manager.get_machine", return_value=m):
+            with patch("unseen_university.devices.igor.tools.machine_manager._write_override"):
                 return is_in_use(m.hostname)
 
     def test_no_hours_no_override_available(self):
@@ -131,9 +131,9 @@ class TestIsInUse(unittest.TestCase):
             self.assertFalse(self._run(m))
 
     def test_unknown_host_returns_false(self):
-        from devices.igor.tools.machine_manager import is_in_use
+        from unseen_university.devices.igor.tools.machine_manager import is_in_use
 
-        with patch("devices.igor.tools.machine_manager.get_machine", return_value=None):
+        with patch("unseen_university.devices.igor.tools.machine_manager.get_machine", return_value=None):
             self.assertFalse(is_in_use("nonexistent"))
 
 
@@ -142,30 +142,30 @@ class TestIsInUse(unittest.TestCase):
 
 class TestResolveAlias(unittest.TestCase):
     def test_hostname_match(self):
-        from devices.igor.tools.machine_manager import resolve_alias
+        from unseen_university.devices.igor.tools.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell", "my desktop"])
         with patch(
-            "devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
+            "unseen_university.devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertEqual(resolve_alias("akiendell"), "akiendell")
 
     def test_alias_match(self):
-        from devices.igor.tools.machine_manager import resolve_alias
+        from unseen_university.devices.igor.tools.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell", "my desktop"])
         with patch(
-            "devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
+            "unseen_university.devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertEqual(resolve_alias("the dell"), "akiendell")
             self.assertEqual(resolve_alias("MY DESKTOP"), "akiendell")
 
     def test_no_match_returns_none(self):
-        from devices.igor.tools.machine_manager import resolve_alias
+        from unseen_university.devices.igor.tools.machine_manager import resolve_alias
 
         m = _machine(hostname="akiendell", aliases=["the dell"])
         with patch(
-            "devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
+            "unseen_university.devices.igor.tools.machine_manager.get_ranked_machines", return_value=[m]
         ):
             self.assertIsNone(resolve_alias("yoga"))
 
@@ -178,7 +178,7 @@ class TestRoute(unittest.TestCase):
 
     def _route(self, machines, healthy_hosts=None, env_override=""):
         """Run route("tier2") with mocked machine list and health."""
-        from devices.igor.cognition import cluster_router
+        from unseen_university.devices.igor.cognition import cluster_router
 
         if healthy_hosts is None:
             # All online machines are healthy by default
@@ -193,12 +193,12 @@ class TestRoute(unittest.TestCase):
                 return False
             # Canonical impl lives in devices.igor.tools.machine_manager; patch
             # there so internal get_machine / _write_override lookups resolve.
-            from devices.igor.tools.machine_manager import is_in_use as _real
+            from unseen_university.devices.igor.tools.machine_manager import is_in_use as _real
 
             with patch(
-                "devices.igor.tools.machine_manager.get_machine", return_value=m
+                "unseen_university.devices.igor.tools.machine_manager.get_machine", return_value=m
             ):
-                with patch("devices.igor.tools.machine_manager._write_override"):
+                with patch("unseen_university.devices.igor.tools.machine_manager._write_override"):
                     return _real(hostname)
 
         with patch(
@@ -273,7 +273,7 @@ class TestRoute(unittest.TestCase):
         # 2026-04-18: post-collapse, extraction resolves to ollama_model
         # (the single local model on the machine), regardless of whether
         # an ollama_model_batch happens to be set on older rows.
-        from devices.igor.cognition import cluster_router
+        from unseen_university.devices.igor.cognition import cluster_router
 
         machines = [
             _machine(
@@ -302,7 +302,7 @@ class TestRoute(unittest.TestCase):
 
 class TestRouteBatch(unittest.TestCase):
     def _route_batch(self, machines, n, healthy_hosts=None):
-        from devices.igor.cognition import cluster_router
+        from unseen_university.devices.igor.cognition import cluster_router
 
         if healthy_hosts is None:
             healthy_hosts = {m.ollama_host for m in machines if m.status == "online"}

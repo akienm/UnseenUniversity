@@ -70,11 +70,19 @@ ever differ, the file wins — fix this shim.**
   `BaseDevice` / `BaseShim`. OOP-first — no standalone functions doing device work.
   *Why: a single well-known entry point per device makes lifecycle management (start/stop/restart/self-test)
   uniform; the framework can iterate all devices without knowing their internals.*
-- **bus/** owns comms:// routing. Nothing outside bus/ speaks to IMAP directly.
+- **Single import root.** All code ships under one package, `unseen_university/`, discovered by
+  pyproject `include = ["unseen_university*"]`. There is exactly one heart; no co-equal top-level
+  `bus`/`skeleton`/`devices`/`diagnostic_base`/`config` trees. `bus` and `skeleton` are **devices**
+  and live at `unseen_university/devices/bus/` and `unseen_university/devices/skeleton/`.
+  *Why: seven co-equal top-level packages let a future CC/DS instance guess wrong about which tree
+  is canonical — the torn-tree drift that motivated the 2026-06-28 collapse (D-single-package-reorg).*
+- **unseen_university/devices/bus/** owns comms:// routing. Nothing outside `bus/` speaks to IMAP directly.
   *Why: transport decoupling — swapping IMAP for another transport requires touching only bus/, not every device.*
-- **skeleton/** owns the MCP aggregator and flat-file registry. No Postgres dependency.
-  *Why: skeleton must boot before the DB is up; a Postgres dependency in skeleton would make cold-start impossible.*
-- **devices/** contains one subdirectory per device; each is independently deployable.
+- **unseen_university/devices/skeleton/** owns the MCP aggregator and flat-file registry. No Postgres dependency.
+  *Why: skeleton must boot before the DB is up; a Postgres dependency in skeleton would make cold-start impossible.
+  The package `__init__.py` files (`unseen_university/__init__.py`, `unseen_university/devices/__init__.py`)
+  stay EMPTY/lazy so importing `unseen_university.devices.skeleton` never eager-imports a psycopg2-bound device.*
+- **unseen_university/devices/** contains one subdirectory per device; each is independently deployable.
   *Why: blast radius containment — a broken device import can't crash the whole rack on import.*
 - **`~/.unseen_university/logs/<device>/<stream>/`** is the canonical log hierarchy —
   ONE per-device home under the runtime dir (`uu_home()`), split into exactly three

@@ -11,7 +11,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.config import (  # noqa: E402
+from unseen_university.devices.igor.config import (  # noqa: E402
     _parse_cfg_file,
     get,
     get_bool,
@@ -90,7 +90,7 @@ class TestParseCfgFile:
     def test_parses_key_value(self, tmp_path):
         cfg = tmp_path / "test.cfg"
         cfg.write_text("FOO=bar\nBAZ=123\n")
-        from devices.igor import config
+        from unseen_university.devices.igor import config
 
         config._cfg_cache.clear()
         _parse_cfg_file(cfg)
@@ -100,7 +100,7 @@ class TestParseCfgFile:
     def test_skips_comments(self, tmp_path):
         cfg = tmp_path / "test.cfg"
         cfg.write_text("# comment\nKEY=val\n")
-        from devices.igor import config
+        from unseen_university.devices.igor import config
 
         config._cfg_cache.clear()
         _parse_cfg_file(cfg)
@@ -110,7 +110,7 @@ class TestParseCfgFile:
     def test_strips_quotes(self, tmp_path):
         cfg = tmp_path / "test.cfg"
         cfg.write_text('QUOTED="hello world"\n')
-        from devices.igor import config
+        from unseen_university.devices.igor import config
 
         config._cfg_cache.clear()
         _parse_cfg_file(cfg)
@@ -122,14 +122,14 @@ class TestParseCfgFile:
 
 class TestCfgPrecedence:
     def test_cfg_file_value_used_when_env_unset(self, tmp_path):
-        from devices.igor import config
+        from unseen_university.devices.igor import config
 
         config._cfg_cache["CFG_ONLY_KEY"] = "from_cfg"
         os.environ.pop("CFG_ONLY_KEY", None)
         assert get("CFG_ONLY_KEY") == "from_cfg"
 
     def test_env_overrides_cfg(self, tmp_path):
-        from devices.igor import config
+        from unseen_university.devices.igor import config
 
         config._cfg_cache["OVERRIDE_KEY"] = "from_cfg"
         with patch.dict(os.environ, {"OVERRIDE_KEY": "from_env"}):

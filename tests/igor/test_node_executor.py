@@ -15,8 +15,8 @@ Tests for execute_node() function including:
 import pytest
 from dataclasses import dataclass, field
 
-from devices.igor.cognition.node_executor import execute_node, ExecutionResult
-from devices.igor.memory.models import Memory, MemoryType
+from unseen_university.devices.igor.cognition.node_executor import execute_node, ExecutionResult
+from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
 
 class MockMemory:
@@ -183,7 +183,7 @@ class TestNoopCommentInstruction:
         basket = {}
         # Capture log output
         import logging
-        from devices.igor.cognition import node_executor as ne_mod
+        from unseen_university.devices.igor.cognition import node_executor as ne_mod
 
         records = []
 
@@ -780,7 +780,7 @@ class TestMcpCallInstruction:
     def test_mcpcall_calls_registered_tool(self):
         """MCPCALL dispatches to a registered tool and stores result in basket."""
         from unittest.mock import patch, MagicMock
-        from devices.igor.tools.registry import Tool, ToolRegistry
+        from unseen_university.devices.igor.tools.registry import Tool, ToolRegistry
 
         mock_tool = Tool(
             name="test_echo",
@@ -800,7 +800,7 @@ class TestMcpCallInstruction:
         basket = {"call_args": {"text": "hello"}}
 
         with patch(
-            "devices.igor.cognition.node_executor._tool_registry", mock_registry
+            "unseen_university.devices.igor.cognition.node_executor._tool_registry", mock_registry
         ):
             result = execute_node(memory, "my_trigger", basket)
 
@@ -810,7 +810,7 @@ class TestMcpCallInstruction:
     def test_mcpcall_unknown_tool_stores_error(self):
         """MCPCALL with unknown tool name writes __error__ to basket; execution continues."""
         from unittest.mock import patch
-        from devices.igor.tools.registry import ToolRegistry
+        from unseen_university.devices.igor.tools.registry import ToolRegistry
 
         empty_registry = ToolRegistry()
         memory = self._make_memory(
@@ -823,7 +823,7 @@ class TestMcpCallInstruction:
         basket = {}
 
         with patch(
-            "devices.igor.cognition.node_executor._tool_registry", empty_registry
+            "unseen_university.devices.igor.cognition.node_executor._tool_registry", empty_registry
         ):
             result = execute_node(memory, "my_trigger", basket)
 
@@ -833,7 +833,7 @@ class TestMcpCallInstruction:
     def test_mcpcall_tool_exception_stores_error(self):
         """MCPCALL stores __error__ in basket when tool raises; execution continues."""
         from unittest.mock import patch
-        from devices.igor.tools.registry import Tool, ToolRegistry
+        from unseen_university.devices.igor.tools.registry import Tool, ToolRegistry
 
         def boom(**_):
             raise RuntimeError("tool exploded")
@@ -852,7 +852,7 @@ class TestMcpCallInstruction:
         basket = {}
 
         with patch(
-            "devices.igor.cognition.node_executor._tool_registry", mock_registry
+            "unseen_university.devices.igor.cognition.node_executor._tool_registry", mock_registry
         ):
             result = execute_node(memory, "my_trigger", basket)
 
@@ -862,7 +862,7 @@ class TestMcpCallInstruction:
     def test_mcpcall_tool_name_from_basket(self):
         """MCPCALL resolves tool name from basket when given [\"basket\", key]."""
         from unittest.mock import patch
-        from devices.igor.tools.registry import Tool, ToolRegistry
+        from unseen_university.devices.igor.tools.registry import Tool, ToolRegistry
 
         mock_tool = Tool(
             name="dynamic_tool",
@@ -882,7 +882,7 @@ class TestMcpCallInstruction:
         basket = {"tool_key": "dynamic_tool", "args": {}}
 
         with patch(
-            "devices.igor.cognition.node_executor._tool_registry", mock_registry
+            "unseen_university.devices.igor.cognition.node_executor._tool_registry", mock_registry
         ):
             result = execute_node(memory, "my_trigger", basket)
 

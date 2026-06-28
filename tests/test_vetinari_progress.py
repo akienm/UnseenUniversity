@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 
 def _make_device(tmp_path):
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.device import VetinariDevice
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.device import VetinariDevice
     return VetinariDevice(channel_post_fn=lambda m: None)
 
 
@@ -23,7 +23,7 @@ def _seed_active_directive(v, directive_id="dir-001", child_ids=None):
     # Manually set as active with child_ticket_ids (simulates post-decompose state)
     directives = v.get_pending_directives()
     from pathlib import Path
-    path = Path(__import__("devices.vetinari.device", fromlist=["uu_home"]).uu_home()) / "vetinari" / "pending_directives.json"
+    path = Path(__import__("unseen_university.devices.vetinari.device", fromlist=["uu_home"]).uu_home()) / "vetinari" / "pending_directives.json"
     for d in directives:
         if d["id"] == directive_id:
             d["status"] = "active"
@@ -55,7 +55,7 @@ def test_all_open_children_gives_active_status(tmp_path):
     v = _make_device(tmp_path)
     _seed_active_directive(v, child_ids=["T-a", "T-b"])
     status_map = {"T-a": "sprint", "T-b": "sprint"}
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
         counts = v.check_directive_progress("dir-001")
     assert counts["open"] == 2
     assert counts["closed"] == 0
@@ -66,7 +66,7 @@ def test_partial_closed_gives_active_status(tmp_path):
     v = _make_device(tmp_path)
     _seed_active_directive(v, child_ids=["T-a", "T-b"])
     status_map = {"T-a": "closed", "T-b": "sprint"}
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
         counts = v.check_directive_progress("dir-001")
     assert counts["closed"] == 1
     assert counts["open"] == 1
@@ -77,7 +77,7 @@ def test_all_closed_gives_completed_status(tmp_path):
     v = _make_device(tmp_path)
     _seed_active_directive(v, child_ids=["T-a", "T-b"])
     status_map = {"T-a": "closed", "T-b": "done"}
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
         counts = v.check_directive_progress("dir-001")
     assert counts["closed"] == 2
     assert v.get_directive_status("dir-001") == "completed"
@@ -88,7 +88,7 @@ def test_missing_ticket_counted_gracefully(tmp_path):
     v = _make_device(tmp_path)
     _seed_active_directive(v, child_ids=["T-exists", "T-missing"])
     status_map = {"T-exists": "sprint"}  # T-missing will return returncode=1
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
         counts = v.check_directive_progress("dir-001")
     assert counts["missing"] == 1
     assert counts["open"] == 1
@@ -99,7 +99,7 @@ def test_progress_snapshot_persisted_to_flat_file(tmp_path):
     v = _make_device(tmp_path)
     _seed_active_directive(v, child_ids=["T-a"])
     status_map = {"T-a": "sprint"}
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
         v.check_directive_progress("dir-001")
     directives = v.get_pending_directives()
     d = next(d for d in directives if d["id"] == "dir-001")
@@ -112,7 +112,7 @@ def test_completed_at_set_when_all_closed(tmp_path):
     v = _make_device(tmp_path)
     _seed_active_directive(v, child_ids=["T-a"])
     status_map = {"T-a": "closed"}
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
         v.check_directive_progress("dir-001")
     directives = v.get_pending_directives()
     d = next(d for d in directives if d["id"] == "dir-001")
@@ -135,7 +135,7 @@ def test_in_progress_children_counted_separately(tmp_path):
     v = _make_device(tmp_path)
     _seed_active_directive(v, child_ids=["T-a", "T-b", "T-c"])
     status_map = {"T-a": "in_progress", "T-b": "sprint", "T-c": "closed"}
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
         counts = v.check_directive_progress("dir-001")
     assert counts["in_progress"] == 1
     assert counts["open"] == 1

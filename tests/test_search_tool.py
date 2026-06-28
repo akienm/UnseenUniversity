@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.librarian.tools.search_tool import SearchResult, _search_git, _search_indexed, _search_palace, search
+from unseen_university.devices.librarian.tools.search_tool import SearchResult, _search_git, _search_indexed, _search_palace, search
 
 
 # ── Palace backend ─────────────────────────────────────────────────────────────
@@ -46,14 +46,14 @@ class TestSearchPalace:
 class TestSearchIndexed:
     def test_indexed_returns_results(self):
         fake_rows = [{"path": "/some/file.py", "chunk_index": 0, "chunk_text": "def foo():", "rank": 0.8}]
-        with patch("devices.scraps.jobs.folder_indexer.search_indexed", return_value=fake_rows):
+        with patch("unseen_university.devices.scraps.jobs.folder_indexer.search_indexed", return_value=fake_rows):
             results = _search_indexed("foo")
         assert len(results) == 1
         assert results[0].source == "indexed"
         assert "/some/file.py#0" == results[0].id
 
     def test_indexed_failure_returns_empty(self):
-        with patch("devices.scraps.jobs.folder_indexer.search_indexed", side_effect=Exception("nope")):
+        with patch("unseen_university.devices.scraps.jobs.folder_indexer.search_indexed", side_effect=Exception("nope")):
             results = _search_indexed("foo")
         assert results == []
 
@@ -94,9 +94,9 @@ class TestSearchUnion:
 
     def test_source_filter_palace(self):
         import asyncio
-        with patch("devices.librarian.tools.search_tool._search_palace", return_value=[]) as mock_palace, \
-             patch("devices.librarian.tools.search_tool._search_indexed") as mock_idx, \
-             patch("devices.librarian.tools.search_tool._search_git") as mock_git:
+        with patch("unseen_university.devices.librarian.tools.search_tool._search_palace", return_value=[]) as mock_palace, \
+             patch("unseen_university.devices.librarian.tools.search_tool._search_indexed") as mock_idx, \
+             patch("unseen_university.devices.librarian.tools.search_tool._search_git") as mock_git:
             asyncio.run(search("test", source="palace"))
         mock_palace.assert_called_once()
         mock_idx.assert_not_called()
@@ -108,13 +108,13 @@ class TestSearchUnion:
 
 class TestFolderIndexer:
     def test_run_indexer_no_paths_returns_zero(self):
-        from devices.scraps.jobs.folder_indexer import run_indexer
+        from unseen_university.devices.scraps.jobs.folder_indexer import run_indexer
         result = run_indexer(paths=[])
         assert result["indexed"] == 0
         assert result["skipped"] == 0
 
     def test_chunk_file_yields_chunks(self, tmp_path):
-        from devices.scraps.jobs.folder_indexer import _chunk_file
+        from unseen_university.devices.scraps.jobs.folder_indexer import _chunk_file
         f = tmp_path / "test.py"
         f.write_text("x" * 2500)
         chunks = list(_chunk_file(f, chunk_size=800))
@@ -123,7 +123,7 @@ class TestFolderIndexer:
             assert len(text) <= 800
 
     def test_chunk_file_empty_file_yields_nothing(self, tmp_path):
-        from devices.scraps.jobs.folder_indexer import _chunk_file
+        from unseen_university.devices.scraps.jobs.folder_indexer import _chunk_file
         f = tmp_path / "empty.txt"
         f.write_text("")
         chunks = list(_chunk_file(f))

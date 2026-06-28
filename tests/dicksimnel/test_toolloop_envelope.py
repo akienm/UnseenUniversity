@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import pytest
 
-from devices.dicksimnel.toolloop import _parse_terminal_response, ToolLoop
+from unseen_university.devices.dicksimnel.toolloop import _parse_terminal_response, ToolLoop
 
 
 class TestParseTerminalResponse:
@@ -81,7 +81,7 @@ class TestMaxTurnsEnvelope:
     def test_max_turns_returns_json(self):
         """MAX_TURNS return value is now a JSON error envelope."""
         from unittest.mock import patch, MagicMock
-        from devices.inference.shim import InferenceResponse
+        from unseen_university.devices.inference.shim import InferenceResponse
 
         # Simulate 2 turns of tool calls then max_turns exceeded
         mock_response = MagicMock(spec=InferenceResponse)
@@ -91,7 +91,7 @@ class TestMaxTurnsEnvelope:
         mock_response.source_billing_type = "usage_based"
 
         loop = ToolLoop(max_turns=1)
-        with patch("devices.inference.device.InferenceDevice") as MockDevice:
+        with patch("unseen_university.devices.inference.device.InferenceDevice") as MockDevice:
             MockDevice.return_value.dispatch.return_value = mock_response
             result = loop.run({"id": "T-test", "title": "test", "tags": [], "description": "test"}, "test system")
 

@@ -21,7 +21,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from devices.granny.daemon import match_rule, run_once
+from unseen_university.devices.granny.daemon import match_rule, run_once
 
 
 _RULES = [
@@ -126,18 +126,18 @@ def test_run_once_exact_match_defers_unmatched_ticket(caplog):
         "priority": 0.5,
     }
 
-    with patch("devices.granny.daemon._sprint_tickets", return_value=[apprentice_ticket]), \
-         patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
-         patch("devices.granny.daemon._load_announced_workers", return_value={}), \
-         patch("devices.granny.daemon._process_handshake_replies", return_value=0), \
-         patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-         patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-         patch("devices.granny.daemon._post_channel"), \
-         patch("devices.granny.availability.is_available", return_value=True), \
-         patch("devices.granny.availability.check_and_expire_cooldowns"), \
-         patch("devices.granny.daemon._dispatch_bus") as mock_dispatch:
+    with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[apprentice_ticket]), \
+         patch("unseen_university.devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+         patch("unseen_university.devices.granny.daemon._load_announced_workers", return_value={}), \
+         patch("unseen_university.devices.granny.daemon._process_handshake_replies", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._post_channel"), \
+         patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+         patch("unseen_university.devices.granny.availability.check_and_expire_cooldowns"), \
+         patch("unseen_university.devices.granny.daemon._dispatch_bus") as mock_dispatch:
         import logging
-        with caplog.at_level(logging.WARNING, logger="devices.granny.daemon"):
+        with caplog.at_level(logging.WARNING, logger="unseen_university.devices.granny.daemon"):
             run_once(config, imap=MagicMock())
 
     mock_dispatch.assert_not_called()
@@ -157,16 +157,16 @@ def test_run_once_exact_match_false_dispatches_unmatched_to_cc():
         "priority": 0.5,
     }
 
-    with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-         patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
-         patch("devices.granny.daemon._load_announced_workers", return_value={}), \
-         patch("devices.granny.daemon._process_handshake_replies", return_value=0), \
-         patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-         patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-         patch("devices.granny.daemon._post_channel"), \
-         patch("devices.granny.availability.is_available", return_value=True), \
-         patch("devices.granny.availability.check_and_expire_cooldowns"), \
-         patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_dispatch:
+    with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+         patch("unseen_university.devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+         patch("unseen_university.devices.granny.daemon._load_announced_workers", return_value={}), \
+         patch("unseen_university.devices.granny.daemon._process_handshake_replies", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._post_channel"), \
+         patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+         patch("unseen_university.devices.granny.availability.check_and_expire_cooldowns"), \
+         patch("unseen_university.devices.granny.daemon._dispatch_bus", return_value=True) as mock_dispatch:
         run_once(config, imap=MagicMock())
 
     mock_dispatch.assert_called_once()

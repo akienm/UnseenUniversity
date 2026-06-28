@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.igor.memory.tree_index import TreeIndex, _CP_NODES, seed_well_known_trees
+from unseen_university.devices.igor.memory.tree_index import TreeIndex, _CP_NODES, seed_well_known_trees
 
 DB_URL = os.getenv(
     "UU_HOME_DB_URL",
@@ -96,7 +96,7 @@ class TestCreateGet:
         _delete_tree(DB_URL, "_test_rules_override")
 
     def test_create_registers_in_node_registry(self):
-        from devices.igor.memory.node_id import node_exists
+        from unseen_university.devices.igor.memory.node_id import node_exists
 
         idx = TreeIndex(db_url=DB_URL)
         tid = idx.create("_test_registry", CP1_ID)
@@ -253,7 +253,7 @@ def test_machine_id_resolves_hostname_not_baked_literal(monkeypatch):
     invisible; monkeypatching a different hostname (with IGOR_SWARM_NAME unset)
     exposes whether the value follows the host or is frozen to the old literal.
     """
-    import devices.igor.memory.tree_index as ti
+    import unseen_university.devices.igor.memory.tree_index as ti
 
     monkeypatch.delenv("IGOR_SWARM_NAME", raising=False)
     monkeypatch.setattr("socket.gethostname", lambda: "proof-host-xyz")

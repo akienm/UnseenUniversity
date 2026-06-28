@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.nanny.sweeps.code_sweep import (
+from unseen_university.devices.nanny.sweeps.code_sweep import (
     CodeSymbol,
     extract_symbols,
     iter_py_files,
@@ -159,7 +159,7 @@ def test_run_sweep_dry_run_counts_symbols(tmp_path):
     f = tmp_path / "devices" / "sample.py"
     f.write_text("def foo(): pass\nclass Bar: pass\n")
 
-    from devices.nanny.sweeps.code_sweep import run_sweep
+    from unseen_university.devices.nanny.sweeps.code_sweep import run_sweep
     result = run_sweep(repo_root=tmp_path, dry_run=True)
     assert result["inserted"] >= 2
     assert result["errors"] == 0
@@ -168,7 +168,7 @@ def test_run_sweep_dry_run_counts_symbols(tmp_path):
 # ── Nanny device integration ───────────────────────────────────────────────────
 
 def test_nanny_default_schedule_includes_code_sweep():
-    from devices.nanny.device import _DEFAULT_SCHEDULE
+    from unseen_university.devices.nanny.device import _DEFAULT_SCHEDULE
     ids = [e["entry_id"] for e in _DEFAULT_SCHEDULE]
     assert "nightly_code_sweep" in ids
     sweep_entry = next(e for e in _DEFAULT_SCHEDULE if e["entry_id"] == "nightly_code_sweep")
@@ -176,7 +176,7 @@ def test_nanny_default_schedule_includes_code_sweep():
 
 
 def test_nanny_fire_entry_handles_run_code_sweep():
-    from devices.nanny.device import NannyOggDevice, ScheduleEntry
+    from unseen_university.devices.nanny.device import NannyOggDevice, ScheduleEntry
 
     device = NannyOggDevice()
     entry = ScheduleEntry(
@@ -193,7 +193,7 @@ def test_nanny_fire_entry_handles_run_code_sweep():
         sweep_called.append(True)
         return {"inserted": 1, "updated": 0, "unchanged": 0, "errors": 0}
 
-    with patch("devices.nanny.sweeps.code_sweep.run_sweep", _fake_sweep):
+    with patch("unseen_university.devices.nanny.sweeps.code_sweep.run_sweep", _fake_sweep):
         with patch.object(device, "_post_to_channel"):
             ok = device.fire_entry(entry)
 

@@ -10,8 +10,8 @@ import time
 import unittest
 from unittest.mock import patch, MagicMock
 
-from devices.discord_bot.device import DiscordBotDevice
-from devices.discord_bot.shim import DiscordBotShim
+from unseen_university.devices.discord_bot.device import DiscordBotDevice
+from unseen_university.devices.discord_bot.shim import DiscordBotShim
 from unseen_university.device import INTERFACE_VERSION
 
 
@@ -67,7 +67,7 @@ class TestDiscordBotDeviceContract(unittest.TestCase):
 
     def test_recovery_clears_block(self):
         self.d.block("blocked")
-        with patch("devices.discord_bot.device._bot") as mock_bot:
+        with patch("unseen_university.devices.discord_bot.device._bot") as mock_bot:
             mock_bot.is_running.return_value = True
             self.d.recovery()
         self.assertFalse(self.d._blocked)
@@ -81,7 +81,7 @@ class TestDiscordBotDeviceContract(unittest.TestCase):
 
     def test_health_unhealthy_when_thread_not_running(self):
         with patch.dict(os.environ, {"DISCORD_BOT_TOKEN": "fake-token"}):
-            with patch("devices.discord_bot.device._bot") as mock_bot:
+            with patch("unseen_university.devices.discord_bot.device._bot") as mock_bot:
                 mock_bot.is_running.return_value = False
                 h = self.d.health()
                 self.assertEqual(h["status"], "unhealthy")
@@ -102,7 +102,7 @@ class TestDiscordBotShimContract(unittest.TestCase):
     def test_self_test_fails_when_not_running(self):
         s = DiscordBotShim()
         with patch.dict(os.environ, {"DISCORD_BOT_TOKEN": "fake"}):
-            with patch("devices.discord_bot.shim._bot") as mock_bot:
+            with patch("unseen_university.devices.discord_bot.shim._bot") as mock_bot:
                 mock_bot.is_running.return_value = False
                 result = s.self_test()
                 self.assertFalse(result["passed"])
@@ -110,7 +110,7 @@ class TestDiscordBotShimContract(unittest.TestCase):
     def test_rollback_calls_stop(self):
         s = DiscordBotShim()
         s._device.stop = MagicMock()
-        with patch("devices.discord_bot.shim._bot") as mock_bot:
+        with patch("unseen_university.devices.discord_bot.shim._bot") as mock_bot:
             mock_bot.stop = MagicMock()
             s.rollback()
         s._device.stop.assert_called_once()
@@ -119,9 +119,9 @@ class TestDiscordBotShimContract(unittest.TestCase):
         from unittest.mock import MagicMock
         mock_registry = MagicMock()
         s = DiscordBotShim(registry=mock_registry)
-        with patch("devices.discord_bot.shim._bot") as mock_bot:
+        with patch("unseen_university.devices.discord_bot.shim._bot") as mock_bot:
             mock_bot.is_running.return_value = False
-            with patch("devices.discord_bot.device._bot") as mock_dev_bot:
+            with patch("unseen_university.devices.discord_bot.device._bot") as mock_dev_bot:
                 mock_dev_bot.is_running.return_value = False
                 mock_dev_bot.start = MagicMock()
                 s.start()

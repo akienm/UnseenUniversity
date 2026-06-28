@@ -12,7 +12,7 @@ import uuid
 
 import pytest
 
-from devices.igor.memory.tag_tree import (
+from unseen_university.devices.igor.memory.tag_tree import (
     TAG_PREFIX,
     build_tag_tree,
     extract_tag_names,
@@ -76,13 +76,13 @@ def _cortex():
         pytest.skip("UU_HOME_DB_URL not set; cortex DB tests require Postgres")
     from pathlib import Path
 
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     return Cortex(instance_id="tag-test")
 
 
 def _store_factual(cortex, narrative: str, metadata: dict | None = None):
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     mid = f"T-mem-{uuid.uuid4().hex[:8]}"
     m = Memory(
@@ -195,7 +195,7 @@ def test_store_empty_metadata_gives_empty_tags_column():
 
 def test_reading_source_gets_auto_index_trigger():
     """Memory with source='reading' gets triggers.auto_index=true automatically."""
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
     cx = _cortex()
     mid = f"T-trigger-{uuid.uuid4().hex[:8]}"
     m = Memory(
@@ -213,7 +213,7 @@ def test_reading_source_gets_auto_index_trigger():
 
 def test_non_reading_source_no_auto_index_trigger():
     """Memory with source='interaction' does NOT get auto_index trigger."""
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
     cx = _cortex()
     mid = f"T-notrigger-{uuid.uuid4().hex[:8]}"
     m = Memory(

@@ -20,7 +20,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.ground_loop.plugin_daemon import (
+from unseen_university.devices.ground_loop.plugin_daemon import (
     PluginDaemon,
     _fire_cc_recovery,
 )
@@ -101,8 +101,8 @@ def test_daemon_fires_recovery_after_max_restarts(tmp_path):
     daemon._proc = mock_dead_proc
     daemon._restart_count = 2  # already exceeded max_restarts=1
 
-    with patch("devices.ground_loop.plugin_daemon._fire_cc_recovery") as mock_recovery, \
-         patch("devices.ground_loop.plugin_daemon._FLAGS_DIR", tmp_path):
+    with patch("unseen_university.devices.ground_loop.plugin_daemon._fire_cc_recovery") as mock_recovery, \
+         patch("unseen_university.devices.ground_loop.plugin_daemon._FLAGS_DIR", tmp_path):
         daemon.tick()
 
     mock_recovery.assert_called_once()
@@ -113,8 +113,8 @@ def test_daemon_stderr_goes_to_log_file(tmp_path):
     """PluginDaemon spawns process with stderr → per-plugin log file, not DEVNULL."""
     daemon = _make_daemon(tmp_path)
 
-    with patch("devices.ground_loop.plugin_daemon._FLAGS_DIR", tmp_path), \
-         patch("devices.ground_loop.plugin_daemon._STDERR_DIR", tmp_path), \
+    with patch("unseen_university.devices.ground_loop.plugin_daemon._FLAGS_DIR", tmp_path), \
+         patch("unseen_university.devices.ground_loop.plugin_daemon._STDERR_DIR", tmp_path), \
          patch("subprocess.Popen") as mock_popen, \
          patch("builtins.open", return_value=MagicMock()) as mock_open:
         mock_popen.return_value = MagicMock(pid=1234)

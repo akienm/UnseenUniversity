@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from devices.librarian.edge_maintenance import (
+from unseen_university.devices.librarian.edge_maintenance import (
     _DEFAULT_EDGE_TYPE,
     _VALID_EDGE_TYPES,
     EdgeMaintenanceWorker,
@@ -177,7 +177,7 @@ def test_query_exception_returns_empty():
 def test_worker_start_stop():
     worker = EdgeMaintenanceWorker(db_url="", interval_s=1000)
     with patch(
-        "devices.librarian.edge_maintenance.run_consolidation",
+        "unseen_university.devices.librarian.edge_maintenance.run_consolidation",
         return_value={"hebbian_count": 0, "backfill_count": 0},
     ):
         worker.start()
@@ -193,11 +193,11 @@ def test_worker_start_stop():
 
 def test_dreaming_stub_delegates_to_librarian():
     """Igor's dreaming._strengthen_coactivated_edges should delegate to Librarian."""
-    from devices.igor.cognition.dreaming import _strengthen_coactivated_edges
+    from unseen_university.devices.igor.cognition.dreaming import _strengthen_coactivated_edges
 
     conn = _make_conn(rows=[])
     with patch(
-        "devices.librarian.edge_maintenance.strengthen_coactivated_edges",
+        "unseen_university.devices.librarian.edge_maintenance.strengthen_coactivated_edges",
         return_value=0,
     ) as mock_lib:
         _strengthen_coactivated_edges(conn)

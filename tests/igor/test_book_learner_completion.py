@@ -64,7 +64,7 @@ class TestDepositCompletionRecord(unittest.TestCase):
 
     def test_episodic_memory_type(self):
         """Completion node is EPISODIC."""
-        from devices.igor.memory.models import MemoryType
+        from unseen_university.devices.igor.memory.models import MemoryType
         cortex = self._make_cortex()
         self.fn(
             cortex=cortex,

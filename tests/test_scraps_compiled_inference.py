@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import pytest
 
-from devices.scraps.purpose_classifier import classify_purpose
-from devices.scraps.task_completion_check import check_completion
-from devices.scraps.habit_tiebreaker import select_by_overlap
+from unseen_university.devices.scraps.purpose_classifier import classify_purpose
+from unseen_university.devices.scraps.task_completion_check import check_completion
+from unseen_university.devices.scraps.habit_tiebreaker import select_by_overlap
 
 # ── purpose_classifier ────────────────────────────────────────────────────────
 

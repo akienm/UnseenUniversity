@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from devices.scraps.jobs.inference_outcome_learner import (
+from unseen_university.devices.scraps.jobs.inference_outcome_learner import (
     _report_channel_message,
     aggregate,
     format_report,

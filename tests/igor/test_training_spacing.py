@@ -21,7 +21,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 
-from devices.igor.cognition.training_corpus import (
+from unseen_university.devices.igor.cognition.training_corpus import (
     SPACING_INTERVALS_DAYS,
     _next_pass_ts,
     schedule_training_passes,

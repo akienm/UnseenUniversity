@@ -14,9 +14,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.inference.device import InferenceDevice, _parse_response
-from devices.inference.shim import InferenceRequest, InferenceResponse
-from devices.inference.sources import SourceRegistry
+from unseen_university.devices.inference.device import InferenceDevice, _parse_response
+from unseen_university.devices.inference.shim import InferenceRequest, InferenceResponse
+from unseen_university.devices.inference.sources import SourceRegistry
 
 # ── Fixtures and helpers ──────────────────────────────────────────────────────
 
@@ -55,7 +55,7 @@ def _mock_urlopen(response_dict: dict):
     mock_resp.__enter__ = lambda s: s
     mock_resp.__exit__ = MagicMock(return_value=False)
     return patch(
-        "devices.inference.device.urllib.request.urlopen", return_value=mock_resp
+        "unseen_university.devices.inference.device.urllib.request.urlopen", return_value=mock_resp
     )
 
 
@@ -164,7 +164,7 @@ class TestDispatchOpenRouter:
             return mock_resp
 
         with patch(
-            "devices.inference.device.urllib.request.urlopen", side_effect=capture_req
+            "unseen_university.devices.inference.device.urllib.request.urlopen", side_effect=capture_req
         ):
             device.dispatch(req)
 
@@ -192,7 +192,7 @@ class TestDispatchOpenRouter:
             hdrs=None,
             fp=BytesIO(b"rate limited"),
         )
-        with patch("devices.inference.device.urllib.request.urlopen", side_effect=err):
+        with patch("unseen_university.devices.inference.device.urllib.request.urlopen", side_effect=err):
             with pytest.raises(RuntimeError, match="429"):
                 device.dispatch(req)
 
@@ -241,7 +241,7 @@ class TestDispatchOllama:
             return mock_resp
 
         with patch(
-            "devices.inference.device.urllib.request.urlopen", side_effect=capture_req
+            "unseen_university.devices.inference.device.urllib.request.urlopen", side_effect=capture_req
         ):
             device.dispatch(req)
 
@@ -259,7 +259,7 @@ class TestDispatchOllama:
             hdrs=None,
             fp=BytesIO(b"internal error"),
         )
-        with patch("devices.inference.device.urllib.request.urlopen", side_effect=err):
+        with patch("unseen_university.devices.inference.device.urllib.request.urlopen", side_effect=err):
             with pytest.raises(RuntimeError, match="500"):
                 device.dispatch(req)
 
@@ -282,7 +282,7 @@ class TestDispatchOllama:
             return mock_resp
 
         with patch(
-            "devices.inference.device.urllib.request.urlopen", side_effect=capture_req
+            "unseen_university.devices.inference.device.urllib.request.urlopen", side_effect=capture_req
         ):
             device.dispatch(req)
 

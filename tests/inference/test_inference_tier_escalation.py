@@ -12,12 +12,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.inference.shim import InferenceRequest, InferenceResponse
+from unseen_university.devices.inference.shim import InferenceRequest, InferenceResponse
 
 
 def _make_device():
-    from devices.inference.device import InferenceDevice
-    from devices.inference.models_registry import default_registry
+    from unseen_university.devices.inference.device import InferenceDevice
+    from unseen_university.devices.inference.models_registry import default_registry
     d = InferenceDevice.__new__(InferenceDevice)
     d._blocked = False
     d._block_reason = ""
@@ -68,9 +68,9 @@ class TestEscalationCeiling:
         mock_source.call.return_value = _fake_raw()
         d._sources = {"openrouter": mock_source}
 
-        with patch("devices.inference.pattern_intercept.try_intercept", return_value=None), \
-             patch("devices.inference.budget_ledger.check_session_limit"), \
-             patch("devices.inference.budget_ledger.debit"):
+        with patch("unseen_university.devices.inference.pattern_intercept.try_intercept", return_value=None), \
+             patch("unseen_university.devices.inference.budget_ledger.check_session_limit"), \
+             patch("unseen_university.devices.inference.budget_ledger.debit"):
             resp = d.dispatch(req)
 
         assert resp.text == "ok"
@@ -92,9 +92,9 @@ class TestEscalationHandoff:
         mock_source.call.return_value = _fake_raw()
         d._sources = {"openrouter": mock_source}
 
-        with patch("devices.inference.pattern_intercept.try_intercept", return_value=None), \
-             patch("devices.inference.budget_ledger.check_session_limit"), \
-             patch("devices.inference.budget_ledger.debit"):
+        with patch("unseen_university.devices.inference.pattern_intercept.try_intercept", return_value=None), \
+             patch("unseen_university.devices.inference.budget_ledger.check_session_limit"), \
+             patch("unseen_university.devices.inference.budget_ledger.debit"):
             d.dispatch(req)
 
         call_args = mock_source.call.call_args[0][0]
@@ -117,9 +117,9 @@ class TestEscalationHandoff:
         mock_source.call.return_value = _fake_raw()
         d._sources = {"openrouter": mock_source}
 
-        with patch("devices.inference.pattern_intercept.try_intercept", return_value=None), \
-             patch("devices.inference.budget_ledger.check_session_limit"), \
-             patch("devices.inference.budget_ledger.debit"):
+        with patch("unseen_university.devices.inference.pattern_intercept.try_intercept", return_value=None), \
+             patch("unseen_university.devices.inference.budget_ledger.check_session_limit"), \
+             patch("unseen_university.devices.inference.budget_ledger.debit"):
             d.dispatch(req)
 
         call_args = mock_source.call.call_args[0][0]
@@ -138,10 +138,10 @@ class TestEscalationHandoff:
         mock_source.call.return_value = _fake_raw()
         d._sources = {"openrouter": mock_source}
 
-        with caplog.at_level(logging.INFO, logger="devices.inference.device"), \
-             patch("devices.inference.pattern_intercept.try_intercept", return_value=None), \
-             patch("devices.inference.budget_ledger.check_session_limit"), \
-             patch("devices.inference.budget_ledger.debit"):
+        with caplog.at_level(logging.INFO, logger="unseen_university.devices.inference.device"), \
+             patch("unseen_university.devices.inference.pattern_intercept.try_intercept", return_value=None), \
+             patch("unseen_university.devices.inference.budget_ledger.check_session_limit"), \
+             patch("unseen_university.devices.inference.budget_ledger.debit"):
             d.dispatch(req)
 
         assert any(

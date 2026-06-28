@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.memory.versioning import (
+from unseen_university.devices.igor.memory.versioning import (
     version_before_update,
     get_version_history,
 )
@@ -30,7 +30,7 @@ def _mock_cortex_with_existing(existing_memory):
 
 
 def _mock_memory(id="TEST_V", narrative="original text", versioned=True):
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     return Memory(
         id=id,
@@ -105,7 +105,7 @@ class TestEngramDelta:
     """T-versioned-engrams: delta computation for engram nodes."""
 
     def test_detects_narrative_change(self):
-        from devices.igor.memory.versioning import _compute_engram_delta
+        from unseen_university.devices.igor.memory.versioning import _compute_engram_delta
 
         old = _mock_memory(narrative="old engram")
         old.metadata["habit_type"] = "engram"
@@ -118,7 +118,7 @@ class TestEngramDelta:
         assert delta["narrative_changed"] is True
 
     def test_detects_cell_change(self):
-        from devices.igor.memory.versioning import _compute_engram_delta
+        from unseen_university.devices.igor.memory.versioning import _compute_engram_delta
 
         old = _mock_memory()
         old.metadata["habit_type"] = "engram"
@@ -133,7 +133,7 @@ class TestEngramDelta:
         assert delta["new_opcodes"] == ["BRANCHIF"]
 
     def test_detects_code_ref_change(self):
-        from devices.igor.memory.versioning import _compute_engram_delta
+        from unseen_university.devices.igor.memory.versioning import _compute_engram_delta
 
         old = _mock_memory()
         old.metadata = {"habit_type": "engram", "code_ref": "tools.pe_chain:pe_plan"}
@@ -146,7 +146,7 @@ class TestEngramDelta:
         assert delta["code_ref_changed"] is True
 
     def test_empty_delta_when_unchanged(self):
-        from devices.igor.memory.versioning import _compute_engram_delta
+        from unseen_university.devices.igor.memory.versioning import _compute_engram_delta
 
         old = _mock_memory(narrative="same")
         old.metadata = {"habit_type": "engram", "code_ref": "x"}

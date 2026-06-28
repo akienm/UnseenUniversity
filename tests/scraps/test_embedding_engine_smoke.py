@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from devices.scraps.embedding_engine import embed
+from unseen_university.devices.scraps.embedding_engine import embed
 
 _VALID_DIMENSIONS = {384, 1536}
 

@@ -15,7 +15,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.push_sources import (  # noqa: E402
+from unseen_university.devices.igor.cognition.push_sources import (  # noqa: E402
     CapabilityAwarenessSource,
 )
 

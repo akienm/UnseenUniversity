@@ -23,7 +23,7 @@ import os
 
 class TestParseInteractionLine(unittest.TestCase):
     def setUp(self):
-        from devices.igor.tools.self_trainer import SelfTrainer
+        from unseen_university.devices.igor.tools.self_trainer import SelfTrainer
 
         self.trainer = SelfTrainer(db_url="unused", log_dir=Path("/tmp"))
 
@@ -58,7 +58,7 @@ class TestParseInteractionLine(unittest.TestCase):
 
 class TestReadCandidateTurns(unittest.TestCase):
     def setUp(self):
-        from devices.igor.tools.self_trainer import SelfTrainer
+        from unseen_university.devices.igor.tools.self_trainer import SelfTrainer
 
         self.tmp = tempfile.mkdtemp()
         self.trainer = SelfTrainer(db_url="unused", log_dir=Path(self.tmp))
@@ -125,7 +125,7 @@ class TestReadCandidateTurns(unittest.TestCase):
 
 class TestQueryTokens(unittest.TestCase):
     def test_removes_stopwords(self):
-        from devices.igor.tools.self_trainer import SelfTrainer
+        from unseen_university.devices.igor.tools.self_trainer import SelfTrainer
 
         trainer = SelfTrainer(db_url="unused", log_dir=Path("/tmp"))
         tokens = trainer._query_tokens("what is machine learning and how does it work")
@@ -135,7 +135,7 @@ class TestQueryTokens(unittest.TestCase):
         self.assertIn("learning", tokens)
 
     def test_min_length_four(self):
-        from devices.igor.tools.self_trainer import SelfTrainer
+        from unseen_university.devices.igor.tools.self_trainer import SelfTrainer
 
         trainer = SelfTrainer(db_url="unused", log_dir=Path("/tmp"))
         tokens = trainer._query_tokens("run it go now fast slow")
@@ -147,7 +147,7 @@ class TestQueryTokens(unittest.TestCase):
 
 class TestMatrixCovers(unittest.TestCase):
     def setUp(self):
-        from devices.igor.tools.self_trainer import SelfTrainer
+        from unseen_university.devices.igor.tools.self_trainer import SelfTrainer
 
         self.trainer = SelfTrainer(db_url="unused", log_dir=Path("/tmp"))
 
@@ -175,7 +175,7 @@ class TestMatrixCovers(unittest.TestCase):
 class TestRunTrainingPass(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        from devices.igor.tools.self_trainer import SelfTrainer
+        from unseen_university.devices.igor.tools.self_trainer import SelfTrainer
 
         self.trainer = SelfTrainer(
             db_url="postgresql://test/test", log_dir=Path(self.tmp)
@@ -197,7 +197,7 @@ class TestRunTrainingPass(unittest.TestCase):
     def test_gap_gets_deposited(
         self, mock_log, mock_psycopg2, mock_deposit, mock_covers
     ):
-        from devices.igor.tools.self_trainer import SelfTrainer
+        from unseen_university.devices.igor.tools.self_trainer import SelfTrainer
 
         # Patch the import inside the method
         with patch.dict("sys.modules", {"psycopg2": MagicMock()}):

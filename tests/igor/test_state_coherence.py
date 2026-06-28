@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.state_coherence_check import (  # noqa: E402
+from unseen_university.devices.igor.cognition.state_coherence_check import (  # noqa: E402
     StateCoherenceSource,
     _behavioral_metrics,
     _detect_mismatches,
@@ -105,6 +105,6 @@ class TestStateCoherenceSource:
         assert StateCoherenceSource.TIMING_TIER == "slow"
 
     def test_registered_in_push_sources(self):
-        from devices.igor.cognition import push_sources
+        from unseen_university.devices.igor.cognition import push_sources
 
         assert hasattr(push_sources, "state_coherence_source")

@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from devices.igor.web.adc_shim import IgorADCShim, _check_health
+from unseen_university.devices.igor.web.adc_shim import IgorADCShim, _check_health
 
 
 class TestCheckHealth:
@@ -58,7 +58,7 @@ class TestIgorADCShimBasics:
 
     def test_self_test_when_health_check_passes(self):
         """Verify self_test() returns {passed: True} when ADC responds."""
-        with patch("devices.igor.web.adc_shim._check_health") as mock_check:
+        with patch("unseen_university.devices.igor.web.adc_shim._check_health") as mock_check:
             mock_check.return_value = True
 
             shim = IgorADCShim()
@@ -69,7 +69,7 @@ class TestIgorADCShimBasics:
 
     def test_self_test_when_health_check_fails(self):
         """Verify self_test() returns {passed: False} when ADC doesn't respond."""
-        with patch("devices.igor.web.adc_shim._check_health") as mock_check:
+        with patch("unseen_university.devices.igor.web.adc_shim._check_health") as mock_check:
             mock_check.return_value = False
 
             shim = IgorADCShim()
@@ -80,7 +80,7 @@ class TestIgorADCShimBasics:
 
     def test_self_test_handles_exception(self):
         """Verify self_test() handles exceptions gracefully."""
-        with patch("devices.igor.web.adc_shim._check_health") as mock_check:
+        with patch("unseen_university.devices.igor.web.adc_shim._check_health") as mock_check:
             mock_check.side_effect = RuntimeError("forced error")
 
             shim = IgorADCShim()
@@ -95,7 +95,7 @@ class TestIgorADCShimStartStopRestart:
 
     def test_start_returns_true_when_adc_already_running(self):
         """Verify start() returns True if ADC already responds to /health."""
-        with patch("devices.igor.web.adc_shim._check_health") as mock_check:
+        with patch("unseen_university.devices.igor.web.adc_shim._check_health") as mock_check:
             mock_check.return_value = True
 
             shim = IgorADCShim()
@@ -107,7 +107,7 @@ class TestIgorADCShimStartStopRestart:
     def test_start_returns_false_on_launch_failure(self):
         """Verify start() returns False if subprocess launch fails."""
         with (
-            patch("devices.igor.web.adc_shim._check_health") as mock_check,
+            patch("unseen_university.devices.igor.web.adc_shim._check_health") as mock_check,
             patch("subprocess.Popen") as mock_popen,
         ):
             mock_check.return_value = False  # ADC not running
@@ -121,7 +121,7 @@ class TestIgorADCShimStartStopRestart:
     def test_start_returns_false_on_health_poll_timeout(self):
         """Verify start() returns False if /health doesn't respond within 15s."""
         with (
-            patch("devices.igor.web.adc_shim._check_health") as mock_check,
+            patch("unseen_university.devices.igor.web.adc_shim._check_health") as mock_check,
             patch("subprocess.Popen") as mock_popen,
             patch("time.time") as mock_time,
             patch("time.sleep"),

@@ -33,7 +33,7 @@ def test_tool_result_verbatim_round_trip_via_twm_category():
     back by category returns the full untruncated content. This is the
     same infrastructure pattern as user_input_verbatim from f0ad6dab."""
     import psycopg2
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",

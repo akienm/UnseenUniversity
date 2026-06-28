@@ -38,7 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
     """Ensure PR_AKIEN facia exists before tests run."""
-    from devices.igor.tools import seed_persistent_relationships as _seed
+    from unseen_university.devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
@@ -46,10 +46,10 @@ def ensure_seeded():
 
 def _fresh_igor():
     """Construct an Igor whose frame-throttle state is clean."""
-    from devices.igor.main import Igor
+    from unseen_university.devices.igor.main import Igor
 
     inst = Igor.__new__(Igor)
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     inst.cortex = Cortex(None)
     inst._pr_frame_last_push = {}
@@ -58,7 +58,7 @@ def _fresh_igor():
 
 def _clear_frame_observations():
     """Wipe any stale relationship_frame observations from a prior test run."""
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     Cortex(None).twm_evict_category("relationship_frame")
 
@@ -189,7 +189,7 @@ def test_push_frame_updates_facia_last_activity():
     """The frame push calls pr_touch which updates last_activity_ts on
     the facia memory. Side effect is best-effort and non-fatal, but should
     happen on the happy path."""
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     _clear_frame_observations()
     before = _pr._resolve_facia("PR_AKIEN")

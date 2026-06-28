@@ -11,7 +11,7 @@ import asyncio
 
 
 def test_inject_inserts_panel_after_body():
-    from devices.web_server.server import _inject_alarms_panel
+    from unseen_university.devices.web_server.server import _inject_alarms_panel
 
     out = _inject_alarms_panel("<html><head></head><body>hello</body></html>")
     assert 'id="sysalarm-panel"' in out
@@ -20,7 +20,7 @@ def test_inject_inserts_panel_after_body():
 
 
 def test_inject_is_idempotent_and_safe_without_body():
-    from devices.web_server.server import _inject_alarms_panel, _ALARMS_PANEL
+    from unseen_university.devices.web_server.server import _inject_alarms_panel, _ALARMS_PANEL
 
     once = _inject_alarms_panel("<body>x</body>")
     twice = _inject_alarms_panel(once)
@@ -33,7 +33,7 @@ def _body(resp):
 
 
 def test_chat_dashboard_metrics_pages_carry_the_panel():
-    from devices.web_server import server
+    from unseen_university.devices.web_server import server
 
     chat = asyncio.run(server._index(request=None))
     dash = asyncio.run(server._page_dashboard(request=None))

@@ -48,7 +48,7 @@ class TestDepositHappyPath:
         assert len(cortex.stored) == 1
 
     def test_deposited_memory_has_factual_type(self):
-        from devices.igor.memory.models import MemoryType
+        from unseen_university.devices.igor.memory.models import MemoryType
 
         engram = GroundingEngram(
             narrative="Today is 2026-04-23. Igor's clock reads 2026.",
@@ -196,7 +196,7 @@ class TestValidation:
 
 class TestBuildMemory:
     def test_build_memory_returns_memory_with_correct_fields(self):
-        from devices.igor.memory.models import MemoryType
+        from unseen_university.devices.igor.memory.models import MemoryType
 
         engram = GroundingEngram(
             narrative="Igor's tools are channel-agnostic transports.",

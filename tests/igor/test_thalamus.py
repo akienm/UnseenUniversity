@@ -10,14 +10,14 @@ from pathlib import Path
 import unittest
 
 
-from devices.igor.cognition.thalamus import _classify_intent, _graph_weight_intent_hint
+from unseen_university.devices.igor.cognition.thalamus import _classify_intent, _graph_weight_intent_hint
 
 
 class TestRelationalPronounGuard(unittest.TestCase):
     """Peer/vision inputs must not be misclassified as code_task or action_request."""
 
     def _intent(self, text: str) -> str:
-        from devices.igor.cognition.thalamus import _extract_keywords
+        from unseen_university.devices.igor.cognition.thalamus import _extract_keywords
         kw = _extract_keywords(text)
         return _classify_intent(text, kw)
 
@@ -52,7 +52,7 @@ class TestLexicalCascadeUnchanged(unittest.TestCase):
     """Verify existing intent patterns still work after the guard insertion."""
 
     def _intent(self, text: str) -> str:
-        from devices.igor.cognition.thalamus import _extract_keywords
+        from unseen_university.devices.igor.cognition.thalamus import _extract_keywords
         kw = _extract_keywords(text)
         return _classify_intent(text, kw)
 

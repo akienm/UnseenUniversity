@@ -22,8 +22,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from devices.critic.agent import CriticAgent, Decision, LearningRule
-from devices.critic.device import CriticDevice
+from unseen_university.devices.critic.agent import CriticAgent, Decision, LearningRule
+from unseen_university.devices.critic.device import CriticDevice
 
 
 # ── CriticAgent.load_rules ─────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ def test_load_rules_accepts_valid_data():
 def test_load_rules_skips_malformed_entries(caplog):
     import logging
     agent = CriticAgent()
-    with caplog.at_level(logging.WARNING, logger="devices.critic.agent"):
+    with caplog.at_level(logging.WARNING, logger="unseen_university.devices.critic.agent"):
         agent.load_rules([
             {"pattern": "ok", "condition": "c", "action": "a", "confidence": 0.5},
             {"pattern": "bad_no_condition"},  # missing keys
@@ -59,7 +59,7 @@ def test_load_rules_empty_list_is_noop():
 # ── CriticDevice persistence ───────────────────────────────────────────────────
 
 def test_critic_device_save_load_round_trip(tmp_path):
-    with patch("devices.critic.device._RULES_DIR", tmp_path):
+    with patch("unseen_university.devices.critic.device._RULES_DIR", tmp_path):
         dev = CriticDevice()
         dev._agent.learn_from_patterns({
             "failure_modes": ["error_not_recovered"],
@@ -76,7 +76,7 @@ def test_critic_device_save_load_round_trip(tmp_path):
 
 
 def test_critic_device_load_missing_file_is_noop(tmp_path):
-    with patch("devices.critic.device._RULES_DIR", tmp_path):
+    with patch("unseen_university.devices.critic.device._RULES_DIR", tmp_path):
         dev = CriticDevice()  # no rules.json → should not raise
     assert dev._agent.export_rules() == []
 
@@ -108,7 +108,7 @@ def _done_response(text: str = '{"status":"done","result":"ok","error_class":nul
 
 def test_toolloop_calls_evaluate_decision_per_tool_call():
     """After each tool call, CriticAgent.evaluate_decision is called."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
 
     responses = [_minimal_response("Bash", "ls"), _done_response()]
     tool_result = "file1.py\n"
@@ -116,16 +116,16 @@ def test_toolloop_calls_evaluate_decision_per_tool_call():
     mock_agent_eval = MagicMock(return_value=MagicMock(
         verdict="good", confidence=0.9, pattern="ok", improvement=None))
 
-    with patch("devices.inference.device.InferenceDevice") as mock_inf_cls, \
-         patch("devices.dicksimnel.toolloop._execute_tool", return_value=tool_result), \
-         patch("devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
-         patch("devices.critic.device.CriticDevice._load_rules"), \
-         patch("devices.critic.agent.CriticAgent.evaluate_decision", mock_agent_eval), \
-         patch("devices.critic.agent.CriticAgent.analyze_pattern", return_value={
+    with patch("unseen_university.devices.inference.device.InferenceDevice") as mock_inf_cls, \
+         patch("unseen_university.devices.dicksimnel.toolloop._execute_tool", return_value=tool_result), \
+         patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
+         patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
+         patch("unseen_university.devices.critic.agent.CriticAgent.evaluate_decision", mock_agent_eval), \
+         patch("unseen_university.devices.critic.agent.CriticAgent.analyze_pattern", return_value={
              "verdict_distribution": {}, "common_patterns": {}, "failure_modes": [],
              "failure_count": 0, "improvement_opportunities": [],
          }), \
-         patch("devices.critic.device.CriticDevice._save_rules"):
+         patch("unseen_university.devices.critic.device.CriticDevice._save_rules"):
         mock_inf = MagicMock()
         mock_inf_cls.return_value = mock_inf
         mock_inf.dispatch.side_effect = responses
@@ -142,30 +142,30 @@ def test_toolloop_calls_evaluate_decision_per_tool_call():
 def test_toolloop_logs_critic_advisory_when_rule_fires(caplog):
     """When a critic rule matches the current tool context, an advisory is logged at INFO."""
     import logging
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
 
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
-    with patch("devices.inference.device.InferenceDevice") as mock_inf_cls, \
-         patch("devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
-         patch("devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
-         patch("devices.critic.device.CriticDevice._load_rules"), \
-         patch("devices.critic.device.CriticDevice.get_recommendation",
+    with patch("unseen_university.devices.inference.device.InferenceDevice") as mock_inf_cls, \
+         patch("unseen_university.devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
+         patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
+         patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
+         patch("unseen_university.devices.critic.device.CriticDevice.get_recommendation",
                return_value={"action": "try different tool", "confidence": 0.85,
                              "rule": "error_not_recovered"}), \
-         patch("devices.critic.agent.CriticAgent.evaluate_decision", return_value=MagicMock(
+         patch("unseen_university.devices.critic.agent.CriticAgent.evaluate_decision", return_value=MagicMock(
              verdict="neutral", confidence=0.5, pattern=None, improvement=None)), \
-         patch("devices.critic.agent.CriticAgent.analyze_pattern", return_value={
+         patch("unseen_university.devices.critic.agent.CriticAgent.analyze_pattern", return_value={
              "verdict_distribution": {}, "common_patterns": {}, "failure_modes": [],
              "failure_count": 0, "improvement_opportunities": [],
          }), \
-         patch("devices.critic.device.CriticDevice._save_rules"):
+         patch("unseen_university.devices.critic.device.CriticDevice._save_rules"):
         mock_inf = MagicMock()
         mock_inf_cls.return_value = mock_inf
         mock_inf.dispatch.side_effect = responses
 
         tl = ToolLoop(max_turns=5)
-        with caplog.at_level(logging.INFO, logger="devices.dicksimnel.toolloop"):
+        with caplog.at_level(logging.INFO, logger="unseen_university.devices.dicksimnel.toolloop"):
             tl.run({"id": "T-adv", "title": "t", "tags": [], "description": "d"}, "sys")
 
     assert "Critic advisory" in caplog.text
@@ -174,22 +174,22 @@ def test_toolloop_logs_critic_advisory_when_rule_fires(caplog):
 
 def test_toolloop_saves_rules_at_sprint_end():
     """_save_rules is called when critic has judgments after sprint completes."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
 
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
     save_mock = MagicMock()
-    with patch("devices.inference.device.InferenceDevice") as mock_inf_cls, \
-         patch("devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
-         patch("devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
-         patch("devices.critic.device.CriticDevice._load_rules"), \
-         patch("devices.critic.agent.CriticAgent.evaluate_decision", return_value=MagicMock(
+    with patch("unseen_university.devices.inference.device.InferenceDevice") as mock_inf_cls, \
+         patch("unseen_university.devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
+         patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
+         patch("unseen_university.devices.critic.device.CriticDevice._load_rules"), \
+         patch("unseen_university.devices.critic.agent.CriticAgent.evaluate_decision", return_value=MagicMock(
              verdict="good", confidence=0.9, pattern="ok", improvement=None)), \
-         patch("devices.critic.agent.CriticAgent.analyze_pattern", return_value={
+         patch("unseen_university.devices.critic.agent.CriticAgent.analyze_pattern", return_value={
              "verdict_distribution": {"good": 1}, "common_patterns": {}, "failure_modes": [],
              "failure_count": 0, "improvement_opportunities": [],
          }), \
-         patch("devices.critic.device.CriticDevice._save_rules", save_mock):
+         patch("unseen_university.devices.critic.device.CriticDevice._save_rules", save_mock):
         mock_inf = MagicMock()
         mock_inf_cls.return_value = mock_inf
         mock_inf.dispatch.side_effect = responses
@@ -202,14 +202,14 @@ def test_toolloop_saves_rules_at_sprint_end():
 
 def test_toolloop_continues_when_critic_unavailable():
     """Sprint completes even if CriticDevice raises on import."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
 
     responses = [_minimal_response("Bash", "ls"), _done_response()]
 
-    with patch("devices.inference.device.InferenceDevice") as mock_inf_cls, \
-         patch("devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
-         patch("devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
-         patch("devices.critic.device.CriticDevice.__init__",
+    with patch("unseen_university.devices.inference.device.InferenceDevice") as mock_inf_cls, \
+         patch("unseen_university.devices.dicksimnel.toolloop._execute_tool", return_value="ok"), \
+         patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix", return_value=""), \
+         patch("unseen_university.devices.critic.device.CriticDevice.__init__",
                side_effect=RuntimeError("critic down")):
         mock_inf = MagicMock()
         mock_inf_cls.return_value = mock_inf

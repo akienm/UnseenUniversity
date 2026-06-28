@@ -129,7 +129,7 @@ def test_tokenize_preserves_length():
 
 
 def test_scraps_non_skill_returns_bark():
-    from devices.scraps.shim import ScrapsShim
+    from unseen_university.devices.scraps.shim import ScrapsShim
 
     s = ScrapsShim()
     out = s.handle_command("tell me a joke")
@@ -137,7 +137,7 @@ def test_scraps_non_skill_returns_bark():
 
 
 def test_scraps_skill_commands_still_work():
-    from devices.scraps.shim import ScrapsShim
+    from unseen_university.devices.scraps.shim import ScrapsShim
 
     s = ScrapsShim()
     out = s.handle_command("/help")
@@ -145,7 +145,7 @@ def test_scraps_skill_commands_still_work():
 
 
 def test_scraps_bark_is_deterministic():
-    from devices.scraps.shim import ScrapsShim
+    from unseen_university.devices.scraps.shim import ScrapsShim
 
     s = ScrapsShim()
     assert s.handle_command("same text") == s.handle_command("same text")
@@ -155,7 +155,7 @@ def test_scraps_bark_is_deterministic():
 
 
 def test_nanny_shim_self_test_passes():
-    from devices.nanny.shim import NannyShim
+    from unseen_university.devices.nanny.shim import NannyShim
 
     s = NannyShim()
     result = s.self_test()
@@ -164,7 +164,7 @@ def test_nanny_shim_self_test_passes():
 
 
 def test_nanny_non_skill_mentions_schedule():
-    from devices.nanny.shim import NannyShim
+    from unseen_university.devices.nanny.shim import NannyShim
 
     s = NannyShim()
     out = s.handle_command("what are you doing?")
@@ -172,7 +172,7 @@ def test_nanny_non_skill_mentions_schedule():
 
 
 def test_nanny_skill_commands_work():
-    from devices.nanny.shim import NannyShim
+    from unseen_university.devices.nanny.shim import NannyShim
 
     s = NannyShim()
     out = s.handle_command("/help")

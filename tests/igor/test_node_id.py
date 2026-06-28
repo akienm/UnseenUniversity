@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.igor.memory.node_id import (
+from unseen_university.devices.igor.memory.node_id import (
     build_suffix,
     new_node_id,
     node_exists,
@@ -228,7 +228,7 @@ class TestRegistry:
         mock_redis.get.return_value = json.dumps(
             {"table_name": "memories", "row_id": "cached_row"}
         )
-        with patch("devices.igor.memory.node_id._get_redis", return_value=mock_redis):
+        with patch("unseen_university.devices.igor.memory.node_id._get_redis", return_value=mock_redis):
             result = node_locate("20260329000000000001.test")
         assert result == {"table_name": "memories", "row_id": "cached_row"}
         mock_redis.get.assert_called_once_with("node:20260329000000000001.test")
@@ -243,7 +243,7 @@ class TestRegistry:
         )
         nid = new_node_id(suffix="fallback")
         register_node(nid, "reading_list", f"rl_{nid}", db_url=db_url)
-        with patch("devices.igor.memory.node_id._get_redis", return_value=mock_redis):
+        with patch("unseen_university.devices.igor.memory.node_id._get_redis", return_value=mock_redis):
             result = node_locate(nid, db_url=db_url)
         assert result is not None
         assert result["table_name"] == "reading_list"

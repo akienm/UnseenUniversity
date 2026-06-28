@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-from devices.igor.cognition import forensic_logger
+from unseen_university.devices.igor.cognition import forensic_logger
 
 
 def _minimal_ctx() -> dict:

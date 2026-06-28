@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
-    from devices.igor.tools import seed_persistent_relationships as _seed
+    from unseen_university.devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0

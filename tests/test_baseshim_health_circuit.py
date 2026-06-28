@@ -167,7 +167,7 @@ class TestPostStatus:
 
 class TestGrannyShimHealthSurface:
     def test_returns_at_least_one_field(self):
-        from devices.granny.shim import GrannyShim
+        from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
         h = shim.health_surface()
@@ -175,7 +175,7 @@ class TestGrannyShimHealthSurface:
         assert len(h) >= 1
 
     def test_contains_relaunch_count(self):
-        from devices.granny.shim import GrannyShim
+        from unseen_university.devices.granny.shim import GrannyShim
 
         shim = GrannyShim()
         h = shim.health_surface()
@@ -183,13 +183,13 @@ class TestGrannyShimHealthSurface:
         assert h["relaunch_count"] == "0"
 
     def test_contains_daemon_field(self):
-        from devices.granny.shim import GrannyShim
+        from unseen_university.devices.granny.shim import GrannyShim
         from unittest.mock import MagicMock
 
         shim = GrannyShim()
         mock_daemon = MagicMock()
         mock_daemon.is_running.return_value = True
-        with patch("devices.granny.daemon.get_daemon", return_value=mock_daemon):
+        with patch("unseen_university.devices.granny.daemon.get_daemon", return_value=mock_daemon):
             h = shim.health_surface()
         assert "daemon" in h
         assert h["daemon"] == "running"

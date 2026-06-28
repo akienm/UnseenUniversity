@@ -27,7 +27,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from unseen_university.skeleton.container_shim import ContainerShim
+from unseen_university.devices.skeleton.container_shim import ContainerShim
 
 
 def _running_result(container_id: str = "abc123def456") -> MagicMock:

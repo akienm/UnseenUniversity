@@ -22,7 +22,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.push_sources import MachinesWatcher  # noqa: E402
+from unseen_university.devices.igor.cognition.push_sources import MachinesWatcher  # noqa: E402
 
 # ── MachinesWatcher evicts before push ───────────────────────────────────────
 
@@ -41,7 +41,7 @@ def test_machines_watcher_evicts_before_push_on_initial_load(tmp_path):
         lambda **kw: call_order.append(("push", kw["source"])) or 1
     )
 
-    with patch("devices.igor.cognition.push_sources.MACHINES_JSON", machines_json):
+    with patch("unseen_university.devices.igor.cognition.push_sources.MACHINES_JSON", machines_json):
         result = watcher.push(cortex)
 
     assert result == [1]
@@ -60,7 +60,7 @@ def test_machines_watcher_evicts_before_push_on_file_change(tmp_path):
     cortex = MagicMock()
     cortex.twm_push.return_value = 1
 
-    with patch("devices.igor.cognition.push_sources.MACHINES_JSON", machines_json):
+    with patch("unseen_university.devices.igor.cognition.push_sources.MACHINES_JSON", machines_json):
         watcher.push(cortex)
 
         machines_json.write_text('{"test": "v2-changed"}')
@@ -80,7 +80,7 @@ def test_machines_watcher_evicts_before_push_on_file_change(tmp_path):
 def test_cortex_exposes_twm_evict_source():
     """twm_evict_source must exist as a callable method on Cortex — the
     boot-singleton call sites depend on it."""
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     assert hasattr(Cortex, "twm_evict_source")
     assert callable(Cortex.twm_evict_source)

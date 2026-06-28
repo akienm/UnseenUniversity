@@ -29,7 +29,7 @@ _add_repo()
 class TestParseDeferred(unittest.TestCase):
 
     def _parse(self, text):
-        from devices.igor.tools.deferred_self_task import parse_deferred_tasks
+        from unseen_university.devices.igor.tools.deferred_self_task import parse_deferred_tasks
 
         return parse_deferred_tasks(text)
 
@@ -72,7 +72,7 @@ class TestParseDeferred(unittest.TestCase):
 class TestStripDeferred(unittest.TestCase):
 
     def _strip(self, text):
-        from devices.igor.tools.deferred_self_task import strip_deferred_tasks
+        from unseen_university.devices.igor.tools.deferred_self_task import strip_deferred_tasks
 
         return strip_deferred_tasks(text)
 
@@ -96,7 +96,7 @@ class TestStripDeferred(unittest.TestCase):
 class TestDispatchDeferred(unittest.TestCase):
 
     def _dispatch(self, task_type, payload="", extra_payload=""):
-        from devices.igor.tools.deferred_self_task import dispatch_deferred_task
+        from unseen_university.devices.igor.tools.deferred_self_task import dispatch_deferred_task
 
         mock_cortex = MagicMock()
         mock_jm = MagicMock()
@@ -137,7 +137,7 @@ class TestDispatchDeferred(unittest.TestCase):
 class TestPushDeferredResult(unittest.TestCase):
 
     def test_deferred_title_pushes_to_twm(self):
-        from devices.igor.tools.deferred_self_task import push_deferred_result_to_twm
+        from unseen_university.devices.igor.tools.deferred_self_task import push_deferred_result_to_twm
 
         mock_cortex = MagicMock()
         push_deferred_result_to_twm(
@@ -152,7 +152,7 @@ class TestPushDeferredResult(unittest.TestCase):
         self.assertIn("DEFERRED_RESULT", kwargs["content_csb"])
 
     def test_non_deferred_title_skips(self):
-        from devices.igor.tools.deferred_self_task import push_deferred_result_to_twm
+        from unseen_university.devices.igor.tools.deferred_self_task import push_deferred_result_to_twm
 
         mock_cortex = MagicMock()
         push_deferred_result_to_twm(
@@ -165,7 +165,7 @@ class TestJobFunctions(unittest.TestCase):
     """Unit tests for the job lambdas returned by _make_job_fn."""
 
     def test_memory_search_fn_returns_hits(self):
-        from devices.igor.tools.deferred_self_task import _make_job_fn
+        from unseen_university.devices.igor.tools.deferred_self_task import _make_job_fn
 
         mock_cortex = MagicMock()
         mock_mem = MagicMock()
@@ -179,7 +179,7 @@ class TestJobFunctions(unittest.TestCase):
         self.assertIn("reading list entry", result)
 
     def test_memory_search_fn_no_results(self):
-        from devices.igor.tools.deferred_self_task import _make_job_fn
+        from unseen_university.devices.igor.tools.deferred_self_task import _make_job_fn
 
         mock_cortex = MagicMock()
         mock_cortex.search.return_value = []
@@ -188,14 +188,14 @@ class TestJobFunctions(unittest.TestCase):
         self.assertIn("no results", result)
 
     def test_note_fn_returns_note(self):
-        from devices.igor.tools.deferred_self_task import _make_job_fn
+        from unseen_university.devices.igor.tools.deferred_self_task import _make_job_fn
 
         fn = _make_job_fn("note", "check back on reading list", MagicMock())
         result = fn()
         self.assertIn("check back on reading list", result)
 
     def test_twm_read_fn_empty(self):
-        from devices.igor.tools.deferred_self_task import _make_job_fn
+        from unseen_university.devices.igor.tools.deferred_self_task import _make_job_fn
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = []
@@ -204,7 +204,7 @@ class TestJobFunctions(unittest.TestCase):
         self.assertIn("empty", result)
 
     def test_twm_read_fn_with_items(self):
-        from devices.igor.tools.deferred_self_task import _make_job_fn
+        from unseen_university.devices.igor.tools.deferred_self_task import _make_job_fn
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = [

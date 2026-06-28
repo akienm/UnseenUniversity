@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from devices.igor.memory.cortex import (
+from unseen_university.devices.igor.memory.cortex import (
     _twm_decay_factor,
     _twm_effective_salience,
     _twm_pick_eviction_victims,

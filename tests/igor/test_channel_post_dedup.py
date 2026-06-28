@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-from devices.igor.tools import channel_post as cp
+from unseen_university.devices.igor.tools import channel_post as cp
 
 
 class TestDedupSuppression(unittest.TestCase):

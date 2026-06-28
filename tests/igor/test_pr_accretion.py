@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
-    from devices.igor.tools import seed_persistent_relationships as _seed
+    from unseen_university.devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
@@ -59,7 +59,7 @@ def cleanup_after_each():
 
 
 def test_pr_accrete_creates_episodic_with_facia_link():
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     mem_id = _pra.pr_accrete(
         facia_id="PR_AKIEN",
@@ -82,7 +82,7 @@ def test_pr_accrete_creates_episodic_with_facia_link():
 
 def test_pr_accrete_failure_returns_none_not_raise():
     """Passing junk should produce None, never an exception."""
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     # Empty facia_id is still accepted by the generic entry — the validation
     # is at the caller level (the dispatcher only calls when frame applies).
@@ -105,7 +105,7 @@ def test_pr_accrete_failure_returns_none_not_raise():
 
 
 def test_pr_accrete_exchange_stores_both_sides_verbatim():
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     user_text = (
         "Read this now: /home/akien/TheIgorsProject/akien/Readings/"
@@ -160,7 +160,7 @@ def test_pr_accrete_exchange_stores_both_sides_verbatim():
 
 
 def test_pr_accrete_exchange_narrative_is_truncated_summary():
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     # Realistic-looking long text — repeated raw chars (e.g. 'x' * 5000) trip
     # Igor's credential scrubber. A repeated sentence stays past the filter.
@@ -212,7 +212,7 @@ def test_pr_accrete_exchange_narrative_is_truncated_summary():
 
 
 def test_detect_marker_finds_explicit_phrases():
-    from devices.igor.tools.pr_accretion import detect_marker
+    from unseen_university.devices.igor.tools.pr_accretion import detect_marker
 
     assert detect_marker("Remember this: never delete the live db") == "remember this"
     assert detect_marker("don't forget the certificate path") == "don't forget"
@@ -223,7 +223,7 @@ def test_detect_marker_finds_explicit_phrases():
 
 
 def test_pr_accrete_marker_creates_marker_memory():
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     mem_id = _pra.pr_accrete_marker(
         facia_id="PR_AKIEN",
@@ -260,7 +260,7 @@ def test_pr_accrete_marker_creates_marker_memory():
 
 
 def test_pr_accrete_commitment_links_to_goal():
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     mem_id = _pra.pr_accrete_commitment(
         facia_id="PR_AKIEN",
@@ -296,7 +296,7 @@ def test_pr_accrete_commitment_links_to_goal():
 
 
 def test_pr_recent_accretions_orders_newest_first():
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     # Use a sentinel facia_id so Igor's concurrent PR_AKIEN writes don't
     # push our 3 test rows out of the limit=10 window.

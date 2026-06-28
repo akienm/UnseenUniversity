@@ -16,10 +16,10 @@ from __future__ import annotations
 import pytest
 from datetime import datetime, timezone, timedelta
 
-from devices.classifier.report import BuilderReport
-from devices.classifier.meta_classifier import classify_task
-from devices.classifier.device import ClassifierDevice, STALE_THRESHOLD_SECONDS
-from devices.classifier.shim import ClassifierShim
+from unseen_university.devices.classifier.report import BuilderReport
+from unseen_university.devices.classifier.meta_classifier import classify_task
+from unseen_university.devices.classifier.device import ClassifierDevice, STALE_THRESHOLD_SECONDS
+from unseen_university.devices.classifier.shim import ClassifierShim
 
 
 # ── BuilderReport ─────────────────────────────────────────────────────────────

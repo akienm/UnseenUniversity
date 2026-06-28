@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from devices.igor.tools.curiosity_recognition import (
+from unseen_university.devices.igor.tools.curiosity_recognition import (
     NOVELTY_SCORES,
     _jaccard,
     _tokenize,

@@ -20,7 +20,7 @@ def test_status_label_single_canonical_source():
         0, os.path.join(os.path.dirname(__file__), "..", "devlab", "claudecode")
     )
     canonical = importlib.import_module("unseen_university.ticket_status")
-    server = importlib.import_module("devices.web_server.server")
+    server = importlib.import_module("unseen_university.devices.web_server.server")
     queue_view = importlib.import_module("queue_view")
 
     # Same object identity, not just equal values — a change can't diverge.
@@ -73,8 +73,8 @@ def test_akien_is_not_legacy_anywhere():
 
 
 def _make_app():
-    import devices.web_server.server as _srv
-    with patch("devices.web_server.server._init_comms"):
+    import unseen_university.devices.web_server.server as _srv
+    with patch("unseen_university.devices.web_server.server._init_comms"):
         return _srv._make_app()
 
 
@@ -104,7 +104,7 @@ def _serving(rows: list[tuple]):
     bodies = _rows_to_bodies(rows)
     conn = MagicMock()  # truthy — clears the page's _db_conn banner check
     with (
-        patch("devices.web_server.server._db_conn", return_value=conn),
+        patch("unseen_university.devices.web_server.server._db_conn", return_value=conn),
         patch("unseen_university.ticket_store.list", return_value=bodies),
     ):
         yield
@@ -216,7 +216,7 @@ class TestPageQueue:
     def test_no_db_shows_unavailable(self):
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._db_conn", return_value=None):
+        with patch("unseen_university.devices.web_server.server._db_conn", return_value=None):
             with TestClient(app) as client:
                 html = client.get("/queue").text
         assert "DB unavailable" in html or "no-db" in html

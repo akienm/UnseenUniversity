@@ -34,31 +34,31 @@ def _make_source():
 
     # Stub out heavy imports before loading push_sources
     for mod_name in [
-        "devices.igor.igor_base",
-        "devices.igor.paths",
-        "devices.igor.cognition.forensic_logger",
+        "unseen_university.devices.igor.igor_base",
+        "unseen_university.devices.igor.paths",
+        "unseen_university.devices.igor.cognition.forensic_logger",
     ]:
         if mod_name not in sys.modules:
             sys.modules[mod_name] = types.ModuleType(mod_name)
 
     # Minimal IgorBase
-    igor_base_mod = sys.modules["devices.igor.igor_base"]
+    igor_base_mod = sys.modules["unseen_university.devices.igor.igor_base"]
     if not hasattr(igor_base_mod, "IgorBase"):
         igor_base_mod.IgorBase = object
 
     # Minimal paths()
-    paths_mod = sys.modules["devices.igor.paths"]
+    paths_mod = sys.modules["unseen_university.devices.igor.paths"]
     if not hasattr(paths_mod, "paths"):
         _p = MagicMock()
         _p.return_value = MagicMock()
         paths_mod.paths = _p
 
     # Minimal forensic_logger
-    fl_mod = sys.modules["devices.igor.cognition.forensic_logger"]
+    fl_mod = sys.modules["unseen_university.devices.igor.cognition.forensic_logger"]
     if not hasattr(fl_mod, "log_error"):
         fl_mod.log_error = lambda **kw: None
 
-    from devices.igor.cognition.push_sources import ThreadCoherenceSource
+    from unseen_university.devices.igor.cognition.push_sources import ThreadCoherenceSource
 
     return ThreadCoherenceSource()
 
@@ -243,7 +243,7 @@ class TestPush(unittest.TestCase):
         mock_paths = MagicMock()
         mock_paths.logs = log_dir
         return patch(
-            "devices.igor.cognition.push_sources.paths",
+            "unseen_university.devices.igor.cognition.push_sources.paths",
             return_value=mock_paths,
         )
 

@@ -28,8 +28,8 @@ import pytest
 
 def _make_app(tmp_circuit_file: Path, granny_home: Path):
     """Build a test Starlette app with isolated circuit file + granny home."""
-    import devices.web_server.server as srv
-    with patch("devices.web_server.server._init_comms"):
+    import unseen_university.devices.web_server.server as srv
+    with patch("unseen_university.devices.web_server.server._init_comms"):
         srv._CIRCUIT_STATE_FILE = tmp_circuit_file
         srv._GRANNY_HOME = granny_home
         return srv._make_app()
@@ -163,7 +163,7 @@ def test_toggle_uses_atomic_write(tmp_path):
     circuit_file = tmp_path / "circuit_state.json"
     granny_home = tmp_path / ".granny"
     app = _make_app(circuit_file, granny_home)
-    with patch("devices.web_server.server.os.replace") as mock_replace, \
+    with patch("unseen_university.devices.web_server.server.os.replace") as mock_replace, \
          patch("unseen_university.channel.post_to_channel", create=True):
         with TestClient(app) as client:
             resp = client.post("/api/devices/DS.0/toggle")

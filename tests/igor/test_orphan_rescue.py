@@ -22,7 +22,7 @@ from unittest.mock import MagicMock, patch, call
 
 def _make_cortex_offline():
     """Build a Cortex instance without touching any DB."""
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     c = Cortex.__new__(Cortex)
     c._instance_id = "test"
@@ -37,7 +37,7 @@ def _make_cortex_offline():
 
 def _fake_memory(mem_id, narrative, parent_id=None):
     """Return a minimal Memory-like mock."""
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     m = Memory(
         id=mem_id,
@@ -57,7 +57,7 @@ class TestOrphanRescueWiring(unittest.TestCase):
         With a large traversal pool (> 80 nodes), the old supplement never ran.
         Orphan rescue is separate and unconditional.
         """
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         c = Cortex.__new__(Cortex)
         c._instance_id = "test"
@@ -152,7 +152,7 @@ class TestOrphanRescueWiring(unittest.TestCase):
         Orphan nodes returned by the rescue query enter the candidate pool
         and can score/rank into results via text match.
         """
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         c = Cortex.__new__(Cortex)
         c._instance_id = "test"
@@ -254,7 +254,7 @@ class TestOrphanRescueWiring(unittest.TestCase):
         If an orphan node is already in the traversal pool, the rescue
         query result is filtered out (dedup by _seen_ids).
         """
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         c = Cortex.__new__(Cortex)
         c._instance_id = "test"

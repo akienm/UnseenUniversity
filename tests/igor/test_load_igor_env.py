@@ -12,7 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from devices.igor.env_sync import load_igor_env_into_environ
+from unseen_university.devices.igor.env_sync import load_igor_env_into_environ
 
 
 class TestLoadIgorEnvIntoEnviron(unittest.TestCase):

@@ -2,11 +2,11 @@
 
 from unittest.mock import patch
 
-import devices.web_server.server as _srv
+import unseen_university.devices.web_server.server as _srv
 
 
 def _make_app():
-    with patch("devices.web_server.server._init_comms"):
+    with patch("unseen_university.devices.web_server.server._init_comms"):
         return _srv._make_app()
 
 

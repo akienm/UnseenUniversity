@@ -15,7 +15,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition import anticipator, pursuits
+from unseen_university.devices.igor.cognition import anticipator, pursuits
 
 
 @pytest.fixture(autouse=True)

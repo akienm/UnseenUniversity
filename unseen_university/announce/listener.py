@@ -17,8 +17,8 @@ import logging
 import threading
 from dataclasses import asdict as _asdict
 
-from bus.envelope import Envelope
-from bus.imap_server import IMAPServer
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.bus.imap_server import IMAPServer
 
 from .broker import AnnounceBroker, AnnounceError
 from .channels import ChannelRegistry

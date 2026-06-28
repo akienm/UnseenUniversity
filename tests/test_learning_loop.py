@@ -87,7 +87,7 @@ class FakeEvaluator:
 
 
 def _make_loop(evaluator, db_url: str = "", cc_queue_path: str = "/dev/null"):
-    from devices.evaluator.loop import ObserveLearnImproveLoop
+    from unseen_university.devices.evaluator.loop import ObserveLearnImproveLoop
 
     return ObserveLearnImproveLoop(
         evaluator=evaluator,
@@ -196,7 +196,7 @@ class TestCriterion1_BadOutputFilesTicket:
 
         mock_run = MagicMock(returncode=0, stdout="  added: T-learn-abc — t\n")
         with patch("subprocess.run", return_value=mock_run):
-            with patch("devices.librarian.memory_writer.write_memory") as mock_write:
+            with patch("unseen_university.devices.librarian.memory_writer.write_memory") as mock_write:
                 mock_write.return_value = {"id": "mem-001", "tags": [], "stored_at": ""}
                 cycle = loop.run_cycle("bad code", "R-uu-core", "device-x", 0.6)
 
@@ -222,7 +222,7 @@ class TestCriterion2_UUEnrollment:
 
     def test_bad_device_gets_improvement_ticket(self, tmp_path):
         """A device that fails R-uu-core gets an improvement ticket filed."""
-        from devices.evaluator.uu_enrollment import run_uu_enrollment
+        from unseen_university.devices.evaluator.uu_enrollment import run_uu_enrollment
 
         device_dir = self._make_bad_device_dir(tmp_path, "bad-device")
         evaluator = FakeEvaluator(preset=_make_eval_result(verdict="fail", score=0.1))
@@ -230,7 +230,7 @@ class TestCriterion2_UUEnrollment:
 
         mock_run = MagicMock(returncode=0, stdout="  added: T-learn-x — t\n")
         with patch("subprocess.run", return_value=mock_run):
-            with patch("devices.evaluator.uu_enrollment._DEVICES_ROOT", tmp_path):
+            with patch("unseen_university.devices.evaluator.uu_enrollment._DEVICES_ROOT", tmp_path):
                 summary = run_uu_enrollment(
                     loop, rubric_id="R-uu-core", improve_threshold=0.6
                 )
@@ -240,7 +240,7 @@ class TestCriterion2_UUEnrollment:
 
     def test_good_device_no_ticket(self, tmp_path):
         """A device that passes R-uu-core does not get a ticket."""
-        from devices.evaluator.uu_enrollment import run_uu_enrollment
+        from unseen_university.devices.evaluator.uu_enrollment import run_uu_enrollment
 
         device_dir = tmp_path / "good-device"
         device_dir.mkdir()
@@ -257,7 +257,7 @@ class TestCriterion2_UUEnrollment:
         loop = _make_loop(evaluator)
 
         with patch("subprocess.run") as mock_run:
-            with patch("devices.evaluator.uu_enrollment._DEVICES_ROOT", tmp_path):
+            with patch("unseen_university.devices.evaluator.uu_enrollment._DEVICES_ROOT", tmp_path):
                 summary = run_uu_enrollment(
                     loop, rubric_id="R-uu-core", improve_threshold=0.6
                 )
@@ -267,7 +267,7 @@ class TestCriterion2_UUEnrollment:
 
     def test_build_output_includes_no_test_flag(self, tmp_path):
         """_build_output sets no_test=true when no test file exists."""
-        from devices.evaluator.uu_enrollment import _build_output, _test_exists
+        from unseen_university.devices.evaluator.uu_enrollment import _build_output, _test_exists
 
         device_dir = tmp_path / "no-test-device"
         device_dir.mkdir()
@@ -278,7 +278,7 @@ class TestCriterion2_UUEnrollment:
 
     def test_build_output_no_test_false_when_test_exists(self, tmp_path):
         """_build_output sets no_test=false when test file found."""
-        from devices.evaluator.uu_enrollment import _build_output
+        from unseen_university.devices.evaluator.uu_enrollment import _build_output
 
         device_dir = tmp_path / "tested-device"
         device_dir.mkdir()
@@ -288,13 +288,13 @@ class TestCriterion2_UUEnrollment:
         tests_dir.mkdir()
         (tests_dir / "test_tested_device.py").write_text("def test_x(): pass")
 
-        with patch("devices.evaluator.uu_enrollment._UU_ROOT", tmp_path):
+        with patch("unseen_university.devices.evaluator.uu_enrollment._UU_ROOT", tmp_path):
             output = _build_output(device_dir / "device.py")
         assert "no_test=false" in output
 
     def test_seed_uu_core_creates_rubric(self):
         """seed_uu_core_rubric() stores R-uu-core with expected criteria."""
-        from devices.evaluator.uu_enrollment import seed_uu_core_rubric
+        from unseen_university.devices.evaluator.uu_enrollment import seed_uu_core_rubric
 
         evaluator = FakeEvaluator()
         rubric_id = seed_uu_core_rubric(evaluator)

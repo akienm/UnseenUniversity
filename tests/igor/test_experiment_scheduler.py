@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.experiment import (  # noqa: E402
+from unseen_university.devices.igor.cognition.experiment import (  # noqa: E402
     Experiment,
     ExperimentStatus,
     Hypothesis,
@@ -23,7 +23,7 @@ from devices.igor.cognition.experiment import (  # noqa: E402
     Probe,
     ProbeKind,
 )
-from devices.igor.cognition.experiment_scheduler import (  # noqa: E402
+from unseen_university.devices.igor.cognition.experiment_scheduler import (  # noqa: E402
     DEFAULT_TIMEOUT_SEC,
     SAFE_PROBE_KINDS,
     ExperimentScheduler,
@@ -176,7 +176,7 @@ def test_run_one_unsupported_probe_kind_aborts():
         target="test",
     )
     # Temporarily shrink whitelist to force an abort
-    import devices.igor.cognition.experiment_scheduler as _mod
+    import unseen_university.devices.igor.cognition.experiment_scheduler as _mod
 
     orig = _mod.SAFE_PROBE_KINDS
     _mod.SAFE_PROBE_KINDS = frozenset()
@@ -206,7 +206,7 @@ def test_run_one_tool_call_unknown_tool_mismatches():
     )
 
     with patch(
-        "devices.igor.tools.registry.registry.get",
+        "unseen_university.devices.igor.tools.registry.registry.get",
         return_value=None,
     ):
         result = scheduler.run_one(exp)
@@ -228,11 +228,11 @@ def test_run_one_tool_call_success():
     fake_tool = MagicMock()
     with (
         patch(
-            "devices.igor.tools.registry.registry.get",
+            "unseen_university.devices.igor.tools.registry.registry.get",
             return_value=fake_tool,
         ),
         patch(
-            "devices.igor.tools.registry.registry.execute",
+            "unseen_university.devices.igor.tools.registry.registry.execute",
             return_value="ok: did the thing",
         ),
     ):
@@ -253,11 +253,11 @@ def test_run_one_tool_call_error_string_is_mismatch():
     fake_tool = MagicMock()
     with (
         patch(
-            "devices.igor.tools.registry.registry.get",
+            "unseen_university.devices.igor.tools.registry.registry.get",
             return_value=fake_tool,
         ),
         patch(
-            "devices.igor.tools.registry.registry.execute",
+            "unseen_university.devices.igor.tools.registry.registry.execute",
             return_value="Error: tool blew up",
         ),
     ):
@@ -372,7 +372,7 @@ def test_habit_dryrun_found():
         probe=Probe(kind=ProbeKind.HABIT_DRYRUN, target="habit-123"),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from devices.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
+    from unseen_university.devices.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
 
     obs = _dispatch_habit_dryrun(cortex, exp)
     assert obs.outcome == Outcome.MATCH
@@ -387,7 +387,7 @@ def test_habit_dryrun_not_found():
         probe=Probe(kind=ProbeKind.HABIT_DRYRUN, target="nonexistent"),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from devices.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
+    from unseen_university.devices.igor.cognition.experiment_scheduler import _dispatch_habit_dryrun
 
     obs = _dispatch_habit_dryrun(cortex, exp)
     assert obs.outcome == Outcome.MISMATCH
@@ -403,9 +403,9 @@ def test_channel_send_success():
         probe=Probe(kind=ProbeKind.CHANNEL_SEND, target="test message"),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from devices.igor.cognition.experiment_scheduler import _dispatch_channel_send
+    from unseen_university.devices.igor.cognition.experiment_scheduler import _dispatch_channel_send
 
-    with patch("devices.igor.tools.channel_post.post_to_channel") as mock_post:
+    with patch("unseen_university.devices.igor.tools.channel_post.post_to_channel") as mock_post:
         obs = _dispatch_channel_send(cortex, exp)
     assert obs.outcome == Outcome.MATCH
     mock_post.assert_called_once()
@@ -418,10 +418,10 @@ def test_channel_send_failure():
         probe=Probe(kind=ProbeKind.CHANNEL_SEND, target="test message"),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from devices.igor.cognition.experiment_scheduler import _dispatch_channel_send
+    from unseen_university.devices.igor.cognition.experiment_scheduler import _dispatch_channel_send
 
     with patch(
-        "devices.igor.tools.channel_post.post_to_channel",
+        "unseen_university.devices.igor.tools.channel_post.post_to_channel",
         side_effect=ConnectionError("down"),
     ):
         obs = _dispatch_channel_send(cortex, exp)
@@ -442,9 +442,9 @@ def test_sim_turn_cascade_match():
         ),
     )
     exp.advance(ExperimentStatus.RUNNING)
-    from devices.igor.cognition.experiment_scheduler import _dispatch_sim_turn
+    from unseen_university.devices.igor.cognition.experiment_scheduler import _dispatch_sim_turn
 
-    from devices.igor.cognition.experiment_cascade import (
+    from unseen_university.devices.igor.cognition.experiment_cascade import (
         CascadeResult,
         CascadeStatus,
     )
@@ -457,7 +457,7 @@ def test_sim_turn_cascade_match():
         reason="matched",
     )
     with patch(
-        "devices.igor.cognition.experiment_cascade.build_default_cascade",
+        "unseen_university.devices.igor.cognition.experiment_cascade.build_default_cascade",
         return_value=mock_cascade,
     ):
         obs = _dispatch_sim_turn(cortex, exp)

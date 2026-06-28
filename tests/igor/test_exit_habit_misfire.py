@@ -18,7 +18,7 @@ def _make_habit(
     trigger, author_filter=None, habit_type="action", code_ref="tools.runner:exit_self"
 ):
     """Build a minimal mock habit Memory."""
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     meta = {
         "trigger": trigger,
@@ -54,17 +54,17 @@ class TestAuthorFilterListSupport(unittest.TestCase):
     """author_filter stored as list must work correctly in select_habit."""
 
     def setUp(self):
-        from devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.cognition import basal_ganglia
 
         basal_ganglia._refractory_map.clear()
 
     def tearDown(self):
-        from devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.cognition import basal_ganglia
 
         basal_ganglia._refractory_map.clear()
 
     def _run_select(self, habits, text, author):
-        from devices.igor.cognition.basal_ganglia import select_habit
+        from unseen_university.devices.igor.cognition.basal_ganglia import select_habit
 
         parsed = _make_parsed(text=text)
         winner, _conf, _near = select_habit(parsed, habits, author=author)
@@ -125,7 +125,7 @@ class TestExitTriggerTightening(unittest.TestCase):
     )
 
     def _score(self, text):
-        from devices.igor.cognition.basal_ganglia import _score_habit
+        from unseen_university.devices.igor.cognition.basal_ganglia import _score_habit
 
         habit = _make_habit(trigger=self.NEW_TRIGGER)
         return _score_habit(habit, text.lower(), set(text.lower().split()))

@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch
 from dataclasses import dataclass
 
-from devices.igor.cognition.emit_channels import (
+from unseen_university.devices.igor.cognition.emit_channels import (
     get_registry,
     BasketChannel,
     EmotionalMilieuChannel,
@@ -17,7 +17,7 @@ from devices.igor.cognition.emit_channels import (
     WebChannel,
     MemoryChannel,
 )
-from devices.igor.memory.models import Memory, MemoryType
+from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
 
 class TestBasketChannel:
@@ -173,7 +173,7 @@ class TestMemoryChannel:
         basket = {}  # No _cortex
 
         # Should not raise, should just log warning
-        with patch("devices.igor.cognition.emit_channels.log") as mock_log:
+        with patch("unseen_university.devices.igor.cognition.emit_channels.log") as mock_log:
             channel.write("EPISODIC", "Content", basket)
             mock_log.warning.assert_called()
 
@@ -183,7 +183,7 @@ class TestMemoryChannel:
         mock_cortex = Mock()
         basket = {"_cortex": mock_cortex}
 
-        with patch("devices.igor.cognition.emit_channels.log") as mock_log:
+        with patch("unseen_university.devices.igor.cognition.emit_channels.log") as mock_log:
             channel.write("INVALID_TYPE", "Content", basket)
             mock_log.warning.assert_called()
             mock_cortex.store.assert_not_called()
@@ -250,7 +250,7 @@ class TestEmitChannelRegistry:
         registry = get_registry()
         basket = {}
 
-        with patch("devices.igor.cognition.emit_channels.log") as mock_log:
+        with patch("unseen_university.devices.igor.cognition.emit_channels.log") as mock_log:
             registry.write("nonexistent_channel", "key", "value", basket)
             mock_log.warning.assert_called()
 

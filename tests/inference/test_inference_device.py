@@ -12,10 +12,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.inference.device import InferenceDevice
-from devices.inference.models_registry import default_registry
-from devices.inference.shim import InferenceRequest, InferenceResponse
-from devices.inference.sources import SourceRegistry
+from unseen_university.devices.inference.device import InferenceDevice
+from unseen_university.devices.inference.models_registry import default_registry
+from unseen_university.devices.inference.shim import InferenceRequest, InferenceResponse
+from unseen_university.devices.inference.sources import SourceRegistry
 from unseen_university.device import INTERFACE_VERSION
 
 
@@ -78,13 +78,13 @@ def test_interface_version(or_device):
 
 
 def test_health_openrouter_reachable(or_device):
-    with patch("devices.inference.device._openrouter_reachable", return_value=True):
+    with patch("unseen_university.devices.inference.device._openrouter_reachable", return_value=True):
         h = or_device.health()
     assert h["status"] == "healthy"
 
 
 def test_health_openrouter_unreachable(or_device):
-    with patch("devices.inference.device._openrouter_reachable", return_value=False):
+    with patch("unseen_university.devices.inference.device._openrouter_reachable", return_value=False):
         h = or_device.health()
     assert h["status"] == "unhealthy"
 
@@ -97,13 +97,13 @@ def test_health_blocked_returns_unhealthy(or_device):
 
 
 def test_health_ollama_reachable(ollama_device):
-    with patch("devices.inference.device._ollama_reachable", return_value=True):
+    with patch("unseen_university.devices.inference.device._ollama_reachable", return_value=True):
         h = ollama_device.health()
     assert h["status"] == "healthy"
 
 
 def test_health_ollama_unreachable(ollama_device):
-    with patch("devices.inference.device._ollama_reachable", return_value=False):
+    with patch("unseen_university.devices.inference.device._ollama_reachable", return_value=False):
         h = ollama_device.health()
     assert h["status"] == "unhealthy"
 
@@ -206,7 +206,7 @@ def test_dispatch_via_rules_engine(or_device):
     }
     or_device._sources.register(mock_src)
     or_device._rules = __import__(
-        "devices.inference.rules_engine", fromlist=["RulesEngine"]
+        "unseen_university.devices.inference.rules_engine", fromlist=["RulesEngine"]
     ).RulesEngine(or_device._sources, or_device._models)
 
     req = InferenceRequest(

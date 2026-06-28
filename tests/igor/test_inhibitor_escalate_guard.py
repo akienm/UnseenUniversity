@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.igor.cognition import response_coherence_inhibitor as rci
+from unseen_university.devices.igor.cognition import response_coherence_inhibitor as rci
 
 
 @pytest.fixture(autouse=True)
@@ -73,7 +73,7 @@ class TestCheckCoherenceStuckPath:
 
     def test_stuck_path_returns_stuck_reason(self):
         c = self._cortex_stub()
-        with patch("devices.igor.tools.channel_post.post_to_channel") as mock_post:
+        with patch("unseen_university.devices.igor.tools.channel_post.post_to_channel") as mock_post:
             result = self._fire_until_stuck(c)
         assert result["reason"] == "stuck_escalated"
         assert result["fire_count"] == rci._INHIBITOR_ESCALATE_N

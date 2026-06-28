@@ -5,7 +5,7 @@ import time
 
 
 def test_stop_returns_elapsed():
-    from devices.igor.logging_setup import get_timer
+    from unseen_university.devices.igor.logging_setup import get_timer
 
     log = logging.getLogger("test.timer")
     timer = get_timer(log, "test_op")
@@ -15,7 +15,7 @@ def test_stop_returns_elapsed():
 
 
 def test_stop_emits_log_line(caplog):
-    from devices.igor.logging_setup import get_timer
+    from unseen_university.devices.igor.logging_setup import get_timer
 
     log = logging.getLogger("test.timer.emit")
     with caplog.at_level(logging.DEBUG, logger="test.timer.emit"):
@@ -32,7 +32,7 @@ def test_stop_emits_log_line(caplog):
 
 
 def test_context_kwargs_in_every_stop(caplog):
-    from devices.igor.logging_setup import get_timer
+    from unseen_university.devices.igor.logging_setup import get_timer
 
     log = logging.getLogger("test.timer.ctx")
     with caplog.at_level(logging.DEBUG, logger="test.timer.ctx"):
@@ -45,7 +45,7 @@ def test_context_kwargs_in_every_stop(caplog):
 
 
 def test_level_respected(caplog):
-    from devices.igor.logging_setup import get_timer
+    from unseen_university.devices.igor.logging_setup import get_timer
 
     log = logging.getLogger("test.timer.level")
     with caplog.at_level(logging.INFO, logger="test.timer.level"):
@@ -61,7 +61,7 @@ def test_level_respected(caplog):
 
 def test_igor_base_self_log_get_timer(caplog):
     """self.log.get_timer() works from any IgorBase subclass."""
-    from devices.igor.igor_base import IgorBase
+    from unseen_university.devices.igor.igor_base import IgorBase
 
     class MyComponent(IgorBase):
         def do_work(self):
@@ -81,7 +81,7 @@ def test_igor_base_self_log_get_timer(caplog):
 
 
 def test_elapsed_increases_with_sleep():
-    from devices.igor.logging_setup import get_timer
+    from unseen_university.devices.igor.logging_setup import get_timer
 
     log = logging.getLogger("test.timer.sleep")
     timer = get_timer(log, "slow_op")

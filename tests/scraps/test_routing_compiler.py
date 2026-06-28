@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from devices.scraps.jobs.routing_compiler import CompileDownProposal, RoutingCompiler
+from unseen_university.devices.scraps.jobs.routing_compiler import CompileDownProposal, RoutingCompiler
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -332,9 +332,9 @@ def test_rules_engine_add_compiled_rule():
     """add_compiled_rule prepends a new rule and it takes priority in routing."""
     from unittest.mock import MagicMock
 
-    from devices.inference.models_registry import ModelsRegistry, ModelSpec
-    from devices.inference.rules_engine import RoutingRule, RulesEngine
-    from devices.inference.sources import Source, SourceRegistry
+    from unseen_university.devices.inference.models_registry import ModelsRegistry, ModelSpec
+    from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
+    from unseen_university.devices.inference.sources import Source, SourceRegistry
 
     sources = SourceRegistry()
     src = MagicMock(spec=Source)

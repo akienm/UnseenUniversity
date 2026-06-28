@@ -7,8 +7,8 @@ import os
 import psycopg2
 import pytest
 
-from devices.librarian.memory_writer import write_memory
-from devices.librarian.recall import recall
+from unseen_university.devices.librarian.memory_writer import write_memory
+from unseen_university.devices.librarian.recall import recall
 
 _DB_URL = os.environ.get("UU_HOME_DB_URL", "")
 

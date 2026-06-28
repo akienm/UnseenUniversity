@@ -24,7 +24,7 @@ def igor_home(tmp_path, monkeypatch):
 class TestDemoDaemon:
     def _reload_module(self):
         import importlib
-        import devices.demo_daemon.groundloop.runme as mod
+        import unseen_university.devices.demo_daemon.groundloop.runme as mod
         importlib.reload(mod)
         return mod
 
@@ -78,7 +78,7 @@ class TestDemoDaemon:
         assert "poll_interval_s" in data
 
     def test_supervisor_discovers_demo_daemon(self, igor_home):
-        from devices.ground_loop.supervisor import RunmeSupervisor
+        from unseen_university.devices.ground_loop.supervisor import RunmeSupervisor
         repo = Path(".")
         sup = RunmeSupervisor(repo)
         sup.scan()

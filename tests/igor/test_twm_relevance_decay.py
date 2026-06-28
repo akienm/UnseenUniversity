@@ -28,7 +28,7 @@ def make_cortex():
     and no internal __init__ patching is required.
     """
     import types
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     class _CortexStub:
         _instance_id = "test-instance"
@@ -164,7 +164,7 @@ class TestTwmApplyGoalDecay:
         mock_conn = self._setup_conn(cortex, rows, goal_text="write python code")
 
         with patch(
-            "devices.igor.memory.cortex.os.getenv",
+            "unseen_university.devices.igor.memory.cortex.os.getenv",
             side_effect=lambda k, d=None: (
                 "2.0" if k == "IGOR_TWM_GOAL_DECAY_PENALTY" else os.getenv(k, d)
             ),
@@ -316,7 +316,7 @@ class TestEmitChannelsGoalDecayIntegration:
 
     def test_active_goal_push_triggers_goal_decay(self):
         """When ACTIVE_GOAL is pushed, twm_apply_goal_decay should be called."""
-        from devices.igor.cognition.emit_channels import CognitiveMilieuChannel
+        from unseen_university.devices.igor.cognition.emit_channels import CognitiveMilieuChannel
 
         channel = CognitiveMilieuChannel()
         mock_cortex = MagicMock()
@@ -331,7 +331,7 @@ class TestEmitChannelsGoalDecayIntegration:
 
     def test_non_goal_push_does_not_trigger_goal_decay(self):
         """Non-ACTIVE_GOAL pushes should NOT call twm_apply_goal_decay."""
-        from devices.igor.cognition.emit_channels import CognitiveMilieuChannel
+        from unseen_university.devices.igor.cognition.emit_channels import CognitiveMilieuChannel
 
         channel = CognitiveMilieuChannel()
         mock_cortex = MagicMock()

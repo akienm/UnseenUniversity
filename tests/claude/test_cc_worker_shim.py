@@ -26,7 +26,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from devices.claude.worker_shim import CCWorkerShim, _worker_id_to_mailbox
+from unseen_university.devices.claude.worker_shim import CCWorkerShim, _worker_id_to_mailbox
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ def test_worker_id_to_mailbox():
 def test_start_no_ops_when_circuit_open():
     s = _shim()
     with patch.object(s, "check_circuit", return_value=True):
-        with patch("bus.connection.make_bus_connection") as mock_bus:
+        with patch("unseen_university.devices.bus.connection.make_bus_connection") as mock_bus:
             result = s.start()
     assert result is False
     mock_bus.assert_not_called()
@@ -80,11 +80,11 @@ def test_start_creates_listener_thread_when_circuit_closed():
 
     with patch.object(s, "check_circuit", return_value=False), \
          patch.object(s, "_listener_alive", return_value=False), \
-         patch("devices.claude.worker_shim.announce"), \
+         patch("unseen_university.devices.claude.worker_shim.announce"), \
          patch.object(s, "_mark_available"), \
          patch.object(s, "_post_status"), \
-         patch("devices.granny.cc_worker_listener.CCWorkerListener", return_value=mock_listener) as MockCWL, \
-         patch("bus.connection.make_bus_connection", return_value=mock_imap):
+         patch("unseen_university.devices.granny.cc_worker_listener.CCWorkerListener", return_value=mock_listener) as MockCWL, \
+         patch("unseen_university.devices.bus.connection.make_bus_connection", return_value=mock_imap):
         result = s.start()
 
     assert result is True
@@ -107,7 +107,7 @@ def test_stop_calls_listener_stop():
     mock_listener = MagicMock()
     s._listener = mock_listener
 
-    with patch("devices.claude.worker_shim.withdraw"), \
+    with patch("unseen_university.devices.claude.worker_shim.withdraw"), \
          patch.object(s, "_mark_unavailable"), \
          patch.object(s, "_cancel_active_handshakes"), \
          patch.object(s, "_post_status"):
@@ -121,7 +121,7 @@ def test_stop_clears_listener_reference():
     s = _shim()
     s._listener = MagicMock()
 
-    with patch("devices.claude.worker_shim.withdraw"), \
+    with patch("unseen_university.devices.claude.worker_shim.withdraw"), \
          patch.object(s, "_mark_unavailable"), \
          patch.object(s, "_cancel_active_handshakes"), \
          patch.object(s, "_post_status"):
@@ -134,7 +134,7 @@ def test_stop_graceful_when_no_listener():
     s = _shim()
     assert s._listener is None
 
-    with patch("devices.claude.worker_shim.withdraw"), \
+    with patch("unseen_university.devices.claude.worker_shim.withdraw"), \
          patch.object(s, "_mark_unavailable"), \
          patch.object(s, "_cancel_active_handshakes"), \
          patch.object(s, "_post_status"):

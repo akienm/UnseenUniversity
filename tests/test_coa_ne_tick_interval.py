@@ -14,7 +14,7 @@ def _make_stub(last_run_ago: float, monkeypatch, interval: float = 30.0):
     """Build a minimal COA stub with _ne_last_run_time set to `last_run_ago` seconds ago."""
     monkeypatch.setenv("IGOR_NE_TICK_INTERVAL", str(interval))
 
-    import devices.igor.cognition.coa as coa_mod
+    import unseen_university.devices.igor.cognition.coa as coa_mod
 
     stub = object.__new__(coa_mod.COA)
     stub._ne_last_run_time = time.monotonic() - last_run_ago

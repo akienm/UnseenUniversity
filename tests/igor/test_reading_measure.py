@@ -59,7 +59,7 @@ def _make_fake_cortex(node_count=10, edge_count=25, embedded=5, activated=3):
 
 def test_reading_graph_baseline_format():
     """_format_report returns expected fields."""
-    from devices.igor.tools import reading_measure
+    from unseen_university.devices.igor.tools import reading_measure
 
     stats = {
         "node_count": 10,
@@ -87,7 +87,7 @@ def test_reading_graph_baseline_format():
 
 def test_gather_stats_no_nodes():
     """_gather_stats returns error dict when book has no nodes."""
-    from devices.igor.tools import reading_measure
+    from unseen_university.devices.igor.tools import reading_measure
 
     fake_cortex = MagicMock()
     conn_ctx = MagicMock()
@@ -108,7 +108,7 @@ def test_gather_stats_no_nodes():
 
 def test_reading_graph_baseline_registered():
     """Tool is registered in the registry."""
-    from devices.igor.tools.registry import registry
+    from unseen_university.devices.igor.tools.registry import registry
 
     tool = registry.get("reading_graph_baseline")
     assert tool is not None

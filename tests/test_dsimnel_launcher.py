@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from devices.dicksimnel.shim import DickSimnelShim, _FLAG_DIR, _AVAILABLE_FLAG, _BLOCKED_FLAG
+from unseen_university.devices.dicksimnel.shim import DickSimnelShim, _FLAG_DIR, _AVAILABLE_FLAG, _BLOCKED_FLAG
 
 
 @pytest.fixture()
@@ -16,9 +16,9 @@ def tmp_flag_dir(tmp_path, monkeypatch):
     """Redirect semaphore flags to a temp dir so tests don't touch ~/.granny."""
     flag_dir = tmp_path / "available"
     flag_dir.mkdir()
-    monkeypatch.setattr("devices.dicksimnel.shim._FLAG_DIR", flag_dir)
-    monkeypatch.setattr("devices.dicksimnel.shim._AVAILABLE_FLAG", flag_dir / "DickSimnel.0.available.true")
-    monkeypatch.setattr("devices.dicksimnel.shim._BLOCKED_FLAG", flag_dir / "DickSimnel.0.available.false")
+    monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._FLAG_DIR", flag_dir)
+    monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._AVAILABLE_FLAG", flag_dir / "DickSimnel.0.available.true")
+    monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._BLOCKED_FLAG", flag_dir / "DickSimnel.0.available.false")
     return flag_dir
 
 
@@ -63,13 +63,13 @@ class TestDickSimnelGrannyIntegration:
         flag_dir.mkdir(parents=True)
         (flag_dir / "DickSimnel.0.available.true").write_text("true")
 
-        monkeypatch.setattr("devices.granny.daemon.Path", type(
+        monkeypatch.setattr("unseen_university.devices.granny.daemon.Path", type(
             "Path", (), {"home": staticmethod(lambda: tmp_path),
                          "__truediv__": lambda s, x: tmp_path / x}
         ))
         # Simpler: patch Path.home in the module's namespace
         import pathlib
-        from devices.granny.daemon import _dicksimnel_available
+        from unseen_university.devices.granny.daemon import _dicksimnel_available
         monkeypatch.setattr(pathlib.Path, "home", classmethod(lambda cls: tmp_path))
         assert _dicksimnel_available() is True
 
@@ -80,6 +80,6 @@ class TestDickSimnelGrannyIntegration:
         # No .true flag written
 
         import pathlib
-        from devices.granny.daemon import _dicksimnel_available
+        from unseen_university.devices.granny.daemon import _dicksimnel_available
         monkeypatch.setattr(pathlib.Path, "home", classmethod(lambda cls: tmp_path))
         assert _dicksimnel_available() is False

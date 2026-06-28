@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
-    from devices.igor.tools import seed_persistent_relationships as _seed
+    from unseen_university.devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
@@ -46,7 +46,7 @@ def _delete_test_accretions():
 
 def _reset_akien_weight_to_one():
     """Restore PR_AKIEN cumulative_investment_weight to exactly 1.0."""
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     row = _pr._resolve_facia("PR_AKIEN")
     if row:
@@ -65,7 +65,7 @@ def cleanup_each():
 
 def _seed_accretion(facia_id: str, content_type: str, ord_n: int = 0) -> str:
     """Helper: create a tagged test accretion."""
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     return _pra.pr_accrete(
         facia_id=facia_id,
@@ -79,14 +79,14 @@ def _seed_accretion(facia_id: str, content_type: str, ord_n: int = 0) -> str:
 
 
 def test_weight_delta_inactive_pass_decays():
-    from devices.igor.tools.pr_consolidation import compute_weight_delta
+    from unseen_university.devices.igor.tools.pr_consolidation import compute_weight_delta
 
     delta = compute_weight_delta({"exchange": 0, "marker": 0, "commitment": 0})
     assert delta == -0.02
 
 
 def test_weight_delta_single_exchange_small_positive():
-    from devices.igor.tools.pr_consolidation import compute_weight_delta
+    from unseen_university.devices.igor.tools.pr_consolidation import compute_weight_delta
 
     delta = compute_weight_delta({"exchange": 1, "marker": 0, "commitment": 0})
     # 1 * 1.0 weight * 0.01 = 0.01
@@ -94,7 +94,7 @@ def test_weight_delta_single_exchange_small_positive():
 
 
 def test_weight_delta_caps_at_max_per_pass():
-    from devices.igor.tools.pr_consolidation import compute_weight_delta
+    from unseen_university.devices.igor.tools.pr_consolidation import compute_weight_delta
 
     # 100 exchanges → would be 1.0 raw, but capped at 0.10
     delta = compute_weight_delta({"exchange": 100, "marker": 0, "commitment": 0})
@@ -102,7 +102,7 @@ def test_weight_delta_caps_at_max_per_pass():
 
 
 def test_weight_delta_commitments_weighted_higher_than_exchanges():
-    from devices.igor.tools.pr_consolidation import compute_weight_delta
+    from unseen_university.devices.igor.tools.pr_consolidation import compute_weight_delta
 
     # 1 commitment (weight 5) vs 1 exchange (weight 1)
     just_exchange = compute_weight_delta({"exchange": 1})
@@ -113,7 +113,7 @@ def test_weight_delta_commitments_weighted_higher_than_exchanges():
 
 
 def test_weight_delta_markers_between_exchange_and_commitment():
-    from devices.igor.tools.pr_consolidation import compute_weight_delta
+    from unseen_university.devices.igor.tools.pr_consolidation import compute_weight_delta
 
     e = compute_weight_delta({"exchange": 1})
     m = compute_weight_delta({"marker": 1})
@@ -125,8 +125,8 @@ def test_weight_delta_markers_between_exchange_and_commitment():
 
 
 def test_consolidate_with_no_accretions_decays_weight():
-    from devices.igor.tools import pr_consolidation as _prc
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import pr_consolidation as _prc
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     # Use a since_ts in the future so no accretions match — simulates inactivity
     summary = _prc.pr_consolidate(facia_id="PR_AKIEN", since_ts="2099-01-01")
@@ -139,8 +139,8 @@ def test_consolidate_with_no_accretions_decays_weight():
 
 
 def test_consolidate_with_active_accretions_increases_weight():
-    from devices.igor.tools import pr_consolidation as _prc
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import pr_consolidation as _prc
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     _seed_accretion("PR_AKIEN", "exchange", 1)
     _seed_accretion("PR_AKIEN", "exchange", 2)
@@ -165,8 +165,8 @@ def test_consolidate_with_active_accretions_increases_weight():
 
 
 def test_consolidate_writes_consolidation_summary_memory():
-    from devices.igor.tools import pr_consolidation as _prc
-    from devices.igor.tools import pr_accretion as _pra
+    from unseen_university.devices.igor.tools import pr_consolidation as _prc
+    from unseen_university.devices.igor.tools import pr_accretion as _pra
 
     _seed_accretion("PR_AKIEN", "exchange", 1)
     _prc.pr_consolidate(facia_id="PR_AKIEN")
@@ -201,8 +201,8 @@ def test_consolidate_writes_consolidation_summary_memory():
 
 
 def test_consolidate_clamps_weight_to_max():
-    from devices.igor.tools import pr_consolidation as _prc
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import pr_consolidation as _prc
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     # Push baseline up to near-max
     _pr.pr_update_weight(name="PR_AKIEN", delta=0.95)  # 1.0 + 0.95 = 1.95
@@ -222,8 +222,8 @@ def test_consolidate_clamps_weight_to_max():
 
 
 def test_consolidate_clamps_weight_to_min():
-    from devices.igor.tools import pr_consolidation as _prc
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import pr_consolidation as _prc
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     # Push baseline down to near-zero
     _pr.pr_update_weight(name="PR_AKIEN", delta=-0.99)  # 1.0 - 0.99 = 0.01
@@ -242,7 +242,7 @@ def test_consolidate_clamps_weight_to_min():
 
 
 def test_consolidate_unknown_facia_returns_error_string():
-    from devices.igor.tools import pr_consolidation as _prc
+    from unseen_university.devices.igor.tools import pr_consolidation as _prc
 
     out = _prc.pr_consolidate(facia_id="PR_NONEXISTENT")
     assert "[ERROR]" in out
@@ -253,7 +253,7 @@ def test_consolidate_unknown_facia_returns_error_string():
 
 
 def test_consolidate_all_processes_active_facia():
-    from devices.igor.tools import pr_consolidation as _prc
+    from unseen_university.devices.igor.tools import pr_consolidation as _prc
 
     out = _prc.pr_consolidate_all(since_ts="2099-01-01")
     assert "PR_AKIEN" in out
@@ -261,8 +261,8 @@ def test_consolidate_all_processes_active_facia():
 
 
 def test_consolidate_all_skips_dormant():
-    from devices.igor.tools import pr_consolidation as _prc
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import pr_consolidation as _prc
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     # Set PR_IGORS_PROJECT dormant temporarily
     _pr.pr_set_status(name="PR_IGORS_PROJECT", status="dormant")

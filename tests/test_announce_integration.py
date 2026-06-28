@@ -27,10 +27,10 @@ from unseen_university.announce import (
     ANNOUNCE_MAILBOX,
     IdentityEnvelope,
 )
-from unseen_university.skeleton.skeleton import Skeleton
-from bus.envelope import Envelope
-from bus.imap_server import IMAPServer
-from skeleton.registry import DeviceRegistry
+from unseen_university.devices.skeleton.skeleton import Skeleton
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.bus.imap_server import IMAPServer
+from unseen_university.devices.skeleton.registry import DeviceRegistry
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
 

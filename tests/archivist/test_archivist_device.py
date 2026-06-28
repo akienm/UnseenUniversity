@@ -13,10 +13,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from devices.archivist.device import ArchivistDevice
-from devices.archivist.shim import ArchivistShim
-from devices.inference.shim import InferenceRequest, InferenceResponse
-from skeleton.registry import DeviceRegistry
+from unseen_university.devices.archivist.device import ArchivistDevice
+from unseen_university.devices.archivist.shim import ArchivistShim
+from unseen_university.devices.inference.shim import InferenceRequest, InferenceResponse
+from unseen_university.devices.skeleton.registry import DeviceRegistry
 from unseen_university.device import INTERFACE_VERSION
 
 
@@ -106,13 +106,13 @@ def test_dispatch_calls_inference_dispatch(device):
 
 
 def test_dispatch_logs_proxy_intercept(device, caplog):
-    with caplog.at_level(logging.INFO, logger="devices.archivist.proxy"):
+    with caplog.at_level(logging.INFO, logger="unseen_university.devices.archivist.proxy"):
         device.dispatch(_make_request())
     assert any("PROXY_INTERCEPT" in r.message for r in caplog.records)
 
 
 def test_dispatch_logs_graph_hit_false(device, caplog):
-    with caplog.at_level(logging.INFO, logger="devices.archivist.proxy"):
+    with caplog.at_level(logging.INFO, logger="unseen_university.devices.archivist.proxy"):
         device.dispatch(_make_request())
     proxy_records = [r for r in caplog.records if "PROXY_INTERCEPT" in r.message]
     assert len(proxy_records) == 1

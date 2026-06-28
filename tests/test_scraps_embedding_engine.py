@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from devices.scraps.embedding_engine import (
+from unseen_university.devices.scraps.embedding_engine import (
     _FALLBACK_DIMENSION,
     _FALLBACK_MODEL,
     embed,

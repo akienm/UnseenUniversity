@@ -82,8 +82,8 @@ def _call_anthropic(selection: ModelSelection, prompt: str) -> str:
 
 
 def _call_via_inference_device(selection: ModelSelection, prompt: str) -> str:
-    from devices.inference.device import InferenceDevice
-    from devices.inference.shim import InferenceRequest
+    from unseen_university.devices.inference.device import InferenceDevice
+    from unseen_university.devices.inference.shim import InferenceRequest
 
     device = InferenceDevice(mode=selection.backend)
     req = InferenceRequest(
@@ -282,7 +282,7 @@ class ResearchEngine:
         the intent device is unavailable.
         """
         try:
-            from devices.intent.tools import intent_validate
+            from unseen_university.devices.intent.tools import intent_validate
             intent_validate(actual_outcome=answer[:500], prediction_id=None)
             log.debug("research: seeded intent extractor with research outcome")
         except ImportError:

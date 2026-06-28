@@ -13,7 +13,7 @@ import threading
 
 import pytest
 
-from devices.igor.cognition import boredom as br
+from unseen_university.devices.igor.cognition import boredom as br
 
 
 @pytest.fixture

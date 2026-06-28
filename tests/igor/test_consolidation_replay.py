@@ -26,7 +26,7 @@ from unittest.mock import MagicMock, patch, call
 
 def _make_cortex_offline():
     """Build a Cortex instance without touching any DB."""
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     c = Cortex.__new__(Cortex)
     c._instance_id = "test"
@@ -40,7 +40,7 @@ def _make_cortex_offline():
 
 def _fake_memory(mem_id, narrative, memory_type="FACTUAL", source="", timestamp=None):
     """Return a minimal Memory-like mock."""
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     mt = MemoryType[memory_type] if memory_type else MemoryType.FACTUAL
     m = Memory(
@@ -62,13 +62,13 @@ class TestConsolidationReplay(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        from devices.igor.cognition.replay import ConsolidationReplay
+        from unseen_university.devices.igor.cognition.replay import ConsolidationReplay
 
         self.replay = ConsolidationReplay()
 
     def test_replay_creates_edges_between_co_deposited_nodes(self):
         """Verify that edges are created between nodes in the same group."""
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         cortex = _make_cortex_offline()
 
@@ -153,7 +153,7 @@ class TestConsolidationReplay(unittest.TestCase):
 
     def test_max_pairs_limit_respected(self):
         """Verify that max_pairs_per_pass limit is enforced."""
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         # Create a large group of nodes
         now = datetime.now()
@@ -170,7 +170,7 @@ class TestConsolidationReplay(unittest.TestCase):
             nodes.append(node)
 
         # Mock cortex
-        from devices.igor.memory.models import MemoryType
+        from unseen_university.devices.igor.memory.models import MemoryType
 
         cortex = _make_cortex_offline()
         cortex.get = MagicMock(
@@ -264,7 +264,7 @@ class TestConsolidationReplay(unittest.TestCase):
         """Verify that _upsert_edge creates a new edge correctly."""
         cortex = _make_cortex_offline()
 
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         node_a = Memory(
             id="FACT_CLOUD_AAAA",
@@ -292,7 +292,7 @@ class TestConsolidationReplay(unittest.TestCase):
         """Verify that _upsert_edge strengthens an existing edge correctly."""
         cortex = _make_cortex_offline()
 
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         node_a = Memory(
             id="FACT_CLOUD_AAAA",
@@ -321,7 +321,7 @@ class TestConsolidationReplay(unittest.TestCase):
         """Verify that edge weight is capped at 1.0."""
         cortex = _make_cortex_offline()
 
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         node_a = Memory(
             id="FACT_CLOUD_AAAA",

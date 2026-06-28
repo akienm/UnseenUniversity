@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.summarizer.device import (
+from unseen_university.devices.summarizer.device import (
     SummarizerDevice,
     _chunk_text,
     _fetch_url,

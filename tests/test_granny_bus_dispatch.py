@@ -17,8 +17,8 @@ from unittest.mock import patch
 
 import pytest
 
-from bus.envelope import Envelope
-from devices.granny.daemon import (
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.granny.daemon import (
     DISPATCH_ACK_TIMEOUT_S,
     _GRANNY_MAILBOX_DEFAULT,
     _cc0_busy,
@@ -118,7 +118,7 @@ class TestDispatchBus:
         ticket = {"id": "T-abc", "title": "test"}
         mock_run, _ = _mock_run_factory()
 
-        with patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
+        with patch("unseen_university.devices.granny.daemon.subprocess.run", side_effect=mock_run):
             ok = _dispatch_bus(ticket, imap, "cc.0", "granny.0")
 
         assert ok
@@ -135,7 +135,7 @@ class TestDispatchBus:
         ticket = {"id": "T-xyz"}
         fake_ss, calls = _mock_setstatus_factory()
 
-        with patch("devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
+        with patch("unseen_university.devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
             _dispatch_bus(ticket, imap, "cc.0", "granny.0")
 
         assert ["T-xyz", "dispatched"] in calls
@@ -154,7 +154,7 @@ class TestDispatchBus:
         ticket = {"id": "T-mb"}
         mock_run, _ = _mock_run_factory()
 
-        with patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
+        with patch("unseen_university.devices.granny.daemon.subprocess.run", side_effect=mock_run):
             _dispatch_bus(ticket, imap, "cc.0", "granny-custom.0")
 
         env = imap._boxes["cc.0"][0]
@@ -170,7 +170,7 @@ class TestProcessHandshakeReplies:
         imap.inject_reply(_GRANNY_MAILBOX_DEFAULT, kind, ticket_id)
         fake_ss, calls = _mock_setstatus_factory()
 
-        with patch("devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
+        with patch("unseen_university.devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
             count = _process_handshake_replies(imap, _GRANNY_MAILBOX_DEFAULT)
 
         return count, calls
@@ -193,7 +193,7 @@ class TestProcessHandshakeReplies:
     def test_unknown_kind_ignored(self):
         imap = _FakeIMAP()
         imap.inject_reply(_GRANNY_MAILBOX_DEFAULT, "something_else", "T-u")
-        with patch("devices.granny.daemon.subprocess.run") as mock_run:
+        with patch("unseen_university.devices.granny.daemon.subprocess.run") as mock_run:
             count = _process_handshake_replies(imap, _GRANNY_MAILBOX_DEFAULT)
         assert count == 0
         mock_run.assert_not_called()
@@ -211,7 +211,7 @@ class TestProcessHandshakeReplies:
         imap.inject_reply(_GRANNY_MAILBOX_DEFAULT, "dispatch_ack", "T-d")
         mock_run, _ = _mock_run_factory()
 
-        with patch("devices.granny.daemon.subprocess.run", side_effect=mock_run):
+        with patch("unseen_university.devices.granny.daemon.subprocess.run", side_effect=mock_run):
             first = _process_handshake_replies(imap, _GRANNY_MAILBOX_DEFAULT)
             second = _process_handshake_replies(imap, _GRANNY_MAILBOX_DEFAULT)
 
@@ -234,8 +234,8 @@ class TestEscalateStaleDispatched:
             return True
 
         with patch("psycopg2.connect", return_value=conn), \
-             patch("devices.granny.daemon._setstatus_direct", side_effect=_fake_setstatus), \
-             patch("devices.granny.availability.mark_unavailable"):
+             patch("unseen_university.devices.granny.daemon._setstatus_direct", side_effect=_fake_setstatus), \
+             patch("unseen_university.devices.granny.availability.mark_unavailable"):
             count = _escalate_stale_dispatched()
 
         assert count == 1
@@ -269,7 +269,7 @@ class TestResetStaleInprogress:
 
         conn = _make_pg_conn(pg_rows)
         with patch("psycopg2.connect", return_value=conn), \
-             patch("devices.granny.daemon.subprocess.run", side_effect=_run):
+             patch("unseen_university.devices.granny.daemon.subprocess.run", side_effect=_run):
             count = _reset_stale_inprogress()
         return count, cmds
 
@@ -331,13 +331,13 @@ class TestRunOnceBusDispatch:
         ticket = {"id": "T-run", "tags": [], "role": "master"}
         fake_ss, calls = _mock_setstatus_factory()
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cc0_busy", return_value=False), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"), \
-             patch("devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"), \
+             patch("unseen_university.devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
             run_once(self._bus_config(), imap=imap)
 
         assert imap._boxes.get("cc.0"), "no envelope sent to cc.0"
@@ -349,10 +349,10 @@ class TestRunOnceBusDispatch:
         imap.inject_reply("granny.0", "dispatch_ack", "T-reply")
         fake_ss, calls = _mock_setstatus_factory()
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[]), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[]), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._setstatus_direct", side_effect=fake_ss):
             run_once(self._bus_config(), imap=imap)
 
         assert ["T-reply", "acked"] in calls
@@ -360,13 +360,13 @@ class TestRunOnceBusDispatch:
     def test_bus_dispatch_skipped_when_imap_none(self, caplog):
         ticket = {"id": "T-nobus", "tags": [], "role": "master"}
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cc0_busy", return_value=False), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             import logging
-            with caplog.at_level(logging.WARNING, logger="devices.granny.daemon"):
+            with caplog.at_level(logging.WARNING, logger="unseen_university.devices.granny.daemon"):
                 run_once(self._bus_config(), imap=None)
 
         assert any("no imap" in r.message for r in caplog.records)
@@ -401,12 +401,12 @@ class TestDickSimnelBusDispatch:
         imap = _FakeIMAP()
         ticket = {"id": "T-build", "tags": [], "role": "builder"}
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._setstatus_direct", return_value=True), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._setstatus_direct", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(self._no_cascade_config(), imap=imap)
 
         assert imap._boxes.get("dicksimnel.0"), "no dispatch envelope sent to dicksimnel.0"
@@ -425,13 +425,13 @@ class TestDickSimnelBusDispatch:
                 set_worker_calls.append(list(cmd))
             return _OK
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._setstatus_direct", return_value=True), \
-             patch("devices.granny.daemon._post_channel"), \
-             patch("devices.granny.daemon.subprocess.run", side_effect=_run):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._setstatus_direct", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._post_channel"), \
+             patch("unseen_university.devices.granny.daemon.subprocess.run", side_effect=_run):
             run_once(self._no_cascade_config(), imap=imap)
 
         assert not set_worker_calls, f"set-worker must not be called for bus dispatch; got: {set_worker_calls}"
@@ -440,12 +440,12 @@ class TestDickSimnelBusDispatch:
         imap = _FakeIMAP()
         ticket = {"id": "T-create", "tags": [], "role": "creator"}
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._setstatus_direct", return_value=True), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._setstatus_direct", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(self._no_cascade_config(), imap=imap)
 
         assert imap._boxes.get("dicksimnel.0"), "creator ticket must route to dicksimnel.0 via bus"

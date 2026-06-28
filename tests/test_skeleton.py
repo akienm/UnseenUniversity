@@ -20,11 +20,11 @@ import pytest
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
-from unseen_university.skeleton.exceptions import AuthError, RegistrationError
-from unseen_university.skeleton.health import rack_health_async
-from unseen_university.skeleton.skeleton import Skeleton
-from config.device_config import DeviceConfig
-from skeleton.registry import DeviceRegistry
+from unseen_university.devices.skeleton.exceptions import AuthError, RegistrationError
+from unseen_university.devices.skeleton.health import rack_health_async
+from unseen_university.devices.skeleton.skeleton import Skeleton
+from unseen_university.config.device_config import DeviceConfig
+from unseen_university.devices.skeleton.registry import DeviceRegistry
 from fixtures.stub_devices import StubDevice
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
@@ -37,7 +37,7 @@ def _make_skeleton(tmp_path: Path) -> Skeleton:
 
 def _make_skeleton_with_bus(tmp_path: Path):
     """Returns (skeleton, imap_server, profiles_dir). Caller must server.stop()."""
-    from bus.imap_server import IMAPServer
+    from unseen_university.devices.bus.imap_server import IMAPServer
 
     registry = DeviceRegistry(path=tmp_path / "devices.json")
     server = IMAPServer()

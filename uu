@@ -195,7 +195,7 @@ def _cmd_contrib(args: list[str]) -> None:
     """uu contrib [scan | list | submit <id>]"""
     sys.path.insert(0, str(UU_ROOT))
     try:
-        from devices.archivist.contrib import build_pr_diff, get_staged, list_staged, scan
+        from unseen_university.devices.archivist.contrib import build_pr_diff, get_staged, list_staged, scan
     except ImportError as e:
         print(f"uu contrib: archivist module unavailable — {e}")
         sys.exit(1)

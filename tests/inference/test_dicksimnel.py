@@ -30,7 +30,7 @@ class _FakeBus:
         return new
 
     def inject(self, mailbox: str, kind: str, ticket_id: str) -> None:
-        from bus.envelope import Envelope
+        from unseen_university.devices.bus.envelope import Envelope
         env = Envelope.now(
             from_device="granny.0",
             to_device=mailbox,
@@ -44,10 +44,10 @@ class _FakeBus:
 
 class TestDickSimnelShim:
     def test_start_writes_availability_flag(self, tmp_path, monkeypatch):
-        from devices.dicksimnel.shim import DickSimnelShim, _FLAG_DIR, _AVAILABLE_FLAG
+        from unseen_university.devices.dicksimnel.shim import DickSimnelShim, _FLAG_DIR, _AVAILABLE_FLAG
 
-        monkeypatch.setattr("devices.dicksimnel.shim._FLAG_DIR", tmp_path)
-        monkeypatch.setattr("devices.dicksimnel.shim._AVAILABLE_FLAG", tmp_path / "DickSimnel.0.available.true")
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._FLAG_DIR", tmp_path)
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._AVAILABLE_FLAG", tmp_path / "DickSimnel.0.available.true")
 
         shim = DickSimnelShim()
         assert shim.start()
@@ -55,11 +55,11 @@ class TestDickSimnelShim:
         shim.stop()
 
     def test_stop_removes_flag(self, tmp_path, monkeypatch):
-        from devices.dicksimnel.shim import DickSimnelShim
+        from unseen_university.devices.dicksimnel.shim import DickSimnelShim
 
         flag = tmp_path / "DickSimnel.0.available.true"
-        monkeypatch.setattr("devices.dicksimnel.shim._FLAG_DIR", tmp_path)
-        monkeypatch.setattr("devices.dicksimnel.shim._AVAILABLE_FLAG", flag)
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._FLAG_DIR", tmp_path)
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._AVAILABLE_FLAG", flag)
 
         shim = DickSimnelShim()
         shim.start()
@@ -68,10 +68,10 @@ class TestDickSimnelShim:
         assert not flag.exists()
 
     def test_is_blocked_reads_false_flag(self, tmp_path, monkeypatch):
-        from devices.dicksimnel.shim import DickSimnelShim
+        from unseen_university.devices.dicksimnel.shim import DickSimnelShim
 
         blocked_flag = tmp_path / "DickSimnel.0.available.false"
-        monkeypatch.setattr("devices.dicksimnel.shim._BLOCKED_FLAG", blocked_flag)
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._BLOCKED_FLAG", blocked_flag)
 
         shim = DickSimnelShim()
         assert not shim.is_blocked()
@@ -79,9 +79,9 @@ class TestDickSimnelShim:
         assert shim.is_blocked()
 
     def test_start_creates_and_starts_listener(self, tmp_path, monkeypatch):
-        from devices.dicksimnel.shim import DickSimnelShim
-        monkeypatch.setattr("devices.dicksimnel.shim._FLAG_DIR", tmp_path)
-        monkeypatch.setattr("devices.dicksimnel.shim._AVAILABLE_FLAG", tmp_path / "av.true")
+        from unseen_university.devices.dicksimnel.shim import DickSimnelShim
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._FLAG_DIR", tmp_path)
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._AVAILABLE_FLAG", tmp_path / "av.true")
 
         shim = DickSimnelShim()
         shim._connect_bus = lambda: None  # no real bus in tests
@@ -91,19 +91,19 @@ class TestDickSimnelShim:
         assert shim._listener is None
 
     def test_self_test_passes_when_inference_importable(self, tmp_path, monkeypatch):
-        from devices.dicksimnel.shim import DickSimnelShim
+        from unseen_university.devices.dicksimnel.shim import DickSimnelShim
 
-        monkeypatch.setattr("devices.dicksimnel.shim._FLAG_DIR", tmp_path)
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._FLAG_DIR", tmp_path)
         shim = DickSimnelShim()
         result = shim.self_test()
         assert result["passed"]
 
     def test_rollback_removes_flag_if_written(self, tmp_path, monkeypatch):
-        from devices.dicksimnel.shim import DickSimnelShim
+        from unseen_university.devices.dicksimnel.shim import DickSimnelShim
 
         flag = tmp_path / "DickSimnel.0.available.true"
-        monkeypatch.setattr("devices.dicksimnel.shim._FLAG_DIR", tmp_path)
-        monkeypatch.setattr("devices.dicksimnel.shim._AVAILABLE_FLAG", flag)
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._FLAG_DIR", tmp_path)
+        monkeypatch.setattr("unseen_university.devices.dicksimnel.shim._AVAILABLE_FLAG", flag)
 
         shim = DickSimnelShim()
         shim._write_available()
@@ -117,7 +117,7 @@ class TestDickSimnelShim:
 
 class TestDickSimnelDevice:
     def _device(self):
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         d = DickSimnelDevice()
         # Replace shim with a no-op so tests don't touch filesystem or threads
         d._shim = MagicMock()
@@ -163,7 +163,7 @@ class TestDickSimnelDevice:
 
 class TestDickSimnelEscalation:
     def _device(self):
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         d = DickSimnelDevice()
         d._shim = MagicMock()
         d._shim.is_blocked.return_value = False
@@ -220,7 +220,7 @@ class TestDickSimnelEscalation:
 
 class TestPostResultGuards:
     def _device(self):
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         d = DickSimnelDevice()
         d._shim = MagicMock()
         d._shim.is_blocked.return_value = False
@@ -330,71 +330,71 @@ class TestPostResultGuards:
 
 class TestDickSimnelSkillLoad:
     def _device(self):
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         d = DickSimnelDevice()
         d._shim = MagicMock()
         d._shim.is_blocked.return_value = False
         return d
 
     def test_skill_load_returns_content_when_found(self, tmp_path):
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         skill_dir = tmp_path / "sprint-ticket"
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("# Sprint Procedure\nStep 1. Do the thing.")
         d = DickSimnelDevice()
         d._shim = MagicMock()
-        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+        with patch("unseen_university.devices.dicksimnel.device._SKILLS_DIR", tmp_path):
             content = d.skill_load("sprint-ticket")
         assert content is not None
         assert "Step 1" in content
 
     def test_skill_load_returns_none_when_missing(self, tmp_path):
         d = self._device()
-        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+        with patch("unseen_university.devices.dicksimnel.device._SKILLS_DIR", tmp_path):
             assert d.skill_load("sprint-ticket") is None
 
     def test_build_system_prompt_always_uses_compact_prompt(self, tmp_path):
         # _build_system_prompt always returns SYSTEM_PROMPT regardless of skill availability.
         # The full sprint-ticket skill was too long for OR models — they narrate instead of
         # calling tools. Dick uses the compact SYSTEM_PROMPT for reliable tool-first execution.
-        from devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
         skill_dir = tmp_path / "sprint-ticket"
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("SKILL_CONTENT_MARKER")
         d = DickSimnelDevice()
         d._shim = MagicMock()
-        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+        with patch("unseen_university.devices.dicksimnel.device._SKILLS_DIR", tmp_path):
             prompt = d._build_system_prompt({})
         assert prompt == SYSTEM_PROMPT
         assert "SKILL_CONTENT_MARKER" not in prompt
         assert "DickSimnel" in prompt
 
     def test_build_system_prompt_consistent_with_and_without_skill(self, tmp_path):
-        from devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
         d = self._device()
         # With skill present
         skill_dir = tmp_path / "sprint-ticket"
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("SOME_SKILL_CONTENT")
-        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+        with patch("unseen_university.devices.dicksimnel.device._SKILLS_DIR", tmp_path):
             prompt_with_skill = d._build_system_prompt({})
         # Without skill
         empty_dir = tmp_path / "empty"
         empty_dir.mkdir()
-        with patch("devices.dicksimnel.device._SKILLS_DIR", empty_dir):
+        with patch("unseen_university.devices.dicksimnel.device._SKILLS_DIR", empty_dir):
             prompt_without_skill = d._build_system_prompt({})
         # Both should be the same compact SYSTEM_PROMPT
         assert prompt_with_skill == prompt_without_skill == SYSTEM_PROMPT
 
     def test_build_system_prompt_falls_back_to_base_when_skill_missing(self, tmp_path):
-        from devices.dicksimnel.device import SYSTEM_PROMPT
+        from unseen_university.devices.dicksimnel.device import SYSTEM_PROMPT
         d = self._device()
-        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+        with patch("unseen_university.devices.dicksimnel.device._SKILLS_DIR", tmp_path):
             prompt = d._build_system_prompt({})
         assert prompt == SYSTEM_PROMPT
 
     def test_run_inference_uses_compact_prompt(self, tmp_path):
-        from devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice, SYSTEM_PROMPT
         skill_dir = tmp_path / "sprint-ticket"
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("SKILL_MARKER")
@@ -411,8 +411,8 @@ class TestDickSimnelSkillLoad:
             captured.append(req.system)
             return mock_response
 
-        with patch("devices.dicksimnel.device._SKILLS_DIR", tmp_path):
-            with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+        with patch("unseen_university.devices.dicksimnel.device._SKILLS_DIR", tmp_path):
+            with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
                 d._run_inference({"id": "T-test", "title": "Test", "tags": [], "description": "x"})
 
         assert captured, "dispatch was not called"
@@ -428,7 +428,7 @@ class TestORCostGate:
 
     def test_worker_google_free_rule_exists(self):
         """google_free source is in the worker routing rules."""
-        from devices.inference.rules_engine import _DEFAULT_RULES
+        from unseen_university.devices.inference.rules_engine import _DEFAULT_RULES
         worker_rules = [r for r in _DEFAULT_RULES if r.task_class == "worker"]
         google_free_rules = [r for r in worker_rules if r.source_name == "google_free"]
         assert google_free_rules, "expected a worker→google_free rule"
@@ -436,8 +436,8 @@ class TestORCostGate:
 
     def test_worker_google_free_preferred_over_openrouter_when_available(self):
         """google_free (flat_rate) sorts before openrouter (usage_based) for worker tier."""
-        from devices.inference.rules_engine import RulesEngine, _DEFAULT_RULES
-        from devices.inference.sources import GoogleSource, OpenRouterSource
+        from unseen_university.devices.inference.rules_engine import RulesEngine, _DEFAULT_RULES
+        from unseen_university.devices.inference.sources import GoogleSource, OpenRouterSource
         from unittest.mock import MagicMock
 
         google_src = MagicMock()
@@ -474,7 +474,7 @@ class TestDickSimnelWorkerListener:
     """Bus dispatch listener works tickets synchronously on envelope receipt."""
 
     def _listener(self, bus=None, device=None, poll_interval=999):
-        from devices.dicksimnel.worker_listener import DickSimnelWorkerListener
+        from unseen_university.devices.dicksimnel.worker_listener import DickSimnelWorkerListener
         return DickSimnelWorkerListener(
             bus=bus or _FakeBus(),
             device_mailbox="dicksimnel.0",
@@ -497,7 +497,7 @@ class TestDickSimnelWorkerListener:
         device = self._mock_device()
         listener = self._listener(bus=bus, device=device)
 
-        with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
+        with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
             listener._poll_once()
 
         acks = [e for e in bus._boxes.get("granny.0", [])
@@ -512,7 +512,7 @@ class TestDickSimnelWorkerListener:
         device = self._mock_device(ticket=ticket)
         listener = self._listener(bus=bus, device=device)
 
-        with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
+        with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
             listener._poll_once()
 
         device._run_inference.assert_called_once_with(ticket)
@@ -524,7 +524,7 @@ class TestDickSimnelWorkerListener:
         device = self._mock_device()
         listener = self._listener(bus=bus, device=device)
 
-        with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
+        with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
             listener._poll_once()
 
         reply_kinds = [e.payload["kind"] for e in bus._boxes.get("granny.0", [])]
@@ -533,7 +533,7 @@ class TestDickSimnelWorkerListener:
         assert reply_kinds.index("dispatch_ack") < reply_kinds.index("dispatch_started")
 
     def test_halt_envelope_stops_listener(self):
-        from bus.envelope import Envelope
+        from unseen_university.devices.bus.envelope import Envelope
         bus = _FakeBus()
         env = Envelope.now(
             from_device="granny.0",
@@ -561,9 +561,9 @@ class TestDickSimnelWorkerListener:
         device = self._mock_device()
         listener = self._listener(bus=bus, device=device)
 
-        with patch("devices.dicksimnel.worker_listener.fetch_balance",
+        with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance",
                    return_value={"balance": 5.0}), \
-             patch("devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
+             patch("unseen_university.devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
             listener._poll_once()
 
         device._run_inference.assert_not_called()
@@ -576,9 +576,9 @@ class TestDickSimnelWorkerListener:
         device = self._mock_device()
         listener = self._listener(bus=bus, device=device)
 
-        with patch("devices.dicksimnel.worker_listener.fetch_balance",
+        with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance",
                    return_value={"balance": 50.0}), \
-             patch("devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
+             patch("unseen_university.devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
             listener._poll_once()
 
         device._run_inference.assert_called_once()
@@ -589,7 +589,7 @@ class TestDickSimnelWorkerListener:
         device = self._mock_device()
         listener = self._listener(bus=bus, device=device)
 
-        with patch("devices.dicksimnel.worker_listener.fetch_balance",
+        with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance",
                    side_effect=OSError("network")):
             listener._poll_once()
 
@@ -603,7 +603,7 @@ class TestDickSimnelWorkerListener:
         device._should_escalate.return_value = (True, "HIGH-inertia tags: ['Security']")
         listener = self._listener(bus=bus, device=device)
 
-        with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
+        with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance", return_value=None):
             listener._poll_once()
 
         device._run_inference.assert_not_called()

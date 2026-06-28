@@ -201,7 +201,7 @@ class PalaceWriter:
                 log.warning("palace_writer: cc_inbox_fn failed: %s", exc)
         # Fallback: try the cc_inbox_bridge
         try:
-            from devices.cognition.cc_inbox_bridge import post_to_cc_inbox  # type: ignore
+            from unseen_university.devices.cognition.cc_inbox_bridge import post_to_cc_inbox  # type: ignore
 
             post_to_cc_inbox(kind=kind, summary=summary, body=body, urgency=urgency)
         except Exception:

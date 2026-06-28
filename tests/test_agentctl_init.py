@@ -108,7 +108,7 @@ def test_detect_cc_workflow_tools_respects_fake_repo(
 ) -> None:
     """When DEFAULT_MASTER_ROOT points into a tree that has devlab/claudecode/cc_queue.py,
     the function returns that path."""
-    import devices.installer.shim as shim_mod
+    import unseen_university.devices.installer.shim as shim_mod
 
     # Build a fake repo tree: tmp/skills/ and tmp/devlab/claudecode/cc_queue.py
     fake_skills = tmp_path / "skills"
@@ -127,7 +127,7 @@ def test_detect_cc_workflow_tools_missing_cc_queue_returns_none(
     tmp_path: Path, monkeypatch
 ) -> None:
     """If devlab/claudecode exists but cc_queue.py is absent, return None."""
-    import devices.installer.shim as shim_mod
+    import unseen_university.devices.installer.shim as shim_mod
 
     fake_skills = tmp_path / "skills"
     fake_skills.mkdir()

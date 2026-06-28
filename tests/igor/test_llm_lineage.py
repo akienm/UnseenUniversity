@@ -97,7 +97,7 @@ class TestWriteLLMCallDB(unittest.TestCase):
             pass
 
     def test_row_inserted_and_queryable(self):
-        from devices.igor.cognition.forensic_logger import _write_llm_call_db
+        from unseen_university.devices.igor.cognition.forensic_logger import _write_llm_call_db
         import psycopg2
 
         _write_llm_call_db(
@@ -135,7 +135,7 @@ class TestLogInferenceIODualWrite(unittest.TestCase):
 
     def test_file_write_preserved(self, tmp_path=None):
         """File log write must still succeed after our changes."""
-        from devices.igor.cognition import forensic_logger as fl
+        from unseen_university.devices.igor.cognition import forensic_logger as fl
 
         written = []
 
@@ -162,9 +162,9 @@ class TestLogInferenceIODualWrite(unittest.TestCase):
         with (
             patch.object(fl, "LOG_DIR", _FakePath()),
             patch(
-                "devices.igor.cognition.forensic_logger._write_llm_call_db"
+                "unseen_university.devices.igor.cognition.forensic_logger._write_llm_call_db"
             ) as mock_db,
-            patch("devices.igor.cognition.forensic_logger._purge_old_inference_io"),
+            patch("unseen_university.devices.igor.cognition.forensic_logger._purge_old_inference_io"),
         ):
             fl.log_inference_io(
                 provider="openrouter",
@@ -180,7 +180,7 @@ class TestLogInferenceIODualWrite(unittest.TestCase):
         mock_db.assert_called_once()
 
     def test_db_write_called_with_correct_hash(self):
-        from devices.igor.cognition import forensic_logger as fl
+        from unseen_university.devices.igor.cognition import forensic_logger as fl
 
         prompt = "test prompt for hashing"
         expected_hash = hashlib.md5(prompt.encode("utf-8")).hexdigest()
@@ -208,9 +208,9 @@ class TestLogInferenceIODualWrite(unittest.TestCase):
         with (
             patch.object(fl, "LOG_DIR", _FakePath()),
             patch(
-                "devices.igor.cognition.forensic_logger._write_llm_call_db"
+                "unseen_university.devices.igor.cognition.forensic_logger._write_llm_call_db"
             ) as mock_db,
-            patch("devices.igor.cognition.forensic_logger._purge_old_inference_io"),
+            patch("unseen_university.devices.igor.cognition.forensic_logger._purge_old_inference_io"),
         ):
             fl.log_inference_io(
                 provider="ollama",

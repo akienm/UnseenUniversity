@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from devices.vetinari.device import ROUTING_TABLE, _route_worker
+from unseen_university.devices.vetinari.device import ROUTING_TABLE, _route_worker
 
 
 # ── _route_worker (pure) ──────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ def test_routing_table_has_all_three_workers():
 
 def test_write_tickets_routes_by_tags():
     """_write_tickets_to_queue applies _route_worker; research→librarian, build→claude."""
-    from devices.vetinari.device import _write_tickets_to_queue
+    from unseen_university.devices.vetinari.device import _write_tickets_to_queue
 
     subtasks = [
         {"title": "Research the system", "description": "d", "tags": ["Research"], "size": "S"},
@@ -90,7 +90,7 @@ def test_write_tickets_routes_by_tags():
         return result
 
     from unittest.mock import MagicMock
-    with patch("devices.vetinari.device.subprocess.run", side_effect=fake_run):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=fake_run):
         ids = _write_tickets_to_queue(subtasks, decision_id="d-routing")
 
     assert len(ids) == 2

@@ -27,7 +27,7 @@ class TestPathsDefaultsWithoutEnvVars(unittest.TestCase):
         os.environ.update(self._saved)
 
     def test_runtime_root_defaults_to_unseen_university(self):
-        from devices.igor.paths import _BootstrapPathManager
+        from unseen_university.devices.igor.paths import _BootstrapPathManager
 
         pm = _BootstrapPathManager()
         pm._init()
@@ -35,14 +35,14 @@ class TestPathsDefaultsWithoutEnvVars(unittest.TestCase):
         self.assertEqual(pm.runtime, expected)
 
     def test_instance_id_defaults_to_igor_wild_0001(self):
-        from devices.igor.paths import _BootstrapPathManager
+        from unseen_university.devices.igor.paths import _BootstrapPathManager
 
         pm = _BootstrapPathManager()
         pm._init()
         self.assertEqual(pm.instance_id, "Igor-wild-0001")
 
     def test_instance_dir_resolves_correctly(self):
-        from devices.igor.paths import _BootstrapPathManager
+        from unseen_university.devices.igor.paths import _BootstrapPathManager
 
         pm = _BootstrapPathManager()
         pm._init()
@@ -54,7 +54,7 @@ class TestPathsDefaultsWithoutEnvVars(unittest.TestCase):
             tmp_path = Path(tmp)
             os.environ["IGOR_RUNTIME_ROOT"] = str(tmp_path)
             os.environ["IGOR_INSTANCE_ID"] = "Igor-custom-9999"
-            from devices.igor.paths import _BootstrapPathManager
+            from unseen_university.devices.igor.paths import _BootstrapPathManager
 
             pm = _BootstrapPathManager()
             pm._init()
@@ -68,7 +68,7 @@ class TestConfigDefaultsWithoutEnvVars(unittest.TestCase):
         for key in ("IGOR_RUNTIME_ROOT", "IGOR_INSTANCE_ID"):
             os.environ.pop(key, None)
         # Force config to reload after env change
-        import devices.igor.config as _cfg
+        import unseen_university.devices.igor.config as _cfg
 
         _cfg._loaded = False
         _cfg._cfg_cache.clear()
@@ -76,19 +76,19 @@ class TestConfigDefaultsWithoutEnvVars(unittest.TestCase):
     def tearDown(self):
         os.environ.clear()
         os.environ.update(self._saved)
-        import devices.igor.config as _cfg
+        import unseen_university.devices.igor.config as _cfg
 
         _cfg._loaded = False
         _cfg._cfg_cache.clear()
 
     def test_config_get_returns_default_when_key_absent(self):
-        from devices.igor.config import get
+        from unseen_university.devices.igor.config import get
 
         result = get("SOME_KEY_THAT_DOES_NOT_EXIST", "my_default")
         self.assertEqual(result, "my_default")
 
     def test_config_load_does_not_raise_without_bootstrap_vars(self):
-        from devices.igor.config import _load_cfg_files
+        from unseen_university.devices.igor.config import _load_cfg_files
 
         try:
             _load_cfg_files()
@@ -96,7 +96,7 @@ class TestConfigDefaultsWithoutEnvVars(unittest.TestCase):
             self.fail(f"_load_cfg_files() raised without bootstrap vars: {exc}")
 
     def test_config_get_bool_returns_default(self):
-        from devices.igor.config import get_bool
+        from unseen_university.devices.igor.config import get_bool
 
         self.assertFalse(get_bool("NONEXISTENT_FLAG"))
         self.assertTrue(get_bool("NONEXISTENT_FLAG", True))

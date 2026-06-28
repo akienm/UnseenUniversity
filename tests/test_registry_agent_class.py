@@ -7,12 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from config.device_config import DeviceConfig
-from devices.igor.device import IgorDevice
-from devices.minion.device import MinionDevice
-from devices.nanny.device import NannyOggDevice
-from devices.scraps.scraps_device import ScrapsDevice
-from skeleton.registry import DeviceRegistry
+from unseen_university.config.device_config import DeviceConfig
+from unseen_university.devices.igor.device import IgorDevice
+from unseen_university.devices.minion.device import MinionDevice
+from unseen_university.devices.nanny.device import NannyOggDevice
+from unseen_university.devices.scraps.scraps_device import ScrapsDevice
+from unseen_university.devices.skeleton.registry import DeviceRegistry
 from unseen_university.devices.librarian.tools.manifest_tools import datacenter_manifest
 
 # ── Registry: agent_class stored and retrieved ────────────────────────────────

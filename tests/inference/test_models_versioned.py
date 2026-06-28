@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from devices.inference.models_registry import ModelSpec, ModelsRegistry, _SEED
+from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry, _SEED
 
 
 def _spec(model_id: str = "test/model", **kwargs) -> ModelSpec:

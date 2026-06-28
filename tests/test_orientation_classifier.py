@@ -21,7 +21,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.scraps.orientation_classifier import (
+from unseen_university.devices.scraps.orientation_classifier import (
     BuilderReport,
     FileMatch,
     classify,
@@ -29,7 +29,7 @@ from devices.scraps.orientation_classifier import (
     extract_keywords,
     query_relevant_files,
 )
-from devices.dicksimnel.toolloop import _build_initial_message, _orientation_prefix
+from unseen_university.devices.dicksimnel.toolloop import _build_initial_message, _orientation_prefix
 
 
 # ── extract_keywords ──────────────────────────────────────────────────────────
@@ -166,7 +166,7 @@ def test_query_relevant_files_empty_keywords():
 
 def test_classify_db_failure_returns_empty():
     ticket = {"id": "T-test", "title": "some ticket", "tags": [], "description": "", "size": "S"}
-    with patch("devices.scraps.orientation_classifier.query_relevant_files",
+    with patch("unseen_university.devices.scraps.orientation_classifier.query_relevant_files",
                side_effect=Exception("DB down")):
         report = classify(ticket, db_url="postgresql://test/db")
     assert isinstance(report, BuilderReport)
@@ -177,7 +177,7 @@ def test_classify_db_failure_returns_empty():
 
 def test_classify_returns_builder_report():
     ticket = {"id": "T-test", "title": "Extend ToolLoop", "tags": ["Inference"], "description": "", "size": "M"}
-    with patch("devices.scraps.orientation_classifier.query_relevant_files", return_value=[
+    with patch("unseen_university.devices.scraps.orientation_classifier.query_relevant_files", return_value=[
         FileMatch(path="devices/dicksimnel/toolloop.py", symbol="ToolLoop",
                   kind="class", summary="ReAct loop", score=3.0)
     ]):
@@ -205,10 +205,10 @@ def test_build_initial_message_with_report():
 
 def test_orientation_prefix_fail_open():
     ticket = {"id": "T-foo", "title": "test", "tags": [], "description": "", "size": "S"}
-    with patch("devices.dicksimnel.toolloop._orientation_prefix.__module__",
-               new="devices.dicksimnel.toolloop"):
+    with patch("unseen_university.devices.dicksimnel.toolloop._orientation_prefix.__module__",
+               new="unseen_university.devices.dicksimnel.toolloop"):
         # Patch classify to raise — _orientation_prefix should return ""
-        with patch("devices.scraps.orientation_classifier.classify",
+        with patch("unseen_university.devices.scraps.orientation_classifier.classify",
                    side_effect=Exception("boom")):
             result = _orientation_prefix(ticket)
     assert result == ""
@@ -216,7 +216,7 @@ def test_orientation_prefix_fail_open():
 
 def test_orientation_prefix_no_files_returns_empty():
     ticket = {"id": "T-foo", "title": "test", "tags": [], "description": "", "size": "S"}
-    with patch("devices.scraps.orientation_classifier.classify",
+    with patch("unseen_university.devices.scraps.orientation_classifier.classify",
                return_value=BuilderReport(keywords=[], relevant_files=[], task_shape="general")):
         result = _orientation_prefix(ticket)
     assert result == ""
@@ -231,7 +231,7 @@ def test_orientation_prefix_with_files():
         task_shape="new-feature",
         estimated_complexity="M",
     )
-    with patch("devices.scraps.orientation_classifier.classify", return_value=mock_report):
+    with patch("unseen_university.devices.scraps.orientation_classifier.classify", return_value=mock_report):
         result = _orientation_prefix(ticket)
     assert "Builder Report" in result
     assert result.endswith("\n\n")

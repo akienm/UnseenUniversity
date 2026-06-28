@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from devices.web_server.device import WebServerDevice
+from unseen_university.devices.web_server.device import WebServerDevice
 from unseen_university.device import INTERFACE_VERSION
 
 
@@ -59,7 +59,7 @@ def test_interface_version(device):
 
 
 def test_health_unhealthy_when_server_not_running(device):
-    with patch("devices.web_server.device._check_health", return_value=None):
+    with patch("unseen_university.devices.web_server.device._check_health", return_value=None):
         h = device.health()
     assert h["status"] == "unhealthy"
     assert "checked_at" in h
@@ -67,7 +67,7 @@ def test_health_unhealthy_when_server_not_running(device):
 
 def test_health_healthy_when_server_running(device):
     with patch(
-        "devices.web_server.device._check_health",
+        "unseen_university.devices.web_server.device._check_health",
         return_value={"agents_attached": 0},
     ):
         h = device.health()
@@ -77,7 +77,7 @@ def test_health_healthy_when_server_running(device):
 def test_health_unhealthy_when_blocked(device):
     device.block("test block")
     with patch(
-        "devices.web_server.device._check_health", return_value={"agents_attached": 0}
+        "unseen_university.devices.web_server.device._check_health", return_value={"agents_attached": 0}
     ):
         h = device.health()
     assert h["status"] == "unhealthy"

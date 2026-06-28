@@ -31,7 +31,7 @@ _UU_ROOT = Path(os.environ.get("UU_ROOT", str(Path.home() / "dev/src/UnseenUnive
 if str(_UU_ROOT) not in sys.path:
     sys.path.insert(0, str(_UU_ROOT))
 
-from devices.librarian.learning_pipeline import LearningPipeline  # noqa: E402
+from unseen_university.devices.librarian.learning_pipeline import LearningPipeline  # noqa: E402
 
 _PROJECTS_DIR = Path(os.environ.get("CLAUDE_PROJECTS_DIR", str(Path.home() / ".claude" / "projects")))
 

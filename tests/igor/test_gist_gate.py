@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.gist_gate import (
+from unseen_university.devices.igor.cognition.gist_gate import (
     should_skip_memory_search,
     _REFLEX_INTENTS,
 )

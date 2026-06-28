@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from diagnostic_base.perf import Stopwatch, timed, _csv_path, _prune_old_csvs
+from unseen_university.diagnostic_base.perf import Stopwatch, timed, _csv_path, _prune_old_csvs
 
 
 @pytest.fixture()

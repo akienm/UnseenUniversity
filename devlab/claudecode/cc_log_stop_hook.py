@@ -38,7 +38,7 @@ def main() -> int:
     if str(uu_root) not in sys.path:
         sys.path.insert(0, str(uu_root))
     try:
-        from devices.claude.chat_log_handler import ChatLogHandler, ingest_session
+        from unseen_university.devices.claude.chat_log_handler import ChatLogHandler, ingest_session
     except ImportError as e:
         print(f"cc_log_stop_hook: import failed ({e})", file=sys.stderr)
         return 1

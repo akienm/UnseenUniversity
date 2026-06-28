@@ -8,8 +8,8 @@ import time
 
 import pytest
 
-from devices.igor.memory.cortex import Cortex
-from devices.igor.cognition.word_graph import WordGraph
+from unseen_university.devices.igor.memory.cortex import Cortex
+from unseen_university.devices.igor.cognition.word_graph import WordGraph
 
 
 @pytest.fixture

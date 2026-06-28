@@ -19,7 +19,7 @@ from unittest.mock import MagicMock
 
 
 def _make_habit(hid, trigger, habit_type="action", activation=0):
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     m = Memory(
         id=hid,
@@ -47,18 +47,18 @@ class TestBGScoreDebugWinnerPath(unittest.TestCase):
     """Winner path emits bg_scoring to TurnContext."""
 
     def setUp(self):
-        from devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.cognition import basal_ganglia
 
         basal_ganglia._refractory_map.clear()
 
     def tearDown(self):
-        from devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.cognition import basal_ganglia
 
         basal_ganglia._refractory_map.clear()
 
     def _run(self, habits, text):
-        import devices.igor.cognition.forensic_logger as fl
-        from devices.igor.cognition import basal_ganglia
+        import unseen_university.devices.igor.cognition.forensic_logger as fl
+        from unseen_university.devices.igor.cognition import basal_ganglia
 
         captures = {}
         orig = fl.turn_ctx_update
@@ -114,8 +114,8 @@ class TestBGScoreDebugNoWinner(unittest.TestCase):
     """No-candidates path emits bg_scoring with winner=None."""
 
     def _run(self, habits, text):
-        import devices.igor.cognition.forensic_logger as fl
-        from devices.igor.cognition import basal_ganglia
+        import unseen_university.devices.igor.cognition.forensic_logger as fl
+        from unseen_university.devices.igor.cognition import basal_ganglia
 
         captures = {}
         orig = fl.turn_ctx_update
@@ -150,8 +150,8 @@ class TestBGScoreDebugPreChecks(unittest.TestCase):
     """Pre-check paths emit bg_scoring with pre_check key."""
 
     def _run(self, habits, text):
-        import devices.igor.cognition.forensic_logger as fl
-        from devices.igor.cognition import basal_ganglia
+        import unseen_university.devices.igor.cognition.forensic_logger as fl
+        from unseen_university.devices.igor.cognition import basal_ganglia
 
         captures = {}
         orig = fl.turn_ctx_update
@@ -164,7 +164,7 @@ class TestBGScoreDebugPreChecks(unittest.TestCase):
         return result, captures
 
     def test_compile_phrase_emits_pre_check(self):
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         compiler = Memory(
             id="PROC_HABIT_COMPILER",
@@ -178,7 +178,7 @@ class TestBGScoreDebugPreChecks(unittest.TestCase):
         self.assertEqual(caps["bg_scoring"]["winner"], "PROC_HABIT_COMPILER")
 
     def test_notebook_phrase_emits_pre_check(self):
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         saver = Memory(
             id="PROC_NOTEBOOK_SAVE",
@@ -196,8 +196,8 @@ class TestBGScoreDebugRobustness(unittest.TestCase):
     """_emit_bg failure must never propagate out of select_habit."""
 
     def test_forensic_logger_import_error_does_not_crash(self):
-        import devices.igor.cognition.forensic_logger as fl
-        from devices.igor.cognition import basal_ganglia
+        import unseen_university.devices.igor.cognition.forensic_logger as fl
+        from unseen_university.devices.igor.cognition import basal_ganglia
 
         orig = fl.turn_ctx_update
 
@@ -220,8 +220,8 @@ class TestApplyIntentGate(unittest.TestCase):
 
     def test_intent_gate_passes_on_action_intent(self):
         """Action-type habits pass gate on non-question intents."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_ACTION",
@@ -235,8 +235,8 @@ class TestApplyIntentGate(unittest.TestCase):
 
     def test_intent_gate_blocks_action_on_question_intent(self):
         """Action-type habits fail gate on question intents."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_ACTION",
@@ -250,8 +250,8 @@ class TestApplyIntentGate(unittest.TestCase):
 
     def test_intent_gate_blocks_workflow_on_question_intent(self):
         """Workflow-type habits also fail on question intents."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_WORKFLOW",
@@ -265,8 +265,8 @@ class TestApplyIntentGate(unittest.TestCase):
 
     def test_intent_gate_response_fails_on_knowledge_intent(self):
         """Response habits fail on knowledge intents."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_RESPONSE",
@@ -280,8 +280,8 @@ class TestApplyIntentGate(unittest.TestCase):
 
     def test_intent_gate_response_passes_on_action_intent(self):
         """Response habits pass on action intent."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_RESPONSE",
@@ -295,8 +295,8 @@ class TestApplyIntentGate(unittest.TestCase):
 
     def test_intent_gate_threshold_always_fails(self):
         """Threshold-type habits always fail gate."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_THRESHOLD",
@@ -310,8 +310,8 @@ class TestApplyIntentGate(unittest.TestCase):
 
     def test_intent_gate_author_filter_blocks_wrong_author(self):
         """Author filter blocks habits restricted to different authors."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_CC_ONLY",
@@ -327,8 +327,8 @@ class TestApplyIntentGate(unittest.TestCase):
 
     def test_intent_gate_author_filter_passes_matching_author(self):
         """Author filter passes when author matches."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_CC_ONLY",
@@ -348,8 +348,8 @@ class TestApplySpecificityBonus(unittest.TestCase):
 
     def test_specificity_bonus_zero_without_conditions(self):
         """Specificity bonus is 0 when no conditions present."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_TEST",
@@ -365,8 +365,8 @@ class TestApplySpecificityBonus(unittest.TestCase):
 
     def test_specificity_bonus_positive_with_matching_conditions(self):
         """Specificity bonus > 0 when condition fields match."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_TEST",
@@ -385,8 +385,8 @@ class TestApplySpecificityBonus(unittest.TestCase):
 
     def test_specificity_bonus_includes_word_graph_score(self):
         """Specificity bonus includes word graph score."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_TEST",
@@ -405,8 +405,8 @@ class TestApplySpecificityBonus(unittest.TestCase):
 
     def test_specificity_bonus_includes_meaning_to_me_context(self):
         """Specificity bonus includes meaning_to_me context bonus."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_TEST",
@@ -423,8 +423,8 @@ class TestApplySpecificityBonus(unittest.TestCase):
 
     def test_specificity_bonus_combines_all_bonuses(self):
         """Specificity bonus combines conditions + word graph + meaning_to_me."""
-        from devices.igor.cognition import basal_ganglia
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition import basal_ganglia
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         habit = Memory(
             id="PROC_TEST",

@@ -25,11 +25,11 @@ def test_timeout_resets_to_sprint_not_escalated(tmp_path):
     """A timed-out dispatched ticket must go to 'sprint', not 'escalated'."""
     with (
         _patch_store([_stale_ticket("T-timeout-1", "dicksimnel")]),
-        patch("devices.granny.availability._AVAILABLE_DIR", tmp_path),
-        patch("devices.granny.daemon._setstatus_direct") as mock_status,
+        patch("unseen_university.devices.granny.availability._AVAILABLE_DIR", tmp_path),
+        patch("unseen_university.devices.granny.daemon._setstatus_direct") as mock_status,
     ):
         mock_status.return_value = True
-        from devices.granny.daemon import _escalate_stale_dispatched
+        from unseen_university.devices.granny.daemon import _escalate_stale_dispatched
         count = _escalate_stale_dispatched()
 
     assert count == 1
@@ -40,10 +40,10 @@ def test_timeout_marks_worker_on_cooldown(tmp_path):
     """Builder that timed out must be put on cooldown."""
     with (
         _patch_store([_stale_ticket("T-timeout-2", "dicksimnel")]),
-        patch("devices.granny.availability._AVAILABLE_DIR", tmp_path),
-        patch("devices.granny.daemon._setstatus_direct", return_value=True),
+        patch("unseen_university.devices.granny.availability._AVAILABLE_DIR", tmp_path),
+        patch("unseen_university.devices.granny.daemon._setstatus_direct", return_value=True),
     ):
-        from devices.granny.daemon import _escalate_stale_dispatched
+        from unseen_university.devices.granny.daemon import _escalate_stale_dispatched
         _escalate_stale_dispatched()
 
     cooldown_file = tmp_path / "DickSimnel.0.cooldown_until"
@@ -56,10 +56,10 @@ def test_timeout_unknown_worker_no_crash(tmp_path):
     """An unrecognised worker name must not crash _escalate_stale_dispatched."""
     with (
         _patch_store([_stale_ticket("T-timeout-3", "unknownrobot")]),
-        patch("devices.granny.availability._AVAILABLE_DIR", tmp_path),
-        patch("devices.granny.daemon._setstatus_direct", return_value=True),
+        patch("unseen_university.devices.granny.availability._AVAILABLE_DIR", tmp_path),
+        patch("unseen_university.devices.granny.daemon._setstatus_direct", return_value=True),
     ):
-        from devices.granny.daemon import _escalate_stale_dispatched
+        from unseen_university.devices.granny.daemon import _escalate_stale_dispatched
         count = _escalate_stale_dispatched()
 
     assert count == 1

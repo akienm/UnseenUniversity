@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.local_preparse import (
+from unseen_university.devices.igor.cognition.local_preparse import (
     LocalPreparser,
     preparse_local,
     default_preparser,
@@ -165,7 +165,7 @@ def test_never_calls_cloud_by_construction():
     """Hard invariant of this ticket: local-only. The module must not
     import anthropic/openai/openrouter or reference cloud API hosts
     anywhere in CODE (docstrings may mention them to enforce the rule)."""
-    import devices.igor.cognition.local_preparse as mod
+    import unseen_university.devices.igor.cognition.local_preparse as mod
     import inspect
 
     source = inspect.getsource(mod)
@@ -204,7 +204,7 @@ def test_never_calls_cloud_by_construction():
 
 def test_module_level_exports():
     """Sanity: public API is accessible as documented in docstring."""
-    from devices.igor.cognition import local_preparse
+    from unseen_university.devices.igor.cognition import local_preparse
 
     assert hasattr(local_preparse, "LocalPreparser")
     assert hasattr(local_preparse, "preparse_local")

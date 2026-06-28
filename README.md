@@ -223,7 +223,7 @@ Tools: `announce_tool`, `manifest_tool`, `check_for_invalidate_tool`. CC calls t
 A **shim** is the per-device transport adapter:
 
 ```python
-from unseen_university.skeleton import BaseShim
+from unseen_university.devices.skeleton import BaseShim
 
 class MyShim(BaseShim):
     device_id = "my-device"

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from devices.installer.factory import (
+from unseen_university.devices.installer.factory import (
     FactoryInstantiator,
     FactorySpec,
     load_spec,

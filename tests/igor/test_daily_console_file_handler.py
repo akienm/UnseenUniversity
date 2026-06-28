@@ -16,7 +16,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-from devices.igor.logging_setup import DailyConsoleFileHandler, setup_logging
+from unseen_university.devices.igor.logging_setup import DailyConsoleFileHandler, setup_logging
 
 
 def _fresh_igor_root():
@@ -68,7 +68,7 @@ class TestDailyConsoleFileHandler(unittest.TestCase):
             day1 = datetime(2026, 5, 6, 23, 59)
             day2 = datetime(2026, 5, 7, 0, 1)
 
-            with patch("devices.igor.logging_setup.datetime") as mock_dt:
+            with patch("unseen_university.devices.igor.logging_setup.datetime") as mock_dt:
                 mock_dt.now.return_value = day1
                 mock_dt.strptime = datetime.strptime
                 r1 = logging.LogRecord("igor", logging.INFO, "", 0, "day1", (), None)

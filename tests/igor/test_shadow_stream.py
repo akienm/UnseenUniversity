@@ -18,7 +18,7 @@ os.environ.setdefault(
     "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
 )
 
-from devices.igor.cognition.shadow_reasoner import (
+from unseen_university.devices.igor.cognition.shadow_reasoner import (
     DivergenceRecord,
     ReasonResult,
     ShadowReasoner,

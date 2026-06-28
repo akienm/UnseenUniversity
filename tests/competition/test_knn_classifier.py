@@ -74,18 +74,18 @@ def _delete(mem_ids: list[str]) -> None:
 
 class TestKnnClassifierFallback(unittest.TestCase):
     def test_returns_fallback_when_embed_returns_none(self):
-        with patch("devices.igor.cognition.embedder.embed", return_value=None):
+        with patch("unseen_university.devices.igor.cognition.embedder.embed", return_value=None):
             mtype, cloud = classify("some text")
         self.assertEqual(mtype, FALLBACK_TYPE)
         self.assertEqual(cloud, 0)
 
     def test_cloud_calls_always_zero(self):
-        with patch("devices.igor.cognition.embedder.embed", return_value=None):
+        with patch("unseen_university.devices.igor.cognition.embedder.embed", return_value=None):
             _, cloud = classify("some text")
         self.assertEqual(cloud, 0)
 
     def test_returns_string_memory_type(self):
-        with patch("devices.igor.cognition.embedder.embed", return_value=None):
+        with patch("unseen_university.devices.igor.cognition.embedder.embed", return_value=None):
             mtype, _ = classify("some text")
         self.assertIsInstance(mtype, str)
         self.assertGreater(len(mtype), 0)

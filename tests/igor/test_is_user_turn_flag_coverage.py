@@ -31,7 +31,7 @@ import logging
 
 def test_human_authors_frozenset():
     """_HUMAN_AUTHORS must include both known human-originating authors."""
-    from devices.igor.main import _HUMAN_AUTHORS
+    from unseen_university.devices.igor.main import _HUMAN_AUTHORS
 
     assert "akien" in _HUMAN_AUTHORS, "akien must be in _HUMAN_AUTHORS"
     assert "claude-code" in _HUMAN_AUTHORS, "claude-code must be in _HUMAN_AUTHORS"
@@ -44,7 +44,7 @@ def test_bg_is_user_true_for_human_authors():
     main.py:4832. Tested here so a rename of _HUMAN_AUTHORS members or a
     refactor of the expression breaks loudly.
     """
-    from devices.igor.main import _HUMAN_AUTHORS
+    from unseen_university.devices.igor.main import _HUMAN_AUTHORS
 
     human_authors = {"akien", "claude-code"}
     igor_authors = {"igor", "system", "background", "habit_engine"}
@@ -68,7 +68,7 @@ def test_gateway_logs_reason_entry(caplog):
     """
     from unittest.mock import MagicMock
 
-    from devices.igor.cognition.inference_gateway import InferenceGateway
+    from unseen_university.devices.igor.cognition.inference_gateway import InferenceGateway
 
     gw = InferenceGateway.__new__(InferenceGateway)
     gw._t2 = None
@@ -83,7 +83,7 @@ def test_gateway_logs_reason_entry(caplog):
     cortex = MagicMock()
     cortex.twm_read.return_value = []
 
-    logger_name = "devices.igor.cognition.inference_gateway"
+    logger_name = "unseen_university.devices.igor.cognition.inference_gateway"
     with caplog.at_level(logging.DEBUG, logger=logger_name):
         gw.reason(
             "test input",
@@ -110,7 +110,7 @@ def test_impulse_path_uses_false_by_design():
     """
     from unittest.mock import MagicMock, patch
 
-    from devices.igor.cognition.inference_gateway import InferenceGateway
+    from unseen_university.devices.igor.cognition.inference_gateway import InferenceGateway
 
     gw = InferenceGateway.__new__(InferenceGateway)
     gw._t2 = MagicMock(name="t2_ollama")

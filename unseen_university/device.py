@@ -18,12 +18,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from diagnostic_base.base import DiagnosticBase
-from diagnostic_base.core_values import CoreValuesMixin
-from diagnostic_base.perf import Stopwatch
+from unseen_university.diagnostic_base.base import DiagnosticBase
+from unseen_university.diagnostic_base.core_values import CoreValuesMixin
+from unseen_university.diagnostic_base.perf import Stopwatch
 
 if TYPE_CHECKING:
-    from bus.imap_server import IMAPServer
+    from unseen_university.devices.bus.imap_server import IMAPServer
 
 INTERFACE_VERSION = "1.0"
 
@@ -181,8 +181,8 @@ class BaseDevice(CoreValuesMixin, DiagnosticBase, ABC):
         _stop = stop or threading.Event()
 
         def _beat() -> None:
-            from bus.envelope import Envelope
-            from unseen_university.bus.router import Router
+            from unseen_university.devices.bus.envelope import Envelope
+            from unseen_university.devices.bus.router import Router
 
             router = Router(imap_server)
             device_id = self.who_am_i().get("device_id", "unknown")

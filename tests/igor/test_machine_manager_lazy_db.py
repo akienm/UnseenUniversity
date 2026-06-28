@@ -43,7 +43,7 @@ def test_import_succeeds_with_env_unset():
 def test_db_url_helper_raises_with_clear_message(monkeypatch):
     """The connect-time guard still emits the exact error message the ops
     docs rely on."""
-    from devices.igor.tools import machine_manager as mm
+    from unseen_university.devices.igor.tools import machine_manager as mm
 
     monkeypatch.setenv("UU_HOME_DB_URL", "")
     with pytest.raises(RuntimeError) as excinfo:
@@ -52,7 +52,7 @@ def test_db_url_helper_raises_with_clear_message(monkeypatch):
 
 
 def test_db_url_returns_value_when_set(monkeypatch):
-    from devices.igor.tools import machine_manager as mm
+    from unseen_university.devices.igor.tools import machine_manager as mm
 
     monkeypatch.setenv("UU_HOME_DB_URL", "postgresql://test")
     assert mm._db_url() == "postgresql://test"
@@ -61,7 +61,7 @@ def test_db_url_returns_value_when_set(monkeypatch):
 def test_pg_connect_surfaces_runtime_error_at_first_use(monkeypatch):
     """Concrete regression: import succeeded (tested above); now calling
     _pg_connect with the env unset should raise the same RuntimeError."""
-    from devices.igor.tools import machine_manager as mm
+    from unseen_university.devices.igor.tools import machine_manager as mm
 
     monkeypatch.setenv("UU_HOME_DB_URL", "")
     with pytest.raises(RuntimeError) as excinfo:

@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from devices.igor.memory.cortex import Cortex
+from unseen_university.devices.igor.memory.cortex import Cortex
 
 
 @pytest.fixture

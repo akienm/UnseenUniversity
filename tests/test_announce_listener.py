@@ -21,8 +21,8 @@ from unseen_university.announce import (
     AnnounceListener,
     IdentityEnvelope,
 )
-from bus.envelope import Envelope
-from bus.imap_server import IMAPServer
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.bus.imap_server import IMAPServer
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
 

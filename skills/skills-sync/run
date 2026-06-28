@@ -14,13 +14,13 @@ from pathlib import Path
 
 def _load_installer():
     try:
-        from devices.installer.shim import (
+        from unseen_university.devices.installer.shim import (
             DEFAULT_DEPLOY_TARGET,
             DEFAULT_MANIFEST_PATH,
             DEFAULT_MASTER_ROOT,
         )
-        from devices.installer.manifest import load_manifest
-        from devices.installer import deploy_skills, deploy_status
+        from unseen_university.devices.installer.manifest import load_manifest
+        from unseen_university.devices.installer import deploy_skills, deploy_status
         return DEFAULT_MASTER_ROOT, DEFAULT_DEPLOY_TARGET, DEFAULT_MANIFEST_PATH, load_manifest, deploy_skills, deploy_status
     except ImportError:
         print(

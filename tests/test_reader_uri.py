@@ -21,8 +21,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.reader.blob_cache import BlobCache, BlobEntry
-from devices.reader.uri import FetchResult, _strip_html, _text_from_raw, fetch_uri
+from unseen_university.devices.reader.blob_cache import BlobCache, BlobEntry
+from unseen_university.devices.reader.uri import FetchResult, _strip_html, _text_from_raw, fetch_uri
 
 # ── BlobCache ──────────────────────────────────────────────────────────────────
 

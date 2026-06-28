@@ -21,7 +21,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.main import Igor
+from unseen_university.devices.igor.main import Igor
 
 # ── Bug 1: tool-call parser flat-key fallback ────────────────────────────────
 
@@ -98,7 +98,7 @@ def test_verbatim_trace_push_and_retrieve_via_twm_category():
 
     # Use a live cortex against the running Postgres — this verifies the
     # category-filtered twm_read path which is the load-bearing infrastructure.
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",

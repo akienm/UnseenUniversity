@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from devices.igor.restart_guard import (
+from unseen_university.devices.igor.restart_guard import (
     HALT_FLAG_FILENAME,
     HISTORY_FILENAME,
     clear_history,

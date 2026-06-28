@@ -14,13 +14,13 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.engineered_failure import (  # noqa: E402
+from unseen_university.devices.igor.cognition.engineered_failure import (  # noqa: E402
     STAKES_THRESHOLD,
     information_gain,
     is_high_stakes,
     sort_by_information_gain,
 )
-from devices.igor.cognition.experiment_cascade import (  # noqa: E402
+from unseen_university.devices.igor.cognition.experiment_cascade import (  # noqa: E402
     BaseCascadeLevel,
     CascadeResult,
     CascadeSituation,

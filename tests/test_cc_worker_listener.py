@@ -16,8 +16,8 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from bus.envelope import Envelope
-from devices.granny.cc_worker_listener import CCWorkerListener, _CCShimAdapter
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.granny.cc_worker_listener import CCWorkerListener, _CCShimAdapter
 
 
 # ── Fake IMAP ─────────────────────────────────────────────────────────────────

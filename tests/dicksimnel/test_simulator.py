@@ -24,7 +24,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from devices.dicksimnel.simulator import Event, TicketSimulator
+from unseen_university.devices.dicksimnel.simulator import Event, TicketSimulator
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ def _write_turns(log_dir: Path, events: list[dict]) -> None:
 def _make_sim(tmp_path: Path, ticket_id: str, events: list[dict]) -> TicketSimulator:
     """Create a TicketSimulator whose _LOGS_ROOT is redirected to tmp_path."""
     _write_turns(tmp_path / ticket_id, events)
-    with patch("devices.dicksimnel.simulator._LOGS_ROOT", tmp_path):
+    with patch("unseen_university.devices.dicksimnel.simulator._LOGS_ROOT", tmp_path):
         return TicketSimulator(ticket_id)
 
 
@@ -84,7 +84,7 @@ def test_replay_all_returns_events_in_order(tmp_path):
 
 
 def test_replay_all_empty_when_no_log_dir(tmp_path):
-    with patch("devices.dicksimnel.simulator._LOGS_ROOT", tmp_path):
+    with patch("unseen_university.devices.dicksimnel.simulator._LOGS_ROOT", tmp_path):
         sim = TicketSimulator("T-no-logs")
     events = list(sim.replay_all())
     assert events == []
@@ -155,7 +155,7 @@ def test_success_rate_computed_correctly(tmp_path):
 
 
 def test_success_rate_zero_when_no_events(tmp_path):
-    with patch("devices.dicksimnel.simulator._LOGS_ROOT", tmp_path):
+    with patch("unseen_university.devices.dicksimnel.simulator._LOGS_ROOT", tmp_path):
         sim = TicketSimulator("T-empty-rate")
     assert sim.success_rate() == 0.0
 
@@ -233,11 +233,11 @@ def test_all_tool_calls_answered_from_cache(ticket_id):
 
 def test_device_replay_and_analyze_returns_structured_result(tmp_path):
     """DickSimnelDevice.replay_and_analyze returns expected keys."""
-    from devices.dicksimnel.device import DickSimnelDevice
+    from unseen_university.devices.dicksimnel.device import DickSimnelDevice
 
     _write_turns(tmp_path / "T-analyze-test", _SAMPLE_EVENTS)
 
-    with patch("devices.dicksimnel.simulator._LOGS_ROOT", tmp_path), \
+    with patch("unseen_university.devices.dicksimnel.simulator._LOGS_ROOT", tmp_path), \
          patch.object(DickSimnelDevice, "__init__", lambda self: None):
         device = DickSimnelDevice.__new__(DickSimnelDevice)
         result = device.replay_and_analyze("T-analyze-test")
@@ -251,9 +251,9 @@ def test_device_replay_and_analyze_returns_structured_result(tmp_path):
 
 def test_device_replay_and_analyze_empty_ticket(tmp_path):
     """replay_and_analyze returns zero counts for ticket with no logs."""
-    from devices.dicksimnel.device import DickSimnelDevice
+    from unseen_university.devices.dicksimnel.device import DickSimnelDevice
 
-    with patch("devices.dicksimnel.simulator._LOGS_ROOT", tmp_path), \
+    with patch("unseen_university.devices.dicksimnel.simulator._LOGS_ROOT", tmp_path), \
          patch.object(DickSimnelDevice, "__init__", lambda self: None):
         device = DickSimnelDevice.__new__(DickSimnelDevice)
         result = device.replay_and_analyze("T-no-events")

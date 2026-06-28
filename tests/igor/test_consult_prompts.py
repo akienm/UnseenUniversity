@@ -11,8 +11,8 @@ Covers:
 
 from __future__ import annotations
 
-from devices.igor.cognition.consult import ConsultState
-from devices.igor.cognition.consult_prompts import (
+from unseen_university.devices.igor.cognition.consult import ConsultState
+from unseen_university.devices.igor.cognition.consult_prompts import (
     build_state_message,
     build_system_prompt,
 )
@@ -149,7 +149,7 @@ class TestIntegrationWithConsultSession:
     templates instead of the inline stubs."""
 
     def test_session_uses_reasoning_system_prompt(self, monkeypatch, tmp_path):
-        from devices.igor.cognition import consult as cm
+        from unseen_university.devices.igor.cognition import consult as cm
 
         monkeypatch.setattr(cm, "CONSULT_LOG_PATH", tmp_path / "consults.log")
         reasoning_state = ConsultState(problem_kind="reasoning", summary="s")

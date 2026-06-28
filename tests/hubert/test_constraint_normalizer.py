@@ -17,7 +17,7 @@ import os
 
 import pytest
 
-import devices.hubert.constraint_normalizer as cn
+import unseen_university.devices.hubert.constraint_normalizer as cn
 
 # ── Env-gated skip marker ─────────────────────────────────────────────────────
 

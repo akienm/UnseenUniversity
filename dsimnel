@@ -48,7 +48,7 @@ def _session_exists() -> bool:
 
 
 def _start_daemon() -> None:
-    cmd = f"{VENV_PYTHON} -m devices.dicksimnel"
+    cmd = f"{VENV_PYTHON} -m unseen_university.devices.dicksimnel"
     subprocess.run(
         ["tmux", "new-session", "-d", "-s", TMUX_SESSION, "-x", "220", "-y", "50"],
         check=True, cwd=UU_ROOT,

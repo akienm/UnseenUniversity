@@ -42,7 +42,7 @@ _stub_modules()
 
 # ── import NE internals directly (no live DB needed) ─────────────────────────
 
-from devices.igor.cognition.narrative_engine import (
+from unseen_university.devices.igor.cognition.narrative_engine import (
     NarrativeEngine,
     _PE_HEAT_THRESHOLD,
     _PE_REINFORCE_DELTA,
@@ -191,7 +191,7 @@ class TestApplyOutputReturnsPromotedIds(unittest.TestCase):
         milieu_mock = MagicMock()
         milieu_mock.get.return_value = None
         with patch.dict(sys.modules, {"igor.cognition.milieu": milieu_mock}):
-            from devices.igor.memory.models import Memory, MemoryType
+            from unseen_university.devices.igor.memory.models import Memory, MemoryType
             result_dict = {
                 "summary_csb": "test",
                 "salience_updates": [],

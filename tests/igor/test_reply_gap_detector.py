@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.reply_gap_detector import (  # noqa: E402
+from unseen_university.devices.igor.cognition.reply_gap_detector import (  # noqa: E402
     ReplyGap,
     detect_and_flag,
     find_reply_gap,

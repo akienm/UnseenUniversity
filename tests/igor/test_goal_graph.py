@@ -45,7 +45,7 @@ _skip_no_db = pytest.mark.skipif(not _db_available(), reason="Postgres not reach
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
     """Seed goal facia + PR_ROOT (which strategic goals point at) once per module."""
-    from devices.igor.tools import (
+    from unseen_university.devices.igor.tools import (
         seed_persistent_relationships as _pr_seed,
         seed_strategic_goals as _goal_seed,
     )
@@ -85,7 +85,7 @@ def _cleanup_test_subgoals() -> None:
 
 @_skip_no_db
 def test_seed_creates_aspirational_goal():
-    from devices.igor.tools.goal_graph import _resolve_goal
+    from unseen_university.devices.igor.tools.goal_graph import _resolve_goal
 
     row = _resolve_goal("PR_GOAL_ASPIRATIONAL_SUCK_LESS")
     assert row is not None
@@ -99,7 +99,7 @@ def test_seed_creates_aspirational_goal():
 
 @_skip_no_db
 def test_seed_creates_three_strategic_goals():
-    from devices.igor.tools.goal_graph import _fetch_goal_facia
+    from unseen_university.devices.igor.tools.goal_graph import _fetch_goal_facia
 
     rows = _fetch_goal_facia()
     strategic = [
@@ -113,7 +113,7 @@ def test_seed_creates_three_strategic_goals():
 
 @_skip_no_db
 def test_strategic_goals_parent_is_aspirational():
-    from devices.igor.tools.goal_graph import _resolve_goal
+    from unseen_university.devices.igor.tools.goal_graph import _resolve_goal
 
     for gid in (
         "PR_GOAL_STRATEGIC_SELF_GOALGRAPH",
@@ -127,7 +127,7 @@ def test_strategic_goals_parent_is_aspirational():
 
 @_skip_no_db
 def test_seed_is_idempotent():
-    from devices.igor.tools.seed_strategic_goals import seed
+    from unseen_university.devices.igor.tools.seed_strategic_goals import seed
 
     rc1 = seed()
     rc2 = seed()
@@ -139,7 +139,7 @@ def test_seed_is_idempotent():
 
 @_skip_no_db
 def test_goal_list_groups_by_type():
-    from devices.igor.tools.goal_graph import goal_list
+    from unseen_university.devices.igor.tools.goal_graph import goal_list
 
     out = goal_list()
     assert "[goal_aspirational]" in out
@@ -152,7 +152,7 @@ def test_goal_list_groups_by_type():
 
 @_skip_no_db
 def test_decompose_creates_child_goal():
-    from devices.igor.tools.goal_graph import _resolve_goal, goal_decompose
+    from unseen_university.devices.igor.tools.goal_graph import _resolve_goal, goal_decompose
 
     result = goal_decompose(
         parent="PR_GOAL_STRATEGIC_SELF_GOALGRAPH",
@@ -170,7 +170,7 @@ def test_decompose_creates_child_goal():
 
 @_skip_no_db
 def test_decompose_rejects_invalid_relationship_type():
-    from devices.igor.tools.goal_graph import goal_decompose
+    from unseen_university.devices.igor.tools.goal_graph import goal_decompose
 
     out = goal_decompose(
         parent="PR_GOAL_ASPIRATIONAL_SUCK_LESS",
@@ -182,7 +182,7 @@ def test_decompose_rejects_invalid_relationship_type():
 
 @_skip_no_db
 def test_decompose_rejects_unknown_parent():
-    from devices.igor.tools.goal_graph import goal_decompose
+    from unseen_university.devices.igor.tools.goal_graph import goal_decompose
 
     out = goal_decompose(parent="PR_GOAL_NONEXISTENT", sub_goal_description="x")
     assert "not found" in out
@@ -190,7 +190,7 @@ def test_decompose_rejects_unknown_parent():
 
 @_skip_no_db
 def test_decompose_rejects_empty_description():
-    from devices.igor.tools.goal_graph import goal_decompose
+    from unseen_university.devices.igor.tools.goal_graph import goal_decompose
 
     out = goal_decompose(
         parent="PR_GOAL_ASPIRATIONAL_SUCK_LESS", sub_goal_description=""
@@ -203,7 +203,7 @@ def test_decompose_rejects_empty_description():
 
 @_skip_no_db
 def test_progress_clamps_to_unit_interval():
-    from devices.igor.tools.goal_graph import (
+    from unseen_university.devices.igor.tools.goal_graph import (
         _resolve_goal,
         goal_decompose,
         goal_progress,
@@ -225,7 +225,7 @@ def test_progress_clamps_to_unit_interval():
 
 @_skip_no_db
 def test_progress_auto_transitions_to_in_progress():
-    from devices.igor.tools.goal_graph import (
+    from unseen_university.devices.igor.tools.goal_graph import (
         _resolve_goal,
         goal_decompose,
         goal_progress,
@@ -245,7 +245,7 @@ def test_progress_auto_transitions_to_in_progress():
 
 @_skip_no_db
 def test_progress_rejects_unknown_goal():
-    from devices.igor.tools.goal_graph import goal_progress
+    from unseen_university.devices.igor.tools.goal_graph import goal_progress
 
     out = goal_progress(name="PR_GOAL_NOSUCH", delta=0.1)
     assert "No goal found" in out
@@ -256,7 +256,7 @@ def test_progress_rejects_unknown_goal():
 
 @_skip_no_db
 def test_state_transition_valid_flow():
-    from devices.igor.tools.goal_graph import (
+    from unseen_university.devices.igor.tools.goal_graph import (
         _resolve_goal,
         goal_decompose,
         goal_state_transition,
@@ -286,7 +286,7 @@ def test_state_transition_valid_flow():
 
 @_skip_no_db
 def test_state_transition_rejects_terminal_exit():
-    from devices.igor.tools.goal_graph import goal_decompose, goal_state_transition
+    from unseen_university.devices.igor.tools.goal_graph import goal_decompose, goal_state_transition
 
     create = goal_decompose(
         parent="PR_GOAL_STRATEGIC_SELF_GOALGRAPH",
@@ -301,7 +301,7 @@ def test_state_transition_rejects_terminal_exit():
 
 @_skip_no_db
 def test_state_transition_rejects_not_started_to_blocked():
-    from devices.igor.tools.goal_graph import goal_decompose, goal_state_transition
+    from unseen_university.devices.igor.tools.goal_graph import goal_decompose, goal_state_transition
 
     create = goal_decompose(
         parent="PR_GOAL_STRATEGIC_SELF_GOALGRAPH",
@@ -314,7 +314,7 @@ def test_state_transition_rejects_not_started_to_blocked():
 
 @_skip_no_db
 def test_state_transition_rejects_invalid_state():
-    from devices.igor.tools.goal_graph import goal_state_transition
+    from unseen_university.devices.igor.tools.goal_graph import goal_state_transition
 
     out = goal_state_transition(
         name="PR_GOAL_ASPIRATIONAL_SUCK_LESS", new_state="happy"
@@ -329,10 +329,10 @@ def test_state_transition_rejects_invalid_state():
 def test_goal_adopt_accepts_parent_goal_facia_id():
     from unittest.mock import patch
 
-    from devices.igor.memory.cortex import Cortex
-    from devices.igor.tools.ops import goal_adopt
+    from unseen_university.devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.tools.ops import goal_adopt
 
-    with patch("devices.igor.tools.ops._channel_append"):
+    with patch("unseen_university.devices.igor.tools.ops._channel_append"):
         result = goal_adopt(
             "sprint goal graph tests",
             parent_goal_facia_id="PR_GOAL_STRATEGIC_SELF_GOALGRAPH",
@@ -367,7 +367,7 @@ def test_goal_adopt_accepts_parent_goal_facia_id():
 
 
 def test_tools_registered():
-    from devices.igor.tools.registry import registry
+    from unseen_university.devices.igor.tools.registry import registry
 
     assert "goal_list" in registry._tools
     assert "goal_decompose" in registry._tools

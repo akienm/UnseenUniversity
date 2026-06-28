@@ -29,14 +29,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
-    from devices.igor.tools import seed_persistent_relationships as _seed
+    from unseen_university.devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
 
 
 def _clear_frame_observations():
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     Cortex(None).twm_evict_category("relationship_frame")
 
@@ -44,7 +44,7 @@ def _clear_frame_observations():
 def _push_test_frame(facia_id: str = "PR_AKIEN", weight: float = 1.0):
     """Push a frame marker for testing — bypasses the throttle map by
     going through the cortex directly."""
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex.twm_evict_category("relationship_frame")
@@ -82,41 +82,41 @@ def _fake_memory(mem_id: str, score: float, pr_facia_id: str = None):
 
 
 def test_compute_retrieval_bias_baseline_returns_default():
-    from devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
+    from unseen_university.devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
 
     assert pr_compute_retrieval_bias(1.0) == pytest.approx(0.10, abs=1e-6)
 
 
 def test_compute_retrieval_bias_high_weight():
-    from devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
+    from unseen_university.devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
 
     # weight 2.0 → 0.10 + 1.0*0.05 = 0.15
     assert pr_compute_retrieval_bias(2.0) == pytest.approx(0.15, abs=1e-6)
 
 
 def test_compute_retrieval_bias_low_weight_keeps_floor():
-    from devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
+    from unseen_university.devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
 
     # weight 0.0 → 0.10 + (-1.0)*0.05 = 0.05 (floor)
     assert pr_compute_retrieval_bias(0.0) == pytest.approx(0.05, abs=1e-6)
 
 
 def test_compute_retrieval_bias_clamps_above_max():
-    from devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
+    from unseen_university.devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
 
     # Way past saturation → caps at 0.20
     assert pr_compute_retrieval_bias(10.0) == pytest.approx(0.20, abs=1e-6)
 
 
 def test_compute_retrieval_bias_clamps_below_min():
-    from devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
+    from unseen_university.devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
 
     # Negative (shouldn't happen) → floors at 0.05
     assert pr_compute_retrieval_bias(-100.0) == pytest.approx(0.05, abs=1e-6)
 
 
 def test_compute_retrieval_bias_handles_invalid_input():
-    from devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
+    from unseen_university.devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
 
     assert pr_compute_retrieval_bias(None) == pytest.approx(0.10, abs=1e-6)
     assert pr_compute_retrieval_bias("garbage") == pytest.approx(0.10, abs=1e-6)
@@ -126,7 +126,7 @@ def test_retrieval_bias_never_overwhelming():
     """Critical invariant: even max bias doesn't dominate strong text/embedding
     signals. Text scores normalize to 0-1; the max bias of 0.20 is a tiebreaker
     on top, not an override of substantive signal."""
-    from devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
+    from unseen_university.devices.igor.tools.persistent_relationships import pr_compute_retrieval_bias
 
     for w in (0.0, 0.5, 1.0, 1.5, 2.0, 5.0, 10.0):
         assert pr_compute_retrieval_bias(w) <= 0.20
@@ -137,7 +137,7 @@ def test_retrieval_bias_never_overwhelming():
 
 
 def test_apply_bias_no_op_when_no_frame_active():
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     _clear_frame_observations()
     cortex = Cortex(None)
@@ -154,7 +154,7 @@ def test_apply_bias_no_op_when_no_frame_active():
 
 
 def test_apply_bias_bumps_linked_memories_only():
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     _push_test_frame("PR_AKIEN", weight=1.0)
     cortex = Cortex(None)
@@ -175,7 +175,7 @@ def test_apply_bias_bumps_linked_memories_only():
 
 
 def test_apply_bias_scales_with_frame_weight():
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
 
@@ -196,7 +196,7 @@ def test_apply_bias_scales_with_frame_weight():
 
 def test_apply_bias_handles_memory_without_metadata():
     """Memories without a metadata attribute must not crash the bias pass."""
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     _push_test_frame("PR_AKIEN", weight=1.0)
     cortex = Cortex(None)
@@ -220,7 +220,7 @@ def test_apply_bias_is_best_effort_on_failure():
     breaks. Force a failure by passing something that will trigger an
     exception inside the loop.
     """
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     _push_test_frame("PR_AKIEN", weight=1.0)
     cortex = Cortex(None)
@@ -241,7 +241,7 @@ def test_apply_bias_is_best_effort_on_failure():
 
 
 def test_apply_bias_with_no_facia_in_frame_metadata_no_op():
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex.twm_evict_category("relationship_frame")

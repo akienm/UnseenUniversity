@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.scraps.embedding_engine import (
+from unseen_university.devices.scraps.embedding_engine import (
     _WG_DIMENSION,
     _WG_MODEL,
     _cosine,
@@ -65,14 +65,14 @@ class TestSparseToDense:
 
 class TestTextToActivationVector:
     def _make_graph_with_db(self, spread_returns: dict):
-        from devices.igor.cognition.word_graph import WordGraph
+        from unseen_university.devices.igor.cognition.word_graph import WordGraph
 
         wg = WordGraph.__new__(WordGraph)
         wg.spread_from_words = MagicMock(return_value=spread_returns)
         return wg
 
     def test_empty_text_returns_empty(self):
-        from devices.igor.cognition.word_graph import WordGraph
+        from unseen_university.devices.igor.cognition.word_graph import WordGraph
 
         wg = WordGraph.__new__(WordGraph)
         wg.spread_from_words = MagicMock(return_value={})
@@ -117,12 +117,12 @@ class TestTextToActivationVector:
 
 class TestWgEmbed:
     def test_returns_none_when_import_fails(self):
-        with patch.dict("sys.modules", {"devices.igor.cognition.word_graph": None}):
+        with patch.dict("sys.modules", {"unseen_university.devices.igor.cognition.word_graph": None}):
             result = _wg_embed(["hello"])
         assert result is None
 
     def test_returns_none_when_wordgraph_raises(self):
-        import devices.igor.cognition.word_graph as wg_mod
+        import unseen_university.devices.igor.cognition.word_graph as wg_mod
 
         orig = wg_mod.WordGraph
         wg_mod.WordGraph = MagicMock(side_effect=RuntimeError("db down"))
@@ -133,7 +133,7 @@ class TestWgEmbed:
         assert result is None
 
     def test_result_shape(self):
-        import devices.igor.cognition.word_graph as wg_mod
+        import unseen_university.devices.igor.cognition.word_graph as wg_mod
 
         mock_wg = MagicMock()
         mock_wg.text_to_activation_vector.return_value = {"foo": 1.0, "bar": 0.5}
@@ -179,13 +179,13 @@ class TestEmbedBatchWgIntegration:
         mock_wg = MagicMock()
         mock_wg.text_to_activation_vector.return_value = {"hello": 0.9, "world": 0.5}
 
-        import devices.igor.cognition.word_graph as wg_mod
+        import unseen_university.devices.igor.cognition.word_graph as wg_mod
 
         orig = wg_mod.WordGraph
         wg_mod.WordGraph = lambda: mock_wg
         try:
             with caplog.at_level(
-                logging.INFO, logger="devices.scraps.embedding_engine"
+                logging.INFO, logger="unseen_university.devices.scraps.embedding_engine"
             ):
                 embed_batch(["hello world"], force_fallback=True)
         finally:
@@ -196,7 +196,7 @@ class TestEmbedBatchWgIntegration:
     def test_wg_failure_does_not_block_embed(self):
         """WG backend failure must not raise — embed still returns primary result."""
         with patch(
-            "devices.scraps.embedding_engine._log_wg_comparison",
+            "unseen_university.devices.scraps.embedding_engine._log_wg_comparison",
             side_effect=RuntimeError("wg exploded"),
         ):
             results = embed_batch(["test"], force_fallback=True)

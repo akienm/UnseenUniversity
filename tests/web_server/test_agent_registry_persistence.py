@@ -15,7 +15,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def patch_registry_file(tmp_path, monkeypatch):
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     monkeypatch.setattr(srv, "_AGENT_REGISTRY_FILE", tmp_path / "agent_registry.json")
     # Reset in-memory state before each test
@@ -27,7 +27,7 @@ def patch_registry_file(tmp_path, monkeypatch):
 
 
 def test_save_writes_json_file(tmp_path):
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     with srv._agents_lock:
         srv._agents["granny"] = {
@@ -48,7 +48,7 @@ def test_save_writes_json_file(tmp_path):
 
 
 def test_load_restores_registrations(tmp_path):
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     registry = {
         "librarian": {
@@ -70,7 +70,7 @@ def test_load_restores_registrations(tmp_path):
 
 
 def test_load_missing_file_is_silent():
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     # File doesn't exist — should not raise
     srv._load_agents()
@@ -80,7 +80,7 @@ def test_load_missing_file_is_silent():
 
 
 def test_round_trip(tmp_path):
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     with srv._agents_lock:
         srv._agents["granny"] = {
@@ -109,7 +109,7 @@ def test_round_trip(tmp_path):
 
 def test_deregister_removes_from_file(tmp_path):
     """After deregister, agent should not appear in the persisted file."""
-    import devices.web_server.server as srv
+    import unseen_university.devices.web_server.server as srv
 
     with srv._agents_lock:
         srv._agents["granny"] = {

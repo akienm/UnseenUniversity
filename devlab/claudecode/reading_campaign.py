@@ -599,8 +599,8 @@ def _worker_id() -> str:
 
 def _blob_for(item_source: str, title: str, author: str) -> Path:
     """Return the blob path for an item, fetching it if absent."""
-    from devices.igor.tools.reading_engine import blob_path as _bp
-    from devices.igor.tools.reading_engine import fetch_to_blob as _fetch
+    from unseen_university.devices.igor.tools.reading_engine import blob_path as _bp
+    from unseen_university.devices.igor.tools.reading_engine import fetch_to_blob as _fetch
 
     bp = _bp(item_source)
     if not bp.exists():
@@ -613,7 +613,7 @@ def _process_block_local(block: dict, target_schema: str = "clan") -> dict:
 
     Raises on hard failure; caller handles retry policy.
     """
-    from devices.igor.tools.reading_engine import process_one_chunk
+    from unseen_university.devices.igor.tools.reading_engine import process_one_chunk
 
     blob = _blob_for(block["item_source"], block["item_title"], block["item_author"])
     return process_one_chunk(
@@ -633,7 +633,7 @@ def _process_block_cloud_retry(
     Called only when the local attempt failed AND the campaign still has
     budget remaining. Cost from this call is attributed back to the block.
     """
-    from devices.igor.tools.reading_engine import process_one_chunk
+    from unseen_university.devices.igor.tools.reading_engine import process_one_chunk
 
     blob = _blob_for(block["item_source"], block["item_title"], block["item_author"])
     return process_one_chunk(
@@ -695,8 +695,8 @@ def worker_loop(
         # from real blob size. Idempotent — existing rows stay queued.
         if block["chunk_pos"] == 0:
             try:
-                from devices.igor.tools.reading_engine import blob_path as _bp
-                from devices.igor.tools.reading_engine import count_chunks as _cc
+                from unseen_university.devices.igor.tools.reading_engine import blob_path as _bp
+                from unseen_university.devices.igor.tools.reading_engine import count_chunks as _cc
 
                 bp = _bp(block["item_source"])
                 if bp.exists():

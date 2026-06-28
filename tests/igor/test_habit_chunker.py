@@ -28,7 +28,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.tools.habit_chunker import (
+from unseen_university.devices.igor.tools.habit_chunker import (
     _chunk_id,
     _find_ngrams,
     run_habit_chunking,
@@ -98,12 +98,12 @@ class TestChunkId:
 class TestRunHabitChunking:
     def _mock_sequences(self, seqs):
         return patch(
-            "devices.igor.tools.habit_chunker._fetch_habit_sequences",
+            "unseen_university.devices.igor.tools.habit_chunker._fetch_habit_sequences",
             return_value=seqs,
         )
 
     def _mock_upsert(self):
-        return patch("devices.igor.tools.habit_chunker._upsert_chunk")
+        return patch("unseen_university.devices.igor.tools.habit_chunker._upsert_chunk")
 
     def test_no_sequences_returns_skip(self):
         with self._mock_sequences([]):
@@ -145,7 +145,7 @@ class TestRunHabitChunking:
 
     def test_db_fetch_error_returns_error_string(self):
         with patch(
-            "devices.igor.tools.habit_chunker._fetch_habit_sequences",
+            "unseen_university.devices.igor.tools.habit_chunker._fetch_habit_sequences",
             side_effect=Exception("conn refused"),
         ):
             result = run_habit_chunking()
@@ -156,7 +156,7 @@ class TestRunHabitChunking:
         seqs = [["PROC_A", "PROC_B", "PROC_C"]] * 6
         with self._mock_sequences(seqs):
             with patch(
-                "devices.igor.tools.habit_chunker._upsert_chunk",
+                "unseen_university.devices.igor.tools.habit_chunker._upsert_chunk",
                 side_effect=Exception("DB error"),
             ):
                 result = run_habit_chunking()

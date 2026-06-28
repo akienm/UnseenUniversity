@@ -20,7 +20,7 @@ import unittest
 from pathlib import Path
 
 
-from devices.igor.tools.registry import Tool, ToolRegistry, ToolStats
+from unseen_university.devices.igor.tools.registry import Tool, ToolRegistry, ToolStats
 
 # ── ToolStats unit tests ──────────────────────────────────────────────────────
 
@@ -211,19 +211,19 @@ class TestGetToolRegistryReport(unittest.TestCase):
     def test_no_calls_message(self):
         """If the global registry has no stats, report says 'No tool calls'."""
         # Import the function but patch the registry it uses
-        from devices.igor.tools import metrics as metrics_mod
-        from devices.igor.tools.registry import ToolRegistry
+        from unseen_university.devices.igor.tools import metrics as metrics_mod
+        from unseen_university.devices.igor.tools.registry import ToolRegistry
         import unittest.mock as mock
 
         empty_reg = ToolRegistry()
-        with mock.patch("devices.igor.tools.metrics.registry", empty_reg):
+        with mock.patch("unseen_university.devices.igor.tools.metrics.registry", empty_reg):
             # Patch the registry inside _get_tool_registry_report
-            import devices.igor.tools.registry as reg_mod
+            import unseen_university.devices.igor.tools.registry as reg_mod
 
             real_registry = reg_mod.registry
             reg_mod.registry = empty_reg
             try:
-                from devices.igor.tools.metrics import _get_tool_registry_report
+                from unseen_university.devices.igor.tools.metrics import _get_tool_registry_report
 
                 result = _get_tool_registry_report()
                 self.assertIn("No tool calls", result)
@@ -231,8 +231,8 @@ class TestGetToolRegistryReport(unittest.TestCase):
                 reg_mod.registry = real_registry
 
     def test_report_format_with_calls(self):
-        from devices.igor.tools.registry import ToolRegistry, Tool
-        import devices.igor.tools.registry as reg_mod
+        from unseen_university.devices.igor.tools.registry import ToolRegistry, Tool
+        import unseen_university.devices.igor.tools.registry as reg_mod
 
         test_reg = ToolRegistry()
         test_reg.register(
@@ -248,7 +248,7 @@ class TestGetToolRegistryReport(unittest.TestCase):
         original = reg_mod.registry
         reg_mod.registry = test_reg
         try:
-            from devices.igor.tools.metrics import _get_tool_registry_report
+            from unseen_university.devices.igor.tools.metrics import _get_tool_registry_report
 
             result = _get_tool_registry_report()
             self.assertIn("demo_tool", result)

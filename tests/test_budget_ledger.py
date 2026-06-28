@@ -50,7 +50,7 @@ def live_db():
 
 
 def _debit(agent_id, session_id, provider, cost_usd, tokens=(10, 5), model="gpt-4o"):
-    from devices.inference.budget_ledger import debit
+    from unseen_university.devices.inference.budget_ledger import debit
 
     debit(
         agent_id=agent_id,
@@ -75,33 +75,33 @@ class TestNoDB:
 
     def test_budget_summary_empty(self, monkeypatch):
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
-        from devices.inference.budget_ledger import budget_summary
+        from unseen_university.devices.inference.budget_ledger import budget_summary
 
         assert budget_summary("igor") == []
 
     def test_budget_limit_set_false(self, monkeypatch):
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
-        from devices.inference.budget_ledger import budget_limit_set
+        from unseen_university.devices.inference.budget_ledger import budget_limit_set
 
         assert budget_limit_set("igor", "session", 5.0) is False
 
     def test_budget_remaining_safe_dict(self, monkeypatch):
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
-        from devices.inference.budget_ledger import budget_remaining
+        from unseen_university.devices.inference.budget_ledger import budget_remaining
 
         r = budget_remaining("igor", "s1")
         assert r["remaining_usd"] is None
 
     def test_check_session_limit_noop_for_ollama(self, monkeypatch):
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
-        from devices.inference.budget_ledger import check_session_limit
+        from unseen_university.devices.inference.budget_ledger import check_session_limit
 
         ok, _ = check_session_limit("igor", "s1", "ollama")
         assert ok
 
     def test_check_session_limit_failopen_for_or(self, monkeypatch):
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
-        from devices.inference.budget_ledger import check_session_limit
+        from unseen_university.devices.inference.budget_ledger import check_session_limit
 
         ok, _ = check_session_limit("igor", "s1", "openrouter")
         assert ok  # fail-open when DB unavailable
@@ -112,13 +112,13 @@ class TestNoDB:
 
 class TestValidation:
     def test_budget_summary_bad_group_by(self):
-        from devices.inference.budget_ledger import budget_summary
+        from unseen_university.devices.inference.budget_ledger import budget_summary
 
         with pytest.raises(ValueError):
             budget_summary("igor", group_by="bad_value")
 
     def test_budget_limit_set_bad_scope(self):
-        from devices.inference.budget_ledger import budget_limit_set
+        from unseen_university.devices.inference.budget_ledger import budget_limit_set
 
         with pytest.raises(ValueError):
             budget_limit_set("igor", "bad_scope", 5.0)
@@ -138,7 +138,7 @@ class TestLedgerIntegration:
 
     def test_debit_and_summary_by_session(self):
         """After 3 inference calls, budget_summary returns correct token counts."""
-        from devices.inference.budget_ledger import budget_summary
+        from unseen_university.devices.inference.budget_ledger import budget_summary
 
         agent = self._unique_agent()
         session = f"sess_{int(time.time() * 1000)}"
@@ -157,7 +157,7 @@ class TestLedgerIntegration:
         assert abs(r["cost_usd_total"] - 0.06) < 1e-6
 
     def test_debit_and_summary_multiple_sessions(self):
-        from devices.inference.budget_ledger import budget_summary
+        from unseen_university.devices.inference.budget_ledger import budget_summary
 
         agent = self._unique_agent()
         sess_a = f"sess_a_{int(time.time() * 1000)}"
@@ -172,7 +172,7 @@ class TestLedgerIntegration:
 
     def test_ollama_cost_null_excluded_from_sum(self):
         """Ollama calls (cost_usd=None) don't inflate the OR cost total."""
-        from devices.inference.budget_ledger import budget_summary
+        from unseen_university.devices.inference.budget_ledger import budget_summary
 
         agent = self._unique_agent()
         session = f"sess_{int(time.time() * 1000)}"
@@ -188,7 +188,7 @@ class TestLedgerIntegration:
 
     def test_budget_remaining_with_limit(self):
         """budget_remaining returns correct value against a set limit."""
-        from devices.inference.budget_ledger import budget_limit_set, budget_remaining
+        from unseen_university.devices.inference.budget_ledger import budget_limit_set, budget_remaining
 
         agent = self._unique_agent()
         session = f"sess_{int(time.time() * 1000)}"
@@ -203,7 +203,7 @@ class TestLedgerIntegration:
         assert info["pct_used"] == pytest.approx(40.0)
 
     def test_budget_remaining_no_limit(self):
-        from devices.inference.budget_ledger import budget_remaining
+        from unseen_university.devices.inference.budget_ledger import budget_remaining
 
         agent = self._unique_agent()
         session = f"sess_{int(time.time() * 1000)}"
@@ -217,7 +217,7 @@ class TestLedgerIntegration:
 
     def test_or_enforcement_blocks_when_limit_exceeded(self):
         """OR call rejected when cumulative session spend >= limit."""
-        from devices.inference.budget_ledger import (
+        from unseen_university.devices.inference.budget_ledger import (
             budget_limit_set,
             check_session_limit,
         )
@@ -237,7 +237,7 @@ class TestLedgerIntegration:
 
     def test_ollama_not_enforced_even_with_limit(self):
         """Ollama calls always return ok regardless of limit."""
-        from devices.inference.budget_ledger import (
+        from unseen_university.devices.inference.budget_ledger import (
             budget_limit_set,
             check_session_limit,
         )
@@ -254,7 +254,7 @@ class TestLedgerIntegration:
 
     def test_no_limit_check_without_agent_session(self):
         """check_session_limit with no session limit set returns ok."""
-        from devices.inference.budget_ledger import check_session_limit
+        from unseen_university.devices.inference.budget_ledger import check_session_limit
 
         agent = self._unique_agent()
         ok, msg = check_session_limit(agent, "no-session", "openrouter")
@@ -263,7 +263,7 @@ class TestLedgerIntegration:
 
     def test_budget_limit_set_upserts(self):
         """budget_limit_set overwrites an existing limit."""
-        from devices.inference.budget_ledger import budget_limit_set, budget_remaining
+        from unseen_university.devices.inference.budget_ledger import budget_limit_set, budget_remaining
 
         agent = self._unique_agent()
         session = f"sess_{int(time.time() * 1000)}"
@@ -289,8 +289,8 @@ class TestDispatchDebitHook:
         }
 
     def test_dispatch_debits_or_call(self):
-        from devices.inference.device import InferenceDevice
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.shim import InferenceRequest
 
         dev = InferenceDevice(mode="openrouter")
         req = InferenceRequest(
@@ -301,20 +301,20 @@ class TestDispatchDebitHook:
 
         with (
             patch(
-                "devices.inference.budget_gate.check_balance", return_value=(True, "OK")
+                "unseen_university.devices.inference.budget_gate.check_balance", return_value=(True, "OK")
             ),
             patch(
-                "devices.inference.budget_gate.record_spend",
+                "unseen_university.devices.inference.budget_gate.record_spend",
             ),
             patch(
-                "devices.inference.sources.OpenRouterSource.call",
+                "unseen_university.devices.inference.sources.OpenRouterSource.call",
                 return_value=self._fake_or_response(0.01),
             ),
             patch(
-                "devices.inference.budget_ledger.check_session_limit",
+                "unseen_university.devices.inference.budget_ledger.check_session_limit",
                 return_value=(True, "ok"),
             ),
-            patch("devices.inference.budget_ledger.debit") as mock_debit,
+            patch("unseen_university.devices.inference.budget_ledger.debit") as mock_debit,
         ):
             dev.dispatch(req)
 
@@ -326,8 +326,8 @@ class TestDispatchDebitHook:
         assert call_kwargs["cost_usd"] == pytest.approx(0.01)
 
     def test_dispatch_debits_ollama_with_null_cost(self):
-        from devices.inference.device import InferenceDevice
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.shim import InferenceRequest
 
         dev = InferenceDevice(mode="ollama", endpoint="http://127.0.0.1:11434")
         req = InferenceRequest(
@@ -345,14 +345,14 @@ class TestDispatchDebitHook:
         }
         with (
             patch(
-                "devices.inference.rules_engine.RulesEngine.route",
+                "unseen_university.devices.inference.rules_engine.RulesEngine.route",
                 return_value=None,
             ),
             patch(
-                "devices.inference.sources.OllamaSource.call",
+                "unseen_university.devices.inference.sources.OllamaSource.call",
                 return_value=fake,
             ),
-            patch("devices.inference.budget_ledger.debit") as mock_debit,
+            patch("unseen_university.devices.inference.budget_ledger.debit") as mock_debit,
         ):
             dev.dispatch(req)
 
@@ -362,8 +362,8 @@ class TestDispatchDebitHook:
 
     def test_dispatch_enforces_or_limit(self):
         """dispatch() raises when check_session_limit returns not-ok."""
-        from devices.inference.device import InferenceDevice
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.shim import InferenceRequest
 
         dev = InferenceDevice(mode="openrouter")
         req = InferenceRequest(
@@ -374,10 +374,10 @@ class TestDispatchDebitHook:
 
         with (
             patch(
-                "devices.inference.budget_gate.check_balance", return_value=(True, "OK")
+                "unseen_university.devices.inference.budget_gate.check_balance", return_value=(True, "OK")
             ),
             patch(
-                "devices.inference.budget_ledger.check_session_limit",
+                "unseen_university.devices.inference.budget_ledger.check_session_limit",
                 return_value=(
                     False,
                     "session budget exhausted: $0.0500 spent >= $0.0500 limit",
@@ -389,23 +389,23 @@ class TestDispatchDebitHook:
 
     def test_dispatch_skips_limit_check_when_no_agent_id(self):
         """Requests without agent_id bypass the session limit check."""
-        from devices.inference.device import InferenceDevice
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.shim import InferenceRequest
 
         dev = InferenceDevice(mode="openrouter")
         req = InferenceRequest(messages=[{"role": "user", "content": "hi"}])
 
         with (
             patch(
-                "devices.inference.budget_gate.check_balance", return_value=(True, "OK")
+                "unseen_university.devices.inference.budget_gate.check_balance", return_value=(True, "OK")
             ),
-            patch("devices.inference.budget_gate.record_spend"),
+            patch("unseen_university.devices.inference.budget_gate.record_spend"),
             patch(
-                "devices.inference.sources.OpenRouterSource.call",
+                "unseen_university.devices.inference.sources.OpenRouterSource.call",
                 return_value=self._fake_or_response(0.0),
             ),
-            patch("devices.inference.budget_ledger.check_session_limit") as mock_check,
-            patch("devices.inference.budget_ledger.debit"),
+            patch("unseen_university.devices.inference.budget_ledger.check_session_limit") as mock_check,
+            patch("unseen_university.devices.inference.budget_ledger.debit"),
         ):
             dev.dispatch(req)
 

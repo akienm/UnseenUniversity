@@ -18,7 +18,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 
-from devices.igor.tools.metrics import _emotion_label, _get_milieu_state
+from unseen_university.devices.igor.tools.metrics import _emotion_label, _get_milieu_state
 
 
 class TestEmotionLabel(unittest.TestCase):

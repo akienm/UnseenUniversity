@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 def test_goal_adopt_records_origin_when_awaiting_reply():
     """goal_adopt with awaiting_reply=True stores origin thread/turn/question
     and pushes the goal to TWM at salience 0.90 (vs default 0.85)."""
-    from devices.igor.tools import ops as _ops
+    from unseen_university.devices.igor.tools import ops as _ops
 
     captured_mems = []
     captured_pushes = []
@@ -58,8 +58,8 @@ def test_goal_adopt_records_origin_when_awaiting_reply():
         )
         _dt.now.return_value.isoformat.return_value = "2026-04-12T18:00:00"
         with (
-            patch("devices.igor.memory.cortex.Cortex", _FakeCortex),
-            patch("devices.igor.tools.ops._channel_append"),
+            patch("unseen_university.devices.igor.memory.cortex.Cortex", _FakeCortex),
+            patch("unseen_university.devices.igor.tools.ops._channel_append"),
         ):
             result = _ops.goal_adopt(
                 "look at the ticket list",
@@ -92,7 +92,7 @@ def test_goal_adopt_records_origin_when_awaiting_reply():
 def test_goal_adopt_no_origin_when_not_awaiting_reply():
     """Default callers (no awaiting_reply) get the original 0.85-salience
     behavior with no origin_* metadata fields."""
-    from devices.igor.tools import ops as _ops
+    from unseen_university.devices.igor.tools import ops as _ops
 
     captured_mems = []
     captured_pushes = []
@@ -112,8 +112,8 @@ def test_goal_adopt_no_origin_when_not_awaiting_reply():
             return 0
 
     with (
-        patch("devices.igor.memory.cortex.Cortex", _FakeCortex),
-        patch("devices.igor.tools.ops._channel_append"),
+        patch("unseen_university.devices.igor.memory.cortex.Cortex", _FakeCortex),
+        patch("unseen_university.devices.igor.tools.ops._channel_append"),
     ):
         result = _ops.goal_adopt("write the failing test")
 
@@ -133,7 +133,7 @@ def test_goal_adopt_evicts_prior_active_goal_before_push():
     """Each goal_adopt call must evict prior active_goal rows before pushing.
     Without this, 22+ stacked ACTIVE_GOAL rows were observed 2026-04-24,
     saturating TWM and starving lower-salience observations."""
-    from devices.igor.tools import ops as _ops
+    from unseen_university.devices.igor.tools import ops as _ops
 
     call_log = []  # ordered trace of ("evict", cat) and ("push", kw)
 
@@ -153,8 +153,8 @@ def test_goal_adopt_evicts_prior_active_goal_before_push():
             return 1
 
     with (
-        patch("devices.igor.memory.cortex.Cortex", _FakeCortex),
-        patch("devices.igor.tools.ops._channel_append"),
+        patch("unseen_university.devices.igor.memory.cortex.Cortex", _FakeCortex),
+        patch("unseen_university.devices.igor.tools.ops._channel_append"),
     ):
         _ops.goal_adopt("first goal", goal_id="GOAL_A")
         _ops.goal_adopt("second goal", goal_id="GOAL_B")
@@ -181,7 +181,7 @@ def test_goal_adopt_evicts_prior_active_goal_before_push():
 def test_submit_background_propagates_goal_id_into_completion_item():
     """The completion item dict carries goal_id so the drain can find the
     obligation goal back."""
-    from devices.igor.cognition.job_manager import JobManager
+    from unseen_university.devices.igor.cognition.job_manager import JobManager
 
     jm = JobManager()
     completions: deque = deque()
@@ -214,7 +214,7 @@ def test_submit_background_propagates_goal_id_into_completion_item():
 
 def test_submit_background_default_goal_id_is_none():
     """Existing callers that don't pass goal_id get None — no breakage."""
-    from devices.igor.cognition.job_manager import JobManager
+    from unseen_university.devices.igor.cognition.job_manager import JobManager
 
     jm = JobManager()
     completions: deque = deque()
@@ -281,7 +281,7 @@ def test_reply_obligation_habit_seeded():
 
 def test_seed_script_is_idempotent():
     """Running the seed twice doesn't error and doesn't create a duplicate row."""
-    from devices.igor.tools import seed_reply_obligation_look as _seed
+    from unseen_university.devices.igor.tools import seed_reply_obligation_look as _seed
     import psycopg2
     import os
 

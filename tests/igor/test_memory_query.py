@@ -15,8 +15,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-_CORTEX_PATH = "devices.igor.memory.cortex.Cortex"
-_FTS_PATH = "devices.igor.tools.memory_query._fts_search"
+_CORTEX_PATH = "unseen_university.devices.igor.memory.cortex.Cortex"
+_FTS_PATH = "unseen_university.devices.igor.tools.memory_query._fts_search"
 
 
 def _add_repo():
@@ -41,7 +41,7 @@ class TestMemorySearch(unittest.TestCase):
 
     def _call(self, query, limit=5, hits=None, fts_hits=None):
         """Call memory_search with cortex and _fts_search both mocked."""
-        from devices.igor.tools.memory_query import memory_search
+        from unseen_university.devices.igor.tools.memory_query import memory_search
 
         mock_cortex = MagicMock()
         mock_cortex.search.return_value = hits or []
@@ -68,7 +68,7 @@ class TestMemorySearch(unittest.TestCase):
         mock_cortex.search.assert_called_once_with("test query", limit=9)
 
     def test_error_returns_string(self):
-        from devices.igor.tools.memory_query import memory_search
+        from unseen_university.devices.igor.tools.memory_query import memory_search
 
         with patch(_CORTEX_PATH, side_effect=RuntimeError("db down")):
             result = memory_search("anything")
@@ -102,8 +102,8 @@ class TestMemorySearch(unittest.TestCase):
             "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
-        from devices.igor.tools.registry import registry
-        import devices.igor.tools.memory_query  # noqa
+        from unseen_university.devices.igor.tools.registry import registry
+        import unseen_university.devices.igor.tools.memory_query  # noqa
 
         self.assertIn("memory_search", registry._tools)
 
@@ -111,7 +111,7 @@ class TestMemorySearch(unittest.TestCase):
 class TestRRFMerge(unittest.TestCase):
 
     def test_item_in_both_lists_ranks_first(self):
-        from devices.igor.tools.memory_query import _rrf_merge
+        from unseen_university.devices.igor.tools.memory_query import _rrf_merge
 
         # M1 is #1 in list_a, #1 in list_b → highest RRF score
         # M2 is #2 in list_a only
@@ -123,7 +123,7 @@ class TestRRFMerge(unittest.TestCase):
         self.assertEqual(merged[0].id, "M1")
 
     def test_deduplication(self):
-        from devices.igor.tools.memory_query import _rrf_merge
+        from unseen_university.devices.igor.tools.memory_query import _rrf_merge
 
         m1 = _make_mem("M1")
         merged = _rrf_merge([m1, m1], [m1])
@@ -131,7 +131,7 @@ class TestRRFMerge(unittest.TestCase):
         self.assertEqual(len(merged), 1)
 
     def test_items_only_in_one_list_included(self):
-        from devices.igor.tools.memory_query import _rrf_merge
+        from unseen_university.devices.igor.tools.memory_query import _rrf_merge
 
         m1 = _make_mem("M1")
         m2 = _make_mem("M2")
@@ -141,19 +141,19 @@ class TestRRFMerge(unittest.TestCase):
         self.assertIn("M2", ids)
 
     def test_empty_list_b_returns_list_a(self):
-        from devices.igor.tools.memory_query import _rrf_merge
+        from unseen_university.devices.igor.tools.memory_query import _rrf_merge
 
         mems = [_make_mem(f"M{i}") for i in range(3)]
         merged = _rrf_merge(mems, [])
         self.assertEqual([m.id for m in merged], [m.id for m in mems])
 
     def test_both_empty_returns_empty(self):
-        from devices.igor.tools.memory_query import _rrf_merge
+        from unseen_university.devices.igor.tools.memory_query import _rrf_merge
 
         self.assertEqual(_rrf_merge([], []), [])
 
     def test_lower_ranked_item_overtakes_with_second_signal(self):
-        from devices.igor.tools.memory_query import _rrf_merge
+        from unseen_university.devices.igor.tools.memory_query import _rrf_merge
 
         # M2 is rank-2 in list_a but rank-1 in list_b
         # M1 is rank-1 in list_a only
@@ -172,7 +172,7 @@ class TestRRFMerge(unittest.TestCase):
 class TestFindTool(unittest.TestCase):
 
     def setUp(self):
-        from devices.igor.tools.registry import registry, Tool
+        from unseen_university.devices.igor.tools.registry import registry, Tool
 
         self._injected = {
             "test_alpha_tool": Tool(
@@ -198,39 +198,39 @@ class TestFindTool(unittest.TestCase):
             registry._tools[k] = v
 
     def tearDown(self):
-        from devices.igor.tools.registry import registry
+        from unseen_university.devices.igor.tools.registry import registry
 
         for k in self._injected:
             registry._tools.pop(k, None)
 
     def test_name_match(self):
-        from devices.igor.tools.memory_query import find_tool
+        from unseen_university.devices.igor.tools.memory_query import find_tool
 
         result = find_tool("alpha tool")
         self.assertIn("test_alpha_tool", result)
 
     def test_description_match(self):
-        from devices.igor.tools.memory_query import find_tool
+        from unseen_university.devices.igor.tools.memory_query import find_tool
 
         result = find_tool("search memory keyword")
         self.assertIn("test_alpha_tool", result)
 
     def test_no_match_returns_message(self):
-        from devices.igor.tools.memory_query import find_tool
+        from unseen_university.devices.igor.tools.memory_query import find_tool
 
         # Purely nonsense tokens that won't appear in any tool name/description
         result = find_tool("qxzplonk blarfwumbo zygfroth")
         self.assertIn("no matching tools", result)
 
     def test_limit_respected(self):
-        from devices.igor.tools.memory_query import find_tool
+        from unseen_university.devices.igor.tools.memory_query import find_tool
 
         result = find_tool("tool", limit=1)
         lines = [l for l in result.splitlines() if "(score=" in l]
         self.assertLessEqual(len(lines), 1)
 
     def test_score_shown_in_output(self):
-        from devices.igor.tools.memory_query import find_tool
+        from unseen_university.devices.igor.tools.memory_query import find_tool
 
         result = find_tool("search memory")
         self.assertIn("score=", result)
@@ -242,13 +242,13 @@ class TestFindTool(unittest.TestCase):
             "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
-        from devices.igor.tools.registry import registry
-        import devices.igor.tools.memory_query  # noqa
+        from unseen_university.devices.igor.tools.registry import registry
+        import unseen_university.devices.igor.tools.memory_query  # noqa
 
         self.assertIn("find_tool", registry._tools)
 
     def test_filesystem_tool_not_in_memory_search_results(self):
-        from devices.igor.tools.memory_query import find_tool
+        from unseen_university.devices.igor.tools.memory_query import find_tool
 
         # "write file filesystem" should match beta not alpha
         result = find_tool("write file filesystem")

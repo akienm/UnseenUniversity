@@ -22,7 +22,7 @@ def _make_cortex(twm_entries=None, ring_entries=None):
 
 class TestTokenize:
     def test_basic_tokenization(self):
-        from devices.igor.cognition.confabulation_gate import _tokenize
+        from unseen_university.devices.igor.cognition.confabulation_gate import _tokenize
 
         tokens = _tokenize("The quick brown fox jumps over the lazy dog")
         assert "quick" in tokens
@@ -34,13 +34,13 @@ class TestTokenize:
         assert "over" not in tokens
 
     def test_empty_string(self):
-        from devices.igor.cognition.confabulation_gate import _tokenize
+        from unseen_university.devices.igor.cognition.confabulation_gate import _tokenize
 
         assert _tokenize("") == set()
         assert _tokenize(None) == set()
 
     def test_code_identifiers(self):
-        from devices.igor.cognition.confabulation_gate import _tokenize
+        from unseen_university.devices.igor.cognition.confabulation_gate import _tokenize
 
         tokens = _tokenize("cortex.twm_push(salience=0.92)")
         assert "cortex" in tokens
@@ -50,7 +50,7 @@ class TestTokenize:
 
 class TestCheckGrounding:
     def test_short_response_passes(self):
-        from devices.igor.cognition.confabulation_gate import check_grounding
+        from unseen_university.devices.igor.cognition.confabulation_gate import check_grounding
 
         cortex = _make_cortex()
         result = check_grounding(cortex, "Yes, I can do that.")
@@ -59,7 +59,7 @@ class TestCheckGrounding:
         assert "too short" in result["reason"]
 
     def test_insufficient_context_passes(self):
-        from devices.igor.cognition.confabulation_gate import check_grounding
+        from unseen_university.devices.igor.cognition.confabulation_gate import check_grounding
 
         cortex = _make_cortex()
         # Long response but no context
@@ -73,7 +73,7 @@ class TestCheckGrounding:
         assert "insufficient context" in result["reason"]
 
     def test_grounded_response_passes(self):
-        from devices.igor.cognition.confabulation_gate import check_grounding
+        from unseen_university.devices.igor.cognition.confabulation_gate import check_grounding
 
         # Context and response share significant vocabulary
         twm_entries = [
@@ -94,7 +94,7 @@ class TestCheckGrounding:
         assert result["score"] > 0.08
 
     def test_ungrounded_response_flagged(self):
-        from devices.igor.cognition.confabulation_gate import check_grounding
+        from unseen_university.devices.igor.cognition.confabulation_gate import check_grounding
 
         # Context is about one thing, response about something completely different
         twm_entries = [
@@ -123,7 +123,7 @@ class TestCheckGrounding:
         assert result["score"] < 0.08
 
     def test_logs_to_ring_when_flagged(self):
-        from devices.igor.cognition.confabulation_gate import check_grounding
+        from unseen_university.devices.igor.cognition.confabulation_gate import check_grounding
 
         twm_entries = [
             {"content_csb": "monitoring dashboard health status operational metrics"},
@@ -148,7 +148,7 @@ class TestCheckGrounding:
 
 class TestEvaluateConfabulationGate:
     def test_no_response_passes(self):
-        from devices.igor.cognition.confabulation_gate import (
+        from unseen_university.devices.igor.cognition.confabulation_gate import (
             evaluate_confabulation_gate,
         )
 
@@ -159,7 +159,7 @@ class TestEvaluateConfabulationGate:
         assert should_gate is False
 
     def test_grounded_response_passes(self):
-        from devices.igor.cognition.confabulation_gate import (
+        from unseen_university.devices.igor.cognition.confabulation_gate import (
             evaluate_confabulation_gate,
         )
 
@@ -181,7 +181,7 @@ class TestEvaluateConfabulationGate:
         assert should_gate is False
 
     def test_ungrounded_response_gates(self):
-        from devices.igor.cognition.confabulation_gate import (
+        from unseen_university.devices.igor.cognition.confabulation_gate import (
             evaluate_confabulation_gate,
         )
 

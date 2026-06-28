@@ -83,7 +83,7 @@ def record_escalation(
     """Record a cloud escalation for future regression testing.
     Delegates to forensic_logger.record_cloud_escalation (the canonical location).
     """
-    from devices.igor.cognition.forensic_logger import record_cloud_escalation
+    from unseen_university.devices.igor.cognition.forensic_logger import record_cloud_escalation
 
     record_cloud_escalation(user_input, tier_used, reason, intent, complexity)
 
@@ -106,7 +106,7 @@ def replay_input(user_input: str) -> dict:
     }
 
     try:
-        from devices.igor.cognition.thalamus import Thalamus
+        from unseen_university.devices.igor.cognition.thalamus import Thalamus
 
         thalamus = Thalamus()
         parsed = thalamus.process(user_input)
@@ -116,7 +116,7 @@ def replay_input(user_input: str) -> dict:
         result["thalamus_error"] = str(e)
 
     try:
-        from devices.igor.cognition.inference_ollama import (
+        from unseen_university.devices.igor.cognition.inference_ollama import (
             _rule_based_csb,
             parse_preparse_csb,
             compute_complexity,
@@ -138,7 +138,7 @@ def replay_input(user_input: str) -> dict:
 
     # Check if any habit would fire (tier.1 intercept)
     try:
-        from devices.igor.cognition.word_graph import WordGraph
+        from unseen_university.devices.igor.cognition.word_graph import WordGraph
 
         wg = WordGraph()
         predictions = wg.predict_next(user_input)

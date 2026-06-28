@@ -141,7 +141,7 @@ class TestResearchEngine:
             validate_calls.append({"outcome": actual_outcome, "prediction_id": prediction_id})
             return {"status": "ok"}
 
-        with patch("devices.intent.tools.intent_validate", side_effect=mock_validate):
+        with patch("unseen_university.devices.intent.tools.intent_validate", side_effect=mock_validate):
             result = self.engine.research("what is connection pooling?")
 
         # Should have called validate with the answer and prediction_id=None
@@ -155,7 +155,7 @@ class TestResearchEngine:
         from unittest.mock import patch
 
         # Simulate missing intent extractor device
-        with patch("devices.intent.tools.intent_validate", side_effect=ImportError("not found")):
+        with patch("unseen_university.devices.intent.tools.intent_validate", side_effect=ImportError("not found")):
             result = self.engine.research("what is X?")
 
         # Should still return a valid research result, not raise
@@ -169,7 +169,7 @@ class TestResearchEngine:
         def mock_validate_error(actual_outcome, prediction_id=None):
             raise RuntimeError("validation failed")
 
-        with patch("devices.intent.tools.intent_validate", side_effect=mock_validate_error):
+        with patch("unseen_university.devices.intent.tools.intent_validate", side_effect=mock_validate_error):
             result = self.engine.research("what is Y?")
 
         # Should still return a valid research result, not raise

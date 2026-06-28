@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.igor.env_sync import (
+from unseen_university.devices.igor.env_sync import (
     SAFETY_GATE_NAMES,
     _is_safety_gate,
     hydrate_from_graph,
@@ -41,7 +41,7 @@ def test_is_safety_gate_helper():
 class TestPushExcludesSafetyGates:
     def test_push_skips_tier5(self):
         cortex = MagicMock()
-        with patch("devices.igor.env_sync._ensure_root_nodes", lambda c: None):
+        with patch("unseen_university.devices.igor.env_sync._ensure_root_nodes", lambda c: None):
             count = push_vars_to_graph(
                 cortex, {"IGOR_TIER5_ENABLED": "true", "OLLAMA_HOST": "x"}
             )
@@ -59,7 +59,7 @@ class TestPushExcludesSafetyGates:
             "IGOR_SELF_EDIT_ENABLED": "true",
             "OLLAMA_HOST": "localhost",
         }
-        with patch("devices.igor.env_sync._ensure_root_nodes", lambda c: None):
+        with patch("unseen_university.devices.igor.env_sync._ensure_root_nodes", lambda c: None):
             count = push_vars_to_graph(cortex, vars_dict)
         assert count == 1
 
@@ -73,7 +73,7 @@ class TestHydrateRefusesSafetyGates:
 
         def _get_children(cat_id):
             # Return the safety-gate node in the features category only
-            from devices.igor.env_sync import SYSCFG_FEATURES_ID
+            from unseen_university.devices.igor.env_sync import SYSCFG_FEATURES_ID
 
             if cat_id == SYSCFG_FEATURES_ID:
                 return [mem]

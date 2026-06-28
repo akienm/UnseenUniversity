@@ -11,7 +11,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.memory.provenance import (
+from unseen_university.devices.igor.memory.provenance import (
     EXTENDED_PROVENANCE_KEYS,
     PROVENANCE_KEYS,
     ensure_provenance,
@@ -114,7 +114,7 @@ class TestStoreIntegration:
         """Memory stored via cortex gets deposited_at and deposited_by."""
         from unittest.mock import MagicMock, patch
 
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         mem = Memory(
             narrative="test provenance enforcement",
@@ -131,7 +131,7 @@ class TestStoreIntegration:
         cortex._instance_id = "test"
         cortex._habit_cache = None
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         # Call store directly on the class with our mock
         with patch.object(Cortex, "_maybe_calve"):

@@ -16,7 +16,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-import devices.igor.cognition.anticipation as ant
+import unseen_university.devices.igor.cognition.anticipation as ant
 
 
 def _patch_path(tmp: Path):

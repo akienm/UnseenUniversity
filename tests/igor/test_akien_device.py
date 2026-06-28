@@ -11,8 +11,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import devices.akien as akien_device
-from devices.akien.shim import AkienShim, who_am_i
+import unseen_university.devices.akien as akien_device
+from unseen_university.devices.akien.shim import AkienShim, who_am_i
 
 
 class TestAkienDeviceImport:

@@ -11,7 +11,7 @@ import time
 
 import pytest
 
-from devices.sensor.device import SensorDevice
+from unseen_university.devices.sensor.device import SensorDevice
 from unseen_university.device import INTERFACE_VERSION
 
 

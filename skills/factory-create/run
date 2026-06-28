@@ -100,7 +100,7 @@ def cmd_validate(args: argparse.Namespace) -> None:
     uu_root = find_uu_root()
     sys.path.insert(0, str(uu_root))
 
-    from devices.installer.factory import load_spec
+    from unseen_university.devices.installer.factory import load_spec
 
     path = Path(args.path)
     if not path.is_absolute():
@@ -124,7 +124,7 @@ def cmd_instantiate(args: argparse.Namespace) -> None:
     uu_root = find_uu_root()
     sys.path.insert(0, str(uu_root))
 
-    from devices.installer.factory import FactoryInstantiator, load_spec
+    from unseen_university.devices.installer.factory import FactoryInstantiator, load_spec
 
     path = Path(args.path)
     if not path.is_absolute():

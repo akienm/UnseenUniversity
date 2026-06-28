@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.reader.node_extractor import _extract_chunk, extract_nodes
+from unseen_university.devices.reader.node_extractor import _extract_chunk, extract_nodes
 
 # ── _extract_chunk unit tests ─────────────────────────────────────────────────
 
@@ -158,7 +158,7 @@ class TestExtractNodes:
 
 class TestReaderDeviceNodes:
     def _make_device(self, node_reply: str = None) -> "ReaderDevice":
-        from devices.reader.device import ReaderDevice
+        from unseen_university.devices.reader.device import ReaderDevice
 
         if node_reply is None:
             node_reply = '{"nodes": [{"type": "factual", "narrative": "A fact.", "confidence": 0.8}]}'
@@ -188,11 +188,11 @@ class TestReaderDeviceNodes:
         assert "metadata" in node
 
     def test_binary_content_returns_empty_list(self, tmp_path):
-        from devices.reader.device import ReaderDevice
-        from devices.reader.uri import FetchResult
+        from unseen_university.devices.reader.device import ReaderDevice
+        from unseen_university.devices.reader.uri import FetchResult
 
         device = self._make_device()
-        with patch("devices.reader.device.fetch_uri") as mock_fetch:
+        with patch("unseen_university.devices.reader.device.fetch_uri") as mock_fetch:
             mock_fetch.return_value = FetchResult(
                 uri="calibre://42",
                 content="",
@@ -211,7 +211,7 @@ class TestReaderDeviceNodes:
         f = tmp_path / "doc.txt"
         f.write_text("Content here.", encoding="utf-8")
 
-        from devices.reader.device import ReaderDevice
+        from unseen_university.devices.reader.device import ReaderDevice
 
         call_count = [0]
 
@@ -230,7 +230,7 @@ class TestReaderDeviceNodes:
         assert "chunks" in result
 
     def test_unknown_format_still_raises_value_error(self, tmp_path):
-        from devices.reader.device import ReaderDevice
+        from unseen_university.devices.reader.device import ReaderDevice
 
         device = self._make_device()
         with pytest.raises(ValueError, match="Unknown format"):

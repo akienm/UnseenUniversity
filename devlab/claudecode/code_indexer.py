@@ -232,7 +232,7 @@ def sweep_python_files(
     """Delegate Python AST symbol extraction to devices.nanny.sweeps.code_sweep."""
     sys.path.insert(0, str(repo_root))
     try:
-        from devices.nanny.sweeps.code_sweep import run_sweep
+        from unseen_university.devices.nanny.sweeps.code_sweep import run_sweep
         return run_sweep(db_url=db_url, repo_root=repo_root, dry_run=dry_run)
     except ImportError as exc:
         log.error("CODE_INDEXER|python_sweep|import_error=%s", exc)

@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 # Note: after_action_reviewer imports cortex/ollama lazily inside try/except,
 # so they fail silently without DB/Ollama in tests — no module-level stubs needed.
 
-from devices.igor.tools.after_action_reviewer import _extract_cc_turn
+from unseen_university.devices.igor.tools.after_action_reviewer import _extract_cc_turn
 
 # ── _extract_cc_turn ──────────────────────────────────────────────────────────
 
@@ -96,6 +96,6 @@ def test_extract_cc_turn_returns_all_fields():
 
 def test_run_after_action_review_is_registered():
     """Verify the tool is registered in the registry."""
-    from devices.igor.tools.registry import registry
+    from unseen_university.devices.igor.tools.registry import registry
 
     assert "run_after_action_review" in registry._tools

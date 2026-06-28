@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from devices.scraps.jobs.cpu_peg_monitor import CpuPegMonitor
+from unseen_university.devices.scraps.jobs.cpu_peg_monitor import CpuPegMonitor
 
 
 def _make_monitor(threshold=90, samples_needed=3, top=None, posts=None):

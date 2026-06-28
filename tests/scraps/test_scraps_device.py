@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from devices.scraps.scraps_device import ScrapsDevice
-from devices.scraps import validation_rules
+from unseen_university.devices.scraps.scraps_device import ScrapsDevice
+from unseen_university.devices.scraps import validation_rules
 from unseen_university.device import INTERFACE_VERSION
 
 _VALID_TICKET = {

@@ -21,8 +21,8 @@ from unittest.mock import patch
 
 import pytest
 
-from config.device_config import DeviceConfig
-from skeleton.registry import DeviceRegistry, _agent_mailbox, _split_surface
+from unseen_university.config.device_config import DeviceConfig
+from unseen_university.devices.skeleton.registry import DeviceRegistry, _agent_mailbox, _split_surface
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 

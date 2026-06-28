@@ -29,7 +29,7 @@ class _FakeMsg:
 class TestWebIdentifyHandshake:
     def _make_igor_stub(self):
         """Build a minimal stub that exercises _process_network_msg."""
-        from devices.igor.main import Igor
+        from unseen_university.devices.igor.main import Igor
 
         igor = MagicMock(spec=Igor)
         igor.interaction_count = 0
@@ -38,7 +38,7 @@ class TestWebIdentifyHandshake:
         igor._user_ctx_mgr = MagicMock()
 
         # Attach the real method bound to the stub
-        from devices.igor.main import Igor as _RealIgor
+        from unseen_university.devices.igor.main import Igor as _RealIgor
         igor._process_network_msg = lambda msg, tid: _RealIgor._process_network_msg(
             igor, msg, tid
         )
@@ -50,7 +50,7 @@ class TestWebIdentifyHandshake:
         msg = _FakeMsg(content="__identify__:Akien", author="Akien", source="web")
 
         with (
-            patch("devices.igor.main.Igor._process") as mock_process,
+            patch("unseen_university.devices.igor.main.Igor._process") as mock_process,
         ):
             igor._process_network_msg(msg, "web:thread1")
 
@@ -65,7 +65,7 @@ class TestWebIdentifyHandshake:
         igor = self._make_igor_stub()
         msg = _FakeMsg(content="__identify__:Akien", author="Akien", source="web")
 
-        with patch("devices.igor.main.Igor._process"):
+        with patch("unseen_university.devices.igor.main.Igor._process"):
             igor._process_network_msg(msg, "web:thread1")
 
         igor._user_ctx_mgr.preseed.assert_called_once_with("web:thread1", "Akien")

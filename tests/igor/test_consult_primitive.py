@@ -22,7 +22,7 @@ from unittest.mock import patch
 
 import pytest
 
-from devices.igor.cognition import consult as cm
+from unseen_university.devices.igor.cognition import consult as cm
 
 GOOD_JSON = '{"hypotheses": ["h1", "h2"], "next_question": "is X?", "confidence": 0.7}'
 GOOD_JSON_WITH_FENCE = f"```json\n{GOOD_JSON}\n```"

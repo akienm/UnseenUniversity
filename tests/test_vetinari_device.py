@@ -14,8 +14,8 @@ from unittest.mock import patch
 
 def _make_vetinari(tmp_path, threshold=0.5):
     import os
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.device import VetinariDevice
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.device import VetinariDevice
     channel_calls = []
     v = VetinariDevice(
         escalation_threshold=threshold,
@@ -38,8 +38,8 @@ class TestVetinariOwnsFactory:
         v.own_factory("factory-2", {"name": "Eval Factory"})
         # Reload from disk
         import os
-        import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-        from devices.vetinari.device import VetinariDevice
+        import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+        from unseen_university.devices.vetinari.device import VetinariDevice
         v2 = VetinariDevice(channel_post_fn=lambda m: None)
         owned = v2.get_owned_factories()
         assert any(f["factory_id"] == "factory-2" for f in owned)

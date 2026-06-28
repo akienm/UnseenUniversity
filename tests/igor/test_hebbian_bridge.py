@@ -57,7 +57,7 @@ class TestWgBoostSearch(unittest.TestCase):
         os.environ["IGOR_HEBBIAN_BRIDGE"] = "true"
         # Reload module so _ENABLED re-evaluates
         import importlib
-        import devices.igor.cognition.coactivation_counter as hb
+        import unseen_university.devices.igor.cognition.coactivation_counter as hb
 
         importlib.reload(hb)
         self.hb = hb
@@ -96,7 +96,7 @@ class TestWgBoostSearch(unittest.TestCase):
     def test_disabled_returns_empty(self):
         """When env gate is off, always returns empty."""
         import importlib
-        import devices.igor.cognition.coactivation_counter as hb
+        import unseen_university.devices.igor.cognition.coactivation_counter as hb
 
         os.environ["IGOR_HEBBIAN_BRIDGE"] = "false"
         importlib.reload(hb)
@@ -118,7 +118,7 @@ class TestRecordRetrievalBoost(unittest.TestCase):
     def setUp(self):
         os.environ["IGOR_HEBBIAN_BRIDGE"] = "true"
         import importlib
-        import devices.igor.cognition.coactivation_counter as hb
+        import unseen_university.devices.igor.cognition.coactivation_counter as hb
 
         importlib.reload(hb)
         self.hb = hb
@@ -207,7 +207,7 @@ class TestWgPredictForActivation(unittest.TestCase):
     def setUp(self):
         os.environ["IGOR_HEBBIAN_BRIDGE"] = "true"
         import importlib
-        import devices.igor.cognition.coactivation_counter as hb
+        import unseen_university.devices.igor.cognition.coactivation_counter as hb
 
         importlib.reload(hb)
         self.hb = hb
@@ -257,7 +257,7 @@ class TestCortexSearchWordGraphParam(unittest.TestCase):
     def test_search_accepts_word_graph_param(self):
         """cortex.search(word_graph=None) signature is valid."""
         import inspect
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         sig = inspect.signature(Cortex.search)
         self.assertIn("word_graph", sig.parameters)
@@ -265,7 +265,7 @@ class TestCortexSearchWordGraphParam(unittest.TestCase):
     def test_spread_activation_accepts_word_graph_param(self):
         """_spread_activation(word_graph=None) signature is valid."""
         import inspect
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         sig = inspect.signature(Cortex._spread_activation)
         self.assertIn("word_graph", sig.parameters)

@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_seeded():
-    from devices.igor.tools import seed_persistent_relationships as _seed
+    from unseen_university.devices.igor.tools import seed_persistent_relationships as _seed
 
     rc = _seed.seed()
     assert rc == 0
@@ -42,7 +42,7 @@ def _set_facia_last_activity(facia_id: str, days_ago: float):
 
     Uses the cortex update path via persistent_relationships._store_facia_metadata
     to keep behavior consistent with normal writes."""
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     row = _pr._resolve_facia(facia_id)
     if not row:
@@ -55,7 +55,7 @@ def _set_facia_last_activity(facia_id: str, days_ago: float):
 
 def _restore_facia_last_activity(facia_id: str):
     """Reset facia last_activity_ts to now, so other tests aren't affected."""
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     _pr.pr_touch(name=facia_id)
 
@@ -66,7 +66,7 @@ def restore_facia_state():
     _restore_facia_last_activity("PR_AKIEN")
     _restore_facia_last_activity("PR_IGORS_PROJECT")
     # Ensure status is active for both
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     _pr.pr_set_status(name="PR_AKIEN", status="active")
     _pr.pr_set_status(name="PR_IGORS_PROJECT", status="active")
@@ -76,28 +76,28 @@ def restore_facia_state():
 
 
 def test_expected_rhythm_default_for_person_is_seven_days():
-    from devices.igor.tools.relationship_drift import expected_rhythm_seconds
+    from unseen_university.devices.igor.tools.relationship_drift import expected_rhythm_seconds
 
     meta = {"relationship_type": "person"}
     assert expected_rhythm_seconds(meta) == 7 * 86400
 
 
 def test_expected_rhythm_default_for_project_is_fourteen_days():
-    from devices.igor.tools.relationship_drift import expected_rhythm_seconds
+    from unseen_university.devices.igor.tools.relationship_drift import expected_rhythm_seconds
 
     meta = {"relationship_type": "project"}
     assert expected_rhythm_seconds(meta) == 14 * 86400
 
 
 def test_expected_rhythm_default_for_field_is_thirty_days():
-    from devices.igor.tools.relationship_drift import expected_rhythm_seconds
+    from unseen_university.devices.igor.tools.relationship_drift import expected_rhythm_seconds
 
     meta = {"relationship_type": "field"}
     assert expected_rhythm_seconds(meta) == 30 * 86400
 
 
 def test_expected_rhythm_unknown_type_falls_back_to_seven():
-    from devices.igor.tools.relationship_drift import expected_rhythm_seconds
+    from unseen_university.devices.igor.tools.relationship_drift import expected_rhythm_seconds
 
     meta = {"relationship_type": "unknown_type"}
     assert expected_rhythm_seconds(meta) == 7 * 86400
@@ -107,7 +107,7 @@ def test_expected_rhythm_unknown_type_falls_back_to_seven():
 
 
 def test_expected_rhythm_per_facia_override_works():
-    from devices.igor.tools.relationship_drift import expected_rhythm_seconds
+    from unseen_university.devices.igor.tools.relationship_drift import expected_rhythm_seconds
 
     # Override 7-day default with 3 days
     meta = {"relationship_type": "person", "expected_rhythm_days": 3}
@@ -127,8 +127,8 @@ def test_expected_rhythm_per_facia_override_works():
 
 def test_find_drifted_skips_fresh_facia():
     """PR_AKIEN with a recent last_activity_ts should NOT be flagged."""
-    from devices.igor.tools.relationship_drift import find_drifted_relationships
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools.relationship_drift import find_drifted_relationships
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     _pr.pr_touch(name="PR_AKIEN")  # ensure fresh
     drifted = find_drifted_relationships()
@@ -137,7 +137,7 @@ def test_find_drifted_skips_fresh_facia():
 
 def test_find_drifted_catches_stale_person_facia():
     """PR_AKIEN aged 12 days (past 7 * 1.5 = 10.5 day threshold) → drifted."""
-    from devices.igor.tools.relationship_drift import find_drifted_relationships
+    from unseen_university.devices.igor.tools.relationship_drift import find_drifted_relationships
 
     _set_facia_last_activity("PR_AKIEN", days_ago=12)
     drifted = find_drifted_relationships()
@@ -151,7 +151,7 @@ def test_find_drifted_catches_stale_person_facia():
 def test_find_drifted_skips_recently_stale_person_facia():
     """PR_AKIEN aged 8 days is in the slack window (under 10.5 day threshold)
     → NOT drifted yet. Healthy relationships don't fire on day 8."""
-    from devices.igor.tools.relationship_drift import find_drifted_relationships
+    from unseen_university.devices.igor.tools.relationship_drift import find_drifted_relationships
 
     _set_facia_last_activity("PR_AKIEN", days_ago=8)
     drifted = find_drifted_relationships()
@@ -161,7 +161,7 @@ def test_find_drifted_skips_recently_stale_person_facia():
 def test_find_drifted_uses_project_threshold_for_project_type():
     """PR_IGORS_PROJECT aged 18 days (past 14 * 1.5 = 21 day threshold)
     is NOT drifted yet because it's a project type with a longer rhythm."""
-    from devices.igor.tools.relationship_drift import find_drifted_relationships
+    from unseen_university.devices.igor.tools.relationship_drift import find_drifted_relationships
 
     _set_facia_last_activity("PR_IGORS_PROJECT", days_ago=18)
     drifted = find_drifted_relationships()
@@ -176,8 +176,8 @@ def test_find_drifted_uses_project_threshold_for_project_type():
 
 def test_find_drifted_skips_dormant_facia():
     """A dormant facia is NOT drifted — dormancy is intentional, not silence."""
-    from devices.igor.tools.relationship_drift import find_drifted_relationships
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools.relationship_drift import find_drifted_relationships
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     _set_facia_last_activity("PR_AKIEN", days_ago=30)  # very stale
     _pr.pr_set_status(name="PR_AKIEN", status="dormant")
@@ -189,8 +189,8 @@ def test_find_drifted_skips_dormant_facia():
 
 
 def test_surface_pushes_twm_markers():
-    from devices.igor.tools.relationship_drift import surface_drifted_relationships
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.tools.relationship_drift import surface_drifted_relationships
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex.twm_evict_category("relationship_drift")
@@ -213,8 +213,8 @@ def test_surface_pushes_twm_markers():
 
 
 def test_surface_returns_clean_message_when_no_drift():
-    from devices.igor.tools.relationship_drift import surface_drifted_relationships
-    from devices.igor.tools import persistent_relationships as _pr
+    from unseen_university.devices.igor.tools.relationship_drift import surface_drifted_relationships
+    from unseen_university.devices.igor.tools import persistent_relationships as _pr
 
     _pr.pr_touch(name="PR_AKIEN")
     _pr.pr_touch(name="PR_IGORS_PROJECT")
@@ -230,7 +230,7 @@ def test_surface_returns_clean_message_when_no_drift():
 
 
 def _make_quiet_cortex():
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex._conversation_active_ts = None
@@ -238,7 +238,7 @@ def _make_quiet_cortex():
 
 
 def _make_active_cortex():
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     cortex = Cortex(None)
     cortex._conversation_active_ts = datetime.now()
@@ -246,7 +246,7 @@ def _make_active_cortex():
 
 
 def test_source_has_required_interface():
-    from devices.igor.cognition.relationship_drift_source import (
+    from unseen_university.devices.igor.cognition.relationship_drift_source import (
         RelationshipDriftSource,
     )
 
@@ -257,7 +257,7 @@ def test_source_has_required_interface():
 
 
 def test_source_skips_during_active_conversation():
-    from devices.igor.cognition.relationship_drift_source import (
+    from unseen_university.devices.igor.cognition.relationship_drift_source import (
         RelationshipDriftSource,
     )
 
@@ -269,7 +269,7 @@ def test_source_skips_during_active_conversation():
 
 
 def test_source_runs_during_quiet_period():
-    from devices.igor.cognition.relationship_drift_source import (
+    from unseen_university.devices.igor.cognition.relationship_drift_source import (
         RelationshipDriftSource,
     )
 
@@ -281,7 +281,7 @@ def test_source_runs_during_quiet_period():
 
 
 def test_source_rate_limited_within_interval():
-    from devices.igor.cognition.relationship_drift_source import (
+    from unseen_university.devices.igor.cognition.relationship_drift_source import (
         RelationshipDriftSource,
     )
 
@@ -296,7 +296,7 @@ def test_source_rate_limited_within_interval():
 
 
 def test_source_registered_in_run_background_sources():
-    import devices.igor.cognition.push_sources as _ps
+    import unseen_university.devices.igor.cognition.push_sources as _ps
 
     assert hasattr(_ps, "relationship_drift_source")
     src_text = Path(_ps.__file__).read_text()

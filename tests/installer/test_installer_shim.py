@@ -13,8 +13,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from devices.installer.manifest import SkillEntry, load_manifest
-from devices.installer.shim import deploy_skills, deploy_status
+from unseen_university.devices.installer.manifest import SkillEntry, load_manifest
+from unseen_university.devices.installer.shim import deploy_skills, deploy_status
 
 # ── Manifest ──────────────────────────────────────────────────────────────────
 
@@ -262,12 +262,12 @@ def test_deploy_status_reports_missing_in_target(
 
 class TestSymlinkBackend:
     def test_is_available(self):
-        from devices.installer.backends import SymlinkBackend
+        from unseen_university.devices.installer.backends import SymlinkBackend
 
         assert SymlinkBackend().is_available() is True
 
     def test_deploy_skill_links_to_master(self, tmp_path):
-        from devices.installer.backends import SymlinkBackend
+        from unseen_university.devices.installer.backends import SymlinkBackend
 
         src = tmp_path / "src_skill"
         src.mkdir()
@@ -280,7 +280,7 @@ class TestSymlinkBackend:
         assert (dst / "skill.md").read_text() == "# test skill"
 
     def test_deploy_skill_raises_on_missing_source(self, tmp_path):
-        from devices.installer.backends import SymlinkBackend
+        from unseen_university.devices.installer.backends import SymlinkBackend
 
         with pytest.raises(FileNotFoundError):
             SymlinkBackend().deploy_skill(tmp_path / "nonexistent", tmp_path / "dst")
@@ -290,13 +290,13 @@ class TestSymlinkBackend:
 
 
 def test_select_backend_returns_backend():
-    from devices.installer.backends import select_backend
+    from unseen_university.devices.installer.backends import select_backend
 
     backend = select_backend()
     assert backend.is_available() is True
 
 
 def test_select_backend_is_symlink():
-    from devices.installer.backends import SymlinkBackend, select_backend
+    from unseen_university.devices.installer.backends import SymlinkBackend, select_backend
 
     assert isinstance(select_backend(), SymlinkBackend)

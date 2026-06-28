@@ -19,14 +19,14 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from devices.claude.tmux_face import (
+from unseen_university.devices.claude.tmux_face import (
     capture_pane,
     capture_pane_as_envelope,
     deliver_envelope,
     read_jsonl_transcript,
     send_to_session,
 )
-from bus.envelope import Envelope
+from unseen_university.devices.bus.envelope import Envelope
 
 # ── JSONL transcript reader ────────────────────────────────────────────────────
 

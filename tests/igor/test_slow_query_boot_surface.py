@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.tools import slow_query as sq
+from unseen_university.devices.igor.tools import slow_query as sq
 
 
 def _fixture_log(tmp_path: Path) -> Path:

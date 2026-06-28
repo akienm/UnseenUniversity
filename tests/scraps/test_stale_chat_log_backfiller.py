@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.scraps.jobs.stale_chat_log_backfiller import (  # noqa: E402
+from unseen_university.devices.scraps.jobs.stale_chat_log_backfiller import (  # noqa: E402
     StaleChatLogBackfiller,
 )
 

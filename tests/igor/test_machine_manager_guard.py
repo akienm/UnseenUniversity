@@ -15,7 +15,7 @@ class TestDbUrlGuard(unittest.TestCase):
         match — import must succeed; calling _pg_connect must raise.
         """
         saved = os.environ.pop("UU_HOME_DB_URL", None)
-        uc_mod_name = "devices.igor.tools.machine_manager"
+        uc_mod_name = "unseen_university.devices.igor.tools.machine_manager"
         saved_uc_mod = sys.modules.pop(uc_mod_name, None)
         try:
             mod = importlib.import_module(uc_mod_name)
@@ -31,7 +31,7 @@ class TestDbUrlGuard(unittest.TestCase):
     def test_db_url_present_no_error(self):
         """machine_manager imports cleanly when UU_HOME_DB_URL is set."""
         os.environ.setdefault("UU_HOME_DB_URL", "postgresql://test@localhost/test")
-        mod_name = "devices.igor.tools.machine_manager"
+        mod_name = "unseen_university.devices.igor.tools.machine_manager"
         saved_mod = sys.modules.pop(mod_name, None)
         try:
             mod = importlib.import_module(mod_name)

@@ -18,7 +18,7 @@ import sys
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[2]))
 
-from devices.igor.cognition.debug_session import claim, query, release, status
+from unseen_university.devices.igor.cognition.debug_session import claim, query, release, status
 
 
 def main():

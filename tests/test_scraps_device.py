@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 import pytest
 
-from devices.scraps.scraps_device import ScrapsDevice
-from devices.scraps import validation_rules
+from unseen_university.devices.scraps.scraps_device import ScrapsDevice
+from unseen_university.devices.scraps import validation_rules
 
 # ── validation_rules ─────────────────────────────────────────────────────────
 
@@ -198,7 +198,7 @@ class TestScrapsChannelPosts:
         # Short description triggers fuzzy check — patch _fuzzy_check to avoid inference
         with pytest.MonkeyPatch.context() as mp:
             mp.setattr(
-                "devices.scraps.scraps_device._fuzzy_check",
+                "unseen_university.devices.scraps.scraps_device._fuzzy_check",
                 lambda t: (False, "INVALID: not enough detail"),
             )
             d.validate_ticket(

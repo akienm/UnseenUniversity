@@ -14,7 +14,7 @@ WorkingDirectory=/home/akien/dev/src/UnseenUniversity
 
 # Python from the repo's venv
 ExecStart=/home/akien/dev/src/UnseenUniversity/.venv/bin/python3 \
-          -m devices.ground_loop.daemon \
+          -m unseen_university.devices.ground_loop.daemon \
           --poll 15 \
           --log-level INFO
 

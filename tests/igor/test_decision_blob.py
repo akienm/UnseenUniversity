@@ -24,7 +24,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.decision_blob import (  # noqa: E402
+from unseen_university.devices.igor.cognition.decision_blob import (  # noqa: E402
     Alternative,
     CPValidation,
     DecisionBlob,

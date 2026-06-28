@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from devices.nanny.cron_backend import CronJob, LinuxCronBackend, get_cron_backend
+from unseen_university.devices.nanny.cron_backend import CronJob, LinuxCronBackend, get_cron_backend
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ def test_get_cron_backend_returns_linux_on_linux():
 
 
 def test_get_cron_backend_windows_raises_not_implemented():
-    from devices.nanny.cron_backend import WindowsCronBackend
+    from unseen_university.devices.nanny.cron_backend import WindowsCronBackend
     with patch("platform.system", return_value="Windows"):
         backend = get_cron_backend()
         assert isinstance(backend, WindowsCronBackend)

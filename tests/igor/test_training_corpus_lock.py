@@ -17,7 +17,7 @@ import pytest
 @pytest.fixture()
 def tmp_corpus(tmp_path, monkeypatch):
     """Redirect CORPUS_DIR and INDEX_FILE to a temp directory."""
-    import devices.igor.cognition.training_corpus as tc
+    import unseen_university.devices.igor.cognition.training_corpus as tc
 
     monkeypatch.setattr(tc, "CORPUS_DIR", tmp_path)
     monkeypatch.setattr(tc, "INDEX_FILE", tmp_path / "index.json")
@@ -27,7 +27,7 @@ def tmp_corpus(tmp_path, monkeypatch):
 class TestSaveIndexConcurrency:
     def test_concurrent_writes_produce_valid_json(self, tmp_corpus):
         """Two threads calling _save_index() concurrently must not corrupt the file."""
-        from devices.igor.cognition.training_corpus import _save_index
+        from unseen_university.devices.igor.cognition.training_corpus import _save_index
 
         errors: list[Exception] = []
 
@@ -52,7 +52,7 @@ class TestSaveIndexConcurrency:
 
     def test_load_after_concurrent_writes_is_valid(self, tmp_corpus):
         """_load_index() after concurrent writes must return a dict (not raise)."""
-        from devices.igor.cognition.training_corpus import _load_index, _save_index
+        from unseen_university.devices.igor.cognition.training_corpus import _load_index, _save_index
 
         def writer(entry: dict) -> None:
             for _ in range(5):

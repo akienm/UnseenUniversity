@@ -28,7 +28,7 @@ ExecStartPre=-/bin/sh -c 'mkdir -p %h/.unseen_university/ground_loop && cp /home
 
 # Python from the repo's venv
 ExecStart=/home/akien/dev/src/UnseenUniversity/.venv/bin/python3 \
-          -m devices.ground_loop.daemon \
+          -m unseen_university.devices.ground_loop.daemon \
           --poll 15 \
           --log-level INFO
 

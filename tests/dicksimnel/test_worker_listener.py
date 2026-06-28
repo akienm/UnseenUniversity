@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from devices.dicksimnel.worker_listener import DickSimnelWorkerListener
-from bus.envelope import Envelope
+from unseen_university.devices.dicksimnel.worker_listener import DickSimnelWorkerListener
+from unseen_university.devices.bus.envelope import Envelope
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -96,8 +96,8 @@ def test_or_balance_at_floor_triggers_decline():
     device = _stub_device()
     listener = _make_listener(bus=bus, device=device)
     low_balance = {"balance": 2.0, "currency": "USD"}
-    with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=low_balance):
-        with patch("devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
+    with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance", return_value=low_balance):
+        with patch("unseen_university.devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
             listener._handle_dispatch("T-low", "granny.0")
     # Should NOT call _run_inference
     device._run_inference.assert_not_called()
@@ -110,8 +110,8 @@ def test_or_balance_above_floor_proceeds():
     device = _stub_device()
     listener = _make_listener(bus=bus, device=device)
     ok_balance = {"balance": 20.0, "currency": "USD"}
-    with patch("devices.dicksimnel.worker_listener.fetch_balance", return_value=ok_balance):
-        with patch("devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
+    with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance", return_value=ok_balance):
+        with patch("unseen_university.devices.dicksimnel.worker_listener._OR_BALANCE_FLOOR", 5.0):
             listener._handle_dispatch("T-ok", "granny.0")
     device._run_inference.assert_called_once()
 
@@ -121,7 +121,7 @@ def test_balance_check_unavailable_is_fail_open():
     bus = MagicMock()
     device = _stub_device()
     listener = _make_listener(bus=bus, device=device)
-    with patch("devices.dicksimnel.worker_listener.fetch_balance", side_effect=Exception("no network")):
+    with patch("unseen_university.devices.dicksimnel.worker_listener.fetch_balance", side_effect=Exception("no network")):
         listener._handle_dispatch("T-failopen", "granny.0")
     device._run_inference.assert_called_once()
 
@@ -195,7 +195,7 @@ def test_consecutive_failures_below_threshold_no_callback():
     bus.fetch_unseen.side_effect = ConnectionRefusedError("refused")
     callback = MagicMock()
     listener = DickSimnelWorkerListener(bus=bus, on_bus_failure=callback)
-    from devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
+    from unseen_university.devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
     for _ in range(_FAILURE_THRESHOLD - 1):
         listener._poll_once()
     callback.assert_not_called()
@@ -208,7 +208,7 @@ def test_consecutive_failures_at_threshold_triggers_callback():
     bus.fetch_unseen.side_effect = ConnectionRefusedError("refused")
     callback = MagicMock()
     listener = DickSimnelWorkerListener(bus=bus, on_bus_failure=callback)
-    from devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
+    from unseen_university.devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
     for _ in range(_FAILURE_THRESHOLD):
         listener._poll_once()
     callback.assert_called_once_with(listener)
@@ -236,7 +236,7 @@ def test_no_callback_set_failures_dont_raise():
     bus = MagicMock()
     bus.fetch_unseen.side_effect = ConnectionRefusedError("refused")
     listener = DickSimnelWorkerListener(bus=bus, on_bus_failure=None)
-    from devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
+    from unseen_university.devices.dicksimnel.worker_listener import _FAILURE_THRESHOLD
     for _ in range(_FAILURE_THRESHOLD + 2):
         listener._poll_once()  # must not raise
 
@@ -246,7 +246,7 @@ def test_no_callback_set_failures_dont_raise():
 
 def test_shim_handle_bus_failure_reconnects_successfully():
     """On first failure, shim reconnects and updates listener._bus."""
-    from devices.dicksimnel.shim import DickSimnelShim
+    from unseen_university.devices.dicksimnel.shim import DickSimnelShim
     new_bus = MagicMock()
     shim = DickSimnelShim()
     shim._connect_bus = MagicMock(return_value=new_bus)
@@ -258,7 +258,7 @@ def test_shim_handle_bus_failure_reconnects_successfully():
 
 def test_shim_handle_bus_failure_failed_reconnect_increments_count():
     """When _connect_bus returns None, reconnect count increments."""
-    from devices.dicksimnel.shim import DickSimnelShim
+    from unseen_university.devices.dicksimnel.shim import DickSimnelShim
     shim = DickSimnelShim()
     shim._connect_bus = MagicMock(return_value=None)
     listener = MagicMock()
@@ -269,7 +269,7 @@ def test_shim_handle_bus_failure_failed_reconnect_increments_count():
 
 def test_shim_handle_bus_failure_stops_after_max_attempts():
     """After _MAX_RECONNECT_ATTEMPTS failed reconnects, shim removes availability flag."""
-    from devices.dicksimnel.shim import DickSimnelShim, _MAX_RECONNECT_ATTEMPTS
+    from unseen_university.devices.dicksimnel.shim import DickSimnelShim, _MAX_RECONNECT_ATTEMPTS
     shim = DickSimnelShim()
     shim._connect_bus = MagicMock(return_value=None)
     shim._remove_available = MagicMock()

@@ -12,8 +12,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bus.envelope import Envelope
-from bus.imap_server import IMAPServer, _STUB_MAILBOXES, _STUB_SEEN
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.bus.imap_server import IMAPServer, _STUB_MAILBOXES, _STUB_SEEN
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -83,7 +83,7 @@ class TestFetchRecent:
 def _call_tool(name: str, args: dict) -> dict:
     """Drive the mcp_server dispatch function with a tools/call message."""
     # Reset the module-level singleton so each test gets a fresh unstarted client
-    import devices.queue.mcp_server as ms
+    import unseen_university.devices.queue.mcp_server as ms
 
     ms._feeds_imap = None
     msg = {

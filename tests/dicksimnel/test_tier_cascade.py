@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch, call
 
 import pytest
 
-from devices.inference.rules_engine import _DEFAULT_RULES, RoutingRule
+from unseen_university.devices.inference.rules_engine import _DEFAULT_RULES, RoutingRule
 
 
 # ── 1. rules_engine has creator-tier rules ────────────────────────────────────
@@ -55,7 +55,7 @@ class TestCreatorTierRulesExist:
 
 def _make_device_with_cascade(cascade):
     """Return a DickSimnelDevice with a patched _TIER_CASCADE."""
-    from devices.dicksimnel.device import DickSimnelDevice
+    from unseen_university.devices.dicksimnel.device import DickSimnelDevice
     dev = DickSimnelDevice.__new__(DickSimnelDevice)
     dev._TIER_CASCADE = cascade
     dev._active_ticket = None
@@ -65,7 +65,7 @@ def _make_device_with_cascade(cascade):
 class TestBuilderEscalatesToCreator:
     def test_escalate_advances_to_creator_tier(self):
         """When builder returns ESCALATE:, the next tier (creator) is attempted."""
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
 
         cascade = [
             ("builder-model", "builder"),
@@ -85,8 +85,8 @@ class TestBuilderEscalatesToCreator:
         loop_mock.run.side_effect = lambda t, sp, model_override=None: fake_toolloop_run(t, sp, model_override)
         loop_mock._turn_log = []
 
-        with patch("devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
-            with patch("devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
+        with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
+            with patch("unseen_university.devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
                 MockLoop.return_value = loop_mock
 
                 dev = _make_device_with_cascade(cascade)
@@ -99,7 +99,7 @@ class TestBuilderEscalatesToCreator:
 
     def test_escalation_context_appended_to_ticket(self):
         """Builder escalation reason is appended to ticket description for creator."""
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
 
         cascade = [
             ("builder-model", "builder"),
@@ -119,8 +119,8 @@ class TestBuilderEscalatesToCreator:
         loop_mock.run.side_effect = lambda t, sp, model_override=None: capture_run(t, sp, model_override)
         loop_mock._turn_log = []
 
-        with patch("devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
-            with patch("devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
+        with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
+            with patch("unseen_university.devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
                 MockLoop.return_value = loop_mock
 
                 dev = _make_device_with_cascade(cascade)
@@ -136,7 +136,7 @@ class TestBuilderEscalatesToCreator:
 
     def test_creator_done_does_not_reach_master(self):
         """When creator returns DONE:, the cascade stops — no third tier attempted."""
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
 
         cascade = [
             ("builder-model", "builder"),
@@ -159,8 +159,8 @@ class TestBuilderEscalatesToCreator:
         loop_mock.run.side_effect = lambda t, sp, model_override=None: fake_run(t, sp, model_override)
         loop_mock._turn_log = []
 
-        with patch("devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
-            with patch("devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
+        with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
+            with patch("unseen_university.devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
                 MockLoop.return_value = loop_mock
 
                 dev = _make_device_with_cascade(cascade)
@@ -176,7 +176,7 @@ class TestBuilderEscalatesToCreator:
 class TestCumulativeContext:
     def test_master_receives_cumulative_escalation_notes(self):
         """When builder and creator both escalate, master gets both escalation notes."""
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
 
         cascade = [
             ("builder-model", "builder"),
@@ -199,8 +199,8 @@ class TestCumulativeContext:
         loop_mock.run.side_effect = lambda t, sp, model_override=None: capture_run(t, sp, model_override)
         loop_mock._turn_log = []
 
-        with patch("devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
-            with patch("devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
+        with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
+            with patch("unseen_university.devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
                 MockLoop.return_value = loop_mock
 
                 dev = _make_device_with_cascade(cascade)
@@ -217,7 +217,7 @@ class TestCumulativeContext:
 
     def test_last_tier_escalate_returns_immediately(self):
         """When the last tier returns ESCALATE:, it returns without advancing."""
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
 
         cascade = [
             ("only-model", "builder"),
@@ -228,8 +228,8 @@ class TestCumulativeContext:
         loop_mock.run.return_value = "ESCALATE: cannot do this"
         loop_mock._turn_log = []
 
-        with patch("devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
-            with patch("devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
+        with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
+            with patch("unseen_university.devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
                 MockLoop.return_value = loop_mock
 
                 dev = _make_device_with_cascade(cascade)
@@ -239,7 +239,7 @@ class TestCumulativeContext:
 
     def test_done_at_first_tier_skips_rest(self):
         """DONE: at builder tier should not call any further tiers."""
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
 
         cascade = [
             ("builder-model", "builder"),
@@ -257,8 +257,8 @@ class TestCumulativeContext:
         loop_mock.run.side_effect = lambda t, sp, model_override=None: fake_run(t, sp, model_override)
         loop_mock._turn_log = []
 
-        with patch("devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
-            with patch("devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
+        with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice._build_system_prompt", return_value="sys"):
+            with patch("unseen_university.devices.dicksimnel.toolloop.ToolLoop") as MockLoop:
                 MockLoop.return_value = loop_mock
 
                 dev = _make_device_with_cascade(cascade)

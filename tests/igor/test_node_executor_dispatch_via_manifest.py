@@ -21,8 +21,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition import node_executor
-from devices.igor.cognition.node_executor import execute_node
+from unseen_university.devices.igor.cognition import node_executor
+from unseen_university.devices.igor.cognition.node_executor import execute_node
 
 
 def _memory_with_mcpcall(tool_name: str = "fake_tool") -> SimpleNamespace:
@@ -60,7 +60,7 @@ def test_mcpcall_consults_manifest_when_dc_client_present(fake_tool, caplog):
     memory = _memory_with_mcpcall("fake_tool")
     basket = {"args": {}}
 
-    with caplog.at_level(logging.INFO, logger="devices.igor.cognition.node_executor"):
+    with caplog.at_level(logging.INFO, logger="unseen_university.devices.igor.cognition.node_executor"):
         execute_node(memory, "__entry__", basket, dc_client=dc_client)
 
     dc_client.get_tool.assert_called_once_with("fake_tool")
@@ -74,7 +74,7 @@ def test_mcpcall_falls_back_when_dc_client_missing(fake_tool, caplog):
     memory = _memory_with_mcpcall("fake_tool")
     basket = {"args": {}}
 
-    with caplog.at_level(logging.INFO, logger="devices.igor.cognition.node_executor"):
+    with caplog.at_level(logging.INFO, logger="unseen_university.devices.igor.cognition.node_executor"):
         execute_node(memory, "__entry__", basket, dc_client=None)
 
     assert not any("manifest-bound tool" in r.message for r in caplog.records)
@@ -92,7 +92,7 @@ def test_mcpcall_consults_manifest_but_falls_through_when_tool_unlisted(
     memory = _memory_with_mcpcall("fake_tool")
     basket = {"args": {}}
 
-    with caplog.at_level(logging.INFO, logger="devices.igor.cognition.node_executor"):
+    with caplog.at_level(logging.INFO, logger="unseen_university.devices.igor.cognition.node_executor"):
         execute_node(memory, "__entry__", basket, dc_client=dc_client)
 
     dc_client.get_tool.assert_called_once_with("fake_tool")
@@ -109,7 +109,7 @@ def test_mcpcall_handles_dc_client_get_tool_raising(fake_tool, caplog):
     basket = {"args": {}}
 
     with caplog.at_level(
-        logging.WARNING, logger="devices.igor.cognition.node_executor"
+        logging.WARNING, logger="unseen_university.devices.igor.cognition.node_executor"
     ):
         execute_node(memory, "__entry__", basket, dc_client=dc_client)
 

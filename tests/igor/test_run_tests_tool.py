@@ -20,10 +20,10 @@ def _import_run_tests():
     # _Registry into downstream tests that looked up tools at call-time
     # (test_tiered_research, test_tool_discovery_semantic).
     _stub_pkgs = [
-        "devices.igor.tools",
-        "devices.igor.tools.registry",
-        "devices.igor.memory",
-        "devices.igor.paths",
+        "unseen_university.devices.igor.tools",
+        "unseen_university.devices.igor.tools.registry",
+        "unseen_university.devices.igor.memory",
+        "unseen_university.devices.igor.paths",
     ]
     _orig_mods = {pkg: sys.modules.get(pkg) for pkg in _stub_pkgs}
 
@@ -33,7 +33,7 @@ def _import_run_tests():
             sys.modules[pkg] = types.ModuleType(pkg)
 
     # Stub registry so Tool/registry.register calls are no-ops
-    fake_registry_mod = types.ModuleType("devices.igor.tools.registry")
+    fake_registry_mod = types.ModuleType("unseen_university.devices.igor.tools.registry")
 
     class _Tool:
         def __init__(self, **kwargs):
@@ -45,12 +45,12 @@ def _import_run_tests():
 
     fake_registry_mod.Tool = _Tool
     fake_registry_mod.registry = _Registry()
-    sys.modules["devices.igor.tools.registry"] = fake_registry_mod
+    sys.modules["unseen_university.devices.igor.tools.registry"] = fake_registry_mod
 
     # Stub paths (unconditional — ops.py needs a callable paths at import time)
-    fake_paths_mod = types.ModuleType("devices.igor.paths")
+    fake_paths_mod = types.ModuleType("unseen_university.devices.igor.paths")
     fake_paths_mod.paths = MagicMock()
-    sys.modules["devices.igor.paths"] = fake_paths_mod
+    sys.modules["unseen_university.devices.igor.paths"] = fake_paths_mod
 
     # Stub psycopg2 so module-level DB code doesn't fail
     if "psycopg2" not in sys.modules:
@@ -59,7 +59,7 @@ def _import_run_tests():
         sys.modules["psycopg2"] = fake_pg
 
     # Now import the module fresh (or reuse cached)
-    mod_name = "devices.igor.tools.ops"
+    mod_name = "unseen_university.devices.igor.tools.ops"
     if mod_name in sys.modules:
         del sys.modules[mod_name]
 

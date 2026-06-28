@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.granny.daemon import (
+from unseen_university.devices.granny.daemon import (
     match_rule,
     run_once,
     _default_config,
@@ -19,11 +19,11 @@ def _no_db_gated_tickets(monkeypatch):
     """Prevent _cleared_gated_tickets from hitting the DB in unit tests.
 
     Tests that want to exercise the gate-eval path patch it explicitly via
-    patch("devices.granny.daemon._cleared_gated_tickets", ...) which takes
+    patch("unseen_university.devices.granny.daemon._cleared_gated_tickets", ...) which takes
     precedence over this fixture's monkeypatch.
     """
     monkeypatch.setattr(
-        "devices.granny.daemon._cleared_gated_tickets", lambda: []
+        "unseen_university.devices.granny.daemon._cleared_gated_tickets", lambda: []
     )
 
 
@@ -96,18 +96,18 @@ def _config():
 class TestRunOnce:
     def test_skips_when_worker_unavailable(self):
         ticket = {"id": "T-new", "tags": [], "role": "master", "status": "sprint"}
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=False):
-                with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]):
+            with patch("unseen_university.devices.granny.availability.is_available", return_value=False):
+                with patch("unseen_university.devices.granny.daemon._dispatch_bus") as mock_bus:
                     run_once(_config())
         mock_bus.assert_not_called()
 
     def test_skips_cc0_when_busy(self):
         ticket = {"id": "T-new", "tags": [], "role": "master", "status": "sprint"}
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=True):
-                with patch("devices.granny.daemon._cc0_busy", return_value=True):
-                    with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]):
+            with patch("unseen_university.devices.granny.availability.is_available", return_value=True):
+                with patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=True):
+                    with patch("unseen_university.devices.granny.daemon._dispatch_bus") as mock_bus:
                         run_once(_config())
         mock_bus.assert_not_called()
 
@@ -116,13 +116,13 @@ class TestRunOnce:
                   "title": "Fix it"}
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cc0_busy", return_value=False), \
-             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(_config(), imap=imap)
         mock_bus.assert_called_once()
         # Third positional arg is worker_mailbox — default config has CC.0 mailbox "cc.0"
@@ -136,13 +136,13 @@ class TestRunOnce:
 
         # Patch cascade to empty so CC.0 doesn't absorb the builder ticket
         # (CC.0 has cascade_if_idle=True — without this patch, it would claim the ticket).
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cascade_active_workers", return_value={}), \
-             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cascade_active_workers", return_value={}), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(_config(), imap=imap)
 
         mock_bus.assert_called_once()
@@ -154,12 +154,12 @@ class TestRunOnce:
                   "title": "Fail"}
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cc0_busy", return_value=False), \
-             patch("devices.granny.daemon._dispatch_bus", return_value=False), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0):
             run_once(_config(), imap=imap)  # must not raise
 
     def test_guru_ticket_dispatches_to_akien_not_cc_or_ds(self):
@@ -167,10 +167,10 @@ class TestRunOnce:
                   "title": "Needs Akien"}
         # _dispatch_dicksimnel was removed — bus dispatch is the unified path now;
         # for guru tickets, _dispatch_akien is called and _dispatch_bus is NOT called.
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.daemon._dispatch_akien", return_value=True) as mock_akien:
-                with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
-                    with patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]):
+            with patch("unseen_university.devices.granny.daemon._dispatch_akien", return_value=True) as mock_akien:
+                with patch("unseen_university.devices.granny.daemon._dispatch_bus") as mock_bus:
+                    with patch("unseen_university.devices.granny.daemon._post_channel"):
                         run_once(_config())
         mock_akien.assert_called_once()
         mock_bus.assert_not_called()
@@ -181,11 +181,11 @@ class TestRunOnce:
         # is_available IS called during the idle-worker-launch pass (checking whether
         # DickSimnel/CC.0 need launching), but must NOT be called for guru routing itself.
         # Observable check: _dispatch_akien fires even when all workers are "unavailable".
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]):
-            with patch("devices.granny.availability.is_available", return_value=False):
-                with patch("devices.granny.daemon._dispatch_akien", return_value=True) as mock_akien:
-                    with patch("devices.granny.daemon._dispatch_bus") as mock_bus:
-                        with patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]):
+            with patch("unseen_university.devices.granny.availability.is_available", return_value=False):
+                with patch("unseen_university.devices.granny.daemon._dispatch_akien", return_value=True) as mock_akien:
+                    with patch("unseen_university.devices.granny.daemon._dispatch_bus") as mock_bus:
+                        with patch("unseen_university.devices.granny.daemon._post_channel"):
                             run_once(_config())
         mock_akien.assert_called_once()
         mock_bus.assert_not_called()
@@ -195,13 +195,13 @@ class TestRunOnce:
                   "title": "Mark it"}
         imap = MagicMock()
         imap.fetch_unseen.return_value = []
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cc0_busy", return_value=False), \
-             patch("devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", return_value=True) as mock_bus, \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(_config(), imap=imap)
         mock_bus.assert_called_once()
         assert mock_bus.call_args[0][2] == "cc.0", "CC.0 must dispatch to cc.0 mailbox"
@@ -219,13 +219,13 @@ class TestRunOnce:
             dispatched_ids.append(ticket["id"])
             return True
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=tickets), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cc0_busy", return_value=False), \
-             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=tickets), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(_config(), imap=imap)
 
         assert dispatched_ids == ["T-first"], "second CC ticket must be deferred to next cycle"
@@ -248,12 +248,12 @@ class TestRunOnce:
             dispatched.append(ticket["id"])
             return True
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=ungated), \
-             patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
-             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=ungated), \
+             patch("unseen_university.devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(_default_config(), imap=imap)
 
         assert "T-B" not in dispatched, "gated ticket must not dispatch while gate is blocked"
@@ -270,21 +270,21 @@ class TestRunOnce:
             dispatched.append(ticket["id"])
             return True
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[]), \
-             patch("devices.granny.daemon._cleared_gated_tickets", return_value=[cleared_ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cascade_active_workers", return_value={}), \
-             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[]), \
+             patch("unseen_university.devices.granny.daemon._cleared_gated_tickets", return_value=[cleared_ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cascade_active_workers", return_value={}), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(_default_config(), imap=imap)
 
         assert "T-B" in dispatched, "cleared-gated ticket must be dispatched"
 
     def test_cleared_gated_tickets_returns_empty_on_db_error(self):
         """_cleared_gated_tickets() returns [] when DB is unreachable — never raises."""
-        with patch("devices.granny.daemon._DB_URL", "postgresql://bad:bad@127.0.0.1:9/bad"):
+        with patch("unseen_university.devices.granny.daemon._DB_URL", "postgresql://bad:bad@127.0.0.1:9/bad"):
             result = _cleared_gated_tickets()
         assert result == []
 
@@ -299,7 +299,7 @@ class TestRunOnce:
             {"id": "T-done",   "status": "closed"},
         ]
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[]):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[]):
             # Simulate what _cleared_gated_tickets does without hitting the DB
             results = [
                 t for t in [t_blocked, t_cleared]
@@ -319,13 +319,13 @@ class TestRunOnce:
             dispatched_mailboxes.append(worker_mailbox)
             return True
 
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cc0_busy", return_value=False), \
-             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(_config(), imap=imap)
         assert dispatched_mailboxes == ["cc.0"], f"Security tag must route to cc.0, got {dispatched_mailboxes}"
 
@@ -343,12 +343,12 @@ class TestRunOnce:
 
         # _dispatch_dicksimnel was removed — bus dispatch is the unified path;
         # check observable behavior: bus dispatched to cc.0, not dicksimnel.0.
-        with patch("devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
-             patch("devices.granny.availability.is_available", return_value=True), \
-             patch("devices.granny.daemon._cc0_busy", return_value=False), \
-             patch("devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
-             patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-             patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-             patch("devices.granny.daemon._post_channel"):
+        with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=[ticket]), \
+             patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+             patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+             patch("unseen_university.devices.granny.daemon._dispatch_bus", side_effect=fake_bus), \
+             patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+             patch("unseen_university.devices.granny.daemon._post_channel"):
             run_once(_config(), imap=imap)
         assert dispatched_mailboxes == ["cc.0"], "escalated tickets must go to CC (cc.0)"

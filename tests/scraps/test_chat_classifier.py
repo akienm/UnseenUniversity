@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.scraps.chat_classifier import ChatClassifier, _CHATS_ROOT
+from unseen_university.devices.scraps.chat_classifier import ChatClassifier, _CHATS_ROOT
 
 
 class TestChatClassifier:
@@ -20,7 +20,7 @@ class TestChatClassifier:
     def test_run_once_no_chats_root(self):
         """run_once handles missing chats root gracefully."""
         classifier = ChatClassifier("postgresql://test")
-        with patch("devices.scraps.chat_classifier._CHATS_ROOT") as mock_root:
+        with patch("unseen_university.devices.scraps.chat_classifier._CHATS_ROOT") as mock_root:
             mock_root.exists.return_value = False
             result = classifier.run_once()
         assert result["turns_read"] == 0

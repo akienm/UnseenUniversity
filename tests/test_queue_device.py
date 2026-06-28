@@ -12,7 +12,7 @@ import os
 
 import pytest
 
-from devices.queue.device import (
+from unseen_university.devices.queue.device import (
     LegacyDirectClaimError,
     QueueDevice,
     _gate_tripped,
@@ -48,7 +48,7 @@ class TestLegacyClaimError:
 
 class TestGateTripped:
     def test_no_gate_file_not_tripped(self, tmp_path):
-        from devices.queue import device as dev_mod
+        from unseen_university.devices.queue import device as dev_mod
 
         original = dev_mod.GATE_FILE
         dev_mod.GATE_FILE = tmp_path / "nonexistent_gate.json"
@@ -60,7 +60,7 @@ class TestGateTripped:
     def test_tripped_true_when_file_says_tripped(self, tmp_path):
         gate_file = tmp_path / "queue_gate.json"
         gate_file.write_text(json.dumps({"tripped": True, "reason": "test"}))
-        from devices.queue import device as dev_mod
+        from unseen_university.devices.queue import device as dev_mod
 
         original = dev_mod.GATE_FILE
         dev_mod.GATE_FILE = gate_file
@@ -72,7 +72,7 @@ class TestGateTripped:
     def test_not_tripped_when_false(self, tmp_path):
         gate_file = tmp_path / "queue_gate.json"
         gate_file.write_text(json.dumps({"tripped": False}))
-        from devices.queue import device as dev_mod
+        from unseen_university.devices.queue import device as dev_mod
 
         original = dev_mod.GATE_FILE
         dev_mod.GATE_FILE = gate_file
@@ -120,7 +120,7 @@ class TestQueueNextGateTripped:
         monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
         gate_file = tmp_path / "queue_gate.json"
         gate_file.write_text(json.dumps({"tripped": True}))
-        from devices.queue import device as dev_mod
+        from unseen_university.devices.queue import device as dev_mod
 
         original = dev_mod.GATE_FILE
         dev_mod.GATE_FILE = gate_file
@@ -151,7 +151,7 @@ class TestQueueNextFS:
         monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
         gate_file = tmp_path / "gate.json"
         gate_file.write_text(json.dumps({"tripped": False}))
-        from devices.queue import device as dev_mod
+        from unseen_university.devices.queue import device as dev_mod
 
         original = dev_mod.GATE_FILE
         dev_mod.GATE_FILE = gate_file

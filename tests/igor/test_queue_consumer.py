@@ -31,8 +31,8 @@ if str(_REPO) not in sys.path:
 
 # ── patch targets ─────────────────────────────────────────────────────────────
 
-_CORTEX_PATH = "devices.igor.memory.cortex.Cortex"
-_MT_PATH = "devices.igor.memory.models.MemoryType"
+_CORTEX_PATH = "unseen_university.devices.igor.memory.cortex.Cortex"
+_MT_PATH = "unseen_university.devices.igor.memory.models.MemoryType"
 # read_queue_top and adopt_top_queue_ticket now use cc_queue.load_tasks (Postgres)
 _LOAD_TASKS_PATH = "devlab.claudecode.cc_queue.load_tasks"
 
@@ -70,7 +70,7 @@ def _make_goal(active: bool = True, source: str = "work ticket T-alpha") -> Magi
 class TestReadQueueTop(unittest.TestCase):
 
     def _call(self, tickets: list[dict]) -> str:
-        from devices.igor.tools.ops import read_queue_top
+        from unseen_university.devices.igor.tools.ops import read_queue_top
 
         with patch(_LOAD_TASKS_PATH, return_value=tickets):
             return read_queue_top()
@@ -129,7 +129,7 @@ class TestReadQueueTop(unittest.TestCase):
 
     def test_load_error_returns_error_string(self):
         """Returns an error string if cc_queue.load_tasks raises."""
-        from devices.igor.tools.ops import read_queue_top
+        from unseen_university.devices.igor.tools.ops import read_queue_top
 
         with patch(_LOAD_TASKS_PATH, side_effect=Exception("db connection failed")):
             result = read_queue_top()
@@ -148,7 +148,7 @@ class TestAdoptTopQueueTicket(unittest.TestCase):
     def test_raises_legacy_direct_claim_error(self):
         """adopt_top_queue_ticket always raises — PROC_QUEUE_DRAIN autonomous pickup is gone."""
         from devlab.claudecode.cc_queue import LegacyDirectClaimError
-        from devices.igor.tools.ops import adopt_top_queue_ticket
+        from unseen_university.devices.igor.tools.ops import adopt_top_queue_ticket
 
         with self.assertRaises(LegacyDirectClaimError) as ctx:
             adopt_top_queue_ticket()
@@ -162,8 +162,8 @@ class TestRegistryRegistration(unittest.TestCase):
 
     def test_read_queue_top_registered(self):
         """read_queue_top is present in the tool registry."""
-        from devices.igor.tools.registry import registry
-        import devices.igor.tools.ops  # noqa: F401 — triggers registration
+        from unseen_university.devices.igor.tools.registry import registry
+        import unseen_university.devices.igor.tools.ops  # noqa: F401 — triggers registration
 
         tool = registry.get("read_queue_top")
         self.assertIsNotNone(tool, "read_queue_top not found in registry")
@@ -171,8 +171,8 @@ class TestRegistryRegistration(unittest.TestCase):
 
     def test_adopt_top_queue_ticket_registered(self):
         """adopt_top_queue_ticket is present in the tool registry with no required args."""
-        from devices.igor.tools.registry import registry
-        import devices.igor.tools.ops  # noqa: F401
+        from unseen_university.devices.igor.tools.registry import registry
+        import unseen_university.devices.igor.tools.ops  # noqa: F401
 
         tool = registry.get("adopt_top_queue_ticket")
         self.assertIsNotNone(tool, "adopt_top_queue_ticket not found in registry")

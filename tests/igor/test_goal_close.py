@@ -26,8 +26,8 @@ def _add_repo_to_path():
 _add_repo_to_path()
 
 # Patch target: close_goal_by_ticket imports Cortex inside the function
-_CORTEX_PATH = "devices.igor.memory.cortex.Cortex"
-_MT_PATH = "devices.igor.memory.models.MemoryType"
+_CORTEX_PATH = "unseen_university.devices.igor.memory.cortex.Cortex"
+_MT_PATH = "unseen_university.devices.igor.memory.models.MemoryType"
 
 
 def _make_goal(ticket_id: str, active: bool = True) -> MagicMock:
@@ -45,7 +45,7 @@ def _make_goal(ticket_id: str, active: bool = True) -> MagicMock:
 
 def _run_close(ticket_id: str, goals: list) -> tuple[str, MagicMock]:
     """Call close_goal_by_ticket with mocked Cortex returning `goals`."""
-    from devices.igor.tools.ops import close_goal_by_ticket
+    from unseen_university.devices.igor.tools.ops import close_goal_by_ticket
 
     mock_cortex = MagicMock()
     mock_cortex.get_by_type.return_value = goals

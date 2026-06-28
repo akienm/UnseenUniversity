@@ -38,14 +38,14 @@ def _connect():
 @pytest.fixture
 def cortex():
     os.environ.setdefault("UU_HOME_DB_URL", DB_URL)
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     return Cortex(None)
 
 
 def _make_test_memory(cortex) -> str:
     """Deposit a tagged test memory, return its id."""
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     mem = Memory(
         narrative="test narrative for delete_memory FK cascade",

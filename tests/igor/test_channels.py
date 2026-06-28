@@ -11,15 +11,15 @@ from pathlib import Path
 
 import pytest
 
-from devices.igor.acquisition import (
+from unseen_university.devices.igor.acquisition import (
     AcquireRequest,
     ChannelFailure,
     AcquireResult,
     ChannelReliability,
     get_registry,
 )
-from devices.igor.acquisition.file_inbox import FileInboxChannel
-from devices.igor.acquisition.direct_url import DirectURLChannel
+from unseen_university.devices.igor.acquisition.file_inbox import FileInboxChannel
+from unseen_university.devices.igor.acquisition.direct_url import DirectURLChannel
 
 
 class TestAcquireRequest:
@@ -67,7 +67,7 @@ class TestAcquireResult:
 
     def test_result_creation(self):
         """Create an AcquireResult."""
-        from devices.igor.acquisition import BlobMeta
+        from unseen_university.devices.igor.acquisition import BlobMeta
 
         blob = b"test content"
         meta = BlobMeta(
@@ -89,14 +89,14 @@ class TestChannelRegistry:
     def test_registry_empty_at_start(self):
         """Registry should support registration."""
         # Create a fresh registry (not the global one)
-        from devices.igor.acquisition import ChannelRegistry
+        from unseen_university.devices.igor.acquisition import ChannelRegistry
 
         registry = ChannelRegistry()
         assert len(registry.list_channels()) == 0
 
     def test_register_channel(self):
         """Register a channel."""
-        from devices.igor.acquisition import ChannelRegistry, Channel
+        from unseen_university.devices.igor.acquisition import ChannelRegistry, Channel
 
         registry = ChannelRegistry()
 
@@ -117,7 +117,7 @@ class TestChannelRegistry:
 
     def test_duplicate_registration_fails(self):
         """Registering same channel name twice should fail."""
-        from devices.igor.acquisition import ChannelRegistry, Channel
+        from unseen_university.devices.igor.acquisition import ChannelRegistry, Channel
 
         registry = ChannelRegistry()
 
@@ -171,7 +171,7 @@ class TestFileInboxChannel:
             import os
 
             # Monkey-patch paths().inbox to point to our temp dir
-            from devices.igor import paths as paths_module
+            from unseen_university.devices.igor import paths as paths_module
 
             original_inbox = paths_module._BootstrapPathManager.inbox.fget
 

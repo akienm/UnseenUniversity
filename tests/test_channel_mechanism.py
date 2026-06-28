@@ -21,7 +21,7 @@ import pytest
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
 from unseen_university.announce.channels import ChannelRegistry
-from bus.envelope import Envelope
+from unseen_university.devices.bus.envelope import Envelope
 
 CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
 
@@ -140,7 +140,7 @@ def test_listener_registers_subscriptions_after_announce(tmp_path: Path):
     from unseen_university.announce.broker import AnnounceBroker
     from unseen_university.announce.envelope import IdentityEnvelope
     from unseen_university.announce.listener import AnnounceListener
-    from bus.imap_server import IMAPServer
+    from unseen_university.devices.bus.imap_server import IMAPServer
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
@@ -198,9 +198,9 @@ def test_listener_registers_subscriptions_after_announce(tmp_path: Path):
 
 
 def test_skeleton_creates_shared_mailbox_on_bootstrap(tmp_path: Path):
-    from unseen_university.skeleton.skeleton import Skeleton
-    from bus.imap_server import IMAPServer
-    from skeleton.registry import DeviceRegistry
+    from unseen_university.devices.skeleton.skeleton import Skeleton
+    from unseen_university.devices.bus.imap_server import IMAPServer
+    from unseen_university.devices.skeleton.registry import DeviceRegistry
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
@@ -219,9 +219,9 @@ def test_skeleton_creates_shared_mailbox_on_bootstrap(tmp_path: Path):
 
 
 def test_skeleton_exposes_channel_registry(tmp_path: Path):
-    from unseen_university.skeleton.skeleton import Skeleton
-    from bus.imap_server import IMAPServer
-    from skeleton.registry import DeviceRegistry
+    from unseen_university.devices.skeleton.skeleton import Skeleton
+    from unseen_university.devices.bus.imap_server import IMAPServer
+    from unseen_university.devices.skeleton.registry import DeviceRegistry
 
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
@@ -242,7 +242,7 @@ def test_skeleton_exposes_channel_registry(tmp_path: Path):
 
 
 def test_skeleton_without_bus_has_no_channel_registry():
-    from unseen_university.skeleton.skeleton import Skeleton
+    from unseen_university.devices.skeleton.skeleton import Skeleton
 
     skel = Skeleton()
     assert skel.channels is None

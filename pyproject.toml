@@ -26,7 +26,12 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["unseen_university*", "bus*", "diagnostic_base*", "skeleton*", "devices*", "config*", "devlab*"]
+include = ["unseen_university*"]
+
+[tool.setuptools.package-data]
+# Shipped read-only assets that live inside the package (configs, templates, schemas).
+# Editable installs read these from the source tree; this block makes wheel builds carry them.
+"*" = ["*.yaml", "*.yml", "*.cfg", "*.template", "*.json", "*.txt", "*.sh", "*.md", "Dockerfile*"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "tests", "devlab"]

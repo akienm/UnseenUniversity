@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.web_server_watchdog import (  # noqa: E402
+from unseen_university.devices.igor.cognition.web_server_watchdog import (  # noqa: E402
     DOWN_THRESHOLD,
     RESTART_COOLDOWN_SEC,
     WebServerWatchdog,
@@ -21,7 +21,7 @@ from devices.igor.cognition.web_server_watchdog import (  # noqa: E402
 class TestIsWebServerUp:
     def test_up_when_health_check_passes(self):
         with patch(
-            "devices.igor.cognition.web_server_watchdog.is_web_server_up",
+            "unseen_university.devices.igor.cognition.web_server_watchdog.is_web_server_up",
             return_value=True,
         ):
             # Calling the patched version directly just verifies patch works
@@ -31,17 +31,17 @@ class TestIsWebServerUp:
 
     def test_up_delegates_to_check_health(self):
         with patch(
-            "devices.web_server.device._check_health", return_value={"status": "ok"}
+            "unseen_university.devices.web_server.device._check_health", return_value={"status": "ok"}
         ):
             assert is_web_server_up() is True
 
     def test_down_when_check_health_returns_none(self):
-        with patch("devices.web_server.device._check_health", return_value=None):
+        with patch("unseen_university.devices.web_server.device._check_health", return_value=None):
             assert is_web_server_up() is False
 
     def test_down_when_check_health_raises(self):
         with patch(
-            "devices.web_server.device._check_health",
+            "unseen_university.devices.web_server.device._check_health",
             side_effect=ImportError("no module"),
         ):
             assert is_web_server_up() is False
@@ -52,11 +52,11 @@ class TestRelaunchWebServer:
         mock_dev = MagicMock()
         with (
             patch(
-                "devices.web_server.device.WebServerDevice",
+                "unseen_university.devices.web_server.device.WebServerDevice",
                 return_value=mock_dev,
             ),
             patch(
-                "devices.igor.cognition.web_server_watchdog.is_web_server_up",
+                "unseen_university.devices.igor.cognition.web_server_watchdog.is_web_server_up",
                 return_value=True,
             ),
         ):
@@ -68,11 +68,11 @@ class TestRelaunchWebServer:
         mock_dev = MagicMock()
         with (
             patch(
-                "devices.web_server.device.WebServerDevice",
+                "unseen_university.devices.web_server.device.WebServerDevice",
                 return_value=mock_dev,
             ),
             patch(
-                "devices.igor.cognition.web_server_watchdog.is_web_server_up",
+                "unseen_university.devices.igor.cognition.web_server_watchdog.is_web_server_up",
                 return_value=False,
             ),
         ):
@@ -82,10 +82,10 @@ class TestRelaunchWebServer:
     def test_logs_error_on_exception(self):
         with (
             patch(
-                "devices.web_server.device.WebServerDevice",
+                "unseen_university.devices.web_server.device.WebServerDevice",
                 side_effect=RuntimeError("boom"),
             ),
-            patch("devices.igor.cognition.web_server_watchdog.log_error") as mock_log,
+            patch("unseen_university.devices.igor.cognition.web_server_watchdog.log_error") as mock_log,
         ):
             ok = relaunch_web_server()
         assert ok is False
@@ -112,7 +112,7 @@ class TestWatchdogPush:
         wd = WebServerWatchdog()
         wd._consecutive_down = 5
         with patch(
-            "devices.igor.cognition.web_server_watchdog.is_web_server_up",
+            "unseen_university.devices.igor.cognition.web_server_watchdog.is_web_server_up",
             return_value=True,
         ):
             ids = wd.push(self._cortex())
@@ -123,11 +123,11 @@ class TestWatchdogPush:
         wd = WebServerWatchdog()
         with (
             patch(
-                "devices.igor.cognition.web_server_watchdog.is_web_server_up",
+                "unseen_university.devices.igor.cognition.web_server_watchdog.is_web_server_up",
                 return_value=False,
             ),
             patch(
-                "devices.igor.cognition.web_server_watchdog.relaunch_web_server"
+                "unseen_university.devices.igor.cognition.web_server_watchdog.relaunch_web_server"
             ) as mock_rl,
         ):
             wd.push(self._cortex())
@@ -140,11 +140,11 @@ class TestWatchdogPush:
         cortex = self._cortex()
         with (
             patch(
-                "devices.igor.cognition.web_server_watchdog.is_web_server_up",
+                "unseen_university.devices.igor.cognition.web_server_watchdog.is_web_server_up",
                 return_value=False,
             ),
             patch(
-                "devices.igor.cognition.web_server_watchdog.relaunch_web_server",
+                "unseen_university.devices.igor.cognition.web_server_watchdog.relaunch_web_server",
                 return_value=True,
             ) as mock_rl,
         ):
@@ -160,11 +160,11 @@ class TestWatchdogPush:
         wd._last_restart_ts = time.monotonic() - 30  # 30s ago, well under cooldown
         with (
             patch(
-                "devices.igor.cognition.web_server_watchdog.is_web_server_up",
+                "unseen_university.devices.igor.cognition.web_server_watchdog.is_web_server_up",
                 return_value=False,
             ),
             patch(
-                "devices.igor.cognition.web_server_watchdog.relaunch_web_server"
+                "unseen_university.devices.igor.cognition.web_server_watchdog.relaunch_web_server"
             ) as mock_rl,
         ):
             wd.push(self._cortex())
@@ -176,11 +176,11 @@ class TestWatchdogPush:
         wd._last_restart_ts = time.monotonic() - (RESTART_COOLDOWN_SEC + 30)
         with (
             patch(
-                "devices.igor.cognition.web_server_watchdog.is_web_server_up",
+                "unseen_university.devices.igor.cognition.web_server_watchdog.is_web_server_up",
                 return_value=False,
             ),
             patch(
-                "devices.igor.cognition.web_server_watchdog.relaunch_web_server",
+                "unseen_university.devices.igor.cognition.web_server_watchdog.relaunch_web_server",
                 return_value=True,
             ) as mock_rl,
         ):
@@ -191,6 +191,6 @@ class TestWatchdogPush:
         assert WebServerWatchdog.TIMING_TIER == "slow"
 
     def test_registered_in_push_sources(self):
-        from devices.igor.cognition import push_sources
+        from unseen_university.devices.igor.cognition import push_sources
 
         assert hasattr(push_sources, "web_server_watchdog")

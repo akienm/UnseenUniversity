@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from devices.installer import deploy_skills
+from unseen_university.devices.installer import deploy_skills
 
 
 def test_deploy_links_managed_skill_to_master(tmp_path: Path):

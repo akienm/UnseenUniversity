@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.calibre.device import CalibreDevice, _calibredb_available
-from devices.calibre.shim import CalibreShim
+from unseen_university.devices.calibre.device import CalibreDevice, _calibredb_available
+from unseen_university.devices.calibre.shim import CalibreShim
 
 
 class TestCalibreDevice:
@@ -31,7 +31,7 @@ class TestCalibreDevice:
 
     def test_no_sqlite_import(self):
         """CalibreDevice must not import sqlite3 — calibredb handles all DB access."""
-        import devices.calibre.device as mod
+        import unseen_university.devices.calibre.device as mod
         import sys
         # If sqlite3 were imported at module level it would be in sys.modules
         # The device should NOT import sqlite3 or sqlite3 from within its own code

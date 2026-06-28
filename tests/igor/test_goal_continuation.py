@@ -45,8 +45,8 @@ def _make_goal(
 
 # Patch paths: Cortex/MemoryType are imported inside run_goal_continuation()
 # via `from ..memory.cortex import Cortex as _Cortex` — patch the source.
-_CORTEX_PATH = "devices.igor.memory.cortex.Cortex"
-_MT_PATH = "devices.igor.memory.models.MemoryType"
+_CORTEX_PATH = "unseen_university.devices.igor.memory.cortex.Cortex"
+_MT_PATH = "unseen_university.devices.igor.memory.models.MemoryType"
 
 
 def _run_step(goal, bash_returns=None, ticket_data=None):
@@ -56,8 +56,8 @@ def _run_step(goal, bash_returns=None, ticket_data=None):
     - ticket_data: dict returned by _load_ticket (grep_for parsing in step 1).
     Returns (result_str, posted_messages).
     """
-    from devices.igor.tools import goal_continuation as gc
-    from devices.igor.tools.goal_continuation import GoalContinuation
+    from unseen_university.devices.igor.tools import goal_continuation as gc
+    from unseen_university.devices.igor.tools.goal_continuation import GoalContinuation
 
     bash_iter = iter(bash_returns or [])
     posted = []
@@ -88,7 +88,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
     """Step-machine logic — all external I/O mocked."""
 
     def test_no_active_goals(self):
-        from devices.igor.tools import goal_continuation as gc
+        from unseen_university.devices.igor.tools import goal_continuation as gc
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = []
@@ -165,8 +165,8 @@ class TestGoalContinuationSteps(unittest.TestCase):
     def test_step2_skip_when_no_grep_for(self):
         """Step 2 skips (no bash call) when grep_for absent."""
         goal = _make_goal(step=2)  # no grep_for
-        from devices.igor.tools import goal_continuation as gc
-        from devices.igor.tools.goal_continuation import GoalContinuation
+        from unseen_university.devices.igor.tools import goal_continuation as gc
+        from unseen_university.devices.igor.tools.goal_continuation import GoalContinuation
 
         bash_called = []
 
@@ -213,8 +213,8 @@ class TestGoalContinuationSteps(unittest.TestCase):
     def test_step4_lm_territory(self):
         """Step 4+ with live GOAL_READY TWM entry: no-op LLM-territory path."""
         goal = _make_goal(step=4)
-        from devices.igor.tools import goal_continuation as gc
-        from devices.igor.tools.goal_continuation import GoalContinuation
+        from unseen_university.devices.igor.tools import goal_continuation as gc
+        from unseen_university.devices.igor.tools.goal_continuation import GoalContinuation
 
         posted = []
 
@@ -243,8 +243,8 @@ class TestGoalContinuationSteps(unittest.TestCase):
     def test_step4_no_ticket_id_no_re_emit(self):
         """Step 4 with no ticket_id in goal: safe no-op, no TWM calls."""
         goal = _make_goal(step=4, task="no ticket here just a question")
-        from devices.igor.tools import goal_continuation as gc
-        from devices.igor.tools.goal_continuation import GoalContinuation
+        from unseen_university.devices.igor.tools import goal_continuation as gc
+        from unseen_university.devices.igor.tools.goal_continuation import GoalContinuation
 
         mock_cortex = MagicMock()
         mock_cortex.get_by_type.return_value = [goal]
@@ -264,7 +264,7 @@ class TestGoalContinuationSteps(unittest.TestCase):
 
     def test_run_bash_not_truncated_at_500_chars(self):
         """_run_bash 2KB cap: a 600-char result is returned untruncated (old cap was 500)."""
-        from devices.igor.tools.goal_continuation import GoalContinuation
+        from unseen_university.devices.igor.tools.goal_continuation import GoalContinuation
 
         gc_instance = GoalContinuation()
         long_output = "x" * 600

@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 
 def test_wait_for_work_sleeps_for_interval():
-    with patch("devices.granny.daemon.time.sleep") as mock_sleep:
-        from devices.granny.daemon import _wait_for_work
+    with patch("unseen_university.devices.granny.daemon.time.sleep") as mock_sleep:
+        from unseen_university.devices.granny.daemon import _wait_for_work
         _wait_for_work(30)
         mock_sleep.assert_called_once_with(30)

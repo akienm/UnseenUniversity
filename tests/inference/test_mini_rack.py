@@ -8,20 +8,20 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.inference.models_registry import (
+from unseen_university.devices.inference.models_registry import (
     ModelSpec,
     ModelsRegistry,
     default_registry,
 )
-from devices.inference.sources import (
+from unseen_university.devices.inference.sources import (
     OllamaSource,
     OpenRouterSource,
     Source,
     SourceRegistry,
 )
-from devices.inference.rules_engine import RoutingRule, RulesEngine
-from devices.inference.health_monitor import HealthMonitor
-from devices.inference.shim import InferenceRequest
+from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
+from unseen_university.devices.inference.health_monitor import HealthMonitor
+from unseen_university.devices.inference.shim import InferenceRequest
 
 # ── ModelsRegistry ─────────────────────────────────────────────────────────────
 
@@ -372,7 +372,7 @@ def test_cache_read_tokens_logged_at_debug(caplog):
     with (
         patch.object(src, "_api_key", return_value="test-key"),
         patch("urllib.request.urlopen", side_effect=_fake_urlopen),
-        caplog.at_level(logging.DEBUG, logger="devices.inference.sources"),
+        caplog.at_level(logging.DEBUG, logger="unseen_university.devices.inference.sources"),
     ):
         src.call(req)
 

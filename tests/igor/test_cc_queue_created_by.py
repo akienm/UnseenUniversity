@@ -86,7 +86,7 @@ class TestQueueTaskCreatedByInjection:
         with patch("devlab.claudecode.cc_queue.load_tasks", mock_load), patch(
             "devlab.claudecode.cc_queue.save_tasks", mock_save
         ):
-            from devices.igor.tools.ops import queue_task
+            from unseen_university.devices.igor.tools.ops import queue_task
 
             return queue_task(task_json), mock_tasks
 
@@ -120,7 +120,7 @@ class TestQueueTaskCreatedByInjection:
         with _patch("devlab.claudecode.cc_queue.load_tasks", mock_load), _patch(
             "devlab.claudecode.cc_queue.save_tasks", mock_save
         ):
-            from devices.igor.tools.ops import queue_task
+            from unseen_university.devices.igor.tools.ops import queue_task
 
             result = queue_task(self._make_task_json())
         assert "skip" in result

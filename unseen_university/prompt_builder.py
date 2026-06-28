@@ -66,7 +66,7 @@ def build_inference_request(*, model, messages, system, tools=None, **kwargs):
     Patterns 3+4 (consequence framing, imperative register) live in the system prompt
     text — enforce via /audit-precode, not runtime code.
     """
-    from devices.inference.device import InferenceRequest
+    from unseen_university.devices.inference.device import InferenceRequest
 
     kwargs.setdefault("temperature", 0.0)
     return InferenceRequest(

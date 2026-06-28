@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 def _reload_guard():
     """Reload module to reset module-level state between tests."""
-    import devices.igor.tools.alignment_guard as ag
+    import unseen_university.devices.igor.tools.alignment_guard as ag
 
     ag._same_goal_cycles = 0
     ag._current_goal_id = None
@@ -56,7 +56,7 @@ def test_reset_interaction_clears_counter():
     assert ag._current_goal_id is None
 
 
-_ESCALATE_PATH = "devices.igor.cognition.escalate.escalate_to_channel"
+_ESCALATE_PATH = "unseen_university.devices.igor.cognition.escalate.escalate_to_channel"
 
 
 def test_check_and_alert_fires_at_threshold(monkeypatch):

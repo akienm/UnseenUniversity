@@ -36,7 +36,7 @@ def _reload_module(modname: str):
 
 def test_preparse_timeout_is_hour_scale():
     """PREPARSE_TIMEOUT must be ≥ 1 hour. Was 8s before T-no-local-inference-timeouts."""
-    from devices.igor.cognition.reasoners import ollama_reasoner
+    from unseen_university.devices.igor.cognition.reasoners import ollama_reasoner
 
     assert ollama_reasoner.PREPARSE_TIMEOUT >= _HOUR, (
         f"PREPARSE_TIMEOUT={ollama_reasoner.PREPARSE_TIMEOUT}s violates "
@@ -79,7 +79,7 @@ def test_local_preparse_timeout_default_is_hour_scale(monkeypatch):
     """local_preparse timeout default ≥ 1 hour. Was 1.0s — flagrantly short."""
     monkeypatch.delenv("IGOR_LOCAL_PREPARSE_TIMEOUT_SEC", raising=False)
     # Reload to pick up current env (default reads at module-load time).
-    mod = _reload_module("devices.igor.cognition.local_preparse")
+    mod = _reload_module("unseen_university.devices.igor.cognition.local_preparse")
     assert mod._DEFAULT_TIMEOUT_SEC >= _HOUR, (
         f"local_preparse._DEFAULT_TIMEOUT_SEC={mod._DEFAULT_TIMEOUT_SEC}s "
         "violates the rule (must be ≥ 3600s = 1hr)."
@@ -94,7 +94,7 @@ def test_health_check_timeout_intentionally_short():
     The rule explicitly exempts non-inference network checks. We assert the
     short value is preserved here so a future refactor doesn't accidentally
     'fix' it with the rule."""
-    from devices.igor.cognition.reasoners import ollama_reasoner
+    from unseen_university.devices.igor.cognition.reasoners import ollama_reasoner
     import inspect
 
     sig = inspect.signature(ollama_reasoner.is_healthy)

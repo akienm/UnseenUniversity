@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from devices.igor.memory.cortex import Cortex
-from devices.igor.memory.models import Memory, MemoryType
+from unseen_university.devices.igor.memory.cortex import Cortex
+from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
 
 @pytest.fixture

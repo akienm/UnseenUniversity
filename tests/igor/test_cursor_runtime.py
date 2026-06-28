@@ -13,8 +13,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.cursor_runtime import CursorResult, run_cursor
-from devices.igor.cognition.node_executor import ExecutionResult
+from unseen_university.devices.igor.cognition.cursor_runtime import CursorResult, run_cursor
+from unseen_university.devices.igor.cognition.node_executor import ExecutionResult
 
 
 def _mock_cortex():
@@ -39,7 +39,7 @@ class TestRunCursorBasic:
         cortex = _mock_cortex()
         node = _mock_node("ENTRY")
 
-        with patch("devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
+        with patch("unseen_university.devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
             mock_exec.return_value = ExecutionResult(stopped_by="implicit_end")
             result = run_cursor(cortex, node, "__entry__", {})
 
@@ -64,7 +64,7 @@ class TestRunCursorBasic:
             return ExecutionResult(stopped_by="implicit_end")
 
         with patch(
-            "devices.igor.cognition.cursor_runtime.execute_node",
+            "unseen_university.devices.igor.cognition.cursor_runtime.execute_node",
             side_effect=fake_exec,
         ):
             result = run_cursor(cortex, node1, "__entry__", {})
@@ -80,7 +80,7 @@ class TestRunCursorBasic:
         cortex.get.return_value = None  # next node doesn't exist
         node = _mock_node("ENTRY")
 
-        with patch("devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
+        with patch("unseen_university.devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
             mock_exec.return_value = ExecutionResult(next_node="GHOST")
             result = run_cursor(cortex, node, "__entry__", {})
 
@@ -95,7 +95,7 @@ class TestLoopDetection:
         node = _mock_node("LOOPER")
         cortex.get.return_value = node  # always returns same node
 
-        with patch("devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
+        with patch("unseen_university.devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
             mock_exec.return_value = ExecutionResult(next_node="LOOPER")
             result = run_cursor(cortex, node, "__entry__", {})
 
@@ -119,7 +119,7 @@ class TestLoopDetection:
             return ExecutionResult(next_node=f"STEP_{call_count[0]}")
 
         with patch(
-            "devices.igor.cognition.cursor_runtime.execute_node",
+            "unseen_university.devices.igor.cognition.cursor_runtime.execute_node",
             side_effect=fake_exec,
         ):
             result = run_cursor(cortex, node, "__entry__", {}, max_steps=5)
@@ -135,7 +135,7 @@ class TestSpawnedTargets:
         cortex = _mock_cortex()
         node = _mock_node("FORKER")
 
-        with patch("devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
+        with patch("unseen_university.devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
             mock_exec.return_value = ExecutionResult(
                 spawned=["FORK_A", "FORK_B"],
                 stopped_by="implicit_end",
@@ -150,7 +150,7 @@ class TestSpawnedTargets:
         cortex = _mock_cortex()
         node = _mock_node("SPAWNER")
 
-        with patch("devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
+        with patch("unseen_university.devices.igor.cognition.cursor_runtime.execute_node") as mock_exec:
             mock_exec.return_value = ExecutionResult(
                 spawned_fresh=["SPAWN_X"],
                 stopped_by="implicit_end",
@@ -168,7 +168,7 @@ class TestErrorHandling:
         node = _mock_node("CRASHER")
 
         with patch(
-            "devices.igor.cognition.cursor_runtime.execute_node",
+            "unseen_university.devices.igor.cognition.cursor_runtime.execute_node",
             side_effect=RuntimeError("boom"),
         ):
             result = run_cursor(cortex, node, "__entry__", {})

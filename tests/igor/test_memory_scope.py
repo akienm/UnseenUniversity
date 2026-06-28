@@ -13,11 +13,11 @@ import unittest
 from pathlib import Path
 
 
-from devices.igor.memory.models import Memory, MemoryType, MemoryScope, BASE_CONFIDENCE, SOURCE_MULTIPLIER, default_scope
+from unseen_university.devices.igor.memory.models import Memory, MemoryType, MemoryScope, BASE_CONFIDENCE, SOURCE_MULTIPLIER, default_scope
 
 
 def _make_cortex(db_path: str):
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
     return Cortex(Path(db_path))
 
 
@@ -164,7 +164,7 @@ class TestEpistemicSourceMultiplier(unittest.TestCase):
         import os
         import tempfile
         from pathlib import Path
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
         try:

@@ -34,7 +34,7 @@ class TestDeepConsolidationNarrativeLimit(unittest.TestCase):
         Exercise just the TWM-promotion block of _deep_consolidation_pass.
         Returns the narrative stored via cortex.store().
         """
-        from devices.igor.cognition.narrative_engine import NarrativeEngine
+        from unseen_university.devices.igor.cognition.narrative_engine import NarrativeEngine
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = [
@@ -54,7 +54,7 @@ class TestDeepConsolidationNarrativeLimit(unittest.TestCase):
         ne._consolidation_interrupted = False
 
         with patch(
-            "devices.igor.cognition.narrative_engine._NE_CONTENT_PREFIXES", []
+            "unseen_university.devices.igor.cognition.narrative_engine._NE_CONTENT_PREFIXES", []
         ):
             with patch.object(ne, "_consolidation_merge_pass", return_value=0):
                 with patch.object(ne, "_reconsolidation_pass", return_value=0):
@@ -83,7 +83,7 @@ class TestDeepConsolidationNarrativeLimit(unittest.TestCase):
                         pass
 
                     # Direct call to inner logic
-                    from devices.igor.memory.models import Memory, MemoryType
+                    from unseen_university.devices.igor.memory.models import Memory, MemoryType
                     from datetime import datetime
 
                     stored_narratives = []
@@ -152,7 +152,7 @@ class TestConsolidationExtractionPromptLimit(unittest.TestCase):
 
     def test_extraction_prompt_includes_400_chars(self):
         """_cluster_episodics + snippet building uses [:400]."""
-        from devices.igor.cognition.consolidation import _cluster_episodics
+        from unseen_university.devices.igor.cognition.consolidation import _cluster_episodics
 
         mems = []
         for i in range(2):
@@ -163,7 +163,7 @@ class TestConsolidationExtractionPromptLimit(unittest.TestCase):
 
         # Mock _keyword_overlap to force cluster together
         with patch(
-            "devices.igor.cognition.consolidation._keyword_overlap",
+            "unseen_university.devices.igor.cognition.consolidation._keyword_overlap",
             return_value=0.5,
         ):
             clusters = _cluster_episodics(mems, threshold=0.15)

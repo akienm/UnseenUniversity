@@ -9,7 +9,7 @@ import pytest
 
 def _import_is_bare_ack():
     # Import without triggering full Igor boot — pull just the function
-    from devices.igor.main import _is_bare_ack
+    from unseen_university.devices.igor.main import _is_bare_ack
 
     return _is_bare_ack
 

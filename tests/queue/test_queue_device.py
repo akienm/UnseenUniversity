@@ -14,7 +14,7 @@ import os
 
 import pytest
 
-from devices.queue.device import QueueDevice, LegacyDirectClaimError, _gate_tripped
+from unseen_university.devices.queue.device import QueueDevice, LegacyDirectClaimError, _gate_tripped
 from unseen_university.device import INTERFACE_VERSION
 
 _DB_URL = os.environ.get("UU_HOME_DB_URL", "")
@@ -27,7 +27,7 @@ def device(tmp_path, monkeypatch):
     monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
     gate = tmp_path / "gate.json"
     gate.write_text(json.dumps({"tripped": False}))
-    import devices.queue.device as dev_mod
+    import unseen_university.devices.queue.device as dev_mod
 
     original = dev_mod.GATE_FILE
     dev_mod.GATE_FILE = gate
@@ -126,7 +126,7 @@ def test_queue_claim_raises_legacy_error():
 
 
 def test_gate_tripped_false_when_no_file(tmp_path):
-    import devices.queue.device as dev_mod
+    import unseen_university.devices.queue.device as dev_mod
 
     orig = dev_mod.GATE_FILE
     dev_mod.GATE_FILE = tmp_path / "nonexistent.json"
@@ -139,7 +139,7 @@ def test_gate_tripped_false_when_no_file(tmp_path):
 def test_gate_tripped_true_when_set(tmp_path):
     gate = tmp_path / "gate.json"
     gate.write_text(json.dumps({"tripped": True}))
-    import devices.queue.device as dev_mod
+    import unseen_university.devices.queue.device as dev_mod
 
     orig = dev_mod.GATE_FILE
     dev_mod.GATE_FILE = gate
@@ -156,7 +156,7 @@ def test_queue_next_returns_none_when_gate_tripped(tmp_path, monkeypatch):
     monkeypatch.setenv("UU_MEMORY_ROOT", str(tmp_path))
     gate = tmp_path / "gate.json"
     gate.write_text(json.dumps({"tripped": True}))
-    import devices.queue.device as dev_mod
+    import unseen_university.devices.queue.device as dev_mod
 
     orig = dev_mod.GATE_FILE
     dev_mod.GATE_FILE = gate

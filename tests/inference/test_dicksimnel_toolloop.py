@@ -33,7 +33,7 @@ def _bash_call(command: str, call_id: str = "call_abc") -> dict:
 
 
 def test_parse_response_extracts_tool_calls():
-    from devices.inference.device import _parse_response
+    from unseen_university.devices.inference.device import _parse_response
 
     raw = {
         "choices": [{
@@ -61,7 +61,7 @@ def test_parse_response_extracts_tool_calls():
 
 
 def test_parse_response_no_tool_calls_stays_none():
-    from devices.inference.device import _parse_response
+    from unseen_university.devices.inference.device import _parse_response
 
     raw = {
         "choices": [{
@@ -80,26 +80,26 @@ def test_parse_response_no_tool_calls_stays_none():
 
 
 def test_execute_bash_returns_output():
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     result = _execute_tool("Bash", {"command": "echo toolloop_test"})
     assert "toolloop_test" in result
 
 
 def test_execute_bash_denylist_blocks_rm_rf():
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     result = _execute_tool("Bash", {"command": "rm -rf /tmp/test"})
     assert "ERROR" in result
     assert "denylist" in result
 
 
 def test_execute_bash_denylist_blocks_force_push():
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     result = _execute_tool("Bash", {"command": "git push --force origin main"})
     assert "ERROR" in result
 
 
 def test_execute_read_existing_file(tmp_path):
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     f = tmp_path / "test.py"
     f.write_text("def hello(): pass")
     result = _execute_tool("Read", {"path": str(f)})
@@ -107,14 +107,14 @@ def test_execute_read_existing_file(tmp_path):
 
 
 def test_execute_read_missing_file():
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     result = _execute_tool("Read", {"path": "/nonexistent/path/file.py"})
     assert "ERROR" in result
     assert "not found" in result
 
 
 def test_execute_edit_replaces_text(tmp_path):
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     f = tmp_path / "code.py"
     f.write_text("def old_name(): pass\n")
     result = _execute_tool("Edit", {"file_path": str(f), "old_string": "old_name", "new_string": "new_name"})
@@ -123,7 +123,7 @@ def test_execute_edit_replaces_text(tmp_path):
 
 
 def test_execute_edit_fails_on_ambiguous_match(tmp_path):
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     f = tmp_path / "dup.py"
     f.write_text("foo\nfoo\n")
     result = _execute_tool("Edit", {"file_path": str(f), "old_string": "foo", "new_string": "bar"})
@@ -132,7 +132,7 @@ def test_execute_edit_fails_on_ambiguous_match(tmp_path):
 
 
 def test_execute_write_creates_file(tmp_path):
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     new_file = tmp_path / "new.py"
     result = _execute_tool("Write", {"file_path": str(new_file), "content": "x = 1\n"})
     assert "OK" in result
@@ -140,7 +140,7 @@ def test_execute_write_creates_file(tmp_path):
 
 
 def test_execute_unknown_tool_returns_error():
-    from devices.dicksimnel.toolloop import _execute_tool
+    from unseen_university.devices.dicksimnel.toolloop import _execute_tool
     result = _execute_tool("Teleport", {"destination": "somewhere"})
     assert "ERROR" in result
     assert "unknown tool" in result
@@ -151,9 +151,9 @@ def test_execute_unknown_tool_returns_error():
 
 def test_toolloop_done_on_first_turn():
     """Model returns no tool_calls on turn 1 — loop completes immediately."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
     responses = [_make_mock_response("DONE: fixed it")]
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
         loop = ToolLoop()
         result = loop.run({"id": "T-1", "title": "Fix", "tags": [], "description": "x"}, "system")
     assert result is not None
@@ -162,7 +162,7 @@ def test_toolloop_done_on_first_turn():
 
 def test_toolloop_multi_turn_bash_then_done():
     """Tool call on turn 1 → result injected as role:tool → done on turn 2."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
     tc = _bash_call("echo hello", "call_1")
     responses = [
         _make_mock_response("", tool_calls=[tc]),
@@ -174,7 +174,7 @@ def test_toolloop_multi_turn_bash_then_done():
         dispatch_calls.append(req)
         return responses.pop(0)
 
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
         loop = ToolLoop()
         result = loop.run({"id": "T-2", "title": "Greet", "tags": [], "description": "y"}, "sys")
 
@@ -190,7 +190,7 @@ def test_toolloop_multi_turn_bash_then_done():
 
 def test_toolloop_tool_result_uses_role_tool():
     """Tool results land as role:tool messages, not role:user."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
     tc = _bash_call("echo ping", "call_ping")
     responses = [
         _make_mock_response("", tool_calls=[tc]),
@@ -202,7 +202,7 @@ def test_toolloop_tool_result_uses_role_tool():
         dispatch_calls.append(req)
         return responses.pop(0)
 
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
         ToolLoop().run({"id": "T-r", "title": "T", "tags": [], "description": "d"}, "s")
 
     second_messages = dispatch_calls[1].messages
@@ -213,7 +213,7 @@ def test_toolloop_tool_result_uses_role_tool():
 
 def test_toolloop_sends_tool_definitions_in_request():
     """ToolLoop includes TOOL_DEFINITIONS in every InferenceRequest."""
-    from devices.dicksimnel.toolloop import ToolLoop, TOOL_DEFINITIONS
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop, TOOL_DEFINITIONS
     responses = [_make_mock_response("DONE: ok")]
     captured = []
 
@@ -221,7 +221,7 @@ def test_toolloop_sends_tool_definitions_in_request():
         captured.append(req)
         return responses.pop(0)
 
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
         ToolLoop().run({"id": "T-t", "title": "T", "tags": [], "description": "d"}, "s")
 
     assert captured[0].tools == TOOL_DEFINITIONS
@@ -229,7 +229,7 @@ def test_toolloop_sends_tool_definitions_in_request():
 
 def test_toolloop_correction_injected_on_turn1_planning():
     """Turn 1 with no tool_calls and no DONE: prefix → correction injected, loop continues."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
     responses = [
         _make_mock_response("Let me analyze the ticket first."),  # turn 1: planning, no tools
         _make_mock_response("DONE: fixed it"),                    # turn 2: done after correction
@@ -240,7 +240,7 @@ def test_toolloop_correction_injected_on_turn1_planning():
         dispatch_calls.append(req)
         return responses.pop(0)
 
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
         loop = ToolLoop()
         result = loop.run({"id": "T-corr", "title": "T", "tags": [], "description": "d"}, "s")
 
@@ -254,7 +254,7 @@ def test_toolloop_correction_injected_on_turn1_planning():
 
 def test_toolloop_no_correction_when_done_on_turn1():
     """Turn 1 with DONE: prefix and no tool_calls → done immediately, no correction."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
     responses = [_make_mock_response("DONE: nothing needed")]
     dispatch_calls = []
 
@@ -262,7 +262,7 @@ def test_toolloop_no_correction_when_done_on_turn1():
         dispatch_calls.append(req)
         return responses.pop(0)
 
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
         loop = ToolLoop()
         result = loop.run({"id": "T-done1", "title": "T", "tags": [], "description": "d"}, "s")
 
@@ -272,8 +272,8 @@ def test_toolloop_no_correction_when_done_on_turn1():
 
 def test_toolloop_inference_failure_returns_none():
     """Inference raises — ToolLoop returns None."""
-    from devices.dicksimnel.toolloop import ToolLoop
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=RuntimeError("no model")):
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=RuntimeError("no model")):
         loop = ToolLoop()
         result = loop.run({"id": "T-4", "title": "T", "tags": [], "description": "d"}, "s")
     assert result is None
@@ -281,7 +281,7 @@ def test_toolloop_inference_failure_returns_none():
 
 def test_toolloop_max_turns_respected():
     """Loop stops at max_turns even with continuous tool calls."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
     tc = _bash_call("echo still going", "call_loop")
     call_count = [0]
 
@@ -289,7 +289,7 @@ def test_toolloop_max_turns_respected():
         call_count[0] += 1
         return _make_mock_response("", tool_calls=[tc])
 
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=always_tool):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=always_tool):
         loop = ToolLoop(max_turns=3)
         result = loop.run({"id": "T-5", "title": "T", "tags": [], "description": "d"}, "s")
 
@@ -304,13 +304,13 @@ def test_toolloop_max_turns_respected():
 
 def test_toolloop_max_turns_sentinel_content():
     """MAX_TURNS: sentinel includes the turn count for diagnostics."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
     tc = _bash_call("echo loop", "call_sentinel")
 
     def always_tool(req):
         return _make_mock_response("", tool_calls=[tc])
 
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=always_tool):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=always_tool):
         loop = ToolLoop(max_turns=2)
         result = loop.run({"id": "T-s", "title": "T", "tags": [], "description": "d"}, "s")
 
@@ -322,14 +322,14 @@ def test_toolloop_max_turns_sentinel_content():
 
 
 def test_run_inference_uses_toolloop():
-    from devices.dicksimnel.device import DickSimnelDevice
+    from unseen_university.devices.dicksimnel.device import DickSimnelDevice
     d = DickSimnelDevice()
     d._shim = MagicMock()
 
     mock_loop = MagicMock()
     mock_loop.run.return_value = "DONE: fixed"
 
-    with patch("devices.dicksimnel.toolloop.ToolLoop", return_value=mock_loop):
+    with patch("unseen_university.devices.dicksimnel.toolloop.ToolLoop", return_value=mock_loop):
         result = d._run_inference({"id": "T-tl", "title": "T", "tags": [], "description": "d"})
 
     mock_loop.run.assert_called_once()
@@ -338,7 +338,7 @@ def test_run_inference_uses_toolloop():
 
 def test_toolloop_turn_log_populated():
     """_turn_log is populated after run() and cleared on re-run."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
 
     bash_call = _bash_call("echo hi", "call_1")
     responses = [
@@ -347,7 +347,7 @@ def test_toolloop_turn_log_populated():
     ]
 
     loop = ToolLoop(max_turns=5)
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
         loop.run({"id": "T-log", "title": "T", "tags": [], "description": "d"}, "sys")
 
     assert len(loop._turn_log) == 2
@@ -358,13 +358,13 @@ def test_toolloop_turn_log_populated():
 
 def test_toolloop_turn_log_cleared_on_rerun():
     """_turn_log is cleared at the start of each run() — no stale entries."""
-    from devices.dicksimnel.toolloop import ToolLoop
+    from unseen_university.devices.dicksimnel.toolloop import ToolLoop
 
     loop = ToolLoop(max_turns=5)
     loop._turn_log = [{"turn": 99, "had_tool_calls": True, "tool_names": ["Bash"]}]
 
     responses = [_make_mock_response("DONE: quick")]
-    with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
+    with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=responses):
         loop.run({"id": "T-clear", "title": "T", "tags": [], "description": "d"}, "sys")
 
     assert len(loop._turn_log) == 1
@@ -392,7 +392,7 @@ class TestToolLoopLiveOR:
         - The loop terminates with a DONE: prefix
         - At least one tool_calls entry appeared (Bash tool was invoked)
         """
-        from devices.dicksimnel.toolloop import ToolLoop
+        from unseen_university.devices.dicksimnel.toolloop import ToolLoop
 
         ticket = {
             "id": "T-smoke-test",

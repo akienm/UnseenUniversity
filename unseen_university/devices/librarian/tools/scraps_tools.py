@@ -62,7 +62,7 @@ def scraps_embed_text(args: dict) -> str:
     if not isinstance(text, str) or not text:
         return json.dumps({"error": "text must be a non-empty string"})
     try:
-        from devices.scraps.scraps_device import ScrapsDevice
+        from unseen_university.devices.scraps.scraps_device import ScrapsDevice
 
         result = ScrapsDevice().embed_text(text, model=args.get("model", "auto"))
         return json.dumps(result)
@@ -75,7 +75,7 @@ def scraps_validate_ticket(args: dict) -> str:
     if not isinstance(ticket, dict):
         return json.dumps({"error": "ticket must be a JSON object"})
     try:
-        from devices.scraps.scraps_device import ScrapsDevice
+        from unseen_university.devices.scraps.scraps_device import ScrapsDevice
 
         result = ScrapsDevice().validate_ticket(ticket)
         return json.dumps(result)

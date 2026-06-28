@@ -28,7 +28,7 @@ def _make_args(run: bool = True, calibre_id: int = 42) -> types.SimpleNamespace:
 
 
 def _drm_handle(calibre_id: int = 42) -> dict:
-    from devices.igor.tools.ebook_reader import DRM_FAILED
+    from unseen_university.devices.igor.tools.ebook_reader import DRM_FAILED
 
     return {
         DRM_FAILED: True,
@@ -67,7 +67,7 @@ class TestHandleDrmBlocked:
         with (
             patch("book_learner.UU_HOME_DB_URL", "postgresql://test"),
             patch("psycopg2.connect", return_value=mock_conn),
-            patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex),
+            patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex),
         ):
             _handle_drm_blocked(handle, args)
 
@@ -97,7 +97,7 @@ class TestHandleDrmBlocked:
         with (
             patch("book_learner.UU_HOME_DB_URL", "postgresql://test"),
             patch("psycopg2.connect", return_value=mock_conn),
-            patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex),
+            patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex),
         ):
             _handle_drm_blocked(handle, args)
 

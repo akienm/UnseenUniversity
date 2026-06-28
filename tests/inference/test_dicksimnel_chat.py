@@ -12,7 +12,7 @@ import pytest
 
 class TestDickSimnelChat:
     def _device(self):
-        from devices.dicksimnel.device import DickSimnelDevice
+        from unseen_university.devices.dicksimnel.device import DickSimnelDevice
         d = DickSimnelDevice()
         d._shim = MagicMock()
         d._shim.is_blocked.return_value = False
@@ -48,13 +48,13 @@ class TestDickSimnelChat:
         mock_response = MagicMock()
         mock_response.text = "I am DickSimnel, currently idle."
         mock_response.output_tokens = 20
-        with patch("devices.inference.device.InferenceDevice.dispatch", return_value=mock_response):
+        with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", return_value=mock_response):
             result = d._chat_inference("hello")
         assert "DickSimnel" in result or "idle" in result
 
     def test_chat_inference_returns_error_string_on_exception(self):
         d = self._device()
-        with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=RuntimeError("no model")):
+        with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=RuntimeError("no model")):
             result = d._chat_inference("hello")
         assert "unavailable" in result.lower() or "DickSimnel" in result
 
@@ -68,7 +68,7 @@ class TestDickSimnelChat:
         def mock_dispatch(req):
             captured.append(req.system)
             return mock_resp
-        with patch("devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
+        with patch("unseen_university.devices.inference.device.InferenceDevice.dispatch", side_effect=mock_dispatch):
             d._chat_inference("status?")
         assert captured
         assert "T-current" in captured[0]
@@ -80,14 +80,14 @@ class TestDickSimnelChat:
 class TestDickSimnelChatEndpoints:
     def _app(self):
         from starlette.testclient import TestClient
-        from devices.web_server.server import _make_app
+        from unseen_university.devices.web_server.server import _make_app
         return TestClient(_make_app())
 
     def test_post_chat_returns_response(self):
         client = self._app()
         mock_device = MagicMock()
         mock_device.return_value.chat.return_value = "Hello from DickSimnel"
-        with patch("devices.dicksimnel.device.DickSimnelDevice", mock_device):
+        with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice", mock_device):
             resp = client.post("/api/dicksimnel/chat", json={"message": "hello"})
         assert resp.status_code == 200
         data = resp.json()
@@ -108,7 +108,7 @@ class TestDickSimnelChatEndpoints:
         client = self._app()
         mock_device = MagicMock()
         mock_device.return_value.chat.return_value = "pong"
-        with patch("devices.dicksimnel.device.DickSimnelDevice", mock_device):
+        with patch("unseen_university.devices.dicksimnel.device.DickSimnelDevice", mock_device):
             client.post("/api/dicksimnel/chat", json={"message": "ping"})
         resp = client.get("/api/dicksimnel/chat")
         assert resp.status_code == 200

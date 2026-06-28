@@ -15,9 +15,9 @@ from pathlib import Path
 _UU_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_UU_ROOT))
 
-from devices.dicksimnel.device import DickSimnelDevice
-from devices.critic.device import CriticDevice
-from devices.improver.device import ImproverDevice
+from unseen_university.devices.dicksimnel.device import DickSimnelDevice
+from unseen_university.devices.critic.device import CriticDevice
+from unseen_university.devices.improver.device import ImproverDevice
 
 
 def test_ticket(ticket_id: str) -> dict:

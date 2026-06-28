@@ -17,8 +17,8 @@ import pytest
 
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
-from bus.envelope import Envelope
-from bus.imap_server import IMAPServer, _STUB_MAILBOXES
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.bus.imap_server import IMAPServer, _STUB_MAILBOXES
 
 
 @pytest.fixture()

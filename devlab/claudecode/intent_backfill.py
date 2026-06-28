@@ -21,7 +21,7 @@ import cc_queue
 def main():
     """Backfill existing tickets with intent predictions and validations."""
     try:
-        from devices.intent.tools import intent_predict, intent_validate
+        from unseen_university.devices.intent.tools import intent_predict, intent_validate
     except ImportError:
         print("❌ Intent extractor device not available — backfill cannot proceed.")
         return 1

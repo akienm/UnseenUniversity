@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def _make_client():
     """Create a fresh AdcClient instance."""
-    from devices.igor.web.adc_client import AdcClient
+    from unseen_university.devices.igor.web.adc_client import AdcClient
 
     return AdcClient()
 
@@ -34,13 +34,13 @@ def _mock_urlopen(response_data, status=200):
 class TestIsAvailable:
     """Test health check."""
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_available_when_healthy(self, mock_urlopen):
         mock_urlopen.return_value = _mock_urlopen({"status": "ok"})
         client = _make_client()
         assert client.is_available()
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_unavailable_on_connection_error(self, mock_urlopen):
         import urllib.error
 
@@ -48,7 +48,7 @@ class TestIsAvailable:
         client = _make_client()
         assert not client.is_available()
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_unavailable_on_bad_status(self, mock_urlopen):
         mock_urlopen.return_value = _mock_urlopen({"status": "degraded"})
         client = _make_client()
@@ -58,7 +58,7 @@ class TestIsAvailable:
 class TestRegister:
     """Test agent registration."""
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_register_success(self, mock_urlopen):
         # First call: health check. Second call: register.
         mock_urlopen.side_effect = [
@@ -70,7 +70,7 @@ class TestRegister:
         assert client.is_registered
         assert client.agent_id == "igor"
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_register_fails_when_unavailable(self, mock_urlopen):
         import urllib.error
 
@@ -79,7 +79,7 @@ class TestRegister:
         assert not client.register("igor")
         assert not client.is_registered
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_register_fails_on_error_response(self, mock_urlopen):
         mock_urlopen.side_effect = [
             _mock_urlopen({"status": "ok"}),  # health check
@@ -93,7 +93,7 @@ class TestRegister:
 class TestDeregister:
     """Test agent deregistration."""
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_deregister_success(self, mock_urlopen):
         mock_urlopen.side_effect = [
             _mock_urlopen({"status": "ok"}),  # health (is_available)
@@ -112,7 +112,7 @@ class TestDeregister:
         client = _make_client()
         assert client.deregister()  # Should return True (nothing to do)
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_deregister_handles_failure(self, mock_urlopen):
         import urllib.error
 
@@ -133,7 +133,7 @@ class TestDeregister:
 class TestPushStats:
     """Test stats push."""
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_push_stats_success(self, mock_urlopen):
         mock_urlopen.side_effect = [
             _mock_urlopen({"status": "ok"}),  # health (is_available)
@@ -155,7 +155,7 @@ class TestPushStats:
 class TestSendMessage:
     """Test message sending."""
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_send_message_success(self, mock_urlopen):
         mock_urlopen.side_effect = [
             _mock_urlopen({"status": "ok"}),  # health (is_available)
@@ -177,7 +177,7 @@ class TestSendMessage:
 class TestPollMessages:
     """Test message polling."""
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_poll_returns_messages(self, mock_urlopen):
         mock_urlopen.side_effect = [
             _mock_urlopen({"status": "ok"}),  # health (is_available)
@@ -199,7 +199,7 @@ class TestPollMessages:
         assert len(msgs) == 1
         assert msgs[0]["content"] == "hi"
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_poll_returns_empty_on_no_messages(self, mock_urlopen):
         mock_urlopen.side_effect = [
             _mock_urlopen({"status": "ok"}),  # health
@@ -218,7 +218,7 @@ class TestPollMessages:
 class TestStatsPusher:
     """Test background stats pushing thread."""
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_stats_pusher_starts_when_registered(self, mock_urlopen):
         mock_urlopen.side_effect = [
             _mock_urlopen({"status": "ok"}),  # health
@@ -249,14 +249,14 @@ class TestClassifyOutcome:
     """_classify_outcome maps exceptions to telemetry categories."""
 
     def test_none_is_delivered(self):
-        from devices.igor.web.adc_client import _classify_outcome
+        from unseen_university.devices.igor.web.adc_client import _classify_outcome
 
         assert _classify_outcome(None) == "delivered"
 
     def test_http_error_is_http_error(self):
         import urllib.error
 
-        from devices.igor.web.adc_client import _classify_outcome
+        from unseen_university.devices.igor.web.adc_client import _classify_outcome
 
         err = urllib.error.HTTPError("u", 500, "boom", {}, None)
         assert _classify_outcome(err) == "http_error"
@@ -264,7 +264,7 @@ class TestClassifyOutcome:
     def test_urlerror_timed_out_is_timeout(self):
         import urllib.error
 
-        from devices.igor.web.adc_client import _classify_outcome
+        from unseen_university.devices.igor.web.adc_client import _classify_outcome
 
         err = urllib.error.URLError("timed out")
         assert _classify_outcome(err) == "timeout"
@@ -272,18 +272,18 @@ class TestClassifyOutcome:
     def test_urlerror_connection_refused_is_connection_error(self):
         import urllib.error
 
-        from devices.igor.web.adc_client import _classify_outcome
+        from unseen_university.devices.igor.web.adc_client import _classify_outcome
 
         err = urllib.error.URLError("Connection refused")
         assert _classify_outcome(err) == "connection_error"
 
     def test_builtin_timeout_is_timeout(self):
-        from devices.igor.web.adc_client import _classify_outcome
+        from unseen_university.devices.igor.web.adc_client import _classify_outcome
 
         assert _classify_outcome(TimeoutError("slow")) == "timeout"
 
     def test_unknown_is_other_error(self):
-        from devices.igor.web.adc_client import _classify_outcome
+        from unseen_university.devices.igor.web.adc_client import _classify_outcome
 
         assert _classify_outcome(ValueError("wat")) == "other_error"
 
@@ -292,9 +292,9 @@ class TestPostWithTelemetry:
     """_post_with_telemetry returns (result, outcome, elapsed_ms) and posts
     a channel diagnostic on any non-delivered outcome."""
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_success_returns_delivered(self, mock_urlopen):
-        from devices.igor.web.adc_client import _post_with_telemetry
+        from unseen_university.devices.igor.web.adc_client import _post_with_telemetry
 
         mock_urlopen.return_value = _mock_urlopen({"status": "ok"})
         result, outcome, elapsed = _post_with_telemetry(
@@ -307,11 +307,11 @@ class TestPostWithTelemetry:
         assert outcome == "delivered"
         assert elapsed >= 0
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_timeout_posts_channel_diagnostic(self, mock_urlopen):
         import urllib.error
 
-        from devices.igor.web import adc_client as ucc
+        from unseen_university.devices.igor.web import adc_client as ucc
 
         mock_urlopen.side_effect = urllib.error.URLError("timed out")
 
@@ -322,7 +322,7 @@ class TestPostWithTelemetry:
             fake_mod = MagicMock()
             fake_mod.post_to_channel = mock_post
             with patch.dict(
-                sys.modules, {"devices.igor.tools.channel_post": fake_mod}
+                sys.modules, {"unseen_university.devices.igor.tools.channel_post": fake_mod}
             ):
                 result, outcome, elapsed = ucc._post_with_telemetry(
                     "/api/agents/igor/send",
@@ -339,18 +339,18 @@ class TestPostWithTelemetry:
         assert "drop=timeout" in diagnostic
         assert "session=shared" in diagnostic
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_connection_refused_classified_and_diagnosed(self, mock_urlopen):
         import urllib.error
 
-        from devices.igor.web import adc_client as ucc
+        from unseen_university.devices.igor.web import adc_client as ucc
 
         mock_urlopen.side_effect = urllib.error.URLError("Connection refused")
 
         mock_post = MagicMock()
         fake_mod = MagicMock()
         fake_mod.post_to_channel = mock_post
-        with patch.dict(sys.modules, {"devices.igor.tools.channel_post": fake_mod}):
+        with patch.dict(sys.modules, {"unseen_university.devices.igor.tools.channel_post": fake_mod}):
             result, outcome, _ = ucc._post_with_telemetry(
                 "/api/agents/igor/send",
                 {"content": "x", "session_id": "s"},
@@ -362,16 +362,16 @@ class TestPostWithTelemetry:
         assert outcome == "connection_error"
         assert mock_post.called
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_success_does_not_post_channel_diagnostic(self, mock_urlopen):
-        from devices.igor.web import adc_client as ucc
+        from unseen_university.devices.igor.web import adc_client as ucc
 
         mock_urlopen.return_value = _mock_urlopen({"status": "ok"})
 
         mock_post = MagicMock()
         fake_mod = MagicMock()
         fake_mod.post_to_channel = mock_post
-        with patch.dict(sys.modules, {"devices.igor.tools.channel_post": fake_mod}):
+        with patch.dict(sys.modules, {"unseen_university.devices.igor.tools.channel_post": fake_mod}):
             ucc._post_with_telemetry(
                 "/api/agents/igor/send",
                 {"content": "ok", "session_id": "shared"},
@@ -385,8 +385,8 @@ class TestPostWithTelemetry:
 class TestSendMessageUsesTelemetry:
     """send_message routes through _post_with_telemetry, not _post."""
 
-    @patch("devices.igor.web.adc_client._post_with_telemetry")
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client._post_with_telemetry")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_send_message_calls_telemetry_wrapper(self, mock_urlopen, mock_tele):
         mock_urlopen.side_effect = [
             _mock_urlopen({"status": "ok"}),  # health
@@ -422,7 +422,7 @@ class TestCheckServerEpoch:
         client = _make_client()
         assert client.check_server_epoch() is False
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_returns_false_when_health_unreachable(self, mock_urlopen):
         import urllib.error
 
@@ -430,7 +430,7 @@ class TestCheckServerEpoch:
         mock_urlopen.side_effect = urllib.error.URLError("connection refused")
         assert client.check_server_epoch() is False
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_returns_false_when_epoch_unchanged(self, mock_urlopen):
         epoch = "2026-01-01T00:00:00Z"
         client = self._registered_client(mock_urlopen, epoch=epoch)
@@ -440,7 +440,7 @@ class TestCheckServerEpoch:
         assert client.check_server_epoch() is False
         assert client.is_registered  # still registered
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_returns_true_and_reregisters_when_epoch_changes(self, mock_urlopen):
         client = self._registered_client(mock_urlopen, epoch="2026-01-01T00:00:00Z")
         # Epoch poll returns new epoch → restart detected → re-register sequence
@@ -459,7 +459,7 @@ class TestCheckServerEpoch:
         assert client.is_registered
         assert client._server_started_at == "2026-06-01T12:00:00Z"
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_returns_false_when_no_stored_epoch(self, mock_urlopen):
         """If register() couldn't fetch epoch (health returned no started_at), skip check."""
         mock_urlopen.side_effect = [
@@ -475,7 +475,7 @@ class TestCheckServerEpoch:
         ]
         assert client.check_server_epoch() is False  # no stored epoch to compare
 
-    @patch("devices.igor.web.adc_client.urllib.request.urlopen")
+    @patch("unseen_university.devices.igor.web.adc_client.urllib.request.urlopen")
     def test_handles_exception_gracefully(self, mock_urlopen):
         client = self._registered_client(mock_urlopen)
         mock_urlopen.side_effect = RuntimeError("unexpected")

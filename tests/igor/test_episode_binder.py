@@ -30,7 +30,7 @@ def _make_cortex(ring_entries=None):
 
 class TestEpisode:
     def test_to_narrative(self):
-        from devices.igor.memory.episode_binder import Episode
+        from unseen_university.devices.igor.memory.episode_binder import Episode
 
         ep = Episode(
             user_input="What's the weather?",
@@ -45,13 +45,13 @@ class TestEpisode:
         assert "Tools: weather_api" in narrative
 
     def test_to_narrative_empty(self):
-        from devices.igor.memory.episode_binder import Episode
+        from unseen_university.devices.igor.memory.episode_binder import Episode
 
         ep = Episode()
         assert ep.to_narrative() == "empty episode"
 
     def test_to_metadata(self):
-        from devices.igor.memory.episode_binder import Episode
+        from unseen_university.devices.igor.memory.episode_binder import Episode
 
         ep = Episode(
             episode_id="EP_20260418T1200",
@@ -72,7 +72,7 @@ class TestEpisode:
 
 class TestEpisodeBinder:
     def test_basic_flush(self):
-        from devices.igor.memory.episode_binder import EpisodeBinder
+        from unseen_university.devices.igor.memory.episode_binder import EpisodeBinder
 
         cortex = _make_cortex(
             ring_entries=[
@@ -112,7 +112,7 @@ class TestEpisodeBinder:
         assert len(episode.state_changes) == 1  # habit_trace entry
 
     def test_flush_deposits_to_cortex(self):
-        from devices.igor.memory.episode_binder import EpisodeBinder
+        from unseen_university.devices.igor.memory.episode_binder import EpisodeBinder
 
         cortex = _make_cortex(ring_entries=[])
 
@@ -129,7 +129,7 @@ class TestEpisodeBinder:
         assert "episode_binder" in stored_mem.metadata.get("deposited_by", "")
 
     def test_flush_resets_state(self):
-        from devices.igor.memory.episode_binder import EpisodeBinder
+        from unseen_university.devices.igor.memory.episode_binder import EpisodeBinder
 
         cortex = _make_cortex()
         binder = EpisodeBinder()
@@ -142,7 +142,7 @@ class TestEpisodeBinder:
         assert binder._started_at is None
 
     def test_flush_with_no_input_returns_none(self):
-        from devices.igor.memory.episode_binder import EpisodeBinder
+        from unseen_university.devices.igor.memory.episode_binder import EpisodeBinder
 
         cortex = _make_cortex()
         binder = EpisodeBinder()
@@ -150,7 +150,7 @@ class TestEpisodeBinder:
         assert episode is None
 
     def test_snapshot_ring_position(self):
-        from devices.igor.memory.episode_binder import EpisodeBinder
+        from unseen_university.devices.igor.memory.episode_binder import EpisodeBinder
 
         cortex = _make_cortex(
             ring_entries=[
@@ -162,7 +162,7 @@ class TestEpisodeBinder:
         assert binder._ring_snapshot_id == 42
 
     def test_snapshot_empty_ring(self):
-        from devices.igor.memory.episode_binder import EpisodeBinder
+        from unseen_university.devices.igor.memory.episode_binder import EpisodeBinder
 
         cortex = _make_cortex(ring_entries=[])
         binder = EpisodeBinder()
@@ -170,7 +170,7 @@ class TestEpisodeBinder:
         assert binder._ring_snapshot_id == 0
 
     def test_categorizes_tool_results(self):
-        from devices.igor.memory.episode_binder import EpisodeBinder
+        from unseen_university.devices.igor.memory.episode_binder import EpisodeBinder
 
         cortex = _make_cortex(
             ring_entries=[
@@ -201,7 +201,7 @@ class TestEpisodeBinder:
         assert any("TOOL_RESULT" in t for t in episode.tool_calls)
 
     def test_episode_id_format(self):
-        from devices.igor.memory.episode_binder import EpisodeBinder
+        from unseen_university.devices.igor.memory.episode_binder import EpisodeBinder
 
         cortex = _make_cortex()
         binder = EpisodeBinder()
@@ -212,7 +212,7 @@ class TestEpisodeBinder:
 
 class TestReplayEpisodes:
     def test_replay_filters_by_depositor(self):
-        from devices.igor.memory.episode_binder import replay_episodes
+        from unseen_university.devices.igor.memory.episode_binder import replay_episodes
 
         mock_mem_ours = MagicMock()
         mock_mem_ours.id = "EP_1"
@@ -241,7 +241,7 @@ class TestReplayEpisodes:
 
 class TestCompleteEpisode:
     def test_finds_matching_episodes(self):
-        from devices.igor.memory.episode_binder import complete_episode
+        from unseen_university.devices.igor.memory.episode_binder import complete_episode
 
         mock_mem = MagicMock()
         mock_mem.id = "EP_CALVING"
@@ -258,7 +258,7 @@ class TestCompleteEpisode:
         assert results[0]["id"] == "EP_CALVING"
 
     def test_handles_search_failure(self):
-        from devices.igor.memory.episode_binder import complete_episode
+        from unseen_university.devices.igor.memory.episode_binder import complete_episode
 
         cortex = _make_cortex()
         cortex.search.side_effect = RuntimeError("db error")

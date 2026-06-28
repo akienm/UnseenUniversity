@@ -19,7 +19,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.classifier.annotator import ModuleInfo, run_annotator
+from unseen_university.devices.classifier.annotator import ModuleInfo, run_annotator
 
 
 # ── run_annotator delta (file_paths) ──────────────────────────────────────────
@@ -32,9 +32,9 @@ def test_run_annotator_file_paths_targeted():
         symbols=[{"symbol": "run_once", "kind": "function", "summary": "main loop"}],
     )
 
-    with patch("devices.classifier.annotator._query_modules", return_value=[mod]) as mock_qm, \
-         patch("devices.classifier.annotator._haiku_problem_signature", return_value="handles: loop"), \
-         patch("devices.classifier.annotator._upsert_memory", return_value="updated"), \
+    with patch("unseen_university.devices.classifier.annotator._query_modules", return_value=[mod]) as mock_qm, \
+         patch("unseen_university.devices.classifier.annotator._haiku_problem_signature", return_value="handles: loop"), \
+         patch("unseen_university.devices.classifier.annotator._upsert_memory", return_value="updated"), \
          patch("psycopg2.connect", return_value=MagicMock()):
         result = run_annotator(file_paths=["devices/granny/daemon.py"])
 
@@ -47,7 +47,7 @@ def test_run_annotator_file_paths_targeted():
 
 def test_run_annotator_file_paths_empty():
     """run_annotator with file_paths=[] returns immediately with zero counts."""
-    with patch("devices.classifier.annotator._query_modules", return_value=[]) as mock_qm:
+    with patch("unseen_university.devices.classifier.annotator._query_modules", return_value=[]) as mock_qm:
         result = run_annotator(file_paths=[])
 
     mock_qm.assert_called_once()
@@ -66,7 +66,7 @@ def test_annotator_delta_update_calls_annotator():
     mock_git_result.stdout = "devices/granny/daemon.py\nskills/sprint-ticket/SKILL.md\n"
 
     with patch("subprocess.run", return_value=mock_git_result) as mock_run, \
-         patch("devices.classifier.annotator.run_annotator",
+         patch("unseen_university.devices.classifier.annotator.run_annotator",
                return_value={"modules": 2, "inserted": 0, "updated": 2, "errors": 0}) as mock_ann:
         _annotator_delta_update("T-test-ticket")
 
@@ -92,7 +92,7 @@ def test_annotator_delta_update_nonfatal_on_annotator_error():
     mock_git.stdout = "devices/foo/bar.py\n"
 
     with patch("subprocess.run", return_value=mock_git), \
-         patch("devices.classifier.annotator.run_annotator",
+         patch("unseen_university.devices.classifier.annotator.run_annotator",
                side_effect=RuntimeError("annotator crashed")):
         _annotator_delta_update("T-test")  # must not raise
 
@@ -106,7 +106,7 @@ def test_annotator_delta_update_skips_empty_git_diff():
     mock_git.stdout = ""
 
     with patch("subprocess.run", return_value=mock_git), \
-         patch("devices.classifier.annotator.run_annotator") as mock_ann:
+         patch("unseen_university.devices.classifier.annotator.run_annotator") as mock_ann:
         _annotator_delta_update("T-test")
 
     mock_ann.assert_not_called()

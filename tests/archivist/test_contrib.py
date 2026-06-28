@@ -14,7 +14,7 @@ import pytest
 
 class TestStripContext:
     def _strip(self, text):
-        from devices.archivist.contrib import strip_context
+        from unseen_university.devices.archivist.contrib import strip_context
         return strip_context(text)
 
     def test_strips_home_path(self):
@@ -65,7 +65,7 @@ class TestStageCandidate:
         }
 
     def test_stages_record_to_file(self, tmp_path):
-        from devices.archivist.contrib import stage_candidate
+        from unseen_university.devices.archivist.contrib import stage_candidate
 
         row = self._make_row()
         record = stage_candidate(row, staging_dir=tmp_path)
@@ -78,7 +78,7 @@ class TestStageCandidate:
         assert saved["id"] == record["id"]
 
     def test_idempotent_skips_already_staged(self, tmp_path):
-        from devices.archivist.contrib import stage_candidate
+        from unseen_university.devices.archivist.contrib import stage_candidate
 
         row = self._make_row()
         r1 = stage_candidate(row, staging_dir=tmp_path)
@@ -87,7 +87,7 @@ class TestStageCandidate:
         assert r2 is None  # already staged
 
     def test_strips_instance_content(self, tmp_path):
-        from devices.archivist.contrib import stage_candidate
+        from unseen_university.devices.archivist.contrib import stage_candidate
 
         row = self._make_row(pattern="Path ~/TheIgors/lab used for T-my-ticket")
         record = stage_candidate(row, staging_dir=tmp_path)
@@ -96,7 +96,7 @@ class TestStageCandidate:
         assert "T-my-ticket" not in record["content"]
 
     def test_staged_has_no_credentials(self, tmp_path):
-        from devices.archivist.contrib import stage_candidate
+        from unseen_university.devices.archivist.contrib import stage_candidate
 
         row = self._make_row(pattern="Normal pattern text without secrets")
         record = stage_candidate(row, staging_dir=tmp_path)
@@ -111,13 +111,13 @@ class TestStageCandidate:
 
 class TestListStaged:
     def test_returns_empty_when_missing(self, tmp_path):
-        from devices.archivist.contrib import list_staged
+        from unseen_university.devices.archivist.contrib import list_staged
 
         result = list_staged(staging_dir=tmp_path / "nonexistent")
         assert result == []
 
     def test_returns_all_staged(self, tmp_path):
-        from devices.archivist.contrib import list_staged, stage_candidate
+        from unseen_university.devices.archivist.contrib import list_staged, stage_candidate
 
         for i in range(3):
             row = {
@@ -137,7 +137,7 @@ class TestListStaged:
 
 class TestBuildPrDiff:
     def test_contains_jsonl_line(self):
-        from devices.archivist.contrib import build_pr_diff
+        from unseen_university.devices.archivist.contrib import build_pr_diff
 
         record = {
             "id": "PC-abcdef01",
@@ -161,7 +161,7 @@ class TestBuildPrDiff:
         assert obj["origin_instance"] is None
 
     def test_strips_origin_fields(self):
-        from devices.archivist.contrib import build_pr_diff
+        from unseen_university.devices.archivist.contrib import build_pr_diff
 
         record = {
             "id": "PC-test0001",
@@ -183,7 +183,7 @@ class TestBuildPrDiff:
 
 class TestPostContribCandidate:
     def test_posts_to_channel(self):
-        from devices.archivist.contrib import post_contrib_candidate
+        from unseen_university.devices.archivist.contrib import post_contrib_candidate
 
         posted = []
         with patch("unseen_university.channel.post_to_channel", side_effect=lambda *a, **kw: posted.append((a, kw))):
@@ -194,7 +194,7 @@ class TestPostContribCandidate:
         assert "PC-abc" in msg
 
     def test_channel_failure_is_non_fatal(self):
-        from devices.archivist.contrib import post_contrib_candidate
+        from unseen_university.devices.archivist.contrib import post_contrib_candidate
 
         with patch("unseen_university.channel.post_to_channel", side_effect=Exception("channel down")):
             # Must not raise

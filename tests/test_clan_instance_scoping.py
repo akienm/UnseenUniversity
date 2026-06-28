@@ -8,7 +8,7 @@ Verifies:
 """
 from __future__ import annotations
 
-from bus.memory_protocol import (
+from unseen_university.devices.bus.memory_protocol import (
     MemoryAccessRequest,
     MemoryAccessResponse,
     MemoryRecord,

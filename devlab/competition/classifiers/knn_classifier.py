@@ -44,7 +44,7 @@ def _conn():
 def _embed(text: str) -> Optional[list[float]]:
     """Call embedder.embed(); returns None on failure (Ollama offline)."""
     try:
-        from devices.igor.cognition.embedder import embed
+        from unseen_university.devices.igor.cognition.embedder import embed
 
         return embed(text)
     except Exception:

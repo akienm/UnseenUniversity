@@ -15,9 +15,9 @@ import time
 import psycopg2
 import pytest
 
-from bus.envelope import Envelope
-from bus.pg_bus import PgBus, _channel
-from unseen_university.bus.router import Router
+from unseen_university.devices.bus.envelope import Envelope
+from unseen_university.devices.bus.pg_bus import PgBus, _channel
+from unseen_university.devices.bus.router import Router
 
 _DSN = os.environ.get(
     "UU_HOME_DB_URL",
@@ -155,7 +155,7 @@ def test_router_send_direct(bus):
 
 
 def test_router_unknown_address_raises(bus):
-    from unseen_university.bus.router import AddressError
+    from unseen_university.devices.bus.router import AddressError
 
     router = Router(bus)
     with pytest.raises(AddressError, match="nonexistent"):
@@ -262,7 +262,7 @@ def test_default_mailbox_feed_type_is_personal(bus):
 
 def test_debug_mailbox_evicts_oldest_at_cap(bus):
     """Debug mailbox evicts the oldest message when DEBUG_CAP is reached."""
-    from bus.pg_bus import DEBUG_CAP
+    from unseen_university.devices.bus.pg_bus import DEBUG_CAP
 
     bus.create_mailbox("debug-box", feed_type="debug")
     # Fill to exactly the cap
@@ -293,7 +293,7 @@ def test_debug_mailbox_evicts_oldest_at_cap(bus):
 
 def test_personal_mailbox_not_capped(bus):
     """Personal mailboxes are not subject to the debug cap."""
-    from bus.pg_bus import DEBUG_CAP
+    from unseen_university.devices.bus.pg_bus import DEBUG_CAP
 
     bus.create_mailbox("personal-box", feed_type="personal")
     for i in range(DEBUG_CAP + 10):
@@ -307,14 +307,14 @@ def test_personal_mailbox_not_capped(bus):
 
 def test_envelope_feed_type_field_default():
     """Envelope.feed_type defaults to 'personal'."""
-    from bus.envelope import Envelope
+    from unseen_university.devices.bus.envelope import Envelope
     env = Envelope.now("sender", "receiver")
     assert env.feed_type == "personal"
 
 
 def test_envelope_feed_type_roundtrips_json():
     """feed_type survives Envelope.to_json() / from_json() roundtrip."""
-    from bus.envelope import Envelope
+    from unseen_university.devices.bus.envelope import Envelope
     env = Envelope.now("sender", "receiver", payload={"x": 1})
     env.feed_type = "debug"
     env2 = Envelope.from_json(env.to_json())

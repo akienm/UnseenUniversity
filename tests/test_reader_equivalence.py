@@ -19,8 +19,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.reader.device import ReaderDevice
-from devices.reader.uri import FetchResult
+from unseen_university.devices.reader.device import ReaderDevice
+from unseen_university.devices.reader.uri import FetchResult
 
 # ── Synthetic input ────────────────────────────────────────────────────────────
 
@@ -123,12 +123,12 @@ class TestReaderEquivalence:
     def _wg_embed_text(self, text: str) -> dict[str, float]:
         """Embed via WG spreading activation; returns empty dict when unavailable."""
         try:
-            from devices.igor.cognition.word_graph import WordGraph
+            from unseen_university.devices.igor.cognition.word_graph import WordGraph
 
             wg = WordGraph.__new__(WordGraph)
             # Use spread_from_words with an empty frontier (no DB needed):
             # tokenize seeds the dict; spread returns the seed unchanged on empty graph.
-            from devices.igor.cognition.word_graph import tokenize
+            from unseen_university.devices.igor.cognition.word_graph import tokenize
 
             tokens = tokenize(text)
             if not tokens:
@@ -141,7 +141,7 @@ class TestReaderEquivalence:
 
     def test_summary_mode_returns_non_empty(self, reader_summary):
         with patch(
-            "devices.reader.device.fetch_uri", return_value=_make_fetch_result()
+            "unseen_university.devices.reader.device.fetch_uri", return_value=_make_fetch_result()
         ):
             result = reader_summary.read("test://synthetic", format="summary")
         assert result["exec"], "exec must be non-empty"
@@ -149,7 +149,7 @@ class TestReaderEquivalence:
 
     def test_nodes_mode_returns_non_empty(self, reader_nodes):
         with patch(
-            "devices.reader.device.fetch_uri", return_value=_make_fetch_result()
+            "unseen_university.devices.reader.device.fetch_uri", return_value=_make_fetch_result()
         ):
             nodes = reader_nodes.read("test://synthetic", format="nodes")
         assert len(nodes) > 0, "nodes list must be non-empty"
@@ -163,7 +163,7 @@ class TestReaderEquivalence:
         Threshold 0.7 asserts the two outputs share a majority of topic vocabulary.
         """
         with patch(
-            "devices.reader.device.fetch_uri", return_value=_make_fetch_result()
+            "unseen_university.devices.reader.device.fetch_uri", return_value=_make_fetch_result()
         ):
             summary = reader_summary.read("test://synthetic", format="summary")
             nodes = reader_nodes.read("test://synthetic", format="nodes")
@@ -190,7 +190,7 @@ class TestReaderEquivalence:
     def test_unknown_format_raises(self):
         reader = ReaderDevice(inference=MagicMock())
         with patch(
-            "devices.reader.device.fetch_uri", return_value=_make_fetch_result()
+            "unseen_university.devices.reader.device.fetch_uri", return_value=_make_fetch_result()
         ):
             with pytest.raises(ValueError, match="Unknown format"):
                 reader.read("test://synthetic", format="invalid")

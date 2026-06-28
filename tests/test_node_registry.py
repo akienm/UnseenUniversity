@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from devices.librarian.node_registry import (
+from unseen_university.devices.librarian.node_registry import (
     NODE_REGISTRY,
     get_canonical_query,
     get_fts_targets,

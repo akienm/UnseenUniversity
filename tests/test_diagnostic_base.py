@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from diagnostic_base.base import DiagnosticBase, _SafeDict
+from unseen_university.diagnostic_base.base import DiagnosticBase, _SafeDict
 
 # Module-level instance — gc trick works because module dict is a real heap dict
 _module_device = DiagnosticBase(device_id="mod", name="module_device")
@@ -122,7 +122,7 @@ class TestContextManager:
 
 class TestLogger:
     def test_logger_is_tagged_logger(self):
-        from diagnostic_base.tagged_logger import TaggedLogger
+        from unseen_university.diagnostic_base.tagged_logger import TaggedLogger
 
         obj = DiagnosticBase(device_id="d")
         assert isinstance(obj.logger, TaggedLogger)
@@ -147,7 +147,7 @@ class TestJsonLogSink:
     def test_info_writes_json_file(self, tmp_path):
         """Each log call produces one JSON file in <log_root>/<device_id>/<stream>/."""
         import time as _time
-        from diagnostic_base.base import _logger_cache
+        from unseen_university.diagnostic_base.base import _logger_cache
 
         class _TestDevice(DiagnosticBase):
             _log_root = tmp_path
@@ -170,7 +170,7 @@ class TestJsonLogSink:
     def test_filename_encodes_timestamp_and_level(self, tmp_path):
         """Filename contains YYYYMMDD-HHMMSS, logger name, and level."""
         import re
-        from diagnostic_base.base import _logger_cache
+        from unseen_university.diagnostic_base.base import _logger_cache
 
         class _Dev2(DiagnosticBase):
             _log_root = tmp_path
@@ -190,7 +190,7 @@ class TestJsonLogSink:
     def test_prune_json_logs_removes_old_files(self, tmp_path):
         """prune_json_logs deletes files older than the retention window."""
         import time as _time
-        from diagnostic_base.base import prune_json_logs
+        from unseen_university.diagnostic_base.base import prune_json_logs
 
         out_dir = tmp_path / "dev" / "log" / "json"
         out_dir.mkdir(parents=True)
@@ -214,7 +214,7 @@ class TestJsonLogSink:
         """prune_json_logs also prunes trace/*.jsonl files older than retention."""
         import os
         import time as _time
-        from diagnostic_base.base import prune_json_logs
+        from unseen_university.diagnostic_base.base import prune_json_logs
 
         trace_dir = tmp_path / "dev" / "trace"
         trace_dir.mkdir(parents=True)
@@ -234,7 +234,7 @@ class TestJsonLogSink:
 
 class TestTrace:
     def test_trace_record_writes_jsonl(self, tmp_path):
-        from diagnostic_base.base import _logger_cache
+        from unseen_university.diagnostic_base.base import _logger_cache
 
         class _TraceDev(DiagnosticBase):
             _log_root = tmp_path
@@ -253,7 +253,7 @@ class TestTrace:
         assert "ts" in line
 
     def test_trace_record_no_data(self, tmp_path):
-        from diagnostic_base.base import _logger_cache
+        from unseen_university.diagnostic_base.base import _logger_cache
 
         class _TraceDev2(DiagnosticBase):
             _log_root = tmp_path
@@ -268,7 +268,7 @@ class TestTrace:
         assert "data" not in line
 
     def test_last_traces_returns_recent_first(self, tmp_path):
-        from diagnostic_base.base import _logger_cache
+        from unseen_university.diagnostic_base.base import _logger_cache
 
         class _TraceDev3(DiagnosticBase):
             _log_root = tmp_path
@@ -286,7 +286,7 @@ class TestTrace:
         assert events[-1] == "alpha"
 
     def test_last_traces_n_cap(self, tmp_path):
-        from diagnostic_base.base import _logger_cache
+        from unseen_university.diagnostic_base.base import _logger_cache
 
         class _TraceDev4(DiagnosticBase):
             _log_root = tmp_path
@@ -300,7 +300,7 @@ class TestTrace:
         assert len(traces) == 3
 
     def test_last_traces_empty_when_no_trace_dir(self, tmp_path):
-        from diagnostic_base.base import _logger_cache
+        from unseen_university.diagnostic_base.base import _logger_cache
 
         class _TraceDev5(DiagnosticBase):
             _log_root = tmp_path
@@ -310,7 +310,7 @@ class TestTrace:
         assert obj.last_traces() == []
 
     def test_devices_trace_isolated(self, tmp_path):
-        from diagnostic_base.base import _logger_cache
+        from unseen_university.diagnostic_base.base import _logger_cache
 
         class _DevA(DiagnosticBase):
             _log_root = tmp_path

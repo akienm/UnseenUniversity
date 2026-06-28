@@ -261,7 +261,7 @@ def _openrouter_burn_rate(window_hours: float = 48.0) -> str:
 
 def _budget_summary(agent_id: str, group_by: str = "session") -> str:
     try:
-        from devices.inference.budget_ledger import budget_summary
+        from unseen_university.devices.inference.budget_ledger import budget_summary
 
         rows = budget_summary(agent_id, group_by=group_by)
     except Exception as exc:
@@ -281,7 +281,7 @@ def _budget_summary(agent_id: str, group_by: str = "session") -> str:
 
 def _budget_limit_set(agent_id: str, scope: str, limit_usd: float) -> str:
     try:
-        from devices.inference.budget_ledger import budget_limit_set
+        from unseen_university.devices.inference.budget_ledger import budget_limit_set
 
         ok = budget_limit_set(agent_id, scope, limit_usd)
     except Exception as exc:
@@ -293,7 +293,7 @@ def _budget_limit_set(agent_id: str, scope: str, limit_usd: float) -> str:
 
 def _budget_remaining(agent_id: str, session_id: str) -> str:
     try:
-        from devices.inference.budget_ledger import budget_remaining
+        from unseen_university.devices.inference.budget_ledger import budget_remaining
 
         info = budget_remaining(agent_id, session_id)
     except Exception as exc:

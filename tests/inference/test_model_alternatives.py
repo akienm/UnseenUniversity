@@ -37,7 +37,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from devices.inference.model_alternatives import (
+from unseen_university.devices.inference.model_alternatives import (
     ModelAlternativesClassifier,
     _base_category,
     _fetch_anthropic_models,
@@ -210,7 +210,7 @@ def test_classify_model_not_found_fetches_alternatives(caplog):
     payload = json.dumps({"models": [{"name": "llama3"}, {"name": "mistral"}]}).encode()
 
     with patch("urllib.request.urlopen", return_value=_mock_urlopen(payload)), \
-         caplog.at_level(logging.INFO, logger="devices.inference.model_alternatives"):
+         caplog.at_level(logging.INFO, logger="unseen_university.devices.inference.model_alternatives"):
         category, alts = classifier.classify("ollama", "llama3:missing", exc)
 
     assert category == "model_not_found"
@@ -253,7 +253,7 @@ def test_classify_network_failure_returns_unknown():
 def test_source_classify_ping_failure_emits_log_on_model_not_found(caplog):
     """Source._classify_ping_failure logs 'source X model Y not found: alternatives=...' for 404."""
     import logging
-    from devices.inference.sources import Source
+    from unseen_university.devices.inference.sources import Source
 
     class _TestSource(Source):
         def __init__(self):
@@ -267,7 +267,7 @@ def test_source_classify_ping_failure_emits_log_on_model_not_found(caplog):
     payload = json.dumps({"models": [{"name": "available-model"}]}).encode()
 
     with patch("urllib.request.urlopen", return_value=_mock_urlopen(payload)), \
-         caplog.at_level(logging.INFO, logger="devices.inference.sources"):
+         caplog.at_level(logging.INFO, logger="unseen_university.devices.inference.sources"):
         result = src._classify_ping_failure(
             exc, model_name="missing-model", base_url="http://127.0.0.1:11434"
         )
@@ -278,7 +278,7 @@ def test_source_classify_ping_failure_emits_log_on_model_not_found(caplog):
 
 
 def test_source_classify_ping_failure_non_model_error():
-    from devices.inference.sources import Source
+    from unseen_university.devices.inference.sources import Source
 
     class _TestSource(Source):
         def __init__(self):

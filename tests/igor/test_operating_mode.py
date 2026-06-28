@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.operating_mode import (
+from unseen_university.devices.igor.cognition.operating_mode import (
     Mode,
     derive_mode,
     mode_config,
@@ -33,7 +33,7 @@ class TestDeriveMode:
         now = time.monotonic()
         # 10 min idle, not in sleep window
         with patch(
-            "devices.igor.cognition.operating_mode._in_sleep_window",
+            "unseen_university.devices.igor.cognition.operating_mode._in_sleep_window",
             return_value=False,
         ):
             result = derive_mode(last_input_ts=now - 600)
@@ -48,7 +48,7 @@ class TestDeriveMode:
     def test_sleep_window_triggers_consolidation(self):
         now = time.monotonic()
         with patch(
-            "devices.igor.cognition.operating_mode._in_sleep_window",
+            "unseen_university.devices.igor.cognition.operating_mode._in_sleep_window",
             return_value=True,
         ):
             result = derive_mode(last_input_ts=now - 600)
@@ -63,7 +63,7 @@ class TestDeriveMode:
         # Sleep started long enough ago to hit dreaming phase
         # Dream cycle is 600s, dreaming starts at 1.5 * 600 = 900 into the 1200s cycle
         with patch(
-            "devices.igor.cognition.operating_mode._in_sleep_window",
+            "unseen_university.devices.igor.cognition.operating_mode._in_sleep_window",
             return_value=True,
         ):
             result = derive_mode(

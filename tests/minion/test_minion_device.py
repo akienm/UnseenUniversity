@@ -10,15 +10,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.minion.shim import MinionShim, WorkerEnvelope, WorkerResult
-from devices.minion.tool_loop import (
+from unseen_university.devices.minion.shim import MinionShim, WorkerEnvelope, WorkerResult
+from unseen_university.devices.minion.tool_loop import (
     ToolLoop,
     _execute_tool,
     _parse_signal,
     _parse_tool_call,
 )
-from devices.minion.device import MinionDevice
-from devices.inference.shim import InferenceResponse
+from unseen_university.devices.minion.device import MinionDevice
+from unseen_university.devices.inference.shim import InferenceResponse
 
 # ── MinionShim ────────────────────────────────────────────────────────────────
 
@@ -277,7 +277,7 @@ def test_tool_loop_uses_envelope_task_class(tmp_path):
 
 def test_tool_loop_accumulates_cost(tmp_path):
     """Cost is summed from registry pricing across iterations; returned in WorkerResult."""
-    from devices.inference.models_registry import default_registry
+    from unseen_university.devices.inference.models_registry import default_registry
 
     model_id = "qwen/qwen3.5-9b"
     spec = default_registry().get(model_id)

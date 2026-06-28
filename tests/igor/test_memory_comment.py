@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.memory.models import Memory, MemoryType  # noqa: E402
+from unseen_university.devices.igor.memory.models import Memory, MemoryType  # noqa: E402
 
 
 def _mem(narrative="x") -> Memory:

@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from bus.imap_server import IMAPServer
+    from unseen_university.devices.bus.imap_server import IMAPServer
 
 log = logging.getLogger(__name__)
 

@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from diagnostic_base.core_values import CoreValuesMixin
+from unseen_university.diagnostic_base.core_values import CoreValuesMixin
 
 _CIRCUIT_STATE_FILE = Path(
     os.environ.get(
@@ -40,8 +40,8 @@ _CIRCUIT_STATE_FILE = Path(
 )
 
 if TYPE_CHECKING:
-    from devices.policy.gate import PolicyGate
-    from devices.policy.output_validators import OutputValidator
+    from unseen_university.devices.policy.gate import PolicyGate
+    from unseen_university.devices.policy.output_validators import OutputValidator
 
 log = logging.getLogger(__name__)
 
@@ -468,7 +468,7 @@ class BaseShim(CoreValuesMixin, ABC):
                 # Policy device not yet initialized — fail closed (cold start window).
                 # Allowing tool calls before policy is ready would bypass the entire
                 # governance gate. Log and deny until policy device signals ready.
-                from devices.policy.gate import _write_governance_decision
+                from unseen_university.devices.policy.gate import _write_governance_decision
                 _write_governance_decision({
                     "ts": datetime.now(timezone.utc).isoformat(),
                     "agent_id": _policy.agent_id,

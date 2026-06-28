@@ -27,7 +27,7 @@ from unittest.mock import MagicMock, patch, call
 def _fake_mem(
     mem_id, narrative, mtype_str="EPISODIC", activation_count=1, metadata=None
 ):
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     mtype_map = {
         "EPISODIC": MemoryType.EPISODIC,
@@ -58,7 +58,7 @@ def _make_mock_cortex():
 
 class TestKeywordOverlap(unittest.TestCase):
     def setUp(self):
-        from devices.igor.cognition.distillation import _keyword_overlap
+        from unseen_university.devices.igor.cognition.distillation import _keyword_overlap
 
         self.ko = _keyword_overlap
 
@@ -89,7 +89,7 @@ class TestClusterByEmbeddingsFallback(unittest.TestCase):
     """When embeddings unavailable, keyword fallback clusters correctly."""
 
     def test_keyword_fallback_groups_similar_memories(self):
-        from devices.igor.cognition.distillation import _cluster_by_embeddings
+        from unseen_university.devices.igor.cognition.distillation import _cluster_by_embeddings
 
         mems = [
             _fake_mem("E1", "memory graph traversal activation nodes"),
@@ -111,7 +111,7 @@ class TestClusterByEmbeddingsFallback(unittest.TestCase):
         self.assertNotIn("E3", cluster_ids)  # no overlap
 
     def test_singleton_clusters_excluded(self):
-        from devices.igor.cognition.distillation import _cluster_by_embeddings
+        from unseen_university.devices.igor.cognition.distillation import _cluster_by_embeddings
 
         mems = [
             _fake_mem("E1", "memory graph traversal"),
@@ -129,24 +129,24 @@ class TestClusterByEmbeddingsFallback(unittest.TestCase):
 class TestIsNovel(unittest.TestCase):
     def test_returns_true_when_no_embedding_available(self):
         """If embed() returns None, assume novel (can't check)."""
-        from devices.igor.cognition.distillation import _is_novel
-        from devices.igor.memory.models import MemoryType
+        from unseen_university.devices.igor.cognition.distillation import _is_novel
+        from unseen_university.devices.igor.memory.models import MemoryType
 
         cortex = _make_mock_cortex()
-        with patch("devices.igor.cognition.embedder.embed", return_value=None):
+        with patch("unseen_university.devices.igor.cognition.embedder.embed", return_value=None):
             result = _is_novel("some narrative", cortex, MemoryType.EXPERIENTIAL, 0.9)
         self.assertTrue(result)
 
     def test_novel_when_no_existing_nodes(self):
         """Empty existing pool → always novel."""
-        from devices.igor.cognition.distillation import _is_novel
-        from devices.igor.memory.models import MemoryType
+        from unseen_university.devices.igor.cognition.distillation import _is_novel
+        from unseen_university.devices.igor.memory.models import MemoryType
 
         cortex = _make_mock_cortex()
         cortex._conn.return_value.execute.return_value.fetchall.return_value = []
 
-        with patch("devices.igor.cognition.embedder.embed", return_value=[0.1] * 768), patch(
-            "devices.igor.cognition.embedder.cosine_similarity", return_value=0.5
+        with patch("unseen_university.devices.igor.cognition.embedder.embed", return_value=[0.1] * 768), patch(
+            "unseen_university.devices.igor.cognition.embedder.cosine_similarity", return_value=0.5
         ):
             result = _is_novel("new narrative", cortex, MemoryType.EXPERIENTIAL, 0.90)
         self.assertTrue(result)
@@ -160,7 +160,7 @@ class TestRunDistillationGating(unittest.TestCase):
         import importlib
 
         os.environ["IGOR_DISTILLATION_ENABLED"] = "false"
-        import devices.igor.cognition.distillation as dm
+        import unseen_university.devices.igor.cognition.distillation as dm
 
         importlib.reload(dm)
         result = dm.run_distillation(_make_mock_cortex())
@@ -171,7 +171,7 @@ class TestRunDistillationGating(unittest.TestCase):
         import importlib
 
         os.environ["IGOR_DISTILLATION_ENABLED"] = "true"
-        import devices.igor.cognition.distillation as dm
+        import unseen_university.devices.igor.cognition.distillation as dm
 
         importlib.reload(dm)
         dm._last_run = time.time()  # just ran
@@ -189,7 +189,7 @@ class TestRunDistillationExtraction(unittest.TestCase):
         import importlib
 
         os.environ["IGOR_DISTILLATION_ENABLED"] = "true"
-        import devices.igor.cognition.distillation as dm
+        import unseen_university.devices.igor.cognition.distillation as dm
 
         importlib.reload(dm)
         dm._last_run = 0.0
@@ -278,7 +278,7 @@ class TestGraduationPass(unittest.TestCase):
         """EXPERIENTIAL with activation_count >= threshold → PROCEDURAL stored."""
         import importlib
 
-        import devices.igor.cognition.distillation as dm
+        import unseen_university.devices.igor.cognition.distillation as dm
 
         importlib.reload(dm)
 
@@ -320,7 +320,7 @@ class TestGraduationPass(unittest.TestCase):
 
     def test_already_graduated_not_re_graduated(self):
         """EXPERIENTIAL with graduated_to already set → skipped."""
-        import devices.igor.cognition.distillation as dm
+        import unseen_university.devices.igor.cognition.distillation as dm
 
         exp_mem = _fake_mem(
             "EXP_ALREADY",
@@ -352,7 +352,7 @@ class TestDistillationThreadWiring(unittest.TestCase):
     def test_background_method_exists_on_main(self):
         """Igor main class has _run_distillation_background method."""
         import inspect
-        from devices.igor.main import Igor
+        from unseen_university.devices.igor.main import Igor
 
         self.assertTrue(
             hasattr(Igor, "_run_distillation_background"),
@@ -362,7 +362,7 @@ class TestDistillationThreadWiring(unittest.TestCase):
     def test_distillation_thread_attr_initialized(self):
         """_distillation_thread initialized to None in __init__."""
         import inspect
-        from devices.igor.main import Igor
+        from unseen_university.devices.igor.main import Igor
 
         src = inspect.getsource(Igor.__init__)
         self.assertIn("_distillation_thread", src)

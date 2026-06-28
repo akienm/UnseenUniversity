@@ -19,7 +19,7 @@ os.environ.setdefault(
 )
 
 
-from devices.igor.cognition.narrative_engine import NarrativeEngine  # noqa: E402
+from unseen_university.devices.igor.cognition.narrative_engine import NarrativeEngine  # noqa: E402
 
 
 class TestProvenanceCompleteness(unittest.TestCase):

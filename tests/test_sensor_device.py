@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from devices.sensor.device import SensorDevice
-from devices.sensor.shim import SensorShim
+from unseen_university.devices.sensor.device import SensorDevice
+from unseen_university.devices.sensor.shim import SensorShim
 
 
 @pytest.fixture

@@ -15,7 +15,7 @@ def test_boredom_source_twm_push_includes_category():
     """BoredomSource must pass category='boredom_detected' so _check_twm_trigger_habits
     can find the entry via twm_read(category='boredom_detected')."""
     import inspect
-    from devices.igor.cognition import push_sources as ps
+    from unseen_university.devices.igor.cognition import push_sources as ps
 
     src = inspect.getsource(ps.BoredomSource.push)
     # The twm_push call in BoredomSource.push must include category=
@@ -55,7 +55,7 @@ def test_proc_boredom_foreman_seeded_in_db():
 
 def test_foreman_scan_exists_and_is_callable():
     """foreman_scan() must be importable and callable."""
-    from devices.igor.tools.worker_foreman import foreman_scan
+    from unseen_university.devices.igor.tools.worker_foreman import foreman_scan
     assert callable(foreman_scan)
 
 
@@ -65,6 +65,6 @@ def test_seed_script_is_idempotent():
     if not db_url:
         pytest.skip("UU_HOME_DB_URL not set")
 
-    from devices.igor.tools.seed_boredom_foreman import seed
+    from unseen_university.devices.igor.tools.seed_boredom_foreman import seed
     seed()  # first run
     seed()  # idempotent second run

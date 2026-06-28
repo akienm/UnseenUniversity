@@ -13,7 +13,7 @@ import pytest
 
 class TestGoogleSecretaryShim:
     def _shim(self, tmp_path):
-        from devices.google_secretary.shim import GoogleSecretaryShim
+        from unseen_university.devices.google_secretary.shim import GoogleSecretaryShim
         return GoogleSecretaryShim(home=tmp_path)
 
     def test_start_creates_home(self, tmp_path):
@@ -40,7 +40,7 @@ class TestGoogleSecretaryShim:
         assert not result["passed"]
 
     def test_token_saved_with_owner_permissions(self, tmp_path):
-        from devices.google_secretary.shim import GoogleSecretaryShim
+        from unseen_university.devices.google_secretary.shim import GoogleSecretaryShim
         s = GoogleSecretaryShim(home=tmp_path)
         # Mock credentials object
         mock_creds = MagicMock()
@@ -72,7 +72,7 @@ class TestGoogleSecretaryShim:
 
 class TestGoogleSecretaryDispatcher:
     def _dispatcher(self, tmp_path=None):
-        from devices.google_secretary.dispatcher import GoogleSecretaryDispatcher
+        from unseen_university.devices.google_secretary.dispatcher import GoogleSecretaryDispatcher
         mock_creds = MagicMock()
         mock_creds.valid = True
         return GoogleSecretaryDispatcher(
@@ -158,7 +158,7 @@ class TestGoogleSecretaryDispatcher:
         assert result["status"] == "ok"
 
     def test_missing_credentials_returns_error(self):
-        from devices.google_secretary.dispatcher import GoogleSecretaryDispatcher
+        from unseen_university.devices.google_secretary.dispatcher import GoogleSecretaryDispatcher
         d = GoogleSecretaryDispatcher(credentials_provider=lambda: None)
         result = d.dispatch("calendar_list", {})
         assert result["status"] == "error"
@@ -180,7 +180,7 @@ class TestGoogleSecretaryDispatcher:
 
 class TestGoogleSecretaryDevice:
     def _device(self, tmp_path):
-        from devices.google_secretary.device import GoogleSecretaryDevice
+        from unseen_university.devices.google_secretary.device import GoogleSecretaryDevice
         d = GoogleSecretaryDevice(home=tmp_path)
         # Stub shim and dispatcher
         d._shim = MagicMock()

@@ -16,8 +16,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.improver.device import ImproverDevice
-from devices.critic.agent import CriticJudgment, Decision, LearningRule
+from unseen_university.devices.improver.device import ImproverDevice
+from unseen_university.devices.critic.agent import CriticJudgment, Decision, LearningRule
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ def test_improve_returns_learning_rules():
     dev = ImproverDevice()
     with patch.object(dev, "_get_inference") as mock_inf:
         mock_inf.return_value = MagicMock()
-        with patch("devices.improver.device.EvaluatorCore") as MockCore:
+        with patch("unseen_university.devices.improver.device.EvaluatorCore") as MockCore:
             MockCore.return_value = _mock_evaluator_core()
             patterns = [_make_judgment()]
             result = dev.improve(patterns)
@@ -93,11 +93,11 @@ def test_improve_persists_rules_to_disk():
     with tempfile.TemporaryDirectory() as tmpdir:
         rules_dir = Path(tmpdir) / "improver_rules"
 
-        with patch("devices.improver.device._RULES_DIR", rules_dir):
+        with patch("unseen_university.devices.improver.device._RULES_DIR", rules_dir):
             dev = ImproverDevice()
             with patch.object(dev, "_get_inference") as mock_inf:
                 mock_inf.return_value = MagicMock()
-                with patch("devices.improver.device.EvaluatorCore") as MockCore:
+                with patch("unseen_university.devices.improver.device.EvaluatorCore") as MockCore:
                     MockCore.return_value = _mock_evaluator_core()
                     patterns = [_make_judgment()]
                     result = dev.improve(patterns)
@@ -126,7 +126,7 @@ def test_improve_calls_evaluator_core_with_optimism_plus_one():
     dev = ImproverDevice()
     with patch.object(dev, "_get_inference") as mock_inf:
         mock_inf.return_value = MagicMock()
-        with patch("devices.improver.device.EvaluatorCore") as MockCore:
+        with patch("unseen_university.devices.improver.device.EvaluatorCore") as MockCore:
             mock_core = _mock_evaluator_core()
             MockCore.return_value = mock_core
             patterns = [_make_judgment()]
@@ -164,7 +164,7 @@ def test_criterion_4_improver_vs_critic_same_input_different_stance():
     dev = ImproverDevice()
     with patch.object(dev, "_get_inference") as mock_inf:
         mock_inf.return_value = MagicMock()
-        with patch("devices.improver.device.EvaluatorCore") as MockCore:
+        with patch("unseen_university.devices.improver.device.EvaluatorCore") as MockCore:
             # Mock returns a constructive suggestion
             mock_core = _mock_evaluator_core(criteria_reasoning=improver_stance)
             MockCore.return_value = mock_core
@@ -183,7 +183,7 @@ def test_improver_handles_inference_failure_gracefully():
     dev = ImproverDevice()
     with patch.object(dev, "_get_inference") as mock_inf:
         mock_inf.return_value = MagicMock()
-        with patch("devices.improver.device.EvaluatorCore") as MockCore:
+        with patch("unseen_university.devices.improver.device.EvaluatorCore") as MockCore:
             mock_core = MagicMock()
             mock_core.evaluate.side_effect = RuntimeError("inference failed")
             MockCore.return_value = mock_core
@@ -203,7 +203,7 @@ def test_improver_rule_confidence_combines_judgment_and_score():
 
     with patch.object(dev, "_get_inference") as mock_inf:
         mock_inf.return_value = MagicMock()
-        with patch("devices.improver.device.EvaluatorCore") as MockCore:
+        with patch("unseen_university.devices.improver.device.EvaluatorCore") as MockCore:
             mock_core = _mock_evaluator_core(score=0.8)  # 80% on criteria
             MockCore.return_value = mock_core
 
@@ -224,7 +224,7 @@ def test_improver_multiple_patterns_clustered():
 
     with patch.object(dev, "_get_inference") as mock_inf:
         mock_inf.return_value = MagicMock()
-        with patch("devices.improver.device.EvaluatorCore") as MockCore:
+        with patch("unseen_university.devices.improver.device.EvaluatorCore") as MockCore:
             # Return different reasoning for different calls
             responses = [
                 _mock_evaluator_core(criteria_reasoning="Fix timeout handling"),
@@ -249,10 +249,10 @@ def test_improver_get_rules_returns_persisted():
     dev = ImproverDevice()
     with tempfile.TemporaryDirectory() as tmpdir:
         rules_dir = Path(tmpdir) / "improver_rules"
-        with patch("devices.improver.device._RULES_DIR", rules_dir):
+        with patch("unseen_university.devices.improver.device._RULES_DIR", rules_dir):
             with patch.object(dev, "_get_inference") as mock_inf:
                 mock_inf.return_value = MagicMock()
-                with patch("devices.improver.device.EvaluatorCore") as MockCore:
+                with patch("unseen_university.devices.improver.device.EvaluatorCore") as MockCore:
                     MockCore.return_value = _mock_evaluator_core()
                     dev.improve([_make_judgment()])
 

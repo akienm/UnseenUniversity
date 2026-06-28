@@ -22,7 +22,7 @@ def _redirect_home(tmp_path, monkeypatch):
 
 
 async def _call_alarms():
-    from devices.web_server.server import _api_alarms
+    from unseen_university.devices.web_server.server import _api_alarms
 
     resp = await _api_alarms(request=None)
     return json.loads(bytes(resp.body).decode("utf-8"))
@@ -36,9 +36,9 @@ def test_empty_when_no_alarms():
 
 
 def test_reflects_dropped_alarm_with_human_fields():
-    sa.raise_alarm("no-provider:worker", "devices.inference.device", "no source", emit_log=False)
-    sa.raise_alarm("no-provider:worker", "devices.inference.device", "no source", emit_log=False)
-    sa.raise_alarm("no-provider:worker", "devices.igor.cognition", "no source", emit_log=False)
+    sa.raise_alarm("no-provider:worker", "unseen_university.devices.inference.device", "no source", emit_log=False)
+    sa.raise_alarm("no-provider:worker", "unseen_university.devices.inference.device", "no source", emit_log=False)
+    sa.raise_alarm("no-provider:worker", "unseen_university.devices.igor.cognition", "no source", emit_log=False)
 
     import asyncio
 
@@ -46,7 +46,7 @@ def test_reflects_dropped_alarm_with_human_fields():
     assert len(data["alarms"]) == 1
     a = data["alarms"][0]
     # human-rendered list fields — no raw JSON / no dict internals leaked
-    assert a["emitter"] == "devices.inference.device"  # primary caller (max count)
+    assert a["emitter"] == "unseen_university.devices.inference.device"  # primary caller (max count)
     assert a["description"] == "no source"
     assert a["datetime"]  # populated, human format (no 'T')
     assert "T" not in a["datetime"]
@@ -54,12 +54,12 @@ def test_reflects_dropped_alarm_with_human_fields():
     d = a["detail"]
     assert d["signature"] == "no-provider:worker"
     assert "3×" in d["seen"]
-    assert "devices.inference.device×2" in d["callers"]
+    assert "unseen_university.devices.inference.device×2" in d["callers"]
 
 
 def test_panel_is_injected_on_all_pages_and_hidden_by_default():
     """The ALARMS PANEL ships in the shared _html_wrap shell and starts hidden."""
-    from devices.web_server.server import _html_wrap, _ALARMS_PANEL
+    from unseen_university.devices.web_server.server import _html_wrap, _ALARMS_PANEL
 
     assert "SYSTEM ALARMS" in _ALARMS_PANEL
     assert "display:none" in _ALARMS_PANEL  # conditional — hidden until alarms exist

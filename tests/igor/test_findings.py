@@ -15,13 +15,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 class TestMigrationEntry:
     def test_m051_exists(self):
-        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from unseen_university.devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         names = {name for name, _ in _SCHEMA_MIGRATIONS}
         assert "m051_experiment_findings" in names
 
     def test_m051_creates_in_infra(self):
-        from devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
+        from unseen_university.devices.igor.memory.cortex import _SCHEMA_MIGRATIONS
 
         for name, sql in _SCHEMA_MIGRATIONS:
             if name == "m051_experiment_findings":

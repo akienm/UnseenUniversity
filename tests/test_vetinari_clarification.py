@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 
 def _make_device(tmp_path):
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.device import VetinariDevice
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.device import VetinariDevice
     channel_calls = []
     v = VetinariDevice(channel_post_fn=lambda msg: channel_calls.append(msg))
     return v, channel_calls
@@ -23,7 +23,7 @@ def _seed_pending(v, directive_id="dir-001", text="do something vague"):
 
 
 def test_parse_object_format_returns_confidence_and_subtasks():
-    from devices.vetinari.device import _parse_decompose_response
+    from unseen_university.devices.vetinari.device import _parse_decompose_response
     raw = json.dumps({
         "confidence": 0.9,
         "subtasks": [{"title": "Do thing", "description": "d", "worker": "claude", "tags": [], "size": "S"}],
@@ -36,7 +36,7 @@ def test_parse_object_format_returns_confidence_and_subtasks():
 
 
 def test_parse_array_format_returns_confidence_1():
-    from devices.vetinari.device import _parse_decompose_response
+    from unseen_university.devices.vetinari.device import _parse_decompose_response
     raw = json.dumps([{"title": "t", "description": "d", "worker": "claude", "tags": [], "size": "S"}])
     conf, subtasks, question = _parse_decompose_response(raw)
     assert conf == 1.0
@@ -45,7 +45,7 @@ def test_parse_array_format_returns_confidence_1():
 
 
 def test_parse_low_confidence_returns_question():
-    from devices.vetinari.device import _parse_decompose_response
+    from unseen_university.devices.vetinari.device import _parse_decompose_response
     raw = json.dumps({
         "confidence": 0.3,
         "subtasks": [],
@@ -72,7 +72,7 @@ def test_low_confidence_posts_clarification_to_channel(tmp_path):
             "clarification_question": "Which system should be deployed?",
         })
 
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=[]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=[]):
         result = v.decompose_directive("dir-001", llm_fn=low_conf_llm)
 
     assert result == []  # no tickets filed
@@ -88,7 +88,7 @@ def test_low_confidence_sets_awaiting_clarification_status(tmp_path):
     def low_conf_llm(_text):
         return json.dumps({"confidence": 0.2, "subtasks": [], "clarification_question": "What system?"})
 
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=[]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=[]):
         v.decompose_directive("dir-001", llm_fn=low_conf_llm)
 
     assert v.get_directive_status("dir-001") == "awaiting_clarification"
@@ -106,7 +106,7 @@ def test_high_confidence_proceeds_normally(tmp_path):
             "clarification_question": "",
         })
 
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=["T-impl"]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=["T-impl"]):
         result = v.decompose_directive("dir-001", llm_fn=high_conf_llm)
 
     assert result == ["T-impl"]
@@ -123,7 +123,7 @@ def test_handle_clarification_reply_enriches_text_and_redecomposes(tmp_path):
     def low_conf(_text):
         return json.dumps({"confidence": 0.2, "subtasks": [], "clarification_question": "What exactly?"})
 
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=[]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=[]):
         v.decompose_directive("dir-001", llm_fn=low_conf)
 
     assert v.get_directive_status("dir-001") == "awaiting_clarification"
@@ -137,7 +137,7 @@ def test_handle_clarification_reply_enriches_text_and_redecomposes(tmp_path):
             "clarification_question": "",
         })
 
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=["T-health"]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=["T-health"]):
         ids = v.handle_clarification_reply("dir-001", "Expose GET /health", llm_fn=high_conf)
 
     assert ids == ["T-health"]
@@ -159,7 +159,7 @@ def test_clarification_produces_audit_entry(tmp_path):
     def low_conf(_text):
         return json.dumps({"confidence": 0.1, "subtasks": [], "clarification_question": "Huh?"})
 
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=[]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=[]):
         v.decompose_directive("dir-001", llm_fn=low_conf)
 
     entries = v.get_audit_log(directive_id="dir-001")

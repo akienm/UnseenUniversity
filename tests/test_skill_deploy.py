@@ -18,12 +18,12 @@ from pathlib import Path
 
 import pytest
 
-from devices.installer import deploy_skills, deploy_status
-from devices.installer.backends import (
+from unseen_university.devices.installer import deploy_skills, deploy_status
+from unseen_university.devices.installer.backends import (
     SymlinkBackend,
     select_backend,
 )
-from devices.installer.manifest import load_manifest
+from unseen_university.devices.installer.manifest import load_manifest
 
 
 @pytest.fixture

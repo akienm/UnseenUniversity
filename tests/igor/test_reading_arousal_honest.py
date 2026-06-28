@@ -34,7 +34,7 @@ def cortex_mock():
 
 
 def _make_milieu_state(arousal: float):
-    from devices.igor.cognition.milieu import MilieuState
+    from unseen_university.devices.igor.cognition.milieu import MilieuState
 
     ms = MilieuState()
     ms.arousal = arousal

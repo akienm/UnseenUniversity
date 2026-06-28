@@ -16,7 +16,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition import anticipator
+from unseen_university.devices.igor.cognition import anticipator
 
 
 @pytest.fixture(autouse=True)
@@ -128,7 +128,7 @@ class TestSelectHabitAnticipationBias:
     def test_no_anticipation_no_change(self, monkeypatch):
         """When no anticipation matches any habit's pursuit_id, scoring is
         identical to the pre-slice-3 baseline."""
-        from devices.igor.cognition import basal_ganglia as bg
+        from unseen_university.devices.igor.cognition import basal_ganglia as bg
 
         # Two habits with same trigger; no pursuit_id; no bus content.
         habits = [
@@ -149,7 +149,7 @@ class TestSelectHabitAnticipationBias:
         """Two habits in tight competition; only one carries pursuit_id; that
         pursuit is anticipated with a HIGH delta. The tagged habit must end
         up with a higher final score in the BG bias step."""
-        from devices.igor.cognition import basal_ganglia as bg
+        from unseen_university.devices.igor.cognition import basal_ganglia as bg
 
         # Push a strong positive anticipation for pursuit-strong
         ant = anticipator.Anticipation(
@@ -165,7 +165,7 @@ class TestSelectHabitAnticipationBias:
 
         # Direct unit test of the bias block: simulate the post-2b state by
         # hand-applying bias and asserting the tagged one moved up.
-        from devices.igor.cognition import anticipator as _a
+        from unseen_university.devices.igor.cognition import anticipator as _a
 
         bonus_tagged = _a.anticipation_bias_for_referent("pursuit-strong")
         bonus_untagged = _a.anticipation_bias_for_referent(

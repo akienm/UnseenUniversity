@@ -30,7 +30,7 @@ import pytest
 _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
-from devices.build_digester.log_parser import parse_line, parse_log_file
+from unseen_university.devices.build_digester.log_parser import parse_line, parse_log_file
 
 _FIXTURES = _REPO / "tests" / "fixtures" / "build_digester"
 
@@ -201,7 +201,7 @@ class TestParseLogFile:
 
 def _make_mock_store():
     """Return a DigestStore with a mocked _connect."""
-    from devices.build_digester.digest_store import DigestStore
+    from unseen_university.devices.build_digester.digest_store import DigestStore
     store = DigestStore(db_url="postgresql://test/test")
     return store
 
@@ -406,7 +406,7 @@ class TestFlatTimelineDegradation:
 
 class TestRunmeStartStop:
     def test_stop_terminates_start(self):
-        import devices.build_digester.groundloop.runme as runme
+        import unseen_university.devices.build_digester.groundloop.runme as runme
 
         mock_store = MagicMock()
         mock_store.ensure_tables = MagicMock()
@@ -415,9 +415,9 @@ class TestRunmeStartStop:
             return cursors
 
         # DigestStore is imported lazily inside start(); patch at its home module.
-        with patch("devices.build_digester.digest_store.DigestStore", return_value=mock_store):
-            with patch("devices.build_digester.groundloop.runme._poll_once", side_effect=_fake_poll):
-                with patch("devices.build_digester.groundloop.runme._POLL_INTERVAL_S", 1):
+        with patch("unseen_university.devices.build_digester.digest_store.DigestStore", return_value=mock_store):
+            with patch("unseen_university.devices.build_digester.groundloop.runme._poll_once", side_effect=_fake_poll):
+                with patch("unseen_university.devices.build_digester.groundloop.runme._POLL_INTERVAL_S", 1):
                     thread = threading.Thread(target=runme.start, daemon=True)
                     thread.start()
                     time.sleep(0.2)
@@ -426,14 +426,14 @@ class TestRunmeStartStop:
                     assert not thread.is_alive(), "daemon should stop after stop() is called"
 
     def test_db_error_does_not_crash_daemon(self):
-        import devices.build_digester.groundloop.runme as runme
+        import unseen_university.devices.build_digester.groundloop.runme as runme
 
         mock_store = MagicMock()
         mock_store.ensure_tables = MagicMock(side_effect=RuntimeError("no db"))
 
-        with patch("devices.build_digester.digest_store.DigestStore", return_value=mock_store):
-            with patch("devices.build_digester.groundloop.runme._POLL_INTERVAL_S", 1):
-                with patch("devices.build_digester.groundloop.runme._RETRY_DELAY_S", 0):
+        with patch("unseen_university.devices.build_digester.digest_store.DigestStore", return_value=mock_store):
+            with patch("unseen_university.devices.build_digester.groundloop.runme._POLL_INTERVAL_S", 1):
+                with patch("unseen_university.devices.build_digester.groundloop.runme._RETRY_DELAY_S", 0):
                     thread = threading.Thread(target=runme.start, daemon=True)
                     thread.start()
                     time.sleep(0.3)

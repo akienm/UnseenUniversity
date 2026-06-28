@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pytest
 
-from devices.claude.chat_log_handler import (
+from unseen_university.devices.claude.chat_log_handler import (
     CCEventFormatter,
     ChatLogHandler,
     ingest_session,
@@ -333,7 +333,7 @@ def test_ingest_session_respects_explicit_session_id(tmp_path: Path):
 
 
 def test_claude_device_logs_returns_chat_path():
-    from devices.claude.device import ClaudeDevice
+    from unseen_university.devices.claude.device import ClaudeDevice
 
     dev = ClaudeDevice()
     logs = dev.logs()

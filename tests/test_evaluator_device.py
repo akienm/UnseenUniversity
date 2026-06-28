@@ -12,8 +12,8 @@ from unittest.mock import MagicMock, patch, call
 
 import pytest
 
-from devices.evaluator.device import EvaluatorDevice, _extract_json
-from devices.evaluator.shim import EvaluatorShim
+from unseen_university.devices.evaluator.device import EvaluatorDevice, _extract_json
+from unseen_university.devices.evaluator.shim import EvaluatorShim
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -151,7 +151,7 @@ def test_rubric_create_returns_rubric_id():
     conn, cur = _mock_conn()
     d = EvaluatorDevice(db_url="postgresql://fake")
     with patch(
-        "devices.evaluator.device.psycopg2" if False else "psycopg2.connect",
+        "unseen_university.devices.evaluator.device.psycopg2" if False else "psycopg2.connect",
         return_value=conn,
     ):
         with patch.object(d, "_db_connect", return_value=conn):

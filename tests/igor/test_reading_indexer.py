@@ -23,7 +23,7 @@ class TestReadingIndexer(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        from devices.igor.cognition.reading_indexer import (
+        from unseen_university.devices.igor.cognition.reading_indexer import (
             _fact_cloud_id,
             _get_cortex,
         )
@@ -59,7 +59,7 @@ class TestReadingIndexer(unittest.TestCase):
 
     def test_extract_facts_from_chunk_empty_text(self):
         """Verify extraction skips empty/short chunks."""
-        from devices.igor.cognition.reading_indexer import _extract_facts_from_chunk
+        from unseen_university.devices.igor.cognition.reading_indexer import _extract_facts_from_chunk
 
         # Too short
         result = _extract_facts_from_chunk("hi", "Title", 1)
@@ -68,7 +68,7 @@ class TestReadingIndexer(unittest.TestCase):
     @patch("urllib.request.urlopen")
     def test_extract_facts_from_chunk_api_call(self, mock_urlopen):
         """Verify API is called with correct parameters."""
-        from devices.igor.cognition.reading_indexer import _extract_facts_from_chunk
+        from unseen_university.devices.igor.cognition.reading_indexer import _extract_facts_from_chunk
 
         # Mock API response
         mock_response = MagicMock()
@@ -96,8 +96,8 @@ class TestReadingIndexer(unittest.TestCase):
 
     def test_deposit_fact_creates_memory(self):
         """Verify fact deposition creates correct Memory object."""
-        from devices.igor.cognition.reading_indexer import _deposit_fact
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition.reading_indexer import _deposit_fact
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         # Mock cortex
         mock_cortex = MagicMock()
@@ -142,7 +142,7 @@ class TestReadingIndexer(unittest.TestCase):
 
     def test_deposit_fact_filters_low_confidence(self):
         """Verify low-confidence facts are not deposited."""
-        from devices.igor.cognition.reading_indexer import _deposit_fact
+        from unseen_university.devices.igor.cognition.reading_indexer import _deposit_fact
 
         mock_cortex = MagicMock()
 
@@ -168,10 +168,10 @@ class TestReadingIndexer(unittest.TestCase):
         # Should not store
         self.assertFalse(mock_cortex.store.called)
 
-    @patch("devices.igor.cognition.reading_indexer.get_blob_metadata")
-    @patch("devices.igor.cognition.reading_indexer.get_chunks")
-    @patch("devices.igor.cognition.reading_indexer._extract_facts_from_chunk")
-    @patch("devices.igor.cognition.reading_indexer._get_cortex")
+    @patch("unseen_university.devices.igor.cognition.reading_indexer.get_blob_metadata")
+    @patch("unseen_university.devices.igor.cognition.reading_indexer.get_chunks")
+    @patch("unseen_university.devices.igor.cognition.reading_indexer._extract_facts_from_chunk")
+    @patch("unseen_university.devices.igor.cognition.reading_indexer._get_cortex")
     def test_index_content_flow(
         self, mock_get_cortex, mock_extract, mock_get_chunks, mock_get_metadata
     ):
@@ -209,7 +209,7 @@ class TestReadingIndexer(unittest.TestCase):
             }
         ]
 
-        from devices.igor.cognition.reading_indexer import index_content
+        from unseen_university.devices.igor.cognition.reading_indexer import index_content
 
         result = index_content("test-id", dry_run=False)
 
@@ -220,27 +220,27 @@ class TestReadingIndexer(unittest.TestCase):
         self.assertEqual(result["facts_extracted"], 1)
         self.assertGreater(result["nodes_deposited"], 0)
 
-    @patch("devices.igor.cognition.reading_indexer._get_cortex")
-    @patch("devices.igor.cognition.reading_indexer.get_blob_metadata")
+    @patch("unseen_university.devices.igor.cognition.reading_indexer._get_cortex")
+    @patch("unseen_university.devices.igor.cognition.reading_indexer.get_blob_metadata")
     def test_index_content_missing_blob(self, mock_get_metadata, mock_get_cortex):
         """Verify error handling for missing blob."""
         mock_cortex = MagicMock()
         mock_get_cortex.return_value = mock_cortex
         mock_get_metadata.return_value = None
 
-        from devices.igor.cognition.reading_indexer import index_content
+        from unseen_university.devices.igor.cognition.reading_indexer import index_content
 
         result = index_content("missing-id", dry_run=False)
 
         self.assertEqual(result["status"], "error")
         self.assertIn("not found", result["error"])
 
-    @patch("devices.igor.cognition.reading_indexer._get_cortex")
+    @patch("unseen_university.devices.igor.cognition.reading_indexer._get_cortex")
     def test_index_content_no_cortex(self, mock_get_cortex):
         """Verify error handling when cortex unavailable."""
         mock_get_cortex.return_value = None
 
-        from devices.igor.cognition.reading_indexer import index_content
+        from unseen_university.devices.igor.cognition.reading_indexer import index_content
 
         result = index_content("test-id", dry_run=False)
 
@@ -253,7 +253,7 @@ class TestReadingIndexerIntegration(unittest.TestCase):
 
     def test_metadata_structure(self):
         """Verify metadata fields match specification."""
-        from devices.igor.cognition.reading_indexer import _deposit_fact
+        from unseen_university.devices.igor.cognition.reading_indexer import _deposit_fact
 
         mock_cortex = MagicMock()
 

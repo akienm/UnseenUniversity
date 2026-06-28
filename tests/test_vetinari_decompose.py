@@ -13,8 +13,8 @@ from unittest.mock import patch, MagicMock
 
 
 def _make_device(tmp_path):
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.device import VetinariDevice
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.device import VetinariDevice
     return VetinariDevice(channel_post_fn=lambda m: None)
 
 
@@ -62,7 +62,7 @@ def _mock_llm_raises(_text: str) -> str:
 
 
 def test_parse_subtasks_returns_list():
-    from devices.vetinari.device import _parse_subtasks
+    from unseen_university.devices.vetinari.device import _parse_subtasks
     raw = json.dumps([{"title": "do thing", "description": "desc", "worker": "claude", "tags": [], "size": "S"}])
     result = _parse_subtasks(raw)
     assert isinstance(result, list)
@@ -70,7 +70,7 @@ def test_parse_subtasks_returns_list():
 
 
 def test_parse_subtasks_strips_markdown_fences():
-    from devices.vetinari.device import _parse_subtasks
+    from unseen_university.devices.vetinari.device import _parse_subtasks
     raw = "```json\n[{\"title\": \"t\", \"description\": \"d\", \"worker\": \"claude\", \"tags\": [], \"size\": \"S\"}]\n```"
     result = _parse_subtasks(raw)
     assert len(result) == 1
@@ -78,21 +78,21 @@ def test_parse_subtasks_strips_markdown_fences():
 
 
 def test_parse_subtasks_raises_on_invalid_json():
-    from devices.vetinari.device import _parse_subtasks
+    from unseen_university.devices.vetinari.device import _parse_subtasks
     import pytest
     with pytest.raises(ValueError, match="not valid JSON"):
         _parse_subtasks("not json")
 
 
 def test_parse_subtasks_raises_on_empty_list():
-    from devices.vetinari.device import _parse_subtasks
+    from unseen_university.devices.vetinari.device import _parse_subtasks
     import pytest
     with pytest.raises(ValueError, match="empty"):
         _parse_subtasks("[]")
 
 
 def test_parse_subtasks_raises_on_non_list():
-    from devices.vetinari.device import _parse_subtasks
+    from unseen_university.devices.vetinari.device import _parse_subtasks
     import pytest
     with pytest.raises(ValueError, match="not a JSON array"):
         _parse_subtasks('{"title": "single object"}')
@@ -105,7 +105,7 @@ def test_decompose_produces_child_ticket_ids(tmp_path):
     """decompose_directive returns a list of ticket IDs when LLM succeeds."""
     v = _make_device(tmp_path)
     _seed_directive(v)
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=["T-vetinari-implement-web-server", "T-vetinari-write-integration-tests"]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=["T-vetinari-implement-web-server", "T-vetinari-write-integration-tests"]):
         ids = v.decompose_directive("dir-001", llm_fn=_mock_llm_ok)
     assert len(ids) >= 1
     assert all(isinstance(i, str) for i in ids)
@@ -115,7 +115,7 @@ def test_decompose_transitions_directive_to_active(tmp_path):
     """After decompose, directive status == 'active'."""
     v = _make_device(tmp_path)
     _seed_directive(v)
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=["T-vetinari-implement-web-server"]):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=["T-vetinari-implement-web-server"]):
         v.decompose_directive("dir-001", llm_fn=_mock_llm_ok)
     directives = v.get_pending_directives()
     d = next(d for d in directives if d["id"] == "dir-001")
@@ -127,7 +127,7 @@ def test_decompose_records_child_ticket_ids(tmp_path):
     v = _make_device(tmp_path)
     _seed_directive(v)
     fake_ids = ["T-vetinari-endpoint", "T-vetinari-tests"]
-    with patch("devices.vetinari.device._write_tickets_to_queue", return_value=fake_ids):
+    with patch("unseen_university.devices.vetinari.device._write_tickets_to_queue", return_value=fake_ids):
         v.decompose_directive("dir-001", llm_fn=_mock_llm_ok)
     directives = v.get_pending_directives()
     d = next(d for d in directives if d["id"] == "dir-001")

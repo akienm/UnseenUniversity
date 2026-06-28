@@ -21,7 +21,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from devices.granny.daemon import (
+from unseen_university.devices.granny.daemon import (
     _TIER_ORDER,
     _cascade_active_workers,
     _infer_role,
@@ -125,22 +125,22 @@ def _run_once_with_mocks(tickets: list[dict], cascade: bool = True):
         dispatched.append((ticket["id"], mailbox))
         return True
 
-    with patch("devices.granny.daemon._sprint_tickets", return_value=tickets), \
-         patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
-         patch("devices.granny.daemon._load_announced_workers", return_value={}), \
-         patch("devices.granny.availability.is_available", return_value=True), \
-         patch("devices.granny.daemon._cc0_busy", return_value=False), \
-         patch("devices.granny.daemon._dispatch_bus", side_effect=fake_dispatch_bus), \
-         patch("devices.granny.daemon._dispatch_akien", return_value=True), \
-         patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-         patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-         patch("devices.granny.daemon._process_handshake_replies", return_value=0), \
-         patch("devices.granny.daemon._post_channel"), \
-         patch("devices.granny.daemon._setstatus_direct", return_value=True), \
-         patch("devices.granny.availability.check_and_expire_cooldowns"), \
-         patch("devices.granny.daemon._CIRCUIT_STATE_FILE",
+    with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=tickets), \
+         patch("unseen_university.devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+         patch("unseen_university.devices.granny.daemon._load_announced_workers", return_value={}), \
+         patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+         patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+         patch("unseen_university.devices.granny.daemon._dispatch_bus", side_effect=fake_dispatch_bus), \
+         patch("unseen_university.devices.granny.daemon._dispatch_akien", return_value=True), \
+         patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._process_handshake_replies", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._post_channel"), \
+         patch("unseen_university.devices.granny.daemon._setstatus_direct", return_value=True), \
+         patch("unseen_university.devices.granny.availability.check_and_expire_cooldowns"), \
+         patch("unseen_university.devices.granny.daemon._CIRCUIT_STATE_FILE",
                Path("/tmp/nonexistent_circuit_state.json")), \
-         patch("devices.granny.workflow_executor.get_executor") as mock_executor:
+         patch("unseen_university.devices.granny.workflow_executor.get_executor") as mock_executor:
         mock_executor.return_value.tick.return_value = None
         run_once(cfg, imap=mock_imap)
 
@@ -189,21 +189,21 @@ def test_cascade_worker_field_updated():
         status_calls.append((tid, status, worker))
         return True
 
-    with patch("devices.granny.daemon._sprint_tickets", return_value=tickets), \
-         patch("devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
-         patch("devices.granny.daemon._load_announced_workers", return_value={}), \
-         patch("devices.granny.availability.is_available", return_value=True), \
-         patch("devices.granny.daemon._cc0_busy", return_value=False), \
-         patch("devices.granny.daemon._dispatch_bus", return_value=True), \
-         patch("devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
-         patch("devices.granny.daemon._reset_stale_inprogress", return_value=0), \
-         patch("devices.granny.daemon._process_handshake_replies", return_value=0), \
-         patch("devices.granny.daemon._post_channel"), \
-         patch("devices.granny.daemon._setstatus_direct", side_effect=fake_setstatus), \
-         patch("devices.granny.availability.check_and_expire_cooldowns"), \
-         patch("devices.granny.daemon._CIRCUIT_STATE_FILE",
+    with patch("unseen_university.devices.granny.daemon._sprint_tickets", return_value=tickets), \
+         patch("unseen_university.devices.granny.daemon._cleared_gated_tickets", return_value=[]), \
+         patch("unseen_university.devices.granny.daemon._load_announced_workers", return_value={}), \
+         patch("unseen_university.devices.granny.availability.is_available", return_value=True), \
+         patch("unseen_university.devices.granny.daemon._cc0_busy", return_value=False), \
+         patch("unseen_university.devices.granny.daemon._dispatch_bus", return_value=True), \
+         patch("unseen_university.devices.granny.daemon._escalate_stale_dispatched", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._reset_stale_inprogress", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._process_handshake_replies", return_value=0), \
+         patch("unseen_university.devices.granny.daemon._post_channel"), \
+         patch("unseen_university.devices.granny.daemon._setstatus_direct", side_effect=fake_setstatus), \
+         patch("unseen_university.devices.granny.availability.check_and_expire_cooldowns"), \
+         patch("unseen_university.devices.granny.daemon._CIRCUIT_STATE_FILE",
                Path("/tmp/nonexistent_circuit_state.json")), \
-         patch("devices.granny.workflow_executor.get_executor") as mock_executor:
+         patch("unseen_university.devices.granny.workflow_executor.get_executor") as mock_executor:
         mock_executor.return_value.tick.return_value = None
         run_once(cfg, imap=mock_imap)
 

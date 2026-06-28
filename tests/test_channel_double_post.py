@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, call, patch
 
 
 def _make_app():
-    import devices.web_server.server as _srv
-    with patch("devices.web_server.server._init_comms"):
+    import unseen_university.devices.web_server.server as _srv
+    with patch("unseen_university.devices.web_server.server._init_comms"):
         return _srv._make_app()
 
 
@@ -16,8 +16,8 @@ class TestWsOnlyParam:
         """POST /api/agents/{id}/send?ws_only=1 must NOT call _channel_append."""
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._channel_append") as mock_append:
-            with patch("devices.web_server.server._broadcast_to_session"):
+        with patch("unseen_university.devices.web_server.server._channel_append") as mock_append:
+            with patch("unseen_university.devices.web_server.server._broadcast_to_session"):
                 with TestClient(app) as client:
                     resp = client.post(
                         "/api/agents/scraps/send?ws_only=1",
@@ -30,8 +30,8 @@ class TestWsOnlyParam:
         """POST without ws_only=1 must still call _channel_append (direct-caller compat)."""
         from starlette.testclient import TestClient
         app = _make_app()
-        with patch("devices.web_server.server._channel_append") as mock_append:
-            with patch("devices.web_server.server._broadcast_to_session"):
+        with patch("unseen_university.devices.web_server.server._channel_append") as mock_append:
+            with patch("unseen_university.devices.web_server.server._broadcast_to_session"):
                 with TestClient(app) as client:
                     resp = client.post(
                         "/api/agents/scraps/send",
@@ -42,17 +42,17 @@ class TestWsOnlyParam:
 
     def test_agent_send_persist_false_skips_channel_append(self):
         """agent_send(persist=False) must not call _channel_append."""
-        import devices.web_server.server as srv
-        with patch("devices.web_server.server._channel_append") as mock_append:
-            with patch("devices.web_server.server._broadcast_to_session"):
+        import unseen_university.devices.web_server.server as srv
+        with patch("unseen_university.devices.web_server.server._channel_append") as mock_append:
+            with patch("unseen_university.devices.web_server.server._broadcast_to_session"):
                 srv.agent_send("msg", "scraps", "shared", persist=False)
         mock_append.assert_not_called()
 
     def test_agent_send_persist_true_calls_channel_append(self):
         """agent_send(persist=True) must call _channel_append (default behavior)."""
-        import devices.web_server.server as srv
-        with patch("devices.web_server.server._channel_append") as mock_append:
-            with patch("devices.web_server.server._broadcast_to_session"):
+        import unseen_university.devices.web_server.server as srv
+        with patch("unseen_university.devices.web_server.server._channel_append") as mock_append:
+            with patch("unseen_university.devices.web_server.server._broadcast_to_session"):
                 srv.agent_send("msg", "scraps", "shared", persist=True)
         mock_append.assert_called_once()
 

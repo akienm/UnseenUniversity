@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from skeleton.registry import DEFAULT_REGISTRY_PATH
+from unseen_university.devices.skeleton.registry import DEFAULT_REGISTRY_PATH
 
 # Librarian has no BaseDevice subclass — self-declares its class here.
 _LIBRARIAN_AGENT_CLASS = "utility"

@@ -10,8 +10,8 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
-from devices.web_server.device import WebServerDevice, _check_health
-from devices.web_server.shim import WebServerShim
+from unseen_university.devices.web_server.device import WebServerDevice, _check_health
+from unseen_university.devices.web_server.shim import WebServerShim
 from unseen_university.device import INTERFACE_VERSION
 
 
@@ -62,7 +62,7 @@ class TestWebServerDeviceContract(unittest.TestCase):
         self.assertIn("paths", logs)
 
     def test_block_sets_unhealthy(self):
-        with patch("devices.web_server.device._check_health", return_value=None):
+        with patch("unseen_university.devices.web_server.device._check_health", return_value=None):
             self.d.block("test reason")
             h = self.d.health()
             self.assertEqual(h["status"], "unhealthy")
@@ -78,8 +78,8 @@ class TestCheckHealth(unittest.TestCase):
     def test_returns_none_when_no_server(self):
         # Point at a port nothing is on
         with (
-            patch("devices.web_server.device._PORT", 19999),
-            patch("devices.web_server.device._HTTP_PORT", 19998),
+            patch("unseen_university.devices.web_server.device._PORT", 19999),
+            patch("unseen_university.devices.web_server.device._HTTP_PORT", 19998),
         ):
             result = _check_health()
             self.assertIsNone(result)
@@ -104,12 +104,12 @@ class TestWebServerShimContract(unittest.TestCase):
 
     def test_self_test_reflects_health(self):
         s = WebServerShim()
-        with patch("devices.web_server.shim._check_health", return_value=None):
+        with patch("unseen_university.devices.web_server.shim._check_health", return_value=None):
             result = s.self_test()
             self.assertFalse(result["passed"])
 
         fake = {"status": "ok"}
-        with patch("devices.web_server.shim._check_health", return_value=fake):
+        with patch("unseen_university.devices.web_server.shim._check_health", return_value=fake):
             result = s.self_test()
             self.assertTrue(result["passed"])
 

@@ -178,14 +178,14 @@ class TestGrannyDeferralWithRole:
     def test_builder_role_not_apprentice_no_or_fallback(self):
         # builder is not "apprentice" — so it defers rather than OR-cascading
         # when no worker is available (tested end-to-end in test_granny_daemon.py).
-        from devices.granny.daemon import _infer_role, _VALID_ROLES
+        from unseen_university.devices.granny.daemon import _infer_role, _VALID_ROLES
 
         assert "builder" in _VALID_ROLES
         assert _infer_role({"role": "builder", "worker": ""}) == "builder"
         assert _infer_role({"role": "builder", "worker": ""}) != "apprentice"
 
     def test_granny_worker_to_role_consistent_with_queue(self):
-        from devices.granny.daemon import _WORKER_TO_ROLE as G_MAP
+        from unseen_university.devices.granny.daemon import _WORKER_TO_ROLE as G_MAP
 
         assert G_MAP["claude"] == q._WORKER_TO_ROLE["claude"]
         assert G_MAP["dicksimnel"] == q._WORKER_TO_ROLE["dicksimnel"]

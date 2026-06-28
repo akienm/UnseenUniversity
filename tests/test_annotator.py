@@ -19,7 +19,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.classifier.annotator import (
+from unseen_university.devices.classifier.annotator import (
     ModuleInfo,
     _fallback_signature,
     _path_to_dotted,
@@ -74,10 +74,10 @@ def test_fallback_classes_only():
 # ── _haiku_problem_signature — fallback on HTTP error ─────────────────────────
 
 def test_haiku_falls_back_on_error():
-    from devices.classifier.annotator import _haiku_problem_signature
+    from unseen_university.devices.classifier.annotator import _haiku_problem_signature
     symbols = [{"symbol": "foo", "kind": "function", "summary": "does foo"}]
 
-    with patch("devices.classifier.annotator._OR_API_KEY", "fake-key"), \
+    with patch("unseen_university.devices.classifier.annotator._OR_API_KEY", "fake-key"), \
          patch("urllib.request.urlopen", side_effect=Exception("connection refused")):
         sig = _haiku_problem_signature("x.py", symbols)
 
@@ -87,10 +87,10 @@ def test_haiku_falls_back_on_error():
 
 
 def test_haiku_skips_when_no_api_key():
-    from devices.classifier.annotator import _haiku_problem_signature
+    from unseen_university.devices.classifier.annotator import _haiku_problem_signature
     symbols = [{"symbol": "foo", "kind": "function", "summary": "does foo"}]
 
-    with patch("devices.classifier.annotator._OR_API_KEY", ""):
+    with patch("unseen_university.devices.classifier.annotator._OR_API_KEY", ""):
         sig = _haiku_problem_signature("x.py", symbols)
 
     assert isinstance(sig, str)
@@ -127,7 +127,7 @@ def _psycopg2_mock(rows):
 
 
 def test_run_annotator_dry_run():
-    with patch("devices.classifier.annotator._query_modules", return_value=[
+    with patch("unseen_university.devices.classifier.annotator._query_modules", return_value=[
         ModuleInfo(
             path="devices/foo/bar.py",
             dotted_id="palace.codebase.unseen_university.devices.foo.bar",
@@ -148,10 +148,10 @@ def test_run_annotator_inserts_rows():
         symbols=[{"symbol": "X", "kind": "class", "summary": "X handles routing"}],
     )
 
-    with patch("devices.classifier.annotator._query_modules", return_value=[mod]), \
-         patch("devices.classifier.annotator._haiku_problem_signature",
+    with patch("unseen_university.devices.classifier.annotator._query_modules", return_value=[mod]), \
+         patch("unseen_university.devices.classifier.annotator._haiku_problem_signature",
                return_value="handles: X routing"), \
-         patch("devices.classifier.annotator._upsert_memory", return_value="inserted") as mock_up, \
+         patch("unseen_university.devices.classifier.annotator._upsert_memory", return_value="inserted") as mock_up, \
          patch("psycopg2.connect", return_value=MagicMock()):
         result = run_annotator(mode="full_build")
 
@@ -162,7 +162,7 @@ def test_run_annotator_inserts_rows():
 
 
 def test_run_annotator_db_connect_failure():
-    with patch("devices.classifier.annotator._query_modules", return_value=[
+    with patch("unseen_university.devices.classifier.annotator._query_modules", return_value=[
         ModuleInfo(
             path="x.py",
             dotted_id="palace.codebase.unseen_university.x",
@@ -175,7 +175,7 @@ def test_run_annotator_db_connect_failure():
 
 
 def test_run_annotator_nightly_mode_no_modules():
-    with patch("devices.classifier.annotator._query_modules", return_value=[]):
+    with patch("unseen_university.devices.classifier.annotator._query_modules", return_value=[]):
         result = run_annotator(mode="nightly")
     assert result["modules"] == 0
     assert result["errors"] == 0

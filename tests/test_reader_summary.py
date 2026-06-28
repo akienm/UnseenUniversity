@@ -16,8 +16,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.reader.chunker import chunk_text
-from devices.reader.device import ReaderDevice, _llm_summarize, _summary_from_text
+from unseen_university.devices.reader.chunker import chunk_text
+from unseen_university.devices.reader.device import ReaderDevice, _llm_summarize, _summary_from_text
 
 # ── chunk_text ────────────────────────────────────────────────────────────────
 
@@ -154,8 +154,8 @@ class TestReaderDeviceSummary:
         device = self._make_device("Short summary.", "Longer detail paragraph.")
         mock_resp = self._mock_http(body)
         with patch("urllib.request.urlopen", return_value=mock_resp):
-            with patch("devices.reader.device.fetch_uri") as mock_fetch:
-                from devices.reader.uri import FetchResult
+            with patch("unseen_university.devices.reader.device.fetch_uri") as mock_fetch:
+                from unseen_university.devices.reader.uri import FetchResult
 
                 mock_fetch.return_value = FetchResult(
                     uri="https://example.com/",
@@ -188,8 +188,8 @@ class TestReaderDeviceSummary:
     def test_binary_content_returns_empty_result(self, tmp_path):
         """epub/pdf content is empty at this tier — no error, no crash."""
         device = self._make_device()
-        with patch("devices.reader.device.fetch_uri") as mock_fetch:
-            from devices.reader.uri import FetchResult
+        with patch("unseen_university.devices.reader.device.fetch_uri") as mock_fetch:
+            from unseen_university.devices.reader.uri import FetchResult
 
             mock_fetch.return_value = FetchResult(
                 uri="calibre://42",

@@ -91,7 +91,7 @@ def test_activate_raises_score(_cleanup):
     _cleanup.append(nid)
     _insert_node(nid, metadata={"watch_embedding": _EMB})
 
-    from devices.igor.cognition.activate import activate
+    from unseen_university.devices.igor.cognition.activate import activate
 
     score = activate(nid, _EMB)
     assert score > 0.0
@@ -105,7 +105,7 @@ def test_activate_below_threshold_not_updated(_cleanup):
     orthogonal = [0.0, 1.0, 0.0]  # orthogonal to _EMB → similarity = 0.0
     _insert_node(nid, metadata={"watch_embedding": _EMB, "activation_threshold": 0.65})
 
-    from devices.igor.cognition.activate import activate
+    from unseen_university.devices.igor.cognition.activate import activate
 
     score = activate(nid, orthogonal)
     assert score == 0.0
@@ -129,7 +129,7 @@ def test_activate_decay_on_stale_node(_cleanup):
             )
     conn.close()
 
-    from devices.igor.cognition.activate import activate
+    from unseen_university.devices.igor.cognition.activate import activate
 
     score = activate(nid, _EMB)
     # After 1 day: decay_factor = 0.7^1 = 0.7; new_score = 0.7 * 1.0 + 1.0 * 1.0 = 1.7
@@ -145,7 +145,7 @@ def test_propagation_reaches_neighbor(_cleanup):
     _insert_node(dst_id)
     _insert_edge(src_id, dst_id)
 
-    from devices.igor.cognition.activate import activate
+    from unseen_university.devices.igor.cognition.activate import activate
 
     activate(src_id, _EMB)
     assert _get_score(dst_id) > 0.0
@@ -161,7 +161,7 @@ def test_propagation_stops_at_depth_3(_cleanup):
     for i in range(4, 0, -1):
         _insert_edge(ids[i], ids[i - 1])
 
-    from devices.igor.cognition.activate import activate
+    from unseen_university.devices.igor.cognition.activate import activate
 
     # ids[4] (depth 0) → ids[3] (1) → ids[2] (2) → ids[1] (3): within reach
     # ids[0] (depth 4): beyond max_depth=3
@@ -180,7 +180,7 @@ def test_cycle_in_edges_does_not_loop(_cleanup):
     _insert_edge(a_id, b_id)
     _insert_edge(b_id, a_id)
 
-    from devices.igor.cognition.activate import activate
+    from unseen_university.devices.igor.cognition.activate import activate
 
     score = activate(a_id, _EMB)
     assert score > 0.0
@@ -192,7 +192,7 @@ def test_no_crash_without_focus_state(_cleanup):
     _cleanup.append(nid)
     _insert_node(nid)
 
-    from devices.igor.cognition.activate import activate
+    from unseen_university.devices.igor.cognition.activate import activate
 
     score = activate(nid, _EMB)
     assert score > 0.0
@@ -257,7 +257,7 @@ def test_recall_high_confidence_no_expansion(_cleanup):
 
     os.environ["IGOR_RECALL_CONFIDENCE_THRESHOLD"] = "0.6"
     try:
-        from devices.igor.cognition.activate import recall
+        from unseen_university.devices.igor.cognition.activate import recall
 
         result = recall(top_k=1)
     finally:
@@ -281,7 +281,7 @@ def test_recall_low_confidence_triggers_expansion(_cleanup):
 
     os.environ["IGOR_RECALL_CONFIDENCE_THRESHOLD"] = "0.6"
     try:
-        from devices.igor.cognition.activate import recall
+        from unseen_university.devices.igor.cognition.activate import recall
 
         result = recall(top_k=1)
     finally:
@@ -308,10 +308,10 @@ def test_recall_trace_failure_returns_nodes_only(_cleanup):
 
     os.environ["IGOR_RECALL_CONFIDENCE_THRESHOLD"] = "0.99"
     try:
-        from devices.igor.cognition.activate import recall
+        from unseen_university.devices.igor.cognition.activate import recall
 
         with patch(
-            "devices.igor.cognition.activate._TRACE_EXPAND_SQL",
+            "unseen_university.devices.igor.cognition.activate._TRACE_EXPAND_SQL",
             "THIS IS NOT VALID SQL !!",
         ):
             result = recall(top_k=1)
@@ -334,7 +334,7 @@ def test_recall_empty_table_returns_empty():
     mock_cursor.fetchall.return_value = []
     mock_conn.cursor.return_value = mock_cursor
 
-    from devices.igor.cognition.activate import recall
+    from unseen_university.devices.igor.cognition.activate import recall
 
     result = recall(top_k=5, conn=mock_conn)
     assert result == {"nodes": [], "traces": [], "expanded": False, "mean_score": 0.0}

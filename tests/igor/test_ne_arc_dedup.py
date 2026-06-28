@@ -23,7 +23,7 @@ def _mk_ne():
     milieu state via __import__. It doesn't use self.log or any other
     attrs, so a bare shell is enough.
     """
-    from devices.igor.cognition import narrative_engine as ne_module
+    from unseen_university.devices.igor.cognition import narrative_engine as ne_module
 
     return ne_module.NarrativeEngine.__new__(ne_module.NarrativeEngine)
 

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from devices.ground_loop.supervisor import RunmeSupervisor
+from unseen_university.devices.ground_loop.supervisor import RunmeSupervisor
 
 
 def _make_runme(device_dir: Path, body: str = "") -> Path:
@@ -176,14 +176,14 @@ class TestStaleBorked:
         import os
         os.utime(borked, (old_mtime, old_mtime))
         import logging
-        with caplog.at_level(logging.WARNING, logger="devices.ground_loop.supervisor"):
+        with caplog.at_level(logging.WARNING, logger="unseen_university.devices.ground_loop.supervisor"):
             sup.scan()
         assert any("stale_borked" in r.message for r in caplog.records)
 
 
 class TestGroundLoopIntegration:
     def test_groundloop_runs_supervisor_scan(self, tmp_path):
-        from devices.ground_loop.daemon import GroundLoop
+        from unseen_university.devices.ground_loop.daemon import GroundLoop
         gl = GroundLoop(repo_root=tmp_path)
         dev = tmp_path / "devices" / "int_dev"
         runme = _make_runme(dev)

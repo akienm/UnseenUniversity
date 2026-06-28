@@ -24,7 +24,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.tools import instance_tracker as it  # noqa: E402
+from unseen_university.devices.igor.tools import instance_tracker as it  # noqa: E402
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -251,7 +251,7 @@ def test_instance_history_no_cortex():
 
 
 def test_tools_registered():
-    from devices.igor.tools.registry import registry
+    from unseen_university.devices.igor.tools.registry import registry
 
     assert "igor_instance_current" in registry._tools
     assert "igor_instance_history" in registry._tools

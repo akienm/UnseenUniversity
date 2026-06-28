@@ -13,7 +13,7 @@ import unittest
 from pathlib import Path
 
 
-from devices.igor.tools.thread_anchor import _strip_thread_prefix
+from unseen_university.devices.igor.tools.thread_anchor import _strip_thread_prefix
 
 
 class TestStripThreadPrefix(unittest.TestCase):

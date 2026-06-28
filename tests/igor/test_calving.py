@@ -29,7 +29,7 @@ class TestTreeSize:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = (42,)
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex.tree_size(cortex, "root-1")
         assert result == 42
@@ -38,7 +38,7 @@ class TestTreeSize:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = None
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex.tree_size(cortex, "nonexistent")
         assert result == 0
@@ -47,7 +47,7 @@ class TestTreeSize:
         cortex, conn = _mock_cortex()
         conn.execute.side_effect = Exception("db boom")
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex.tree_size(cortex, "x")
         assert result == 0
@@ -58,7 +58,7 @@ class TestFindTreeRoot:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = ("root-abc",)
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex._find_tree_root(cortex, "leaf-1")
         assert result == "root-abc"
@@ -67,7 +67,7 @@ class TestFindTreeRoot:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = None
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex._find_tree_root(cortex, "already-root")
         assert result == "already-root"
@@ -78,7 +78,7 @@ class TestDeepestChild:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = ("deep-leaf",)
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex._deepest_child(cortex, "root-1")
         assert result == "deep-leaf"
@@ -87,7 +87,7 @@ class TestDeepestChild:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = ("root-1",)
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex._deepest_child(cortex, "root-1")
         assert result is None
@@ -96,7 +96,7 @@ class TestDeepestChild:
         cortex, conn = _mock_cortex()
         conn.execute.side_effect = Exception("db boom")
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex._deepest_child(cortex, "x")
         assert result is None
@@ -109,9 +109,9 @@ class TestCalveSubtree:
         cortex.tree_size = MagicMock(return_value=15)
         cortex._find_tree_root = MagicMock(return_value="root-xyz")
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
-        with patch("devices.igor.memory.blob_facia.ensure_blob_facia") as mock_facia:
+        with patch("unseen_university.devices.igor.memory.blob_facia.ensure_blob_facia") as mock_facia:
             result = Cortex.calve_subtree(cortex, "child-node")
         assert result["new_root_id"] == "child-node"
         assert result["subtree_count"] == 15
@@ -126,7 +126,7 @@ class TestCalveSubtree:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = None
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex.calve_subtree(cortex, "nonexistent")
         assert "error" in result
@@ -135,7 +135,7 @@ class TestCalveSubtree:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = (None,)
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex.calve_subtree(cortex, "already-root")
         assert "error" in result
@@ -145,7 +145,7 @@ class TestCalveSubtree:
         cortex, conn = _mock_cortex()
         conn.execute.return_value.fetchone.return_value = ("",)
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         result = Cortex.calve_subtree(cortex, "empty-parent")
         assert "error" in result
@@ -154,7 +154,7 @@ class TestCalveSubtree:
     def test_calve_refuses_core_pattern_nodes(self):
         """CP nodes, ID nodes, ROOT, PROC nodes must never be calved."""
         cortex, conn = _mock_cortex()
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         cortex._CALVING_PROTECTED = Cortex._CALVING_PROTECTED
         for node_id in ("CP1", "CP3", "CP6", "ID1", "ID14", "ROOT", "PROC1"):
@@ -169,7 +169,7 @@ class TestMaybeCalveProtection:
         from unittest.mock import patch as _patch
 
         cortex, conn = _mock_cortex()
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         cortex._CALVING_PROTECTED = Cortex._CALVING_PROTECTED
         memory = MagicMock()
@@ -183,7 +183,7 @@ class TestMaybeCalveProtection:
         import os
         from unittest.mock import patch as _patch
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         cortex, conn = _mock_cortex()
         cortex._find_tree_root = MagicMock(return_value="ROOT")
@@ -207,7 +207,7 @@ class TestMaybeCalve:
         cortex, conn = _mock_cortex()
         os.environ.pop("IGOR_CALVING_ENABLED", None)
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         memory = MagicMock()
         memory.id = "node-1"
@@ -224,7 +224,7 @@ class TestMaybeCalve:
         cortex._find_tree_root = MagicMock(return_value="root-1")
         cortex.tree_size = MagicMock(return_value=500)
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         memory = MagicMock()
         memory.id = "node-1"
@@ -246,7 +246,7 @@ class TestMaybeCalve:
             return_value={"new_root_id": "mid-node", "subtree_count": 200}
         )
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         memory = MagicMock()
         memory.id = "node-1"
@@ -268,7 +268,7 @@ class TestMaybeCalve:
             return_value={"new_root_id": "mid-node", "subtree_count": 50}
         )
 
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         memory = MagicMock()
         memory.id = "node-1"

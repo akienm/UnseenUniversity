@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from devices.librarian.memory_writer import (
+from unseen_university.devices.librarian.memory_writer import (
     CodePayload,
     EmbeddingPayload,
     LinkPayload,

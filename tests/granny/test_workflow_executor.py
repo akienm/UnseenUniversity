@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.granny.workflow_executor import (
+from unseen_university.devices.granny.workflow_executor import (
     WorkflowExecutor,
     _DONE_STATUSES,
     _FAILED_STATUSES,
@@ -30,7 +30,7 @@ def tmp_workflows_dir(tmp_path, monkeypatch):
     """Redirect workflow state files to a temp directory."""
     wdir = tmp_path / "workflows"
     wdir.mkdir()
-    monkeypatch.setattr("devices.granny.workflow_executor._WORKFLOWS_DIR", wdir)
+    monkeypatch.setattr("unseen_university.devices.granny.workflow_executor._WORKFLOWS_DIR", wdir)
     return wdir
 
 
@@ -104,7 +104,7 @@ def test_start_workflow_creates_state_file(tmp_path, tmp_workflows_dir):
 
 def test_tick_dispatches_step_with_no_deps(two_step_state):
     workers_cfg = {"DickSimnel.0": {"worker_name": "dicksimnel"}}
-    with patch("devices.granny.workflow_executor._dispatch_step", return_value=True) as mock_disp:
+    with patch("unseen_university.devices.granny.workflow_executor._dispatch_step", return_value=True) as mock_disp:
         updated = tick_workflow(two_step_state, workers_cfg)
     # step-1 has no deps → dispatched
     assert updated["steps"]["step-1"]["status"] == "dispatched"
@@ -116,7 +116,7 @@ def test_tick_dispatches_step_with_no_deps(two_step_state):
 def test_tick_gates_dependent_step(two_step_state):
     two_step_state["steps"]["step-1"]["status"] = "done"
     workers_cfg = {"DickSimnel.0": {"worker_name": "dicksimnel"}}
-    with patch("devices.granny.workflow_executor._dispatch_step", return_value=True):
+    with patch("unseen_university.devices.granny.workflow_executor._dispatch_step", return_value=True):
         updated = tick_workflow(two_step_state, workers_cfg)
     # step-1 done → step-2 gate passes → dispatched
     assert updated["steps"]["step-2"]["status"] == "dispatched"
@@ -126,7 +126,7 @@ def test_tick_does_not_dispatch_while_deps_pending(two_step_state):
     # step-1 is dispatched (not done) → step-2 still gated
     two_step_state["steps"]["step-1"]["status"] = "dispatched"
     workers_cfg = {}
-    with patch("devices.granny.workflow_executor._dispatch_step") as mock_disp:
+    with patch("unseen_university.devices.granny.workflow_executor._dispatch_step") as mock_disp:
         updated = tick_workflow(two_step_state, workers_cfg)
     assert updated["steps"]["step-2"]["status"] == "pending"
     mock_disp.assert_not_called()
@@ -141,7 +141,7 @@ def test_tick_marks_completed_when_all_done(two_step_state):
 
 def test_tick_marks_failed_on_escalated_ticket(two_step_state):
     two_step_state["steps"]["step-1"]["status"] = "dispatched"
-    with patch("devices.granny.workflow_executor.get_ticket_status", return_value="escalated"):
+    with patch("unseen_university.devices.granny.workflow_executor.get_ticket_status", return_value="escalated"):
         updated = tick_workflow(two_step_state, {})
     assert updated["steps"]["step-1"]["status"] == "failed"
     assert updated["status"] == "failed"
@@ -149,8 +149,8 @@ def test_tick_marks_failed_on_escalated_ticket(two_step_state):
 
 def test_tick_advances_dispatched_to_done_on_closed(two_step_state):
     two_step_state["steps"]["step-1"]["status"] = "dispatched"
-    with patch("devices.granny.workflow_executor.get_ticket_status", return_value="closed"), \
-         patch("devices.granny.workflow_executor._dispatch_step", return_value=True):
+    with patch("unseen_university.devices.granny.workflow_executor.get_ticket_status", return_value="closed"), \
+         patch("unseen_university.devices.granny.workflow_executor._dispatch_step", return_value=True):
         updated = tick_workflow(two_step_state, {})
     assert updated["steps"]["step-1"]["status"] == "done"
 
@@ -158,7 +158,7 @@ def test_tick_advances_dispatched_to_done_on_closed(two_step_state):
 def test_tick_pending_to_running_on_first_call(two_step_state):
     two_step_state["status"] = "pending"
     workers_cfg = {}
-    with patch("devices.granny.workflow_executor._dispatch_step", return_value=True):
+    with patch("unseen_university.devices.granny.workflow_executor._dispatch_step", return_value=True):
         updated = tick_workflow(two_step_state, workers_cfg)
     assert updated["status"] == "running"
 
@@ -166,7 +166,7 @@ def test_tick_pending_to_running_on_first_call(two_step_state):
 def test_tick_retries_dispatch_on_failure(two_step_state):
     """If dispatch fails, step stays pending and retries next cycle."""
     workers_cfg = {}
-    with patch("devices.granny.workflow_executor._dispatch_step", return_value=False):
+    with patch("unseen_university.devices.granny.workflow_executor._dispatch_step", return_value=False):
         updated = tick_workflow(two_step_state, workers_cfg)
     # step-1 has no deps but dispatch failed → stays pending
     assert updated["steps"]["step-1"]["status"] == "pending"

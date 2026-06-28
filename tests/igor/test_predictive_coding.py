@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 
 def _clear_refractory():
     """Reset module-level _gap_refractory between tests."""
-    import devices.igor.main as _m
+    import unseen_university.devices.igor.main as _m
 
     _m._gap_refractory.clear()
 
@@ -34,7 +34,7 @@ def _call_deposit(
     cortex=None,
 ):
     """Helper: call _deposit_prediction_error with a mock cortex."""
-    from devices.igor.main import _deposit_prediction_error
+    from unseen_university.devices.igor.main import _deposit_prediction_error
 
     if cortex is None:
         cortex = MagicMock()
@@ -154,7 +154,7 @@ class TestDepositPredictionError(unittest.TestCase):
 
     def test_refractory_expires(self):
         """Same topic after TTL expires → second deposit proceeds."""
-        import devices.igor.main as _m
+        import unseen_university.devices.igor.main as _m
         import time
 
         cortex = MagicMock()
@@ -231,7 +231,7 @@ class TestDepositPredictionError(unittest.TestCase):
 
     def test_long_query_uses_truncated_key(self):
         """Refractory key is first 60 chars of query (lowercased, stripped)."""
-        import devices.igor.main as _m
+        import unseen_university.devices.igor.main as _m
 
         query = "A" * 120  # 120 char query
         cortex = MagicMock()

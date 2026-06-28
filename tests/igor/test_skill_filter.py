@@ -31,7 +31,7 @@ _add_repo()
 class TestFilterCheckInertia(unittest.TestCase):
 
     def _check(self, text):
-        from devices.igor.tools.skill_filter import filter_check_inertia
+        from unseen_university.devices.igor.tools.skill_filter import filter_check_inertia
 
         return filter_check_inertia(text)
 
@@ -79,7 +79,7 @@ class TestFilterCheckInertia(unittest.TestCase):
 class TestFilterCheckTests(unittest.TestCase):
 
     def _check(self, text):
-        from devices.igor.tools.skill_filter import filter_check_tests
+        from unseen_university.devices.igor.tools.skill_filter import filter_check_tests
 
         return filter_check_tests(text)
 
@@ -107,7 +107,7 @@ class TestFilterCheckTests(unittest.TestCase):
 class TestFilterCheckLogging(unittest.TestCase):
 
     def _check(self, text):
-        from devices.igor.tools.skill_filter import filter_check_logging
+        from unseen_university.devices.igor.tools.skill_filter import filter_check_logging
 
         return filter_check_logging(text)
 
@@ -130,7 +130,7 @@ class TestFilterCheckLogging(unittest.TestCase):
 class TestFilterCheckScope(unittest.TestCase):
 
     def _check(self, text):
-        from devices.igor.tools.skill_filter import filter_check_scope
+        from unseen_university.devices.igor.tools.skill_filter import filter_check_scope
 
         return filter_check_scope(text)
 
@@ -153,7 +153,7 @@ class TestFilterCheckScope(unittest.TestCase):
 class TestFilterCheckSize(unittest.TestCase):
 
     def _check(self, text):
-        from devices.igor.tools.skill_filter import filter_check_size
+        from unseen_university.devices.igor.tools.skill_filter import filter_check_size
 
         return filter_check_size(text)
 
@@ -184,7 +184,7 @@ class TestFilterCheckSize(unittest.TestCase):
 class TestRunFilter(unittest.TestCase):
 
     def _run(self, text):
-        from devices.igor.tools.skill_filter import run_filter
+        from unseen_university.devices.igor.tools.skill_filter import run_filter
 
         return run_filter(plan_text=text)
 
@@ -264,7 +264,7 @@ class TestEngramPayloadStructure(unittest.TestCase):
                 # find the block
                 break
         # Simpler: just verify the constants directly
-        from devices.igor.tools.skill_filter import run_filter
+        from unseen_university.devices.igor.tools.skill_filter import run_filter
 
         self.assertTrue(callable(run_filter))
 
@@ -295,8 +295,8 @@ class TestNodeExecutorMCPCALL(unittest.TestCase):
             "UU_HOME_DB_URL",
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
-        from devices.igor.cognition.node_executor import execute_node
-        from devices.igor.memory.models import Memory, MemoryType
+        from unseen_university.devices.igor.cognition.node_executor import execute_node
+        from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
         # Build a synthetic Memory node
         mem = Memory.__new__(Memory)
@@ -321,7 +321,7 @@ class TestNodeExecutorMCPCALL(unittest.TestCase):
         }
 
         # Import tool so it registers
-        import devices.igor.tools.skill_filter  # noqa
+        import unseen_university.devices.igor.tools.skill_filter  # noqa
 
         result = execute_node(mem, "__entry__", basket)
         self.assertIn("filter_result", result.basket)

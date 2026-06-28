@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.postgres.device import PostgresDevice
+from unseen_university.devices.postgres.device import PostgresDevice
 
 # ── Contract shape ────────────────────────────────────────────────────────────
 
@@ -89,7 +89,7 @@ def test_health_unhealthy_when_connection_refused(monkeypatch):
 
 
 def test_health_raises_when_blocked_in_registry():
-    from unseen_university.skeleton.exceptions import DeviceBlockedError
+    from unseen_university.devices.skeleton.exceptions import DeviceBlockedError
 
     mock_registry = MagicMock()
     mock_registry.get_device.return_value = {
@@ -146,7 +146,7 @@ def test_recovery_noop_without_shim():
 
 
 def test_restart_delegates_to_shim():
-    from devices.postgres.shim import PostgresShim
+    from unseen_university.devices.postgres.shim import PostgresShim
 
     mock_shim = MagicMock(spec=PostgresShim)
     dev = PostgresDevice(shim=mock_shim)
@@ -155,7 +155,7 @@ def test_restart_delegates_to_shim():
 
 
 def test_halt_delegates_to_shim():
-    from devices.postgres.shim import PostgresShim
+    from unseen_university.devices.postgres.shim import PostgresShim
 
     mock_shim = MagicMock(spec=PostgresShim)
     dev = PostgresDevice(shim=mock_shim)
@@ -164,7 +164,7 @@ def test_halt_delegates_to_shim():
 
 
 def test_recovery_delegates_to_shim():
-    from devices.postgres.shim import PostgresShim
+    from unseen_university.devices.postgres.shim import PostgresShim
 
     mock_shim = MagicMock(spec=PostgresShim)
     dev = PostgresDevice(shim=mock_shim)

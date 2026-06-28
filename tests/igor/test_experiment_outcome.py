@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.experiment import (  # noqa: E402
+from unseen_university.devices.igor.cognition.experiment import (  # noqa: E402
     Experiment,
     ExperimentStatus,
     Hypothesis,
@@ -23,7 +23,7 @@ from devices.igor.cognition.experiment import (  # noqa: E402
     Probe,
     ProbeKind,
 )
-from devices.igor.cognition.experiment_outcome import (  # noqa: E402
+from unseen_university.devices.igor.cognition.experiment_outcome import (  # noqa: E402
     HEBBIAN_DELTA_MATCH,
     INHIBITOR_DELTA_TOOL_MISMATCH,
     apply_outcome,

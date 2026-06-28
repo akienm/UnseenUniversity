@@ -39,7 +39,7 @@ def _phase1_create_words(conn) -> dict[str, str]:
 
     Returns {word: memory_id} for ALL words (new and pre-existing).
     """
-    from devices.igor.memory.node_id import new_node_id
+    from unseen_university.devices.igor.memory.node_id import new_node_id
 
     print("Phase 1: collecting distinct words from wg_edges...", flush=True)
     with conn.cursor() as cur:

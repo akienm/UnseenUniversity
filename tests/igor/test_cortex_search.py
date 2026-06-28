@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 
-from devices.igor.memory.cortex import SearchRequest
+from unseen_university.devices.igor.memory.cortex import SearchRequest
 
 
 class TestSearchRequest(unittest.TestCase):
@@ -70,7 +70,7 @@ class TestCortexSearchInterface(unittest.TestCase):
 
     def test_search_signature_accepts_searchrequest_or_string(self):
         """cortex.search() signature should support both string and SearchRequest"""
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
         import inspect
 
         # Verify the method signature
@@ -86,7 +86,7 @@ class TestCortexSearchInterface(unittest.TestCase):
 
     def test_search_accepts_legacy_keyword_args(self):
         """cortex.search() should accept legacy keyword arguments for backwards compat"""
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
         import inspect
 
         sig = inspect.signature(Cortex.search)

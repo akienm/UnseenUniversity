@@ -16,7 +16,7 @@ import logging
 
 import pytest
 
-from devices.policy.output_validators import OutputPolicy, OutputValidator
+from unseen_university.devices.policy.output_validators import OutputPolicy, OutputValidator
 from unseen_university.shim import BaseShim
 
 # ── Minimal concrete shim for testing ────────────────────────────────────────

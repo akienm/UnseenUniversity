@@ -23,7 +23,7 @@ from pathlib import Path
 
 import click
 
-from config.device_config import unseen_university_home, unseen_university_logs
+from unseen_university.config.device_config import unseen_university_home, unseen_university_logs
 
 log = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ def _detect_cc_workflow_tools() -> Path | None:
     For a pip install the lab tree isn't in sys.prefix, so we skip gracefully.
     """
     try:
-        from devices.installer.shim import DEFAULT_MASTER_ROOT
+        from unseen_university.devices.installer.shim import DEFAULT_MASTER_ROOT
 
         candidate = DEFAULT_MASTER_ROOT.parent / "devlab" / "claudecode"
         if (candidate / "cc_queue.py").exists():
@@ -276,7 +276,7 @@ def init(instance: str | None) -> None:
 
     # 6. Skills deploy
     try:
-        from devices.installer import deploy_skills
+        from unseen_university.devices.installer import deploy_skills
 
         skill_result = deploy_skills()
         click.echo(
@@ -299,10 +299,10 @@ def init(instance: str | None) -> None:
 
     # 8. Start skeleton (in-process for init; production uses a daemon launcher)
     try:
-        from skeleton.registry import DeviceRegistry
+        from unseen_university.devices.skeleton.registry import DeviceRegistry
 
         registry = DeviceRegistry()
-        from unseen_university.skeleton.skeleton import Skeleton
+        from unseen_university.devices.skeleton.skeleton import Skeleton
 
         _skel = Skeleton(registry=registry)
         devices = [d["id"] for d in registry.list_devices()]
@@ -323,9 +323,9 @@ def status() -> None:
     try:
         import asyncio
 
-        from skeleton.registry import DeviceRegistry
-        from unseen_university.skeleton.health import rack_health_async
-        from unseen_university.skeleton.skeleton import Skeleton
+        from unseen_university.devices.skeleton.registry import DeviceRegistry
+        from unseen_university.devices.skeleton.health import rack_health_async
+        from unseen_university.devices.skeleton.skeleton import Skeleton
 
         registry = DeviceRegistry()
         skel = Skeleton(registry=registry)
@@ -350,7 +350,7 @@ def skills() -> None:
 @skills.command("deploy")
 def skills_deploy() -> None:
     """Deploy manifest-listed skills to ~/.claude/skills/ (rsync on Linux/Mac)."""
-    from devices.installer import deploy_skills
+    from unseen_university.devices.installer import deploy_skills
 
     result = deploy_skills()
     click.echo(f"deployed:               {len(result.deployed)}")
@@ -375,7 +375,7 @@ def skills_deploy() -> None:
 @skills.command("status")
 def skills_status() -> None:
     """Show what's managed vs local-only on this host."""
-    from devices.installer import deploy_status
+    from unseen_university.devices.installer import deploy_status
 
     info = deploy_status()
     click.echo(f"host:         {info['host']}")

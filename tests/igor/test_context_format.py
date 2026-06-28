@@ -277,7 +277,7 @@ class TestContextFormat(unittest.TestCase):
     )
     def test_ollama_local(self):
         """Compare CSB vs prose on local Ollama model."""
-        from devices.igor.cognition.inference_ollama import OLLAMA_LOCAL_MODEL
+        from unseen_university.devices.igor.cognition.inference_ollama import OLLAMA_LOCAL_MODEL
 
         result = self._run_comparison(
             _call_ollama, OLLAMA_LOCAL_MODEL, f"Ollama/{OLLAMA_LOCAL_MODEL}"
@@ -294,7 +294,7 @@ class TestContextFormat(unittest.TestCase):
     @unittest.skipUnless(os.getenv("OPENROUTER_API_KEY"), "OPENROUTER_API_KEY not set")
     def test_or_cheap(self):
         """Compare CSB vs prose on OR cheap model (gpt-4o-mini)."""
-        from devices.igor.cognition.inference_openrouter import OR_CHEAP_MODEL
+        from unseen_university.devices.igor.cognition.inference_openrouter import OR_CHEAP_MODEL
 
         result = self._run_comparison(_call_or, OR_CHEAP_MODEL, f"OR/{OR_CHEAP_MODEL}")
         if result:
@@ -310,7 +310,7 @@ class TestContextFormat(unittest.TestCase):
     )
     def test_or_interactive(self):
         """Compare CSB vs prose on OR interactive model (haiku)."""
-        from devices.igor.cognition.inference_openrouter import OR_INTERACTIVE_MODEL
+        from unseen_university.devices.igor.cognition.inference_openrouter import OR_INTERACTIVE_MODEL
 
         self._run_comparison(
             _call_or, OR_INTERACTIVE_MODEL, f"OR/{OR_INTERACTIVE_MODEL}"

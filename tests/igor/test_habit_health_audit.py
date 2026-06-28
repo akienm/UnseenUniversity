@@ -5,7 +5,7 @@ Tests each detection category with synthetic turn trace data.
 """
 
 import pytest
-from devices.igor.tools.habit_health_audit import (
+from unseen_university.devices.igor.tools.habit_health_audit import (
     _detect_bare_responses,
     _detect_habit_misfires,
     _detect_thread_drops,

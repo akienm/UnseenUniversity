@@ -237,7 +237,7 @@ def _search_semantic(query: str, seen_ids: set[str]) -> None:
     """Librarian embedding recall — semantic only, de-duped; suppresses score < 0.4."""
     _divider("Semantic (embedding)")
     try:
-        from devices.librarian.recall import recall
+        from unseen_university.devices.librarian.recall import recall
         result = recall(query, limit=8)
         if not result.hits:
             print("  (no semantic hits)")

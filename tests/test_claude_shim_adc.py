@@ -12,7 +12,7 @@ import pytest
 # Must be set before importing ClaudeShim (which imports devices.claude.constants)
 os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 
-from devices.claude.shim import ClaudeShim, _check_adc_health
+from unseen_university.devices.claude.shim import ClaudeShim, _check_adc_health
 
 
 class TestCheckAdcHealth:
@@ -43,7 +43,7 @@ class TestClaudeShimEnsureADCRunning:
 
     def test_returns_true_when_adc_already_up(self):
         """If ADC responds to /health, return True without starting device."""
-        with patch("devices.claude.shim._check_adc_health") as mock_health:
+        with patch("unseen_university.devices.claude.shim._check_adc_health") as mock_health:
             mock_health.return_value = True
             shim = ClaudeShim()
             result = shim._ensure_adc_running()
@@ -62,8 +62,8 @@ class TestClaudeShimEnsureADCRunning:
             return True  # second call: ADC came up
 
         with (
-            patch("devices.claude.shim._check_adc_health", side_effect=health_sequence),
-            patch("devices.web_server.device.WebServerDevice", return_value=mock_dev),
+            patch("unseen_university.devices.claude.shim._check_adc_health", side_effect=health_sequence),
+            patch("unseen_university.devices.web_server.device.WebServerDevice", return_value=mock_dev),
         ):
             shim = ClaudeShim()
             result = shim._ensure_adc_running()
@@ -78,8 +78,8 @@ class TestClaudeShimEnsureADCRunning:
         mock_dev.start.side_effect = RuntimeError("boom")
 
         with (
-            patch("devices.claude.shim._check_adc_health", return_value=False),
-            patch("devices.web_server.device.WebServerDevice", return_value=mock_dev),
+            patch("unseen_university.devices.claude.shim._check_adc_health", return_value=False),
+            patch("unseen_university.devices.web_server.device.WebServerDevice", return_value=mock_dev),
         ):
             shim = ClaudeShim()
             result = shim._ensure_adc_running()
@@ -91,8 +91,8 @@ class TestClaudeShimEnsureADCRunning:
         mock_dev = MagicMock()
 
         with (
-            patch("devices.claude.shim._check_adc_health", return_value=False),
-            patch("devices.web_server.device.WebServerDevice", return_value=mock_dev),
+            patch("unseen_university.devices.claude.shim._check_adc_health", return_value=False),
+            patch("unseen_university.devices.web_server.device.WebServerDevice", return_value=mock_dev),
         ):
             shim = ClaudeShim()
             result = shim._ensure_adc_running()
@@ -107,8 +107,8 @@ class TestClaudeShimStartWithADC:
         """start() registers hook normally when ADC is already up."""
         settings_path = tmp_path / "settings.json"
         with (
-            patch("devices.claude.shim._check_adc_health", return_value=True),
-            patch("devices.claude.shim._SETTINGS_PATH", str(settings_path)),
+            patch("unseen_university.devices.claude.shim._check_adc_health", return_value=True),
+            patch("unseen_university.devices.claude.shim._SETTINGS_PATH", str(settings_path)),
         ):
             shim = ClaudeShim()
             result = shim.start()
@@ -122,9 +122,9 @@ class TestClaudeShimStartWithADC:
         settings_path = tmp_path / "settings.json"
 
         with (
-            patch("devices.claude.shim._check_adc_health", return_value=False),
-            patch("devices.web_server.device.WebServerDevice", return_value=mock_dev),
-            patch("devices.claude.shim._SETTINGS_PATH", str(settings_path)),
+            patch("unseen_university.devices.claude.shim._check_adc_health", return_value=False),
+            patch("unseen_university.devices.web_server.device.WebServerDevice", return_value=mock_dev),
+            patch("unseen_university.devices.claude.shim._SETTINGS_PATH", str(settings_path)),
         ):
             shim = ClaudeShim()
             result = shim.start()
@@ -152,8 +152,8 @@ class TestClaudeShimSelfTestWithADC:
             )
         )
         with (
-            patch("devices.claude.shim._check_adc_health", return_value=True),
-            patch("devices.claude.shim._SETTINGS_PATH", str(settings_path)),
+            patch("unseen_university.devices.claude.shim._check_adc_health", return_value=True),
+            patch("unseen_university.devices.claude.shim._SETTINGS_PATH", str(settings_path)),
         ):
             shim = ClaudeShim()
             result = shim.self_test()
@@ -176,8 +176,8 @@ class TestClaudeShimSelfTestWithADC:
             )
         )
         with (
-            patch("devices.claude.shim._check_adc_health", return_value=False),
-            patch("devices.claude.shim._SETTINGS_PATH", str(settings_path)),
+            patch("unseen_university.devices.claude.shim._check_adc_health", return_value=False),
+            patch("unseen_university.devices.claude.shim._SETTINGS_PATH", str(settings_path)),
         ):
             shim = ClaudeShim()
             result = shim.self_test()

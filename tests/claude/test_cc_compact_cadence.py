@@ -7,56 +7,56 @@ from unittest.mock import patch
 
 class TestCountAndBaseline:
     def test_count_closes_absent_log(self, tmp_path):
-        from devices.claude import cc_compact_cadence as m
+        from unseen_university.devices.claude import cc_compact_cadence as m
 
         assert m.count_closes(tmp_path / "nope.log") == 0
 
     def test_count_closes_ignores_blank_lines(self, tmp_path):
-        from devices.claude import cc_compact_cadence as m
+        from unseen_university.devices.claude import cc_compact_cadence as m
 
         log = tmp_path / "sprint_tokens.log"
         log.write_text("a|T-1|...\n\nb|T-2|...\n  \nc|T-3|...\n")
         assert m.count_closes(log) == 3
 
     def test_baseline_roundtrip(self, tmp_path):
-        from devices.claude import cc_compact_cadence as m
+        from unseen_university.devices.claude import cc_compact_cadence as m
 
         bp = tmp_path / "compact_baseline.txt"
         m.write_baseline(bp, 7)
         assert m.read_baseline(bp) == 7
 
     def test_read_baseline_absent_is_zero(self, tmp_path):
-        from devices.claude import cc_compact_cadence as m
+        from unseen_university.devices.claude import cc_compact_cadence as m
 
         assert m.read_baseline(tmp_path / "nope.txt") == 0
 
 
 class TestShouldCompact:
     def test_below_threshold(self):
-        from devices.claude.cc_compact_cadence import should_compact
+        from unseen_university.devices.claude.cc_compact_cadence import should_compact
 
         assert should_compact(current=4, baseline=0, every_n=5) is False
 
     def test_at_threshold(self):
-        from devices.claude.cc_compact_cadence import should_compact
+        from unseen_university.devices.claude.cc_compact_cadence import should_compact
 
         assert should_compact(current=5, baseline=0, every_n=5) is True
 
     def test_offset_baseline(self):
-        from devices.claude.cc_compact_cadence import should_compact
+        from unseen_university.devices.claude.cc_compact_cadence import should_compact
 
         assert should_compact(current=12, baseline=10, every_n=5) is False
         assert should_compact(current=15, baseline=10, every_n=5) is True
 
     def test_zero_n_never_fires(self):
-        from devices.claude.cc_compact_cadence import should_compact
+        from unseen_university.devices.claude.cc_compact_cadence import should_compact
 
         assert should_compact(current=100, baseline=0, every_n=0) is False
 
 
 class TestMain:
     def _setup(self, tmp_path, monkeypatch, closes: int, baseline: int | None):
-        from devices.claude import cc_compact_cadence as m
+        from unseen_university.devices.claude import cc_compact_cadence as m
 
         log = tmp_path / "sprint_tokens.log"
         log.write_text("".join(f"line{i}\n" for i in range(closes)))
@@ -115,7 +115,7 @@ class TestMain:
 
 class TestShimStopHookRegistration:
     def test_register_then_remove_preserves_other_stop_hooks(self):
-        from devices.claude import shim
+        from unseen_university.devices.claude import shim
 
         settings = {
             "hooks": {
@@ -142,7 +142,7 @@ class TestShimStopHookRegistration:
         )
 
     def test_register_is_idempotent(self):
-        from devices.claude import shim
+        from unseen_university.devices.claude import shim
 
         settings: dict = {}
         shim._register_stop_hook(settings)

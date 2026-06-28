@@ -14,7 +14,7 @@ from starlette.testclient import TestClient
 
 @pytest.fixture(scope="module")
 def client():
-    from devices.web_server.server import _make_app
+    from unseen_university.devices.web_server.server import _make_app
 
     app = _make_app()
     with TestClient(app, raise_server_exceptions=True) as c:

@@ -68,7 +68,7 @@ Call the classifier to get a BuilderReport and append it to the ticket descripti
 Non-fatal — if the classifier is down or returns empty, proceed without the report.
 
 ```bash
-BUILDER_REPORT=$(python3 -m devices.classifier.cli classify \
+BUILDER_REPORT=$(python3 -m unseen_university.devices.classifier.cli classify \
   --title "<ticket title>" \
   --tags "<space-separated tags>" \
   --description "<ticket description>" 2>/dev/null) || BUILDER_REPORT=""

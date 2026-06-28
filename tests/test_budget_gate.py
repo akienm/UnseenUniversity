@@ -6,14 +6,14 @@ import json
 import time
 from unittest.mock import MagicMock, patch
 
-from devices.inference.sources import SourceRegistry
+from unseen_university.devices.inference.sources import SourceRegistry
 
 # ── budget_gate unit tests ────────────────────────────────────────────────────
 
 
 class TestCheckBalance:
     def _fresh_cache(self):
-        import devices.inference.budget_gate as bg
+        import unseen_university.devices.inference.budget_gate as bg
 
         bg._cache = {}
 
@@ -27,11 +27,11 @@ class TestCheckBalance:
         }
         with (
             patch(
-                "devices.inference.budget_gate._fetch_balance_raw", return_value=fake
+                "unseen_university.devices.inference.budget_gate._fetch_balance_raw", return_value=fake
             ),
-            patch("devices.inference.budget_gate._write_balance_history"),
+            patch("unseen_university.devices.inference.budget_gate._write_balance_history"),
         ):
-            from devices.inference.budget_gate import check_balance
+            from unseen_university.devices.inference.budget_gate import check_balance
 
             ok, msg = check_balance()
         assert ok
@@ -47,11 +47,11 @@ class TestCheckBalance:
         }
         with (
             patch(
-                "devices.inference.budget_gate._fetch_balance_raw", return_value=fake
+                "unseen_university.devices.inference.budget_gate._fetch_balance_raw", return_value=fake
             ),
-            patch("devices.inference.budget_gate._write_balance_history"),
+            patch("unseen_university.devices.inference.budget_gate._write_balance_history"),
         ):
-            from devices.inference.budget_gate import check_balance
+            from unseen_university.devices.inference.budget_gate import check_balance
 
             ok, msg = check_balance()
         assert not ok
@@ -60,9 +60,9 @@ class TestCheckBalance:
     def test_fail_open_when_api_unreachable(self):
         self._fresh_cache()
         with patch(
-            "devices.inference.budget_gate._fetch_balance_raw", return_value=None
+            "unseen_university.devices.inference.budget_gate._fetch_balance_raw", return_value=None
         ):
-            from devices.inference.budget_gate import check_balance
+            from unseen_university.devices.inference.budget_gate import check_balance
 
             ok, msg = check_balance()
         assert ok  # fail-open: don't block on network error
@@ -78,11 +78,11 @@ class TestCheckBalance:
         }
         with (
             patch(
-                "devices.inference.budget_gate._fetch_balance_raw", return_value=fake
+                "unseen_university.devices.inference.budget_gate._fetch_balance_raw", return_value=fake
             ),
-            patch("devices.inference.budget_gate._write_balance_history"),
+            patch("unseen_university.devices.inference.budget_gate._write_balance_history"),
         ):
-            from devices.inference.budget_gate import check_balance
+            from unseen_university.devices.inference.budget_gate import check_balance
 
             ok, msg = check_balance()
         assert not ok
@@ -93,7 +93,7 @@ class TestRecordSpend:
     def test_noop_without_db_url(self, monkeypatch):
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
         # Should not raise even without psycopg2 available
-        from devices.inference.budget_gate import record_spend
+        from unseen_university.devices.inference.budget_gate import record_spend
 
         record_spend("gpt-4o-mini", 100, 50)  # no exception
 
@@ -106,7 +106,7 @@ class TestRecordSpend:
         mock_conn.cursor.return_value.__enter__ = lambda s: mock_cur
         mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
         with patch("psycopg2.connect", return_value=mock_conn):
-            from devices.inference.budget_gate import record_spend
+            from unseen_university.devices.inference.budget_gate import record_spend
 
             record_spend("openai/gpt-4o-mini", 200, 80, caller="adc_inference")
         mock_cur.execute.assert_called_once()
@@ -122,14 +122,14 @@ class TestRecordSpend:
 
 class TestDispatchBudgetGate:
     def test_dispatch_checks_balance_before_or_call(self):
-        from devices.inference.device import InferenceDevice
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.shim import InferenceRequest
 
         dev = InferenceDevice(mode="openrouter")
         req = InferenceRequest(messages=[{"role": "user", "content": "hi"}])
 
         with patch(
-            "devices.inference.budget_gate.check_balance",
+            "unseen_university.devices.inference.budget_gate.check_balance",
             return_value=(False, "exhausted"),
         ) as mock_check:
             try:
@@ -140,8 +140,8 @@ class TestDispatchBudgetGate:
             mock_check.assert_called_once()
 
     def test_dispatch_records_spend_after_or_call(self):
-        from devices.inference.device import InferenceDevice
-        from devices.inference.shim import InferenceRequest, InferenceResponse
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.shim import InferenceRequest, InferenceResponse
 
         dev = InferenceDevice(mode="openrouter", sources=SourceRegistry())
         req = InferenceRequest(
@@ -156,20 +156,20 @@ class TestDispatchBudgetGate:
 
         with (
             patch(
-                "devices.inference.budget_gate.check_balance", return_value=(True, "OK")
+                "unseen_university.devices.inference.budget_gate.check_balance", return_value=(True, "OK")
             ),
             patch(
-                "devices.inference.device.InferenceDevice._or_call",
+                "unseen_university.devices.inference.device.InferenceDevice._or_call",
                 return_value=fake_raw,
             ),
-            patch("devices.inference.budget_gate.record_spend") as mock_record,
+            patch("unseen_university.devices.inference.budget_gate.record_spend") as mock_record,
         ):
             dev.dispatch(req)
         mock_record.assert_called_once_with("gpt-4o-mini", 10, 5)
 
     def test_dispatch_skips_budget_gate_for_ollama(self):
-        from devices.inference.device import InferenceDevice
-        from devices.inference.shim import InferenceRequest
+        from unseen_university.devices.inference.device import InferenceDevice
+        from unseen_university.devices.inference.shim import InferenceRequest
 
         dev = InferenceDevice(mode="ollama", sources=SourceRegistry())
         req = InferenceRequest(messages=[{"role": "user", "content": "hi"}])
@@ -181,9 +181,9 @@ class TestDispatchBudgetGate:
         }
 
         with (
-            patch("devices.inference.budget_gate.check_balance") as mock_check,
+            patch("unseen_university.devices.inference.budget_gate.check_balance") as mock_check,
             patch(
-                "devices.inference.device.InferenceDevice._ollama_call",
+                "unseen_university.devices.inference.device.InferenceDevice._ollama_call",
                 return_value=fake_raw,
             ),
         ):
@@ -196,7 +196,7 @@ class TestDispatchBudgetGate:
 
 class TestMaybeAlert:
     def _clear_stamp(self):
-        import devices.inference.budget_gate as bg
+        import unseen_university.devices.inference.budget_gate as bg
 
         bg._ALERT_STAMP.unlink(missing_ok=True)
 
@@ -204,17 +204,17 @@ class TestMaybeAlert:
         self._clear_stamp()
         monkeypatch.setenv("OR_BUDGET_ALERT_USD", "15.0")
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
-        from devices.inference.budget_gate import _maybe_alert
+        from unseen_university.devices.inference.budget_gate import _maybe_alert
 
         _maybe_alert(20.0)  # above threshold — no alert, no exception
 
     def test_alert_fires_below_threshold(self, monkeypatch, tmp_path):
         monkeypatch.setenv("OR_BUDGET_ALERT_USD", "15.0")
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
-        import devices.inference.budget_gate as bg
+        import unseen_university.devices.inference.budget_gate as bg
 
         bg._ALERT_STAMP = tmp_path / "stamp"
-        from devices.inference.budget_gate import _maybe_alert
+        from unseen_university.devices.inference.budget_gate import _maybe_alert
 
         _maybe_alert(10.0)  # below threshold
         assert bg._ALERT_STAMP.exists()
@@ -222,7 +222,7 @@ class TestMaybeAlert:
     def test_alert_deduped_within_window(self, monkeypatch, tmp_path):
         monkeypatch.setenv("OR_BUDGET_ALERT_USD", "15.0")
         monkeypatch.delenv("UU_HOME_DB_URL", raising=False)
-        import devices.inference.budget_gate as bg
+        import unseen_university.devices.inference.budget_gate as bg
 
         stamp = tmp_path / "stamp"
         stamp.touch()  # pretend we already alerted just now
@@ -232,13 +232,13 @@ class TestMaybeAlert:
 
         import time
 
-        with patch("devices.inference.budget_gate._ALERT_DEDUP_SECS", 9999):
+        with patch("unseen_university.devices.inference.budget_gate._ALERT_DEDUP_SECS", 9999):
             # stamp exists and is "recent" — alert should be suppressed
             called = []
             original_log_warning = bg.log.warning
             bg.log.warning = lambda *a, **kw: called.append(a)
             try:
-                from devices.inference.budget_gate import _maybe_alert
+                from unseen_university.devices.inference.budget_gate import _maybe_alert
 
                 _maybe_alert(5.0)
             finally:

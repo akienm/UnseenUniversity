@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 
-from devices.igor.dashboard.terminal import (
+from unseen_university.devices.igor.dashboard.terminal import (
     _cloud_pct,
     _latency_p50,
     _latency_p95,

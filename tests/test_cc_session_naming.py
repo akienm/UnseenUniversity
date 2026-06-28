@@ -54,8 +54,8 @@ def _reload_constants(monkeypatch, cc_tmux_session=None, tmux_sessions=None):
     _missing = Path("/nonexistent/cc_session_test_stub.txt")
 
     with patch("subprocess.run", mock_run), \
-         patch("devices.claude.constants.cc_session_path", return_value=_missing):
-        import devices.claude.constants as mod
+         patch("unseen_university.devices.claude.constants.cc_session_path", return_value=_missing):
+        import unseen_university.devices.claude.constants as mod
         importlib.reload(mod)
         return mod, mock_run
 
@@ -114,8 +114,8 @@ def test_tmux_error_falls_back_to_cc0(monkeypatch):
     monkeypatch.delenv("CC_TMUX_SESSION", raising=False)
     with patch("socket.gethostname", return_value="testhost"), \
          patch("subprocess.run", side_effect=FileNotFoundError("tmux not found")), \
-         patch("devices.claude.constants.cc_session_path", return_value=_missing):
-        import devices.claude.constants as mod
+         patch("unseen_university.devices.claude.constants.cc_session_path", return_value=_missing):
+        import unseen_university.devices.claude.constants as mod
         importlib.reload(mod)
     assert mod.TMUX_SESSION == "testhost.cc.0"
 
@@ -127,8 +127,8 @@ def test_tmux_timeout_falls_back_to_cc0(monkeypatch):
     monkeypatch.delenv("CC_TMUX_SESSION", raising=False)
     with patch("socket.gethostname", return_value="testhost"), \
          patch("subprocess.run", side_effect=subprocess.TimeoutExpired("tmux", 2)), \
-         patch("devices.claude.constants.cc_session_path", return_value=_missing):
-        import devices.claude.constants as mod
+         patch("unseen_university.devices.claude.constants.cc_session_path", return_value=_missing):
+        import unseen_university.devices.claude.constants as mod
         importlib.reload(mod)
     assert mod.TMUX_SESSION == "testhost.cc.0"
 

@@ -15,7 +15,7 @@ import os
 
 import pytest
 
-from devices.hubert import constraint_decorator as cd
+from unseen_university.devices.hubert import constraint_decorator as cd
 
 _PG_URL = os.environ.get("UU_HOME_DB_URL", "") or os.environ.get("IGOR_HOME_DB_URL", "")
 _SKIP_INTEGRATION = pytest.mark.skipif(
@@ -172,7 +172,7 @@ def test_parse_affected_files_tbd_returns_empty():
 
 @_SKIP_INTEGRATION
 def test_decorate_ticket_live():
-    import devices.hubert.constraint_normalizer as cn
+    import unseen_university.devices.hubert.constraint_normalizer as cn
     cn.ingest()
     ticket = {
         "id": "T-decorator-selftest",

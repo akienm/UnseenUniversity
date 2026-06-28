@@ -18,7 +18,7 @@ from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from devices.igor.cognition.coa import COA, _cpu_gate_ok, _cpu_percent_now
+from unseen_university.devices.igor.cognition.coa import COA, _cpu_gate_ok, _cpu_percent_now
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -34,11 +34,11 @@ def _make_coa(instance_id: str = "test-instance") -> COA:
     igor._is_processing = False
     igor._experiment_scheduler = None
     with patch(
-        "devices.igor.cognition.coa.COA.__init__.__wrapped__", None, create=True
+        "unseen_university.devices.igor.cognition.coa.COA.__init__.__wrapped__", None, create=True
     ):
         pass
     # Patch NarrativeEngine so we don't hit the DB during tests
-    with patch("devices.igor.cognition.coa.COA.__init__") as mock_init:
+    with patch("unseen_university.devices.igor.cognition.coa.COA.__init__") as mock_init:
         mock_init.return_value = None
         coa = COA.__new__(COA)
         # Manually set all the attributes __init__ would set
@@ -65,7 +65,7 @@ def _make_coa(instance_id: str = "test-instance") -> COA:
 def _spawn_patch():
     """Context manager: patch NarrativeEngine so spawn() doesn't hit the DB."""
     return patch(
-        "devices.igor.cognition.narrative_engine.NarrativeEngine",
+        "unseen_university.devices.igor.cognition.narrative_engine.NarrativeEngine",
         new_callable=lambda: lambda *a, **kw: MagicMock(name="NarrativeEngine"),
     )
 
@@ -74,9 +74,9 @@ class TestCOANEIsolation(unittest.TestCase):
     def test_spawned_coa_has_separate_ne(self):
         root = _make_coa("wild-0001")
         with (
-            patch("devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
-            patch("devices.igor.cognition.coa.COA._start_background_loop"),
-            patch("devices.igor.cognition.narrative_engine.NarrativeEngine") as MockNE,
+            patch("unseen_university.devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
+            patch("unseen_university.devices.igor.cognition.coa.COA._start_background_loop"),
+            patch("unseen_university.devices.igor.cognition.narrative_engine.NarrativeEngine") as MockNE,
         ):
             MockNE.return_value = MagicMock(name="NarrativeEngine-child")
             child = root.spawn(task_queue=["task1"])
@@ -86,9 +86,9 @@ class TestCOANEIsolation(unittest.TestCase):
     def test_spawned_coa_has_different_instance_id(self):
         root = _make_coa("wild-0001")
         with (
-            patch("devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
-            patch("devices.igor.cognition.coa.COA._start_background_loop"),
-            patch("devices.igor.cognition.narrative_engine.NarrativeEngine") as MockNE,
+            patch("unseen_university.devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
+            patch("unseen_university.devices.igor.cognition.coa.COA._start_background_loop"),
+            patch("unseen_university.devices.igor.cognition.narrative_engine.NarrativeEngine") as MockNE,
         ):
             MockNE.return_value = MagicMock(name="NarrativeEngine-child")
             child = root.spawn()
@@ -99,10 +99,10 @@ class TestCOANEIsolation(unittest.TestCase):
         root = _make_coa("wild-0001")
         children = []
         with (
-            patch("devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
-            patch("devices.igor.cognition.coa.COA._start_background_loop"),
+            patch("unseen_university.devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
+            patch("unseen_university.devices.igor.cognition.coa.COA._start_background_loop"),
             patch(
-                "devices.igor.cognition.narrative_engine.NarrativeEngine",
+                "unseen_university.devices.igor.cognition.narrative_engine.NarrativeEngine",
                 side_effect=lambda *a, **kw: MagicMock(name="NarrativeEngine"),
             ),
         ):
@@ -124,7 +124,7 @@ class TestCPUGate(unittest.TestCase):
         """spawn() returns None when CPU >= IGOR_COA_CPU_GATE."""
         root = _make_coa()
         with (
-            patch("devices.igor.cognition.coa._cpu_percent_now", return_value=95.0),
+            patch("unseen_university.devices.igor.cognition.coa._cpu_percent_now", return_value=95.0),
             patch.dict(os.environ, {"IGOR_COA_CPU_GATE": "60"}),
         ):
             result = root.spawn()
@@ -134,10 +134,10 @@ class TestCPUGate(unittest.TestCase):
         """spawn() creates a child when CPU < IGOR_COA_CPU_GATE."""
         root = _make_coa()
         with (
-            patch("devices.igor.cognition.coa._cpu_percent_now", return_value=10.0),
+            patch("unseen_university.devices.igor.cognition.coa._cpu_percent_now", return_value=10.0),
             patch.dict(os.environ, {"IGOR_COA_CPU_GATE": "60"}),
-            patch("devices.igor.cognition.coa.COA._start_background_loop"),
-            patch("devices.igor.cognition.narrative_engine.NarrativeEngine"),
+            patch("unseen_university.devices.igor.cognition.coa.COA._start_background_loop"),
+            patch("unseen_university.devices.igor.cognition.narrative_engine.NarrativeEngine"),
         ):
             result = root.spawn()
         self.assertIsNotNone(result)
@@ -146,10 +146,10 @@ class TestCPUGate(unittest.TestCase):
         """IGOR_COA_CPU_GATE=80 allows spawn at 70%."""
         root = _make_coa()
         with (
-            patch("devices.igor.cognition.coa._cpu_percent_now", return_value=70.0),
+            patch("unseen_university.devices.igor.cognition.coa._cpu_percent_now", return_value=70.0),
             patch.dict(os.environ, {"IGOR_COA_CPU_GATE": "80"}),
-            patch("devices.igor.cognition.coa.COA._start_background_loop"),
-            patch("devices.igor.cognition.narrative_engine.NarrativeEngine"),
+            patch("unseen_university.devices.igor.cognition.coa.COA._start_background_loop"),
+            patch("unseen_university.devices.igor.cognition.narrative_engine.NarrativeEngine"),
         ):
             result = root.spawn()
         self.assertIsNotNone(result)
@@ -160,17 +160,17 @@ class TestCPUGate(unittest.TestCase):
         children = []
         # First 4 spawns succeed (CPU low)
         with (
-            patch("devices.igor.cognition.coa._cpu_percent_now", return_value=10.0),
+            patch("unseen_university.devices.igor.cognition.coa._cpu_percent_now", return_value=10.0),
             patch.dict(os.environ, {"IGOR_COA_CPU_GATE": "60"}),
-            patch("devices.igor.cognition.coa.COA._start_background_loop"),
-            patch("devices.igor.cognition.narrative_engine.NarrativeEngine"),
+            patch("unseen_university.devices.igor.cognition.coa.COA._start_background_loop"),
+            patch("unseen_university.devices.igor.cognition.narrative_engine.NarrativeEngine"),
         ):
             for _ in range(4):
                 children.append(root.spawn(task_queue=["t"]))
         self.assertTrue(all(c is not None for c in children))
         # 5th spawn refused (CPU high)
         with (
-            patch("devices.igor.cognition.coa._cpu_percent_now", return_value=90.0),
+            patch("unseen_university.devices.igor.cognition.coa._cpu_percent_now", return_value=90.0),
             patch.dict(os.environ, {"IGOR_COA_CPU_GATE": "60"}),
         ):
             fifth = root.spawn()
@@ -188,8 +188,8 @@ class TestCOADissolve(unittest.TestCase):
         root = _make_coa()
 
         with (
-            patch("devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
-            patch("devices.igor.cognition.coa.COA.tick") as mock_tick,
+            patch("unseen_university.devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
+            patch("unseen_university.devices.igor.cognition.coa.COA.tick") as mock_tick,
         ):
 
             # tick() drains one item per call via side_effect
@@ -216,7 +216,7 @@ class TestCOADissolve(unittest.TestCase):
 
     def test_background_coa_with_empty_initial_queue_dissolves_immediately(self):
         root = _make_coa()
-        with patch("devices.igor.cognition.coa._cpu_gate_ok", return_value=True):
+        with patch("unseen_university.devices.igor.cognition.coa._cpu_gate_ok", return_value=True):
             child = root.spawn(task_queue=[])
         # Give thread a moment to start and exit
         if child._bg_thread is not None:
@@ -238,8 +238,8 @@ class TestCOAIsAlive(unittest.TestCase):
     def test_is_background_true_for_spawned(self):
         root = _make_coa()
         with (
-            patch("devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
-            patch("devices.igor.cognition.coa.COA._start_background_loop"),
+            patch("unseen_university.devices.igor.cognition.coa._cpu_gate_ok", return_value=True),
+            patch("unseen_university.devices.igor.cognition.coa.COA._start_background_loop"),
         ):
             child = root.spawn(task_queue=["t"])
         self.assertTrue(child._is_background)

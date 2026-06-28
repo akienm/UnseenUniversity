@@ -15,7 +15,7 @@ class TestPollLoopEpochCheck:
     def _run_n_polls(self, n: int):
         """Import server and run _poll_loop for exactly n poll iterations."""
         import importlib
-        import devices.igor.web.server as srv
+        import unseen_university.devices.igor.web.server as srv
 
         importlib.reload(srv)
 

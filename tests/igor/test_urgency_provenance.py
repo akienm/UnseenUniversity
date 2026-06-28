@@ -30,7 +30,7 @@ class TestUrgencyProvenance(unittest.TestCase):
 
     def _run(self, twm_items, lower_calls=None):
         """Run trace_urgency_provenance with mocked cortex."""
-        from devices.igor.tools import urgency_provenance as up
+        from unseen_university.devices.igor.tools import urgency_provenance as up
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = twm_items
@@ -42,20 +42,20 @@ class TestUrgencyProvenance(unittest.TestCase):
         with patch.object(
             up, "trace_urgency_provenance.__module__", create=True
         ), patch(
-            "devices.igor.tools.urgency_provenance.trace_urgency_provenance.__globals__",
+            "unseen_university.devices.igor.tools.urgency_provenance.trace_urgency_provenance.__globals__",
             create=True,
         ):
             pass
 
         # Patch Cortex directly
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = up.trace_urgency_provenance()
 
         return result, lowered, mock_cortex
 
     def test_grounded_source_not_lowered(self):
         """Items from stdin/web are grounded — urgency not touched."""
-        from devices.igor.tools import urgency_provenance as up
+        from unseen_university.devices.igor.tools import urgency_provenance as up
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = [
@@ -67,7 +67,7 @@ class TestUrgencyProvenance(unittest.TestCase):
                 "content_csb": "user said hello",
             },
         ]
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = up.trace_urgency_provenance()
 
         mock_cortex.twm_lower_urgency.assert_not_called()
@@ -75,7 +75,7 @@ class TestUrgencyProvenance(unittest.TestCase):
 
     def test_manufactured_source_lowered(self):
         """inbox_watcher default urgency 0.5 is manufactured — should be lowered."""
-        from devices.igor.tools import urgency_provenance as up
+        from unseen_university.devices.igor.tools import urgency_provenance as up
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = [
@@ -87,14 +87,14 @@ class TestUrgencyProvenance(unittest.TestCase):
                 "content_csb": "INBOX_FILE|old.txt",
             },
         ]
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             up.trace_urgency_provenance()
 
         mock_cortex.twm_lower_urgency.assert_called_once_with(7, new_urgency=0.2)
 
     def test_high_urgency_never_lowered(self):
         """Items with urgency >= 0.65 are explicit — never touched."""
-        from devices.igor.tools import urgency_provenance as up
+        from unseen_university.devices.igor.tools import urgency_provenance as up
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = [
@@ -106,14 +106,14 @@ class TestUrgencyProvenance(unittest.TestCase):
                 "content_csb": "URGENT|...",
             },
         ]
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             up.trace_urgency_provenance()
 
         mock_cortex.twm_lower_urgency.assert_not_called()
 
     def test_already_quiet_not_lowered(self):
         """Items with urgency <= 0.30 are already quiet — don't touch."""
-        from devices.igor.tools import urgency_provenance as up
+        from unseen_university.devices.igor.tools import urgency_provenance as up
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = [
@@ -125,25 +125,25 @@ class TestUrgencyProvenance(unittest.TestCase):
                 "content_csb": "MILIEU|...",
             },
         ]
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             up.trace_urgency_provenance()
 
         mock_cortex.twm_lower_urgency.assert_not_called()
 
     def test_empty_twm(self):
         """Empty TWM returns graceful message."""
-        from devices.igor.tools import urgency_provenance as up
+        from unseen_university.devices.igor.tools import urgency_provenance as up
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = []
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = up.trace_urgency_provenance()
 
         self.assertIn("empty", result.lower())
 
     def test_web_prefix_is_grounded(self):
         """source='web:session-abc' matches grounded prefix 'web'."""
-        from devices.igor.tools import urgency_provenance as up
+        from unseen_university.devices.igor.tools import urgency_provenance as up
 
         mock_cortex = MagicMock()
         mock_cortex.twm_read.return_value = [
@@ -155,7 +155,7 @@ class TestUrgencyProvenance(unittest.TestCase):
                 "content_csb": "user message",
             },
         ]
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             up.trace_urgency_provenance()
 
         mock_cortex.twm_lower_urgency.assert_not_called()
@@ -176,7 +176,7 @@ class TestTwmLowerUrgency(unittest.TestCase):
             "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
         )
         os.environ.setdefault("IGOR_DB_PATH", "/tmp/test_cortex.db")
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         c = Cortex.__new__(Cortex)
         mock_conn = MagicMock()
@@ -193,7 +193,7 @@ class TestTwmLowerUrgency(unittest.TestCase):
 
     def test_zero_obs_id_no_op(self):
         """obs_id=0 is a no-op."""
-        from devices.igor.memory.cortex import Cortex
+        from unseen_university.devices.igor.memory.cortex import Cortex
 
         c = Cortex.__new__(Cortex)
         with patch.object(c, "_local_conn") as mock_lc:
@@ -208,14 +208,14 @@ class TestMemoryProvenanceTools(unittest.TestCase):
 
     def test_validate_memory_sets_status(self):
         """validate_memory sets validation_status=validated on the memory."""
-        from devices.igor.tools import memory_provenance as mp
+        from unseen_university.devices.igor.tools import memory_provenance as mp
 
         mock_mem = MagicMock()
         mock_mem.metadata = {"validation_status": "unvalidated"}
         mock_cortex = MagicMock()
         mock_cortex.get.return_value = mock_mem
 
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = mp.validate_memory(memory_id="mem-001")
 
         self.assertEqual(mock_mem.metadata["validation_status"], "validated")
@@ -225,26 +225,26 @@ class TestMemoryProvenanceTools(unittest.TestCase):
 
     def test_validate_memory_not_found(self):
         """validate_memory returns a clear message when memory doesn't exist."""
-        from devices.igor.tools import memory_provenance as mp
+        from unseen_university.devices.igor.tools import memory_provenance as mp
 
         mock_cortex = MagicMock()
         mock_cortex.get.return_value = None
 
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = mp.validate_memory(memory_id="nonexistent")
 
         self.assertIn("not found", result)
 
     def test_reject_memory_sets_status(self):
         """reject_memory sets validation_status=rejected with reason."""
-        from devices.igor.tools import memory_provenance as mp
+        from unseen_university.devices.igor.tools import memory_provenance as mp
 
         mock_mem = MagicMock()
         mock_mem.metadata = {}
         mock_cortex = MagicMock()
         mock_cortex.get.return_value = mock_mem
 
-        with patch("devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
+        with patch("unseen_university.devices.igor.memory.cortex.Cortex", return_value=mock_cortex):
             result = mp.reject_memory(
                 memory_id="mem-002", reason="NE hallucinated this"
             )

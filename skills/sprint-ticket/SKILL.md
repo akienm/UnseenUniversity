@@ -79,7 +79,7 @@ m=re.search(r'\*\*Builder report:\*\*\s*(\{.*?\})', d.get('description',''), re.
 print(m.group(1) if m else '{}')
 ")
 if [ "$STORED_REPORT" != "{}" ]; then
-  python3 -m devices.classifier.cli freshness --report-json "$STORED_REPORT" 2>/dev/null || true
+  python3 -m unseen_university.devices.classifier.cli freshness --report-json "$STORED_REPORT" 2>/dev/null || true
 fi
 ```
 

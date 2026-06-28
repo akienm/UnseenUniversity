@@ -25,9 +25,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.ground_loop.daemon import GroundLoop, _PLUGIN_DIR, _FLAGS_DIR
-from devices.ground_loop.plugin_daemon import PluginDaemon
-from devices.ground_loop.plugin_proxy import PluginProxy
+from unseen_university.devices.ground_loop.daemon import GroundLoop, _PLUGIN_DIR, _FLAGS_DIR
+from unseen_university.devices.ground_loop.plugin_daemon import PluginDaemon
+from unseen_university.devices.ground_loop.plugin_proxy import PluginProxy
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ class TestPluginDaemon:
         pd = PluginDaemon(cfg)
         breaker = tmp_path / "no.breaker"
         fired = []
-        with patch("devices.ground_loop.plugin_daemon._fire_cc_recovery",
+        with patch("unseen_university.devices.ground_loop.plugin_daemon._fire_cc_recovery",
                    side_effect=lambda name, reason: fired.append((name, reason))):
             with patch.object(type(pd), "breaker_path", new_callable=lambda: property(lambda self: breaker)):
                 for _ in range(4):
@@ -294,8 +294,8 @@ class TestGroundLoop:
             "name: sleeper\nmode: daemon\nstart_cmd: [python3, -c, 'import time; time.sleep(3600)']\n"
         )
         gl = GroundLoop()
-        with patch("devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
-             patch("devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
+        with patch("unseen_university.devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
+             patch("unseen_university.devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
             gl._scan_plugins()
         assert "sleeper" in gl._daemons
 
@@ -304,8 +304,8 @@ class TestGroundLoop:
         plugin_dir.mkdir()
         (plugin_dir / "bad.yaml").write_text("{{{{ not valid yaml")
         gl = GroundLoop()
-        with patch("devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
-             patch("devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
+        with patch("unseen_university.devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
+             patch("unseen_university.devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
             gl._scan_plugins()  # must not raise
         # No plugins registered
         assert len(gl._daemons) == 0
@@ -316,8 +316,8 @@ class TestGroundLoop:
         plugin_dir.mkdir()
         (plugin_dir / "nomode.yaml").write_text("name: nomode\n")
         gl = GroundLoop()
-        with patch("devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
-             patch("devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
+        with patch("unseen_university.devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
+             patch("unseen_university.devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
             gl._scan_plugins()
         assert "nomode" not in gl._daemons
 
@@ -325,8 +325,8 @@ class TestGroundLoop:
         plugin_dir = tmp_path / "ground_loop"
         plugin_dir.mkdir()
         gl = GroundLoop()
-        with patch("devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
-             patch("devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
+        with patch("unseen_university.devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
+             patch("unseen_university.devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
             gl._scan_plugins()
             assert len(gl._daemons) == 0
 
@@ -342,8 +342,8 @@ class TestGroundLoop:
         plugin_dir.mkdir()
         (plugin_dir / "weird.yaml").write_text("name: weird\nmode: telepathy\n")
         gl = GroundLoop()
-        with patch("devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
-             patch("devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
+        with patch("unseen_university.devices.ground_loop.daemon._PLUGIN_DIR", plugin_dir), \
+             patch("unseen_university.devices.ground_loop.daemon._FLAGS_DIR", tmp_path / "flags"):
             gl._scan_plugins()  # must not raise
         assert "weird" not in gl._daemons
         assert "weird" not in gl._proxies

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from devices.inference.models_registry import ModelSpec, ModelsRegistry
-from devices.inference.version_checker import ModelVersionChecker
+from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
+from unseen_university.devices.inference.version_checker import ModelVersionChecker
 
 
 def _make_spec(model_id: str, created_at: str = "2026-06-01T00:00:00Z") -> ModelSpec:

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from devices.igor.memory.cortex import Cortex
-from devices.igor.memory.models import MemoryType
+from unseen_university.devices.igor.memory.cortex import Cortex
+from unseen_university.devices.igor.memory.models import MemoryType
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def test_word_graph_type_exists():
 
 def test_word_graph_base_inertia():
     """WORD_GRAPH has a defined base inertia (should be very low)."""
-    from devices.igor.memory.models import BASE_INERTIA
+    from unseen_university.devices.igor.memory.models import BASE_INERTIA
     assert MemoryType.WORD_GRAPH in BASE_INERTIA
     assert BASE_INERTIA[MemoryType.WORD_GRAPH] <= 0.10
 

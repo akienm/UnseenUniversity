@@ -28,7 +28,7 @@ def _ticket(
 
 
 def _make_watchdog(**kwargs):
-    from devices.scraps.jobs.orphan_watchdog import OrphanWatchdog
+    from unseen_university.devices.scraps.jobs.orphan_watchdog import OrphanWatchdog
 
     return OrphanWatchdog(**kwargs)
 

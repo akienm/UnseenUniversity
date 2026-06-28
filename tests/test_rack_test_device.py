@@ -18,8 +18,8 @@ import pytest
 
 from unseen_university.device import BaseDevice, INTERFACE_VERSION
 from unseen_university.shim import BaseShim
-from devices.rack_test.device import RackTestDevice
-from devices.rack_test.shim import RackTestShim
+from unseen_university.devices.rack_test.device import RackTestDevice
+from unseen_university.devices.rack_test.shim import RackTestShim
 from fixtures.stub_devices import StubDevice
 
 # ── Contract ──────────────────────────────────────────────────────────────────

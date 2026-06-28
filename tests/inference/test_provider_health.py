@@ -10,7 +10,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from devices.inference.provider_health import ProviderHealthClassifier
+from unseen_university.devices.inference.provider_health import ProviderHealthClassifier
 
 
 class TestProviderHealthClassifier:

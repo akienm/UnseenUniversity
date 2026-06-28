@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.chunker import Chunk, chunk_input
+from unseen_university.devices.igor.cognition.chunker import Chunk, chunk_input
 
 
 def _texts(chunks):

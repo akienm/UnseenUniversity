@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 
 
 def _make_device(tmp_path):
-    import devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
-    from devices.vetinari.device import VetinariDevice
+    import unseen_university.devices.vetinari.device as _vd; _vd.uu_home = lambda p=str(tmp_path): p
+    from unseen_university.devices.vetinari.device import VetinariDevice
     channel_calls = []
     v = VetinariDevice(channel_post_fn=lambda msg: channel_calls.append(msg))
     return v, channel_calls
@@ -42,7 +42,7 @@ def _mock_show(status_map):
 def test_complete_posts_vetinari_complete_to_channel(tmp_path):
     v, channel_calls = _make_device(tmp_path)
     _seed_active(v, tmp_path, ["T-a", "T-b"])
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show({"T-a": "closed", "T-b": "closed"})):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show({"T-a": "closed", "T-b": "closed"})):
         v.check_directive_progress("dir-signal")
     assert any("VETINARI_COMPLETE" in msg for msg in channel_calls)
     complete_msg = next(m for m in channel_calls if "VETINARI_COMPLETE" in m)
@@ -53,7 +53,7 @@ def test_complete_posts_vetinari_complete_to_channel(tmp_path):
 def test_complete_sets_completed_at_in_directive_state(tmp_path):
     v, _ = _make_device(tmp_path)
     _seed_active(v, tmp_path, ["T-a"])
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show({"T-a": "closed"})):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show({"T-a": "closed"})):
         v.check_directive_progress("dir-signal")
     directives = v.get_pending_directives()
     d = next(d for d in directives if d["id"] == "dir-signal")
@@ -66,7 +66,7 @@ def test_second_call_does_not_repost_completion(tmp_path):
     v, channel_calls = _make_device(tmp_path)
     _seed_active(v, tmp_path, ["T-a"])
     status_map = {"T-a": "closed"}
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show(status_map)):
         v.check_directive_progress("dir-signal")  # first call → posts
         v.check_directive_progress("dir-signal")  # second call → no repost
     complete_count = sum(1 for m in channel_calls if "VETINARI_COMPLETE" in m)
@@ -76,7 +76,7 @@ def test_second_call_does_not_repost_completion(tmp_path):
 def test_partial_close_does_not_fire_complete(tmp_path):
     v, channel_calls = _make_device(tmp_path)
     _seed_active(v, tmp_path, ["T-a", "T-b"])
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show({"T-a": "closed", "T-b": "sprint"})):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show({"T-a": "closed", "T-b": "sprint"})):
         v.check_directive_progress("dir-signal")
     assert not any("VETINARI_COMPLETE" in m for m in channel_calls)
 
@@ -85,7 +85,7 @@ def test_complete_produces_audit_entry(tmp_path):
     """Completion produces a COMPLETE audit entry."""
     v, _ = _make_device(tmp_path)
     _seed_active(v, tmp_path, ["T-a"])
-    with patch("devices.vetinari.device.subprocess.run", side_effect=_mock_show({"T-a": "closed"})):
+    with patch("unseen_university.devices.vetinari.device.subprocess.run", side_effect=_mock_show({"T-a": "closed"})):
         v.check_directive_progress("dir-signal")
     entries = v.get_audit_log(directive_id="dir-signal")
     complete_entries = [e for e in entries if e["event"] == "COMPLETE"]

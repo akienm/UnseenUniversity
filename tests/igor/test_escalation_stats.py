@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from devices.igor.tools.escalation_stats import (
+from unseen_university.devices.igor.tools.escalation_stats import (
     _topic_from_input,
     _group_by_topic,
     _format_report,
@@ -451,10 +451,10 @@ class TestGetEscalationStats:
         class FakePaths:
             logs = tmp_path
 
-        import devices.igor.tools.escalation_stats as mod
+        import unseen_university.devices.igor.tools.escalation_stats as mod
 
         monkeypatch.setattr(
-            "devices.igor.tools.escalation_stats._paths",
+            "unseen_university.devices.igor.tools.escalation_stats._paths",
             lambda: FakePaths(),
             raising=False,
         )
@@ -463,7 +463,7 @@ class TestGetEscalationStats:
 
         def patched(**kwargs):
             try:
-                from devices.igor.tools import escalation_stats as _mod
+                from unseen_university.devices.igor.tools import escalation_stats as _mod
 
                 logs_dir = tmp_path
                 from datetime import datetime, timezone, timedelta
@@ -488,7 +488,7 @@ class TestGetEscalationStats:
 
     def test_empty_logs_graceful_message(self, tmp_path):
         """Empty log dir → graceful 'no cloud escalations' message."""
-        from devices.igor.tools.escalation_stats import (
+        from unseen_university.devices.igor.tools.escalation_stats import (
             _collect_cloud_calls,
             _group_by_topic,
             _format_report,
@@ -508,7 +508,7 @@ class TestGetEscalationStats:
 
     def test_db_error_returns_error_string(self, monkeypatch):
         """If paths() raises, get_escalation_stats returns error string, not exception."""
-        import devices.igor.tools.escalation_stats as mod
+        import unseen_university.devices.igor.tools.escalation_stats as mod
 
         original = mod.get_escalation_stats
 
@@ -528,7 +528,7 @@ class TestGetEscalationStats:
 
     def test_result_with_real_escalation_entries(self, tmp_path):
         """Build a minimal escalation log and verify the report structure."""
-        from devices.igor.tools.escalation_stats import (
+        from unseen_university.devices.igor.tools.escalation_stats import (
             _collect_cloud_calls,
             _group_by_topic,
             _format_report,

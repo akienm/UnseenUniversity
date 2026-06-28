@@ -15,8 +15,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.llm_peer_advisor import LLMPeerAdvisor  # noqa: E402
-from devices.igor.cognition.reasoning_workflow import (  # noqa: E402
+from unseen_university.devices.igor.cognition.llm_peer_advisor import LLMPeerAdvisor  # noqa: E402
+from unseen_university.devices.igor.cognition.reasoning_workflow import (  # noqa: E402
     Conversation,
     Speaker,
     WorkflowUtterance,
@@ -198,7 +198,7 @@ def test_lazy_gateway_discovery():
 
     mock_gw = _mock_gateway("discovered response")
     with patch(
-        "devices.igor.cognition.inference_gateway.get_gateway",
+        "unseen_university.devices.igor.cognition.inference_gateway.get_gateway",
         return_value=mock_gw,
     ):
         # The import path for lazy load — need to also patch the

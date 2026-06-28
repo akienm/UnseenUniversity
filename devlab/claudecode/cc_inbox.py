@@ -55,8 +55,8 @@ def _get_imap_router():
         return _imap_router
     _imap_init_done = True
     try:
-        from bus.imap_server import IMAPServer
-        from unseen_university.bus.router import Router
+        from unseen_university.devices.bus.imap_server import IMAPServer
+        from unseen_university.devices.bus.router import Router
 
         s = IMAPServer()
         s.start()
@@ -182,7 +182,7 @@ def append(
     router = _get_imap_router()
     if router is not None:
         try:
-            from bus.envelope import Envelope
+            from unseen_university.devices.bus.envelope import Envelope
 
             env = Envelope(
                 from_device="igor",

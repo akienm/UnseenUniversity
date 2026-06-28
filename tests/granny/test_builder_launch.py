@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, call, patch
 
 def test_launch_fires_when_launch_cmd_set(tmp_path):
     """_launch_builder must call Popen when launch_cmd is set and not rate-limited."""
-    import devices.granny.daemon as daemon
+    import unseen_university.devices.granny.daemon as daemon
     daemon._last_launch_attempt.clear()
 
-    with patch("devices.granny.daemon.subprocess.Popen") as mock_popen:
+    with patch("unseen_university.devices.granny.daemon.subprocess.Popen") as mock_popen:
         daemon._launch_builder("DickSimnel.0", {"launch_cmd": "echo test"})
 
     mock_popen.assert_called_once()
@@ -19,10 +19,10 @@ def test_launch_fires_when_launch_cmd_set(tmp_path):
 
 def test_launch_skipped_when_no_launch_cmd(tmp_path):
     """_launch_builder must be a no-op when launch_cmd is null/absent."""
-    import devices.granny.daemon as daemon
+    import unseen_university.devices.granny.daemon as daemon
     daemon._last_launch_attempt.clear()
 
-    with patch("devices.granny.daemon.subprocess.Popen") as mock_popen:
+    with patch("unseen_university.devices.granny.daemon.subprocess.Popen") as mock_popen:
         daemon._launch_builder("CC.0", {"launch_cmd": None})
         daemon._launch_builder("CC.0", {})
 
@@ -31,10 +31,10 @@ def test_launch_skipped_when_no_launch_cmd(tmp_path):
 
 def test_launch_rate_limited_within_retry_window():
     """Second launch attempt within GRANNY_BUILDER_LAUNCH_RETRY_S must be suppressed."""
-    import devices.granny.daemon as daemon
+    import unseen_university.devices.granny.daemon as daemon
     daemon._last_launch_attempt.clear()
 
-    with patch("devices.granny.daemon.subprocess.Popen") as mock_popen:
+    with patch("unseen_university.devices.granny.daemon.subprocess.Popen") as mock_popen:
         daemon._launch_builder("DickSimnel.0", {"launch_cmd": "echo first"})
         daemon._launch_builder("DickSimnel.0", {"launch_cmd": "echo second"})
 
@@ -44,10 +44,10 @@ def test_launch_rate_limited_within_retry_window():
 
 def test_launch_allowed_after_retry_window():
     """Launch attempt after GRANNY_BUILDER_LAUNCH_RETRY_S must fire again."""
-    import devices.granny.daemon as daemon
+    import unseen_university.devices.granny.daemon as daemon
     daemon._last_launch_attempt["DickSimnel.0"] = time.time() - daemon.GRANNY_BUILDER_LAUNCH_RETRY_S - 1
 
-    with patch("devices.granny.daemon.subprocess.Popen") as mock_popen:
+    with patch("unseen_university.devices.granny.daemon.subprocess.Popen") as mock_popen:
         daemon._launch_builder("DickSimnel.0", {"launch_cmd": "echo retry"})
 
     mock_popen.assert_called_once()

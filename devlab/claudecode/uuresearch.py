@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from devices.librarian.tools.search_tool import search
+from unseen_university.devices.librarian.tools.search_tool import search
 
 
 def main(argv):

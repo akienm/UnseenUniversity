@@ -27,14 +27,14 @@ _FAKE_STATUS = {
 
 def test_skills_status_exits_zero():
     runner = CliRunner()
-    with patch("devices.installer.deploy_status", return_value=_FAKE_STATUS):
+    with patch("unseen_university.devices.installer.deploy_status", return_value=_FAKE_STATUS):
         result = runner.invoke(cli, ["skills", "status"])
     assert result.exit_code == 0, result.output
 
 
 def test_skills_status_lists_managed_count():
     runner = CliRunner()
-    with patch("devices.installer.deploy_status", return_value=_FAKE_STATUS):
+    with patch("unseen_university.devices.installer.deploy_status", return_value=_FAKE_STATUS):
         result = runner.invoke(cli, ["skills", "status"])
     assert "managed:" in result.output
     assert "2" in result.output
@@ -42,7 +42,7 @@ def test_skills_status_lists_managed_count():
 
 def test_skills_status_shows_host_and_target():
     runner = CliRunner()
-    with patch("devices.installer.deploy_status", return_value=_FAKE_STATUS):
+    with patch("unseen_university.devices.installer.deploy_status", return_value=_FAKE_STATUS):
         result = runner.invoke(cli, ["skills", "status"])
     assert "host:" in result.output
     assert "target:" in result.output

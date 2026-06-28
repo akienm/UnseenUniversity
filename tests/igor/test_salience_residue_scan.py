@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.residue_scan import (
+from unseen_university.devices.igor.cognition.residue_scan import (
     scan_after_reply,
     _is_reflex_first_chunk,
     _score_residue,
@@ -113,7 +113,7 @@ def test_scan_disabled_returns_none(monkeypatch):
 def test_scan_enabled_single_chunk_no_spawn(monkeypatch):
     """Single-chunk input has no residue to scan."""
     monkeypatch.setenv("IGOR_RESIDUE_SCAN_ENABLED", "true")
-    with patch("devices.igor.cognition.residue_scan.pursuits_mod", create=True):
+    with patch("unseen_university.devices.igor.cognition.residue_scan.pursuits_mod", create=True):
         result = scan_after_reply(
             assistant=MagicMock(),
             reply_pursuit=MagicMock(),
@@ -148,7 +148,7 @@ def test_scan_spawns_pursuit_on_salient_residue(monkeypatch):
     reply_pursuit = MagicMock()
     reply_pursuit.id = "parent-pursuit-id"
 
-    with patch("devices.igor.cognition.pursuits.spawn") as mock_spawn:
+    with patch("unseen_university.devices.igor.cognition.pursuits.spawn") as mock_spawn:
         scan_after_reply(
             assistant=assistant,
             reply_pursuit=reply_pursuit,
@@ -177,7 +177,7 @@ def test_scan_drops_below_threshold(monkeypatch):
     reply_pursuit = MagicMock()
     reply_pursuit.id = "parent-pursuit-id"
 
-    with patch("devices.igor.cognition.pursuits.spawn") as mock_spawn:
+    with patch("unseen_university.devices.igor.cognition.pursuits.spawn") as mock_spawn:
         scan_after_reply(
             assistant=assistant,
             reply_pursuit=reply_pursuit,

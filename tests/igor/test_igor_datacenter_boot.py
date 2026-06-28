@@ -28,9 +28,9 @@ from unseen_university.announce import (
     DatacenterClient,
     IdentityEnvelope,
 )
-from unseen_university.skeleton.skeleton import Skeleton
-from bus.imap_server import IMAPServer
-from skeleton.registry import DeviceRegistry
+from unseen_university.devices.skeleton.skeleton import Skeleton
+from unseen_university.devices.bus.imap_server import IMAPServer
+from unseen_university.devices.skeleton.registry import DeviceRegistry
 
 CANONICAL_PROFILES = Path("/home/akien/dev/src/UnseenUniversity/config/profiles")
 
@@ -52,7 +52,7 @@ class _IgorShape:
 
 def _wire(stub):
     """Bind Igor._wire_datacenter to the stub instance and run it."""
-    from devices.igor.main import Igor
+    from unseen_university.devices.igor.main import Igor
 
     Igor._wire_datacenter(stub)
 
@@ -165,7 +165,7 @@ class TestIgorDatacenterBoot(unittest.TestCase):
         # listener replies", which times out and falls back. We monkey-patch
         # IMAPServer().start() to raise so we exercise the import-failure path
         # rather than waiting 2 seconds for an announce timeout.
-        from devices.igor import main as main_mod
+        from unseen_university.devices.igor import main as main_mod
 
         stub = _IgorShape(instance_id="wild-0001", datacenter_client=None)
 
@@ -173,7 +173,7 @@ class TestIgorDatacenterBoot(unittest.TestCase):
         # The simplest way is to inject a failing import via sys.modules.
         import sys
 
-        original = sys.modules.get("bus.imap_server")
+        original = sys.modules.get("unseen_university.devices.bus.imap_server")
         try:
 
             class _FakeIMAP:
@@ -186,13 +186,13 @@ class TestIgorDatacenterBoot(unittest.TestCase):
             class _FakeMod:
                 IMAPServer = _FakeIMAP
 
-            sys.modules["bus.imap_server"] = _FakeMod  # type: ignore[assignment]
+            sys.modules["unseen_university.devices.bus.imap_server"] = _FakeMod  # type: ignore[assignment]
             _wire(stub)
         finally:
             if original is not None:
-                sys.modules["bus.imap_server"] = original
+                sys.modules["unseen_university.devices.bus.imap_server"] = original
             else:
-                sys.modules.pop("bus.imap_server", None)
+                sys.modules.pop("unseen_university.devices.bus.imap_server", None)
 
         # Graceful fallback: both attributes are None, no exception escaped.
         self.assertIsNone(stub.datacenter_client)

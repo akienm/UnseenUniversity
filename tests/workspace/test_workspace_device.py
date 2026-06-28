@@ -12,7 +12,7 @@ import time
 
 import pytest
 
-from devices.workspace.device import WorkspaceDevice
+from unseen_university.devices.workspace.device import WorkspaceDevice
 from unseen_university.device import INTERFACE_VERSION
 
 

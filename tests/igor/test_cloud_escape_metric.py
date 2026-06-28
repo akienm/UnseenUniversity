@@ -25,7 +25,7 @@ def _make_turn_block(turn_id: str, intent: str, tier: str) -> str:
 
 def test_cloud_escape_by_category_parses_logs(tmp_path, monkeypatch):
     """_cloud_escape_by_category reads turn_trace files and buckets correctly."""
-    from devices.igor.cognition import metrics
+    from unseen_university.devices.igor.cognition import metrics
 
     # Write a fake turn_trace log for today
     from datetime import datetime, timezone
@@ -60,8 +60,8 @@ def test_cloud_escape_by_category_parses_logs(tmp_path, monkeypatch):
 
 def test_cloud_escape_rate_report_format(tmp_path, monkeypatch):
     """cloud_escape_rate_report returns a formatted string with category rows."""
-    from devices.igor.cognition import metrics
-    from devices.igor.tools import cloud_escape_metric
+    from unseen_university.devices.igor.cognition import metrics
+    from unseen_university.devices.igor.tools import cloud_escape_metric
 
     from datetime import datetime, timezone
 
@@ -83,8 +83,8 @@ def test_cloud_escape_rate_report_format(tmp_path, monkeypatch):
 
 def test_cloud_escape_rate_report_no_logs(tmp_path):
     """cloud_escape_rate_report handles empty logs gracefully."""
-    from devices.igor.cognition import metrics
-    from devices.igor.tools import cloud_escape_metric
+    from unseen_university.devices.igor.cognition import metrics
+    from unseen_university.devices.igor.tools import cloud_escape_metric
 
     with patch.object(metrics, "_LOGS_DIR", tmp_path):
         report = cloud_escape_metric.cloud_escape_rate_report(days=7, deposit=False)
@@ -94,7 +94,7 @@ def test_cloud_escape_rate_report_no_logs(tmp_path):
 
 def test_cloud_escape_metric_registered():
     """Tool is registered in the registry."""
-    from devices.igor.tools.registry import registry
+    from unseen_university.devices.igor.tools.registry import registry
 
     tool = registry.get("cloud_escape_rate_report")
     assert tool is not None

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from devices.librarian.trust import (
+from unseen_university.devices.librarian.trust import (
     TIER_DESCRIPTIONS,
     derive_trust_tier,
     passes_min_tier,

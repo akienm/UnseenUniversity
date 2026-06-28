@@ -7,10 +7,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from devices.inference.device import InferenceDevice
-from devices.inference.models_registry import ModelSpec, ModelsRegistry
-from devices.inference.shim import InferenceRequest
-from devices.inference.sources import SourceRegistry
+from unseen_university.devices.inference.device import InferenceDevice
+from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
+from unseen_university.devices.inference.shim import InferenceRequest
+from unseen_university.devices.inference.sources import SourceRegistry
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

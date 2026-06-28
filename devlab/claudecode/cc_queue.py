@@ -691,7 +691,7 @@ def _classifier_stamp_in_flight(ticket_id: str, required_files: list) -> None:
     if not required_files:
         return
     try:
-        from devices.classifier.device import ClassifierDevice
+        from unseen_university.devices.classifier.device import ClassifierDevice
         ClassifierDevice(llm_fallback=False).stamp_in_flight(ticket_id, required_files)
     except Exception as exc:
         print(f"classifier stamp_in_flight: {exc}", file=sys.stderr)
@@ -700,7 +700,7 @@ def _classifier_stamp_in_flight(ticket_id: str, required_files: list) -> None:
 def _classifier_clear_in_flight(ticket_id: str) -> None:
     """Clear palace.codebase in_flight flags for ticket_id. Non-fatal."""
     try:
-        from devices.classifier.device import ClassifierDevice
+        from unseen_university.devices.classifier.device import ClassifierDevice
         ClassifierDevice(llm_fallback=False).clear_in_flight(ticket_id)
     except Exception as exc:
         print(f"classifier clear_in_flight: {exc}", file=sys.stderr)
@@ -718,7 +718,7 @@ def _annotator_delta_update(ticket_id: str) -> None:
         if result.returncode != 0 or not result.stdout.strip():
             return
         touched = [f.strip() for f in result.stdout.splitlines() if f.strip()]
-        from devices.classifier.annotator import run_annotator
+        from unseen_university.devices.classifier.annotator import run_annotator
         db_url = os.environ.get("UU_HOME_DB_URL") or home_db_url()
         counts = run_annotator(db_url=db_url, file_paths=touched)
         print(
@@ -1428,7 +1428,7 @@ def _scraps_validate(ticket: dict) -> bool:
     On invalid, prints the issue list and returns False.
     """
     try:
-        from devices.scraps.scraps_device import ScrapsDevice
+        from unseen_university.devices.scraps.scraps_device import ScrapsDevice
 
         # silent=True: cc_queue already reports issues to stdout; channel post is redundant
         # and would write to the real Postgres channel during test runs.
@@ -1483,7 +1483,7 @@ def _decorate_with_intent(ticket: dict) -> None:
     with a warning. Never raises.
     """
     try:
-        from devices.intent.tools import intent_predict, intent_validate
+        from unseen_university.devices.intent.tools import intent_predict, intent_validate
     except ImportError:
         # Device or tools module not available
         _log({"action": "intent_decorate_skip", "id": ticket["id"], "reason": "import_failed"})
@@ -1540,7 +1540,7 @@ def _decorate_with_constraints(ticket: dict) -> None:
     proceed normally. Never raises — mirrors _decorate_with_intent.
     """
     try:
-        from devices.hubert.constraint_decorator import decorate_ticket
+        from unseen_university.devices.hubert.constraint_decorator import decorate_ticket
     except ImportError:
         _log({"action": "constraint_decorate_skip", "id": ticket.get("id"), "reason": "import_failed"})
         return

@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from devices.granny.cc_worker_listener import (
+from unseen_university.devices.granny.cc_worker_listener import (
     CCWorkerListener,
     _NAG_TERMINAL_STATUSES,
 )
@@ -42,7 +42,7 @@ def _make_listener(imap=None, nag_state_dir: Path | None = None, nag_interval: i
         poll_interval=0.1,
     )
     # Patch nag interval and state dir
-    import devices.granny.cc_worker_listener as mod
+    import unseen_university.devices.granny.cc_worker_listener as mod
     mod._NAG_INTERVAL_S = nag_interval
     if nag_state_dir:
         mod._NAG_STATE_DIR = nag_state_dir
@@ -90,7 +90,7 @@ class TestAckNote:
 class TestNagLoop:
     def test_nag_fires_when_ticket_still_sprint(self, tmp_path):
         """Nag sends tmux message when ticket stays in sprint status."""
-        import devices.granny.cc_worker_listener as mod
+        import unseen_university.devices.granny.cc_worker_listener as mod
         mod._NAG_STATE_DIR = tmp_path / "nag_state"
         mod._NAG_INTERVAL_S = 1
 
@@ -130,7 +130,7 @@ class TestNagLoop:
 
     def test_nag_stops_when_in_progress(self, tmp_path):
         """Nag loop exits cleanly when ticket reaches in_progress."""
-        import devices.granny.cc_worker_listener as mod
+        import unseen_university.devices.granny.cc_worker_listener as mod
         mod._NAG_STATE_DIR = tmp_path / "nag_state"
         mod._NAG_INTERVAL_S = 1
         (tmp_path / "nag_state").mkdir(parents=True, exist_ok=True)
@@ -158,7 +158,7 @@ class TestNagLoop:
 
     def test_nag_state_file_cleaned_on_terminal(self, tmp_path):
         """Nag state file is removed when ticket reaches terminal status."""
-        import devices.granny.cc_worker_listener as mod
+        import unseen_university.devices.granny.cc_worker_listener as mod
         mod._NAG_STATE_DIR = tmp_path / "nag_state"
         mod._NAG_INTERVAL_S = 1
         (tmp_path / "nag_state").mkdir(parents=True, exist_ok=True)
@@ -187,7 +187,7 @@ class TestNagLoop:
 class TestResumeOnRestart:
     def test_resume_starts_nag_for_pending_ticket(self, tmp_path):
         """On restart, nag resumes for tickets whose state files still exist."""
-        import devices.granny.cc_worker_listener as mod
+        import unseen_university.devices.granny.cc_worker_listener as mod
         nag_dir = tmp_path / "nag_state"
         nag_dir.mkdir()
         mod._NAG_STATE_DIR = nag_dir
@@ -218,7 +218,7 @@ class TestResumeOnRestart:
 
     def test_resume_clears_stale_file_for_terminal_ticket(self, tmp_path):
         """On restart, state files for closed tickets are cleaned up."""
-        import devices.granny.cc_worker_listener as mod
+        import unseen_university.devices.granny.cc_worker_listener as mod
         nag_dir = tmp_path / "nag_state"
         nag_dir.mkdir()
         mod._NAG_STATE_DIR = nag_dir

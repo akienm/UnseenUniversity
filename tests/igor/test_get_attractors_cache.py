@@ -18,7 +18,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.memory import cortex as cortex_mod
+from unseen_university.devices.igor.memory import cortex as cortex_mod
 
 
 @pytest.fixture(autouse=True)
@@ -35,7 +35,7 @@ def _make_cortex_spy(cache_key_id: str, id_rows: list[dict]):
       - self._cache_key_id, self._conn(), self.get(id)
     Calls to conn.execute().fetchall() return id_rows.
     """
-    from devices.igor.memory.cortex import Cortex
+    from unseen_university.devices.igor.memory.cortex import Cortex
 
     c = Cortex.__new__(Cortex)
     c._cache_key_id = cache_key_id

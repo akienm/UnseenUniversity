@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from devices.igor.cognition import reasoning_cache as rc
+from unseen_university.devices.igor.cognition import reasoning_cache as rc
 
 
 @pytest.fixture

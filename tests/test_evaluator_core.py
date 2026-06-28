@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from devices.evaluator.core import EvaluatorCore, _build_system
+from unseen_university.devices.evaluator.core import EvaluatorCore, _build_system
 
 
 # ── _build_system ─────────────────────────────────────────────────────────────

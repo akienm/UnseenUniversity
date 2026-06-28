@@ -3,11 +3,11 @@
 import os
 from unittest.mock import patch
 
-import devices.web_server.server as _srv
+import unseen_university.devices.web_server.server as _srv
 
 
 def _make_app():
-    with patch("devices.web_server.server._init_comms"):
+    with patch("unseen_university.devices.web_server.server._init_comms"):
         return _srv._make_app()
 
 
@@ -72,7 +72,7 @@ class TestPalaceEditAuth:
             ("palace.some.node", "Test Node", "node content here")
         )
         with patch.dict(os.environ, {"ADC_EDIT_TOKEN": "secret123"}):
-            with patch("devices.web_server.server._db_conn", return_value=mock_conn):
+            with patch("unseen_university.devices.web_server.server._db_conn", return_value=mock_conn):
                 app = _make_app()
                 with TestClient(app) as client:
                     resp = client.get("/palace-edit/palace.some.node")

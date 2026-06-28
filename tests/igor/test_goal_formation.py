@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from devices.igor.cognition.goal_formation import (  # noqa: E402
+from unseen_university.devices.igor.cognition.goal_formation import (  # noqa: E402
     DEFAULT_MIN_RECURRENCE,
     FormationCandidate,
     _tokenize,

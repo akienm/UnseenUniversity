@@ -17,8 +17,8 @@ from unittest.mock import MagicMock, patch, call
 
 import pytest
 
-from devices.intent.device import IntentExtractorDevice, _parse_json
-from devices.intent.store import IntentStore
+from unseen_university.devices.intent.device import IntentExtractorDevice, _parse_json
+from unseen_university.devices.intent.store import IntentStore
 
 # ── Env-gated skip markers ────────────────────────────────────────────────────
 

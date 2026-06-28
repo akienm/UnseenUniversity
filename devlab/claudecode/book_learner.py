@@ -64,8 +64,8 @@ except Exception:
                 k, _, v = line.partition("=")
                 os.environ.setdefault(k.strip(), v.strip())
 
-from devices.igor.cognition import milieu as _milieu_mod
-from devices.igor.memory.cortex import Cortex
+from unseen_university.devices.igor.cognition import milieu as _milieu_mod
+from unseen_university.devices.igor.memory.cortex import Cortex
 
 _CLOUD_OK_OVERRIDE_FILE = Path.home() / ".unseen_university" / "cloud_ok_override.json"
 
@@ -97,8 +97,8 @@ def _should_use_local(explicit_local: bool = False) -> bool:
         return True  # on any error, default to local
 
 
-from devices.igor.memory.models import Memory, MemoryType
-from devices.igor.tools.ebook_reader import DRM_FAILED, open_book, read_chunk
+from unseen_university.devices.igor.memory.models import Memory, MemoryType
+from unseen_university.devices.igor.tools.ebook_reader import DRM_FAILED, open_book, read_chunk
 
 DB_PATH = Path(
     os.environ.get(
@@ -450,7 +450,7 @@ def _extract_nodes_local(chunk_text: str, chapter_title: str = "") -> dict:
     host = None
     model = None
     try:
-        from devices.igor.cognition.cluster_router import router as _router
+        from unseen_university.devices.igor.cognition.cluster_router import router as _router
 
         host, model = _router.route("extraction")
     except Exception:
@@ -652,8 +652,8 @@ def _handle_drm_blocked(handle: dict, args) -> None:
 
     if args.run:
         try:
-            from devices.igor.paths import paths as _paths
-            from devices.igor.memory.cortex import Cortex
+            from unseen_university.devices.igor.paths import paths as _paths
+            from unseen_university.devices.igor.memory.cortex import Cortex
 
             cortex = Cortex(db_url=UU_HOME_DB_URL)
             import hashlib, datetime
@@ -1056,7 +1056,7 @@ def run(args) -> None:
     # ── Open book ─────────────────────────────────────────────────────────
     print(f"Opening book...")
     if args.url:
-        from devices.igor.tools.ebook_reader import open_book_url
+        from unseen_university.devices.igor.tools.ebook_reader import open_book_url
 
         handle = open_book_url(args.url, title=args.title or args.url)
     elif args.calibre_id:
@@ -1132,7 +1132,7 @@ def run(args) -> None:
 
     # ── Seek to start position ─────────────────────────────────────────────
     # Access the live BookHandle from cache for position management
-    from devices.igor.tools.ebook_reader import _HANDLE_CACHE
+    from unseen_university.devices.igor.tools.ebook_reader import _HANDLE_CACHE
 
     live_handle = _HANDLE_CACHE.get(handle_key)
     if live_handle is None:

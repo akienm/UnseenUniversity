@@ -95,7 +95,7 @@ def _stamp_verdict(ticket_id: str, verdict: str, reasoning: str) -> None:
 
 def grade(ticket_id: str, diff: str) -> dict:
     """Grade a sprint diff for ticket_id. Returns {verdict, score, eval_id, reasoning}."""
-    from devices.evaluator.device import EvaluatorDevice
+    from unseen_university.devices.evaluator.device import EvaluatorDevice
 
     ticket_desc = _get_ticket_description(ticket_id)
 

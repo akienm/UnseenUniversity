@@ -27,8 +27,8 @@ import socket
 import time
 from dataclasses import dataclass
 
-from bus.connection import make_bus_connection
-from bus.envelope import Envelope
+from unseen_university.devices.bus.connection import make_bus_connection
+from unseen_university.devices.bus.envelope import Envelope
 
 from .envelope import ANNOUNCE_MAILBOX, IdentityEnvelope
 from .manifest import (

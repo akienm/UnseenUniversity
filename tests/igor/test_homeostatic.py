@@ -15,8 +15,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 
-import devices.igor.cognition.milieu as milieu_mod
-from devices.igor.cognition.milieu import (
+import unseen_university.devices.igor.cognition.milieu as milieu_mod
+from unseen_university.devices.igor.cognition.milieu import (
     DECAY_AROUSAL,
     DECAY_DOMINANCE,
     DECAY_VALENCE,

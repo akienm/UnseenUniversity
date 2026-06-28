@@ -39,7 +39,7 @@ def _make_cortex():
 
 class TestEvaluateGate:
     def test_unconditional_gate_fires(self):
-        from devices.igor.cognition.gate_primitive import evaluate_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import evaluate_gate
 
         gate = _make_gate_memory()
         cortex = _make_cortex()
@@ -50,7 +50,7 @@ class TestEvaluateGate:
         assert "unconditional_gate" in reason
 
     def test_code_ref_evaluator_returning_tuple(self):
-        from devices.igor.cognition.gate_primitive import evaluate_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import evaluate_gate
 
         gate = _make_gate_memory(code_ref="mod:check_fn")
         cortex = _make_cortex()
@@ -61,13 +61,13 @@ class TestEvaluateGate:
         mock_registry = MagicMock()
         mock_registry.get.return_value = mock_tool
 
-        with patch("devices.igor.tools.registry.registry", mock_registry):
+        with patch("unseen_university.devices.igor.tools.registry.registry", mock_registry):
             should_gate, reason = evaluate_gate(gate, cortex, {"user_input": "test"})
         assert should_gate is True
         assert reason == "claim unverified"
 
     def test_code_ref_evaluator_returning_dict(self):
-        from devices.igor.cognition.gate_primitive import evaluate_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import evaluate_gate
 
         gate = _make_gate_memory(code_ref="mod:check_fn")
         cortex = _make_cortex()
@@ -78,13 +78,13 @@ class TestEvaluateGate:
         mock_registry = MagicMock()
         mock_registry.get.return_value = mock_tool
 
-        with patch("devices.igor.tools.registry.registry", mock_registry):
+        with patch("unseen_university.devices.igor.tools.registry.registry", mock_registry):
             should_gate, reason = evaluate_gate(gate, cortex, {"user_input": "test"})
         assert should_gate is False
         assert reason == "all clear"
 
     def test_code_ref_error_fails_open(self):
-        from devices.igor.cognition.gate_primitive import evaluate_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import evaluate_gate
 
         gate = _make_gate_memory(code_ref="mod:broken_fn")
         cortex = _make_cortex()
@@ -95,7 +95,7 @@ class TestEvaluateGate:
         mock_registry = MagicMock()
         mock_registry.get.return_value = mock_tool
 
-        with patch("devices.igor.tools.registry.registry", mock_registry):
+        with patch("unseen_university.devices.igor.tools.registry.registry", mock_registry):
             should_gate, reason = evaluate_gate(gate, cortex, {"user_input": "test"})
         assert should_gate is False
         assert "evaluator_error" in reason
@@ -103,7 +103,7 @@ class TestEvaluateGate:
 
 class TestFireGate:
     def test_pushes_to_twm(self):
-        from devices.igor.cognition.gate_primitive import fire_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import fire_gate
 
         gate = _make_gate_memory(domain="action_claims")
         cortex = _make_cortex()
@@ -121,7 +121,7 @@ class TestFireGate:
         assert "action_claims" in call_kwargs["content_csb"]
 
     def test_custom_salience(self):
-        from devices.igor.cognition.gate_primitive import fire_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import fire_gate
 
         gate = _make_gate_memory(gate_salience=0.7, gate_urgency=0.5)
         cortex = _make_cortex()
@@ -132,7 +132,7 @@ class TestFireGate:
         assert call_kwargs["urgency"] == 0.5
 
     def test_logs_to_ring(self):
-        from devices.igor.cognition.gate_primitive import fire_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import fire_gate
 
         gate = _make_gate_memory()
         cortex = _make_cortex()
@@ -146,7 +146,7 @@ class TestFireGate:
 
 class TestDispatchGate:
     def test_full_dispatch_gated(self):
-        from devices.igor.cognition.gate_primitive import dispatch_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import dispatch_gate
 
         gate = _make_gate_memory(domain="coherence")
         cortex = _make_cortex()
@@ -159,7 +159,7 @@ class TestDispatchGate:
         assert result["obs_id"] == 42
 
     def test_full_dispatch_not_gated(self):
-        from devices.igor.cognition.gate_primitive import dispatch_gate
+        from unseen_university.devices.igor.cognition.gate_primitive import dispatch_gate
 
         gate = _make_gate_memory(code_ref="mod:check_fn")
         cortex = _make_cortex()
@@ -169,7 +169,7 @@ class TestDispatchGate:
         mock_registry = MagicMock()
         mock_registry.get.return_value = mock_tool
 
-        with patch("devices.igor.tools.registry.registry", mock_registry):
+        with patch("unseen_university.devices.igor.tools.registry.registry", mock_registry):
             result = dispatch_gate(gate, cortex, {"user_input": "test"})
         assert result["gated"] is False
         assert result["obs_id"] is None
@@ -178,7 +178,7 @@ class TestDispatchGate:
 
 class TestGateEngramNode:
     def test_no_gate_signals_passes(self):
-        from devices.igor.cognition.inhibition_chain import GateEngramNode
+        from unseen_university.devices.igor.cognition.inhibition_chain import GateEngramNode
 
         node = GateEngramNode()
         cortex = _make_cortex()
@@ -189,7 +189,7 @@ class TestGateEngramNode:
         assert inhibited is False
 
     def test_active_gate_signal_inhibits(self):
-        from devices.igor.cognition.inhibition_chain import GateEngramNode
+        from unseen_university.devices.igor.cognition.inhibition_chain import GateEngramNode
 
         node = GateEngramNode()
         cortex = _make_cortex()
@@ -213,7 +213,7 @@ class TestGateEngramNode:
         assert basket.get("inhibition.gate_id") == "GATE_CONFAB"
 
     def test_expired_gate_signal_passes(self):
-        from devices.igor.cognition.inhibition_chain import GateEngramNode
+        from unseen_university.devices.igor.cognition.inhibition_chain import GateEngramNode
 
         node = GateEngramNode()
         cortex = _make_cortex()
@@ -232,7 +232,7 @@ class TestGateEngramNode:
         assert inhibited is False
 
     def test_integrated_gate_signal_ignored(self):
-        from devices.igor.cognition.inhibition_chain import GateEngramNode
+        from unseen_university.devices.igor.cognition.inhibition_chain import GateEngramNode
 
         node = GateEngramNode()
         cortex = _make_cortex()
@@ -250,7 +250,7 @@ class TestGateEngramNode:
         assert inhibited is False
 
     def test_twm_read_failure_passes(self):
-        from devices.igor.cognition.inhibition_chain import GateEngramNode
+        from unseen_university.devices.igor.cognition.inhibition_chain import GateEngramNode
 
         node = GateEngramNode()
         cortex = _make_cortex()
@@ -263,7 +263,7 @@ class TestGateEngramNode:
 
 class TestDefaultChainIncludesGate:
     def test_gate_engram_node_in_chain(self):
-        from devices.igor.cognition.inhibition_chain import (
+        from unseen_university.devices.igor.cognition.inhibition_chain import (
             GateEngramNode,
             default_chain,
         )

@@ -11,15 +11,15 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from devices.inference.models_registry import ModelSpec, ModelsRegistry, default_registry
-from devices.inference.rules_engine import RoutingRule, RulesEngine
-from devices.inference.sources import (
+from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry, default_registry
+from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
+from unseen_university.devices.inference.sources import (
     OllamaCloudSource,
     OpenRouterSource,
     Source,
     SourceRegistry,
 )
-from devices.inference.shim import InferenceRequest
+from unseen_university.devices.inference.shim import InferenceRequest
 
 
 # ── billing_type field ────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ def test_ollama_cloud_source_disabled_without_api_key():
     env = {k: v for k, v in __import__("os").environ.items()
            if k not in ("OLLAMA_PRO_API_KEY", "OLLAMA_API_KEY")}
     with patch.dict("os.environ", env, clear=True):
-        with patch("devices.inference.sources._read_akien_cred", return_value=""):
+        with patch("unseen_university.devices.inference.sources._read_akien_cred", return_value=""):
             src = OllamaCloudSource()
     assert src.available is False
 
@@ -69,14 +69,14 @@ def test_ollama_cloud_source_ping_returns_false_without_key():
     env = {k: v for k, v in __import__("os").environ.items()
            if k not in ("OLLAMA_PRO_API_KEY", "OLLAMA_API_KEY")}
     with patch.dict("os.environ", env, clear=True), \
-         patch("devices.inference.sources._read_akien_cred", return_value=""):
+         patch("unseen_university.devices.inference.sources._read_akien_cred", return_value=""):
         src = OllamaCloudSource()
         assert src.ping() is False
 
 
 def test_ollama_cloud_source_call_includes_tools():
     """OllamaCloudSource.call() forwards req.tools to the API payload."""
-    from devices.dicksimnel.toolloop import TOOL_DEFINITIONS
+    from unseen_university.devices.dicksimnel.toolloop import TOOL_DEFINITIONS
 
     captured = {}
 
@@ -190,7 +190,7 @@ def test_flat_rate_at_priority_99_beats_usage_at_priority_1():
 
 def test_openrouter_forwards_tools_to_api():
     """OpenRouterSource.call() must include req.tools in the POST payload."""
-    from devices.dicksimnel.toolloop import TOOL_DEFINITIONS
+    from unseen_university.devices.dicksimnel.toolloop import TOOL_DEFINITIONS
 
     captured = {}
 
@@ -256,7 +256,7 @@ def test_openrouter_no_tools_field_when_tools_none():
 
 def test_google_free_source_billing_type_is_flat_rate():
     """GoogleSource(free_tier=True) must be flat_rate so rules engine prefers it over OR."""
-    from devices.inference.sources import GoogleSource
+    from unseen_university.devices.inference.sources import GoogleSource
     src = GoogleSource(free_tier=True)
     assert src.billing_type == "flat_rate", (
         "google_free must be flat_rate — otherwise worker tasks route to paid OR "
@@ -266,7 +266,7 @@ def test_google_free_source_billing_type_is_flat_rate():
 
 def test_google_paid_source_billing_type_is_usage_based():
     """GoogleSource(free_tier=False) is usage_based — billed per token."""
-    from devices.inference.sources import GoogleSource
+    from unseen_university.devices.inference.sources import GoogleSource
     src = GoogleSource(free_tier=False)
     assert src.billing_type == "usage_based"
 
@@ -311,9 +311,9 @@ def test_worker_routes_to_google_free_when_ollama_cloud_unavailable():
     Worker tasks must NOT fall through to paid OpenRouter.
     """
     import os
-    from devices.inference.models_registry import ModelSpec, ModelsRegistry
-    from devices.inference.rules_engine import RoutingRule, RulesEngine
-    from devices.inference.sources import Source, SourceRegistry
+    from unseen_university.devices.inference.models_registry import ModelSpec, ModelsRegistry
+    from unseen_university.devices.inference.rules_engine import RoutingRule, RulesEngine
+    from unseen_university.devices.inference.sources import Source, SourceRegistry
 
     # Simulate production: google_free available, ollama_cloud NOT available, OR available
     reg = SourceRegistry()

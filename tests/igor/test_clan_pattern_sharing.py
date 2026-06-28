@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 def _make_memory(id_: str, narrative: str = "", parent_id: str = None, children=None):
-    from devices.igor.memory.models import Memory, MemoryType
+    from unseen_university.devices.igor.memory.models import Memory, MemoryType
 
     m = Memory(id=id_, narrative=narrative or id_, memory_type=MemoryType.FACTUAL)
     m.parent_id = parent_id
@@ -36,7 +36,7 @@ def _make_memory(id_: str, narrative: str = "", parent_id: str = None, children=
 class TestExportImportRoundTrip:
     def test_round_trip_preserves_node_count(self):
         """Export from cortex A, import into cortex B → same node count."""
-        from devices.igor.memory.engram_export import export_engram, import_engram
+        from unseen_university.devices.igor.memory.engram_export import export_engram, import_engram
 
         # Cortex A with a 3-node tree
         root = _make_memory("ROOT", "root node", children=["CHILD1", "CHILD2"])
@@ -74,7 +74,7 @@ class TestExportImportRoundTrip:
 
     def test_import_skips_existing_nodes(self):
         """Import does not overwrite nodes that already exist in the target graph."""
-        from devices.igor.memory.engram_export import export_engram, import_engram
+        from unseen_university.devices.igor.memory.engram_export import export_engram, import_engram
 
         root = _make_memory("ROOT2", "root", children=["CHILD3"])
         child = _make_memory("CHILD3", "child", parent_id="ROOT2")
@@ -111,7 +111,7 @@ class TestExportImportRoundTrip:
 
     def test_export_missing_root_returns_none(self):
         """export_engram returns None when root_id not found."""
-        from devices.igor.memory.engram_export import export_engram
+        from unseen_university.devices.igor.memory.engram_export import export_engram
 
         cortex = MagicMock()
         cortex.get = MagicMock(return_value=None)
@@ -121,12 +121,12 @@ class TestExportImportRoundTrip:
 
     def test_share_pattern_tool_export_missing_root(self):
         """export_pattern tool returns error string for unknown root."""
-        from devices.igor.tools.share_pattern import export_pattern
+        from unseen_university.devices.igor.tools.share_pattern import export_pattern
 
         cortex_mock = MagicMock()
         cortex_mock.get = MagicMock(return_value=None)
 
-        import devices.igor.tools.share_pattern as sp_mod
+        import unseen_university.devices.igor.tools.share_pattern as sp_mod
 
         original = sp_mod._get_cortex
         sp_mod._get_cortex = MagicMock(return_value=cortex_mock)
@@ -138,7 +138,7 @@ class TestExportImportRoundTrip:
 
     def test_json_round_trip_edge_structure(self):
         """Exported JSON parses back to correct node list."""
-        from devices.igor.memory.engram_export import EngramTemplate, export_engram
+        from unseen_university.devices.igor.memory.engram_export import EngramTemplate, export_engram
 
         root = _make_memory("RTEST", "root", children=["C1"])
         c1 = _make_memory("C1", "child", parent_id="RTEST")

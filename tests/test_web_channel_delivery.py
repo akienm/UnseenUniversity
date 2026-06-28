@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import devices.web_server.server as _srv
+import unseen_university.devices.web_server.server as _srv
 
 
 @pytest.fixture(autouse=True)
@@ -111,7 +111,7 @@ class TestAgentRegistrationTmuxTarget:
     def test_register_stores_tmux_target(self):
         from starlette.testclient import TestClient
 
-        with patch("devices.web_server.server._init_comms"):
+        with patch("unseen_university.devices.web_server.server._init_comms"):
             app = _srv._make_app()
         with TestClient(app) as client:
             resp = client.post(
@@ -124,7 +124,7 @@ class TestAgentRegistrationTmuxTarget:
     def test_register_without_tmux_target_defaults_empty(self):
         from starlette.testclient import TestClient
 
-        with patch("devices.web_server.server._init_comms"):
+        with patch("unseen_university.devices.web_server.server._init_comms"):
             app = _srv._make_app()
         with TestClient(app) as client:
             resp = client.post(
@@ -137,7 +137,7 @@ class TestAgentRegistrationTmuxTarget:
     def test_tmux_target_capped_at_128_chars(self):
         from starlette.testclient import TestClient
 
-        with patch("devices.web_server.server._init_comms"):
+        with patch("unseen_university.devices.web_server.server._init_comms"):
             app = _srv._make_app()
         long_target = "x" * 200
         with TestClient(app) as client:
@@ -160,8 +160,8 @@ class TestWebSocketTmuxDelivery:
 
         mock_result = MagicMock(returncode=0, stdout="", stderr="")
         with (
-            patch("devices.web_server.server._init_comms"),
-            patch("devices.web_server.server._load_agents"),
+            patch("unseen_university.devices.web_server.server._init_comms"),
+            patch("unseen_university.devices.web_server.server._load_agents"),
             patch("subprocess.run", return_value=mock_result) as mock_run,
         ):
             app = _srv._make_app()

@@ -73,15 +73,15 @@ _CONFIG = {
 }
 
 _PATCHES = dict(
-    sprint_tickets="devices.granny.daemon._sprint_tickets",
-    cleared_gated="devices.granny.daemon._cleared_gated_tickets",
-    load_announced="devices.granny.daemon._load_announced_workers",
-    setstatus="devices.granny.daemon._setstatus_direct",
-    cc0_busy="devices.granny.daemon._cc0_busy",
-    escalate="devices.granny.daemon._escalate_stale_dispatched",
-    reset_stale="devices.granny.daemon._reset_stale_inprogress",
-    available="devices.granny.availability.is_available",
-    channel="devices.granny.daemon._post_channel",
+    sprint_tickets="unseen_university.devices.granny.daemon._sprint_tickets",
+    cleared_gated="unseen_university.devices.granny.daemon._cleared_gated_tickets",
+    load_announced="unseen_university.devices.granny.daemon._load_announced_workers",
+    setstatus="unseen_university.devices.granny.daemon._setstatus_direct",
+    cc0_busy="unseen_university.devices.granny.daemon._cc0_busy",
+    escalate="unseen_university.devices.granny.daemon._escalate_stale_dispatched",
+    reset_stale="unseen_university.devices.granny.daemon._reset_stale_inprogress",
+    available="unseen_university.devices.granny.availability.is_available",
+    channel="unseen_university.devices.granny.daemon._post_channel",
 )
 
 
@@ -103,7 +103,7 @@ def _run(imap, tickets, replies=None, available=True):
         patch(_PATCHES["available"], return_value=available),
         patch(_PATCHES["channel"]),
     ):
-        from devices.granny.daemon import run_once
+        from unseen_university.devices.granny.daemon import run_once
         run_once(_CONFIG, imap=imap)
 
     return transitions
