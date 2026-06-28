@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-installer-absorbs-init-2026-06-28.20260628.155707139476",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-installer-absorbs-init-2026-06-28"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-28T15:57:07.139476",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-installer-absorbs-init-2026-06-28",
+    "title": "Installer device is the owner of global instance-init (global_kb + bootstrap)",
+    "status": "open",
+    "date": "2026-06-28",
+    "spawned_tickets": [
+      "T-installer-init-intention-point",
+      "T-home-global-kb-under-installer",
+      "T-inventory-classify-scattered-bootstraps",
+      "T-consequence-installer-absorbs-init"
+    ],
+    "text": "# D-installer-absorbs-init-2026-06-28\n**title:** Installer device is the owner of global instance-init\n**date:** 2026-06-28\n**status:** open\n**spawned_tickets:** T-installer-init-intention-point, T-home-global-kb-under-installer, T-inventory-classify-scattered-bootstraps, T-consequence-installer-absorbs-init\n\n## Decision narrative\nThere was no defined 'init container': global instance-init (seed the shared KB, create shared tables, provision a fresh instance) was ownerless and scattered (global_kb.py + dead palace/search bootstraps + igor-local bootstraps), with no architecture intention-point. Akien (2026-06-28) decided the INSTALLER DEVICE absorbs global init — 'stand up a fresh instance' already is its job (factory, manifest, deploy), and seeding/table-creation is the same lifecycle phase. KEY BOUNDARY (prevents over-pulling): the installer owns GLOBAL / cross-instance init only; DEVICE-LOCAL bootstrap (a device standing up its own state, e.g. igor/acquisition/bootstrap.py, igor/setup_assets/installer.py, igor/tools/bootstrap_reader.py) STAYS with its device to preserve blast-radius containment. global_kb is global -> moves under installer. The other scattered pieces get inventoried+classified before any move (bootstrap_learning.py is the ambiguous one). This SUPERSEDES the 'global_kb left as-is' note in D-root-cleanup-2026-06-28 — global_kb is NOT left at root; it homes under installer. Owner: CC.\n\n## Hypothesis\nThe installer device has an architecture intention-point declaring it the global-init owner; global_kb (loader + seed) lives under the installer device; and a classified inventory of the remaining scattered bootstraps (global vs device-local) exists.\n\n## Measurement Signal\nls unseen_university/devices/installer/ shows the global_kb loader+seed; devlab/runtime/memory/architecture/installer.json exists naming the global-vs-device-local boundary; grep finds no unseen_university/global_kb.py at the old path; the bootstrap inventory note tags each piece global/device-local.\n\n## Intention\nI intend that there is one clear owner for global instance-init — the installer device — so seed/bootstrap logic has a home instead of scattering ownerless across the tree."
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-home-global-kb-under-installer.20260628.155706819128",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-home-global-kb-under-installer"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T21:57:06.819128+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-home-global-kb-under-installer"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-home-global-kb-under-installer",
+    "title": "[sprint] Move global_kb loader + seed under the installer device",
+    "size": "M",
+    "tags": [
+      "Installer",
+      "Cleanup"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "description": "**Problem:** global_kb is global instance-init (clones/pulls a KB repo, creates the global_kb.patterns Postgres table, upserts patterns/*.jsonl seed). Today the loader is unseen_university/global_kb.py and the seed is the global_kb/ dir at repo root — both ownerless and root-cluttering. Per D-installer-absorbs-init, global init belongs to the installer device.\n**Proposed shape:** Move the loader unseen_university/global_kb.py -> unseen_university/devices/installer/global_kb.py (or installer/init/global_kb.py — decide at sprint per installer's internal layout), and the seed dir global_kb/ -> alongside it under the installer device (so the loader reads its seed via a path relative to its new home / importlib.resources, not the repo root). Update the single consumer unseen_university/devices/archivist/contrib.py (import path) + any test imports. Add the seed (patterns/*.jsonl) to package-data so it ships. Verify the bootstrap path still resolves the seed from the new location.\n**Affected files:** unseen_university/global_kb.py -> unseen_university/devices/installer/...; global_kb/ seed dir -> under installer; unseen_university/devices/archivist/contrib.py (import update); tests referencing global_kb; pyproject package-data (already globs *.jsonl? verify).\n**Design rules:** one home (global init under installer); migrate->VERIFY->delete (confirm import + seed-read resolve before removing old paths); shipped read-only asset (seed) is package-data read via importlib.resources, NOT repo-root-relative open; check with Akien before any new ~/.unseen_university path (none expected — seed is in-package, runtime KB clone stays in uu_home as today).\n**Scope boundary:** IN — relocate the global_kb loader + seed under the installer device + fix the archivist import + seed-read path. OUT — the architecture intention-point (separate ticket); classifying/moving OTHER scattered bootstraps (T-inventory); changing the KB schema or bootstrap logic.\n**Test plan:** (1) `ls unseen_university/global_kb.py 2>/dev/null` -> absent; the loader present under devices/installer/. (2) `python3 -c 'import unseen_university.devices.installer... ; <loader importable>'` resolves. (3) archivist contrib import resolves (`python3 -c 'import unseen_university.devices.archivist.contrib'`). (4) The bootstrap reads its seed from the new in-package location (dry-run/unit: enumerate_records finds baseline.jsonl) with no repo-root-relative path. (5) pytest --collect-only clean.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-28T21:57:01.213890+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T21:57:01.213952+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "cb6c8ea9-e786-47e2-8a30-550eea82a1e2"
+  }
+}

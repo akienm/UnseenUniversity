@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-installer-absorbs-init.20260628.155707060059",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-installer-absorbs-init"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T21:57:07.060059+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-consequence-installer-absorbs-init"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-installer-absorbs-init",
+    "title": "[sprint] Consequence check: installer device absorbs global init",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "status": "sprint",
+    "gate": "2026-07-12",
+    "priority": 0.3,
+    "description": "**What changed:** Declared the installer device the owner of global instance-init (architecture intention-point); moved the global_kb loader+seed under installer; inventoried+classified the remaining scattered bootstraps (global vs device-local).\n**Predicted unintended effects:** (1) Moving global_kb breaks its consumer (archivist/contrib.py) or a test if an import path is missed -> ImportError at runtime, not collect time if dynamically imported. (2) The seed (baseline.jsonl) read via a repo-root-relative path silently returns empty after the move (wrong base dir) -> KB bootstrap seeds nothing on a fresh instance, no error. (3) The global-vs-device-local boundary gets misapplied later and an igor-local bootstrap is pulled into installer -> breaks igor blast-radius containment. (4) package-data doesn't include the moved *.jsonl -> wheel ships without the seed (editable install masks it). (5) The installer device's __init__ eager-imports the global_kb loader (psycopg2/Postgres) -> violates cold-start if installer is imported on a cold path.\n**Signals to watch:** archivist + any KB consumer import clean post-move; a fresh-instance KB bootstrap actually upserts baseline rows (count>0); no igor-local bootstrap appears under installer; `pip wheel` / sdist includes baseline.jsonl; importing the installer package pulls no psycopg2 on a cold path.\n**Gate condition:** Check by 2026-07-12 or when T-home-global-kb-under-installer closes.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-28T21:57:04.726530+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T21:57:04.726606+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "d037ffa8-8595-41c0-b6c1-7da7fa0933ea"
+  }
+}
