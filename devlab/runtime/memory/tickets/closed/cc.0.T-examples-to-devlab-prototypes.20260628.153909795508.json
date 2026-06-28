@@ -17,20 +17,20 @@
   },
   "body": {
     "id": "T-examples-to-devlab-prototypes",
-    "title": "[sprint] Move examples/ -> devlab/prototypes/ (root tidy)",
+    "title": "Move examples/ -> devlab/prototypes/ (root tidy)",
     "size": "S",
     "tags": [
       "Cleanup",
       "Substrate"
     ],
     "description": "**Problem:** examples/ (chat_agent/: README + agent.py) is a demo/prototype sitting at repo root, imported by nothing. Akien (2026-06-28): rename to prototypes and move under devlab. It is not shipped library code and not a dev-process artifact type — it is a prototype, which belongs in devlab alongside dev tooling.\n**Proposed shape:** git mv examples/ -> devlab/prototypes/ (so examples/chat_agent/ -> devlab/prototypes/chat_agent/). Grep for any reference to the examples/ path (docs, README, skills, CI) and update. examples/chat_agent/agent.py: if it imports the package, the imports already point at unseen_university.* post-collapse (verify it still imports clean from the new location); it is a prototype so a broken demo is non-blocking but should be noted.\n**Affected files:** examples/ -> devlab/prototypes/ (whole dir); any 'examples/' path reference in README.md, docs/press_releases, skills/.\n**Design rules:** minimize root (Akien's repo-tidy intention); prototypes live in devlab; migrate->VERIFY->delete (confirm no stale 'examples/' path ref survives).\n**Scope boundary:** IN — move examples/ to devlab/prototypes/ + fix path references. OUT — fixing/maintaining the chat_agent demo's logic; any other root dir (global_kb is live data, systemd is deploy config, test_env is a stray venv — all left as-is, recorded in the decision narrative).\n**Test plan:** (1) `ls examples 2>/dev/null` -> absent; `ls devlab/prototypes/chat_agent/` -> README.md + agent.py present. (2) `grep -rn 'examples/' README.md docs* skills/ --include='*.md'` returns no live path to the moved dir. (3) `git ls-files devlab/prototypes/` shows the moved files tracked.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-06-28T21:39:05.049623+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Moved examples/ -> devlab/prototypes/chat_agent (commit 63999bca). agent.py compiles + its db_proxy import resolves; no live ref to old path; pyc was untracked.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-28T22:48:29.560074+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -42,6 +42,12 @@
     "scraps_validated": "2026-06-28T21:39:05.049697+00:00",
     "inferred_intention": "unknown",
     "inferred_intention_id": "3c547de6-1ad4-46ce-8216-6ec638a3be3d",
-    "priority": 0.5
+    "priority": 0.5,
+    "proven": false,
+    "unproven_reason": "structural directory move (ImportError-shaped red, rejected as collateral); lever still lacking = a structural-move proof mode (compile + import-resolution + path-absence assertion) — same lever as T-collapse-to-single-package",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
