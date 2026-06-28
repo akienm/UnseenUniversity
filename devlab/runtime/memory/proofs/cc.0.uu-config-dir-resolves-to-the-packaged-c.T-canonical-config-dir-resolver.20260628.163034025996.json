@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.uu-config-dir-resolves-to-the-packaged-c.T-canonical-config-dir-resolver.20260628.163034025996",
+  "emitter": "cc.0",
+  "namespace": [
+    "uu-config-dir-resolves-to-the-packaged-c",
+    "T-canonical-config-dir-resolver"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-28T16:30:34.025996",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-canonical-config-dir-resolver"
+    ],
+    "commits": [
+      "c5782f75565f26f95aa7470aee59a1c6bc17b898"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "uu_config_dir() resolves to the packaged config directory",
+    "intention": "uu_config_dir() returns <package>/config (depth-independent, move-proof) and that dir holds the real config assets",
+    "test": "tests/test_uu_config_dir.py::test_uu_config_dir_resolves_to_packaged_config",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_uu_config_dir.py::test_uu_config_dir_resolves_to_packaged_config",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________________ test_uu_config_dir_resolves_to_packaged_config ________________\n\n    def test_uu_config_dir_resolves_to_packaged_config():\n        cfg = uu_config_dir()\n    \n        # Anchored on the installed package, not the caller's cwd or a parents[N] count.\n        pkg_root = Path(unseen_university.__file__).resolve().parent\n>       assert cfg == pkg_root / \"config\", (\n            f\"uu_config_dir() must resolve to <package>/config; got {cfg}\"\n        )\nE       AssertionError: uu_config_dir() must resolve to <package>/config; got /__uu_config_dir_unimplemented__/config\nE       assert PosixPath('/__uu_config_dir_unimplemented__/config') == (PosixPath('/home/akien/dev/src/UnseenUniversity/unseen_university') / 'config')\n\ntests/test_uu_config_dir.py:24: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_uu_config_dir.py::test_uu_config_dir_resolves_to_packaged_config\n1 failed in 0.21s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.25s"
+          }
+        }
+      }
+    ],
+    "commit": "c5782f75565f26f95aa7470aee59a1c6bc17b898",
+    "impl_paths": [
+      "unseen_university/_uu_root.py"
+    ],
+    "ticket": "T-canonical-config-dir-resolver",
+    "narrative": "Retires fragile parents[N] config-path counting; anchors on _uu_root.py package root.",
+    "why": "A wrong-path stub fails the value assertions (authentic red); green proves the resolver targets the real config dir, not just that the symbol exists.",
+    "bootstrap": false
+  }
+}
