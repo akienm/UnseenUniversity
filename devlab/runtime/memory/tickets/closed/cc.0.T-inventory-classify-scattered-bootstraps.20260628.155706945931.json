@@ -17,21 +17,21 @@
   },
   "body": {
     "id": "T-inventory-classify-scattered-bootstraps",
-    "title": "[sprint] Inventory + classify scattered bootstrap code: global-init vs device-local",
+    "title": "Inventory + classify scattered bootstrap code: global-init vs device-local",
     "size": "S",
     "tags": [
       "Installer",
       "Discovery"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.4,
     "description": "**Problem:** 'Bootstrap' logic is scattered with no map: devlab/claudecode/bootstrap_learning.py, devices/igor/acquisition/bootstrap.py, devices/igor/setup_assets/installer.py, devices/igor/tools/bootstrap_reader.py (+ any missed). Per D-installer-absorbs-init, GLOBAL init consolidates under the installer device, but DEVICE-LOCAL bootstrap must stay with its device. We need the classified worklist before moving anything beyond global_kb.\n**Proposed shape:** Grep ~repo for bootstrap/seed/provision/init code (`grep -rilE 'bootstrap|seed|provision' --include=*.py` minus tests/.venv/test_env). For each hit, classify: GLOBAL-INIT (seeds/provisions cross-instance shared state -> candidate to move under installer) vs DEVICE-LOCAL (a device initializing its own state -> stays, moving it breaks blast-radius containment) vs DEAD (already handled by T-purge-dead-bootstrap-scripts) vs NOT-INIT (false keyword match). Initial read: bootstrap_learning.py = AMBIGUOUS (KB graph bootstrap, currently a devlab dev-tool — adjudicate); igor/acquisition/bootstrap.py + igor/setup_assets/installer.py + igor/tools/bootstrap_reader.py = DEVICE-LOCAL (igor's own, stay). Write the classified worklist to devlab/runtime/memory/notes/. Do NOT move anything in this ticket — discovery only; each GLOBAL-INIT item becomes its own future move ticket.\n**Affected files:** devlab/runtime/memory/notes/bootstrap-inventory.YYYYMMDD.md (output only).\n**Design rules:** blast-radius containment (device-local stays local); one home (global init -> installer); CP1 (classify by reading, don't assume); cross-ref T-purge-dead-bootstrap-scripts (don't re-list the dead ones as live).\n**Scope boundary:** IN — discovery + classified worklist note ONLY. OUT — moving/editing any bootstrap code (global_kb move is its own ticket; other global-init moves are future tickets seeded by this inventory).\n**Test plan:** The note exists and lists every bootstrap/seed/provision code site (minus tests/.venv) tagged GLOBAL-INIT / DEVICE-LOCAL / DEAD / NOT-INIT, each with a one-line why; bootstrap_learning.py carries an explicit adjudication. No code files changed (git diff shows only the new note).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-06-28T21:57:02.960549+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Emitted notes/cc.0.bootstrap-inventory...json classifying every bootstrap/seed/provision site: GLOBAL-INIT (global_kb [ticketed], search_index_bootstrap, migrations[adjudicate]), DEVICE-LOCAL (per-device ensure_tables + igor/vault/evaluator own seeds), DEAD (purged palace), NOT-INIT (~80 keyword-noise). bootstrap_learning adjudicated as CC dev-tool. No code changed.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-28T22:52:02.049617+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -42,6 +42,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-28T21:57:02.960629+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "34029b97-c0d8-4521-989b-8f4448d04f95"
+    "inferred_intention_id": "34029b97-c0d8-4521-989b-8f4448d04f95",
+    "proven": false,
+    "unproven_reason": "discovery/classification note: no behavioral code path; lever still lacking = a content-artifact proof mode (assert worklist completeness/tagging on a data file). Verified: git diff = only the note, every grep hit accounted for.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
