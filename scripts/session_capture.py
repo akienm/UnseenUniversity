@@ -141,7 +141,7 @@ def capture(
         "title": f"Session {session_date}",
         "date": session_date,
         "turn_count": len(turns),
-        "summary": "__stub_unimplemented__",
+        "summary": summary,
         "transcript": transcript_text,
         "source_file": str(session_file),
         "tags": ["session", "rollup"],
