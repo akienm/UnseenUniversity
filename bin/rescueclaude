@@ -48,10 +48,13 @@ fi
 # --new : start a FRESH RESCUE conversation instead of resuming the picker —
 #         same display/remote-control name (still the RESCUE instance), just a new
 #         conversation, so it boots with current tools, not a stale tool set.
-# --1m  : use the 1M-token context window (ANTHROPIC_MODEL=opus[1m]). Off by
-#         default. Opus 1M is auto-included on Max/Team/Enterprise (no credit gate).
-#         The [1m] suffix is Claude Code's documented 1M model alias — not a beta
-#         header. (T-launcher-help-and-1m-flags)
+# --1m  : use the 1M-token context window. Off by default. The control is the
+#         CLAUDE_CODE_DISABLE_1M_CONTEXT env var, which .bashrc exports =1 for
+#         session hygiene; --1m UNSETS it for this launch so the 1M window is
+#         allowed. It does NOT touch the model — there is no "opus[1m]" model and
+#         the [1m] suffix does not gate the context window; pick the model with
+#         /model as usual. Opus 1M is auto-included on Max/Team/Enterprise (no
+#         credit gate). (T-launcher-help-and-1m-flags)
 # --help: print these wrapper flags, then claude's own --help.
 # Flags may appear in any order; everything else is forwarded to claude.
 RESUME_ARGS=(--resume "$CC_TMUX_SESSION")
@@ -59,15 +62,17 @@ PASS_ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --new)  RESUME_ARGS=() ;;
-    --1m)   export ANTHROPIC_MODEL="opus[1m]" ;;
+    --1m)   unset CLAUDE_CODE_DISABLE_1M_CONTEXT ;;
     --help|-h)
       cat <<'HELP'
 rescueclaude — the "everything's borked" recovery launcher.
 
   Wrapper flags (consumed by rescueclaude, NOT passed to claude):
     --new       Start a fresh RESCUE conversation instead of resuming the picker.
-    --1m        Use the 1M-token context window (sets ANTHROPIC_MODEL=opus[1m]).
-                Off by default. Opus 1M is auto-included on Max/Team/Enterprise.
+    --1m        Use the 1M-token context window (unsets the inherited
+                CLAUDE_CODE_DISABLE_1M_CONTEXT=1 from .bashrc). Off by default.
+                Does not change the model — pick it with /model. Opus 1M is
+                auto-included on Max/Team/Enterprise.
     --help, -h  Show this message, then claude's own --help below.
 
   All other arguments are forwarded to claude.
