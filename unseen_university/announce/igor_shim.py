@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 
 # Where the canonical profiles live (read-only repo copy).
 _CANONICAL_PROFILES_DIR = (
-    Path(__file__).resolve().parent.parent.parent / "config" / "profiles"
+    Path(__file__).resolve().parent.parent / "config" / "profiles"
 )
 
 

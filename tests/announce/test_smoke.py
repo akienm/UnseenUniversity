@@ -29,7 +29,7 @@ from unseen_university.announce import (
     IdentityEnvelope,
 )
 
-CANONICAL_PROFILES = Path(__file__).parent.parent.parent / "config" / "profiles"
+CANONICAL_PROFILES = Path(__file__).parent.parent.parent / "unseen_university" / "config" / "profiles"
 
 
 class _FakeRegistry:

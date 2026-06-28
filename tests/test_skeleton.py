@@ -27,7 +27,7 @@ from unseen_university.config.device_config import DeviceConfig
 from unseen_university.devices.skeleton.registry import DeviceRegistry
 from fixtures.stub_devices import StubDevice
 
-CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
+CANONICAL_PROFILES = Path(__file__).parent.parent / "unseen_university" / "config" / "profiles"
 
 
 def _make_skeleton(tmp_path: Path) -> Skeleton:

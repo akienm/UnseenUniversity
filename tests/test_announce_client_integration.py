@@ -34,7 +34,7 @@ from unseen_university.devices.skeleton.skeleton import Skeleton
 from unseen_university.devices.bus.imap_server import IMAPServer
 from unseen_university.devices.skeleton.registry import DeviceRegistry
 
-CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
+CANONICAL_PROFILES = Path(__file__).parent.parent / "unseen_university" / "config" / "profiles"
 
 
 @pytest.fixture()

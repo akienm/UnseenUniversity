@@ -20,7 +20,7 @@ from unseen_university.announce.broker import AnnounceBroker
 from unseen_university.announce.envelope import IdentityEnvelope
 from unseen_university.announce.provenance import ProvenanceService
 
-CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
+CANONICAL_PROFILES = Path(__file__).parent.parent / "unseen_university" / "config" / "profiles"
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────

@@ -20,7 +20,7 @@ import pytest
 from unseen_university.announce.broker import AnnounceBroker, ManifestAssembler
 from unseen_university.announce.envelope import IdentityEnvelope
 
-CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
+CANONICAL_PROFILES = Path(__file__).parent.parent / "unseen_university" / "config" / "profiles"
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

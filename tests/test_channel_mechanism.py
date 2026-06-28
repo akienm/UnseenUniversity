@@ -23,7 +23,7 @@ os.environ.setdefault("AGENT_DATACENTER_TEST_MODE", "1")
 from unseen_university.announce.channels import ChannelRegistry
 from unseen_university.devices.bus.envelope import Envelope
 
-CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
+CANONICAL_PROFILES = Path(__file__).parent.parent / "unseen_university" / "config" / "profiles"
 
 
 # ── ChannelRegistry unit tests ─────────────────────────────────────────────────

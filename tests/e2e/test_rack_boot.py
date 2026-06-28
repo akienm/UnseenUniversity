@@ -29,7 +29,7 @@ from unseen_university.announce import (
 )
 from unseen_university.devices.skeleton.skeleton import Skeleton
 
-CANONICAL_PROFILES = Path(__file__).parent.parent.parent / "config" / "profiles"
+CANONICAL_PROFILES = Path(__file__).parent.parent.parent / "unseen_university" / "config" / "profiles"
 
 
 @pytest.fixture

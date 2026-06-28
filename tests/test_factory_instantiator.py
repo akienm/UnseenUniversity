@@ -137,7 +137,7 @@ class TestLoadSpec:
         """The committed example-factory.yaml must be valid."""
         spec_path = (
             Path(__file__).parent.parent
-            / "config"
+            / "unseen_university" / "config"
             / "factories"
             / "example-factory.yaml"
         )

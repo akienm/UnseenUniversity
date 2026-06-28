@@ -16,7 +16,7 @@ import pytest
 from unseen_university.devices.workspace.device import WorkspaceDevice
 from unseen_university.devices.workspace.shim import WorkspaceShim
 
-CANONICAL_PROFILES = Path(__file__).parent.parent / "config" / "profiles"
+CANONICAL_PROFILES = Path(__file__).parent.parent / "unseen_university" / "config" / "profiles"
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────

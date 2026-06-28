@@ -41,7 +41,7 @@ log = logging.getLogger(__name__)
 _DEFAULT_INTERFACE = "imap_envelope"
 
 # Canonical profiles directory — same resolution as igor_shim._CANONICAL_PROFILES_DIR.
-_CANONICAL_PROFILES_DIR = Path(__file__).parent.parent.parent / "config" / "profiles"
+_CANONICAL_PROFILES_DIR = Path(__file__).parent.parent / "config" / "profiles"
 
 # Fixed assembly order for well-known system prompt sections.
 _PROMPT_SECTION_ORDER = ["rack", "recall", "channels", "agents", "questions"]
