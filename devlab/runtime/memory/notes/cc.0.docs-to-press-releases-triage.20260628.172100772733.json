@@ -1,0 +1,23 @@
+{
+  "id": "cc.0.docs-to-press-releases-triage.20260628.172100772733",
+  "emitter": "cc.0",
+  "namespace": [
+    "docs-to-press-releases-triage"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-06-28T17:21:00.772733",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "docs/ -> press_releases/ triage PROPOSAL (awaiting Akien) — T-docs-to-press-releases",
+    "date": "2026-06-28",
+    "decision_id": "D-single-package-reorg-2026-06-28",
+    "status": "AWAITING AKIEN — do not execute migrations/freezes until reviewed (ticket gate: 'expensive to misfile')",
+    "text": "# docs/ -> press_releases/ triage proposal (T-docs-to-press-releases)\n\nThe ticket REQUIRES surfacing this list to Akien before executing any rename/migrate/freeze (MEDIUM inertia; cross-refs in skills/CLAUDE.md/README must update for KEEP/MIGRATE files). Akien away 2026-06-28 -> proposal prepared, EXECUTION DEFERRED. Akien's pre-specified anchors honored.\n\n## KEEP (human-facing -> stays in the renamed press_releases/)\n- TheoryOfOperation.md (Akien anchor: KEEP)\n- memory_architecture.md (Akien anchor: KEEP)\n- Deterministic_AI_Development_Levers_A_layer_on_top_of_skills.md (essay, Akien byline)\n- QE_in_the_Age_of_AI.md (essay, Akien byline)\n- working_together.md (field-notes philosophy, Akien byline)\n- framework_overview.md (onboarding overview, human-facing)\n- getting_started.md (onboarding, human-facing)\n- the_ownership_gap/ (all 8: Opening, CompiledInference, Levers, WorkflowAuditsModels, Skills, Platform, WhatWeBuilt, README — a human-facing essay series)\n\n## MIGRATE (dev artifact -> devlab/runtime/memory/<subdir> via memory_emit.py)\n- design_patterns_inventory.md -> design_patterns/ (Akien anchor: canonical subdir is design_patterns, NOT patterns)\n- dicksimnel_parity.md -> notes/ (DS/CC parity tracking, dev-process artifact)\n- GlobalKB.md -> architecture/ (Global KB subsystem doc — candidate intention-point; relates to the 2026-06-28 global_kb move under installer)\n- rewind_output_contracts.md -> notes/ (Workstream 1 of D-rewind-as-workflow-primitive)\n- state_inventory.md -> notes/ (Workstream 2 of D-rewind, durability audit)\n- security_known_limitations.md -> notes/ (Murderbot threat model — living reference; consider a security/ subdir if one is wanted)\n- crash_safe_sessions.md -> notes/ (concept still relevant BUT flagged: 'DB references reflect old pattern' — migrate with a staleness note, or FREEZE if fully superseded — ASK AKIEN)\n\n## FREEZE (dead -> ~/TheIgorsProject)\n- html_spec_template.html (Akien anchor: confirmed dead, 0 code refs)\n- skills_intention_review_20260623.md (Akien anchor: FREEZE)\n- skills_harmony_recommendation_20260622.md (Akien anchor: FREEZE)\n- design_audit_2026-06-17.md (point-in-time audit of the RETIRED devlab/design_docs/decisions/ path — dead review)\n- palace_schema.md (Shared Palace design doc — palace is RETIRED; already allowlisted as legacy in the lab/ ref-sweep)\n\n## Open questions for Akien\n1. crash_safe_sessions.md — MIGRATE-with-staleness-note vs FREEZE? (the DB pattern it describes is superseded by the IMAP/bus path).\n2. security_known_limitations.md — notes/ vs a dedicated security/ subdir under the store?\n3. GlobalKB.md — straight MIGRATE to architecture/, or rewrite as a proper intention-point (like cc.0.installer)?\n4. After rename, ALL `docs/<file>` references in skills/, CLAUDE.md, README must be repointed for KEEP+MIGRATE files (grep before executing)."
+  }
+}
