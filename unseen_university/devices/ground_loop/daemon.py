@@ -130,8 +130,13 @@ class GroundLoop:
                 log.error("GROUND_LOOP|name=%s|action=tick_error|exc=%s", name, exc)
 
     def run_once(self) -> None:
-        # STUB (proof red anchor): master-off gate not yet wired — runs the full
-        # cycle even when halted. Real gate restored in the next commit.
+        # Master-off: when halted, suppress ALL restart behavior (no scan, no
+        # daemon tick, no runme supervise) so peers stay down for an update.
+        # Removing the halt flag re-enables on the next tick.
+        halted, reason = self._halt.is_halted(_HALT_AGENT_ID)
+        if halted:
+            log.info("GROUND_LOOP|action=master_off|reason=%s", reason)
+            return
         self._scan_plugins()
         self._tick_daemons()
         self._supervisor.scan()
