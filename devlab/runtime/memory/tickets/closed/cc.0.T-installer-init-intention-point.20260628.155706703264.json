@@ -17,21 +17,21 @@
   },
   "body": {
     "id": "T-installer-init-intention-point",
-    "title": "[sprint] Architecture intention-point: installer device is the global-init owner",
+    "title": "Architecture intention-point: installer device is the global-init owner",
     "size": "S",
     "tags": [
       "Architecture",
       "Installer"
     ],
-    "status": "sprint",
+    "status": "closed",
     "priority": 0.55,
     "description": "**Problem:** There is no defined 'init container' — global instance-init (seed the shared KB, create shared tables, provision a fresh instance) is ownerless and scattered (global_kb.py, dead palace/search bootstraps, etc.), and there is no architecture intention-point for installer/init. Akien (2026-06-28) decided the installer device absorbs global init.\n**Proposed shape:** Write `devlab/runtime/memory/architecture/installer.json` as a uniform intention-point (summary of how the subsystem works + pointers to implementing files), declaring: the installer device is the owner of GLOBAL / cross-instance init AND provisioning. State the boundary explicitly — installer owns global init (seed global_kb, shared-table creation, fresh-instance provisioning via factory/manifest); DEVICE-LOCAL bootstrap (a device standing up its own state, e.g. igor/acquisition/bootstrap.py) stays with that device to preserve blast-radius containment. Point at the implementing files: devices/installer/factory.py, manifest.py, backends.py, device.py, and (post T-home-global-kb-under-installer) the global_kb loader+seed.\n**Affected files:** devlab/runtime/memory/architecture/installer.json (new, via the architecture intention-point convention).\n**Design rules:** one home no exceptions (architecture intention-points live only under devlab/runtime/memory/architecture/); intent->implementation in one JSON; device design-center (installer is a BaseDevice); blast-radius containment (device-local init stays local).\n**Scope boundary:** IN — the installer/init architecture intention-point only (the WHY + the global-vs-device-local boundary + pointers). OUT — actually moving any code (global_kb move is T-home-global-kb-under-installer; classification is T-inventory-classify-scattered-bootstraps).\n**Test plan:** (1) `ls devlab/runtime/memory/architecture/ | grep installer` -> present. (2) The JSON parses and contains: the global-vs-device-local-init boundary statement + file pointers to devices/installer/*. (3) `grep -l 'device-local' devlab/runtime/memory/architecture/installer.json` confirms the boundary is recorded (the nuance that prevents over-pulling device bootstraps).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-06-28T21:56:59.239741+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Emitted architecture/cc.0.installer...json intention-point: installer owns GLOBAL init+provisioning; device-local bootstrap stays local (boundary recorded). Parses; boundary present; file pointers to installer/*.py + global_kb. All 3 test-plan checks pass.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-28T22:49:45.644958+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -42,6 +42,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-28T21:56:59.290631+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "794bec0b-a402-4522-a6dc-4b1f7f47ea18"
+    "inferred_intention_id": "794bec0b-a402-4522-a6dc-4b1f7f47ea18",
+    "proven": false,
+    "unproven_reason": "documentation/intention-point artifact: no behavioral code path to express as red->green assertion; lever still lacking = a content-artifact proof mode (schema+required-content assertion on a data file decoupled from code-diff in-place inversion). Verified by the ticket test-plan checks.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
