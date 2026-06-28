@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-skills-stale-root-paths-post-reorg.20260628.160931554067",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-skills-stale-root-paths-post-reorg"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T22:09:31.554067+00:00",
+  "links": {
+    "decisions": [
+      "D-single-package-reorg-2026-06-28"
+    ],
+    "tickets": [
+      "T-skills-stale-root-paths-post-reorg"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-skills-stale-root-paths-post-reorg",
+    "title": "[sprint] Sweep skills/ + tools for stale root-relative devices/bus/skeleton/config paths",
+    "size": "M",
+    "tags": [
+      "Skills",
+      "Cleanup"
+    ],
+    "status": "sprint",
+    "decision_id": "D-single-package-reorg-2026-06-28",
+    "priority": 0.5,
+    "description": "**Problem:** The single-package collapse moved devices/, bus/, skeleton/, diagnostic_base/, config/ under unseen_university/, but ~13 skills (and possibly bin/ + devlab/claudecode tools) still reference the OLD repo-root paths: factory-create/run, audit-regression/{run,SKILL.md}, new-agent/{run,SKILL.md}, context-load/run, savestate/run, day-close-audit/SKILL.md, audit-precode/SKILL.md, audit-day/SKILL.md, etc. These break at run time (a skill that cds/reads `devices/X` or `pathlib.Path('devices')` finds nothing). Separately, day-close-audit/SKILL.md references a NON-EXISTENT tool `devlab/claudecode/audit_runner.py` (Step 18) — either the tool was renamed/removed or never built; fix or remove the step.\n**Proposed shape:** Grep skills/ (+ bin/, devlab/claudecode/) for root-relative references to the five moved package dirs and repoint to unseen_university/<dir>. CAREFUL like the day-close config fix: distinguish a path that should become `unseen_university/devices/...` from a code-smell scan that legitimately wants to walk the package — and from already-correct `unseen_university/devices` refs (don't double-prefix). For day-close-audit specifically, update the Step 3/10/11/17 `pathlib.Path('devices')` scan roots to `unseen_university/devices` (or just `unseen_university`), and resolve the audit_runner.py reference (point at the real tool or drop the step). Verify each touched skill still runs.\n**Affected files:** ~13 skills under skills/ (grep for the bare-'devices/' set), day-close-audit/SKILL.md (devices/ scan roots + audit_runner.py step), possibly bin/ launchers + devlab/claudecode tools.\n**Design rules:** single import root (paths point into unseen_university/); skills live in repo skills/ (canonical); migrate->VERIFY (run the skill) ->done; don't double-prefix already-correct paths.\n**Scope boundary:** IN — stale root-relative moved-package path refs in skills/ + tools + the audit_runner.py dead reference. OUT — skill logic changes unrelated to paths; the config-dir resolver (separate ticket T-canonical-config-dir-resolver).\n**Test plan:** (1) `grep -rEn \"Path\\(['\\\"]devices['\\\"]\\)|[^_/.]\\b(devices|bus|skeleton|diagnostic_base)/\" skills/ bin/` returns only intentional/unseen_university-prefixed refs (0 bare root refs). (2) day-close-audit code-smell + orphan steps scan unseen_university/devices (not empty root devices/). (3) The audit_runner.py step either points at an existing tool or is removed. (4) Smoke: run context-load/run + savestate/run + one audit skill — no 'No such file/dir devices' error.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-28T22:09:29.374006+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T22:09:29.417986+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "34bedc6a-f2f3-475e-ba95-6e5748016ccf"
+  }
+}

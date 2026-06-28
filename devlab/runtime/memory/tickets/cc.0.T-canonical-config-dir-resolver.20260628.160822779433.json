@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-canonical-config-dir-resolver.20260628.160822779433",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-canonical-config-dir-resolver"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T22:08:22.779433+00:00",
+  "links": {
+    "decisions": [
+      "D-single-package-reorg-2026-06-28"
+    ],
+    "tickets": [
+      "T-canonical-config-dir-resolver"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-canonical-config-dir-resolver",
+    "title": "[sprint] Add uu_config_dir() resolver; retire fragile parents[N] config-path counting",
+    "size": "S",
+    "tags": [
+      "Substrate",
+      "Cleanup"
+    ],
+    "status": "sprint",
+    "decision_id": "D-single-package-reorg-2026-06-28",
+    "priority": 0.4,
+    "description": "**Problem:** After the single-package collapse, ~25 files locate the in-package config dir by counting `Path(__file__).parents[N] / \"config\"`. This is fragile: depth depends on the file's location, so a file that moves (or config moving) silently breaks the path — exactly what bit announce/broker.py + igor_shim.py (fixed in 4f0400e5). Some refs are 'correct by coincidence' (moved WITH config) and will break the next time anything moves.\n**Proposed shape:** Add a canonical `uu_config_dir()` to unseen_university/_uu_root.py: `return Path(__file__).resolve().parent / \"config\"` (the module lives at unseen_university/_uu_root.py, so this is always unseen_university/config/, install-location-independent — same pattern as uu_root()/uu_home()). Then migrate the parents[N]/'config' refs to call it (broker, igor_shim, policy/gate, installer/factory, granny/daemon, auditor/device, + the test CANONICAL_PROFILES anchors). For tests, expose via a tiny import or a conftest fixture.\n**Affected files:** unseen_university/_uu_root.py (+1 function); ~6 production refs + ~17 test refs that currently parent-count to config.\n**Design rules:** one canonical resolver (homogeneity over special-case); install-location-safe (package-anchored, not cwd/repo-root); mirrors uu_root()/uu_home().\n**Scope boundary:** IN — add uu_config_dir() + migrate config-dir path-builders to it. OUT — moving config itself; the runtime ~/.unseen_university/profiles fallback (separate concern).\n**Test plan:** (1) `python3 -c 'from unseen_university._uu_root import uu_config_dir; assert uu_config_dir().name==\"config\" and (uu_config_dir()/\"profiles\"/\"base.yaml\").exists()'`. (2) `grep -rEn 'parent.*/ .config.' unseen_university/ tests/` returns ~0 (refs now go through uu_config_dir). (3) test_skeleton + announce tests still green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-28T22:08:18.923126+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T22:08:18.967729+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "55d1205e-9fa3-427f-936c-21825519c977"
+  }
+}
