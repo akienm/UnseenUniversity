@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.ground-loop-master-off-suppresses-restar.T-ground-loop-master-off.20260628.170052337607",
+  "emitter": "cc.0",
+  "namespace": [
+    "ground-loop-master-off-suppresses-restar",
+    "T-ground-loop-master-off"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-28T17:00:52.337607",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ground-loop-master-off"
+    ],
+    "commits": [
+      "08c49ce84f9fbe7f0dcc9037f80e63bf0fff5808"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "ground-loop master-off suppresses restarts when halted",
+    "intention": "run_once() consults HaltRegistry('ground_loop'); halted -> no scan/tick/supervise; not halted -> full cycle",
+    "test": "tests/test_ground_loop_master_off.py::test_master_off_suppresses_all_restart_work_when_halted",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/test_ground_loop_master_off.py::test_master_off_suppresses_all_restart_work_when_halted",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        halt = _FakeHalt(True, \"updating ground_loop\")\n        gl = GroundLoop(halt_registry=halt)\n        calls: list[str] = []\n        _instrument(gl, calls)\n    \n        gl.run_once()\n    \n>       assert calls == [], (\n            f\"master-off must suppress all restart work when halted; ran: {calls}\"\n        )\nE       AssertionError: master-off must suppress all restart work when halted; ran: ['scan', 'tick', 'supervise']\nE       assert ['scan', 'tick', 'supervise'] == []\nE         \nE         Left contains 3 more items, first extra item: 'scan'\nE         Use -v to get more diff\n\ntests/test_ground_loop_master_off.py:41: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_ground_loop_master_off.py::test_master_off_suppresses_all_restart_work_when_halted\n1 failed in 0.11s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.08s"
+          }
+        }
+      }
+    ],
+    "commit": "08c49ce84f9fbe7f0dcc9037f80e63bf0fff5808",
+    "impl_paths": [
+      "unseen_university/devices/ground_loop/daemon.py"
+    ],
+    "ticket": "T-ground-loop-master-off",
+    "narrative": "Master-off Akien requested: flat-file HaltRegistry gate so the lowest-level loop stops restarting peers during an update.",
+    "why": "A hollow run_once ignoring the flag keeps restarting peers while halted; the calls==[] assertion fails (authentic red). Green proves the gate actually suppresses restarts.",
+    "bootstrap": false
+  }
+}
