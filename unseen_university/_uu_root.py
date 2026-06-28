@@ -70,3 +70,23 @@ def uu_home() -> str:
                             lambda: str(tmp_path))
     """
     return str(Path.home() / ".unseen_university")
+
+
+def uu_config_dir() -> Path:
+    """Return the canonical bundled-config directory — ``unseen_university/config``.
+
+    Bundled config (``profiles/``, ``policies/``, ``audit_checks/``,
+    ``granny.yaml``, ``librarian.yaml``, …) moved INSIDE the package at the
+    single-import-root collapse (D-single-package-reorg-2026-06-28). Before
+    this resolver every call-site reached it by counting
+    ``Path(__file__).resolve().parents[N] / "config"`` — a fragile idiom: the
+    correct N differs by the call-site's depth, and a file that moves without
+    its ``N`` being re-counted silently resolves to the wrong directory (the
+    2026-06-28 config-path regression, fixed in 4f0400e5). Anchor on this
+    module instead — ``_uu_root.py`` lives at the package root and does not
+    move, so the path is depth-independent and move-proof.
+
+    Returns a :class:`pathlib.Path`; callers compose, e.g.
+    ``uu_config_dir() / "profiles" / "base.yaml"``.
+    """
+    return Path("/__uu_config_dir_unimplemented__") / "config"
