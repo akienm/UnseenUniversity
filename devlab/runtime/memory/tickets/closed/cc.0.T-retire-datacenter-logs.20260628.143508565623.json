@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-retire-datacenter-logs",
-    "title": "[sprint] Retire datacenter_logs/ from repo root -> ~/.unseen_university/logs/",
+    "title": "Retire datacenter_logs/ from repo root -> ~/.unseen_university/logs/",
     "size": "S",
     "tags": [
       "Logs",
@@ -29,13 +29,13 @@
     "decision_id": "D-single-package-reorg-2026-06-28",
     "gate": null,
     "priority": 0.35,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-06-28T20:35:05.373370+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Repo-root datacenter_logs/ (15M gitignored debris, no live writer) archived to scratchpad + removed; .gitignore covers it (line 4); git status clean. Fixed stale control_center docstring (code already roots under canonical logs/). The runtime datacenter_logs writers (ticket_store trace, screenshots, supervisor, heartbeat) + readers (build_digester reads repo-root, a pre-existing writer/reader MISMATCH; web_server, dicksimnel, classifier) are a larger tangle needing per-artifact destinations + Akien -> split to T-redirect-runtime-datacenter-logs-writers.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-28T23:18:46.307055+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-28T20:35:05.373420+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "53d123e8-e943-4869-9e9f-4666636f8594"
+    "inferred_intention_id": "53d123e8-e943-4869-9e9f-4666636f8594",
+    "proven": false,
+    "unproven_reason": "repo-root debris removal + doc fix; no behavioral code path to assert (the debris had no live writer; the runtime-writer redirect is split out). lever still lacking = a structural-removal proof mode (path-absence assertion). Verified: dir absent, gitignored, git clean, control_center parses.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
