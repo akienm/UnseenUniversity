@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""session_capture.py — Capture current CC session as palace transcript + summary node.
+"""session_capture.py — Capture the current CC session as a flat-file session node.
 
-Reads the session JSONL, strips tool calls/results/thinking blocks, and writes:
-  - palace.transcripts.<YYYYMMDD-N>  (text-only transcript)
-  - palace.sessions.<YYYYMMDD-N>     (5-10 line summary: decisions, tickets, in-flight)
-  - flat-file echoes alongside for disaster recovery
+Reads the session JSONL, strips tool calls/results/thinking blocks, and writes a
+single session record (summary + text-only transcript) into the canonical
+filesystem memory store at ``devlab/runtime/memory/sessions/`` via the
+``memory_emit`` chokepoint. NO Postgres driver: the retired palace table is the
+dead store (D-canonical-memory-consolidation) — this script used to INSERT into
+it on every session close, a dead interface crossing. The flat-file store IS the
+durable home now (no separate echo dir needed).
 
 Usage:
     python3 scripts/session_capture.py                        # auto-detect current session
@@ -15,29 +18,25 @@ Usage:
 """
 
 from __future__ import annotations
-from unseen_university.identity import home_db_url
 
 import argparse
 import json
-import os
+import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import psycopg2
-import psycopg2.extras
+from unseen_university._uu_root import uu_root
+
+# memory_emit.py is the single write chokepoint for the filesystem memory store.
+# It lives in devlab/claudecode/ (dev tooling), not in the package — put it on the
+# path via the canonical repo-root resolver.
+sys.path.insert(0, str(Path(uu_root()) / "devlab" / "claudecode"))
+from memory_emit import emit  # noqa: E402
+
+log = logging.getLogger(__name__)
 
 _PROJECTS_DIR = Path.home() / ".claude" / "projects"
-_ECHO_DIR = Path.home() / ".unseen_university" / "claudecode" / "palace_echo"
-
-_UPSERT = """
-INSERT INTO adc.palace (path, title, content, node_type, updated_at, metadata)
-VALUES (%s, %s, %s, %s, now(), %s)
-ON CONFLICT (path) DO UPDATE
-    SET title=EXCLUDED.title, content=EXCLUDED.content,
-        node_type=EXCLUDED.node_type, updated_at=EXCLUDED.updated_at,
-        metadata=EXCLUDED.metadata;
-"""
 
 
 def _find_latest_session_file() -> Path | None:
@@ -97,18 +96,6 @@ def _format_transcript(turns: list[dict]) -> str:
     return "\n\n".join(lines)
 
 
-def _next_session_slot(conn, datestamp: str) -> str:
-    """Return the next available palace.sessions.<datestamp>-N slot."""
-    with conn.cursor() as cur:
-        cur.execute(
-            "SELECT path FROM adc.palace WHERE path LIKE %s ORDER BY path",
-            (f"palace.sessions.{datestamp}-%",),
-        )
-        existing = [r[0] for r in cur.fetchall()]
-    n = len(existing) + 1
-    return f"palace.sessions.{datestamp}-{n:02d}"
-
-
 def _auto_summary(turns: list[dict], session_path: str) -> str:
     """Draft a short summary from the transcript (heuristic, not LLM)."""
     user_msgs = [t["text"] for t in turns if t["role"] == "user"]
@@ -127,81 +114,48 @@ def capture(
     session_file: Path,
     summary_text: str | None = None,
     dry_run: bool = False,
-    pg_url: str = None,
+    emit_fn=emit,
 ) -> dict:
-    """Main entry point. Returns dict with written paths."""
-    pg_url = pg_url if pg_url is not None else home_db_url()
+    """Capture the session as a flat-file node in devlab/runtime/memory/sessions/.
+
+    Returns a dict with the written node path (or dry-run / error info). No
+    Postgres connection is made — the canonical filesystem store is the home.
+    """
     turns = extract_transcript(session_file)
     if not turns:
         return {"error": "no text turns found in session file"}
 
+    session_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     datestamp = datetime.now(timezone.utc).strftime("%Y%m%d")
     transcript_text = _format_transcript(turns)
+    summary = summary_text or _auto_summary(turns, f"session-{datestamp}")
 
     if dry_run:
-        slot = f"palace.sessions.{datestamp}-NN"
-        print(f"DRY-RUN: would write {slot} and palace.transcripts.{datestamp}-NN")
-        print(f"  turns: {len(turns)}")
-        print(f"  transcript chars: {len(transcript_text)}")
+        print(
+            "DRY-RUN: would emit a session node to devlab/runtime/memory/sessions/ "
+            f"(turns={len(turns)}, transcript chars={len(transcript_text)})"
+        )
         return {"dry_run": True, "turns": len(turns)}
 
-    conn = psycopg2.connect(pg_url)
-    session_path = _next_session_slot(conn, datestamp)
-    n_suffix = session_path.split("-")[-1]
-    transcript_path = f"palace.transcripts.{datestamp}-{n_suffix}"
-
-    summary = summary_text or _auto_summary(turns, session_path)
-    session_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    session_meta = psycopg2.extras.Json(
-        {
-            "tags": ["session", "rollup"],
-            "date": session_date,
-            "turn_count": len(turns),
-            "transcript_path": transcript_path,
-        }
-    )
-    transcript_meta = psycopg2.extras.Json(
-        {
-            "tags": ["transcript"],
-            "date": session_date,
-            "session_path": session_path,
-            "source_file": str(session_file),
-        }
-    )
-
-    with conn.cursor() as cur:
-        cur.execute(
-            _UPSERT,
-            (session_path, f"Session {session_date}", summary, "session", session_meta),
-        )
-        cur.execute(
-            _UPSERT,
-            (
-                transcript_path,
-                f"Transcript {session_date}",
-                transcript_text,
-                "transcript",
-                transcript_meta,
-            ),
-        )
-    conn.commit()
-    conn.close()
-
-    # Flat-file echo
-    _ECHO_DIR.mkdir(parents=True, exist_ok=True)
-    echo_session = _ECHO_DIR / f"{session_path.replace('.', '_')}.md"
-    echo_transcript = _ECHO_DIR / f"{transcript_path.replace('.', '_')}.md"
-    echo_session.write_text(summary)
-    echo_transcript.write_text(transcript_text)
-
-    return {
-        "session_path": session_path,
-        "transcript_path": transcript_path,
-        "turns": len(turns),
-        "echo_session": str(echo_session),
-        "echo_transcript": str(echo_transcript),
+    body = {
+        "title": f"Session {session_date}",
+        "date": session_date,
+        "turn_count": len(turns),
+        "summary": "__stub_unimplemented__",
+        "transcript": transcript_text,
+        "source_file": str(session_file),
+        "tags": ["session", "rollup"],
+        # `text` is the grep-readable field every store reader surfaces.
+        "text": summary,
     }
+    # Interface crossing (session write to the memory store) — log at INFO.
+    node_path = emit_fn(
+        "sessions", "cc.0", body, kind="session", namespace=f"session-{datestamp}"
+    )
+    log.info(
+        "session_capture: wrote session node %s (turns=%d)", node_path, len(turns)
+    )
+    return {"session_node": node_path, "turns": len(turns)}
 
 
 def main() -> None:
