@@ -3,7 +3,7 @@
 critic.py — Adversarial analysis CLI.
 
 Usage:
-    python scripts/critic.py <target> [--refresh] [--output json|text|markdown]
+    python devlab/claudecode/critic.py <target> [--refresh] [--output json|text|markdown]
 
 Target types (auto-detected):
     symbol   — a Python name (function/class), searched by grep
@@ -27,14 +27,10 @@ import argparse
 import json
 import os
 import sys
-from pathlib import Path
 
-# Ensure devlab/claudecode is importable
-_HERE = Path(__file__).resolve().parent
-_REPO = _HERE.parent
-sys.path.insert(0, str(_REPO / "devlab" / "claudecode"))
-
-from critic_core import (  # noqa: E402
+# critic_core.py is a sibling in devlab/claudecode/ — the script's own dir is on
+# sys.path[0] for direct invocation, and devlab/claudecode is on the pytest path.
+from critic_core import (
     build_prompt,
     cache_get,
     cache_put,

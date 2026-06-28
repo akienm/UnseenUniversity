@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-critic_core.py — Shared core for /critic skill and scripts/critic.py.
+critic_core.py — Shared core for /critic skill and devlab/claudecode/critic.py.
 
 Provides target-type detection, context fetching, prompt construction,
 output schema, and 1-hour file-based cache. Callers supply the actual
@@ -203,17 +203,17 @@ def cache_put(target: str, result: dict) -> None:
         print(f"critic_core: cache write failed: {exc}", file=sys.stderr)
 
 
-# ── Main entry for scripts/critic.py ──────────────────────────────────────────
+# ── Main entry for devlab/claudecode/critic.py ──────────────────────────────────────────
 
 def critique(target: str, refresh: bool = False) -> dict:
     """Run a full critique. Callers use this; they supply the LLM call.
 
     Returns a dict matching the output schema. Raises on API errors.
     This function is the shared entry point — but it requires an LLM call
-    (inject via `_llm_fn` or import the full scripts/critic.py).
+    (inject via `_llm_fn` or import the full devlab/claudecode/critic.py).
     """
     raise NotImplementedError(
-        "critique() is a stub — callers must import scripts/critic.py "
+        "critique() is a stub — callers must import devlab/claudecode/critic.py "
         "or call build_prompt() + their own LLM + cache_put()."
     )
 
