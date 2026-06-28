@@ -16,3 +16,9 @@ Next: Build — start T-collapse-to-single-package (XL single-package reorg); hi
 - D-installer-absorbs-init-2026-06-28: installer device owns global instance-init (global_kb moves under it; device-local bootstrap stays) — T-installer-init-intention-point, T-home-global-kb-under-installer, T-inventory-classify-scattered-bootstraps, T-consequence-installer-absorbs-init
 - T-canonical-config-dir-resolver + T-igor-shim-announce-connect-timeout: day-close findings (config-path regression fixed 4f0400e5; igor_shim timeout pre-existing)
 - T-skills-stale-root-paths-post-reorg: 13 skills + tools hold stale root devices/bus/config paths post-reorg (consequence risk #5); day-close-audit refs missing audit_runner.py
+
+## Session close 2026-06-28
+Done: Built+verified+committed the single-import-root collapse (unseen_university/, a5f4dab0). Designed ground-loop master-off (HaltRegistry). /sorted'd 2 more decisions (root-cleanup, installer-absorbs-init). Day-close audit caught + fixed a real reorg regression (config moved into package -> root-anchored path-builders broke; broker/igor_shim/17 tests, 4f0400e5). Deleted dead run_test.py. Owned all findings (sole maintainer). 16 tickets filed across 3 decisions.
+Next: Sprint the dead-clear cleanup tickets (purge-dead-scripts, home-critic-cli, examples->prototypes) + the post-reorg fixes (canonical-config-dir-resolver, skills-stale-root-paths). Then home global_kb under installer + fix session_capture. Diagnose pre-existing igor_shim announce timeout.
+
+## In-flight: Session close — single-import-root collapse built+verified+committed; 3 decisions /sorted'd (16 tickets); day-close audit found+fixed config-path reorg regression; nothing mid-flight, tree clean.
