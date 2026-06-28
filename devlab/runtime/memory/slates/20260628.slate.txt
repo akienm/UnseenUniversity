@@ -1,0 +1,7 @@
+- D-single-package-reorg-2026-06-28: one import root under unseen_university/ (bus+skeleton as devices), docs/->press_releases/, retire datacenter_logs/ — T-collapse-to-single-package, T-docs-to-press-releases, T-retire-datacenter-logs, T-consequence-single-package-reorg; supersedes T-reconcile-split-package-trees
+
+## Session close 2026-06-28
+Done: /sorted'd D-single-package-reorg-2026-06-28 — Akien ruled the repo collapses to ONE import root under unseen_university/: bus+skeleton become devices under unseen_university/devices/, docs/->press_releases/, datacenter_logs/ retires to uu_home()/logs/. Filed 4 tickets through advisor+audit (advisor caught librarian torn-collision + cold-start __init__ invariant -> folded into the XL). Closed T-reconcile-split-package-trees superseded. Established earlier: unseen_university/ is NOT 'what makes the package' — it's 1 of 7 co-installed top-level packages; collapsing to one is the deliberate fix.
+Next: Build — start T-collapse-to-single-package (XL single-package reorg); high-inertia ~413-import file-touch RE-CONFIRMS at sprint before mechanical execution. Parked: all-generations artifact consolidation (Haiku rec-list, /home/akien only, exclude ~/.unseen_university/akien); T-docs-to-press-releases per-doc triage.
+
+## In-flight: D-single-package-reorg-2026-06-28 filed + ready (4 tickets, advisor-amended); T-reconcile-split-package-trees closed superseded; decision+slate written. Nothing mid-flight — next session builds T-collapse-to-single-package after sprint-time high-inertia re-confirm.

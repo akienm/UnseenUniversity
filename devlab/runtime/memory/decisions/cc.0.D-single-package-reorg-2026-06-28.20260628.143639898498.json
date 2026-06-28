@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-single-package-reorg-2026-06-28.20260628.143639898498",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-single-package-reorg-2026-06-28"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-28T14:36:39.898498",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-single-package-reorg-2026-06-28",
+    "title": "Collapse repo to one import root under unseen_university/; repurpose docs/ + retire datacenter_logs/",
+    "status": "open",
+    "date": "2026-06-28",
+    "spawned_tickets": [
+      "T-collapse-to-single-package",
+      "T-docs-to-press-releases",
+      "T-retire-datacenter-logs",
+      "T-consequence-single-package-reorg"
+    ],
+    "supersedes": [
+      "T-reconcile-split-package-trees"
+    ],
+    "text": "# D-single-package-reorg-2026-06-28\n**title:** Collapse repo to one import root under unseen_university/; repurpose docs/ + retire datacenter_logs/\n**date:** 2026-06-28\n**status:** open\n**spawned_tickets:** T-collapse-to-single-package, T-docs-to-press-releases, T-retire-datacenter-logs, T-consequence-single-package-reorg\n**supersedes:** T-reconcile-split-package-trees\n\n## Decision narrative\nThe repo ships SEVEN co-equal top-level packages (pyproject where=['.'] + a 7-entry include); there is no single 'heart', and bus/skeleton are torn across root/ and unseen_university/ from Sonnet drift. Akien ruled (2026-06-28): make unseen_university/ the ONE import root. Code-bearing packages move INTO it, with bus and skeleton becoming devices under unseen_university/devices/ (they inherit BaseDevice, so they belong with the devices). docs/ is redefined as press_releases/ (human-facing narrative only); dev-process technical docs migrate to devlab/runtime/memory/, dead ones freeze to ~/TheIgorsProject. datacenter_logs/ (retired root, 14M) leaves the repo for uu_home()/logs/. Shipped read-only assets (templates, default config) ride inside the package as package-data read via importlib.resources; mutable runtime state stays in uu_home(). Pre-approved direction; high-inertia file-touch (~413 import rewrites) re-confirms at sprint time. Advisor pass added: torn-tree librarian collision + cold-start __init__ invariant folded into the XL ticket. Supersedes T-reconcile-split-package-trees (closed superseded).\n\n## Hypothesis\nEvery importable module resolves under unseen_university.*; repo root holds only unseen_university/, bin/, and non-code dirs; docs/ is gone (-> press_releases/); pip install -e . still succeeds.\n\n## Measurement Signal\ngrep -rE '^(from|import) (bus|skeleton|devices|diagnostic_base|config)\\b' --include='*.py' (minus .venv) returns 0 outside unseen_university/; egg-info top_level.txt lists ONLY unseen_university; pip install -e . green; importing unseen_university.devices.skeleton triggers no Postgres import (cold-start preserved).\n\n## Intention\nI intend that the codebase have one heart -- a single import root -- so neither I nor a future CC/DS instance has to guess which of several trees is canonical."
+  }
+}

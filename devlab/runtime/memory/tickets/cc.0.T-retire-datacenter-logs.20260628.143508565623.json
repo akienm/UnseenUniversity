@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-retire-datacenter-logs.20260628.143508565623",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-retire-datacenter-logs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T20:35:08.565623+00:00",
+  "links": {
+    "decisions": [
+      "D-single-package-reorg-2026-06-28"
+    ],
+    "tickets": [
+      "T-retire-datacenter-logs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-retire-datacenter-logs",
+    "title": "[sprint] Retire datacenter_logs/ from repo root -> ~/.unseen_university/logs/",
+    "size": "S",
+    "tags": [
+      "Logs",
+      "Substrate"
+    ],
+    "description": "**Problem:** `datacenter_logs/` (14M) sits in the repo root holding old datacenter-era logs (queue/trace, _minimaldevice, librarian/curation, d/log; dates to 20260624). CLAUDE.md already names datacenter_logs/ a RETIRED root that must not be written to; the canonical log home is uu_home()/logs/<device>/<stream>/. It's logs, not code — it should not be in the repo at all.\n**Proposed shape:** Confirm nothing still writes to datacenter_logs/ (grep code for the literal path; the dates suggest a writer was live until ~3 days ago — find and redirect it to uu_home()/logs if so, else it's inert). Move the historical content to ~/.unseen_university/logs/ (preserving device/stream structure) OR delete if it duplicates what's already there. Remove the root dir. Ensure .gitignore covers it so it can't re-appear tracked.\n**Affected files:** datacenter_logs/ (removed), any code writing that literal path (redirect), .gitignore.\n**Design rules:** canonical log hierarchy is uu_home()/logs/<device>/<stream>/ (info/warn/debug); never write to retired datacenter_logs/ root; check with Akien before new ~/.unseen_university paths (this uses the EXISTING logs/ home, not a new one).\n**Scope boundary:** datacenter_logs/ + its writer(s) only.\n**Test plan:** datacenter_logs/ absent from repo root; `grep -rn 'datacenter_logs' --include='*.py' .` (minus .venv) returns 0 live writers (or each redirected to uu_home()/logs); git status clean (dir gitignored, not tracked).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-single-package-reorg-2026-06-28",
+    "gate": null,
+    "priority": 0.35,
+    "status": "sprint",
+    "created_at": "2026-06-28T20:35:05.373370+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T20:35:05.373420+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "53d123e8-e943-4869-9e9f-4666636f8594"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-collapse-to-single-package.20260628.143508326705",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-collapse-to-single-package"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T20:35:08.326705+00:00",
+  "links": {
+    "decisions": [
+      "D-single-package-reorg-2026-06-28"
+    ],
+    "tickets": [
+      "T-collapse-to-single-package"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-collapse-to-single-package",
+    "title": "[sprint] Collapse repo to one import root under unseen_university/ (bus/skeleton/devices merge)",
+    "size": "XL",
+    "tags": [
+      "Substrate",
+      "Packaging"
+    ],
+    "description": "**Problem:** The repo ships SEVEN co-equal top-level packages (top_level.txt: bus, config, devices, devlab, diagnostic_base, skeleton, unseen_university) because pyproject `where=[\".\"]` + a 7-entry `include` discovers them all. There is no single 'heart' — code is scattered, and bus/skeleton are TORN across two trees (root bus/: connection,envelope,imap_server,memory_protocol,pg_bus | unseen_university/bus/: router,bus_launcher; root skeleton/: halt_registry,registry | unseen_university/skeleton/: skeleton,health,device_queue,restart_guard,container_shim,exceptions). 34 files import `bus.*` the root way, 8 import `unseen_university.bus`. A future CC/DS instance cannot tell which tree is canonical — Sonnet drift (T-reconcile-split-package-trees, which THIS supersedes).\n**Proposed shape:** Make `unseen_university/` the single import root. Move code-bearing packages INTO it, merging the torn halves: bus -> `unseen_university/devices/bus/` (both halves), skeleton -> `unseen_university/devices/skeleton/` (both halves), root devices/* -> `unseen_university/devices/`, diagnostic_base -> `unseen_university/diagnostic_base/`, config -> `unseen_university/config/`. (Akien-confirmed 2026-06-28: bus+skeleton are devices, live under devices/.) **TORN-TREE COLLISION:** `librarian` exists in BOTH root devices/ AND unseen_university/devices/ — verify-and-merge it the same way as bus/skeleton (diff both copies, reconcile, do NOT blind `git mv` over the existing one). Re-check the collision set at sprint time (`comm -12 <(ls devices/|sort) <(ls unseen_university/devices/|sort)`) in case more drift accreted. **COLD-START INVARIANT:** `unseen_university/devices/__init__.py` is currently EMPTY (lazy) — it MUST stay empty/lazy. Nesting skeleton under devices/ means importing `unseen_university.devices.skeleton` runs `devices/__init__.py`; if that file ever eager-imports the device roster (any device pulling psycopg2/Postgres), skeleton can no longer boot before the DB (CLAUDE.md cold-start rule) — a silent break no import-smoke catches. Keep the package __init__ files empty/lazy. Rewrite every import to `unseen_university.*` (git mv + scripted import rewrite + manual review of star/dynamic imports). Update pyproject: `include = [\"unseen_university*\"]`, add `[tool.setuptools.package-data]` for shipped read-only assets (templates, default .ini, schemas) read via importlib.resources. Update CLAUDE.md Structural Rules (the bus/ and skeleton/ root-owner clauses now point at unseen_university/devices/...) and the layout/env section. Delete the now-empty root trees only AFTER the import smoke + install proof passes.\n**Affected files:** HIGHEST inertia — pyproject.toml, CLAUDE.md, ~413 import sites across bus/skeleton/devices/diagnostic_base/config + their callers, egg-info regen. Akien PRE-APPROVED the reorg direction 2026-06-28 ('lgtm ticket all that'); the high-inertia FILE TOUCH still surfaces at sprint time for go-ahead on the mechanical execution.\n**Design rules:** device.py/shim.py design center (bus+skeleton inherit BaseDevice, belong with devices); one home no exceptions; `pip install -e .` must succeed at all times; mutable runtime state stays in uu_home() NOT the package (package data = shipped read-only only); migrate->VERIFY->delete (no shadow dups — delete root trees only after proof).\n**Scope boundary:** Code packages + pyproject + CLAUDE.md layout rules ONLY. docs/ repurpose is T-docs-to-press-releases; datacenter_logs is T-retire-datacenter-logs. Do not change any module's internal logic — pure relocation + import-path rewrite.\n**Test plan:** (1) `grep -rE '^(from|import) (bus|skeleton|devices|diagnostic_base|config)\\b' --include='*.py' .` (minus .venv) returns 0 outside unseen_university/. (2) `pip install -e .` succeeds; `python -c 'import unseen_university.devices.bus, unseen_university.devices.skeleton'` imports clean. (3) egg-info top_level.txt lists ONLY `unseen_university`. (4) Targeted import-smoke: agentctl entry (`unseen_university.rack:main`) still resolves; a sample device imports. (5) No root-level bus/ skeleton/ devices/ diagnostic_base/ config/ dirs remain. (6) No torn duplicate survives: `comm -12 <(...)` finds no module living in two trees; librarian exists in exactly one place. (7) Cold-start guard: importing `unseen_university.devices.skeleton` triggers NO psycopg2/Postgres import (e.g. assert under `python -X importtime` or a stub that fails on db import); `unseen_university/devices/__init__.py` and `unseen_university/__init__.py` remain empty/lazy.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-single-package-reorg-2026-06-28",
+    "gate": null,
+    "priority": 0.6,
+    "status": "sprint",
+    "created_at": "2026-06-28T20:35:02.525867+00:00",
+    "worker": "claude",
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "master",
+    "scraps_validated": "2026-06-28T20:35:02.577002+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "4e5f50ce-41e8-4fe5-85e9-ec2f2d8d5efa"
+  }
+}

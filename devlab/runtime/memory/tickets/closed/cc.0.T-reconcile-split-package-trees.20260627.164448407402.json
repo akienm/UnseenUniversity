@@ -17,7 +17,7 @@
   },
   "body": {
     "id": "T-reconcile-split-package-trees",
-    "title": "[triage] Reconcile Sonnet-drift split package trees: root vs unseen_university/ for bus/skeleton/devices (both halves live)",
+    "title": "Reconcile Sonnet-drift split package trees: root vs unseen_university/ for bus/skeleton/devices (both halves live)",
     "size": "L",
     "tags": [
       "Packaging",
@@ -27,13 +27,13 @@
     "description": "**Problem (confirmed by Akien 2026-06-27 as unintentional Sonnet split-brain drift, NOT design):** bus/, skeleton/, devices/ each exist at BOTH the repo root AND under unseen_university/, with DIFFERENT, LIVE modules in each half. Verified split:\n- **bus** — root {connection, envelope, imap_server, memory_protocol, pg_bus} = the IMAP transport; unseen_university/bus {router, bus_launcher} = imported by unseen_university/device.py + each other.\n- **skeleton** — root {registry, halt_registry}; unseen_university/skeleton {skeleton, health, exceptions, container_shim, device_queue, restart_guard} = imported by unseen_university/cli/agentctl.py + the Skeleton class.\n- **devices** — root holds MOST devices (akien, archivist, auditor, browser_use, ...); unseen_university/devices holds ONLY librarian, heavily imported as unseen_university.devices.librarian.*\n\nBoth halves are live. pyproject `[tool.setuptools.packages.find] where=['.']` exposes SEVEN top-level packages, so `import bus` and `import unseen_university.bus` both resolve to DIFFERENT code. Import sites split ~413 root-style vs ~58 unseen_university.*. Result: 'which X is THE X' is unanswerable, the top-level namespace is polluted (a generic `import config`/`import devices` collides with any other installed distribution), and any reader (human or model) keeps re-confusing the two — the drift compounds.\n\n**Q1 (OPEN — needs Akien before sprinting):** canonical direction?\n(a) FLAT root-level — CLAUDE.md structural rules describe root bus/skeleton/devices as the design center; move the unseen_university/{bus,skeleton,devices/librarian} modules out to root, then pin explicit packages.\n(b) PROPER src-layout under unseen_university/ — agentctl CLI, Skeleton, Router, Librarian already live there; move root bus/skeleton/devices/config/diagnostic_base/global_kb under it and rewrite ~413 imports.\n(c) The split is SEMANTIC (e.g. unseen_university/ = installable lib vs root = runtime rack) — if so, make it explicit and de-collide by RENAMING, not merging.\n\n**Affected files:** pyproject.toml (packages discovery); the 6 split dirs; ~471 import sites. HIGH-inertia.\n**Design rules:** CLAUDE.md structural rules (bus/ owns comms://, skeleton/ owns MCP aggregator, devices/ one-subdir-per-device); `pip install -e .` must keep succeeding (hard rule).\n**Scope boundary:** Decide Q1 + reconcile bus/skeleton/devices to ONE tree each + pin explicit pyproject `packages` (kill `where=['.']` namespace grab). The mass import-rewrite (direction b) splits to a follow-up ticket.\n**Test plan:** `pip install -e .` succeeds; `top_level.txt` lists only the intended top-level package(s); grep/AST check finds no two importable modules sharing a name with differing content; import smoke (`python -c 'import unseen_university'`) + targeted device/CLI entrypoints pass.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "gate": null,
     "priority": 0.5,
-    "status": "triage",
+    "status": "closed",
     "created_at": "2026-06-27T22:44:46.338766+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Superseded by D-single-package-reorg-2026-06-28 / T-collapse-to-single-package.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-28T20:36:17.465696+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -43,6 +43,12 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-27T22:44:46.385140+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "c19ccb1d-ee61-4061-ae61-a3abd2daaabf"
+    "inferred_intention_id": "c19ccb1d-ee61-4061-ae61-a3abd2daaabf",
+    "proven": false,
+    "unproven_reason": "NOT shipped — administratively superseded. No proof-lever applies: zero work was done under this ticket as itself; the split-brain reconciliation it described is now wholly subsumed by T-collapse-to-single-package (which carries the torn-tree merge for bus/skeleton/librarian + cold-start invariant). Closed to prevent a future session treating it as live duplicate work.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
