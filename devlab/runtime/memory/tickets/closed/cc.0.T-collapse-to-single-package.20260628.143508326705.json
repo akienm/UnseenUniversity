@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-collapse-to-single-package",
-    "title": "[sprint] Collapse repo to one import root under unseen_university/ (bus/skeleton/devices merge)",
+    "title": "Collapse repo to one import root under unseen_university/ (bus/skeleton/devices merge)",
     "size": "XL",
     "tags": [
       "Substrate",
@@ -29,13 +29,13 @@
     "decision_id": "D-single-package-reorg-2026-06-28",
     "gate": null,
     "priority": 0.6,
-    "status": "sprint",
+    "status": "closed",
     "created_at": "2026-06-28T20:35:02.525867+00:00",
     "worker": "claude",
     "created_by": null,
-    "result": null,
+    "result": "Collapsed to one import root under unseen_university/ — committed a5f4dab0 (+ proof test e8412d89). VERIFIED GREEN: committed tests/test_single_import_root.py::test_single_import_root_and_cold_start passes; top_level.txt lists only unseen_university; pip install -e . green; cold-start import of skeleton pulls no psycopg2; 8480 tests collect with 0 reorg import errors; straggler/double-prefix/-m/dotted checks all 0; agentctl resolves.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-28T21:21:57.562481+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,12 @@
     "role": "master",
     "scraps_validated": "2026-06-28T20:35:02.577002+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "4e5f50ce-41e8-4fe5-85e9-ec2f2d8d5efa"
+    "inferred_intention_id": "4e5f50ce-41e8-4fe5-85e9-ec2f2d8d5efa",
+    "proven": false,
+    "unproven_reason": "proof-on-close's red->green is single-commit + AssertionError-only red; a whole-repo structural import-root reorg has no assertion-red form (its natural red is ImportError, which the emitter rejects as collateral; its docstring excludes 'refactor changed structure' intentions) and forcing it would need a 1050-file in-place diff inversion that risks corrupting the just-built tree. MISSING LEVER: a structural/refactor proof mode (import-resolution or top_level snapshot proof) decoupled from assertion-red in-place inversion. Work is independently verified green (see result message); only the FORMAL emitter binding is absent.",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }
