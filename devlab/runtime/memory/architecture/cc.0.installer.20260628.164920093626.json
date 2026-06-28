@@ -1,0 +1,53 @@
+{
+  "id": "cc.0.installer.20260628.164920093626",
+  "emitter": "cc.0",
+  "namespace": [
+    "installer"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-28T16:49:20.093626",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "installer",
+    "kind": "provisioning",
+    "title": "Installer — owner of GLOBAL / cross-instance init + provisioning",
+    "summary": "The installer device owns GLOBAL instance-init and provisioning: standing up a fresh UU instance, seeding cross-instance shared state, and deploying managed skills. It instantiates factory specs (factory.py: load_spec -> instantiate -> health_rollup/report_eval/escalate/halt, wiring member manifests and announcing to the factory owner), and deploys managed skills as symlinks from the master repo skills/<name> into the target ~/.claude/skills/<name> (backends.py — never a copy, which drifts; manifest.py is the source of truth for which skills are managed). Per D-installer-absorbs-init-2026-06-28 the installer ALSO absorbs global init that was previously ownerless and scattered (global_kb seed/loader, shared-table DDL). THE BOUNDARY (load-bearing): installer owns GLOBAL init only — seeding global_kb, creating shared Postgres tables, provisioning a fresh instance. DEVICE-LOCAL bootstrap (a device standing up its OWN state, e.g. igor/acquisition/bootstrap.py) STAYS with that device — pulling it into installer would break blast-radius containment (a broken device bootstrap could then crash global provisioning). Global-vs-device-local is the discriminator: does this code seed/provision CROSS-instance shared state (-> installer) or initialize ONE device's own state (-> stays device-local)?",
+    "key_concepts": [
+      {
+        "name": "global init vs device-local init",
+        "what": "installer owns cross-instance/shared init (global_kb seed, shared-table DDL, fresh-instance provisioning); each device keeps its own bootstrap for blast-radius containment. The boundary is the discriminator for what may move under installer."
+      },
+      {
+        "name": "factory instantiation",
+        "what": "factory.py loads a factory YAML spec, wires member MemberManifests with the factory channel, and posts FACTORY_ANNOUNCE/HEALTH/EVAL/ESCALATE/HALT to the owner comms:// address (humans and agents are both just comms:// endpoints)"
+      },
+      {
+        "name": "skill deploy = symlink, never copy",
+        "what": "backends.py links skills/<name> -> ~/.claude/skills/<name>; manifest.py lists which skills are managed (unlisted local skills survive deploys). Copies drift; a link always resolves to the one canonical source."
+      },
+      {
+        "name": "global_kb (pending relocation)",
+        "what": "global instance-init: clones/pulls a KB repo, creates global_kb.patterns (Postgres), upserts patterns/*.jsonl seed. Currently at unseen_university/global_kb.py + repo-root global_kb/ seed; moves under installer in T-home-global-kb-under-installer."
+      }
+    ],
+    "implementing_files": [
+      "unseen_university/devices/installer/device.py",
+      "unseen_university/devices/installer/shim.py",
+      "unseen_university/devices/installer/factory.py",
+      "unseen_university/devices/installer/manifest.py",
+      "unseen_university/devices/installer/backends.py",
+      "unseen_university/global_kb.py (global init; relocates under installer per T-home-global-kb-under-installer)"
+    ],
+    "reference_docs": [],
+    "related": [
+      "[[device-shim]]",
+      "[[skeleton]]"
+    ]
+  }
+}
