@@ -12,7 +12,7 @@ Flow:
 Staging area: ~/.unseen_university/archivist/contrib-staging/<id>.json
   (gitignored from UU repo; human-readable JSON)
 
-Global KB format: JSONL per unseen_university/global_kb.py schema.
+Global KB format: JSONL per unseen_university/devices/installer/global_kb.py schema.
   id, title, type, tags, content, version, source
 
 Human ships:  uu contrib list    — show staged candidates

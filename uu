@@ -261,7 +261,7 @@ def _cmd_bootstrap(args: list[str]) -> None:
 
     sys.path.insert(0, str(UU_ROOT))
     try:
-        from unseen_university.global_kb import bootstrap
+        from unseen_university.devices.installer.global_kb import bootstrap
 
         print(f"uu bootstrap: importing global KB {'from ' + kb_url if kb_url else 'from local dir'}...")
         count = bootstrap(url=kb_url, local_dir=local_dir)
