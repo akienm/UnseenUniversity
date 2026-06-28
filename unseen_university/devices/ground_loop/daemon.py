@@ -29,12 +29,22 @@ from typing import Union
 
 import yaml
 
+from unseen_university.devices.skeleton.halt_registry import HaltRegistry
+
 log = logging.getLogger(__name__)
 
 _IGOR_HOME = Path(uu_home())
 _PLUGIN_DIR = _IGOR_HOME / "ground_loop"
 _FLAGS_DIR = _IGOR_HOME / "flags"
 _DEFAULT_POLL = 15  # seconds
+
+# Master-off key in the (flat-file, cold-start-safe) HaltRegistry. The ground
+# loop is the lowest level of the rack — it must read its own off-switch even
+# with Postgres down, so the switch is the flat-file HaltRegistry, never the DB.
+# Set it (`HaltRegistry().set_halted("ground_loop", True, "<why>")`) before
+# updating the ground loop / web_server / scraps / any supervised daemon so the
+# loop stops restarting peers mid-update; clear it to resume.
+_HALT_AGENT_ID = "ground_loop"
 
 # Repo root: two levels up from this file (devices/ground_loop/daemon.py → repo root).
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -57,12 +67,19 @@ def _load_yaml(path: Path) -> dict | None:
 
 
 class GroundLoop:
-    def __init__(self, poll_interval: int = _DEFAULT_POLL, repo_root: Path = _REPO_ROOT) -> None:
+    def __init__(
+        self,
+        poll_interval: int = _DEFAULT_POLL,
+        repo_root: Path = _REPO_ROOT,
+        halt_registry: HaltRegistry | None = None,
+    ) -> None:
         self._poll = poll_interval
         self._daemons: dict[str, "PluginDaemon"] = {}
         self._proxies: dict[str, "PluginProxy"] = {}
         from .supervisor import RunmeSupervisor
         self._supervisor = RunmeSupervisor(repo_root)
+        # Master-off switch — flat-file so the lowest-level loop reads it with the DB down.
+        self._halt = halt_registry if halt_registry is not None else HaltRegistry()
         self._running = False
 
     def _scan_plugins(self) -> None:
@@ -113,6 +130,8 @@ class GroundLoop:
                 log.error("GROUND_LOOP|name=%s|action=tick_error|exc=%s", name, exc)
 
     def run_once(self) -> None:
+        # STUB (proof red anchor): master-off gate not yet wired — runs the full
+        # cycle even when halted. Real gate restored in the next commit.
         self._scan_plugins()
         self._tick_daemons()
         self._supervisor.scan()
