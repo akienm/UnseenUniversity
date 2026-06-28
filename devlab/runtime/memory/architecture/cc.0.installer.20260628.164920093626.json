@@ -42,7 +42,7 @@
       "unseen_university/devices/installer/factory.py",
       "unseen_university/devices/installer/manifest.py",
       "unseen_university/devices/installer/backends.py",
-      "unseen_university/global_kb.py (global init; relocates under installer per T-home-global-kb-under-installer)"
+      "unseen_university/devices/installer/global_kb.py (global init loader; baseline seed at devices/installer/global_kb_seed/) — unwired, see T-global-kb-wire-and-legacy-env"
     ],
     "reference_docs": [],
     "related": [
