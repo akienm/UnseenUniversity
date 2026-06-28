@@ -1,0 +1,21 @@
+{
+  "id": "cc.0.igor-shim-announce-diagnosis.20260628.171337832320",
+  "emitter": "cc.0",
+  "namespace": [
+    "igor-shim-announce-diagnosis"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-06-28T17:13:37.832320",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Diagnosis: igor_shim/datacenter_client announce timeouts = threaded-pump vs embedded-IMAPServer concurrency (T-igor-shim-announce-connect-timeout)",
+    "date": "2026-06-28",
+    "text": "# Root cause: concurrency, NOT the announce logic / reorg / config\n\n**Symptom:** ~12 tests fail with `AnnounceTimeoutError: No manifest received on announce-events within 2.0s` — tests/test_igor_shim.py (4: connect + cached-client) and tests/test_datacenter_client.py (8). Pre-existing (present at baseline 26ac6407, and proven pre-reorg last session).\n\n**What I ruled OUT:**\n- Announce broker/listener LOGIC — `tests/test_announce_listener.py` (7 passed) exercises the SAME broker + `listener.pump()` and round-trips a manifest fine.\n- Proof gate — the failing tests DO pass `proof={'shared_secret': ...}`; broker is not rejecting.\n- Profile resolution — fixtures copy igor.yaml into the broker profiles dir; the broker has the profile.\n- importance<notify_threshold — that only sets a `notified` flag in PgBus.append, not delivery; fetch_unseen returns regardless.\n- The single-package reorg / config-path migration — failure predates all of it.\n\n**The decisive contrast (sync vs threaded):**\n- PASSING `test_announce_listener`: instantiates the real `IMAPServer` but drives `listener.pump()` SYNCHRONOUSLY in the main thread, then drains events. Works.\n- FAILING igor_shim/datacenter_client: drive `listener.pump()` in a BACKGROUND daemon thread (`_drive_pump_in_background`) while the MAIN thread runs `client.announce()`'s poll loop. The announce is appended (PgBus: append logged) but the manifest never round-trips within 2.0s.\n\n**Root cause:** `IMAPServer` (unseen_university/devices/bus/imap_server.py:303) is DEPRECATED (emits DeprecationWarning; 'use PgBus via make_bus_connection() instead') and is an embedded-asyncio-IMAP-server + imaplib-client facade. Under CONCURRENT multi-thread access (background pump thread + main-thread polling, each opening its own imaplib connection to the embedded asyncio server running in its own daemon thread), the announce->manifest round-trip stalls — the manifest append by the pump thread is not observed by the main thread's fetch within the window. The baseline run's interpreter-shutdown trace ('could not acquire lock ... daemon threads', asyncio serve_forever in a thread) corroborates the embedded-server-under-threads fragility. The same code path is correct single-threaded.\n\n**Recommended fix (own ticket T-migrate-announce-tests-off-deprecated-imapserver):** migrate igor_shim + datacenter_client announce tests off the deprecated embedded `IMAPServer` to the canonical PgBus via `make_bus_connection()` (the path the deprecation warning points to), removing the embedded-asyncio-server concurrency layer. Alternative (worse): make the embedded IMAPServer thread-safe for concurrent client connections — not worth it for deprecated code."
+  }
+}
