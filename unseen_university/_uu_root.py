@@ -89,4 +89,4 @@ def uu_config_dir() -> Path:
     Returns a :class:`pathlib.Path`; callers compose, e.g.
     ``uu_config_dir() / "profiles" / "base.yaml"``.
     """
-    return Path("/__uu_config_dir_unimplemented__") / "config"
+    return Path(__file__).resolve().parent / "config"
