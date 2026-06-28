@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-ground-loop-master-off.20260628.145611780906",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-ground-loop-master-off"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-28T20:56:11.780906+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-ground-loop-master-off"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-ground-loop-master-off",
+    "title": "[sprint] Master-off for the ground loop — gate daemon restarts on HaltRegistry",
+    "size": "M",
+    "tags": [
+      "GroundLoop",
+      "Safety"
+    ],
+    "status": "sprint",
+    "priority": 0.55,
+    "description": "**Problem:** The ground loop is the lowest level of the system — designed never to go off. Each poll it scans every device's shim daemon-file, runs that daemon's work, and restarts any peer that goes down (consolidated daemon supervision). To update the ground loop itself, the web_server, scraps, or any device daemon, you must stop it from restarting peers mid-update — but by design it resists stopping (kill it and supervision brings peers back). There is no master-off.\n\n**Proposed shape:** DON'T reinvent — `skeleton/halt_registry.py` is already the right primitive: a flat-file, crash-safe (write-tmp-then-rename) kill switch at `~/.unseen_university/registry/halted.json` with `set_halted(agent_id, halted, reason)` / `is_halted(agent_id) -> (bool, reason)`. Wire the ground loop's run loop to consult it. At the top of `GroundLoop.run_once()` (before `_tick_daemons()` restarts anything), call `HaltRegistry().is_halted(\"ground_loop\")`; when halted, skip ALL peer-daemon restarts this tick (idle-poll, do not exit — so clearing the flag resumes without a relaunch), and log the suppression once per transition. Provide a setter to flip it: a tiny CLI / skill (`master-off` / `master-on`) that calls `set_halted(\"ground_loop\", True/False, reason)`. Leave a note that a reserved global key (e.g. \"*\") could generalize this to a whole-rack off later — out of scope now.\n\n**Architectural constraint:** flat-file, NOT Postgres — the ground loop is the lowest level and must read its own off-switch even with Postgres down (cold-start + external-state principle). HaltRegistry already satisfies this. Halting agent_id `\"ground_loop\"` IS the master-off, because the ground loop is the thing performing all restarts — stop it restarting and nothing comes back up until you clear the flag.\n\n**Affected files:** devices/ground_loop/daemon.py (`run_once` / `_tick_daemons` gate + transition log), a new setter CLI under the ground_loop device (or extend an existing one), skeleton/halt_registry.py (read-only use; add a convenience only if needed). NOTE: these paths move to unseen_university/devices/ground_loop/ + unseen_university/devices/skeleton/ under T-collapse-to-single-package — reference the ground_loop and skeleton devices by NAME, and sequence after the reorg if it lands first to avoid touching doomed paths.\n\n**Design rules:** flat-file-not-Postgres (cold-start/external-state — HaltRegistry already flat-file); external-state principle (off-switch survives restart); device design-center (gate lives in the ground_loop device, not a standalone function); log every state change (halt set/clear + restart-suppressed transition — INFO at the interface crossing); don't-reinvent (use HaltRegistry, do not add a parallel semaphore file); relates to the existing STOP/kill-all-minions concept (cross-ref, not unified here).\n\n**Scope boundary:** IN — wire ground loop run-loop to consult HaltRegistry for the `\"ground_loop\"` halt key; suppress peer-daemon restarts when set; idle (not exit) so clearing resumes; a setter to flip it on/off; log the transition. OUT — unifying with the broader STOP/kill-all-minions path (cross-ref only); the package reorg (T-collapse-to-single-package); rebuilding HaltRegistry; a global/whole-rack reserved key (noted as future).\n\n**Test plan:** Unit test on GroundLoop with a stub down-daemon: (1) with `is_halted(\"ground_loop\")` TRUE, `run_once()` calls NO restart on the down daemon (assert the restart path is not invoked) and logs the suppression; (2) with it FALSE, the down daemon IS restarted; (3) HaltRegistry round-trips the `\"ground_loop\"` key through the flat file (set -> is_halted True -> clear -> is_halted False). Use UU_LOG_ROOT / a tmp halted.json path so the test is hermetic.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-28T20:56:09.505143+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-28T20:56:09.552480+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "3c6ea460-758d-4247-b43a-1b6f2f9cdfb1"
+  }
+}
