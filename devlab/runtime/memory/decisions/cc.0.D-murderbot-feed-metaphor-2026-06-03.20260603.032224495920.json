@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-murderbot-feed-metaphor-2026-06-03.20260603.032224495920",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-murderbot-feed-metaphor-2026-06-03"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-03T03:22:24.495920",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-murderbot-feed-metaphor-2026-06-03",
+    "title": "Web UI naming follows Murderbot Diaries \"feeds\" metaphor",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-06-03",
+    "spawned_tickets": [
+      "T-web-channel-naming",
+      "T-igor-instance-naming"
+    ],
+    "provenance": "Absorbed from ~/TheIgors/lab/design_docs/decisions/D-murderbot-feed-metaphor-2026-06-03.md 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-murderbot-feed-metaphor-2026-06-03\n**title:** Web UI naming follows Murderbot Diaries \"feeds\" metaphor\n**date:** 2026-06-03\n**status:** open\n**spawned_tickets:** T-web-channel-naming, T-igor-instance-naming\n**goal_link:** none: UX consistency decision, not a capability goal\n**concept_links:** none\n\n## Decision narrative\nThe human-facing web interface into the MCP bus uses the Murderbot Diaries \"feeds\" system as its naming metaphor. In the Murderbot universe, \"Shared Comms\" is the public feed on the comms network — what you broadcast to everyone connected to the network. Private comms go to specific addresses; shared/public comms are the broadcast layer.\n\nMapping to this system:\n- **Shared Comms / Public Feed** → the `shared` channel in code — the broadcast layer all devices can see\n- **Private feed** → direct device-to-device IMAP messages\n- **Feed** → the stream of events from a device (feeds/granny, feeds/cc, etc.)\n\nNaming convention for the web UI:\n- The `shared` channel appears as **\"Public\"** (or \"Shared Comms\" for longer labels) in tabs, channel selectors, and feed headers\n- Device feeds (feeds/granny, feeds/cc) appear as **\"<DeviceName> Feed\"**\n- The web UI as a whole is the \"comms console\" — the view into the bus\n\n**Why this metaphor:** Murderbot understands itself through its media consumption; it routes, filters, and manages what it shows the humans vs. what it keeps private. The same structure applies here — devices have private state, public channel posts, and feed events. Using this metaphor keeps naming consistent and gives new contributors an intuitive mental model once explained.\n\n**Instance naming:** Igor's agent_id follows the same pattern — once multiple boxes come up, there will be multiple Igor instances. Agent IDs should be instance-qualified (e.g., \"igor-wild-0001\") matching the IGOR_HOME path convention, so the comms console can show which Igor is posting.\n\n## Provenance\nAbsorbed from ~/TheIgors/lab/design_docs/decisions/D-murderbot-feed-metaphor-2026-06-03.md 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical; original status: open."
+  }
+}

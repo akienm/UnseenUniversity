@@ -1,0 +1,26 @@
+{
+  "id": "cc.0.D-workshop-evolution-2026-04-20.20260420.015614445690",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-workshop-evolution-2026-04-20"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-04-20T01:56:14.445690",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-workshop-evolution-2026-04-20",
+    "title": "D-workshop-evolution-2026-04-20",
+    "status": "historical",
+    "original_status": "unknown",
+    "date": "2026-04-20",
+    "spawned_tickets": [],
+    "provenance": "Absorbed from ~/TheIgors.archive/lab/theigors/theigors/decisions/D-workshop-evolution-2026-04-20.md 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-workshop-evolution-2026-04-20 — workshop evolution\n\n**Path:** `theigors/decisions/D-workshop-evolution-2026-04-20`\n**Updated:** 2026-04-20T19:44:09.234414+00:00 by migrate_decisions_to_palace\n\nDecision D-workshop-evolution-2026-04-20: workshop evolution. Status: active. Canonical row: clan.memories id=D-workshop-evolution-2026-04-20. Spawned tickets: 1.\n\n## Pointers\n\n- `memories:D-workshop-evolution-2026-04-20`\n\n## Provenance\nAbsorbed from ~/TheIgors.archive/lab/theigors/theigors/decisions/D-workshop-evolution-2026-04-20.md 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical; original status: unknown."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "cc.0.D-workflow-overhaul-2026-04-20.20260420.072417493218",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-workflow-overhaul-2026-04-20"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-04-20T07:24:17.493218",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-workflow-overhaul-2026-04-20",
+    "title": "D-workflow-overhaul-2026-04-20",
+    "status": "historical",
+    "original_status": "unknown",
+    "date": "2026-04-20",
+    "spawned_tickets": [],
+    "provenance": "Absorbed from ~/TheIgors.archive/lab/theigors/theigors/decisions/D-workflow-overhaul-2026-04-20.md 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-workflow-overhaul-2026-04-20 — workflow overhaul\n\n**Path:** `theigors/decisions/D-workflow-overhaul-2026-04-20`\n**Updated:** 2026-04-20T19:44:09.233761+00:00 by migrate_decisions_to_palace\n\nDecision D-workflow-overhaul-2026-04-20: workflow overhaul. Status: active. Canonical row: clan.memories id=D-workflow-overhaul-2026-04-20. Spawned tickets: 12.\n\n## Pointers\n\n- `memories:D-workflow-overhaul-2026-04-20`\n\n## Provenance\nAbsorbed from ~/TheIgors.archive/lab/theigors/theigors/decisions/D-workflow-overhaul-2026-04-20.md 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical; original status: unknown."
+  }
+}

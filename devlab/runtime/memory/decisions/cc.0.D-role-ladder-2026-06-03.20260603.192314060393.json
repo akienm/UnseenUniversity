@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-role-ladder-2026-06-03.20260603.192314060393",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-role-ladder-2026-06-03"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-03T19:23:14.060393",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-role-ladder-2026-06-03",
+    "title": "Role-based ticket assignment: apprentice/builder/creator/master/guru",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-06-03",
+    "spawned_tickets": [
+      "T-role-ladder-schema",
+      "T-audit-role-fit",
+      "T-granny-dispatch-role-map",
+      "T-granny-escalate-closed",
+      "T-consequence-role-ladder"
+    ],
+    "provenance": "Absorbed from ~/TheIgors/lab/design_docs/decisions/D-role-ladder-2026-06-03.md 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-role-ladder-2026-06-03\n**title:** Role-based ticket assignment: apprentice/builder/creator/master/guru\n**date:** 2026-06-03\n**status:** open\n**spawned_tickets:** T-role-ladder-schema, T-audit-role-fit, T-granny-dispatch-role-map, T-granny-escalate-closed, T-consequence-role-ladder\n**goal_link:** G-factory-of-factories\n**concept_links:** C-prescient-agents-pa20\n\n## Decision narrative\nReplace direct worker assignment (worker=claude|dicksimnel) with role-based ticketing (role=apprentice|builder|creator|master|guru). \"Builder\" is a capability envelope — DS + specific models + features — not a process name; when models improve, Builder's ceiling rises without touching ticket descriptions. Granny maps role→available workers at dispatch time. Ticket audit gains a role-fit check: L/XL architectural tickets filed as Builder get flagged at creation, not discovered at max-iter HOLD. Failure feedback closes the loop: when DS hits max-iter, the system annotates \"scope exceeded Builder ceiling\" rather than silently holding.\n\nRoot trigger: ~9 tickets accumulated in HOLD over 2026-06-02 because scope exceeded DS's capability ceiling but was only discovered at runtime (post-OR exhaustion). CC is the only available builder while OR is dry and Google AI Studio setup is pending (2026-06-03 morning).\n\n## Hypothesis\nHOLD accumulation from role-mismatch drops to zero; Builder-ceiling failures are caught at audit time (filing) not at runtime (HOLD after max-iter).\n\n## Measurement Signal\nAudit emits \"role-fit violation\" on over-scoped tickets at filing; HOLD records with \"max iter\" signature decrease; tickets route to correct capability tier without manual triage.\n\n## Goal Link\nG-factory-of-factories — building the factory that builds the builders.\n\n## Concept Links\nC-prescient-agents-pa20\n\n## Provenance\nAbsorbed from ~/TheIgors/lab/design_docs/decisions/D-role-ladder-2026-06-03.md 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical; original status: open."
+  }
+}
