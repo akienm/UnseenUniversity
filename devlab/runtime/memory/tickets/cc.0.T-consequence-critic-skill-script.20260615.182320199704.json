@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-critic-skill-script",
-    "gate": "2026-06-29",
+    "gate": null,
     "role": "apprentice",
     "size": "S",
     "tags": [

@@ -22,7 +22,7 @@
   },
   "body": {
     "id": "T-consequence-intent-extractor",
-    "gate": "2026-06-28",
+    "gate": null,
     "role": "master",
     "size": "S",
     "tags": [

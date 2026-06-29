@@ -20,7 +20,7 @@
   },
   "body": {
     "id": "T-consequence-cc-nightly",
-    "gate": "2026-06-27",
+    "gate": null,
     "role": "apprentice",
     "size": "S",
     "tags": [
@@ -46,6 +46,7 @@
     "target_difficulty": 1,
     "inferred_intention": "unknown",
     "inferred_intention_id": "d3d7529e-25b6-41b5-b4eb-aa76aaeb85c7",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "dispatched_at": null
   }
 }

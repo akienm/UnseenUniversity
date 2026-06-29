@@ -1,0 +1,20 @@
+{
+  "id": "cc.0.day-20260628.20260629.103417026829",
+  "emitter": "cc.0",
+  "namespace": [
+    "day-20260628"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-06-29T10:34:17.026829",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Day 2026-06-28",
+    "text": "## Done\n- D-single-package-reorg: T-collapse-to-single-package CLOSED (shipped-unproven); single-import root live\n- D-root-cleanup + D-installer-absorbs-init: 2 decisions designed, 16 tickets filed\n- D-all-generations-consolidation: 113 ADC decisions absorbed, 18 palace slates absorbed, 6 architecture intent-points created, ~16.7G dead bulk deleted (home 42G→26G)\n- Day-close audit: fixed queue device test mock; all other findings pre-existing\n- Tests: 189 passed, 3 skipped after fix\n"
+  }
+}

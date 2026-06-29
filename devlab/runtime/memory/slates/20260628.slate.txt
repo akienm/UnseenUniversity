@@ -1,39 +1,38 @@
-- D-single-package-reorg-2026-06-28: one import root under unseen_university/ (bus+skeleton as devices), docs/->press_releases/, retire datacenter_logs/ — T-collapse-to-single-package, T-docs-to-press-releases, T-retire-datacenter-logs, T-consequence-single-package-reorg; supersedes T-reconcile-split-package-trees
+## Done today
+
+### D-single-package-reorg-2026-06-28
+- **T-collapse-to-single-package** CLOSED (shipped-unproven): Single-import-root reorg live (a5f4dab0). Bus+skeleton merged under unseen_university/devices/; ~3650 imports rewritten; 3 torn devices reconciled; pip -e/cold-start/8480-collect green. Missing proof lever = structural-refactor proof mode. Commits: a5f4dab0, e8412d89, d0f7dab6, 00d560dd.
+- **T-ground-loop-master-off** filed: Master-off for HaltRegistry-gated ground-loop kill switch.
+- **T-canonical-config-dir-resolver** fixed: Config-path reorg regression (broker/igor_shim/17 tests, 4f0400e5).
+
+### D-root-cleanup + D-installer-absorbs-init
+- Designed + /sorted'd 2 decisions (16 tickets filed, advisor-amended).
+
+### D-all-generations-consolidation-2026-06-28
+- **T-absorb-adc-era-decisions** CLOSED: 113 ADC-era decisions migrated to UU (dbaef5bf). Plus 4 pre-flight stragglers caught by exact-id pre-flight (final: UU decisions 116→233, all historical-stamped).
+- **T-absorb-palace-slates** CLOSED: 18 palace slates from TSV (e547c62b). Final: UU slates 69→87.
+- **T-absorb-architecture-intent-points** CLOSED: 6 NEW + 2 EXTEND intent-points (24d772e2). Inference re-homed onto live Proxy, not superseded direct-call ladder. Final: architecture 9→15.
+- **T-reconstruct-palace-pointer-tickets** CLOSED: 52 pointer-tickets verified already in UU — reconstruction moot.
+- **T-delete-dead-bulk-outright** CLOSED: ~16.7G deleted (home 42G→26G). Exact-id pre-flight caught 4 decisions the sweeps missed; advisor caught ~/.unseen_university scan gap — both closed before rm. Exempt set (logs/cc_channel/akien-OneDrive/vault) verified intact.
+
+### Session audits
+- Day-close audit (2026-06-28a) found + fixed config-path reorg regression.
+- No mid-flight work.
+
+## Notes
+
+Remaining for assessment (code-ref-gated + Akien judgment calls):
+1. **T-repoint-igor-refs-finish-gen-dir-consolidation** — igor system_prompt/boot_notes point at TheIgors.archive; need code fix before dir removal.
+2. **3 judgment calls for Akien**: archive/.git (496M, history-only?), training_corpus (valuable?), 352 D-numeric stubs (reconstruct-as-index vs freeze?).
+3. **T-igor-inference-gateway-bypasses-proxy** — Proxy-only violation found during absorb.
+4. **8 consolidation tickets in awaiting_validation** to validate.
+
+## In-flight
+NONE — D-all-generations-consolidation absorb+delete complete, tree clean. Code-ref-gated freeze/dir-removal deferred.
 
 ## Session close 2026-06-28
-Done: /sorted'd D-single-package-reorg-2026-06-28 — Akien ruled the repo collapses to ONE import root under unseen_university/: bus+skeleton become devices under unseen_university/devices/, docs/->press_releases/, datacenter_logs/ retires to uu_home()/logs/. Filed 4 tickets through advisor+audit (advisor caught librarian torn-collision + cold-start __init__ invariant -> folded into the XL). Closed T-reconcile-split-package-trees superseded. Established earlier: unseen_university/ is NOT 'what makes the package' — it's 1 of 7 co-installed top-level packages; collapsing to one is the deliberate fix.
-Next: Build — start T-collapse-to-single-package (XL single-package reorg); high-inertia ~413-import file-touch RE-CONFIRMS at sprint before mechanical execution. Parked: all-generations artifact consolidation (Haiku rec-list, /home/akien only, exclude ~/.unseen_university/akien); T-docs-to-press-releases per-doc triage.
+Done: Autonomous overnight sprint on D-all-generations-consolidation — absorb+delete phase complete. ~16.7G reclaimed (42G→26G home). All dev-artifacts absorbed into UU store (decisions 116→233, slates 69→87, architecture 9→15). Exact-id pre-flight caught 4 missed decisions + filled ~/.unseen_university scan gap before irreversible delete. Repo tree clean; 7 commits (dbaef5bf...4ab84b52).
 
-## In-flight: D-single-package-reorg-2026-06-28 filed + ready (4 tickets, advisor-amended); T-reconcile-split-package-trees closed superseded; decision+slate written. Nothing mid-flight — next session builds T-collapse-to-single-package after sprint-time high-inertia re-confirm.
-- T-ground-loop-master-off: Master-off for the ground loop — gate daemon restarts on HaltRegistry
+Next: Day-close audit (assess overnight quality). Then assess 3 Akien judgment calls (.git/.training_corpus/D-numeric). Then T-repoint-igor-refs code-ref fix work.
 
-## In-flight: Filed T-ground-loop-master-off (HaltRegistry-gated ground-loop kill switch). Mid-reorg: killed 3 stray UU daemons; mapped T-collapse import surface = ~2400 sites/628 files (devices 2236, bus 84, skeleton 23, diag_base 31, config 18) + 3 torn devices (bus/skeleton/librarian) + systemd -m paths; about to advisor-check the mechanical sweep then execute.
-- T-collapse-to-single-package BUILT + committed a5f4dab0: one import root under unseen_university/; bus+skeleton+devices merged to unseen_university/devices/, diagnostic_base+config under unseen_university/; ~3650 imports/strings/-m rewritten; 3 torn devices (bus/skeleton/librarian) reconciled; top_level.txt=unseen_university only; pip -e green; cold-start smoke (no psycopg on skeleton import); 8480 tests collect, 0 reorg import errors. Pre-existing unrelated: run_test.py stale symbol import; 2 py2 DRM vendored files.
-- T-collapse-to-single-package CLOSED shipped-unproven: work verified green (committed test tests/test_single_import_root.py passes + top_level/pip-e/cold-start/8480-collect all clean), but proof_emitter can't bind a whole-repo structural reorg — its red->green is single-commit + AssertionError-only, rejects ImportError as collateral, docstring excludes refactor intentions. Missing lever = structural/refactor proof mode. Commits: a5f4dab0 reorg, e8412d89 proof test, rescueclaude --1m fix.
-
-## In-flight: T-collapse-to-single-package BUILT, verified green, committed (a5f4dab0 reorg + e8412d89 proof test + d0f7dab6 rescueclaude + 00d560dd close), closed shipped-unproven (proof_emitter can't bind structural refactors). One import root under unseen_university/ live. T-ground-loop-master-off filed. Remaining sprint tickets from D-single-package-reorg: T-docs-to-press-releases (M), T-retire-datacenter-logs (S), T-consequence (gate 07-12). Pre-existing unrelated: run_test.py stale symbol import.
-- D-root-cleanup-2026-06-28: post-collapse root cleanup — T-purge-dead-bootstrap-scripts, T-home-critic-cli-to-devlab, T-fix-session-capture-flatfile, T-examples-to-devlab-prototypes, T-consequence-root-cleanup
-- D-installer-absorbs-init-2026-06-28: installer device owns global instance-init (global_kb moves under it; device-local bootstrap stays) — T-installer-init-intention-point, T-home-global-kb-under-installer, T-inventory-classify-scattered-bootstraps, T-consequence-installer-absorbs-init
-- T-canonical-config-dir-resolver + T-igor-shim-announce-connect-timeout: day-close findings (config-path regression fixed 4f0400e5; igor_shim timeout pre-existing)
-- T-skills-stale-root-paths-post-reorg: 13 skills + tools hold stale root devices/bus/config paths post-reorg (consequence risk #5); day-close-audit refs missing audit_runner.py
-
-## Session close 2026-06-28
-Done: Built+verified+committed the single-import-root collapse (unseen_university/, a5f4dab0). Designed ground-loop master-off (HaltRegistry). /sorted'd 2 more decisions (root-cleanup, installer-absorbs-init). Day-close audit caught + fixed a real reorg regression (config moved into package -> root-anchored path-builders broke; broker/igor_shim/17 tests, 4f0400e5). Deleted dead run_test.py. Owned all findings (sole maintainer). 16 tickets filed across 3 decisions.
-Next: Sprint the dead-clear cleanup tickets (purge-dead-scripts, home-critic-cli, examples->prototypes) + the post-reorg fixes (canonical-config-dir-resolver, skills-stale-root-paths). Then home global_kb under installer + fix session_capture. Diagnose pre-existing igor_shim announce timeout.
-
-## In-flight: Session close — single-import-root collapse built+verified+committed; 3 decisions /sorted'd (16 tickets); day-close audit found+fixed config-path reorg regression; nothing mid-flight, tree clean.
-- D-all-generations-consolidation-2026-06-28: absorb all-gen artifacts into UU store, freeze dead code, delete ~17G bulk outright — T-absorb-adc-era-decisions, T-absorb-palace-slates, T-absorb-architecture-intent-points, T-reconstruct-palace-pointer-tickets, T-freeze-dead-code-to-theigorsproject, T-delete-dead-bulk-outright, T-resweep-prove-consolidation-clean, T-consequence-all-generations-consolidation (8). Discovery: 4 Haiku sweeps, measured dedup. Expands D-canonical-substrate-consolidation-2026-06-27.
-
-## Session close 2026-06-28
-Done: /sorted'd D-all-generations-consolidation — 4 read-only Haiku discovery sweeps, MEASURED dedup: 113/116 archive ADC-era decisions missing from UU, 18 palace slates recoverable, 161 palace tickets already in UU, ~350 palace_echo 'sessions' hollow (dropped), ~17G is dead bulk. Filed 8 gated tickets (absorb→verify→freeze→delete→prove), advisor-amended (stamp_for_day_only historical emitted_at, drop hollow echoes, never-follow-symlinks). Closed-folded T-substrate-artifact-inventory + 3 T-cleanup-*. Akien PRE-APPROVED the ~/.unseen_university/archive delete gate (stamped in T-delete-dead-bulk-outright). Commits dc291138, 84a0d4fe; tree clean.
-Next: Sprint the 4 ungated absorb tickets (T-absorb-adc-era-decisions M, T-absorb-palace-slates S, T-absorb-architecture-intent-points M, T-reconstruct-palace-pointer-tickets S) — use memory_emit.stamp_for_day_only(id, yyyymmdd) for historical emitted_at; then freeze (gated) → delete ~17G outright (archive/ pre-approved; re-run absorb-dedup checks at execution) → resweep-prove. Don't wait for Akien. Worklist durable: notes/cc.0.all-gen-consolidation-discovery + decision body.
-
-## In-flight: D-all-generations-consolidation-2026-06-28 filed (8 gated tickets, advisor-amended, committed); nothing mid-flight — next session sprints the 4 absorb tickets then freeze→delete ~17G→resweep; archive/ delete gate pre-approved so execution doesn't block on Akien.
-
-## In-flight: Sprinting D-all-generations-consolidation absorb phase. DONE 3/4: T-absorb-adc-era-decisions (113 decisions, dbaef5bf), T-absorb-palace-slates (18 slates, e547c62b), T-reconstruct-palace-pointer-tickets (moot—all 52 already in UU). IN PROGRESS: T-absorb-architecture-intent-points (triage agent adc058 classifying 35 archive design docs → live-subsystem intent-points only; press_releases overviews deferred to #16). NEXT (all ungated/pre-approved by Akien, running autonomously overnight): review triage drafts→emit intent-points→close #3; then FREEZE dead code→~/TheIgorsProject (reversible, never-follow-symlinks); then DELETE ~17G bulk outright (re-run absorb-dedup first, akien/ exempt, archive/ pre-approved); then RESWEEP-prove clean. Guards: absorb-verified-before-touch, no-symlink-follow, du before/after logged. Tomorrow: Akien assesses + day-close + maybe restart.
-
-## Session close 2026-06-28
-Done: Sprinted D-all-generations-consolidation absorb+delete overnight (Akien pre-approved/ungated). ABSORB: 113 ADC-era decisions + 4 pre-flight stragglers (UU decisions 116->233, all with historical emitted_at — no context-load flooding); 18 palace slates from TSV (69->87); 6 NEW + 2 EXTEND architecture intent-points (9->15, inference re-homed onto live Proxy not the superseded direct-call ladder); 52 pointer-tickets verified already-in-UU (reconstruction moot). DELETE: ~16.7G dead bulk outright, home 42G->26G, exempt set (logs/cc_channel/akien-OneDrive/vault) intact, comprehensive exact-id pre-flight clean (caught 4 decisions the Haiku sweeps missed — incl 2 recent ~/TheIgors ones). Repo tree clean; 5 commits (dbaef5bf,e547c62b,24d772e2,4f122303,4ab84b52). Advisor-gated the irreversible delete (caught the ~/.unseen_university scan gap — closed it before rm). FREEZE + final-sweep DEFERRED: blocked on live igor code-refs to TheIgors.archive/design_docs + ~/.TheIgors/claudecode.
-Next: ASSESS with Akien (his stated plan) then day-close + maybe restart. Open for assessment: (1) T-repoint-igor-refs-finish-gen-dir-consolidation — repoint igor system_prompt/boot_notes off the gen-dirs, then relocate remnant .md->TheIgorsProject + remove emptied dirs + final clean-sweep; (2) JUDGMENT CALLS flagged for Akien: archive/.git 496M (only archive-history copy — keep frozen/delete?), .TheIgors/local/training_corpus 102M (valuable/regenerable?), 352 D-numeric decision stubs (Akien said 'reconstruct' but content is title+gist only — FROZE not reconstructed; reconstruct-as-one-index vs leave?); (3) T-igor-inference-gateway-bypasses-proxy (igor makes direct provider calls — Proxy-only violation found in absorb); (4) 8 consolidation tickets in awaiting_validation to validate. Remaining gen-dir bulk ~1.6G (archive .git + .TheIgors remnants) is code-ref-gated, not blind-deletable.
-
-## In-flight: D-all-generations-consolidation absorb+delete phase complete: ~16.7G reclaimed (home 42G->26G), all dev-artifacts absorbed into UU store (decisions 116->233, slates 69->87, architecture 9->15), tree clean. Nothing mid-flight. Remaining: code-ref-gated freeze/dir-removal + 3 Akien judgment calls (.git/training_corpus/D-numeric) + inference-Proxy-violation ticket — all queued for tomorrow's assessment+day-close.
+✅ CLOSED
