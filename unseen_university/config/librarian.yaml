@@ -3,7 +3,6 @@
 # Supports ~ expansion. Only .py .md .txt .yaml .yml .json .rst .toml are indexed.
 
 indexer_paths:
-  - ~/dev/src/UnseenUniversity/devices
   - ~/dev/src/UnseenUniversity/unseen_university
   - ~/dev/src/UnseenUniversity/docs
-  - ~/dev/src/UnseenUniversity/devlab/design_docs
+  - ~/dev/src/UnseenUniversity/devlab/runtime/memory
