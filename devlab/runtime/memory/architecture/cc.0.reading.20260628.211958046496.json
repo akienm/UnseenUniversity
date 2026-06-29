@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.reading.20260628.211958046496",
+  "emitter": "cc.0",
+  "namespace": [
+    "reading"
+  ],
+  "category": "architecture",
+  "kind": "architecture",
+  "emitted_at": "2026-06-28T21:19:58.046496",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "reading",
+    "kind": "reading",
+    "title": "Reading — book ingestion + two-pass deposit-then-encode into the graph",
+    "summary": "Reading turns books into graph memory. A book is opened and read chunk-by-chunk; each chunk is pushed to Transient Working Memory and extracted into nodes. Crucially, raw extraction is DEPOSITION, not encoding (D170): deposited READ_* nodes only become reasoning-useful after a second pass — embed, link (cosine + BFS edges), spine (sequential narrative thread), interp (interpretive edges), arousal (VAD encoding). Stew salience is set above the Narrative Engine's force-run threshold so book content is processed on the next NE cycle without a manual trigger. In UnseenUniversity the chunk/extract pipeline is extracted into the portable reader DEVICE; Igor-side book/ebook handling and the integration pass remain in the igor tools.",
+    "key_concepts": [
+      {
+        "name": "deposit != encode (D170)",
+        "what": "raw extraction deposits READ_* nodes; a second 5-step pass (embed/link/spine/interp/arousal) makes them usable for reasoning"
+      },
+      {
+        "name": "stew salience above NE threshold",
+        "what": "book chunks pushed to TWM at a salience above the Narrative Engine force-run floor so they are synthesized automatically"
+      },
+      {
+        "name": "reader device (portable)",
+        "what": "chunking, node extraction, URI resolution and blob caching are extracted into the reader rack device"
+      },
+      {
+        "name": "ebook ingestion (Igor-side)",
+        "what": "format handling (epub/mobi/azw/pdf), tokenization, position state, and the reading-integration pass live in igor tools"
+      }
+    ],
+    "implementing_files": [
+      "devices/reader/device.py",
+      "devices/reader/chunker.py",
+      "devices/reader/node_extractor.py",
+      "devices/reader/uri.py",
+      "devices/reader/blob_cache.py",
+      "devices/igor/tools/ebook_reader.py",
+      "devices/igor/tools/reading_integration.py",
+      "devices/igor/cognition/reading_indexer.py",
+      "devices/igor/memory/cortex.py"
+    ],
+    "reference_docs": [],
+    "status_notes": "Reader DEVICE is the lead/portable path; igor/tools/* is the Igor-side reading path that still owns ebook formats and the integration pass. Calibre IDs, experiment-roadmap numbers and the drain-runner case (D179/D181) in the source doc are point-in-time and were NOT carried forward. cortex.py _deposit_nodes() is the canonical write primitive for book nodes.",
+    "provenance": "Distilled from TheIgors.archive/lab/design_docs/subsystem_reading.md 2026-06-28 (D-all-generations-consolidation).",
+    "related": [
+      "[[memory-graph-tree]]",
+      "[[cognition]]"
+    ]
+  }
+}

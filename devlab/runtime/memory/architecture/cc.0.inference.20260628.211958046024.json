@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.inference.20260628.211958046024",
+  "emitter": "cc.0",
+  "namespace": [
+    "inference"
+  ],
+  "category": "architecture",
+  "kind": "architecture",
+  "emitted_at": "2026-06-28T21:19:58.046024",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "inference",
+    "kind": "inference",
+    "title": "Inference — single-entry, budget-gated, tiered model routing (Proxy device)",
+    "summary": "The enduring intent of inference is a SINGLE entry point that callers hit without choosing a model or tier, behind which a tiered escalation cascade routes from cheapest-capable up to most-capable, gated by budget and provider health. In UnseenUniversity this lives in the inference rack DEVICE (the Proxy): a capability graph + rules engine pick a model for a purpose, a budget ledger/gate enforces spend caps, and provider-health monitoring routes around outages. Per the standing rule, ALL inference goes through the Proxy — no device makes direct provider calls.",
+    "key_concepts": [
+      {
+        "name": "single entry point",
+        "what": "callers ask for a result by purpose/level; no tier or model string leaks to the caller"
+      },
+      {
+        "name": "capability graph + rules engine",
+        "what": "maps a purpose to a candidate model set and picks per rules; model_alternatives provides fallbacks"
+      },
+      {
+        "name": "budget gate + ledger",
+        "what": "spend is metered and capped; cloud calls can be blocked when over budget (DS/Igor cost constraints)"
+      },
+      {
+        "name": "provider health routing",
+        "what": "provider_health + health_monitor route around degraded/unavailable providers"
+      }
+    ],
+    "implementing_files": [
+      "devices/inference/device.py",
+      "devices/inference/capability_graph.py",
+      "devices/inference/rules_engine.py",
+      "devices/inference/models_registry.py",
+      "devices/inference/sources.py",
+      "devices/inference/budget_ledger.py",
+      "devices/inference/budget_gate.py",
+      "devices/inference/provider_health.py",
+      "devices/inference/model_alternatives.py"
+    ],
+    "reference_docs": [],
+    "status_notes": "HISTORICAL DIVERGENCE FROM SOURCE DOC: subsystem_inference.md (2026-03-14) described Igor's INTERNAL gateway with a direct-call t1-t6 tier ladder (Ollama / OR gpt-4o-mini / OR claude / Anthropic-direct). That legacy path still has code at devices/igor/cognition/inference_gateway.py (+ inference_ollama.py / inference_openrouter.py / reasoners/), but it makes DIRECT provider calls and is SUPERSEDED by the Proxy device under the 'Inference Proxy only — no direct calls ever' rule. This intent-point is built around the live Proxy; the doc's specific tier-to-model table is NOT current and is recorded here only as historical context.",
+    "provenance": "Distilled (and re-homed onto the live Proxy device) from TheIgors.archive/lab/design_docs/subsystem_inference.md 2026-06-28 (D-all-generations-consolidation).",
+    "related": [
+      "[[cognition]]"
+    ]
+  }
+}

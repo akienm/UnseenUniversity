@@ -1,0 +1,63 @@
+{
+  "id": "cc.0.cognition.20260628.211958041908",
+  "emitter": "cc.0",
+  "namespace": [
+    "cognition"
+  ],
+  "category": "architecture",
+  "kind": "architecture",
+  "emitted_at": "2026-06-28T21:19:58.041908",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "cognition",
+    "kind": "cognition",
+    "title": "Cognition — the non-LLM processing layer between input and inference (Igor)",
+    "summary": "Cognition is Igor's processing layer that sits between raw input and any inference call, and most of it runs WITHOUT an LLM. The Thalamus classifies intent and scores complexity (driving skip_to into the inference cascade); the Basal Ganglia scores all loaded habits in parallel (winner-take-all above a milieu-modulated threshold); the Milieu carries a 3D affect vector (valence/arousal/dominance) that modulates the BG threshold and alerts on extremes; the Narrative Engine synthesizes Transient Working Memory into long-term promotions. Fast-path (greetings, commands) is detected in pure Python in <1ms with no LLM preparse.",
+    "key_concepts": [
+      {
+        "name": "Thalamus — intent classification",
+        "what": "13 intent categories; emits a ParsedInput; complexity (low/medium/high) is scored on core_input only (not thread context) and drives skip_to in the inference cascade"
+      },
+      {
+        "name": "Basal Ganglia — parallel habit scoring",
+        "what": "all habits scored simultaneously, winner-take-all; score = trigger + keyword + activation + inertia + valence bonuses; threshold base 0.50 clamped [0.30,0.70], milieu-modulated"
+      },
+      {
+        "name": "Milieu — 3D affect",
+        "what": "valence/arousal/dominance; fast-rise/slow-fall EMA; modulates BG threshold and surfaces extremes to the Narrative Engine / interruptors"
+      },
+      {
+        "name": "Narrative Engine",
+        "what": "reads TWM, synthesizes, promotes to long-term memory; the background consolidation loop"
+      },
+      {
+        "name": "non-LLM first",
+        "what": "fast-path greetings/commands resolved in pure Python; LLM is the last resort, not the default"
+      }
+    ],
+    "implementing_files": [
+      "devices/igor/cognition/thalamus.py",
+      "devices/igor/cognition/basal_ganglia.py",
+      "devices/igor/cognition/milieu.py",
+      "devices/igor/cognition/narrative_engine.py",
+      "devices/igor/cognition/turn_pipeline.py",
+      "devices/igor/cognition/pipeline_manager.py",
+      "devices/igor/cognition/prefrontal_cortex.py",
+      "devices/igor/cognition/interruptors.py"
+    ],
+    "reference_docs": [
+      "devices/igor/cognition/SUBSYSTEMS.md"
+    ],
+    "status_notes": "Live in the igor device. Habit counts and audit details (D178, etc.) in the source doc are point-in-time and were NOT carried forward. Some named sub-features described in adjacent retired docs (pursuits, engrams, confidence-gated depth) have vestigial code but are retired-intent per D-all-generations-consolidation.",
+    "provenance": "Distilled from TheIgors.archive/lab/design_docs/subsystem_cognition.md 2026-06-28 (D-all-generations-consolidation).",
+    "related": [
+      "[[inference]]",
+      "[[memory-graph-tree]]"
+    ]
+  }
+}

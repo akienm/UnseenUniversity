@@ -1,0 +1,51 @@
+{
+  "id": "cc.0.self-edit.20260628.211958046912",
+  "emitter": "cc.0",
+  "namespace": [
+    "self-edit"
+  ],
+  "category": "architecture",
+  "kind": "architecture",
+  "emitted_at": "2026-06-28T21:19:58.046912",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "self-edit",
+    "kind": "self-modification",
+    "title": "Self-edit & hot-reload — gated, inertia-aware source modification (Igor)",
+    "summary": "Igor can modify his own source code, gated by inertia, syntax-checked, logged, and auto-committed — a step toward the self-programming epic. Targets carry an inertia level (HIGH 0.90+ requires Akien/arbiter review; MEDIUM discuss-first; LOW freely improvable and hot-reloadable). The preferred edit is a targeted patch (old_string -> new_string), syntax-checked before it touches disk so a rejected change never lands; a full-file rewrite is the dangerous fallback. After a LOW-inertia edit, hot-reload re-imports the module (tool modules self-re-register); HIGH-inertia modules (brainstem, memory/models.py, memory/cortex.py, reasoners/base.py) require a restart instead.",
+    "key_concepts": [
+      {
+        "name": "inertia gate",
+        "what": "HIGH (review/arbiter) / MEDIUM (discuss) / LOW (free + hot-reload); the edit refuses or escalates by target inertia"
+      },
+      {
+        "name": "patch preferred over rewrite",
+        "what": "patch_source_file (targeted, syntax-checked, fails on stale/ambiguous match) is preferred; full rewrite only when a patch can't express the change"
+      },
+      {
+        "name": "syntax check before disk",
+        "what": "rejected changes never touch the file; the original is left intact on a syntax error"
+      },
+      {
+        "name": "hot-reload vs restart",
+        "what": "LOW-inertia modules reload via importlib and self-re-register; dataclass/DB-proxy/base modules are reload-blocked and need a restart"
+      }
+    ],
+    "implementing_files": [
+      "devices/igor/tools/self_edit.py",
+      "devices/igor/tools/hot_reload.py",
+      "devices/igor/tools/inertia_map.py"
+    ],
+    "reference_docs": [],
+    "status_notes": "GATED OFF by default (IGOR_SELF_EDIT_ENABLED=false), mirroring the calving-gated-off precedent. The improver rack DEVICE (devices/improver/) is the eventual relocation target for self-modification but is currently a stub (device.py only) — do NOT point at it as live implementation. Inertia tier-to-file table in the source doc is illustrative, not exhaustive.",
+    "provenance": "Distilled from TheIgors.archive/lab/design_docs/subsystem_self_edit.md 2026-06-28 (D-all-generations-consolidation).",
+    "related": [
+      "[[tools]]"
+    ]
+  }
+}

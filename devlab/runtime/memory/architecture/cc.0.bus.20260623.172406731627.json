@@ -5,10 +5,9 @@
     "bus"
   ],
   "category": "architecture",
-  "kind": "intention-point",
+  "kind": "architecture",
   "emitted_at": "2026-06-23T17:24:06.731627",
   "links": {
-    "goals": [],
     "decisions": [],
     "tickets": [],
     "commits": [],
@@ -31,6 +30,18 @@
       {
         "name": "transport decoupling",
         "what": "swap IMAP for another transport by touching only bus/"
+      },
+      {
+        "name": "announce pipeline shape",
+        "what": "agent sends a small identity envelope to comms://announce/inbox; datacenter resolves a static profile for that agent type, intersects it with the live device registry, and ships back a dynamic manifest"
+      },
+      {
+        "name": "manifest is the assembly source",
+        "what": "the agent uses the manifest to assemble its system prompt (Igor) or its MCP tool surface (CC) — one resolution, two surface adapters"
+      },
+      {
+        "name": "idempotent, versioned, push-on-change",
+        "what": "agents subscribe to comms://announce-events and re-pull on notification rather than polling; re-pull is safe to repeat"
       }
     ],
     "implementing_files": [
@@ -43,6 +54,8 @@
     "reference_docs": [],
     "related": [
       "[[device-shim]]"
-    ]
+    ],
+    "status_notes": "| EXTENDED 2026-06-28 (D-all-generations-consolidation): EXTEND, not new. The swarm-bus 'one bus, three transports (MCP/HTTP/IMAP)' framing from datacenter-swarm-bus-design is ALREADY represented across the existing bus + skeleton + device-shim + intent intent-points; that doc gets no separate draft (absorbed). Surface-adapter file paths named in the source doc (datacenter_client.py, announce_mcp.py) are pre-reorg/cross-repo and were NOT verified — reviewer should confirm against devices/claude/ and announce/ before adding any pointer.",
+    "provenance": "Distilled from TheIgors.archive/lab/design_docs/announce-protocol-design-2026-05-01-opus-pass.md (+ datacenter-swarm-bus-design-2026-05-01.md, absorbed) 2026-06-28 (D-all-generations-consolidation)."
   }
 }

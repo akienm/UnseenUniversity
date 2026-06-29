@@ -19,13 +19,13 @@
   },
   "body": {
     "id": "T-reconstruct-palace-pointer-tickets",
-    "title": "[sprint] Reconstruct/freeze 52 palace-pointer cert-walks tickets from echoes TSV",
+    "title": "[awaiting_validation] Reconstruct/freeze 52 palace-pointer cert-walks tickets from echoes TSV",
     "size": "S",
     "tags": [
       "Consolidation",
       "Memory"
     ],
-    "status": "sprint",
+    "status": "awaiting_validation",
     "priority": 0.35,
     "decision_id": "D-all-generations-consolidation-2026-06-28",
     "gate": null,
@@ -33,9 +33,9 @@
     "created_at": "2026-06-29T01:53:52.069151+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Investigated: all 52 cert-walks numeric/GH pointer tickets (26 numeric + 26 GH-) are ALREADY in the UU store with REAL content (e.g. 122->'Containerization eval', GH-151->'Epic: Productization'), absorbed in an earlier-generation migration (cc.0.<id>.20260324 files). Precise exact-id dedup: 0 of 52 missing. The cert-walks pointer .md files are hollow duplicates -> nothing to reconstruct; they freeze with the W1 snapshot in T-freeze-dead-code-to-theigorsproject. Reverses the discovery agent's '52 unique' estimate (it lacked the precise UU id set). No files changed (verification only).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T03:08:22.768040+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-29T01:53:52.069202+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "91f3c9ca-7225-43ce-a8a3-0d2b65624261"
+    "inferred_intention_id": "91f3c9ca-7225-43ce-a8a3-0d2b65624261",
+    "no_commit_reason": "verification-only: all 52 already absorbed; no reconstruction needed"
   }
 }

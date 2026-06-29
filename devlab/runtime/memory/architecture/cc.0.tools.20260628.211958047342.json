@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.tools.20260628.211958047342",
+  "emitter": "cc.0",
+  "namespace": [
+    "tools"
+  ],
+  "category": "architecture",
+  "kind": "architecture",
+  "emitted_at": "2026-06-28T21:19:58.047342",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "tools",
+    "kind": "tools",
+    "title": "Tools — self-registering, AI-agnostic tool registry (Igor)",
+    "summary": "Tools are the action surface Igor's reasoners call. The registry is AI-agnostic: a tool knows nothing about which tier or provider calls it, and reasoner adapters convert the registry schema to whatever protocol the caller speaks (Anthropic tool-use vs OpenAI/OR). Each tool module self-registers at import time via registry.register(Tool(...)) — no manual wiring — and LOW-inertia modules are hot-reloadable, their registration re-executing on reload. A Tool carries name/description/parameters/fn and execute() never raises (it returns an error string on an unknown tool). A reactive habit can carry a code_ref + TTL so a habit fire dispatches a tool and pushes the result to TWM, giving Igor capabilities (e.g. current time) without an LLM call.",
+    "key_concepts": [
+      {
+        "name": "self-registration",
+        "what": "each module calls registry.register(Tool(...)) on import; tools/__init__.py imports all modules so registration is automatic"
+      },
+      {
+        "name": "AI-agnostic + schema normalization",
+        "what": "to_anthropic_schema / to_openai_schema / to_text_description; adapters translate per caller, tools stay protocol-blind"
+      },
+      {
+        "name": "execute() never raises",
+        "what": "unknown-tool and error cases return a string, not an exception — the reasoner loop can't be crashed by a bad tool call"
+      },
+      {
+        "name": "reactive habit pattern",
+        "what": "a PROC habit with code_ref + twm_ttl_seconds dispatches a tool on fire and pushes the result to TWM with a self-cleaning TTL"
+      }
+    ],
+    "implementing_files": [
+      "devices/igor/tools/registry.py",
+      "devices/igor/tools/__init__.py",
+      "devices/igor/tools/self_edit.py",
+      "devices/igor/tools/hot_reload.py",
+      "devices/igor/tools/filesystem.py",
+      "devices/igor/tools/runner.py",
+      "devices/igor/tools/ebook_reader.py"
+    ],
+    "reference_docs": [],
+    "status_notes": "Live in the igor device. The source doc's '118-tool inventory' and capabilities_index.dsb are point-in-time and not carried forward; the tool roster drifts, the registry mechanism is the durable intent. Self-edit/hot-reload tools have their own intent-point ([[self-edit]]).",
+    "provenance": "Distilled from TheIgors.archive/lab/design_docs/subsystem_tools.md 2026-06-28 (D-all-generations-consolidation).",
+    "related": [
+      "[[self-edit]]",
+      "[[reading]]"
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "id": "cc.0.librarian.20260628.211958047803",
+  "emitter": "cc.0",
+  "namespace": [
+    "librarian"
+  ],
+  "category": "architecture",
+  "kind": "architecture",
+  "emitted_at": "2026-06-28T21:19:58.047803",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "librarian",
+    "kind": "peer-agent",
+    "title": "Librarian — research peer-agent + bidirectional growth loop with Igor",
+    "summary": "Librarian is a peer agent that shares Igor's constitutional layer but runs a different cognitive architecture, so where the two agree a belief is well-anchored and where they diverge one has a blind spot or better information. The growth-loop intent makes that divergence VISIBLE both ways: after each research/synthesis cycle Librarian emits a kind='librarian_observation' onto instance.proposals — the SAME observation bus Igor's dreaming uses — recording topic, outcome (answered/failed/escalated), confidence, tier and effective-source count, deduped by fingerprint with occurrence_count accumulating repeated failures. Igor's dreaming pass reads those observations, so a topic Librarian repeatedly fails is structurally identical to a recurring-failure pattern dreaming already handles. No new tables, no new memory types — instance.proposals is the bidirectional observation bus.",
+    "key_concepts": [
+      {
+        "name": "shared constitution, different architecture",
+        "what": "agreement = anchored belief; divergence = a blind spot or better info in one of them — the signal worth surfacing"
+      },
+      {
+        "name": "instance.proposals as observation bus",
+        "what": "Librarian writes librarian_observation entries to the same table dreaming uses; reused bidirectionally, no new schema"
+      },
+      {
+        "name": "dedup + occurrence_count",
+        "what": "fingerprint dedup; repeated failures on a topic increment occurrence_count, accumulating signal like dreaming's recurring patterns"
+      },
+      {
+        "name": "dreaming consumes the loop",
+        "what": "Igor's dreaming reads Librarian observations, closing a bidirectional growth loop (previously one-way: Akien -> both)"
+      }
+    ],
+    "implementing_files": [
+      "devices/librarian/librarian.py",
+      "devices/librarian/research.py",
+      "devices/librarian/palace_writer.py",
+      "devices/librarian/persistent_inquiry.py",
+      "devices/librarian/learning_pipeline.py",
+      "devices/librarian/recall.py",
+      "devices/igor/cognition/dreaming.py"
+    ],
+    "reference_docs": [],
+    "status_notes": "Librarian is a live rack device with no prior intent-point. The growth-loop spec describes the observation emission (PalaceWriter.write / ResearchEngine on failure) and dreaming's _read_librarian_observations consumer; verify the emit/consume hooks are wired before treating the loop as proven. The 'instance.proposals' table is the Igor-side cognition store (Postgres, NO SQLITE), distinct from the dev-process filesystem store.",
+    "provenance": "Distilled from TheIgors.archive/lab/design_docs/librarian-igor-growth-loop-spec-2026-05-17.md 2026-06-28 (D-all-generations-consolidation).",
+    "related": [
+      "[[cognition]]",
+      "[[memory-graph-tree]]"
+    ]
+  }
+}

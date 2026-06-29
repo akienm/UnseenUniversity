@@ -19,13 +19,13 @@
   },
   "body": {
     "id": "T-absorb-palace-slates",
-    "title": "[sprint] Absorb 18 palace-era slates (TSV) + missing .TheIgors slates into UU slates/",
+    "title": "[awaiting_validation] Absorb 18 palace-era slates (TSV) + missing .TheIgors slates into UU slates/",
     "size": "S",
     "tags": [
       "Consolidation",
       "Memory"
     ],
-    "status": "sprint",
+    "status": "awaiting_validation",
     "priority": 0.45,
     "decision_id": "D-all-generations-consolidation-2026-06-28",
     "gate": null,
@@ -33,9 +33,9 @@
     "created_at": "2026-06-29T01:53:48.408722+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Reconstructed 18 palace-era slates (2026-04-02..04-20) from TSV into UU slates/ (summary-level, provenance-marked). 42 .TheIgors slates already in UU -> skipped (UU canonical, gaps-only fill). Slate count 69->87. Sessions confirmed-hollow, dropped. Verify: 0 in-scope slates missing; fidelity spot-check passes; slates are date-keyed .txt so emitted_at flooding N/A. Proof = re-runnable migrate_slates.py dedup; proof_emitter can't bind a data-absorb (missing lever = migration/absorb proof mode).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T03:07:21.593152+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-29T01:53:48.408825+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "bc91efe0-b92d-49e9-8c63-5fe4b8c1ace1"
+    "inferred_intention_id": "bc91efe0-b92d-49e9-8c63-5fe4b8c1ace1",
+    "commit_hash": "e547c62b"
   }
 }

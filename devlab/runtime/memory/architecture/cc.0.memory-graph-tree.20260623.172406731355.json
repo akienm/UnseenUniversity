@@ -5,10 +5,9 @@
     "memory-graph-tree"
   ],
   "category": "architecture",
-  "kind": "intention-point",
+  "kind": "architecture",
   "emitted_at": "2026-06-23T17:24:06.731355",
   "links": {
-    "goals": [],
     "decisions": [],
     "tickets": [],
     "commits": [],
@@ -39,6 +38,18 @@
       {
         "name": "calving",
         "what": "split an overgrown node into children when it accretes too much; designed + gated OFF by default 🔶"
+      },
+      {
+        "name": "memory type taxonomy",
+        "what": "ROOT -> CP1-CP6 (structural bedrock, inertia 0.90+) -> ID (identity) -> RM (role models) -> PROCEDURAL / EPISODIC / FACTUAL / INTERPRETIVE / EXPERIENTIAL; everything is memory in one graph, no special cases"
+      },
+      {
+        "name": "inertia is computed, not stored",
+        "what": "inertia = base(type) + 0.1*log1p(activation) + 0.05*len(children) + 0.02*depth; emerges from use/depth so CP nodes resist change and ephemeral EPISODICs don't"
+      },
+      {
+        "name": "Cortex is the only gatekeeper",
+        "what": "all reads/writes go through Cortex; reasoners/tools never touch raw SQL; DatabaseProxy wraps every connection (commit on success, rollback on exception)"
       }
     ],
     "implementing_files": [
@@ -48,14 +59,16 @@
       "devices/igor/memory/tree_index.py",
       "devices/igor/memory/tag_tree.py",
       "devices/igor/memory/twm_leap.py",
-      "devices/igor/cognition/hebbian_bridge.py"
+      "devices/igor/cognition/hebbian_bridge.py",
+      "devices/igor/memory/db_proxy.py"
     ],
     "reference_docs": [
       "docs/memory_architecture.md"
     ],
-    "status_notes": "node store / trees / attractors implemented ✅; calving gated off 🔶. Implemented-vs-designed gap map: docs/memory_architecture.md §4.",
+    "status_notes": "node store / trees / attractors implemented ✅; calving gated off 🔶. Implemented-vs-designed gap map: docs/memory_architecture.md §4. | EXTENDED 2026-06-28 (D-all-generations-consolidation): EXTEND, not new. INTENT-ONLY divergence flagged: source doc lists ring_memory, twm_observations, interpretive_edges, tails, word_graph tables and a separate word_graph.db — verify which persist post-reorg before enshrining table names. Carry the taxonomy + inertia formula; do not carry the SQLite-default claim.",
     "related": [
       "[[memory-dev-artifacts]]"
-    ]
+    ],
+    "provenance": "Distilled from TheIgors.archive/lab/design_docs/subsystem_memory.md 2026-06-28 (D-all-generations-consolidation)."
   }
 }
