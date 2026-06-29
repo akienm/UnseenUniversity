@@ -1529,7 +1529,7 @@ registry.register(
 # ── Calibre Igor-tagged book ingest ────────────────────────────────────────────
 
 _CALIBRE_DB = Path(
-    "/home/akien/.TheIgors/akien/onedrive/AkiensMedia/Ebooks"
+    "/home/akien/.unseen_university/akien/onedrive/AkiensMedia/Ebooks"
     "/Calibre Portable/Calibre Library/metadata.db"
 )
 

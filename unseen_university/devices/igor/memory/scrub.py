@@ -39,7 +39,7 @@ _FULL_PATTERNS: list[re.Pattern] = [
     re.compile(r'(?<![/\w])[0-9A-F]{32,}(?![/\w])'),
     # Base64/URL-safe-base64-ish tokens ≥40 chars.
     # '/' excluded from charset — real API tokens use URL-safe base64 ('-'/'_'); including
-    # '/' caused path segments to be absorbed and mangled (e.g. .TheIgors/cache/... redacted).
+    # '/' caused path segments to be absorbed and mangled (e.g. .unseen_university/cache/... redacted).
     re.compile(r'(?<![/\w])[A-Za-z0-9+\-_]{40,}={0,2}(?![/\w])'),
 ]
 

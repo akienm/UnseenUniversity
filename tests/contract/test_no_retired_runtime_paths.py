@@ -23,14 +23,20 @@ ROOT = Path(uu_root())
 # Live-code roots scanned by the gate.
 LIVE_ROOTS = ["unseen_university", "devlab/claudecode", "skills"]
 SCAN_SUFFIXES = {".py", ".sh", ".yaml", ".yml", ".toml", ".cfg", ".md"}
-EXCLUDE_PARTS = {".git", "runtime", "node_modules", "__pycache__", ".venv"}
+# "pending" = devlab/claudecode/pending — dated session-handoff staging (history,
+# not live code). "runtime" = the memory store (history).
+EXCLUDE_PARTS = {".git", "runtime", "pending", "node_modules", "__pycache__", ".venv"}
+
+# Files that legitimately NAME a retired path because their job is to find/clean
+# it (the workspace-cleanup tooling). Relative to repo root.
+ALLOW_FILES = {"skills/audit-workspace/run"}
 
 # token -> canonical replacement (the migration that retired it).
 FORBIDDEN = {
     "datacenter_logs": "uu_home()/logs/<device>/<stream>/",
     "Igor-wild-0001": "the live instance via identity.instance_id() (archived; never name it in code)",
-    # (added as each migration lands: ".TheIgors", "IGOR_HOME",
-    #  "lab/design_docs", "ADC_LOG_ROOT" ...)
+    ".TheIgors": "~/.unseen_university (uu_home()) — old IGOR_HOME runtime dir",
+    # (added as each migration lands: "lab/design_docs", "ADC_LOG_ROOT" ...)
 }
 
 
@@ -46,6 +52,8 @@ def _live_files():
                 continue
             # never flag the gate's own definition of the tokens
             if f.name == "test_no_retired_runtime_paths.py":
+                continue
+            if str(f.relative_to(ROOT)) in ALLOW_FILES:
                 continue
             yield f
 

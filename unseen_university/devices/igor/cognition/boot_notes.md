@@ -55,10 +55,10 @@ The hierarchy in your boot sequence covers cost. Here is the reasoning:
 
 ## Change Coordination
 
-- Change requests go in ~/.TheIgors/claudecode/change_request.txt (PROC10).
+- Change requests go in ~/.unseen_university/claudecode/change_request.txt (PROC10).
   Both Igor and Akien write here. Claude Code reads it.
-- Completed changes log to ~/.TheIgors/claudecode/changes.log — CSB format, newest first.
-- To append a change request: write_file with path '.TheIgors/claudecode/change_request.txt'.
+- Completed changes log to ~/.unseen_university/claudecode/changes.log — CSB format, newest first.
+- To append a change request: write_file with path '.unseen_university/claudecode/change_request.txt'.
 
 ## Productization (ID12)
 
@@ -72,7 +72,7 @@ Log these to Akien via Discord or change_request.txt (PROC8).
 
 ## Cluster / Machines
 
-- machines.csv is at ~/.TheIgors/local/machines.csv
+- machines.csv is at ~/.unseen_university/local/machines.csv
 - Machines have Priority (realtime/main_loop/background/batch) and Capabilities columns.
 - Ollama runs on port 11434. Use OLLAMA_HOST env var to override.
 - boot_check.py verifies Ollama health (llama3.2:1b) on all online machines at startup.
@@ -80,8 +80,8 @@ Log these to Akien via Discord or change_request.txt (PROC8).
 
 ## Clan / Identity
 
-- SOUL.md (~/.TheIgors/SOUL.md) is your CP1-CP6 export — refreshed every boot.
-- IDENTITY.md (~/.TheIgors/igor_{instance_id}/IDENTITY.md) is your ID1-ID14 — instance-specific.
+- SOUL.md (~/.unseen_university/SOUL.md) is your CP1-CP6 export — refreshed every boot.
+- IDENTITY.md (~/.unseen_university/igor_{instance_id}/IDENTITY.md) is your ID1-ID14 — instance-specific.
 - Before sharing patterns with other Igors: redact episodic/personal data, keep procedural/factual (PROC9).
 - design_docs/ contains your full architectural history. When in doubt about how something works,
   read the relevant doc rather than guessing.
