@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-resweep-prove-consolidation-clean.20260628.195401816645",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-resweep-prove-consolidation-clean"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T01:54:01.816645+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-resweep-prove-consolidation-clean"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-resweep-prove-consolidation-clean",
+    "title": "[sprint] Re-run home-wide sweep — prove dev-artifacts live only in the UU store",
+    "size": "S",
+    "tags": [
+      "Consolidation",
+      "Proof"
+    ],
+    "status": "sprint",
+    "priority": 0.3,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "gate": "T-delete-dead-bulk-outright",
+    "description": "**Problem:** The decision's measurement signal is Akien's acceptance test: 'I can't find any dev artifacts anymore except in devlab/runtime/memory/.' This ticket runs that proof after absorb+freeze+delete and records the result — it is the close-the-loop measurement for D-all-generations-consolidation.\n**Proposed shape:** GATED on T-delete-dead-bulk-outright. Run the Akien grep — `(slate|ticket|decision|session|proof|rule) x (md|json|txt)` under `~/` minus the exempt-by-default set (uu_home() runtime, ~/.claude harness, ~/.unseen_university/akien, ~/TheIgorsProject freeze, .git, credentials) — and assert it returns empty outside devlab/runtime/memory/. Capture `du -sh ~` delta (~17G expected) and the store counts (decisions ~231, sessions non-empty). Record numbers in the close.\n**Affected files:** none (read-only proof). Writes a proof/note recording the result.\n**Design rules:** this is the measurement-signal proof for the decision; one-home invariant (CLAUDE.md); proof-on-close (this IS the proof ticket — its red form is 'sweep finds artifacts outside the store').\n**Scope boundary:** IN — run the sweep, assert clean outside store + frozen freeze home, record du delta + counts. OUT — fixing any stray the sweep finds (that re-opens the relevant absorb/freeze ticket; this ticket only measures).\n**Test plan:** (1) The home-wide artifact grep returns 0 hits outside devlab/runtime/memory/ and ~/TheIgorsProject (the freeze home, which is allowed to hold frozen copies). (2) `du -sh ~` shows the ~17G reduction vs the pre-consolidation baseline. (3) decisions/ ~231, sessions/ non-empty. (4) If any stray is found, it is logged and the owning ticket re-opened — this ticket closes only when the sweep is clean.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T01:53:57.300831+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T01:53:57.300881+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "980e4047-6bcd-4d8e-abb0-a132385873e6"
+  }
+}

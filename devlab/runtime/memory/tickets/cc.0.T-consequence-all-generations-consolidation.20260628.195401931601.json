@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-consequence-all-generations-consolidation.20260628.195401931601",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-all-generations-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T01:54:01.931601+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-consequence-all-generations-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-all-generations-consolidation",
+    "title": "[sprint] Consequence check: all-generations artifact consolidation",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "status": "sprint",
+    "priority": 0.3,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "gate": "2026-07-12",
+    "description": "**What changed:** Absorbed every generation's genuinely-new dev-artifacts into the UU store (113 ADC-era decisions, palace slates/sessions, ~40 architecture intent-points, palace-pointer stubs), deep-froze dead code to ~/TheIgorsProject, and deleted ~17G of dead bulk outright.\n**Predicted unintended effects:** (1) emitted_at flooding — MITIGATED by stamping absorbs with stamp_for_day_only (historical emitted_at); watch to CONFIRM /context-load Step 2a/3 still surfaces genuinely-recent decisions, not the 113 freshly-absorbed 2026-04/05 ones. (2) Deleting datacenter_logs (8.9G) removes forensic history a future debug might want — gone irreversibly. (3) Freezing the triplicate theigors trees could orphan a tool/skill that still reads an old path (a stale ref into ~/TheIgors.archive/lab or ~/.TheIgors). (4) The decision-rollup may try to auto-close the 113 historical decisions' (non-existent) spawned tickets oddly. (5) A followed symlink during freeze/delete could have touched live ~/.unseen_university state — verify live runtime feeds intact post-run.\n**Signals to watch:** /context-load Step 2a/3 output (do historical decisions dominate?); any tool erroring on a now-frozen ~/TheIgors* path; grep for surviving refs to deleted dirs in skills/ + devlab/claudecode/; du -sh ~ holds its reduction (nothing regrew).\n**Gate condition:** Check by 2026-07-12 or when the absorb+delete tickets all close, whichever first.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T01:53:59.074215+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T01:53:59.074291+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "07527b97-d6b9-4300-abe3-6e0738a11d16"
+  }
+}

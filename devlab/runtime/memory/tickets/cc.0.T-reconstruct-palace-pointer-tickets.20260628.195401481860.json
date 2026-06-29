@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-reconstruct-palace-pointer-tickets.20260628.195401481860",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-reconstruct-palace-pointer-tickets"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T01:54:01.481860+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-reconstruct-palace-pointer-tickets"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-reconstruct-palace-pointer-tickets",
+    "title": "[sprint] Reconstruct/freeze 52 palace-pointer cert-walks tickets from echoes TSV",
+    "size": "S",
+    "tags": [
+      "Consolidation",
+      "Memory"
+    ],
+    "status": "sprint",
+    "priority": 0.35,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "gate": null,
+    "description": "**Problem:** `~/TheIgors-cert-walks/W1/lab/theigors/theigors/tickets/` has 52 numeric/GH-prefixed ticket files that are hollow pointers ('Canonical row: clan.memories id=N') — their bodies died with the retired palace DB. `~/TheIgorsProject/20260427.Cleanup/database/palace_old_ticket_echoes.tsv` (161 rows) carries title+size for the numeric ids; `old_done_tickets.tsv` carries T-slug+status+title+date. Folds in T-cleanup-investigate-cert-walks.\n**Proposed shape:** Cross-join the two TSVs to recover what survives for each of the 52 (id, title, size, status, date) and write metadata-stub ticket nodes into UU tickets/ CLEARLY marked `palace-era, body-lost` so they are honest stubs, not fake-complete tickets. Any of the 52 with NO recoverable metadata in either TSV: leave in the cert-walks snapshot for the freeze, logged as unrecoverable. Honesty over completeness (CP1): a stub that admits the body is gone beats a fabricated body.\n**Affected files:** writes to devlab/runtime/memory/tickets/ (metadata stubs); reads cert-walks tickets + the two TSV dumps. No code changes.\n**Design rules:** NO SQLITE (TSV/.md -> flat JSON; dead palace DB not queried); one-home store; CP1 honesty (stubs marked body-lost, never fabricated); [[reference_cc_queue_list_hides_tickets]] — verify via store not just list.\n**Scope boundary:** IN — the 52 numeric/GH cert-walks pointer tickets + TSV metadata recovery. OUT — the 645 cert-walks T- tickets (100% already in UU); full-body reconstruction (bodies are unrecoverable — do not invent them).\n**Test plan:** (1) Each of the 52 ids resolves to either a UU metadata-stub node (marked palace-era/body-lost) or a logged 'unrecoverable, frozen in snapshot' entry. (2) Spot-check 5 stubs: title/size/date match the TSV row; body explicitly states it is a palace-era metadata stub. (3) No stub presents a fabricated body.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T01:53:52.069151+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T01:53:52.069202+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "91f3c9ca-7225-43ce-a8a3-0d2b65624261"
+  }
+}

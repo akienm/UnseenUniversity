@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-delete-dead-bulk-outright.20260628.195401702198",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-delete-dead-bulk-outright"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T01:54:01.702198+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-delete-dead-bulk-outright"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-delete-dead-bulk-outright",
+    "title": "[sprint] Delete ~17G dead bulk outright (logs, venvs, caches) after absorb+freeze verified",
+    "size": "M",
+    "tags": [
+      "Consolidation",
+      "Cleanup"
+    ],
+    "status": "sprint",
+    "priority": 0.3,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "gate": "T-freeze-dead-code-to-theigorsproject",
+    "description": "**Problem:** The bulk of the laptop noise is dead, rebuildable, non-artifact mass (~17G): TheIgors.archive/datacenter_logs (8.9G, 2.27M files), TheIgors.archive/venv (2.0G), .TheIgors caches+logs (~1.8G), .unseen_university/archive (3.5G) + retired datacenter_logs/embeddings (~200M), __pycache__ across all dirs. Akien decided 2026-06-28: DELETE OUTRIGHT (no freeze copy of logs/venvs). Folds in T-cleanup-runtime-artifacts.\n**Proposed shape:** GATED on T-freeze-dead-code-to-theigorsproject (which itself gates on absorb-verified). Delete the dead bulk outright. TWO RE-CONFIRM SUB-GATES at execution (HIGH-inertia, irreversible): (1) re-run the absorb dedup checks immediately before deleting — 0 missing, proving nothing live is being destroyed; (2) `~/.unseen_university/archive` is INSIDE the live runtime dir — per the memory rule 'check before touching ~/.unseen_university', re-confirm with Akien at execution that archive/ is dead-archived devices (not live) before deleting it; EXEMPT ~/.unseen_university/akien (OneDrive) entirely.\n**Affected files:** deletes ~/TheIgors.archive/{datacenter_logs,venv,*cache*}, ~/.TheIgors/{cache,logs,...}, ~/.unseen_university/{archive,datacenter_logs,cache} (archive/ pending Akien re-confirm), __pycache__ trees. No repo code changes.\n**Design rules:** delete-after-verify only ([[feedback_delete_after_successful_merge]]); [[feedback_check_new_paths_unseen_university]] (re-confirm before touching ~/.unseen_university); CP6 (irreversible op — guard with the absorb-clean proof); exempt akien/OneDrive. **NEVER FOLLOW SYMLINKS** when deleting (`find -type`, never `rm` through a symlinked dir): .TheIgors symlinks (cc_channel, Igor-wild-0001) point into LIVE ~/.unseen_university — a followed symlink would delete live runtime state. **Ordering precondition (state explicitly even though gates hide gated tickets):** do NOT begin until T-freeze-dead-code-to-theigorsproject is closed AND the absorb dedup checks re-pass at execution time.\n**Scope boundary:** IN — rebuildable/operational dead bulk (logs, venvs, caches, __pycache__) after absorb+freeze verified. OUT — any artifact store; ~/.unseen_university live runtime state (logs/ feeds, cc_channel, devices cachedstate, vault); ~/.unseen_university/akien.\n**Test plan:** (1) Pre-delete proof: absorb dedup checks return 0 missing (captured in the ticket close). (2) `du -sh ~` measured before and after shows ~17G reduction. (3) The exempt set (akien/, live runtime feeds) is untouched — verify uu_home() logs/ and cc_channel/ still present and current. (4) Akien re-confirm stamp for ~/.unseen_university/archive recorded in ticket body before that subdir is deleted.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T01:53:55.602800+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T01:53:55.602855+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "876eb764-102b-4478-b01e-a663c3912caf"
+  }
+}

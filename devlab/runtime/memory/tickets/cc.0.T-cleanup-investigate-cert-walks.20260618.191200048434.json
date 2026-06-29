@@ -21,8 +21,8 @@
   },
   "body": {
     "id": "T-cleanup-investigate-cert-walks",
-    "title": "[sprint] Investigate: ~/TheIgors-cert-walks — safe to delete?",
-    "status": "sprint",
+    "title": "[awaiting_validation] Investigate: ~/TheIgors-cert-walks — safe to delete?",
+    "status": "awaiting_validation",
     "worker": "cc.1",
     "size": "S",
     "tags": [
@@ -33,8 +33,8 @@
     "decision_id": "D-audit-regression-violations-2026-06-18",
     "created_at": "2026-06-18T19:12:00.048434+00:00",
     "updated_at": "2026-06-18T13:12:00.372212-06:00",
-    "completed_at": null,
-    "result": null,
+    "completed_at": "2026-06-29T01:55:26.170453+00:00",
+    "result": "Folded into D-all-generations-consolidation-2026-06-28: subsumed by T-reconstruct-palace-pointer-tickets (52 hollow pointers identified; 645 T- already in UU).",
     "role": "apprentice",
     "priority": 0.3,
     "gate": null,
@@ -48,6 +48,7 @@
     "scraps_validated": "2026-06-18T19:12:00.101126+00:00",
     "inferred_intention": "unknown",
     "inferred_intention_id": "83166dfd-53c3-4fda-98c2-414f61b69977",
-    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)"
+    "source": "cc_queue.load_tasks() (clan.memories + devlab.tickets merged read)",
+    "no_commit_reason": "superseded/folded into the gated consolidation batch"
   }
 }

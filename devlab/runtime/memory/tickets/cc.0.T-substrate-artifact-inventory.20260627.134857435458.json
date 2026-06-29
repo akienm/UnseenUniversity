@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-substrate-artifact-inventory",
-    "title": "[sprint] Inventory: grep ~/ for dev-process artifacts living outside devlab/runtime/memory/",
+    "title": "[awaiting_validation] Inventory: grep ~/ for dev-process artifacts living outside devlab/runtime/memory/",
     "size": "M",
     "tags": [
       "Substrate",
@@ -29,13 +29,13 @@
     "decision_id": "D-canonical-substrate-consolidation-2026-06-27",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "awaiting_validation",
     "created_at": "2026-06-27T19:48:51.712831+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Fulfilled by D-all-generations-consolidation discovery: 4 read-only Haiku sweeps (archive/.TheIgors/TheIgorsProject+certwalks/.unseen_university) + measured dedup + SYNTHESIS.md. The home-wide inventory this asked for is done; the worklist became the 8-ticket gated batch.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T01:55:25.127862+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-27T19:48:51.758629+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "ee4a7069-23fa-4f39-84e6-e81d458a6151"
+    "inferred_intention_id": "ee4a7069-23fa-4f39-84e6-e81d458a6151",
+    "no_commit_reason": "discovery/inventory ticket — artifacts are the 4 reports, no code"
   }
 }

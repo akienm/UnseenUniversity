@@ -1,0 +1,33 @@
+{
+  "id": "cc.0.D-all-generations-consolidation-2026-06-28.20260628.195449788861",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-all-generations-consolidation-2026-06-28"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-28T19:54:49.788861",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "title": "Absorb every generation's dev-artifacts into the UU store; freeze dead code; delete dead bulk outright",
+    "status": "open",
+    "date": "2026-06-28",
+    "spawned_tickets": [
+      "T-absorb-adc-era-decisions",
+      "T-absorb-palace-slates",
+      "T-absorb-architecture-intent-points",
+      "T-reconstruct-palace-pointer-tickets",
+      "T-freeze-dead-code-to-theigorsproject",
+      "T-delete-dead-bulk-outright",
+      "T-resweep-prove-consolidation-clean",
+      "T-consequence-all-generations-consolidation"
+    ],
+    "text": "# D-all-generations-consolidation-2026-06-28\n**title:** Absorb every generation's dev-artifacts into the UU store; freeze dead code; delete dead bulk outright\n**date:** 2026-06-28\n**status:** open\n**spawned_tickets:** T-absorb-adc-era-decisions, T-absorb-palace-slates, T-absorb-architecture-intent-points, T-reconstruct-palace-pointer-tickets, T-freeze-dead-code-to-theigorsproject, T-delete-dead-bulk-outright, T-resweep-prove-consolidation-clean, T-consequence-all-generations-consolidation\n\n## Decision narrative\nEXPANDS D-canonical-substrate-consolidation-2026-06-27 from home-wide-artifact-sweep to the full lineage (TheIgors -> UtilityCloset -> AgentDatacenter -> UnseenUniversity is ONE project; [[project_one_lineage_consolidate_to_uu]]). Akien's method (delegate-to-Haiku mechanical sweep, human review before acting) was run 2026-06-28: 4 read-only Haiku sweeps across ~/TheIgors.archive (12G), ~/.TheIgors (1.9G), ~/TheIgorsProject (576M)+cert-walks (22M), ~/.unseen_university (3.8G, akien/ excluded). MEASURED (not estimated) dedup: 113 of 116 archive ADC-era decisions are MISSING from UU (incl. the foundational D-agent-datacenter-spec / D-adc-phase-1..5 / D-announce-protocol CLAUDE.md flags as absent); 18 palace-era slates recoverable from TSV; 161 palace-era tickets ALREADY 100% in UU (reconstruction moot); ~350 'palace_echo sessions' are hollow echo-test stubs (DROPPED); 52 cert-walks numeric/GH tickets are hollow palace-DB pointers. The ~14.5-17G is almost entirely dead bulk (8.9G archive datacenter_logs, 2.0G venv, 3.5G .unseen_university/archive, caches), not artifacts.\n\nAkien decisions 2026-06-28: palace-era content -> RECONSTRUCT what survives (scoped down to 18 slates + metadata stubs once the data showed tickets already absorbed and sessions hollow); dead bulk -> DELETE OUTRIGHT (no freeze copy of logs/venvs); dead CODE -> still deep-freeze to ~/TheIgorsProject per lineage intent. Sequence: absorb -> verify -> freeze -> delete -> re-sweep-prove, gated so no source is touched before its content is verified-in-UU. Advisor pass caught + folded: historical emitted_at via stamp_for_day_only (avoid context-load flooding), hollow palace_echo drop, never-follow-symlinks (.TheIgors symlinks point into live ~/.unseen_university).\n\nSupersession/folds: this expands D-canonical-substrate-consolidation-2026-06-27 (its T-substrate-artifact-inventory is FULFILLED by this discovery -> close done; its broad T-substrate-artifact-consolidation is replaced by this finer gated batch). Folds T-cleanup-audit-old-projects (-> freeze ticket), T-cleanup-investigate-cert-walks (-> pointer ticket), T-cleanup-runtime-artifacts (-> delete ticket). Discovery synthesis + 4 raw reports archived in session scratchpad consolidation_discovery/.\n\n## Hypothesis\nAfter these tickets ship, a home-wide artifact sweep finds dev-artifacts only in devlab/runtime/memory/, the UU decision count rises from 118 to ~231 (the 113 ADC-era decisions now present), the sessions/ dir stays correctly governed by session_capture (not padded with echo stubs), and ~17G of dead bulk is gone from the laptop.\n\n## Measurement Signal\nThe Akien grep -- (slate|ticket|decision|session|proof|rule) x (md|json|txt) under ~/ minus the exempt set (uu_home() runtime, ~/.claude, ~/.unseen_university/akien, ~/TheIgorsProject freeze home, .git, credentials) -- returns empty outside devlab/runtime/memory/; du -sh ~ drops ~17G; ls decisions/ | wc -l ~= 231; absorbed historical nodes carry a historical emitted_at (context-load 'recent' surfaces stay genuinely recent). Akien's acceptance test: 'I can't find any dev artifacts anymore except in devlab/runtime/memory/.'\n\n## Intention\nI intend that all dev-process artifacts across every generation of the project lineage live on one canonical substrate (devlab/runtime/memory/), so tools and future CC/DS instances operate on one ground with a low noise floor (CLAUDE.md: canonical dev-process memory, one home, no exceptions)."
+  }
+}

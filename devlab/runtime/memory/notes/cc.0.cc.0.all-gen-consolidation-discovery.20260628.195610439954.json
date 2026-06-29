@@ -1,0 +1,22 @@
+{
+  "id": "cc.0.cc.0.all-gen-consolidation-discovery.20260628.195610439954",
+  "emitter": "cc.0",
+  "namespace": [
+    "cc",
+    "0",
+    "all-gen-consolidation-discovery"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-06-28T19:56:10.439954",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "All-generations consolidation — measured discovery worklist (D-all-generations-consolidation-2026-06-28)",
+    "text": "Measured discovery for D-all-generations-consolidation-2026-06-28 (4 read-only Haiku sweeps, 2026-06-28). Hard counts, not estimates. For whoever sprints the absorb/freeze/delete batch.\n\n## ABSORB (genuinely-new, measured)\n- ~/TheIgors.archive/lab/design_docs/decisions/: 116 D-slug .md, 113 MISSING from UU -> T-absorb-adc-era-decisions. Incl. D-agent-datacenter-spec-2026-04-27, D-adc-phase-1..5-2026-04-27, D-announce-protocol-2026-05-01 (CLAUDE.md flags these absent). Use stamp_for_day_only(decision_id, yyyymmdd) for historical emitted_at.\n- ~/TheIgorsProject/20260427.Cleanup/database/palace_slates_archived.tsv: 18 slates, all missing, REAL section summaries -> T-absorb-palace-slates. Same historical-stamp rule.\n- ~/TheIgors.archive/lab/design_docs/ (~40 subsystem .md): -> T-absorb-architecture-intent-points (verify impl paths against post-reorg tree unseen_university/devices/).\n- ~/TheIgors-cert-walks/W1/.../tickets/ 52 numeric+GH pointers: hollow (palace-DB bodies gone); recover title/size/date from palace_old_ticket_echoes.tsv + old_done_tickets.tsv -> T-reconstruct-palace-pointer-tickets (metadata stubs marked body-lost; CP1).\n\n## ALREADY DONE / DROPPED (do NOT re-absorb)\n- 161 palace-era done tickets (old_done_tickets.tsv): 161/161 ALREADY in UU. Reconstruction moot.\n- ~350 ~/.TheIgors/claudecode.bak/palace_echo/palace_sessions_*.md: HOLLOW echo-test stubs ('Test session','Echo test',0 lines). DROPPED. UU sessions/=0 is by-design (session_capture.py writes live).\n- 645 cert-walks T- tickets: 100% already in UU.\n- theigors ticket/decision corpus exists in TRIPLICATE (archive/lab/theigors, TheIgorsProject/{lab/theigors,theigors}, certwalks/W1/lab/theigors) -> migrate once (above), freeze the rest.\n\n## FREEZE dead code -> ~/TheIgorsProject (T-freeze-dead-code-to-theigorsproject)\n- redundant theigors trees, utility_closet, design_docs_for_igor *.dsb (24), wild_igor igor memory .py. NEVER follow symlinks (.TheIgors has cc_channel + Igor-wild-0001 symlinks into LIVE ~/.unseen_university).\n\n## DELETE dead bulk OUTRIGHT (~17G) (T-delete-dead-bulk-outright, after absorb+freeze verified)\n- ~/TheIgors.archive/datacenter_logs 8.9G (2.27M files) + venv 2.0G\n- ~/.TheIgors caches+logs ~1.8G\n- ~/.unseen_university/archive 3.5G (RE-CONFIRM with Akien — inside live runtime dir) + datacenter_logs 80M + cache/embeddings 120M\n- __pycache__ across all. EXEMPT ~/.unseen_university/akien (OneDrive) + live runtime (logs/ feeds, cc_channel, devices, vault).\n\n## PROVE (T-resweep-prove-consolidation-clean)\n- Akien grep returns empty outside store; du -sh ~ drops ~17G; decisions/~231; sessions/ governed by session_capture (not echo-padded).\n\nRaw per-dir reports were in session scratchpad consolidation_discovery/{archive,dot_theigors,project_and_certwalks,dot_unseen_university,SYNTHESIS}.md."
+  }
+}

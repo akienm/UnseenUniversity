@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-freeze-dead-code-to-theigorsproject.20260628.195401596029",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-freeze-dead-code-to-theigorsproject"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T01:54:01.596029+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-freeze-dead-code-to-theigorsproject"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-freeze-dead-code-to-theigorsproject",
+    "title": "[sprint] Deep-freeze dead code + duplicate artifact trees to ~/TheIgorsProject",
+    "size": "L",
+    "tags": [
+      "Consolidation",
+      "Cleanup"
+    ],
+    "status": "sprint",
+    "priority": 0.3,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "gate": "T-absorb-architecture-intent-points",
+    "description": "**Problem:** Once the genuinely-new artifacts are absorbed (the absorb/reconstruct tickets), the remaining dead CODE and duplicate artifact trees across the generations should be deep-frozen to the single freeze home `~/TheIgorsProject` (per the lineage intent: dead code freezes, it is not deleted). The theigors ticket/decision corpus exists in TRIPLICATE (archive/lab/theigors, TheIgorsProject/{lab/theigors,theigors}, cert-walks/W1/lab/theigors) — migrate-once is done by the absorb tickets, so the redundant trees + retired code (utility_closet, design_docs_for_igor .dsb, igor memory modules) freeze. Folds in T-cleanup-audit-old-projects.\n**Proposed shape:** GATED on all absorb tickets verified (T-absorb-adc-era-decisions, T-absorb-palace-slates, T-absorb-architecture-intent-points, T-reconstruct-palace-pointer-tickets — gate field names T-absorb-architecture-intent-points; the others are listed here as preconditions and re-verified at execution). Relocate the dead-code/dupe trees into a clean `~/TheIgorsProject/<generation>/` freeze layout. Do NOT freeze anything still absorb-pending or still live. Verify each source is either already-absorbed-into-UU or genuinely dead before moving.\n**Affected files:** moves under ~/TheIgors.archive, ~/TheIgorsProject, ~/TheIgors-cert-walks, ~/TheIgors, ~/.TheIgors (artifact/code trees only — NOT the dead bulk, that is the delete ticket). No repo code changes.\n**Design rules:** [[feedback_delete_after_successful_merge]] (migrate->VERIFY->then relocate source; never freeze un-absorbed artifacts); [[feedback_git_stash_hidden_divergent_state]] (no stash); deep-freeze dead->TheIgorsProject (lineage intent); HIGH-inertia relocation — Akien pre-approved the absorb->freeze->delete sequence 2026-06-28. **NEVER FOLLOW SYMLINKS** (operate with `-h`/`find -type f -o -type d`, never `cp -L`/`rsync -L`): the .TheIgors sweep flagged symlinks (cc_channel, Igor-wild-0001) pointing into LIVE ~/.unseen_university — following one would relocate live runtime state.\n**Scope boundary:** IN — dead code + verified-duplicate artifact trees -> ~/TheIgorsProject freeze. OUT — the dead bulk delete (separate gated ticket: datacenter_logs, venvs, caches); any artifact not yet verified-absorbed; ~/.unseen_university live runtime (handled with care in the delete ticket).\n**Test plan:** (1) Before any move, assert each artifact tree being frozen has its content already in UU (re-run the absorb dedup checks; 0 missing). (2) After freeze, ~/TheIgorsProject contains the relocated trees under a clean per-generation layout. (3) No un-absorbed artifact was frozen (the absorb dedup checks still pass post-move). (4) Originating source dirs no longer contain duplicate live artifact stores.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T01:53:53.940451+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T01:53:53.940675+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "be912049-9111-48dc-9f93-79239ccac827"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-absorb-palace-slates.20260628.195401231936",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-absorb-palace-slates"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T01:54:01.231936+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-absorb-palace-slates"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-absorb-palace-slates",
+    "title": "[sprint] Absorb 18 palace-era slates (TSV) + missing .TheIgors slates into UU slates/",
+    "size": "S",
+    "tags": [
+      "Consolidation",
+      "Memory"
+    ],
+    "status": "sprint",
+    "priority": 0.45,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "gate": null,
+    "description": "**Problem:** 18 palace-era slates in `~/TheIgorsProject/20260427.Cleanup/database/palace_slates_archived.tsv` are all measured-missing from UU slates/ and carry REAL section summaries (not pointers). Plus ~40 slates in `.TheIgors/claudecode{,.bak}/` to dedup against UU's 78. **Sessions DROPPED from scope (verified 2026-06-28):** the ~350 `~/.TheIgors/claudecode.bak/palace_echo/palace_sessions_*.md` are hollow echo-test stubs ('Test session', 'Echo test', 0 lines) — NOT real sessions; absorbing them would pad the store with exactly the hollow content this decision rejects. UU sessions/=0 is by-design (session_capture.py writes live sessions); leave it.\n**Proposed shape:** Parse palace_slates_archived.tsv, reconstruct each of the 18 slates (date, title, section-summary body) into UU slates/, preserving original date. Dedup the ~40 .TheIgors slates by date; absorb only the genuinely-missing ones. CRITICAL: stamp each emitted node with the ORIGINAL date via `memory_emit.stamp_for_day_only(record_id, yyyymmdd)` (NOT now_stamp) so `emitted_at` is historical — otherwise /context-load Step 2a/3 floods with today-stamped 2026-04 items.\n**Affected files:** writes to devlab/runtime/memory/slates/; reads palace_slates_archived.tsv, ~/.TheIgors/claudecode{,.bak}/. No code changes.\n**Design rules:** one-home canonical store; memory_emit/slate_store as write path; stamp_for_day_only for historical emitted_at; NO SQLITE (TSV/.md -> flat); dedup-before-write ([[feedback_delete_after_successful_merge]]); CP1 (do not absorb the hollow palace_echo stubs).\n**Scope boundary:** IN — the 18 TSV slates + missing-after-dedup .TheIgors slates. OUT — sessions (hollow, dropped); decisions/tickets (separate/already-absorbed).\n**Test plan:** (1) The 18 TSV slates each have a corresponding UU slates/ entry with non-empty section summary and a HISTORICAL emitted_at (not today). (2) Re-run date-based dedup: 0 missing in-scope slates. (3) Spot-check 3 reconstructed slates against their TSV rows. (4) /context-load 'recent decisions/slates' still surfaces genuinely-recent items, not the freshly-absorbed historical ones.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T01:53:48.408722+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T01:53:48.408825+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "bc91efe0-b92d-49e9-8c63-5fe4b8c1ace1"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-absorb-architecture-intent-points.20260628.195401364203",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-absorb-architecture-intent-points"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T01:54:01.364203+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-absorb-architecture-intent-points"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-absorb-architecture-intent-points",
+    "title": "[sprint] Convert ~40 archive subsystem/design docs into architecture/ intention-points",
+    "size": "M",
+    "tags": [
+      "Consolidation",
+      "Architecture"
+    ],
+    "status": "sprint",
+    "priority": 0.4,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "gate": null,
+    "description": "**Problem:** `~/TheIgors.archive/lab/design_docs/` holds ~40 subsystem/architecture .md docs (announce-protocol-design, datacenter-swarm-bus-design, subsystem_cognition, etc.) that describe how subsystems were intended to work. CLAUDE.md's canonical form for these is a uniform `architecture/<subsystem>.json` intention-point (intent summary + pointers to implementing files). UU architecture/ has only 9 today.\n**Proposed shape:** Triage the ~40 docs: for each subsystem still live in UU, write/extend an `architecture/<subsystem>.json` intention-point capturing the intent and pointing at the CURRENT implementing files (verify the files still exist post-single-package-reorg — paths are now under unseen_university/devices/). For docs describing retired subsystems, capture as historical architecture notes or skip with a logged reason. This is judgment-heavy: a hollow copy is not the deliverable — each intent-point must point at real current code or be marked historical.\n**Affected files:** writes to devlab/runtime/memory/architecture/; reads ~/TheIgors.archive/lab/design_docs/*.md. No code changes.\n**Design rules:** architecture intention-points are JSON (intent -> implementation), one-home store; verify implementation paths against the post-reorg tree (unseen_university/devices/...); CP1 (mark historical honestly rather than fabricate a live pointer).\n**Scope boundary:** IN — the ~40 subsystem/design .md in archive lab/design_docs/ (excluding the decisions/ subdir). OUT — the 116 decisions (separate ticket); .dsb palace files (freeze); docs that duplicate an existing architecture/ intent-point (extend, don't duplicate).\n**Test plan:** (1) Each in-scope doc results in either a new/extended architecture/<subsystem>.json OR a logged skip-reason. (2) For 5 sampled live intent-points, the file pointers resolve to real paths in the current tree. (3) `ls devlab/runtime/memory/architecture/ | wc -l` rises. (4) No intent-point points at a pre-reorg path (devices/ or config/ at repo root).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T01:53:50.065918+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T01:53:50.066031+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "18aabf7a-b2a3-4dab-bd21-45c0c3b062bf"
+  }
+}

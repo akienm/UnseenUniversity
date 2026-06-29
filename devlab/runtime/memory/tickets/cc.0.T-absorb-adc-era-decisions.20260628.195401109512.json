@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-absorb-adc-era-decisions.20260628.195401109512",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-absorb-adc-era-decisions"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T01:54:01.109512+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-absorb-adc-era-decisions"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-absorb-adc-era-decisions",
+    "title": "[sprint] Absorb 113 ADC-era decisions from TheIgors.archive into UU decisions/ store",
+    "size": "M",
+    "tags": [
+      "Consolidation",
+      "Memory"
+    ],
+    "status": "sprint",
+    "priority": 0.5,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "gate": null,
+    "description": "**Problem:** `~/TheIgors.archive/lab/design_docs/decisions/` holds 116 D-slug decision .md files; a measured dedup (2026-06-28) found **113 are MISSING from the UU store** (118 decisions today). These are the foundational ADC-era decisions the lineage was built on — D-agent-datacenter-spec-2026-04-27, D-adc-phase-1..5-2026-04-27, D-announce-protocol-2026-05-01, etc. — which CLAUDE.md explicitly flags as 'historical spec NOT in the store (live in the now-archived palace)'. This ticket absorbs them onto the one canonical substrate so future CC/DS instances grep one ground.\n**Proposed shape:** For each of the 113 missing .md decisions: parse the markdown, build a store-shaped decision body preserving the ORIGINAL decision_id and date, set status to reflect reality (the D-adc-phase-* are 'complete' per CLAUDE.md phase map; others 'superseded' or 'historical' as the content indicates), and emit via memory_emit. CRITICAL: stamp each node with the ORIGINAL date via `memory_emit.stamp_for_day_only(decision_id, yyyymmdd)` (NOT now_stamp) so the envelope `emitted_at` is the historical date — /context-load Step 2a/3 sorts by `emitted_at`, so today-stamping 113 nodes would flood 'recent decisions' with 2026-04/05 items for weeks. (Preserving body.date is NOT enough — context-load reads emitted_at, not body.date.) Re-run the dedup grep to confirm 0 missing afterward. The 3 already-present decisions are skipped.\n**Affected files:** writes to devlab/runtime/memory/decisions/ (new JSON nodes via memory_emit.py); reads ~/TheIgors.archive/lab/design_docs/decisions/*.md. No code changes.\n**Design rules:** canonical memory store one-home (CLAUDE.md); memory_emit.py is the sole write chokepoint; NO SQLITE (source is flat .md, target flat JSON — palace DB is dead and not consulted); preserve original decision date/id (historical fidelity, CP3).\n**Scope boundary:** IN — the 113 measured-missing D-slug decisions from archive lab/design_docs/decisions/. OUT — the 359 D-numeric palace-pointer decisions (separate handling: superseded/freeze); tickets and slates (separate absorb tickets); the 3 already-present decisions.\n**Test plan:** (1) After run, `grep`-based dedup (the same check used 2026-06-28: for each archive decision slug, confirm a UU decisions/ file contains it) reports 0 missing. (2) Spot-check 5 migrated nodes: original date preserved, decision_id intact, status sensible, body text non-empty. (3) `ls devlab/runtime/memory/decisions/ | wc -l` rises by ~113 (118 -> ~231).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T01:53:46.436182+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T01:53:46.482110+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "28ab2b2b-583b-4401-a96f-e93babc370c0"
+  }
+}
