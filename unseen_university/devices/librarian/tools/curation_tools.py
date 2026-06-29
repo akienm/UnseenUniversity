@@ -4,7 +4,7 @@ Reads clan.memories, reasons about redundant/stale/underused content,
 writes archive_action proposals to instance.proposals.
 Librarian PROPOSES, Igor DECIDES — no direct writes to clan.memories.
 
-All findings logged to datacenter_logs/librarian/curation/curation.jsonl.
+All findings logged to logs/librarian/curation/curation.jsonl.
 """
 
 from __future__ import annotations
@@ -14,12 +14,14 @@ import hashlib
 import json
 import logging
 import os
+
+from unseen_university._uu_root import uu_home
 from datetime import datetime, timezone
 from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-_LOG_ROOT = Path(os.environ.get("ADC_LOG_ROOT", "datacenter_logs"))
+_LOG_ROOT = Path(uu_home()) / "logs"
 _CURATION_LOG = _LOG_ROOT / "librarian" / "curation" / "curation.jsonl"
 
 _FOCUS_QUALITY_LOG_DDL = """

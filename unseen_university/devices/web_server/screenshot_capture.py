@@ -2,7 +2,7 @@
 screenshot_capture.py — Headless screenshot of device fascia pages.
 
 Captures a PNG of each known device's /feeds/<id> page and stores it at:
-  <runtime>/datacenter_logs/web_server/screenshots/<device_id>.png
+  <runtime>/logs/web_server/screenshots/<device_id>.png
 
 Requires google-chrome (or chromium) installed. Gracefully skips on failure.
 Called by Nanny Ogg's periodic screenshot sweep, or run standalone:
@@ -29,7 +29,7 @@ _SCREENSHOT_DIR: Path = (
         or os.environ.get("IGOR_RUNTIME_ROOT")
         or Path.home() / ".unseen_university"
     )
-    / "datacenter_logs"
+    / "logs"
     / "web_server"
     / "screenshots"
 )

@@ -89,7 +89,7 @@ def _now_iso() -> str:
 # Forensic device id for the build queue. The queue's eventual home is a rack
 # device (devices/queue/device.py) that inherits DiagnosticBase; until then this
 # module IS the queue chokepoint, so it owns the forensic log here. The record
-# schema ({ts, device, event, data}) and the datacenter_logs/<device>/trace/
+# schema ({ts, device, event, data}) and the logs/<device>/trace/
 # location are IDENTICAL to DiagnosticBase.trace_record, so when the queue
 # becomes a device the call swaps to self.trace_record with zero schema change
 # and existing readers (last_traces) keep working.
@@ -108,7 +108,7 @@ def _forensic(event: str, data: Optional[dict] = None) -> None:
     try:
         env = os.environ.get("UU_QUEUE_TRACE_DIR")
         trace_dir = Path(env) if env else (
-            Path.home() / ".unseen_university" / "datacenter_logs"
+            Path.home() / ".unseen_university" / "logs"
             / _FORENSIC_DEVICE / "trace"
         )
         trace_dir.mkdir(parents=True, exist_ok=True)

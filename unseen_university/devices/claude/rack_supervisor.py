@@ -160,7 +160,7 @@ def run(
 
 
 if __name__ == "__main__":
-    _log_dir = _IGOR_HOME / "datacenter_logs" / "rack_supervisor" / "supervisor"
+    _log_dir = _IGOR_HOME / "logs" / "rack_supervisor" / "supervisor"
     _log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,

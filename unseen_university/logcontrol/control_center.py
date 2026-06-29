@@ -70,7 +70,7 @@ class LoggingControlCenter:
         """
         Return a Python logger wired under the canonical log root
         (default_root() -> ~/.unseen_university/logs/, NOT the retired
-        datacenter_logs/ root).
+        logs/ root).
 
         Logger name: '{device_id}.{subsystem}' or '{device_id}' if no subsystem.
         Log file:    <log_root>/{device_id}/{subsystem}/{device_id}.log

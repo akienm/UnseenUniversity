@@ -3,7 +3,7 @@
 From SWADL: instance naming via gc.get_referrers, hierarchical get_name,
             substitution engine, dump/bannerize, apply_kwargs, context manager,
             timeout_remaining, lazy per-class logger.
-From ADC:   device_id stamping, datacenter_logs path convention.
+From ADC:   device_id stamping, logs path convention.
 Logging:    loguru backend via TaggedLogger.
 Operational logs: one JSON file per log record → <log_root>/<device_id>/log/json/.
   These are rolling operational logs (30-day retention), not durable knowledge.

@@ -1,7 +1,7 @@
 """
 Build-log digester daemon — Ground Loop plugin (daemon mode).
 
-Tails cc_channel/log.jsonl and datacenter_logs/queue/trace/*.jsonl,
+Tails cc_channel/log.jsonl and logs/queue/trace/*.jsonl,
 extracts ticket-keyed events, and upserts them into devlab.build_digest.
 
 Cursor positions (byte offsets) are persisted to
@@ -32,7 +32,7 @@ _UU_ROOT = os.environ.get(
     "UU_ROOT",
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
 )
-_QUEUE_TRACE_GLOB = os.path.join(_UU_ROOT, "datacenter_logs", "queue", "trace", "*.jsonl")
+_QUEUE_TRACE_GLOB = os.path.join(str(uu_home()), "logs", "queue", "trace", "*.jsonl")
 
 _stop_evt = threading.Event()
 

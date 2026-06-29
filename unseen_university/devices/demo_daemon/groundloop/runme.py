@@ -1,14 +1,14 @@
 """
 demo_daemon — Ground Loop supervisor smoke test.
 
-Writes a heartbeat line to datacenter_logs/demo_daemon/heartbeat.log every
+Writes a heartbeat line to logs/demo_daemon/heartbeat.log every
 HEARTBEAT_INTERVAL seconds. Designed to be the simplest possible production-
 shaped daemon: start() blocks until stop() is called, hot-reload works, and
 an injected import/runtime error produces a .borkedpy rename.
 
 To verify manually:
   1. Run Ground Loop (--once) in the repo root.
-  2. Check datacenter_logs/demo_daemon/heartbeat.log grows.
+  2. Check logs/demo_daemon/heartbeat.log grows.
   3. Modify this file (touch it) and run --once again → hot-reload.
   4. Temporarily break this file (syntax error) → .borkedpy rename.
   5. Fix and rename back → recovery on next --once.
@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 HEARTBEAT_INTERVAL = int(os.environ.get("DEMO_DAEMON_INTERVAL", "5"))
 _LOG_DIR = (
     Path(uu_home())
-    / "datacenter_logs"
+    / "logs"
     / "demo_daemon"
 )
 _HEARTBEAT_LOG = _LOG_DIR / "heartbeat.log"

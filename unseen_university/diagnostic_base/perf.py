@@ -82,6 +82,13 @@ def _append_row(
         )
 
 
+
+def _default_perf_log_root() -> Path:
+    """Canonical perf-log root: uu_home()/logs (never a cwd-relative dir)."""
+    from unseen_university._uu_root import uu_home
+
+    return Path(uu_home()) / "logs"
+
 class Stopwatch:
     """Measures elapsed time and persists perf rows.
 
@@ -114,7 +121,7 @@ class Stopwatch:
         self.device_id = device_id
         self.class_name = class_name
         self.comment = comment
-        self.log_root = log_root or Path("datacenter_logs")
+        self.log_root = log_root or _default_perf_log_root()
         self._ts_start: float | None = None
         self._ts_end: float | None = None
         self.elapsed_s: float | None = None

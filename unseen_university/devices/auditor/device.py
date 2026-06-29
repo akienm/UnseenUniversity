@@ -530,7 +530,7 @@ class AuditorDevice(BaseDevice):
 
     def logs(self) -> dict:
         return {
-            "paths": {"trace": str(Path.home() / ".unseen_university" / "datacenter_logs" / "auditor" / "trace")}
+            "paths": {"trace": str(Path.home() / ".unseen_university" / "logs" / "auditor" / "trace")}
         }
 
     def update_info(self) -> dict:

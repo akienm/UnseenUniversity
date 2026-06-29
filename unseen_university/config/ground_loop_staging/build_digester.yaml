@@ -1,6 +1,6 @@
 # Ground Loop plugin: build_digester (daemon mode)
 #
-# Tails cc_channel/log.jsonl and datacenter_logs/queue/trace/*.jsonl,
+# Tails cc_channel/log.jsonl and logs/queue/trace/*.jsonl,
 # extracts ticket-keyed events, and upserts them into devlab.build_digest.
 # Enables context resumption from a compact ticket-keyed digest instead of
 # re-tokenizing raw logs.

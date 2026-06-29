@@ -10,6 +10,8 @@ Discworld canon: the Librarian's word is OOK.
 from __future__ import annotations
 
 import os
+
+from unseen_university._uu_root import uu_home
 import socket
 import time
 from datetime import datetime, timezone
@@ -20,7 +22,7 @@ from unseen_university.device import BaseDevice, INTERFACE_VERSION
 OOK = "Ook."  # the Librarian's only word
 
 _VERSION = "0.1.0"
-_LOG_ROOT = Path(os.environ.get("ADC_LOG_ROOT", "datacenter_logs"))
+_LOG_ROOT = Path(uu_home()) / "logs"
 
 
 def _ts() -> str:

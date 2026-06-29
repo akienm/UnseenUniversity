@@ -1963,7 +1963,7 @@ async def _api_device_console(request: Request):
       2. {runtime}/logs/{device_id}/YYYY-MM-DD.console.md  (glob: any instance dir matching)
       3. {runtime}/logs/{device_id}.log
       4. {runtime}/logs/{device_id_underscored}.log
-      5. {runtime}/datacenter_logs/{device_id}/**/*.log    (newest file)
+      5. {runtime}/logs/{device_id}/**/*.log    (newest file)
     """
     device_id = request.path_params.get("id", "")
     if not device_id:
@@ -2002,8 +2002,8 @@ async def _api_device_console(request: Request):
         _RUNTIME_ROOT / "logs" / f"{device_id.replace('-', '_')}.log",
     ]
 
-    # 5. datacenter_logs newest .log
-    dc_dir = _RUNTIME_ROOT / "datacenter_logs" / device_id
+    # 5. logs newest .log
+    dc_dir = _RUNTIME_ROOT / "logs" / device_id
     if dc_dir.is_dir():
         logs = sorted(dc_dir.rglob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates += logs[:3]
@@ -2088,7 +2088,7 @@ async def _api_device_breaker(request: Request):
 
 
 _SCREENSHOT_DIR = (
-    _RUNTIME_ROOT / "datacenter_logs" / "web_server" / "screenshots"
+    _RUNTIME_ROOT / "logs" / "web_server" / "screenshots"
 )
 
 

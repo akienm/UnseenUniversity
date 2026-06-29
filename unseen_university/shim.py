@@ -78,7 +78,7 @@ def _write_shim_trace(record: dict) -> None:
         else:
             # Canonical per-device log home (T-per-device-log-hierarchy): the shim's
             # dispatch trace is the "shim" device's log, under logs/shim/, not the
-            # retired datacenter_logs/ root.
+            # retired logs/ root.
             trace_dir = Path.home() / ".unseen_university" / "logs" / "shim" / "trace"
         trace_dir.mkdir(parents=True, exist_ok=True)
         date_str = datetime.now(timezone.utc).strftime("%Y%m%d")

@@ -6,7 +6,7 @@ Enables observing why DickSimnel makes decisions. Foundation for Critic training
 and pattern mining.
 
 Immutable event stream: (timestamp, turn, decision_point, tool_call, result, outcome)
-sourced from datacenter_logs/<ticket>/.
+sourced from logs/<ticket>/.
 
 Usage:
   sim = TicketSimulator(ticket_id="T-provider-health-classifier")
@@ -28,7 +28,7 @@ from unseen_university.identity import instance_id
 
 log = logging.getLogger(__name__)
 
-_LOGS_ROOT = Path.home() / ".unseen_university" / instance_id() / "datacenter_logs" / "inference"
+_LOGS_ROOT = Path.home() / ".unseen_university" / instance_id() / "logs" / "inference"
 
 
 @dataclass

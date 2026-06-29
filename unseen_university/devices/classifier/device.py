@@ -180,7 +180,7 @@ class ClassifierDevice(BaseDevice):
         return self._startup_errors[:]
 
     def logs(self) -> dict:
-        return {"log_dir": "datacenter_logs/classifier/"}
+        return {"log_dir": "logs/classifier/"}
 
     def update_info(self) -> dict:
         return {"version": "0.1.0", "tickets": ["T-classifier-device"]}

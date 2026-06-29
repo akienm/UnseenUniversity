@@ -3,7 +3,7 @@ build_digester.log_parser — Extract ticket-keyed events from JSONL log lines.
 
 Parses events from two sources:
   1. ~/.unseen_university/cc_channel/log.jsonl  (ticket lifecycle events)
-  2. datacenter_logs/queue/trace/<date>.jsonl   (queue_next events)
+  2. logs/queue/trace/<date>.jsonl   (queue_next events)
 
 Returns structured event dicts suitable for upsert into devlab.build_digest.
 
