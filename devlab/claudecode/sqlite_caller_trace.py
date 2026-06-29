@@ -4,7 +4,7 @@ Activated by env var IGOR_TRACE_SQLITE_CALLERS=1.
 Writes to ~/.unseen_university/local/logs/sqlite_caller_trace.log.
 
 Usage:
-    Set IGOR_TRACE_SQLITE_CALLERS=1 in ~/.unseen_university/Igor-wild-0001/.env, then
+    Set IGOR_TRACE_SQLITE_CALLERS=1 in ~/.unseen_university/Igor-Wild1/.env, then
     restart Igor and run a user turn that previously triggered:
       sqlite3.OperationalError: no such table: config
     Read the log to find which module+function called sqlite3.connect() and

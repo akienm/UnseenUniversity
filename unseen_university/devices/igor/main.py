@@ -1168,7 +1168,7 @@ class Igor(IgorBase):
                     "habit_type": "action",
                     "action": (
                         "Run two commands: "
-                        "(1) pg_dump -d Igor-wild-0001 -F c -f ~/.unseen_university/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).dump  "
+                        "(1) pg_dump -d Igor-Wild1 -F c -f ~/.unseen_university/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).dump  "
                         "(2) tar czf ~/.unseen_university/backups/igor_{id}_$(date +%Y%m%d_%H%M%S).tar.gz "
                         "~/.unseen_university/milieu_global.json "
                         "~/.unseen_university/igor_{id}/warm_context.0.json "
@@ -1340,7 +1340,7 @@ class Igor(IgorBase):
         console.print(
             "\n[bold yellow]Igor cannot start with integrity violations.[/]\n"
             "[dim]Restore the database from a backup, or contact akien.[/]\n"
-            "[dim]Check ~/.unseen_university/Igor-wild-0001/ for backup files.[/]"
+            "[dim]Check ~/.unseen_university/Igor-Wild1/ for backup files.[/]"
         )
         sys.exit(1)
 
@@ -10072,7 +10072,7 @@ def main():
     else:
         # Phase 6: fall back to config.cfg value (e.g. igor.cfg IGOR_INSTANCE_ID),
         # then to the hardcoded default.  SQLite file discovery removed (Postgres era).
-        instance_id = _config_get("IGOR_INSTANCE_ID", "Igor-wild-0001")
+        instance_id = _config_get("IGOR_INSTANCE_ID", "Igor-Wild1")
 
     igor = Igor(instance_id=instance_id)
     igor.run()

@@ -10,7 +10,7 @@ def _test_conn():
     """psycopg2 connection with the test schema search_path active."""
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     search_path = os.environ.get("IGOR_LOCAL_SEARCH_PATH", "instance,infra,public")
     return psycopg2.connect(db_url, options=f"-c search_path={search_path}")

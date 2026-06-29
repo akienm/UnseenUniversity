@@ -20,7 +20,7 @@ def _clean_playbooks(pg_test_schema):
     conn = psycopg2.connect(
         os.environ.get(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
     )
     try:
@@ -119,7 +119,7 @@ def test_archive_does_not_hard_delete(pb):
     conn = psycopg2.connect(
         os.environ.get(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
     )
     try:

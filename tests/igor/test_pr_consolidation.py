@@ -32,7 +32,7 @@ def _delete_test_accretions():
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
@@ -188,7 +188,7 @@ def test_consolidate_writes_consolidation_summary_memory():
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     conn = psycopg2.connect(db_url)
     conn.autocommit = True

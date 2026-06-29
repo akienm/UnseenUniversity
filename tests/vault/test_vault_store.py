@@ -20,7 +20,7 @@ import pytest
 
 # Skip entire module if vault schema is not available
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"),
+    not os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1"),
     reason="UU_HOME_DB_URL not set",
 )
 

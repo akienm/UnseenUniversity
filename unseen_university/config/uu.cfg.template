@@ -21,7 +21,7 @@ default_model = claude-sonnet-4-6
 # ── Database ─────────────────────────────────────────────────────────────────
 # PostgreSQL connection URL shared by all rack devices.
 # Individual devices may override db_url in their own config.cfg.
-db_url = postgresql://igor:<db-password>@127.0.0.1/Igor-wild-0001
+db_url = postgresql://igor:<db-password>@127.0.0.1/Igor-Wild1
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 # Global log level. Per-device config.cfg can override.
@@ -45,7 +45,7 @@ default_frontend = librarian
 # ── Instance identity ────────────────────────────────────────────────────────
 # Name given to this UU installation during the first-run wizard.
 # Set automatically by the wizard — do not edit unless you know why.
-# Default: Igor-wild-0001. Env var IGOR_INSTANCE_ID overrides at launch time.
+# Default: Igor-Wild1. Env var IGOR_INSTANCE_ID overrides at launch time.
 instance_name =
 
 # ── Feature flags ────────────────────────────────────────────────────────────

@@ -44,7 +44,7 @@ def test_commit_proposal_stores_memory_id(proposals):
     conn = psycopg2.connect(
         os.environ.get(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
     )
     with conn.cursor() as cur:
@@ -77,7 +77,7 @@ def test_reject_proposal_stores_reason(proposals):
     conn = psycopg2.connect(
         os.environ.get(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
     )
     with conn.cursor() as cur:

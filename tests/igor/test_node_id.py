@@ -65,7 +65,7 @@ class TestNodeIdFormat:
             os.environ,
             {
                 "IGOR_SWARM_NAME": "sw",
-                "IGOR_INSTANCE_ID": "Igor-wild-0001",  # default — no suffix
+                "IGOR_INSTANCE_ID": "Igor-Wild1",  # default — no suffix
             },
         ):
             nid = new_node_id()
@@ -177,7 +177,7 @@ def _pg_available() -> bool:
 
         url = os.getenv(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         conn = psycopg2.connect(url, connect_timeout=2)
         cur = conn.cursor()
@@ -197,7 +197,7 @@ class TestRegistry:
         """register_node writes to Postgres; node_locate reads it back."""
         db_url = os.getenv(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         nid = new_node_id(suffix="test")
         register_node(nid, "memories", f"fake_{nid}", db_url=db_url)
@@ -209,7 +209,7 @@ class TestRegistry:
     def test_node_exists_true(self):
         db_url = os.getenv(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         nid = new_node_id(suffix="test")
         register_node(nid, "memories", f"exists_{nid}", db_url=db_url)
@@ -218,7 +218,7 @@ class TestRegistry:
     def test_node_exists_false(self):
         db_url = os.getenv(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         assert not node_exists("00000000000000000000.ghost", db_url=db_url)
 
@@ -239,7 +239,7 @@ class TestRegistry:
         mock_redis.get.return_value = None
         db_url = os.getenv(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         nid = new_node_id(suffix="fallback")
         register_node(nid, "reading_list", f"rl_{nid}", db_url=db_url)

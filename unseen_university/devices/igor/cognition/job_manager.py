@@ -7,7 +7,7 @@ Long-running jobs are a different class from queries:
   - Failed units are logged and skipped; the job continues.
   - On completion, the associated GitHub work order can be closed.
 
-Storage: ~/.unseen_university/Igor-wild-0001/jobs/{job_id}.json
+Storage: ~/.unseen_university/Igor-Wild1/jobs/{job_id}.json
 Loaded on boot — pending/running/paused jobs resume automatically.
 
 Trigger (called from main._process()):
@@ -89,7 +89,7 @@ class Job:
 class JobManager(IgorBase):
     """
     Manages the lifecycle of long-running jobs.
-    Loaded at Igor boot; persists state to ~/.unseen_university/Igor-wild-0001/jobs/.
+    Loaded at Igor boot; persists state to ~/.unseen_university/Igor-Wild1/jobs/.
     """
 
     def __init__(self) -> None:

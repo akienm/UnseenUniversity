@@ -27,7 +27,7 @@ from pathlib import Path
 
 # ── Suffix resolution ─────────────────────────────────────────────────────────
 
-_DEFAULT_INSTANCE = "Igor-wild-0001"
+_DEFAULT_INSTANCE = "Igor-Wild1"
 
 
 def _swarm_name() -> str | None:

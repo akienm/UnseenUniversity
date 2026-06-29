@@ -1117,7 +1117,7 @@ class TestEngramTriggerCellsKeyRealDB:
 
     Verifies that an engram with triggers={"__entry__": "cells"} executes
     correctly via execute_node.  Seeds a minimal test row in the live Postgres
-    DB (Igor-wild-0001), loads it back as a plain namespace object, and asserts
+    DB (Igor-Wild1), loads it back as a plain namespace object, and asserts
     that execute_node runs at least one instruction instead of the old WARN-and-
     noop path that returned instructions_run=0 when trigger mapped to
     "coding sprint entry" (absent in payload) instead of "cells".
@@ -1132,7 +1132,7 @@ class TestEngramTriggerCellsKeyRealDB:
 
         cls._db_url = os.environ.get(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         cls._conn = psycopg2.connect(cls._db_url)
         cls._conn.autocommit = True

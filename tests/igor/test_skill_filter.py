@@ -293,7 +293,7 @@ class TestNodeExecutorMCPCALL(unittest.TestCase):
 
         os.environ.setdefault(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         from unseen_university.devices.igor.cognition.node_executor import execute_node
         from unseen_university.devices.igor.memory.models import Memory, MemoryType

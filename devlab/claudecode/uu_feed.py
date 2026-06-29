@@ -53,7 +53,7 @@ def resolve_instance(device: str, log_root: Path) -> str:
     """Map a device name to its on-disk log dir.
 
     The dispatch name is the device dir under devices/ (e.g. `igor`), but the
-    log hierarchy is keyed by the runtime instance id (e.g. `Igor-wild-0001`).
+    log hierarchy is keyed by the runtime instance id (e.g. `Igor-Wild1`).
     Resolve in order: exact dir, single case-insensitive prefix match,
     IGOR_INSTANCE_ID for igor, else the device name unchanged.
     """

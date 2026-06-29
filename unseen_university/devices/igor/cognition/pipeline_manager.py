@@ -18,7 +18,7 @@ Usage:
   state = get_state("pipelines", "book_ingest")     # {"state": "done", "mtime": ..., "contents": ...}
   list_states("pipelines")                           # all entries + current state
 
-instance_id from IGOR_INSTANCE_ID env (defaults to "Igor-wild-0001").
+instance_id from IGOR_INSTANCE_ID env (defaults to "Igor-Wild1").
 """
 
 import json

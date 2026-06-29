@@ -70,8 +70,8 @@ class TestLogChannels:
 class TestInstanceResolution:
     def test_igor_resolves_to_instance_dir(self, tmp_path):
         root = tmp_path / "logs"
-        (root / "Igor-wild-0001" / "info").mkdir(parents=True)
-        assert uu_feed.resolve_instance("igor", root) == "Igor-wild-0001"
+        (root / "Igor-Wild1" / "info").mkdir(parents=True)
+        assert uu_feed.resolve_instance("igor", root) == "Igor-Wild1"
 
     def test_exact_device_dir_wins(self, tmp_path):
         root = tmp_path / "logs"

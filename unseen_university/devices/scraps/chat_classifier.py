@@ -1,7 +1,7 @@
 """
 chat_classifier.py — Classify CC chat transcripts for training data distillation.
 
-ChatClassifier reads .jsonl session files from ~/.unseen_university/Igor-wild-0001/chats/,
+ChatClassifier reads .jsonl session files from ~/.unseen_university/Igor-Wild1/chats/,
 extracts turn content, classifies via PurposeClassifier, and deposits classified
 nodes to adc.palace for the training pipeline.
 

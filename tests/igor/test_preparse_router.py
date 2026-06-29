@@ -14,7 +14,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 os.environ.setdefault(
-    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1"
 )
 
 from unseen_university.devices.igor.cognition.preparse_router import (

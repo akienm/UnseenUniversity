@@ -4,7 +4,7 @@ rotate_igor_console.py — T-igor-console-midnight-rotate
 
 Re-point Igor's tmux pipe-pane to today's console log file. The igor
 launcher (~/bin/igor → ~/dev/src/UnseenUniversity/igor) starts pipe-pane to
-$ADC_HOME/logs/Igor-wild-0001/YYYY-MM-DD.console.md AT SESSION START ONLY.
+$ADC_HOME/logs/Igor-Wild1/YYYY-MM-DD.console.md AT SESSION START ONLY.
 Long-lived sessions keep appending to the launch-day file. This script
 rotates that pipe at day boundaries so each calendar day gets its own
 file.

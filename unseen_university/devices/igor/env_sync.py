@@ -370,15 +370,15 @@ def load_igor_env_into_environ(
     Returns the dict of vars that were applied (key → value).
 
     Args:
-      instance_id: Igor instance id (e.g. "Igor-wild-0001"). When None,
+      instance_id: Igor instance id (e.g. "Igor-Wild1"). When None,
         uses IGOR_INSTANCE_ID from os.environ, falling back to
-        "Igor-wild-0001".
+        "Igor-Wild1".
       overwrite: when False (default), pre-set os.environ values win
         (matches boot_env_sync's hydration priority); when True, cfg
         values overwrite existing os.environ entries.
     """
     if instance_id is None:
-        instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
+        instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-Wild1")
 
     runtime_root = Path(
         os.environ.get("IGOR_RUNTIME_ROOT", str(Path.home() / ".unseen_university"))

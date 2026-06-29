@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import os
 
 os.environ.setdefault(
-    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001"
+    "UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1"
 )
 
 from unseen_university.devices.igor.cognition.cluster_router import (

@@ -144,7 +144,7 @@ class TestAuditTelemetryIntegration(unittest.TestCase):
         from devlab.claudecode.audit_telemetry import emit_watch_next, read_watch_next
         import psycopg2, os
         # Write a note with ttl_days=0 directly
-        db_url = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001")
+        db_url = os.environ.get("UU_HOME_DB_URL", "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1")
         sp = os.environ.get("IGOR_HOME_SEARCH_PATH") or "clan,infra,public"
         conn = psycopg2.connect(db_url)
         conn.autocommit = True

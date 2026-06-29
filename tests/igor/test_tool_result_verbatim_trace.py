@@ -37,7 +37,7 @@ def test_tool_result_verbatim_round_trip_via_twm_category():
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     # Clean any prior test entries
     conn = psycopg2.connect(db_url)

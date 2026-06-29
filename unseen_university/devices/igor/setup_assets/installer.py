@@ -35,7 +35,7 @@ def _load_cfg() -> None:
         runtime_root = Path(
             os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".unseen_university")
         )
-        instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
+        instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-Wild1")
         instance_dir = runtime_root / instance_id
         cfg_order = [
             runtime_root / "swarm" / "swarm.cfg",
@@ -64,7 +64,7 @@ def restart_loop(igor_args: list[str]) -> None:
     runtime_root = Path(
         os.environ.get("IGOR_RUNTIME_ROOT", Path.home() / ".unseen_university")
     )
-    instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
+    instance_id = os.environ.get("IGOR_INSTANCE_ID", "Igor-Wild1")
     instance_dir = runtime_root / instance_id
     instance_dir.mkdir(parents=True, exist_ok=True)
     restart_ts_file = instance_dir / "restart_timestamps.txt"

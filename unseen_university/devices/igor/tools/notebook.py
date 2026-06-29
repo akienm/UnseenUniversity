@@ -2,7 +2,7 @@
 The Master's Notebook — per-user knowledge base (#153).
 
 Each user gets their own SQLite database at:
-  ~/.unseen_university/Igor-wild-0001/chats/<slug>/notebook.db
+  ~/.unseen_university/Igor-Wild1/chats/<slug>/notebook.db
 
 Igor saves reference material (text, URLs, files) into the user's notebook
 and searches it semantically. Completely separate from Igor's own memory graph.

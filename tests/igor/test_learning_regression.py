@@ -32,7 +32,7 @@ if str(_REPO) not in sys.path:
 
 DB_URL = os.getenv(
     "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+    "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
 )
 
 

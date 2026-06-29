@@ -11,7 +11,7 @@ Supports:
 Library search: queries Calibre's metadata.db by title/author/ASIN.
 
 Reading state (chapter + sentence offset) persisted per-book in
-  ~/.unseen_university/Igor-wild-0001/reading_state.json
+  ~/.unseen_university/Igor-Wild1/reading_state.json
 so Igor can resume across restarts.
 
 Usage (from Igor's tool dispatch):

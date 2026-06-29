@@ -9,11 +9,11 @@
 
 # ── Instance identity ────────────────────────────────────────────────────────
 # Set automatically by the first-run wizard. Do not edit.
-instance_id = Igor-wild-0001
+instance_id = Igor-Wild1
 
 # ── Database ─────────────────────────────────────────────────────────────────
 # Overrides uu.cfg db_url for this Igor instance.
-# db_url = postgresql://igor:<db-password>@127.0.0.1/Igor-wild-0001
+# db_url = postgresql://igor:<db-password>@127.0.0.1/Igor-Wild1
 
 # ── Model preferences ────────────────────────────────────────────────────────
 # Override the global default_model for Igor's inference calls.

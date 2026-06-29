@@ -1,7 +1,7 @@
 """Proof for T-uu-config-profile-db-creds.
 
 config/profiles/*.yaml must carry NO embedded DB credential. Igor's state_refs
-previously hardcoded ``postgres://igor:<pw>@127.0.0.1/Igor-wild-0001#<frag>`` in
+previously hardcoded ``postgres://igor:<pw>@127.0.0.1/Igor-Wild1#<frag>`` in
 three subsystem URLs (twm/ne/milieu). Those refs ride the announce manifest
 across the bus (listener posts ``manifest.to_dict()``), so a baked URL persisted
 the live password into mailboxes — directly undercutting password rotation.

@@ -182,7 +182,7 @@ def test_record_outcome_marks_failure(tmp_path):
 # ── 3 closed datasets (integration — live log files) ─────────────────────────
 
 _INFERENCE_ROOT = (
-    Path.home() / ".unseen_university" / "Igor-wild-0001" / "datacenter_logs" / "inference"
+    Path.home() / ".unseen_university" / "Igor-Wild1" / "datacenter_logs" / "inference"
 )
 
 _CLOSED_TICKETS = ["T-test-closed-ticket", "T-realistic-test", "T-error-pattern-test"]

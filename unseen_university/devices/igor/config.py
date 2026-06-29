@@ -43,7 +43,7 @@ def _load_cfg_files() -> None:
         return
     _loaded = True
 
-    instance_id = os.getenv("IGOR_INSTANCE_ID", "Igor-wild-0001")
+    instance_id = os.getenv("IGOR_INSTANCE_ID", "Igor-Wild1")
     runtime_root = Path(
         os.getenv("IGOR_RUNTIME_ROOT", str(Path.home() / ".unseen_university"))
     )

@@ -1,7 +1,7 @@
 """Canonical call-time resolvers for install identity.
 
 This is the single import target for de-hardcoding the install's identity across the
-repo: the instance / tenant name (was 'Igor-wild-0001'), the instance-folder name, the
+repo: the instance / tenant name (was 'Igor-Wild1'), the instance-folder name, the
 home DB URL, and the machine/swarm name (previously a hardcoded host literal). The
 sweep tickets point their files here. (The home-DB *name* was decoupled from the tenant
 identity to the substrate-owned 'unseen_university' — see UU_HOME_DB_NAME; igor_name is
@@ -32,7 +32,7 @@ import socket
 def igor_name() -> str:
     """This instance / tenant name, from env ``IGOR_NAME``. Raises if unset.
 
-    The current value is ``Igor-wild-0001`` — but it lives in config
+    The current value is ``Igor-Wild1`` — but it lives in config
     (~/.unseen_university/uu_bash_profile.sh), not in code. This is the *tenant*
     identity; the home-DB name is separate (substrate-owned ``unseen_university``,
     composed from ``UU_HOME_DB_NAME``). The rename ticket changes the value; this
@@ -42,7 +42,7 @@ def igor_name() -> str:
     if not name:
         raise RuntimeError(
             "IGOR_NAME not set — export the instance / home-DB name (e.g. "
-            "Igor-wild-0001). It is set by ~/.unseen_university/uu_bash_profile.sh."
+            "Igor-Wild1). It is set by ~/.unseen_university/uu_bash_profile.sh."
         )
     return name
 
@@ -95,7 +95,7 @@ def swarm_hostname() -> str:
 
 def instance_id() -> str:
     """This install's on-disk instance-folder name: env ``IGOR_INSTANCE_ID`` if set,
-    else the canonical default ``Igor-wild-0001``. Total (never raises) — unlike
+    else the canonical default ``Igor-Wild1``. Total (never raises) — unlike
     :func:`igor_name` this resolves a *path component*, not a credential, and the
     default preserves the long-standing behavior.
 
@@ -106,4 +106,4 @@ def instance_id() -> str:
     (CLAUDE.md device-independence). The literal default lives here and in paths.py as
     the two settled canonical homes; everything else delegates. (T-uu-sweep-instance-name.)
     """
-    return os.environ.get("IGOR_INSTANCE_ID", "Igor-wild-0001")
+    return os.environ.get("IGOR_INSTANCE_ID", "Igor-Wild1")

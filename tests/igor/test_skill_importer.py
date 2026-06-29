@@ -276,7 +276,7 @@ class TestImportSkill(unittest.TestCase):
 
         os.environ.setdefault(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
 
     def test_import_filter_skill(self):
@@ -325,7 +325,7 @@ class TestImportSkill(unittest.TestCase):
 
         db_url = os.environ.get(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
 
         # Create a temp skill dir with a minimal skill

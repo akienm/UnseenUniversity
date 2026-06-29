@@ -2,7 +2,7 @@
 Arbiter queue — pending human-approval items (change.33).
 
 File-backed JSON at:
-  ~/.unseen_university/Igor-wild-0001/arbiter/pending.json
+  ~/.unseen_university/Igor-Wild1/arbiter/pending.json
 
 Igor submits uncertain actions here before executing them.
 Akien reviews via /arbiter commands or the web dashboard.

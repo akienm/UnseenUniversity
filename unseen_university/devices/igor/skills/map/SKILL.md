@@ -12,7 +12,7 @@ Migrated from the former top-level `/map-igor` into the igor device
 > ⚠ **BROKEN — rebuild is an igor-phase follow-on (igor = last priority).**
 > The backing script this skill describes (`${CC_WORKFLOW_TOOLS}/map_igor.py`) does
 > **not exist** in the repo, and the section sources below are DB/old-instance-era
-> (memory_palace table, decisions_log.dsb, queue.json, Igor-wild-0001) — several no
+> (memory_palace table, decisions_log.dsb, queue.json, Igor-Wild1) — several no
 > longer reflect canonical sources (tickets/decisions are now the filesystem store
 > under `devlab/runtime/memory/`, not the DB). This file is migrated to preserve the
 > intent and document the gap, not because it runs.

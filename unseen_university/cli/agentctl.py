@@ -199,7 +199,7 @@ def cli(debug: bool) -> None:
 @click.option(
     "--instance",
     default=None,
-    help="Instance name to create (e.g. Igor-wild-0001). Creates instance dir and logs subdir.",
+    help="Instance name to create (e.g. Igor-Wild1). Creates instance dir and logs subdir.",
 )
 def init(instance: str | None) -> None:
     """

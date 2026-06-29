@@ -1,7 +1,7 @@
 """
 Cluster SSH tools — run commands on remote cluster machines via SSH.
 
-Uses the Igor-wild-0001 user and the keypair at ~/.unseen_university/igor_id_rsa.
+Uses the Igor-Wild1 user and the keypair at ~/.unseen_university/igor_id_rsa.
 Machine inventory is read from ~/.unseen_university/local/machines.json (ssh:true entries only).
 
 Two tools registered:
@@ -28,7 +28,7 @@ from ..paths import paths
 
 _MACHINES_JSON = paths().machines_json
 _KEY_PATH = paths().ssh_key
-_DEFAULT_USER = "Igor-wild-0001"
+_DEFAULT_USER = "Igor-Wild1"
 _SSH_TIMEOUT = 20  # seconds per command
 
 
@@ -327,7 +327,7 @@ def _bootstrap_ssh(machine: str = "") -> str:
     except ImportError:
         return "paramiko not installed — run: pip install paramiko"
 
-    igor_user = os.getenv("WINDOWS_USER_IGOR_USER", "Igor-wild-0001")
+    igor_user = os.getenv("WINDOWS_USER_IGOR_USER", "Igor-Wild1")
     igor_pw = os.getenv("WINDOWS_USER_IGOR_PW", "")
     pubkey = _KEY_PATH.with_suffix(".pub").read_text().strip()
 
@@ -849,7 +849,7 @@ registry.register(
 def _set_powershell_default(machine: str = "") -> str:
     """
     Set PowerShell as the default SSH shell on Windows machines via registry.
-    Requires the SSH user to be an administrator (Igor-wild-0001 is admin).
+    Requires the SSH user to be an administrator (Igor-Wild1 is admin).
     Prefers PowerShell 7 (pwsh.exe) if installed, falls back to PS 5.1.
 
     This is a one-time setup per machine. After this, SSH sessions open
@@ -901,7 +901,7 @@ registry.register(
         name="set_powershell_default",
         description=(
             "Set PowerShell as the default SSH shell on Windows cluster machines via registry. "
-            "Requires admin rights (Igor-wild-0001 is admin). "
+            "Requires admin rights (Igor-Wild1 is admin). "
             "Prefers PowerShell 7 (pwsh.exe), falls back to PS 5.1. "
             "One-time setup per machine — makes all future SSH sessions cleaner. "
             "Leave machine empty to configure all online Windows SSH machines."

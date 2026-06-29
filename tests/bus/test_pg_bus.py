@@ -21,7 +21,7 @@ from unseen_university.devices.bus.router import Router
 
 _DSN = os.environ.get(
     "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+    "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
 )
 
 # ── Fixtures ───────────────────────────────────────────────────────────────────

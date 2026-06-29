@@ -1,10 +1,10 @@
 """Proof for T-uu-rename-role-and-db (the git-tracked part).
 
-The live DB/role rename (Igor-wild-0001/igor -> unseen_university) is a one-shot
+The live DB/role rename (Igor-Wild1/igor -> unseen_university) is a one-shot
 DDL op verified at runtime; what's git-tracked and provable is the config-layer
 decoupling: the home DB name comes from UU_HOME_DB_NAME (substrate-owned),
 *not* from IGOR_NAME (the igor tenant identity / on-disk instance folder, which
-stays Igor-wild-0001). IGOR_NAME remains the fallback so installs predating the
+stays Igor-Wild1). IGOR_NAME remains the fallback so installs predating the
 rename keep their old behavior.
 
 RED before: bin/uu_bash_profile_processor.sh composed the URL's DB component as

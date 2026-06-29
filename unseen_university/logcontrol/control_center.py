@@ -5,11 +5,11 @@ Log tree layout (rooted at $UNSEEN_UNIVERSITY_HOME/logs/):
   logs/
     rack/                  # skeleton, bus, registry
       rack.log
-    Igor-wild-0001/        # Igor subsystem logs
+    Igor-Wild1/        # Igor subsystem logs
       cognition/
-        Igor-wild-0001.log
+        Igor-Wild1.log
       memory/
-        Igor-wild-0001.log
+        Igor-Wild1.log
     claude_code/           # CC logs
       claude_code.log
     CC.0/                  # comms-channel logs (chat history written by export_chat)
@@ -25,7 +25,7 @@ Override by calling configure(custom_root) before first use.
 Usage:
     from unseen_university.logcontrol.control_center import LoggingControlCenter
     # Uses $UNSEEN_UNIVERSITY_HOME/logs/ automatically:
-    log = LoggingControlCenter.instance().get_logger('Igor-wild-0001', 'cognition')
+    log = LoggingControlCenter.instance().get_logger('Igor-Wild1', 'cognition')
     log.info('cognition cycle complete')
     # Or with explicit root:
     LoggingControlCenter.configure(Path('/tmp/test-logs'))

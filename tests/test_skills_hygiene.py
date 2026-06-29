@@ -28,7 +28,7 @@ def _skill_files():
 
 # Lines where the literal is a credential-SCANNER needle (the day-close-audit
 # Step-15 grep that hunts for hardcoded creds MUST name what it scans for).
-_SCANNER_NEEDLE = re.compile(r'-e "(choose_a_password|Igor-wild-0001)"')
+_SCANNER_NEEDLE = re.compile(r'-e "(choose_a_password|Igor-Wild1)"')
 
 
 def _violations(pattern: str, *, exclude_dirs: tuple[str, ...] = ()) -> list[str]:
@@ -52,7 +52,7 @@ def test_no_dead_db_credentials():
 
 
 def test_no_dead_instance_db_name():
-    v = _violations(r"Igor-wild-0001")
+    v = _violations(r"Igor-Wild1")
     assert not v, "dead instance/DB name in skills (use $UU_HOME_DB_URL):\n" + "\n".join(v)
 
 

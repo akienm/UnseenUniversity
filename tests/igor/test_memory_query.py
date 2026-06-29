@@ -100,7 +100,7 @@ class TestMemorySearch(unittest.TestCase):
 
         os.environ.setdefault(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         from unseen_university.devices.igor.tools.registry import registry
         import unseen_university.devices.igor.tools.memory_query  # noqa
@@ -240,7 +240,7 @@ class TestFindTool(unittest.TestCase):
 
         os.environ.setdefault(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         from unseen_university.devices.igor.tools.registry import registry
         import unseen_university.devices.igor.tools.memory_query  # noqa

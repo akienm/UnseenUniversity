@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 
 _DB_URL = os.environ.get(
     "UU_HOME_DB_URL",
-    "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+    "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
 )
 
 

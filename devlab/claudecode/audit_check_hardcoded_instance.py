@@ -2,7 +2,7 @@
 audit_check_hardcoded_instance.py — T-hardcoded-instance-refs audit check
 
 Fails if Igor's runtime code (unseen_university/devices/igor/) reintroduces hardcoded
-'Igor-wild-0001' strings or the placeholder DB password outside the
+'Igor-Wild1' strings or the placeholder DB password outside the
 known-exempt files: paths.py (canonical default), cluster_ssh.py (ssh user
 constant + windows user env default), cognition/{job_manager,response_habituation,
 pipeline_manager,machine_manager}.py (docstrings), network/channels/file_inbox.py
@@ -45,7 +45,7 @@ EXEMPT_SUFFIXES: set[str] = {
 }
 
 PATTERNS: list[str] = [
-    "Igor-wild-0001",
+    "Igor-Wild1",
     "choose_a" "_password",  # fragmented: detector needle, literal must not live in source
 ]
 

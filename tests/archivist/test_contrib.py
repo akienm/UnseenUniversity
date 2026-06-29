@@ -27,8 +27,8 @@ class TestStripContext:
         assert "/home/akien" not in result
 
     def test_strips_instance_id(self):
-        result = self._strip("Running on Igor-wild-0001")
-        assert "Igor-wild-0001" not in result
+        result = self._strip("Running on Igor-Wild1")
+        assert "Igor-Wild1" not in result
         assert "<instance-id>" in result
 
     def test_strips_ticket_id(self):

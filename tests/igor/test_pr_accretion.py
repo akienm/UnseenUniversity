@@ -35,7 +35,7 @@ def _delete_test_accretions(**_):
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
@@ -129,7 +129,7 @@ def test_pr_accrete_exchange_stores_both_sides_verbatim():
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
@@ -183,7 +183,7 @@ def test_pr_accrete_exchange_narrative_is_truncated_summary():
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
@@ -236,7 +236,7 @@ def test_pr_accrete_marker_creates_marker_memory():
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     conn = psycopg2.connect(db_url)
     conn.autocommit = True
@@ -273,7 +273,7 @@ def test_pr_accrete_commitment_links_to_goal():
 
     db_url = os.environ.get(
         "UU_HOME_DB_URL",
-        "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+        "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
     )
     conn = psycopg2.connect(db_url)
     conn.autocommit = True

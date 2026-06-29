@@ -1983,7 +1983,7 @@ async def _api_device_console(request: Request):
         for f in sorted(exact_dir.glob("*.console.md"), reverse=True):
             candidates.append(f)
 
-    # 2. glob: dirs that start with device_id (e.g. Igor-wild-0001 for 'igor')
+    # 2. glob: dirs that start with device_id (e.g. Igor-Wild1 for 'igor')
     for d in sorted((_RUNTIME_ROOT / "logs").glob(f"{device_id}*"), reverse=True):
         if d.is_dir():
             candidates.append(d / f"{today}.console.md")

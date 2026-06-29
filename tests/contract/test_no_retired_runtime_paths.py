@@ -28,8 +28,9 @@ EXCLUDE_PARTS = {".git", "runtime", "node_modules", "__pycache__", ".venv"}
 # token -> canonical replacement (the migration that retired it).
 FORBIDDEN = {
     "datacenter_logs": "uu_home()/logs/<device>/<stream>/",
+    "Igor-wild-0001": "the live instance via identity.instance_id() (archived; never name it in code)",
     # (added as each migration lands: ".TheIgors", "IGOR_HOME",
-    #  "Igor-wild-0001", "lab/design_docs", "ADC_LOG_ROOT" ...)
+    #  "lab/design_docs", "ADC_LOG_ROOT" ...)
 }
 
 

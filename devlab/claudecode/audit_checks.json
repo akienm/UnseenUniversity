@@ -42,7 +42,7 @@
       "code": "AR-004",
       "kind": "shell",
       "pattern": "python3 devlab/claudecode/audit_check_hardcoded_instance.py",
-      "description": "T-hardcoded-instance-refs (#458): Igor runtime reads instance identifiers from config, not string literals. 'Igor-wild-0001' and 'choose_a.password' live in paths.py, docstrings, and the node_id constant (the settled exempt list from the 2026-04-15 sprint).",
+      "description": "T-hardcoded-instance-refs (#458): Igor runtime reads instance identifiers from config, not string literals. 'Igor-Wild1' and 'choose_a.password' live in paths.py, docstrings, and the node_id constant (the settled exempt list from the 2026-04-15 sprint).",
       "severity": "med",
       "added_by": "claude-code",
       "added_at": "2026-04-15T16:12:26.903828",

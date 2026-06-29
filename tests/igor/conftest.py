@@ -115,7 +115,7 @@ def _redirect_inbox_to_test_dir(tmp_path_factory):
 
     Without this, tests that call FileInboxChannel().acquire() trigger
     paths().inbox.mkdir(parents=True, exist_ok=True), which creates
-    ~/.unseen_university/Igor-wild-0001/inbox/ (the default instance when
+    ~/.unseen_university/Igor-Wild1/inbox/ (the default instance when
     IGOR_INSTANCE_ID is not set in the test environment).
     """
     test_inbox = tmp_path_factory.mktemp("igor_test_inbox")

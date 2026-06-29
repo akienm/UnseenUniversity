@@ -39,14 +39,14 @@ class TestPathsDefaultsWithoutEnvVars(unittest.TestCase):
 
         pm = _BootstrapPathManager()
         pm._init()
-        self.assertEqual(pm.instance_id, "Igor-wild-0001")
+        self.assertEqual(pm.instance_id, "Igor-Wild1")
 
     def test_instance_dir_resolves_correctly(self):
         from unseen_university.devices.igor.paths import _BootstrapPathManager
 
         pm = _BootstrapPathManager()
         pm._init()
-        expected = Path.home() / ".unseen_university" / "Igor-wild-0001"
+        expected = Path.home() / ".unseen_university" / "Igor-Wild1"
         self.assertEqual(pm.instance, expected)
 
     def test_env_override_still_respected_when_set(self):

@@ -173,7 +173,7 @@ class TestTwmLowerUrgency(unittest.TestCase):
 
         os.environ.setdefault(
             "UU_HOME_DB_URL",
-            "postgresql://igor:choose_a_password@127.0.0.1/Igor-wild-0001",
+            "postgresql://igor:choose_a_password@127.0.0.1/Igor-Wild1",
         )
         os.environ.setdefault("IGOR_DB_PATH", "/tmp/test_cortex.db")
         from unseen_university.devices.igor.memory.cortex import Cortex

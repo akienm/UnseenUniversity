@@ -42,10 +42,10 @@ def test_igor_name_resolves_via_subprocess():
     r = subprocess.run(
         [sys.executable, "-c",
          "from unseen_university import identity; print(identity.igor_name(), end='')"],
-        env=_base_env(PYTHONPATH=os.getcwd(), IGOR_NAME="Igor-wild-0001"),
+        env=_base_env(PYTHONPATH=os.getcwd(), IGOR_NAME="Igor-Wild1"),
         capture_output=True, text=True, timeout=30,
     )
-    assert r.stdout == "Igor-wild-0001"
+    assert r.stdout == "Igor-Wild1"
 
 
 def test_igor_name_raises_when_unset(monkeypatch):
@@ -85,4 +85,4 @@ def test_instance_id_prefers_env_then_canonical_default(monkeypatch):
     monkeypatch.setenv("IGOR_INSTANCE_ID", "Igor-proof-9999")
     assert identity.instance_id() == "Igor-proof-9999"
     monkeypatch.delenv("IGOR_INSTANCE_ID", raising=False)
-    assert identity.instance_id() == "Igor-wild-0001"
+    assert identity.instance_id() == "Igor-Wild1"
