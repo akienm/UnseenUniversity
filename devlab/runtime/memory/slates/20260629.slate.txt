@@ -22,6 +22,7 @@ NONE
 - T-device-contract-schema — Add owns/delegates_to contract fields to architecture intention-points (owns/delegates_to contract added to all 15 architecture intention-points; consistent capability vocabulary enforced by t)
 - T-igor-inference-gateway-bypasses-proxy — igor/cognition/inference_gateway.py makes DIRECT provider calls — violates Inference-Proxy-only (SPLIT (not done): survey revealed this M-labeled ticket is an L/XL HIGH-inertia rewrite of igor's inference path (prompt)
 - T-proxy-source-kind — Inference Proxy: expose source kind (local vs paid-cloud) on InferenceResponse (InferenceResponse.source_kind (local|cloud|none) added; is_local ClassVar on Source (True only on OllamaSource); dispatc)
+- T-inf-reroute-A — Repoint igor gateway.reason() onto Proxy dispatch() (tier ladder -> rules_engine) (igor reason() repointed onto InferenceDevice.dispatch() — tier ladder/direct reasoners/budget-gate/tool-loop/MODE-overri)
 ## Session close 2026-06-29
 Done: Done: D-all-generations-consolidation autonomous overnight sprint — 113 ADC decisions migrated, 18 palace slates absorbed, 6 architecture intent-points created, ~16.7G dead bulk deleted. 8 gated tickets filed (awaiting_validation). Home reduced 42G→26G, tree clean.
 Next: Next: day-close-audit (assess overnight quality); assess 3 Akien judgment calls (archive/.git, training_corpus, D-numeric stubs); T-repoint-igor-refs code-ref fix work.
@@ -47,3 +48,7 @@ Done: Done: Shipped 2 proven tickets from D-device-contract-maps: T-device-contr
 Next: Next: /sprint T-inf-reroute-A (HIGH-inertia reason() seam, dedicated+reviewed) — consumes source_kind to preserve used_api; then A→(B,bypassers)→C, plus the now-ungated T-contract-violation-audit-check for enforcement.
 
 ## In-flight: Session closed clean. D-device-contract-maps half-shipped: schema + source-kind proven; inference reroute re-filed as T-inf-reroute-A/B/C + T-proxy-source-kind(done) + T-igor-inference-bypassers. T-inf-reroute-A is the live next unit (HIGH-inertia, needs review). Tree clean, all pushed through 0edeb9f3.
+
+## In-flight: T-inf-reroute-A claimed in_progress (HIGH-inertia reason() seam); surveying current code before planning; awaiting Akien inline pre-approval before edits.
+
+## In-flight: T-inf-reroute-A CLOSED PROVEN (f92b2fea impl + 630e45bf proof, red=AssertionError): igor reason() now routes through InferenceDevice.dispatch() — tier ladder yanked. Ungated T-inf-reroute-B + T-igor-inference-bypassers. Igor is a normal Proxy consumer now.

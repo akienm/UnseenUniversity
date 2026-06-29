@@ -27,7 +27,7 @@
       "Igor"
     ],
     "decision_id": "D-device-contract-maps-2026-06-29",
-    "gate": "T-inf-reroute-A",
+    "gate": null,
     "priority": 0.35,
     "status": "sprint",
     "intention": "I intend that igor's call()/DAG inference path also routes through the Proxy, reusing the assembler from reroute-A.",

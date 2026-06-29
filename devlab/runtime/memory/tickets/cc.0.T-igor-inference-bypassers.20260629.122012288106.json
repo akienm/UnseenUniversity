@@ -27,7 +27,7 @@
       "Igor"
     ],
     "decision_id": "D-device-contract-maps-2026-06-29",
-    "gate": "T-inf-reroute-A",
+    "gate": null,
     "priority": 0.32,
     "status": "sprint",
     "intention": "I intend that no igor code reaches a provider except through the Proxy — including paths the gateway-only grep misses.",
