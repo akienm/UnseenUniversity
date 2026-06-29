@@ -42,6 +42,13 @@
     "reference_docs": [],
     "related": [
       "[[device-shim]]"
-    ]
+    ],
+    "owns": [
+      "mcp",
+      "registry"
+    ],
+    "delegates_to": {
+      "liveness": "ground_loop"
+    }
   }
 }

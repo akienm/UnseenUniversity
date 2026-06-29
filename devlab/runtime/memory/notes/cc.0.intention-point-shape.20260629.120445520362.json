@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.intention-point-shape.20260629.120445520362",
+  "emitter": "cc.0",
+  "namespace": [
+    "intention-point-shape"
+  ],
+  "category": "notes",
+  "kind": "note",
+  "emitted_at": "2026-06-29T12:04:45.520362",
+  "links": {
+    "decisions": [
+      "D-device-contract-maps-2026-06-29"
+    ],
+    "tickets": [
+      "T-device-contract-schema"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "title": "Architecture intention-point shape: owns / delegates_to (the device contract map)",
+    "subject": "intention-point-shape",
+    "text": "Every architecture intention-point (devlab/runtime/memory/architecture/*.json) carries, in its body, a per-device CONTRACT alongside summary/key_concepts/implementing_files:\n\n  owns         list[str]            — the capabilities this device/subsystem holds. Domain capabilities (e.g. cognition, twm, research, reading) plus, for infra owners, the single canonical capability token they provide (bus owns 'comms'; skeleton owns 'mcp' and 'registry'; inference owns 'inference'; ground_loop owns 'liveness'; nanny owns 'scheduling'; installer owns 'provisioning').\n  delegates_to map[str,str]         — capability -> owning device. The cross-cutting capabilities this device RELIES ON another device to provide and must NOT implement itself (e.g. cognition delegates inference->inference, comms->bus, mcp->skeleton, storage->postgres, dispatch->granny, liveness->ground_loop).\n\nINTENT, not a scrape. The map declares what a device is ALLOWED to own; current code that violates it (e.g. inference_gateway.py making direct provider calls inside devices/igor/cognition/) is exactly what the contract makes detectable (T-contract-violation-audit-check).\n\nConsistency invariant (one term per capability): every delegates_to KEY must appear verbatim in the OWNS of the device it names, for owners that have an intention-point file. postgres and granny have no file and are whitelisted delegate targets. Enforced by tests/contract/test_device_contract_maps.py.\n\nFloor tier: delegates_to is present on every file but is EMPTY {} for the two subsystems that own their floor and delegate no infra capability — device-shim (the BaseDevice/BaseShim contract itself) and memory-dev-artifacts (the flat-file dev-artifact store). An empty map there is honest; a fabricated entry to satisfy a non-empty grep is the hollow build the proof-on-close gate exists to stop (CP1). The test exempts exactly those two and requires non-empty on the other 13 runtime devices.\n\nProvenance: T-device-contract-schema, D-device-contract-maps-2026-06-29 (2026-06-29).",
+    "related": [
+      "[[feedback_igor_uses_not_contains]]",
+      "[[feedback_homogeneity_over_special_case]]"
+    ]
+  }
+}

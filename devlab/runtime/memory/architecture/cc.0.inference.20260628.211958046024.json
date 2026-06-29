@@ -52,6 +52,14 @@
     "provenance": "Distilled (and re-homed onto the live Proxy device) from TheIgors.archive/lab/design_docs/subsystem_inference.md 2026-06-28 (D-all-generations-consolidation).",
     "related": [
       "[[cognition]]"
-    ]
+    ],
+    "owns": [
+      "inference"
+    ],
+    "delegates_to": {
+      "comms": "bus",
+      "storage": "postgres",
+      "liveness": "ground_loop"
+    }
   }
 }

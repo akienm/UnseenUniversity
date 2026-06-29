@@ -58,6 +58,22 @@
     "related": [
       "[[inference]]",
       "[[memory-graph-tree]]"
-    ]
+    ],
+    "owns": [
+      "cognition",
+      "twm",
+      "milieu",
+      "emotional-memory",
+      "dreaming",
+      "ne-impulses"
+    ],
+    "delegates_to": {
+      "inference": "inference",
+      "comms": "bus",
+      "mcp": "skeleton",
+      "storage": "postgres",
+      "dispatch": "granny",
+      "liveness": "ground_loop"
+    }
   }
 }

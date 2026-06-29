@@ -52,6 +52,15 @@
     "related": [
       "[[ground_loop]]",
       "[[device-shim]]"
-    ]
+    ],
+    "owns": [
+      "scheduling"
+    ],
+    "delegates_to": {
+      "comms": "bus",
+      "storage": "postgres",
+      "dispatch": "granny",
+      "liveness": "ground_loop"
+    }
   }
 }

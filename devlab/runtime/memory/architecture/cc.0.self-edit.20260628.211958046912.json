@@ -46,6 +46,14 @@
     "provenance": "Distilled from TheIgors.archive/lab/design_docs/subsystem_self_edit.md 2026-06-28 (D-all-generations-consolidation).",
     "related": [
       "[[tools]]"
-    ]
+    ],
+    "owns": [
+      "self-edit"
+    ],
+    "delegates_to": {
+      "storage": "postgres",
+      "comms": "bus",
+      "liveness": "ground_loop"
+    }
   }
 }

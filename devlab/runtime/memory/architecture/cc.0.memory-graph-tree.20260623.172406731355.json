@@ -69,6 +69,14 @@
     "related": [
       "[[memory-dev-artifacts]]"
     ],
-    "provenance": "Distilled from TheIgors.archive/lab/design_docs/subsystem_memory.md 2026-06-28 (D-all-generations-consolidation)."
+    "provenance": "Distilled from TheIgors.archive/lab/design_docs/subsystem_memory.md 2026-06-28 (D-all-generations-consolidation).",
+    "owns": [
+      "graph-tree-memory"
+    ],
+    "delegates_to": {
+      "storage": "postgres",
+      "comms": "bus",
+      "liveness": "ground_loop"
+    }
   }
 }

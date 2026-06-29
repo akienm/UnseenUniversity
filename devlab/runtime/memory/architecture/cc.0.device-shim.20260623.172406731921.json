@@ -43,6 +43,10 @@
     "related": [
       "[[bus]]",
       "[[skeleton]]"
-    ]
+    ],
+    "owns": [
+      "device-contract"
+    ],
+    "delegates_to": {}
   }
 }

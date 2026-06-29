@@ -53,6 +53,15 @@
     "related": [
       "[[memory-graph-tree]]",
       "[[cognition]]"
-    ]
+    ],
+    "owns": [
+      "reading"
+    ],
+    "delegates_to": {
+      "inference": "inference",
+      "storage": "postgres",
+      "comms": "bus",
+      "liveness": "ground_loop"
+    }
   }
 }

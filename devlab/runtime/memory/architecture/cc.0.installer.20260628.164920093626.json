@@ -48,6 +48,14 @@
     "related": [
       "[[device-shim]]",
       "[[skeleton]]"
-    ]
+    ],
+    "owns": [
+      "provisioning"
+    ],
+    "delegates_to": {
+      "storage": "postgres",
+      "comms": "bus",
+      "liveness": "ground_loop"
+    }
   }
 }

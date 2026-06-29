@@ -44,6 +44,15 @@
       "D-intent-extractor-learning-substrate-2026-06-14",
       "D-architecture-as-code-cognition-pipeline-2026-06-16",
       "[[memory-graph-tree]]"
-    ]
+    ],
+    "owns": [
+      "intent-extraction"
+    ],
+    "delegates_to": {
+      "inference": "inference",
+      "storage": "postgres",
+      "comms": "bus",
+      "liveness": "ground_loop"
+    }
   }
 }

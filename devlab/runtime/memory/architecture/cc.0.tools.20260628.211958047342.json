@@ -51,6 +51,14 @@
     "related": [
       "[[self-edit]]",
       "[[reading]]"
-    ]
+    ],
+    "owns": [
+      "tool-registry"
+    ],
+    "delegates_to": {
+      "mcp": "skeleton",
+      "comms": "bus",
+      "liveness": "ground_loop"
+    }
   }
 }

@@ -73,6 +73,12 @@
     "related": [
       "[[device-shim]]",
       "[[nanny]]"
-    ]
+    ],
+    "owns": [
+      "liveness"
+    ],
+    "delegates_to": {
+      "registry": "skeleton"
+    }
   }
 }

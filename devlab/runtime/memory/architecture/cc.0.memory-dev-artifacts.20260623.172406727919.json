@@ -54,6 +54,10 @@
       "[[memory-graph-tree]]",
       "D-canonical-memory-consolidation-2026-06-23",
       "D-filesystem-memory-store-2026-06-16"
-    ]
+    ],
+    "owns": [
+      "dev-artifact-memory"
+    ],
+    "delegates_to": {}
   }
 }

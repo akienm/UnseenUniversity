@@ -51,6 +51,16 @@
     "related": [
       "[[cognition]]",
       "[[memory-graph-tree]]"
-    ]
+    ],
+    "owns": [
+      "research"
+    ],
+    "delegates_to": {
+      "inference": "inference",
+      "storage": "postgres",
+      "comms": "bus",
+      "mcp": "skeleton",
+      "liveness": "ground_loop"
+    }
   }
 }
