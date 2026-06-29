@@ -19,6 +19,9 @@ NONE
 - Day-close audit (2026-06-28): fixed queue device test mock (0540322d)
 - D-device-contract-maps-2026-06-29 /sorted: 3 new tickets + inference ticket re-pointed
 
+- T-device-contract-schema — Add owns/delegates_to contract fields to architecture intention-points (owns/delegates_to contract added to all 15 architecture intention-points; consistent capability vocabulary enforced by t)
+- T-igor-inference-gateway-bypasses-proxy — igor/cognition/inference_gateway.py makes DIRECT provider calls — violates Inference-Proxy-only (SPLIT (not done): survey revealed this M-labeled ticket is an L/XL HIGH-inertia rewrite of igor's inference path (prompt)
+- T-proxy-source-kind — Inference Proxy: expose source kind (local vs paid-cloud) on InferenceResponse (InferenceResponse.source_kind (local|cloud|none) added; is_local ClassVar on Source (True only on OllamaSource); dispatc)
 ## Session close 2026-06-29
 Done: Done: D-all-generations-consolidation autonomous overnight sprint — 113 ADC decisions migrated, 18 palace slates absorbed, 6 architecture intent-points created, ~16.7G dead bulk deleted. 8 gated tickets filed (awaiting_validation). Home reduced 42G→26G, tree clean.
 Next: Next: day-close-audit (assess overnight quality); assess 3 Akien judgment calls (archive/.git, training_corpus, D-numeric stubs); T-repoint-igor-refs code-ref fix work.
@@ -30,3 +33,11 @@ Done: Done: Day-close audit complete. D-single-package-reorg live; D-all-generat
 Next: Next: Assess consolidation results + 3 Akien judgment calls; T-repoint-igor-refs code-ref fix; validate 8 awaiting_validation tickets.
 
 ## In-flight: Day-close audit + gate sweep complete; 2 commits (test fix 0540322d, docs 2b9da074); tree clean; nothing in-flight.
+
+## In-flight: Session ready for restart. D-device-contract-maps /sorted'd (3 tickets + inference ticket re-pointed, committed 7d97cc82). 4 consolidation judgment calls resolved (archive/.git deleted, training_corpus moved, 352 stubs deleted, inference-proxy scoped+deferred). Next post-restart: sprint D-device-contract-maps then inference reroute as first consumer.
+
+## In-flight: T-device-contract-schema CLOSED PROVEN (commits 99e3ec3f impl + 6763b897 proof, pushed): owns/delegates_to on all 15 architecture intention-points, 6-test contract suite green, proof red=AssertionError. Ungated T-contract-violation-audit-check. Filed T-arch-points-stale-impl-paths (pri 0.2, pre-existing test red). NEXT in batch: T-igor-inference-gateway-bypasses-proxy (first consumer of the contract maps).
+
+## In-flight: BATCH DONE (1/2 shipped + 1 re-filed). Ticket 1: T-device-contract-schema CLOSED PROVEN (99e3ec3f+6763b897). Ticket 2: T-igor-inference-gateway-bypasses-proxy was mislabeled M — survey showed L/XL HIGH-inertia (prompt-assembly lives in reasoners, Proxy dispatch needs pre-assembled messages; used_api branched on for routing telemetry; 3 bypassers outside gateway). Akien approved SPLIT; original closed shipped-unproven. Filed: T-proxy-source-kind (S, gate=none, the used_api fix), T-inf-reroute-A (L, gate=proxy-source-kind, reason() seam, HIGH-inertia=needs review), T-inf-reroute-B (M, gate=A), T-inf-reroute-C (S, gate=B), T-igor-inference-bypassers (M, gate=A). NEXT: sprint T-proxy-source-kind (unblocks A), then A dedicated+reviewed. Also open: T-contract-violation-audit-check (ungated), T-arch-points-stale-impl-paths (pri 0.2).
+
+## In-flight: T-proxy-source-kind CLOSED PROVEN (f670866b impl + 5ae3b647 close/proof, pushed): InferenceResponse.source_kind (local|cloud|none) via is_local ClassVar on Source; 4 tests green. Ungated T-inf-reroute-A — now eligible. Filed T-inference-tier-escalation-tests-red (pri 0.2, 3 pre-existing red tests, no live source in test env). SESSION TOTALS: shipped proven T-device-contract-schema + T-proxy-source-kind; re-filed inference reroute as 5-ticket split. NEXT: T-inf-reroute-A (L, HIGH-inertia reason() seam) as a dedicated reviewed session — uses the new source_kind for used_api; survey map embedded in the ticket.
