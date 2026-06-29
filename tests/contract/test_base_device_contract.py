@@ -89,9 +89,7 @@ def contract_device(request, tmp_path):
         gate.write_text(json.dumps({"tripped": False}))
         orig_gate = qdev.GATE_FILE
         qdev.GATE_FILE = gate
-        with patch("unseen_university.devices.queue.device._db_conn") as mc:
-            mc.return_value.close = MagicMock()
-            dev = QueueDevice()
+        dev = QueueDevice()
         qdev.GATE_FILE = orig_gate
         return dev
 
