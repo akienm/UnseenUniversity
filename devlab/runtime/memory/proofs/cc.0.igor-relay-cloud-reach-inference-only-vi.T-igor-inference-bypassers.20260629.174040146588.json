@@ -1,0 +1,59 @@
+{
+  "id": "cc.0.igor-relay-cloud-reach-inference-only-vi.T-igor-inference-bypassers.20260629.174040146588",
+  "emitter": "cc.0",
+  "namespace": [
+    "igor-relay-cloud-reach-inference-only-vi",
+    "T-igor-inference-bypassers"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-29T17:40:40.146588",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-igor-inference-bypassers"
+    ],
+    "commits": [
+      "46c79ffcbdf8ca7a51ca54e98bb473c2bab081dd"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "igor /relay+/cloud reach inference only via the Proxy",
+    "intention": "relay.py and multi_cloud.py contain no raw reasoner.reason() or raw ollama/urllib — all inference goes through InferenceDevice.dispatch()",
+    "test": "tests/igor/test_inference_bypassers.py::test_no_raw_provider_calls_in_relay_and_multicloud",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_inference_bypassers.py::test_no_raw_provider_calls_in_relay_and_multicloud",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "            for i, line in enumerate(text.splitlines(), 1):\n                for pat in _FORBIDDEN:\n                    if re.search(pat, line):\n                        hits.append(f\"{fname}:{i}: {line.strip()[:90]}\")\n>       assert not hits, \"raw provider/reasoner calls survive:\\n\" + \"\\n\".join(hits)\nE       AssertionError: raw provider/reasoner calls survive:\nE         relay.py:39: text, _cost = self.reasoner.reason(\nE         multi_cloud.py:34: text, cost = reasoner.reason(\nE         multi_cloud.py:61: import ollama as _ollama\nE         multi_cloud.py:61: import ollama as _ollama\nE         multi_cloud.py:62: from .inference_ollama import OLLAMA_LOCAL_MODEL\nE         multi_cloud.py:72: resp = _ollama.chat(\nE       assert not ['relay.py:39: text, _cost = self.reasoner.reason(', 'multi_cloud.py:34: text, cost = reasoner.reason(', 'multi_cloud....ama', 'multi_cloud.py:62: from .inference_ollama import OLLAMA_LOCAL_MODEL', 'multi_cloud.py:72: resp = _ollama.chat(']\n\ntests/igor/test_inference_bypassers.py:58: AssertionError\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-29 17:40:39.945 | WARNING  | logging:callHandlers:1762 - slow query 258ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_inference_bypassers.py::test_no_raw_provider_calls_in_relay_and_multicloud\n1 failed in 1.54s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.43s"
+          }
+        }
+      }
+    ],
+    "commit": "46c79ffcbdf8ca7a51ca54e98bb473c2bab081dd",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-igor-inference-bypassers.20260629.122012288106.json",
+      "unseen_university/devices/igor/cognition/multi_cloud.py",
+      "unseen_university/devices/igor/cognition/relay.py",
+      "unseen_university/devices/igor/main.py"
+    ],
+    "ticket": "T-igor-inference-bypassers",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
