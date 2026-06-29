@@ -1,0 +1,7 @@
+# Slate 2026-04-07
+
+Slate for 2026-04-07. Canonical row: clan.memories id=SLATE-20260407. Sections: Decided (21:15) — D319-D325 Config + Installer Architecture, Done, Done Today (20:54), Active, Tools, In-flight 13:38 — T-instance-id-normalize-v2, DONE 13:50 — T-instance-id-normalize-v2, Incident Root Cause, Secondary Issues Fixed, In-flight 18:26 — T-installer-stage1, In-flight 18:33 — T-installer-stage2, In-flight 18:38 — T-installer-stage3.
+
+
+---
+[Absorbed 2026-06-28 (D-all-generations-consolidation-2026-06-28) from the TheIgors lineage. reconstructed from palace_slates_archived.tsv — summary-level; full sections were in the retired palace DB]

@@ -19,13 +19,13 @@
   },
   "body": {
     "id": "T-absorb-adc-era-decisions",
-    "title": "[sprint] Absorb 113 ADC-era decisions from TheIgors.archive into UU decisions/ store",
+    "title": "[awaiting_validation] Absorb 113 ADC-era decisions from TheIgors.archive into UU decisions/ store",
     "size": "M",
     "tags": [
       "Consolidation",
       "Memory"
     ],
-    "status": "sprint",
+    "status": "awaiting_validation",
     "priority": 0.5,
     "decision_id": "D-all-generations-consolidation-2026-06-28",
     "gate": null,
@@ -33,9 +33,9 @@
     "created_at": "2026-06-29T01:53:46.436182+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Migrated 113 ADC-era decisions archive->UU store. Verified: 0 missing (was 113), UU decisions 116->229, fidelity (date/title/text/status) holds, historical emitted_at confirmed (2026-05-10 not today). 2 misfiled T- tickets skipped; D-constraints-first-class already present. Proof = re-runnable dedup+fidelity check (migrate_adc_decisions.py); proof_emitter can't bind a data-absorb (no single-node red->green AssertionError form) — missing lever = migration/absorb proof mode.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T03:05:38.625335+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-29T01:53:46.482110+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "28ab2b2b-583b-4401-a96f-e93babc370c0"
+    "inferred_intention_id": "28ab2b2b-583b-4401-a96f-e93babc370c0",
+    "commit_hash": "dbaef5bf"
   }
 }

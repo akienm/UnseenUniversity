@@ -1,0 +1,7 @@
+# Active Slate — 2026-04-02
+
+Slate for 2026-04-02. Canonical row: clan.memories id=SLATE-20260402. Sections: Slate 0 — Database architecture (TODAY), Slate 1 — Training + neural process engineering (NEXT), Slate 2 — Productization (AFTER NEXT), Blobs (read tops for context), Design thread.
+
+
+---
+[Absorbed 2026-06-28 (D-all-generations-consolidation-2026-06-28) from the TheIgors lineage. reconstructed from palace_slates_archived.tsv — summary-level; full sections were in the retired palace DB]
