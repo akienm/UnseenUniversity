@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-layer-seed-tests-restore.20260629.163458733870",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-layer-seed-tests-restore"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T22:34:58.733870+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-layer-seed-tests-restore"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-layer-seed-tests-restore",
+    "title": "[sprint] Restore or rewrite layer3/layer4 tests importing deleted seed_layer*.py",
+    "size": "M",
+    "priority": 0.25,
+    "status": "sprint",
+    "tags": [
+      "Testing",
+      "Cleanup"
+    ],
+    "description": "**Problem:** 9 tests fail at COLLECTION (ModuleNotFoundError) — tests/igor/test_layer3_{constrain,decompose,hypothesize,observe,parse_goal,replan,scope_check,situate}.py and test_layer4_nodes.py import claudecode.seed_layer3_* / seed_layer*, the seed scripts deleted in the runtime-path cleanup (commit 3fcfd070). The seeds were verified not subprocess-invoked, but these test modules import them directly, so deletion broke collection.\n\n**Options:** (a) rewrite the tests to seed via the live API instead of the deleted scripts, or (b) restore the seed helpers into devlab/claudecode/ if still load-bearing.\n\n**Scope:** IN — the 10 collectors import and run again. OUT — other pre-existing igor test reds.\n\n**Provenance:** Pre-existing collateral from this session's cleanup; NOT from T-inf-reroute-B. Discovered during B's regression check.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T22:34:56.370613+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T22:34:56.415476+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "f10b9bea-e7ee-45ee-b840-6748b8cafece"
+  }
+}

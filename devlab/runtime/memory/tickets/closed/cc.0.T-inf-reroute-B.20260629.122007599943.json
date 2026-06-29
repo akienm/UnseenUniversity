@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-inf-reroute-B",
-    "title": "[in_progress] Repoint igor gateway.call()/DAG purpose-nodes onto Proxy dispatch()",
+    "title": "Repoint igor gateway.call()/DAG purpose-nodes onto Proxy dispatch()",
     "size": "M",
     "tags": [
       "Architecture",
@@ -29,20 +29,27 @@
     "decision_id": "D-device-contract-maps-2026-06-29",
     "gate": null,
     "priority": 0.35,
-    "status": "in_progress",
+    "status": "closed",
     "intention": "I intend that igor's call()/DAG inference path also routes through the Proxy, reusing the assembler from reroute-A.",
     "description": "**Problem:** The second gateway surface — call(purpose_id, prompt, ctx) (L234) + build_default_gateway DAG (L998-~1270) — routes purpose nodes (preparse, winnow, ne, think, reading) through raw-urllib module handlers _h_ollama (L848) and _h_or (L898, reads OPENROUTER_API_KEY L900), bypassing the Proxy. Callers: narrative_engine.py (gw().call('ne',...) L1092/1801/1986), reasoners/base.py:755 (winnow), main.py:1816 (think), main.py:4243 (preparse).\n**Proposed shape:** Keep call() signature frozen (returns str). Replace the DAG handlers so each purpose node builds an InferenceRequest (task_class per purpose) and calls InferenceDevice().dispatch(), reusing the message assembler introduced in T-inf-reroute-A. Preserve the fallback semantics (local-preferred -> cloud fallback) via rules_engine cascade rather than DAG is_fallback edges where possible; keep RoutingError on total failure.\n**Affected files:** inference_gateway.py (call, build_default_gateway, _h_ollama/_h_or, edge predicates). Depends on the assembler from T-inf-reroute-A.\n**Design rules:** Inference-Proxy-only; no raw urllib for inference; log crossings.\n**Scope boundary:** IN — call()/DAG purpose nodes route through dispatch(); call() str contract preserved. OUT — reason() (A, done); deleting dead handlers/classes (C); bypassers.\n**Test plan:** (1) gw().call('preparse'/'ne'/'think',...) routes through stubbed dispatch (assert dispatch called, not _h_ollama/_h_or). (2) fallback: local-unavailable -> cloud source selected. (3) callers unchanged.\n**Completion criteria:** both gateway surfaces (reason + call) flow through the Proxy; tests green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-06-29T18:20:05.470810+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "call()/DAG purpose path routes through InferenceDevice.dispatch(): purpose->task_class map (preparse/winnow/think=minion, ne=analyst, reading_extract=batch), constraints+ne response_format mapped onto InferenceRequest, foreground from ctx; handler_override benchmark path keeps DAG until C. Proof red=AssertionError green=passed @389925f6.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T22:34:03.997619+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
     "target_difficulty": 1,
     "role": "apprentice",
-    "scraps_validated": "2026-06-29T18:20:05.517761+00:00"
+    "scraps_validated": "2026-06-29T18:20:05.517761+00:00",
+    "proven": true,
+    "proof_id": "cc.0.igor-call-routes-through-inference-proxy.T-inf-reroute-B.20260629.163355824131",
+    "proof_commit": "389925f67928832a5051041a44776d38d142e6ec",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

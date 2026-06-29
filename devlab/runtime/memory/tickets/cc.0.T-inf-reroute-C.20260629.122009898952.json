@@ -27,7 +27,7 @@
       "Cleanup"
     ],
     "decision_id": "D-device-contract-maps-2026-06-29",
-    "gate": "T-inf-reroute-B",
+    "gate": null,
     "priority": 0.3,
     "status": "sprint",
     "intention": "I intend that no direct provider call or OPENROUTER_ env read remains in inference_gateway.py once both surfaces route through the Proxy.",
