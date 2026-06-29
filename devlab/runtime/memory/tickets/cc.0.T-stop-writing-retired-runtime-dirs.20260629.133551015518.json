@@ -1,0 +1,45 @@
+{
+  "id": "cc.0.T-stop-writing-retired-runtime-dirs.20260629.133551015518",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-stop-writing-retired-runtime-dirs"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T19:35:51.015518+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-stop-writing-retired-runtime-dirs"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-stop-writing-retired-runtime-dirs",
+    "title": "[sprint] Repoint live code off retired runtime dirs (datacenter_logs, ~/.TheIgors) onto canonical log home",
+    "size": "L",
+    "tags": [
+      "Architecture",
+      "Observability"
+    ],
+    "priority": 0.55,
+    "status": "sprint",
+    "intention": "I intend that no UU-package code writes to the retired datacenter_logs/ root (or ~/.TheIgors), so the cleanup-targeted runtime dirs, once deleted, stop regenerating on the next boot.",
+    "description": "**Problem (root cause of the dir cleanup):** the retired runtime dirs keep coming back because LIVE code still writes them. CLAUDE.md marks `datacenter_logs/` retired and `~/.unseen_university/logs/<device>/<stream>/` canonical (closed T-per-device-log-hierarchy migrated DiagnosticBase routing), but ~19 UU-package files still resolve `datacenter_logs` as a write target, and igor still references `~/.TheIgors`. Deleting the dirs without fixing these = they regenerate. This is the same write-path-split bug class CLAUDE.md warns about (the stale lab/design_docs write-path).\n\n**datacenter_logs writers (grep `datacenter_logs` in unseen_university/):** ticket_store.py, shim.py, diagnostic_base/base.py, diagnostic_base/perf.py, logcontrol/control_center.py, devices/auditor/device.py, devices/classifier/device.py, devices/claude/rack_supervisor.py, devices/web_server/server.py, devices/web_server/screenshot_capture.py, devices/librarian/librarian.py, devices/librarian/tools/curation_tools.py, devices/policy/gate.py, devices/dicksimnel/simulator.py, devices/build_digester/log_parser.py, devices/build_digester/groundloop/runme.py, devices/demo_daemon/groundloop/runme.py, devices/igor/igor_base.py, config/ground_loop_staging/build_digester.yaml. Newest regen observed: datacenter_logs/librarian/curation/curation.jsonl @ 2026-06-29 10:48.\n\n**~/.TheIgors references:** devices/igor/cognition/interruptors.py (disk-space check on ~/.TheIgors partition), tools/filesystem.py (key-paths disk check), cognition/boot_notes.md (prompt/doc content pointing igor at ~/.TheIgors/...). These are mostly cosmetic/disk-check but keep the dead path alive in prompts.\n\n**Proposed shape:** repoint every datacenter_logs write target onto `unseen_university._uu_root.uu_home()/logs/<device>/<stream>/` (the canonical home; UU_LOG_ROOT override for tests). Prefer fixing the base/shim/control_center resolvers FIRST so device-level writers inherit the fix; then sweep the remaining device-specific literals. Update igor disk-checks + boot_notes to the live home. HIGH INERTIA on diagnostic_base/base.py and shim.py (design center) — needs Akien inline pre-approval before editing those two.\n\n**Affected files:** the ~19 above. **Design rules:** `~/.unseen_university/logs/<device>/<stream>/` canonical; device.py/base.py design center; log every interface crossing.\n\n**Scope boundary:** IN — redirect all live datacenter_logs write-paths in the UU package to the canonical per-device log home; update igor's ~/.TheIgors disk-check + boot-doc references. OUT — absorbing/freezing/deleting the EXISTING dir CONTENTS (covered by the consolidation absorb/freeze tickets, awaiting_validation); deleting the dirs themselves (do that AFTER this lands + verified no regen).\n\n**Test plan:** (1) a grep gate test: no `datacenter_logs` string survives as a write target in unseen_university/ (only retired-marker comments allowed). (2) per representative device (auditor/classifier/web_server), assert its resolved log dir is under uu_home()/logs/<device>/, not datacenter_logs (monkeypatch uu_home to a tmp). (3) boot a device with UU_LOG_ROOT set to tmp and assert it writes there, and that datacenter_logs is NOT created.\n\n**Completion criteria:** no UU code writes datacenter_logs/ or ~/.TheIgors; a fresh run regenerates neither dir; the dirs can then be deleted and stay deleted.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "target_difficulty": 3,
+    "role": "master",
+    "created_at": "2026-06-29T19:35:48.794732+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "scraps_validated": "2026-06-29T19:35:48.838451+00:00"
+  }
+}
