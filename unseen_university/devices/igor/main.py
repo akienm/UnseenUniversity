@@ -752,11 +752,9 @@ class Igor(IgorBase):
         # G4 / #27: async job completion queue
         self._job_completions: "collections.deque" = __import__("collections").deque()
 
-        if self._gateway._t4:
-            console.print(f"[dim]OpenRouter ready ({self._gateway._t4.model})[/]")
-
-        # change.40: extra reasoners for /cloud multi-query
-        self._extra_reasoners: dict = {}  # name → BaseReasoner
+        # change.40: model names for /cloud multi-query (comparison exception —
+        # specific models, but every query goes through the Inference Proxy).
+        self._cloud_models: dict = {}  # display_name → model_id
         self._cloud_tag_on: bool = (
             True  # show [model] prefix in cloud inference responses
         )
@@ -9380,40 +9378,29 @@ class Igor(IgorBase):
             loginfo("[yellow]Usage: /cloud list|add|remove|query|tag[/]")
 
     def _cloud_list(self):
-        reasoners = self._all_cloud_reasoners()
-        if not reasoners:
-            loginfo("\n[dim]No cloud inference reasoners configured.[/]")
+        models = self._all_cloud_models()
+        if not models:
+            loginfo("\n[dim]No cloud models configured. Use /cloud add MODEL.[/]")
             return
-        loginfo(f"\n[bold]Cloud inference reasoners ({len(reasoners)}):[/]")
-        for name, r in reasoners.items():
-            loginfo(f"  [cyan]{name}[/]  {r.name()}")
+        loginfo(f"\n[bold]Cloud models ({len(models)}):[/]")
+        for name, model in models.items():
+            loginfo(f"  [cyan]{name}[/]  {model}")
 
     def _cloud_add(self, model: str):
         if not model:
-            loginfo("[yellow]Usage: /cloud add MODEL  (e.g. openai/gpt-4o-mini)[/]")
+            loginfo("[yellow]Usage: /cloud add MODEL  (e.g. anthropic/claude-haiku-4.5)[/]")
             return
-        if not os.getenv("OPENROUTER_API_KEY", "").strip():
-            loginfo(
-                "[red]OPENROUTER_API_KEY not set — cannot add OpenRouter models.[/]"
-            )
-            return
-        try:
-            from .cognition.inference_openrouter import OpenRouterReasoner
-
-            r = OpenRouterReasoner(model=model, show_model_tag=self._cloud_tag_on)
-            name = model.split("/")[-1]
-            self._extra_reasoners[name] = r
-            loginfo(f"[green]Added:[/] {name} → {r.name()}")
-        except Exception as e:
-            loginfo(f"[red]Failed to add {model}: {e}[/]")
+        name = model.split("/")[-1]
+        self._cloud_models[name] = model
+        loginfo(f"[green]Added:[/] {name} → {model}")
 
     def _cloud_remove(self, name: str):
-        if name in self._extra_reasoners:
-            del self._extra_reasoners[name]
+        if name in self._cloud_models:
+            del self._cloud_models[name]
             loginfo(f"[dim]Removed: {name}[/]")
         else:
             loginfo(
-                f"[yellow]No reasoner named '{name}'. Use /cloud list to see names.[/]"
+                f"[yellow]No model named '{name}'. Use /cloud list to see names.[/]"
             )
 
     def _cloud_query(self, arg: str):
@@ -9422,36 +9409,28 @@ class Igor(IgorBase):
             loginfo("[yellow]Usage: /cloud query all|NAME MESSAGE[/]")
             return
         target, msg = parts[0].lower(), parts[1]
-        mems = self.cortex.search(msg, limit=5)
-        core = get_core_patterns(self.cortex)
+        models = self._all_cloud_models()
+        if not models:
+            loginfo("[yellow]No cloud models configured. Use /cloud add MODEL.[/]")
+            return
         if target == "all":
-            reasoners = self._all_cloud_reasoners()
-            if not reasoners:
-                loginfo("[yellow]No cloud inference reasoners configured.[/]")
-                return
-            results = query_multiple(
-                msg, mems, core, self.instance_id, reasoners, self.cortex
-            )
+            results = query_multiple(msg, models)
             loginfo("\n" + compare_responses(results) + "\n")
             self.session_cost += sum(c for _, _, c in results)
         else:
-            reasoners = self._all_cloud_reasoners()
-            if target not in reasoners:
+            if target not in models:
                 loginfo(
-                    f"[yellow]No reasoner '{target}'. Use /cloud list to see names.[/]"
+                    f"[yellow]No model '{target}'. Use /cloud list to see names.[/]"
                 )
                 return
-            r = reasoners[target]
-            text, cost = r.reason(msg, mems, core, self.instance_id, cortex=self.cortex)
-            loginfo(f"\n[bold magenta][{r.name()}][/] {text}\n")
+            results = query_multiple(msg, {target: models[target]})
+            name, text, cost = results[0]
+            tag = f"[{name}] " if self._cloud_tag_on else ""
+            loginfo(f"\n[bold magenta]{tag}[/]{text}\n")
             self.session_cost += cost
 
-    def _all_cloud_reasoners(self) -> dict:
-        result = {}
-        if self._gateway._t4:
-            result["openrouter"] = self._gateway._t4
-        result.update(self._extra_reasoners)
-        return result
+    def _all_cloud_models(self) -> dict:
+        return dict(self._cloud_models)
 
     # ── change.41: relay ───────────────────────────────────────────────────────
 
@@ -9482,24 +9461,12 @@ class Igor(IgorBase):
         if not model:
             loginfo("[yellow]Usage: /relay start MODEL[/]")
             return
-        reasoners = self._all_cloud_reasoners()
+        # If the short name is a configured /cloud model, resolve to its full id;
+        # otherwise relay the model string as typed (experiment exception). Either
+        # way RelaySession dispatches through the Inference Proxy.
         short = model.split("/")[-1]
-        if short in reasoners:
-            r = reasoners[short]
-        elif os.getenv("OPENROUTER_API_KEY", "").strip():
-            try:
-                from .cognition.inference_openrouter import OpenRouterReasoner
-
-                r = OpenRouterReasoner(model=model, show_model_tag=False)
-            except Exception as e:
-                loginfo(f"[red]Failed to create relay reasoner: {e}[/]")
-                return
-        else:
-            loginfo(
-                f"[red]No reasoner for '{model}'. Set OPENROUTER_API_KEY or use /cloud add first.[/]"
-            )
-            return
-        self._relay_session = RelaySession(model_name=model, reasoner=r)
+        model = self._cloud_models.get(short, model)
+        self._relay_session = RelaySession(model_name=model)
         loginfo(f"\n[bold magenta]── Relay started: {model} ──[/]")
         console.print(
             f"[dim]{_cts()}Your messages go directly to the model. /relay end to stop.[/]\n"

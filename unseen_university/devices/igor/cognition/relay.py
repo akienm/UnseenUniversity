@@ -20,28 +20,46 @@ from ..igor_base import IgorBase
 class RelaySession(IgorBase):
     """Maintains state for an active relay conversation."""
 
-    def __init__(self, model_name: str, reasoner):
+    def __init__(self, model_name: str, inference=None):
         self.model_name   = model_name
-        self.reasoner     = reasoner
+        self._inference   = inference
         self.messages: list[dict] = []   # [{role, content, ts}]
         self.started_at   = datetime.now().isoformat()
         self.last_extract: Optional[str] = None
 
+    def _get_inference(self):
+        """Lazy-load the canonical Inference Proxy (injectable for tests)."""
+        if getattr(self, "_inference", None) is None:
+            from unseen_university.devices.inference.device import InferenceDevice
+
+            self._inference = InferenceDevice()
+        return self._inference
+
     def send(self, user_input: str) -> str:
-        """Forward user_input to the relay model. Returns response text."""
+        """Forward user_input to the relay model. Returns response text.
+
+        Relay is the experiment exception: it names a specific model — but, like
+        every consumer, it goes through the Inference Proxy (req.model), never a
+        raw reasoner. Pure relay: no memory or core patterns injected.
+        """
         self.messages.append({
             "role": "user",
             "content": user_input,
             "ts": datetime.now().isoformat(),
         })
         try:
-            # Pure relay: no memory or core patterns injected — keep it clean
-            text, _cost = self.reasoner.reason(
-                user_input,
-                relevant_memories=[],
-                core_patterns=[],
-                instance_id="relay",
+            from unseen_university.devices.inference.shim import InferenceRequest
+
+            resp = self._get_inference().dispatch(
+                InferenceRequest(
+                    messages=[{"role": "user", "content": user_input}],
+                    model=self.model_name,
+                    task_class="analyst",
+                    foreground=True,
+                    instance_id="relay",
+                )
             )
+            text = resp.text
         except Exception as e:
             text = f"[relay error: {e}]"
 
