@@ -1,0 +1,71 @@
+{
+  "id": "cc.0.device-contract-maps-on-architecture-int.T-device-contract-schema.20260629.120706877107",
+  "emitter": "cc.0",
+  "namespace": [
+    "device-contract-maps-on-architecture-int",
+    "T-device-contract-schema"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-29T12:07:06.877107",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-device-contract-schema"
+    ],
+    "commits": [
+      "99e3ec3f547a6f739e73ce162f12b1ee76229749"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "device contract maps on architecture intention-points",
+    "intention": "cognition (igor) delegates inference to the inference device and does not own it — the contract makes igor uses-not-contains declarative",
+    "test": "tests/contract/test_device_contract_maps.py::test_igor_delegates_inference_not_owns_it",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/contract/test_device_contract_maps.py::test_igor_delegates_inference_not_owns_it",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        # .get() (not []) so the pre-implementation tree yields an AssertionError\n        # (authentic red for proof_emitter), not a KeyError (collateral, rejected).\n        assert \"inference\" not in cog.get(\"owns\", []), (\n            \"cognition must not OWN inference — it is igor uses-not-contains\"\n        )\n>       assert cog.get(\"delegates_to\", {}).get(\"inference\") == \"inference\", (\n            \"cognition must delegate inference -> inference device, \"\n            f\"got {cog.get('delegates_to', {}).get('inference')!r}\"\n        )\nE       AssertionError: cognition must delegate inference -> inference device, got None\nE       assert None == 'inference'\nE        +  where None = <built-in method get of dict object at 0x71d26cc7f980>('inference')\nE        +    where <built-in method get of dict object at 0x71d26cc7f980> = {}.get\nE        +      where {} = <built-in method get of dict object at 0x71d26cc7f640>('delegates_to', {})\nE        +        where <built-in method get of dict object at 0x71d26cc7f640> = {'implementing_files': ['devices/igor/cognition/thalamus.py', 'devices/igor/cognition/basal_ganglia.py', 'devices/igor...illed from TheIgors.archive/lab/design_docs/subsystem_cognition.md 2026-06-28 (D-all-generations-consolidation).', ...}.get\n\ntests/contract/test_device_contract_maps.py:103: AssertionError\n=========================== short test summary info ============================\nFAILED tests/contract/test_device_contract_maps.py::test_igor_delegates_inference_not_owns_it\n1 failed in 0.09s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.06s"
+          }
+        }
+      }
+    ],
+    "commit": "99e3ec3f547a6f739e73ce162f12b1ee76229749",
+    "impl_paths": [
+      "devlab/runtime/memory/architecture/cc.0.bus.20260623.172406731627.json",
+      "devlab/runtime/memory/architecture/cc.0.cognition.20260628.211958041908.json",
+      "devlab/runtime/memory/architecture/cc.0.device-shim.20260623.172406731921.json",
+      "devlab/runtime/memory/architecture/cc.0.ground_loop.20260624.141213355316.json",
+      "devlab/runtime/memory/architecture/cc.0.inference.20260628.211958046024.json",
+      "devlab/runtime/memory/architecture/cc.0.installer.20260628.164920093626.json",
+      "devlab/runtime/memory/architecture/cc.0.intent.20260623.173756443248.json",
+      "devlab/runtime/memory/architecture/cc.0.librarian.20260628.211958047803.json",
+      "devlab/runtime/memory/architecture/cc.0.memory-dev-artifacts.20260623.172406727919.json",
+      "devlab/runtime/memory/architecture/cc.0.memory-graph-tree.20260623.172406731355.json",
+      "devlab/runtime/memory/architecture/cc.0.nanny.20260624.141213398214.json",
+      "devlab/runtime/memory/architecture/cc.0.reading.20260628.211958046496.json",
+      "devlab/runtime/memory/architecture/cc.0.self-edit.20260628.211958046912.json",
+      "devlab/runtime/memory/architecture/cc.0.skeleton.20260623.172406732187.json",
+      "devlab/runtime/memory/architecture/cc.0.tools.20260628.211958047342.json",
+      "devlab/runtime/memory/notes/cc.0.intention-point-shape.20260629.120445520362.json"
+    ],
+    "ticket": "T-device-contract-schema",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
