@@ -1,0 +1,57 @@
+{
+  "id": "cc.0.igor-call-routes-through-inference-proxy.T-inf-reroute-B.20260629.163355824131",
+  "emitter": "cc.0",
+  "namespace": [
+    "igor-call-routes-through-inference-proxy",
+    "T-inf-reroute-B"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-29T16:33:55.824131",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inf-reroute-B"
+    ],
+    "commits": [
+      "389925f67928832a5051041a44776d38d142e6ec"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "igor call() routes through Inference Proxy",
+    "intention": "gateway.call(purpose) dispatches through InferenceDevice.dispatch(), not the raw DAG handlers",
+    "test": "tests/igor/test_call_via_proxy.py::test_call_routes_through_proxy_dispatch",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_call_via_proxy.py::test_call_routes_through_proxy_dispatch",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "\n    def assert_called_once(self):\n        \"\"\"assert that the mock was called only once.\n        \"\"\"\n        if not self.call_count == 1:\n            msg = (\"Expected '%s' to have been called once. Called %s times.%s\"\n                   % (self._mock_name or 'mock',\n                      self.call_count,\n                      self._calls_repr()))\n>           raise AssertionError(msg)\nE           AssertionError: Expected 'dispatch' to have been called once. Called 0 times.\n\n/usr/lib/python3.12/unittest/mock.py:923: AssertionError\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-29 16:33:55.642 | WARNING  | logging:callHandlers:1762 - slow query 269ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n---------------------------- Captured log teardown -----------------------------\nWARNING  unseen_university.db_proxy:db_proxy.py:307 slow query 269ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_call_via_proxy.py::test_call_routes_through_proxy_dispatch\n1 failed in 1.56s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.49s"
+          }
+        }
+      }
+    ],
+    "commit": "389925f67928832a5051041a44776d38d142e6ec",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-inf-reroute-B.20260629.122007599943.json",
+      "unseen_university/devices/igor/cognition/inference_gateway.py"
+    ],
+    "ticket": "T-inf-reroute-B",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
