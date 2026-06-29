@@ -19,13 +19,13 @@
   },
   "body": {
     "id": "T-freeze-dead-code-to-theigorsproject",
-    "title": "[sprint] Deep-freeze dead code + duplicate artifact trees to ~/TheIgorsProject",
+    "title": "[awaiting_validation] Deep-freeze dead code + duplicate artifact trees to ~/TheIgorsProject",
     "size": "L",
     "tags": [
       "Consolidation",
       "Cleanup"
     ],
-    "status": "sprint",
+    "status": "awaiting_validation",
     "priority": 0.3,
     "decision_id": "D-all-generations-consolidation-2026-06-28",
     "gate": "T-absorb-architecture-intent-points",
@@ -33,9 +33,9 @@
     "created_at": "2026-06-29T01:53:53.940451+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Artifacts PRESERVED (absorbed into UU store + TheIgorsProject retains historical lab/theigors copies), so the freeze's GOAL (no historical source lost) is met. Physical relocation of remnant trees -> ~/TheIgorsProject DEFERRED: blocked on LIVE igor code-refs to TheIgors.archive/design_docs (system_prompt.py) + ~/.TheIgors/claudecode (boot_notes.md) — moving the dirs first would hard-break igor. Unblocker filed: T-repoint-igor-refs-finish-gen-dir-consolidation (does the relocation after repointing). shipped-unproven: missing lever = the code-ref repoint that gates a clean move.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T03:33:56.452411+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-29T01:53:53.940675+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "be912049-9111-48dc-9f93-79239ccac827"
+    "inferred_intention_id": "be912049-9111-48dc-9f93-79239ccac827",
+    "no_commit_reason": "blocked on igor code-refs; artifacts preserved, relocation in follow-up"
   }
 }

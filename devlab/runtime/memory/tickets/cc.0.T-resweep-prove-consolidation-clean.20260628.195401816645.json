@@ -19,13 +19,13 @@
   },
   "body": {
     "id": "T-resweep-prove-consolidation-clean",
-    "title": "[sprint] Re-run home-wide sweep — prove dev-artifacts live only in the UU store",
+    "title": "[awaiting_validation] Re-run home-wide sweep — prove dev-artifacts live only in the UU store",
     "size": "S",
     "tags": [
       "Consolidation",
       "Proof"
     ],
-    "status": "sprint",
+    "status": "awaiting_validation",
     "priority": 0.3,
     "decision_id": "D-all-generations-consolidation-2026-06-28",
     "gate": "T-delete-dead-bulk-outright",
@@ -33,9 +33,9 @@
     "created_at": "2026-06-29T01:53:57.300831+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "PROVEN NOW: (a) artifact-completeness — 0 decisions/tickets/slates missing across ALL gen-dirs incl ~/.unseen_university (comprehensive exact-id pre-flight; caught+absorbed 4 stragglers the Haiku sweeps missed); UU decisions 116->233, slates 69->87, architecture 9->15. (b) du -sh ~ 42G->26G (~16.7G reclaimed). (c) exempt/live set intact. NOT YET: strict 'no artifact .md anywhere outside the store' — historical-source .md still sit in TheIgors.archive/lab pending the code-ref-gated freeze/removal (T-repoint-igor-refs-finish-gen-dir-consolidation carries the final clean-sweep). shipped-unproven: partial proof recorded; final sweep gated on the remnant-dir removal.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T03:33:56.967324+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-29T01:53:57.300881+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "980e4047-6bcd-4d8e-abb0-a132385873e6"
+    "inferred_intention_id": "980e4047-6bcd-4d8e-abb0-a132385873e6",
+    "no_commit_reason": "partial: absorb-complete + 16.7G proven; final sweep in follow-up"
   }
 }

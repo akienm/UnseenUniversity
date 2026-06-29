@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-repoint-igor-refs-finish-gen-dir-consolidation.20260628.213332996687",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-repoint-igor-refs-finish-gen-dir-consolidation"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T03:33:32.996687+00:00",
+  "links": {
+    "decisions": [
+      "D-all-generations-consolidation-2026-06-28"
+    ],
+    "tickets": [
+      "T-repoint-igor-refs-finish-gen-dir-consolidation"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-repoint-igor-refs-finish-gen-dir-consolidation",
+    "title": "[sprint] Repoint igor lineage/boot refs off ~/.TheIgors + TheIgors.archive, then relocate/remove gen-dir remnants",
+    "size": "M",
+    "tags": [
+      "Consolidation",
+      "Cleanup"
+    ],
+    "status": "sprint",
+    "priority": 0.4,
+    "decision_id": "D-all-generations-consolidation-2026-06-28",
+    "description": "**Problem:** The ~16.7G bulk delete (T-delete-dead-bulk-outright) is done, but the gen-dir REMNANTS can't be cleanly relocated/removed yet because LIVE repo code references them: unseen_university/devices/igor/cognition/system_prompt.py points igor's lineage/identity at `TheIgors.archive/design_docs/*.csb.txt`; igor/cognition/boot_notes.md writes change-requests to `~/.TheIgors/claudecode/`; igor/tools/learner.py has a stale `~/.TheIgors/akien/onedrive` ebook path (dir doesn't exist); devlab/claudecode/{channel.py,audit_logging.py} have stale ~/.TheIgors docstrings/walks. Moving the dirs first would hard-break these.\n**Remaining content (post-bulk-delete):** ~/TheIgors.archive 515M (lab/ 14M artifacts ALREADY absorbed, .git 496M dead-repo history, tests/claude_chat_logs), ~/.TheIgors 136M (local/training_corpus 102M + small remnants), ~/TheIgors-cert-walks 20M (W1, already in UU), ~/TheIgors 32K. The 352 D-numeric decision stubs (title+gist; full content died with palace DB) live in archive/lab/theigors/theigors/decisions.\n**Proposed shape:** (1) Repoint the igor lineage/identity refs to wherever that content now lives (UU store / a frozen location) or mark absent gracefully; fix the stale ~/.TheIgors docstrings/walks. (2) Relocate the historical .md remnants to ~/TheIgorsProject (the freeze home) — the FREEZE step (T-freeze-dead-code-to-theigorsproject), now unblocked. (3) ASSESS with Akien: archive/.git 496M (only copy of archive repo history — keep frozen or delete?), .TheIgors/local/training_corpus 102M (valuable or regenerable?), and the 352 D-numeric stubs (Akien answered 'reconstruct' but content is title+gist only — reconstruct as ONE index note, or leave frozen?). (4) Remove the emptied top-level gen-dirs. (5) Final clean-sweep (T-resweep-prove-consolidation-clean): Akien grep returns empty outside the store + TheIgorsProject.\n**Affected files:** unseen_university/devices/igor/cognition/system_prompt.py, boot_notes.md, igor/tools/learner.py, devlab/claudecode/channel.py, audit_logging.py; filesystem moves under ~/TheIgors*/~/.TheIgors -> ~/TheIgorsProject.\n**Design rules:** delete/relocate-after-verify ([[feedback_delete_after_successful_merge]]); never-follow-symlinks; exempt ~/.unseen_university/akien + live runtime; check-with-Akien on .git/training_corpus/D-numeric (judgment calls); Inference-Proxy-only N/A.\n**Scope boundary:** IN — repoint the 5 files' refs, relocate remnant .md to TheIgorsProject, Akien-gated assessment of .git/training_corpus/D-numeric, remove emptied dirs, final sweep. OUT — the bulk already deleted; igor cognition behavior beyond the path refs.\n**Test plan:** (1) grep repo for TheIgors.archive + ~/.TheIgors -> 0 live-code refs (docstrings/comments may remain if marked historical). (2) Akien grep for dev-artifacts under ~/ (minus exempt + TheIgorsProject) returns empty. (3) emptied gen-dirs removed; du -sh ~ reflects it. (4) igor system_prompt builds without a dead lineage path.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T03:33:30.792499+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T03:33:30.837150+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "27f64312-c61b-45cd-8fb9-e1509a0064d9"
+  }
+}
