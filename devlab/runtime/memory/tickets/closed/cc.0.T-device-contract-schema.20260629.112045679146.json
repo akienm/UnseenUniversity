@@ -19,7 +19,7 @@
   },
   "body": {
     "id": "T-device-contract-schema",
-    "title": "[sprint] Add owns/delegates_to contract fields to architecture intention-points",
+    "title": "Add owns/delegates_to contract fields to architecture intention-points",
     "size": "M",
     "tags": [
       "Architecture",
@@ -28,14 +28,14 @@
     "decision_id": "D-device-contract-maps-2026-06-29",
     "gate": null,
     "priority": 0.5,
-    "status": "sprint",
+    "status": "closed",
     "description": "**Problem:** The architecture intention-points (devlab/runtime/memory/architecture/*.json) carry `implementing_files` but no declaration of what each device is *allowed* to do. So \"does capability X belong in device Y?\" is re-judged from scratch each session, sometimes wrong — e.g. inference_gateway.py living inside igor/cognition/ and making direct urllib/OPENROUTER provider calls went unnoticed because nothing declared inference is NOT igor's to own.\n**Proposed shape:** Extend the architecture intention-point schema with two fields: `owns` (list of capability strings this device holds) and `delegates_to` (map of capability → owning device). Populate both for every existing intention-point (~15 devices). Anchor igor on [[feedback_igor_uses_not_contains]]: owns = {graph-tree cognition, TWM, emotional milieu, emotional memories, dreaming, NE impulses}; delegates_to = {inference: inference, comms: bus, mcp: skeleton, storage: postgres, dispatch: granny}. Keep the capability vocabulary consistent across devices (one term per capability — [[feedback_homogeneity_over_special_case]]).\n**Affected files:** devlab/runtime/memory/architecture/*.json (all ~15, re-emit via memory_emit reusing each file's stamp for atomic overwrite); document the two new fields in the intention-point shape.\n**Design rules:** canonical-memory-home (intention-points stay in devlab/runtime/memory/architecture/); homogeneity-over-special-case (one schema, all devices); theory-of-operation (each owns/delegates entry carries its why where non-obvious).\n**Scope boundary:** IN — add + populate owns/delegates_to on every architecture intention-point. OUT — the audit enforcement (T-contract-violation-audit-check); the actual inference extraction (T-igor-inference-gateway-bypasses-proxy, the first consumer).\n**Test plan:** (1) grep architecture/*.json → every device JSON has non-empty `owns` AND `delegates_to`. (2) igor's intention-point: `inference` is absent from owns and present in delegates_to (→ inference device). (3) capability terms are consistent — no two JSONs use different words for the same capability.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
     "created_at": "2026-06-29T17:20:39.784465+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "owns/delegates_to contract added to all 15 architecture intention-points; consistent capability vocabulary enforced by tests/contract/test_device_contract_maps.py (6 tests); floor tier (device-shim, memory-dev-artifacts) declares empty delegates_to by design. Proof: red=AssertionError green=passed @ 99e3ec3f.",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T18:07:37.466404+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,13 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-29T17:20:39.828748+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "a5e187d1-f4bd-448a-a518-83c5d19e2cc1"
+    "inferred_intention_id": "a5e187d1-f4bd-448a-a518-83c5d19e2cc1",
+    "proven": true,
+    "proof_id": "cc.0.device-contract-maps-on-architecture-int.T-device-contract-schema.20260629.120706877107",
+    "proof_commit": "99e3ec3f547a6f739e73ce162f12b1ee76229749",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
   }
 }

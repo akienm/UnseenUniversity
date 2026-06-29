@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-inf-reroute-C.20260629.122009898952",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-inf-reroute-C"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T18:20:09.898952+00:00",
+  "links": {
+    "decisions": [
+      "D-device-contract-maps-2026-06-29"
+    ],
+    "tickets": [
+      "T-inf-reroute-C"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-inf-reroute-C",
+    "title": "[sprint] Delete dead direct-provider paths from inference_gateway.py",
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Inference",
+      "Cleanup"
+    ],
+    "decision_id": "D-device-contract-maps-2026-06-29",
+    "gate": "T-inf-reroute-B",
+    "priority": 0.3,
+    "status": "sprint",
+    "intention": "I intend that no direct provider call or OPENROUTER_ env read remains in inference_gateway.py once both surfaces route through the Proxy.",
+    "description": "**Problem:** After A+B repoint reason() and call() through the Proxy, the direct-provider machinery in inference_gateway.py is dead: from_env reasoner instantiation (L356-417 _t2/_t3/_t35/_t4), _h_ollama (L848), _h_or (L898), urllib import (L126), OPENROUTER_* env reads (L384/389/393-401/900/906/1041/1058/1075/1324/1329). The original ticket's test #1 (grep gateway for direct provider/urllib/OPENROUTER_ -> 0) is satisfied here.\n**Proposed shape:** Remove the now-unreferenced reasoner instantiation, raw handlers, urllib import, and OPENROUTER_* reads. Drop or repoint imports of inference_ollama/inference_openrouter reasoner CLASSES if no longer used by the gateway (coordinate with T-igor-inference-bypassers which may still touch reasoners elsewhere). Confirm nothing else imports the removed symbols.\n**Affected files:** inference_gateway.py; possibly cognition/inference_ollama.py, cognition/inference_openrouter.py if fully orphaned.\n**Design rules:** flag-direct-provider-calls; no dead code.\n**Scope boundary:** IN — delete dead provider paths in the gateway; the grep-clean proof. OUT — the bypassers outside the gateway (T-igor-inference-bypassers).\n**Test plan:** (1) grep inference_gateway.py for urllib|OPENROUTER_|OllamaReasoner|OpenRouterReasoner -> 0. (2) full igor cognition import + a reason()/call() smoke still green (no orphaned-symbol ImportError). RED achievable by asserting absence.\n**Completion criteria:** gateway has zero direct-provider code; tests green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T18:20:07.866547+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T18:20:07.911327+00:00"
+  }
+}

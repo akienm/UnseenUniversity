@@ -1,0 +1,58 @@
+{
+  "id": "cc.0.source-kind-on-inferenceresponse.T-proxy-source-kind.20260629.122808526382",
+  "emitter": "cc.0",
+  "namespace": [
+    "source-kind-on-inferenceresponse",
+    "T-proxy-source-kind"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-29T12:28:08.526382",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-proxy-source-kind"
+    ],
+    "commits": [
+      "f670866ba102a6ac4f4874881068bed15729a7bc"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "source_kind on InferenceResponse",
+    "intention": "a flat_rate cloud source yields source_kind=='cloud' — a reliable local-vs-cloud signal distinct from billing_type",
+    "test": "tests/inference/test_source_kind.py::test_cloud_source_yields_source_kind_cloud",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/inference/test_source_kind.py::test_cloud_source_yields_source_kind_cloud",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "2026-06-29 12:28:08.209 | INFO     | logging:callHandlers:1762 - rules: worker → worker→sonnet/OR\n2026-06-29 12:28:08.209 | INFO     | logging:callHandlers:1762 - dispatch: worker → anthropic/claude-sonnet-4.6/openrouter (rule=worker→sonnet/OR)\n2026-06-29 12:28:08.336 | DEBUG    | logging:callHandlers:1762 - budget_gate: OR balance fetch failed — HTTP Error 401: Unauthorized\n------------------------------ Captured log call -------------------------------\nINFO     unseen_university.devices.inference.sources:sources.py:946 SourceRegistry: registered source 'openrouter'\nINFO     unseen_university.devices.inference.device:device.py:259 dispatch: task_class=worker foreground=False escalation_hop=0\nINFO     unseen_university.devices.inference.device:device.py:356 dispatch: unknown model=openai/gpt-4o-mini — routing by task_class=worker via rules engine\nDEBUG    unseen_university.devices.inference.rules_engine:rules_engine.py:194 rules: rule 'worker→gemini-flash/google-free' skipped — source 'google_free' unavailable\nDEBUG    unseen_university.devices.inference.rules_engine:rules_engine.py:194 rules: rule 'worker→devstral-small-2:24b/ollama-pro' skipped — source 'ollama_cloud' unavailable\nDEBUG    unseen_university.devices.inference.rules_engine:rules_engine.py:194 rules: rule 'worker→qwen3-coder-next/ollama-pro' skipped — source 'ollama_cloud' unavailable\nINFO     unseen_university.devices.inference.rules_engine:rules_engine.py:223 rules: worker → worker→sonnet/OR\nINFO     unseen_university.devices.inference.device:device.py:394 dispatch: worker → anthropic/claude-sonnet-4.6/openrouter (rule=worker→sonnet/OR)\nDEBUG    unseen_university.devices.inference.budget_gate:budget_gate.py:68 budget_gate: OR balance fetch failed — HTTP Error 401: Unauthorized\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-29 12:28:08.397 | INFO     | logging:callHandlers:1762 - HealthMonitor: stopped\n---------------------------- Captured log teardown -----------------------------\nINFO     unseen_university.devices.inference.health_monitor:health_monitor.py:49 HealthMonitor: stopped\n=========================== short test summary info ============================\nFAILED tests/inference/test_source_kind.py::test_cloud_source_yields_source_kind_cloud\n1 failed in 0.33s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 0.30s"
+          }
+        }
+      }
+    ],
+    "commit": "f670866ba102a6ac4f4874881068bed15729a7bc",
+    "impl_paths": [
+      "unseen_university/devices/inference/device.py",
+      "unseen_university/devices/inference/shim.py",
+      "unseen_university/devices/inference/sources.py"
+    ],
+    "ticket": "T-proxy-source-kind",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}

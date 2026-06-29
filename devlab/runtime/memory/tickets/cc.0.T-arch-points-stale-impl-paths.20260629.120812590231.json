@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-arch-points-stale-impl-paths.20260629.120812590231",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-arch-points-stale-impl-paths"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T18:08:12.590231+00:00",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-arch-points-stale-impl-paths"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-arch-points-stale-impl-paths",
+    "title": "[sprint] Architecture intention-points: implementing_files paths stale after single-package reorg",
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "TestFix"
+    ],
+    "priority": 0.2,
+    "status": "sprint",
+    "description": "**Problem:** tests/test_architecture_intention_points.py::test_every_intention_point_pointer_resolves is RED (pre-existing, confirmed on HEAD 7d97cc82 independent of T-device-contract-schema). ~80 implementing_files/reference_docs pointers across the 15 architecture intention-points still use pre-reorg paths (e.g. 'bus/imap_server.py', 'diagnostic_base/base.py', 'devices/igor/...') that no longer resolve from repo root — D-single-package-reorg moved them under 'unseen_university/devices/...'. The proof test asserts every pointer resolves; it fails because the paths predate the collapse.\n**Proposed shape:** Re-point each intention-point's implementing_files + reference_docs to its real post-reorg path (prefix 'unseen_university/' where the file moved under the single package; verify each path exists). Re-emit in place (same stamp, atomic overwrite) like T-device-contract-schema did. Some pointers may be genuinely dead (deleted in consolidation) — drop those and note in status_notes.\n**Affected files:** devlab/runtime/memory/architecture/*.json (pointers only; do NOT touch owns/delegates_to).\n**Design rules:** canonical-memory-home; the test is the proof (already red).\n**Scope boundary:** IN — fix/drop implementing_files + reference_docs pointers so test_every_intention_point_pointer_resolves goes green. OUT — owns/delegates_to (just shipped); adding new subsystems.\n**Test plan:** tests/test_architecture_intention_points.py green (RED now -> GREEN after); each surviving pointer resolves to an extant repo file.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T18:08:10.486421+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "decision_id": null,
+    "gate": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T18:08:10.537781+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "1bfb8242-ead4-477d-ac99-d48c9c22529f"
+  }
+}

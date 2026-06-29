@@ -1,0 +1,48 @@
+{
+  "id": "cc.0.T-igor-inference-bypassers.20260629.122012288106",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-igor-inference-bypassers"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T18:20:12.288106+00:00",
+  "links": {
+    "decisions": [
+      "D-device-contract-maps-2026-06-29"
+    ],
+    "tickets": [
+      "T-igor-inference-bypassers"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-igor-inference-bypassers",
+    "title": "[sprint] Route igor's 3 direct-reasoner bypassers through the Proxy",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Inference",
+      "Igor"
+    ],
+    "decision_id": "D-device-contract-maps-2026-06-29",
+    "gate": "T-inf-reroute-A",
+    "priority": 0.32,
+    "status": "sprint",
+    "intention": "I intend that no igor code reaches a provider except through the Proxy — including paths the gateway-only grep misses.",
+    "description": "**Problem:** The original test #1 only grepped inference_gateway.py, but the survey found 3 direct-reasoner call sites OUTSIDE the gateway that still bypass the Proxy: cognition/relay.py:39 (self.reasoner.reason(...)), cognition/multi_cloud.py:34 (reasoner.reason(...)), main.py:9445 (r.reason(msg, mems, core, ...) — a 2-tuple direct reasoner). A green gateway grep would falsely read as 'igor inference fully centralized'.\n**Proposed shape:** Repoint each through the Proxy seam built in T-inf-reroute-A (the shared message-assembler + dispatch()). For multi_cloud.py confirm whether multi-provider fan-out is still intended or is superseded by the Proxy's routing; if superseded, collapse it. Preserve each call site's observable behavior.\n**Affected files:** unseen_university/devices/igor/cognition/relay.py, cognition/multi_cloud.py, main.py (~L9445). Reuses A's assembler.\n**Design rules:** Inference-Proxy-only; flag-direct-provider-calls.\n**Scope boundary:** IN — the 3 named bypassers route through the Proxy. OUT — the gateway surfaces (A/B); dead-code deletion (C).\n**Test plan:** (1) grep igor/ for .reason( on a raw reasoner (not gateway/Proxy) -> 0 at these 3 sites. (2) each repointed site routes through stubbed dispatch.\n**Completion criteria:** zero direct-provider reasoner calls remain in igor outside the Proxy client; tests green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T18:20:10.155678+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T18:20:10.218634+00:00"
+  }
+}

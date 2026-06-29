@@ -1,0 +1,54 @@
+{
+  "id": "cc.0.T-proxy-source-kind.20260629.122002493950",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-proxy-source-kind"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T18:20:02.493950+00:00",
+  "links": {
+    "decisions": [
+      "D-device-contract-maps-2026-06-29"
+    ],
+    "tickets": [
+      "T-proxy-source-kind"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-proxy-source-kind",
+    "title": "Inference Proxy: expose source kind (local vs paid-cloud) on InferenceResponse",
+    "size": "S",
+    "tags": [
+      "Architecture",
+      "Inference"
+    ],
+    "decision_id": "D-device-contract-maps-2026-06-29",
+    "gate": null,
+    "priority": 0.45,
+    "status": "closed",
+    "intention": "I intend that a caller can reconstruct local-vs-paid-cloud from an InferenceResponse, so igor's reason() seam can preserve used_api.",
+    "description": "**Problem:** Repointing igor's gateway.reason() onto Proxy dispatch() (T-inf-reroute-A) must preserve its 3rd return value used_api (local vs paid cloud). Callers BRANCH on it: main.py:6304 emits PROC_ROUTING_LOCAL vs PROC_ROUTING_ESCALATE, main.py:6297 pfc.measure_friction(used_api=...), main.py:5974 'if used_api:'. Today the only signal on InferenceResponse is source_billing_type (shim.py:74), which DEFAULTS to 'usage_based' (device.py:487 getattr(source,'billing_type','usage_based')) even on failure/no-source — so it can't reliably distinguish local Ollama from paid cloud. Without a clean signal the frozen-signature seam has a hole.\n**Proposed shape:** Add an explicit, non-defaulting field to InferenceResponse identifying the source kind (e.g. source_kind: 'local'|'cloud'|'none', or source_name + is_local bool) set from the actually-resolved source in dispatch() (device.py ~L456/487). Local Ollama -> local; OpenRouter/Anthropic -> cloud; failure chokepoint (device.py L412-438) -> none. Keep source_billing_type as-is.\n**Affected files:** unseen_university/devices/inference/shim.py (InferenceResponse), unseen_university/devices/inference/device.py (dispatch sets it).\n**Design rules:** device.py/shim.py design center; log the interface crossing.\n**Scope boundary:** IN — add + populate the source-kind field; a unit test asserting local source -> local, cloud source -> cloud, no-source -> none. OUT — changing routing; igor's consumption (that's T-inf-reroute-A).\n**Test plan:** unit test: dispatch with a stubbed local source -> response.source_kind=='local'; stubbed cloud source -> 'cloud'; forced no-source -> 'none'. RED before field exists.\n**Completion criteria:** InferenceResponse carries a reliable local-vs-cloud signal; test green.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T18:20:00.088317+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": "InferenceResponse.source_kind (local|cloud|none) added; is_local ClassVar on Source (True only on OllamaSource); dispatch() sets it on success + 'none' at no-source chokepoint. 4 tests green (incl. flat_rate-cloud->cloud, proving source_kind != billing_type). Proof: red=AssertionError green=passed @ f670866b. Unblocks T-inf-reroute-A.",
+    "dispatched_at": null,
+    "completed_at": "2026-06-29T18:28:20.522367+00:00",
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T18:20:00.142259+00:00",
+    "proven": true,
+    "proof_id": "cc.0.source-kind-on-inferenceresponse.T-proxy-source-kind.20260629.122808526382",
+    "proof_commit": "f670866ba102a6ac4f4874881068bed15729a7bc",
+    "input_tokens": 0,
+    "cache_write_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0
+  }
+}
