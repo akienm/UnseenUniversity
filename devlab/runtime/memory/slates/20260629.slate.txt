@@ -54,3 +54,9 @@ Next: Next: /sprint T-inf-reroute-A (HIGH-inertia reason() seam, dedicated+revie
 ## In-flight: T-inf-reroute-A CLOSED PROVEN (f92b2fea impl + 630e45bf proof, red=AssertionError): igor reason() now routes through InferenceDevice.dispatch() — tier ladder yanked. Ungated T-inf-reroute-B + T-igor-inference-bypassers. Igor is a normal Proxy consumer now.
 
 ## In-flight: RUNTIME-PATH CLEANUP DONE (4 phases): all bad-path tokens fixed+gated (datacenter_logs, Igor-wild-0001->Igor-Wild1, .TheIgors->.unseen_university), dead scripts deleted, 4 scattered ~/TheIgors* dirs consolidated to ~/TheIgorsProject deep-freeze, datacenter_logs deleted. ~/ clean. Commits 1637991e/fa4225c7/d62dc24a/55d0584c/32a06ef8/3fcfd070. Follow-up: restart stale web_server+sudoer_daemon to pick up new paths.
+
+## Session close 2026-06-29
+Done: Runtime-path cleanup COMPLETE (4 phases): all bad-path tokens fixed + grep-gated (datacenter_logs->uu_home/logs; archived Igor-wild-0001->live Igor-Wild1 incl live config; ~/.TheIgors->~/.unseen_university); dead retired scripts deleted; 4 scattered ~/TheIgors* dirs consolidated into ~/TheIgorsProject deep-freeze (nothing lost - 237 decisions/99 slates already in UU); datacenter_logs deleted; ~/ clean of all igor/uc/adc dirs. Also shipped T-inf-reroute-A (igor reason() -> Inference Proxy, proven). All Python procs stopped. 9 commits pushed.
+Next: Close the awaiting_validation absorb tickets (contents preserved in UU + deep-freeze archive). Then resume inference-out-of-igor: T-inf-reroute-B (call/DAG), T-igor-inference-bypassers, T-inf-reroute-C (delete dead reasoners). Codex inference-compiler ticket pack now unblocked (cleanup done).
+
+## In-flight: Session clean: runtime-path cleanup (4 phases) + T-inf-reroute-A both done, committed, pushed; tree clean; ~/ clear of all old igor/uc/adc dirs; grep-gate guards regression; all Python processes stopped.
