@@ -21,7 +21,7 @@ from unseen_university._uu_root import uu_root
 ROOT = Path(uu_root())
 
 # Live-code roots scanned by the gate.
-LIVE_ROOTS = ["unseen_university", "devlab/claudecode", "skills"]
+LIVE_ROOTS = ["unseen_university", "devlab/claudecode", "skills", "tests"]
 SCAN_SUFFIXES = {".py", ".sh", ".yaml", ".yml", ".toml", ".cfg", ".md"}
 # "pending" = devlab/claudecode/pending — dated session-handoff staging (history,
 # not live code). "runtime" = the memory store (history).

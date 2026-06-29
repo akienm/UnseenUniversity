@@ -35,7 +35,7 @@ class TestDemoDaemon:
         time.sleep(2.5)
         mod.stop()
         t.join(timeout=2)
-        log = igor_home / "datacenter_logs" / "demo_daemon" / "heartbeat.log"
+        log = igor_home / "logs" / "demo_daemon" / "heartbeat.log"
         assert log.exists(), "heartbeat log not created"
         lines = [l for l in log.read_text().splitlines() if l.strip()]
         assert len(lines) >= 2, f"expected ≥2 heartbeats, got {len(lines)}: {lines}"
@@ -64,7 +64,7 @@ class TestDemoDaemon:
         time.sleep(1.5)
         mod.stop()
         t.join(timeout=2)
-        log = igor_home / "datacenter_logs" / "demo_daemon" / "heartbeat.log"
+        log = igor_home / "logs" / "demo_daemon" / "heartbeat.log"
         first_line = log.read_text().splitlines()[0]
         assert "heartbeat #1" in first_line
         assert "T" in first_line  # ISO 8601 timestamp contains T

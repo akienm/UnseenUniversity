@@ -13,7 +13,7 @@ from unseen_university.diagnostic_base.perf import Stopwatch, timed, _csv_path, 
 
 @pytest.fixture()
 def tmp_log_root(tmp_path):
-    return tmp_path / "datacenter_logs"
+    return tmp_path / "logs"
 
 
 class TestStopwatch:

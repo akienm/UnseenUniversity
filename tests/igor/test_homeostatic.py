@@ -6,7 +6,7 @@ valence converge toward their homeostatic setpoints (not zero), and that
 dominance continues to converge toward 0.3 (unchanged).
 
 All file I/O and global-state side-effects are mocked out so the tests run
-without any ~/.TheIgors runtime dir.
+without any ~/.unseen_university runtime dir.
 """
 
 import sys

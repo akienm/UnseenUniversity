@@ -6,7 +6,7 @@ When multiple minions work concurrently, the single-working-tree assumption brea
 a feature branch per ticket; merge-back is to local main, push to GitHub is explicit.
 
 Workspace layout:
-    ~/.unseen_university/<instance>/workspace/TheIgors/   ← clone root
+    ~/.unseen_university/<instance>/workspace/UnseenUniversity/   ← clone root
 
 Branch naming:
     minion/<instance>/<ticket-id>
@@ -47,7 +47,7 @@ class MinionWorkspace:
     def __init__(self, instance: str, repo_origin: str | None = None):
         """
         instance:    minion identifier, e.g. "cc1", "igor-main", "haiku-worker"
-        repo_origin: path or URL of the source repo (defaults to ~/TheIgors)
+        repo_origin: path or URL of the source repo (defaults to ~/dev/src/UnseenUniversity)
         """
         self.instance = instance
         self.repo_origin = repo_origin or _DEFAULT_REPO_ORIGIN

@@ -379,7 +379,7 @@ def live_replay():
             pass
 
         # Write to alert file that audit will catch
-        alert_file = Path.home() / ".TheIgors" / "lab" / "learning_regression_alert.txt"
+        alert_file = Path.home() / ".unseen_university" / "lab" / "learning_regression_alert.txt"
         alert_file.parent.mkdir(parents=True, exist_ok=True)
         alert_file.write_text(alert)
         print(f"\nAlert written to {alert_file}")

@@ -112,7 +112,7 @@ class TestFilterCheckLogging(unittest.TestCase):
         return filter_check_logging(text)
 
     def test_pass_logging_mentioned(self):
-        result = self._check("Add logging to ~/.TheIgors/logs/worker_daemon.log.")
+        result = self._check("Add logging to ~/.unseen_university/logs/worker_daemon.log.")
         self.assertTrue(result["pass"])
 
     def test_pass_loginfo_mentioned(self):

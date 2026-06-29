@@ -318,7 +318,7 @@ registry.register(
 def _resolve_repo_path(repo_path: str = None, project_id: str = None) -> str:
     """
     Resolve a repository path.
-    Priority: explicit repo_path > project_id lookup in DB > ~/TheIgors fallback.
+    Priority: explicit repo_path > project_id lookup in DB > ~/dev/src/UnseenUniversity fallback.
     """
     if repo_path:
         return repo_path
@@ -341,7 +341,7 @@ def git_log(repo_path: str = None, project_id: str = None, n: int = 20) -> str:
     """
     Return the last N git log entries for a project repository.
     If project_id is given, the path is looked up from Igor's DB.
-    Defaults to ~/TheIgors if neither is provided.
+    Defaults to ~/dev/src/UnseenUniversity if neither is provided.
     """
     path = _resolve_repo_path(repo_path, project_id)
     try:
@@ -423,7 +423,7 @@ registry.register(
         description=(
             "Return the last N git log entries for a project repository. "
             "Pass project_id to look up the path from Igor's memory, "
-            "or repo_path to specify directly. Defaults to ~/TheIgors."
+            "or repo_path to specify directly. Defaults to ~/dev/src/UnseenUniversity."
         ),
         parameters={
             "type": "object",

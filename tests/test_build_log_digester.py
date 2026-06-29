@@ -92,7 +92,7 @@ class TestParserEventTypes:
         assert "claude" in evt["summary"]
 
     def test_queue_next_from_queue_trace(self):
-        # queue_next from datacenter_logs/queue/trace format
+        # queue_next from logs/queue/trace format
         line = json.dumps({"ts": "2026-01-01T00:00:00+00:00", "device": "queue", "event": "queue_next", "data": {"worker": "claude", "ticket_id": "T-foo"}})
         evt = parse_line(line)
         assert evt is not None
