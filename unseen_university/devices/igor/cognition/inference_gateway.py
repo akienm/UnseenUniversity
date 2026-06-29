@@ -201,8 +201,12 @@ class RoutingError(RuntimeError):
 
 
 class InferenceGateway(IgorBase):
-    def __init__(self) -> None:
+    def __init__(self, inference=None) -> None:
         super().__init__()
+        # Canonical Inference Proxy. igor requests inference like every
+        # other device (reader/summarizer/evaluator pattern). Lazy-loaded
+        # on first use; injectable for tests. (T-inf-reroute-A)
+        self._inference = inference
         self._nodes: dict[str, Node] = {}
         self._edges: dict[str, list[Edge]] = {}
         self._purposes: dict[str, PurposeConstraints] = {}
@@ -217,6 +221,15 @@ class InferenceGateway(IgorBase):
         self.last_elapsed_s: float = 0.0  # set after every reason() call
 
     # ── Registration ──────────────────────────────────────────────────────────
+
+    def _get_inference(self):
+        """Lazy-load the canonical Inference Proxy (reader/summarizer/
+        evaluator pattern). Injectable via __init__ for tests."""
+        if getattr(self, "_inference", None) is None:
+            from unseen_university.devices.inference.device import InferenceDevice
+
+            self._inference = InferenceDevice()
+        return self._inference
 
     def add_node(self, node: Node) -> None:
         self._nodes[node.id] = node
@@ -443,400 +456,107 @@ class InferenceGateway(IgorBase):
         core: list,
         *,
         level: str = "interactive",
-        skip_to: str = "tier.3.5",  # deprecated — ignored; kept for caller compat (D198)
+        skip_to: str = "tier.3.5",  # deprecated -- ignored; kept for caller compat (D198)
         preparse_csb: str = "",
         thread_id: Optional[str] = None,
         cortex=None,
         instance_id: str = "",
         local_only: bool = False,
         on_tier: Optional[Callable[[str], None]] = None,
-        is_user_turn: bool = False,  # D211: human web turn
-        complexity: str = "low",  # D211: low|medium|high from thalamus
-        prompt_role: Optional[
-            str
-        ] = None,  # T-tool-synthesis-lean-prompt: override system-prompt role on cloud path
+        is_user_turn: bool = False,
+        complexity: str = "low",
+        prompt_role: Optional[str] = None,
     ) -> "tuple[str, float, bool]":
         """
-        Route a reasoning request. Three call profiles, binary cloud/local decision. (D198)
+        Route a reasoning request through the canonical Inference Proxy.
 
-        level:
-          "interactive"      Human turns:         cloud=sonnet | local=fastest-box
-          "background"       NE impulses:         cloud=gpt-4o-mini | local=fastest-box
-          "background_batch" Proactive habits:    always local, quality priority
+        T-inf-reroute-A: igor is now a normal Proxy consumer. It assembles a
+        message list and calls InferenceDevice.dispatch() exactly like reader,
+        summarizer, and evaluator do. The old per-tier ladder (direct Ollama /
+        OpenRouter reasoners, budget gating, tool loop, fall-through diagnostics)
+        is gone -- the Proxy owns routing (rules_engine), budget (budget_gate),
+        and source selection. igor's reasoning-specific behaviour is re-layered
+        later (his specifics; he is asleep for this pass).
 
-        skip_to: DEPRECATED — ignored. Kept for caller compatibility.
+        The signature is FROZEN across the ~8 reason() callers. Params that were
+        igor-ladder-specific (skip_to, local_only, on_tier, level) are accepted
+        and mapped onto the request where meaningful, ignored otherwise.
 
-        on_tier: callback fired at each attempt — used for activity broadcast.
-                 Signature: (label: str) -> None
-
-        Returns (response_text, cost_usd, used_api).
+        Returns (response_text, cost_usd, used_api). used_api is reconstructed
+        from response.source_kind ("cloud" -> True; "local"/"none" -> False) --
+        the signal T-proxy-source-kind added for exactly this purpose.
         """
-        self.last_tier = ""
-        _log_err = log_error  # forensic hook — wired to log_error for TIER_FAIL entries
-        get_logger(__name__).debug(
-            "[gateway] reason() entry: is_user_turn=%s level=%s complexity=%s input=%r",
-            is_user_turn,
-            level,
-            complexity,
-            user_input[:60],
+        from unseen_university.devices.inference.shim import InferenceRequest
+        from .system_prompt import build_system_prompt
+
+        # -- Assemble messages the way every device does ----------------------
+        system = build_system_prompt(
+            cortex,
+            instance_id or "wild-0001",
+            role=prompt_role or "interactive",
         )
-
-        # ── local_only: caller explicitly wants local (cloud_ok_override=False) ─
-        if local_only:
-            if self._t2:
-                try:
-                    self.last_tier = "local/forced"
-                    if on_tier:
-                        on_tier("local/forced")
-                    text, cost = self._t2.reason(
-                        user_input,
-                        relevant,
-                        core,
-                        instance_id,
-                        cortex=cortex,
-                        thread_id=thread_id,
-                        interactive_fallback=True,
-                    )
-                    return text, cost, False
-                except Exception as _e:
-                    if _log_err:
-                        _log_err(
-                            kind="TIER_FAIL", source="local/forced", detail=str(_e)
-                        )
-            return (
-                "I'm operating in local-only mode, but my local model is unavailable "
-                "right now. Please try a simpler task or remove the 'local only' constraint.",
-                0.0,
-                False,
-            )
-
-        # ── Budget depletion guard ─────────────────────────────────────────────
-        try:
-            from unseen_university.devices.igor.tools.resource_manager import is_cloud_blocked as _blocked_check
-
-            _blocked, _block_reason = _blocked_check()
-            if _blocked:
-                if _log_err:
-                    _log_err(
-                        kind="BUDGET_BLOCK",
-                        source="gateway.reason",
-                        detail=_block_reason,
-                    )
-                if self._t2:
-                    try:
-                        self.last_tier = "local/budget"
-                        if on_tier:
-                            on_tier("local/budget")
-                        text, cost = self._t2.reason(
-                            user_input,
-                            relevant,
-                            core,
-                            instance_id,
-                            cortex=cortex,
-                            thread_id=thread_id,
-                        )
-                        return text, cost, False
-                    except Exception as _e:
-                        if _log_err:
-                            _log_err(
-                                kind="TIER_FAIL", source="local/budget", detail=str(_e)
-                            )
-        except Exception as _bare_e:
-            log_error(
-                kind="BARE_EXCEPT",
-                detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
-            )
-
-        # ── Cloud availability: single check, shared across all profiles ───────
-        # _t4 is only initialized when OPENROUTER_API_KEY is present (from_env).
-        # is_cloud_training_active() is a research-mode flag — NOT the availability gate.
-        # If we have a live t4 reasoner, cloud is available. (D198 fix)
-        _cloud_ok = bool(self._t4)
-        _cloud_attempted = False  # Track if we even tried cloud
-        _cloud_error = ""  # Track why cloud failed, if at all
-        if not _cloud_ok:
-            import logging as _logging
-
-            get_logger(__name__).debug(
-                "[inference_gateway] cloud unavailable: _t4=%s (check OPENROUTER_API_KEY init at boot)",
-                "initialized" if self._t4 else "None",
-            )
-
-        # ── background_batch: always local, quality priority ──────────────────
-        if level == "background_batch":
-            pool = self._t2_batch or self._t2
-            if pool:
-                try:
-                    self.last_tier = "local/batch"
-                    if on_tier:
-                        on_tier("local/batch")
-                    if hasattr(pool, "reason_batch"):
-                        text, cost = pool.reason_batch(
-                            user_input, relevant, core, instance_id
-                        )
-                    else:
-                        text, cost = pool.reason(
-                            user_input, relevant, core, instance_id, force_local=True
-                        )
-                    return text, cost, False
-                except Exception as _e:
-                    if _log_err:
-                        _log_err(
-                            kind="IMPULSE_SKIP", source="local/batch", detail=str(_e)
-                        )
-            return "", 0.0, False
-
-        # ── background: Ollama primary, drop if fails (D234: OR is scarce luxury) ──
-        # Background impulses don't warrant OR budget — quality doesn't matter here.
-        if level == "background":
-            if self._t2:
-                try:
-                    self.last_tier = "local/background"
-                    if on_tier:
-                        on_tier("local/background")
-                    text, cost = self._t2.reason(
-                        user_input, relevant, core, instance_id, force_local=True
-                    )
-                    return text, cost, False
-                except Exception as _e:
-                    if _log_err:
-                        _log_err(
-                            kind="IMPULSE_SKIP",
-                            source="local/background",
-                            detail=str(_e),
-                        )
-            return "", 0.0, False
-
-        # ── interactive: D254 human turns → cloud direct; D234 Ollama primary for background ──
-        # D254: human turns (is_user_turn=True) skip Ollama entirely — go straight to cloud.
-        # Ollama reserved for background/non-human interactive turns.
-        # Cloud budget exhaustion is the only condition that falls back to Ollama for human turns.
-        # T-inference-misreport-fix: keep per-attempt errors in named vars so
-        # the diagnostic and user-facing message can name WHICH path failed.
-        # Previously, last_error was overwritten by every attempt — the cloud
-        # error became the "local_error" in the post-mortem, hiding the truth.
-        last_error = ""  # legacy: retained for backwards-compat callers
-        _local_first_error = ""
-        _local_retry_error = ""
-        _quality_path = is_user_turn and complexity in ("medium", "high")
-
-        # D268: MODE override — check TWM for active min_tier entry before tier selection.
-        # Habit PROC_READING_BOOTSTRAP (and future mode habits) push:
-        #   twm_push(content_csb="MODE|...|min_tier=tier.4", category="mode_override", ttl_seconds=N)
-        # If active, force cloud path regardless of is_user_turn / complexity.
-        _force_cloud_mode = False
+        context = ""
         if cortex is not None:
             try:
-                _mode_entries = cortex.twm_read(
-                    limit=5, category="mode_override", include_integrated=True
-                )
-                for _me in reversed(_mode_entries):
-                    _csb = _me.get("content_csb", "")
-                    if "min_tier=tier.4" in _csb:
-                        _force_cloud_mode = True
-                        try:
-                            from .forensic_logger import (
-                                log_cognition_metric as _lcm_mode,
-                            )
-
-                            _lcm_mode(
-                                metric="mode_override",
-                                value=1.0,
-                                detail=f"min_tier=tier.4 from TWM: {_csb[:80]}",
-                            )
-                        except Exception as _exc:
-                            from .forensic_logger import log_error as _le
-
-                            _le(
-                                kind="SILENT_EXCEPT",
-                                detail=f"inference_gateway.py:519: {_exc}",
-                            )
-                        break
-            except Exception as _mode_e:
-                log_error(kind="MODE_READ_FAIL", detail=str(_mode_e))
-
-        if self._t2 and not is_user_turn and not _force_cloud_mode:
-            try:
-                self.last_tier = "local/interactive"
-                if on_tier:
-                    on_tier("local/interactive")
-                text, cost = self._t2.reason(
-                    user_input,
-                    relevant,
-                    core,
-                    instance_id,
-                    cortex=cortex,
+                context = build_twm_context(
+                    cortex,
+                    tier="tier.4" if is_user_turn else "tier.2",
                     thread_id=thread_id,
-                    interactive_fallback=True,
+                    relevant_memories=relevant,
                 )
-                return text, cost, False
             except Exception as _e:
-                last_error = str(_e)
-                _local_first_error = last_error  # T-inference-misreport-fix
-                _kind = (
-                    "STALL"
-                    if (
-                        "timed out" in last_error.lower()
-                        or "timeout" in last_error.lower()
-                    )
-                    else "DOWN"
-                )
-                if _log_err:
-                    _log_err(
-                        kind=f"TIER_FAIL_{_kind}",
-                        source="local/interactive",
-                        detail=str(_e),
-                    )
+                log_error(kind="TWM_CONTEXT_FAIL", detail=str(_e))
 
-        # Cloud path: always for human turns (D254); quality path for non-human (D234);
-        # D268: forced when MODE override is active (e.g. reading bootstrap min_tier=tier.4)
-        if (
-            (is_user_turn or _quality_path or _force_cloud_mode)
-            and _cloud_ok
-            and self._t4
-        ):
-            _cloud_attempted = True
-            try:
-                self.last_tier = "cloud/interactive"
-                if on_tier:
-                    on_tier("cloud/interactive")
-                text, cost = self._t4.reason(
-                    user_input,
-                    relevant,
-                    core,
-                    instance_id,
-                    cortex=cortex,
-                    preparse_csb=preparse_csb,
-                    thread_id=thread_id,
-                    no_tools=True,  # 161 tools → provider 400; interactive turns are conversational
-                    prompt_role=prompt_role,
-                )
-                return text, cost, True
-            except Exception as _e:
-                last_error = str(_e)
-                _cloud_error = last_error  # Capture cloud-specific error
-                if _log_err:
-                    _log_err(
-                        kind="TIER_FAIL", source="cloud/interactive", detail=str(_e)
-                    )
+        parts = [p for p in (preparse_csb, user_input, context) if p]
+        content = "\n\n".join(parts)
+        messages = [{"role": "user", "content": content}]
 
-        # ── last-resort local retry: cloud failed (or wasn't tried), retry Ollama ──
-        # Cloud fail → try local once more before giving up entirely.
-        # Skip retry if the FIRST local failure was a timeout — it'll just stall again.
-        # T-inference-misreport-fix: previously checked last_error which gets overwritten
-        # by cloud's error after a cloud attempt fires, so the timeout-detect was looking
-        # at cloud errors instead of local. Now uses _local_first_error specifically.
-        # D254: human turns always allowed to retry Ollama as budget-exhaustion fallback.
-        _was_timeout = (
-            "timed out" in _local_first_error.lower()
-            or "timeout" in _local_first_error.lower()
+        # -- Routing hints -- the Proxy's rules_engine owns the real decision -
+        # task_class picks the candidate source pool; foreground flips the
+        # billing preference toward usage_based (cloud). local_only is honoured
+        # best-effort by declining foreground (prefer flat_rate / local); a hard
+        # force-local belongs to igor's specifics, deferred.
+        _level = str(level).lower()
+        if "batch" in _level:
+            task_class = "batch"
+        elif "background" in _level:
+            task_class = "minion"
+        elif is_user_turn:
+            task_class = "analyst"
+        else:
+            task_class = "worker"
+        foreground = (not local_only) and (
+            is_user_turn or complexity in ("medium", "high")
         )
-        _have_some_failure = bool(_local_first_error or _cloud_error)
-        if self._t2 and _have_some_failure and (is_user_turn or not _was_timeout):
+
+        req = InferenceRequest(
+            messages=messages,
+            system=system,
+            task_class=task_class,
+            foreground=foreground,
+            instance_id=instance_id,
+            session_id=thread_id or "",
+        )
+
+        get_logger(__name__).info(
+            "[gateway] reason -> Proxy.dispatch task_class=%s foreground=%s "
+            "is_user_turn=%s local_only=%s",
+            task_class,
+            foreground,
+            is_user_turn,
+            local_only,
+        )
+        if on_tier:
             try:
-                self.last_tier = "local/retry"
-                if on_tier:
-                    on_tier("local/retry")
-                text, cost = self._t2.reason(
-                    user_input,
-                    relevant,
-                    core,
-                    instance_id,
-                    cortex=cortex,
-                    thread_id=thread_id,
-                    interactive_fallback=True,
-                )
-                return text, cost, False
+                on_tier(f"proxy/{task_class}")
             except Exception as _e:
-                _local_retry_error = str(_e)  # T-inference-misreport-fix
-                if _log_err:
-                    _log_err(kind="TIER_FAIL", source="local/retry", detail=str(_e))
+                log_error(kind="ON_TIER_FAIL", detail=str(_e))
 
-        # ── total failure: cloud + local both failed ──────────────────────────
-        # T-inference-monitor: proactive detection now lives in ResourceMonitorSource.
-        # tier.6 only logs forensically — no inline arbiter submit needed.
-        self.last_tier = "tier.6"
+        resp = self._get_inference().dispatch(req)
 
-        # T-inference-misreport-fix: build diagnostic with per-attempt errors
-        # named separately. Old version printed `_cloud_ok and self._t4` which
-        # short-circuited to the reasoner OBJECT (not a bool), and used the
-        # shared last_error which was always cloud's error if cloud ran at all.
-        _diagnostic = []
-        if _cloud_attempted:
-            _diagnostic.append(
-                f"cloud_attempted={bool(_cloud_ok and self._t4)} error={_cloud_error[:120]}"
-            )
-        else:
-            _diagnostic.append(
-                f"cloud_skipped=(is_user_turn={is_user_turn} OR quality_path={_quality_path} OR force_mode={_force_cloud_mode}) AND cloud_ok={_cloud_ok} AND t4={bool(self._t4)}"
-            )
-        if _local_first_error:
-            _diagnostic.append(f"local_first_error={_local_first_error[:120]}")
-        if _local_retry_error:
-            _diagnostic.append(f"local_retry_error={_local_retry_error[:120]}")
-        _diagnostic_str = " | ".join(_diagnostic)
-
-        try:
-            from .forensic_logger import log_anomaly as _log_anomaly
-
-            try:
-                from ..tools.system_proxy import system_proxy as _sp
-
-                _snap = _sp.snapshot()
-                _mem_info = _snap.memory
-                _resource_detail = (
-                    (
-                        f"cpu={_snap.cpu_percent:.0f}% mem_used={_mem_info.percent:.0f}% "
-                        f"mem_avail_mb={int(_mem_info.available_gb * 1024)}"
-                    )
-                    if _mem_info
-                    else f"cpu={_snap.cpu_percent:.0f}%"
-                )
-            except Exception:
-                _resource_detail = "resource_stats=unavailable"
-            _log_anomaly(
-                kind="TIER6",
-                detail=f"inference_fall_through: {_diagnostic_str} | {_resource_detail}",
-            )
-        except Exception as _bare_e:
-            log_error(
-                kind="BARE_EXCEPT",
-                detail=f"devices/igor/cognition/inference_gateway.py: {_bare_e}",
-            )
-
-        # T-inference-misreport-fix: distinguish failure modes in the user-facing
-        # message. Previously every fall-through said "Both cloud and local
-        # inference are unavailable" regardless of which path actually broke.
-        _local_failed = bool(_local_first_error or _local_retry_error)
-        _local_summary = _local_first_error or _local_retry_error
-        if _cloud_error and not _local_failed:
-            _msg = (
-                f"⚠ Cloud inference failed: {_cloud_error[:120]}. "
-                "Local was not tried this turn."
-            )
-        elif _local_failed and not _cloud_error:
-            _msg = (
-                f"⚠ Local inference failed: {_local_summary[:120]}. "
-                "Cloud was not tried this turn."
-            )
-        elif _cloud_error and _local_failed:
-            if _cloud_error == _local_summary:
-                _msg = (
-                    f"⚠ Cloud AND local failed with the SAME error — likely a "
-                    f"shared dependency bug, not an inference outage. "
-                    f"Error: {_cloud_error[:120]}"
-                )
-            else:
-                _msg = (
-                    f"⚠ Cloud failed ({_cloud_error[:120]}); "
-                    f"local also failed ({_local_summary[:120]})."
-                )
-        else:
-            _msg = (
-                "⚠ No inference path was attempted "
-                "(cloud skipped, no local available)."
-            )
-        return (_msg, 0.0, False)
+        used_api = resp.source_kind == "cloud"
+        self.last_tier = f"proxy/{resp.source_kind}"
+        return resp.text, resp.cost_estimate, used_api
 
 
 # ── Handler callables ────────────────────────────────────────────────────────────

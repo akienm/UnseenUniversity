@@ -60,28 +60,22 @@ def test_bg_is_user_true_for_human_authors():
 
 
 def test_gateway_logs_reason_entry(caplog):
-    """gateway.reason() must emit a DEBUG log at entry with is_user_turn value.
+    """gateway.reason() must emit a log carrying the is_user_turn value.
 
-    This is the observability check: the log line added for T-is-user-turn-flag-coverage
-    must fire on every gateway.reason() call so the next misroute is immediately
-    visible in debug logs without requiring code changes.
+    This is the observability check: the dispatch log line must fire on every
+    gateway.reason() call so the next misroute is immediately visible in logs
+    without requiring code changes. (Post T-inf-reroute-A the line names the
+    Proxy dispatch rather than the retired tier ladder, but still carries
+    is_user_turn.)
     """
     from unittest.mock import MagicMock
 
     from unseen_university.devices.igor.cognition.inference_gateway import InferenceGateway
+    from unseen_university.devices.inference.shim import InferenceResponse
 
-    gw = InferenceGateway.__new__(InferenceGateway)
-    gw._t2 = None
-    gw._t2_batch = None
-    gw._t3 = None
-    gw._t35 = None
-    gw._t4 = MagicMock(name="t4_sonnet")
-    gw._t4.reason.return_value = ("ok", 0.001)
-    gw._t5 = None
-    gw.last_tier = ""
-
-    cortex = MagicMock()
-    cortex.twm_read.return_value = []
+    spy = MagicMock()
+    spy.dispatch.return_value = InferenceResponse(text="ok", source_kind="cloud")
+    gw = InferenceGateway(inference=spy)
 
     logger_name = "unseen_university.devices.igor.cognition.inference_gateway"
     with caplog.at_level(logging.DEBUG, logger=logger_name):
@@ -90,54 +84,44 @@ def test_gateway_logs_reason_entry(caplog):
             [],
             [],
             level="interactive",
-            cortex=cortex,
+            cortex=None,
             is_user_turn=True,
             complexity="low",
         )
 
-    entry_logs = [r for r in caplog.records if "[gateway] reason() entry" in r.message]
-    assert entry_logs, "Expected a [gateway] reason() entry DEBUG log — not found"
-    assert "is_user_turn=True" in entry_logs[0].message
+    entry_logs = [r for r in caplog.records if "is_user_turn=True" in r.message]
+    assert entry_logs, "Expected a reason() log carrying is_user_turn=True — not found"
 
 
 def test_impulse_path_uses_false_by_design():
-    """Impulse path in main.py:5879 does NOT pass is_user_turn — defaults False.
+    """Impulse path in main.py does NOT pass is_user_turn — defaults False.
 
-    Impulses are Igor-self habit firings, not human-originated. local-first is
-    correct (saves cost; impulses don't require human-quality responsiveness).
-    This test documents the INTENTIONAL absence, so a future refactor that
-    accidentally adds is_user_turn=True to all gateway.reason() calls gets caught.
+    Impulses are Igor-self habit firings, not human-originated. Non-foreground
+    is correct (the Proxy then prefers flat_rate/local; impulses don't require
+    human-quality responsiveness). Post T-inf-reroute-A the source choice is the
+    Proxy's, so this pins the surviving intent: a background impulse declines
+    foreground and reconstructs used_api=False from a local source_kind.
     """
-    from unittest.mock import MagicMock, patch
+    from unittest.mock import MagicMock
 
     from unseen_university.devices.igor.cognition.inference_gateway import InferenceGateway
+    from unseen_university.devices.inference.shim import InferenceResponse
 
-    gw = InferenceGateway.__new__(InferenceGateway)
-    gw._t2 = MagicMock(name="t2_ollama")
-    gw._t2.reason.return_value = ("local reply", 0.0)
-    gw._t2_batch = None
-    gw._t3 = None
-    gw._t35 = None
-    gw._t4 = MagicMock(name="t4_sonnet")
-    gw._t5 = None
-    gw.last_tier = ""
+    spy = MagicMock()
+    spy.dispatch.return_value = InferenceResponse(text="local reply", source_kind="local")
+    gw = InferenceGateway(inference=spy)
 
-    cortex = MagicMock()
-    cortex.twm_read.return_value = []
-
-    # Simulate what the impulse path does: call reason with level="background"
-    # and no is_user_turn (defaults False) — local should be attempted first.
+    # Simulate the impulse path: level="background", no is_user_turn (False).
     text, cost, used_api = gw.reason(
         "[IMPULSE] habit check",
         [],
         [],
         level="background",
-        cortex=cortex,
+        cortex=None,
         # is_user_turn intentionally omitted — same as impulse path in main.py
         complexity="low",
     )
 
-    # Local-first was called (is_user_turn=False → not gated at line 651)
-    gw._t2.reason.assert_called_once()
-    gw._t4.reason.assert_not_called()
+    req = spy.dispatch.call_args.args[0]
+    assert req.foreground is False  # impulse does not force cloud preference
     assert used_api is False
