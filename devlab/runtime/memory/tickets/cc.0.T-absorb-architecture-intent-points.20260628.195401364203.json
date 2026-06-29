@@ -19,13 +19,13 @@
   },
   "body": {
     "id": "T-absorb-architecture-intent-points",
-    "title": "[sprint] Convert ~40 archive subsystem/design docs into architecture/ intention-points",
+    "title": "[awaiting_validation] Convert ~40 archive subsystem/design docs into architecture/ intention-points",
     "size": "M",
     "tags": [
       "Consolidation",
       "Architecture"
     ],
-    "status": "sprint",
+    "status": "awaiting_validation",
     "priority": 0.4,
     "decision_id": "D-all-generations-consolidation-2026-06-28",
     "gate": null,
@@ -33,9 +33,9 @@
     "created_at": "2026-06-29T01:53:50.065918+00:00",
     "worker": null,
     "created_by": null,
-    "result": null,
+    "result": "Triaged 35 archive design docs (agent-assisted + reviewed): emitted 6 NEW intent-points (cognition/inference/reading/self-edit/tools/librarian) + merged 2 EXTEND (bus, memory-graph-tree); architecture 9->15. All 44 pointers verified to exist on post-reorg tree; 0 pre-reorg paths. 8 overview docs deferred to T-docs-to-press-releases (not pre-empted); 18 retired/other-project/point-in-time skipped w/ logged reasons (CLASSIFICATION.md). inference re-homed onto live Proxy not the superseded direct-call ladder. Proof = pointer-existence verification (44/44) + CLASSIFICATION coverage of all 35; proof_emitter can't bind doc-absorb (missing lever = migration/absorb proof mode).",
     "dispatched_at": null,
-    "completed_at": null,
+    "completed_at": "2026-06-29T03:20:21.602603+00:00",
     "required_files": [],
     "related_to": null,
     "github_issue": null,
@@ -44,6 +44,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-29T01:53:50.066031+00:00",
     "inferred_intention": "unknown",
-    "inferred_intention_id": "18aabf7a-b2a3-4dab-bd21-45c0c3b062bf"
+    "inferred_intention_id": "18aabf7a-b2a3-4dab-bd21-45c0c3b062bf",
+    "commit_hash": "24d772e2"
   }
 }
