@@ -1,0 +1,60 @@
+{
+  "id": "cc.0.igor-reason-routes-through-the-inference.T-inf-reroute-A.20260629.131625591753",
+  "emitter": "cc.0",
+  "namespace": [
+    "igor-reason-routes-through-the-inference",
+    "T-inf-reroute-A"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-29T13:16:25.591753",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-inf-reroute-A"
+    ],
+    "commits": [
+      "f92b2fea7b3ac9f50ce5e3a61f55a74bf134f8de"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "igor reason() routes through the Inference Proxy",
+    "intention": "igor's reason() obtains inference by calling InferenceDevice.dispatch(), not a direct tier reasoner",
+    "test": "tests/igor/test_reason_via_proxy.py::test_reason_routes_through_proxy_dispatch",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_reason_via_proxy.py::test_reason_routes_through_proxy_dispatch",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "        \"\"\"\n        if not self.call_count == 1:\n            msg = (\"Expected '%s' to have been called once. Called %s times.%s\"\n                   % (self._mock_name or 'mock',\n                      self.call_count,\n                      self._calls_repr()))\n>           raise AssertionError(msg)\nE           AssertionError: Expected 'dispatch' to have been called once. Called 0 times.\n\n/usr/lib/python3.12/unittest/mock.py:923: AssertionError\n----------------------------- Captured stderr call -----------------------------\n2026-06-29 13:16:24.057 | DEBUG    | logging:callHandlers:1762 - [gateway] reason() entry: is_user_turn=False level=interactive complexity=low input='question'\n2026-06-29 13:16:24.756 | DEBUG    | logging:callHandlers:1762 - [inference_gateway] cloud unavailable: _t4=None (check OPENROUTER_API_KEY init at boot)\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-29 13:16:25.238 | WARNING  | logging:callHandlers:1762 - slow query 270ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n---------------------------- Captured log teardown -----------------------------\nWARNING  unseen_university.db_proxy:db_proxy.py:307 slow query 270ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_reason_via_proxy.py::test_reason_routes_through_proxy_dispatch\n1 failed in 2.15s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.45s"
+          }
+        }
+      }
+    ],
+    "commit": "f92b2fea7b3ac9f50ce5e3a61f55a74bf134f8de",
+    "impl_paths": [
+      "tests/igor/test_inference_gateway_misreport.py",
+      "tests/igor/test_inference_gateway_mode.py",
+      "tests/igor/test_is_user_turn_flag_coverage.py",
+      "tests/igor/test_user_turn_cloud_first.py",
+      "unseen_university/devices/igor/cognition/inference_gateway.py"
+    ],
+    "ticket": "T-inf-reroute-A",
+    "narrative": "",
+    "why": "",
+    "bootstrap": false
+  }
+}
