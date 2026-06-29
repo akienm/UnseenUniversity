@@ -72,6 +72,12 @@ class InferenceResponse:
     # Billing type of the source that served this response.
     # "flat_rate" = subscription (cost cap irrelevant); "usage_based" = pay-per-token.
     source_billing_type: str = "usage_based"
+    # Where the response was served from, for callers that branch on local vs paid
+    # cloud (e.g. igor's used_api routing telemetry): "local" (on-box Ollama),
+    # "cloud" (any networked provider), or "none" (no live source — error response).
+    # Reliable, non-defaulting signal — UNLIKE source_billing_type, which defaults
+    # to "usage_based" and can't distinguish local from a flat_rate cloud source.
+    source_kind: str = "none"
 
 
 log = logging.getLogger(__name__)

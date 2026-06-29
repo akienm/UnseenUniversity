@@ -18,7 +18,7 @@ import socket
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
     from unseen_university.devices.inference.shim import InferenceRequest
@@ -72,6 +72,12 @@ class Source:
     available: bool = True
     # "flat_rate" = subscription (prefer over usage-based); "usage_based" = pay-per-token
     billing_type: str = "usage_based"
+    # On-box inference (no network hop, no paid token cost) vs networked cloud.
+    # Distinct from billing_type: a cloud source can be flat_rate (subscription)
+    # yet still NOT local — callers needing local-vs-cloud must read this, not
+    # billing_type. ClassVar so it stays off the dataclass __init__ (subclasses
+    # override the class attribute; no constructor churn).
+    is_local: ClassVar[bool] = False
 
     def ping(self) -> bool:
         raise NotImplementedError
@@ -247,6 +253,8 @@ class OpenRouterSource(Source):
 
 class OllamaSource(Source):
     """Local Ollama server."""
+
+    is_local: ClassVar[bool] = True  # on-box; the only true-local source
 
     def __init__(self, base_url: str = "http://127.0.0.1:11434") -> None:
         super().__init__(name="ollama")

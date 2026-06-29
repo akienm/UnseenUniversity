@@ -435,6 +435,7 @@ class InferenceDevice(BaseDevice):
             return InferenceResponse(
                 text=f"[InferenceDevice: no live inference source for task_class={tc}]",
                 finish_reason="error",
+                source_kind="none",
             )
 
         # OR-specific pre-call gates
@@ -485,6 +486,10 @@ class InferenceDevice(BaseDevice):
             cost_usd=cost_usd,
         )
         resp.source_billing_type = getattr(source, "billing_type", "usage_based") if source is not None else "usage_based"
+        # Past the chokepoint source is guaranteed non-None; local-vs-cloud comes
+        # from the source's is_local flag, NOT billing_type (a flat_rate cloud
+        # source is still cloud).
+        resp.source_kind = "local" if getattr(source, "is_local", False) else "cloud"
         return resp
 
     def source_health(self) -> dict[str, bool]:
