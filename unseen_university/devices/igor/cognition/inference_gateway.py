@@ -197,6 +197,19 @@ class RoutingError(RuntimeError):
     pass
 
 
+# T-inf-reroute-B: purpose -> Proxy task_class. preparse / winnow / think are
+# cheap mechanical extraction (minion); ne is narrative synthesis where quality
+# matters (analyst); reading_extract is background book work (batch). The Proxy's
+# rules_engine owns local-vs-cloud selection within each class.
+_PURPOSE_TASK_CLASS = {
+    "preparse": "minion",
+    "winnow": "minion",
+    "ne": "analyst",
+    "think": "minion",
+    "reading_extract": "batch",
+}
+
+
 # ── Gateway ──────────────────────────────────────────────────────────────────────
 
 
@@ -261,12 +274,6 @@ class InferenceGateway(IgorBase):
             Used by benchmarking to force ollama vs OR endpoint.
         Raises RoutingError if no handler succeeds.
         """
-        try:
-            from .forensic_logger import log_pipeline_step as _lpt, get_turn_id as _gtid
-        except Exception:
-            _lpt = None
-            _gtid = lambda: "?"
-
         # Pop special kwargs so they don't forward to handlers
         handler_override = kwargs.pop("handler_override", None)
         timeout_override = kwargs.pop("timeout_override", None)
@@ -280,7 +287,96 @@ class InferenceGateway(IgorBase):
 
             constraints = replace(constraints, timeout_s=float(timeout_override))
 
-        current_id = handler_override if handler_override else purpose_id
+        # Benchmark-only legacy path: handler_override forces a specific DAG
+        # handler node (reading_benchmark.py). Keep raw DAG traversal for this
+        # case only; T-inf-reroute-C moves the benchmark onto the Proxy and
+        # deletes the DAG + raw _h_ollama/_h_or handlers.
+        if handler_override:
+            return self._traverse_dag(
+                handler_override, prompt, ctx, constraints, **kwargs
+            )
+
+        # Normal path (T-inf-reroute-B): igor is a normal Proxy consumer. The
+        # purpose maps to a task_class; the Proxy's rules_engine owns local-vs-
+        # cloud selection and fallback, collapsing the old DAG fallback edges.
+        return self._call_via_proxy(purpose_id, prompt, ctx, constraints, **kwargs)
+
+    def _call_via_proxy(
+        self,
+        purpose_id: str,
+        prompt: str,
+        ctx: "InferenceContext",
+        constraints: "PurposeConstraints",
+        **kwargs,
+    ) -> str:
+        """Route a purpose call through the canonical Inference Proxy.
+
+        Maps PurposeConstraints -> InferenceRequest (max_tokens / temperature /
+        timeout, and response_format via extra) and the purpose -> a task_class.
+        Returns the response text; raises RoutingError on dispatch failure or when
+        no source is available — matching call()'s legacy failure contract so the
+        ne / think / preparse callers keep their existing except-handling.
+        """
+        from unseen_university.devices.inference.shim import InferenceRequest
+
+        task_class = _PURPOSE_TASK_CLASS.get(purpose_id, "minion")
+        foreground = bool(
+            getattr(ctx, "is_user_turn", False)
+            or getattr(ctx, "research_mode", False)
+        )
+        extra: dict = {}
+        if "response_format" in constraints.extra:
+            extra["response_format"] = constraints.extra["response_format"]
+
+        req = InferenceRequest(
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=constraints.max_tokens,
+            temperature=constraints.temperature,
+            timeout=int(constraints.timeout_s),
+            task_class=task_class,
+            foreground=foreground,
+            extra=extra,
+        )
+        get_logger(__name__).info(
+            "[gateway] call(%s) -> Proxy.dispatch task_class=%s foreground=%s",
+            purpose_id,
+            task_class,
+            foreground,
+        )
+        try:
+            resp = self._get_inference().dispatch(req)
+        except Exception as exc:
+            raise RoutingError(
+                f"call('{purpose_id}'): Proxy dispatch failed: {exc}"
+            ) from exc
+        if not (resp.text or "").strip() and resp.source_kind == "none":
+            raise RoutingError(
+                f"call('{purpose_id}'): no inference source available"
+            )
+        ctx.last_elapsed_ms = float(getattr(resp, "elapsed_ms", 0) or 0)
+        return resp.text
+
+    def _traverse_dag(
+        self,
+        start_id: str,
+        prompt: str,
+        ctx: "InferenceContext",
+        constraints: "PurposeConstraints",
+        **kwargs,
+    ) -> str:
+        """Legacy raw-DAG traversal — benchmark handler_override path only.
+
+        Retained until T-inf-reroute-C so reading_benchmark.py can still force a
+        specific Ollama / OpenRouter endpoint. Every non-benchmark call now goes
+        through _call_via_proxy.
+        """
+        try:
+            from .forensic_logger import log_pipeline_step as _lpt, get_turn_id as _gtid
+        except Exception:
+            _lpt = None
+            _gtid = lambda: "?"
+
+        current_id = start_id
         failed: set[str] = set()
 
         while True:
