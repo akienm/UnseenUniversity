@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-ne-desperation-pull-2026-05-11.20260511.075952569445",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-ne-desperation-pull-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T07:59:52.569445",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-ne-desperation-pull-2026-05-11",
+    "title": "NE empty → active LTM desperation kick + faster boredom window",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-ne-desperation-pull-ltm",
+      "T-boredom-window-shrink"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-ne-desperation-pull-2026-05-11\n**title:** NE empty → active LTM desperation kick + faster boredom window\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-ne-desperation-pull-ltm, T-boredom-window-shrink\n\n## Decision narrative\nWhen the narrative engine produces no result, Igor should actively search LTM rather than waiting passively for boredom to accumulate. Sensory deprivation biology model: a starved narrative engine searches harder for material, not slower. Implementation: add MemorySurfacer.force_push() (top-N by activation_score, no keyword requirement, once-per-cycle rate-limit) called from the coa.py NE-empty branch; separately reduce BoredomDetector.WINDOW_MINS 20→5 to make the reactive path faster. Alternative considered: boredom-window-shrink alone (simpler but still reactive, not proactive). Constraint: must not generate infinite LTM churn — force_push guarded to once per NE cycle.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

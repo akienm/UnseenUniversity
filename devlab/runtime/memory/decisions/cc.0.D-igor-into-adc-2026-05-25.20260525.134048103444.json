@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-igor-into-adc-2026-05-25.20260525.134048103444",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-igor-into-adc-2026-05-25"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-25T13:40:48.103444",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-igor-into-adc-2026-05-25",
+    "title": "Migrate Igor cognition code from TheIgors/wild_igor/ into UnseenUniversity/devices/igor/",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-25",
+    "spawned_tickets": [
+      "T-igor-subtree-import",
+      "T-igor-import-rewrite",
+      "T-igor-theigers-archive",
+      "T-consequence-igor-migration"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-igor-into-adc-2026-05-25\n**title:** Migrate Igor cognition code from TheIgors/wild_igor/ into UnseenUniversity/devices/igor/\n**date:** 2026-05-25\n**status:** open\n**spawned_tickets:** T-igor-subtree-import, T-igor-import-rewrite, T-igor-theigers-archive, T-consequence-igor-migration\n\n## Decision narrative\nIgor's 273-file cognition engine (wild_igor/) has lived in a separate repo (TheIgors) as an inversion of the correct dependency direction. Igor is a device on the rack, not the host for everything. This decision migrates wild_igor/igor/ into UnseenUniversity/devices/igor/ using git subtree (full history preserved), rewrites all imports from wild_igor.igor.* → devices.igor.*, and converts TheIgors into a docs/skills/slates archive. Utility closet removal is tracked separately (T-remove-utility-closet-all with grep-based pass condition). Three alternatives were considered: no-merge (symlinks — rejected: already tried three times, still debt), copy-only (history lost — rejected: Akien wants history in single repo), and git filter-repo+merge (chosen).\n\n## Hypothesis\nIgor starts and runs exclusively from devices.igor.* imports inside UnseenUniversity; TheIgors contains no runnable Python source.\n\n## Measurement Signal\n`grep -rn 'wild_igor' ~/dev/src/UnseenUniversity/ --include='*.py'` returns zero results; Igor boots from new location; all tests pass.\n\n## Goal Link\nG-system-self-improving / architecture-separation: Igor is a device, UnseenUniversity is the platform.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

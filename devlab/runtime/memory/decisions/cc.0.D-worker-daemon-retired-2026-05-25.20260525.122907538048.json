@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-worker-daemon-retired-2026-05-25.20260525.122907538048",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-worker-daemon-retired-2026-05-25"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-25T12:29:07.538048",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-worker-daemon-retired-2026-05-25",
+    "title": "Retire worker_daemon.sh — /query-ticket is the canonical path, no autonomous sprinting",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-25",
+    "spawned_tickets": [
+      "T-retire-worker-daemon-sh",
+      "T-consequence-worker-daemon-retired"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-worker-daemon-retired-2026-05-25\n**title:** Retire worker_daemon.sh — /query-ticket is the canonical path, no autonomous sprinting\n**date:** 2026-05-25\n**status:** open\n**spawned_tickets:** T-retire-worker-daemon-sh, T-consequence-worker-daemon-retired\n\n## Decision narrative\nworker_daemon.sh was auto-sprinting migration tickets in parallel with CC, violating the principle that no autonomous code work should proceed until Igor's reasoning is stabilized. The daemon is suspended as of 2026-05-25. Formally retire it by adding a disabled sentinel and removing the `claim` command from cc_queue.py entirely (LegacyDirectClaimError). /query-ticket is the single canonical read-only path for \"what's next?\" and will transparently switch to the ADC queue device MCP interface when that ships.\n\n## Hypothesis\nNo autonomous ticket consumption is possible via worker_daemon.sh or cc_queue.py claim; /query-ticket is the documented single path.\n\n## Measurement Signal\n`cc_queue.py claim T-test` prints LegacyDirectClaimError; worker_daemon.sh loop is commented out; /query-ticket referenced in SPRINT.md, CONTEXT-LOAD.md, CLAUDE.md.\n\n## Goal Link\nnone: prerequisite safety gate before ADC queue device work proceeds; not tied to a growth goal but to a stability constraint.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

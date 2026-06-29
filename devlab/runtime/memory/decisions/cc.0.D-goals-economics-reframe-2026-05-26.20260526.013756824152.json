@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-goals-economics-reframe-2026-05-26.20260526.013756824152",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-goals-economics-reframe-2026-05-26"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-26T01:37:56.824152",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-goals-economics-reframe-2026-05-26",
+    "title": "Defer off-cloud/self-programming goals — cognition stability first + economics shift",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-26",
+    "spawned_tickets": [
+      "(none — goals update",
+      "no code change)"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-goals-economics-reframe-2026-05-26\n**title:** Defer off-cloud/self-programming goals — cognition stability first + economics shift\n**date:** 2026-05-26\n**status:** open\n**spawned_tickets:** (none — goals update, no code change)\n\n## Decision narrative\nFour goals deferred: G-igor-self-programs (1.5), G-igor-brain-model (1.1), G-igor-small-compute (1.2),\nG-igor-sentient (1.3). Self-programming deferred until Igor's cognition stabilizes (pe_chain, NE, memory\nconsolidation must run reliably first). Off-cloud/graph-matrix deferred because the economics that made\nit urgent no longer apply — Claude API costs have dropped enough that staying with Claude for most work\nis the cheaper, pragmatic path. These goals are not abandoned; they will return when the prerequisites\nare met. The research interest in brain-modeled cognition remains; the survival urgency is gone.\n\n## Hypothesis\nN/A — no observable code change; this is a prioritization and context record.\n\n## Goal Link\nG-igor-self-programs (the deferred goal itself)\n\n## Context\nOriginal token-cost pressure drove the \"escape from tokens\" design goals (1.1, 1.2, graph matrix,\nno-GPU). That pressure is now gone. Focus shifts to: cognition stability → reliable pe_chain →\nobservable self-improvement → THEN revisit self-programming if still warranted.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

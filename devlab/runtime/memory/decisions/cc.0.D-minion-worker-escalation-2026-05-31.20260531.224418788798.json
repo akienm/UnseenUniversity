@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-minion-worker-escalation-2026-05-31.20260531.224418788798",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-minion-worker-escalation-2026-05-31"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-31T22:44:18.788798",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-minion-worker-escalation-2026-05-31",
+    "title": "Non-Claude worker: tiered escalation baked into system prompt",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-31",
+    "spawned_tickets": [
+      "T-minion-worker-device",
+      "T-granny-worker-dispatch",
+      "T-consequence-D-minion-escalation"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-minion-worker-escalation-2026-05-31\n**title:** Non-Claude worker: tiered escalation baked into system prompt\n**date:** 2026-05-31\n**status:** open\n**spawned_tickets:** T-minion-worker-device, T-granny-worker-dispatch, T-consequence-D-minion-escalation\n**goal_link:** cost-reduction + capabilities-expansion (self-funding platform)\n**concept_links:** none\n\n## Decision narrative\nBuild a minion-tier rack device (devices/minion/) that executes sprint tickets using cheap inference (DeepSeek V4 Flash ~$0.10/1M) instead of spawning Claude CLI. The system prompt bakes in a tiered escalation contract: worker responds with DONE (commit+close) or ESCALATE: worker / analyst / designer (re-route via RulesEngine with escalation notes as context). Granny's dispatch switches from tmux+claude to comms://worker-inbox. Goal: cost reduction + capabilities expansion toward a self-funding platform with reach beyond Igor.\n\n## Hypothesis\nSprint tickets complete via cheap models without touching Claude; platform becomes useful for non-Igor work, expanding reach.\n\n## Measurement Signal\nInferenceDevice budget ledger shows spend against openrouter/deepseek-v4-flash for closed tickets; escalation tier distribution log shows what % of tickets reach analyst/designer.\n\n## Goal Link\ncost-reduction + capabilities-expansion — making the platform self-funding by routing minion-class work to $0.10/1M models\n\n## Concept Links\nnone\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-igor-memory-depth-2026-05-10.20260510.120916394990",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-igor-memory-depth-2026-05-10"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-10T12:09:16.394990",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-igor-memory-depth-2026-05-10",
+    "title": "Deepen Igor's memory scaffold: occurrence signals, recursive traversal, task boundaries, grader decomposition",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-10",
+    "spawned_tickets": [
+      "T-igor-proposals-occurrence-signal",
+      "T-igor-recursive-edge-traversal",
+      "T-igor-ne-task-boundary",
+      "T-igor-ne-grader-decompose"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-igor-memory-depth-2026-05-10\n**title:** Deepen Igor's memory scaffold: occurrence signals, recursive traversal, task boundaries, grader decomposition\n**date:** 2026-05-10\n**status:** open\n**spawned_tickets:** T-igor-proposals-occurrence-signal, T-igor-recursive-edge-traversal, T-igor-ne-task-boundary, T-igor-ne-grader-decompose\n\n## Decision narrative\nFour scaffold-deepening improvements derived from neuroscience/ML reading synthesis: (1) occurrence_count on proposals gives Igor the recurrence signal needed to judge promotion — the calligraphy principle: promotion requires recurrence AND foreseen future use, both judgment calls, never auto-gates; (2) WITH RECURSIVE CTE replaces Python-level propagation in activate() — DB-native, cleaner, cycle-safe; (3) NE task boundary flushes episodic context on focus displacement — task = fresh window, step = accumulates (AgentSPEX pattern applied to NE); (4) grader decomposition makes quality signals actionable — low memory_retrieval signals Librarian curation, low context_assembly triggers task boundary, low coherence feeds watch-confidence accumulator.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

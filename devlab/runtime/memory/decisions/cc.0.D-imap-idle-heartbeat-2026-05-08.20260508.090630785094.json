@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-imap-idle-heartbeat-2026-05-08.20260508.090630785094",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-imap-idle-heartbeat-2026-05-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-08T09:06:30.785094",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-imap-idle-heartbeat-2026-05-08",
+    "title": "IMAP IDLE client + BaseDevice heartbeat = push-based health monitoring",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-08",
+    "spawned_tickets": [
+      "T-bus-imap-idle-client",
+      "T-bus-heartbeat",
+      "T-librarian-health-aggregator"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-imap-idle-heartbeat-2026-05-08\n**title:** IMAP IDLE client + BaseDevice heartbeat = push-based health monitoring\n**date:** 2026-05-08\n**status:** open\n**spawned_tickets:** T-bus-imap-idle-client, T-bus-heartbeat, T-librarian-health-aggregator\n\n## Decision narrative\nTwo connected decisions: (1) implement IMAP IDLE on the bus client/listener side so all rack participants (Igor, the Librarian, etc.) wake on server push rather than polling — zero CPU at rest, sub-100ms wakeup; RFC 2177 29-min timeout handled with keepalive re-entry. (2) BaseDevice publishes a heartbeat envelope to comms://heartbeat every N seconds (default 30); the Librarian sits in IDLE on that mailbox and maintains a last-seen table — silence for >2N = suspect, >3N = presumed down. This inverts the health monitoring model: aliveness is demonstrated by continuous publication, not answered on query. Complements the existing pull health() interface. Librarian restarts include a 2N warm-up period before silence thresholds activate.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

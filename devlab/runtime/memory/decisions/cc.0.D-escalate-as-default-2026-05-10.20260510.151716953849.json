@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-escalate-as-default-2026-05-10.20260510.151716953849",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-escalate-as-default-2026-05-10"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-10T15:17:16.953849",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-escalate-as-default-2026-05-10",
+    "title": "Escalate as Igor's default fallback; watch list + lever watcher for grand escalation",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-10",
+    "spawned_tickets": [
+      "T-escalate-default-pattern",
+      "T-igor-watch-list",
+      "T-igor-lever-watcher"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-escalate-as-default-2026-05-10\n**title:** Escalate as Igor's default fallback; watch list + lever watcher for grand escalation\n**date:** 2026-05-10\n**status:** open\n**spawned_tickets:** T-escalate-default-pattern, T-igor-watch-list, T-igor-lever-watcher\n\n## Decision narrative\nWhen habit inventory exhausts, Igor should escalate to channel (structured missing-info post) rather than confabulate or go mute — this is a cognition primitive symmetrical to human behaviour. When escalation itself can't reach a resolver, grand-escalate: park the problem on a persistent watch list with a structured lever description, then actively scan incoming information for conditions that would unblock it.\n\nThree-tier fallback: (1) habits — normal operation; (2) escalate — post to channel what's missing; (3) grand escalation — add to watch list with watch_condition, monitor for lever.\n\nSpawned from design conversation 2026-05-10 starting with: \"humans often also go mute when their habits run out — they pick the best of bad choices to reply with rather than try for something new.\" The pe_chain description-gate kick-back (D-pe-chain-description-gate-2026-05-10) was the first instance of this pattern; this decision generalises it.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

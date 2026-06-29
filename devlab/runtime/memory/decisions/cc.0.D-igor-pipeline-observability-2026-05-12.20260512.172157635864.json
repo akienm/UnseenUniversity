@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-igor-pipeline-observability-2026-05-12.20260512.172157635864",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-igor-pipeline-observability-2026-05-12"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-12T17:21:57.635864",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-igor-pipeline-observability-2026-05-12",
+    "title": "Wire IgorBase through Igor's coding pipeline and add flight-recorder logging",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-12",
+    "spawned_tickets": [
+      "T-igorbase-llm-io-log",
+      "T-pe-chain-igorbase",
+      "T-pe-chain-flight-recorder",
+      "T-coa-flight-recorder",
+      "T-goal-continuation-igorbase"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-igor-pipeline-observability-2026-05-12\n**title:** Wire IgorBase through Igor's coding pipeline and add flight-recorder logging\n**date:** 2026-05-12\n**status:** open\n**spawned_tickets:** T-igorbase-llm-io-log, T-pe-chain-igorbase, T-pe-chain-flight-recorder, T-coa-flight-recorder, T-goal-continuation-igorbase\n\n## Decision narrative\nBuild observable, diagnosable Igor coding pipeline by extending IgorBase with log_llm_io()/log_state_snapshot() methods, refactoring pe_chain.py from standalone functions into PeChain(IgorBase), adding flight-recorder log calls to PeChain (LLM I/O at every tier.2 call, state snapshot at escalation/implement), adding TWM pre-NE logging to COA, and refactoring goal_continuation.py into GoalContinuation(IgorBase) with untruncated bash output logging. Migrate forensic_logger references to self.log as each file is touched.\n\nforensic_logger.py was an ad-hoc logging module that grew alongside the pipeline but is not the base class logger. The base class pattern (IgorBase → AgentBase, with self.log, time_it(), dump()) is the canonical mechanism established by T-d125-igorbase-drift and T-logging-class-inheritance-fixups. pe_chain and goal_continuation were missed by those tickets.\n\nAlternative considered: ad-hoc Python logging per function (rejected — no time_it(), dump(), or consistent routing; continues the inconsistency those earlier tickets were meant to end).\n\n## Dependency chain\nT-igorbase-llm-io-log (S, CC) → unblocks → T-pe-chain-flight-recorder, T-coa-flight-recorder\nT-pe-chain-igorbase (L, CC) → unblocks → T-pe-chain-flight-recorder\nT-goal-continuation-igorbase (S, CC) → no deps\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

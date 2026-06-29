@@ -1,0 +1,34 @@
+{
+  "id": "cc.0.D-expert-lenses-confidence-2026-05-21.20260521.224434422415",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-expert-lenses-confidence-2026-05-21"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-21T22:44:34.422415",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-expert-lenses-confidence-2026-05-21",
+    "title": "Add four expert lenses + confidence-everywhere system",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-21",
+    "spawned_tickets": [
+      "T-confidence-schema",
+      "T-confidence-surface-audit",
+      "T-pe-evaluate-confidence",
+      "T-habit-telemetry-gate",
+      "T-universal-llm-lineage",
+      "T-skill-contract-checker",
+      "T-consequence-expert-lenses-confidence"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-expert-lenses-confidence-2026-05-21\n**title:** Add four expert lenses + confidence-everywhere system\n**date:** 2026-05-21\n**status:** open\n**spawned_tickets:** T-confidence-schema, T-confidence-surface-audit, T-pe-evaluate-confidence, T-habit-telemetry-gate, T-universal-llm-lineage, T-skill-contract-checker, T-consequence-expert-lenses-confidence\n\n## Decision narrative\nAdded four expert lenses to UnseenUniversity/EXPERTS.md from recovery of prior design conversations: Schmidhuber (self-modifying systems with provable improvement), Shankar (evaluator quality, confidence everywhere), Willison (observability-first, universal LLM lineage), Cherny (explicit contracts at scale). Akien's core insight from Shankar: \"we shouldn't have binary answers in Igor — pretty much everything should be a confidence between -1 and 1.\" This drives the confidence schema ticket (HIGH inertia, pre-approved inline) and cascading surface-audit and pe_evaluate changes. Schmidhuber maps to connecting the already-built skill telemetry to the habit write gate. Willison maps to a universal LLM call table (pe_chain already logs; NE/habits don't). Cherny maps to contract checking at queue-add time.\n\n## Hypothesis\nAfter these tickets ship, Igor's evaluations are no longer binary: confidence is a first-class float on memories, habits, and evaluator outputs; every LLM call anywhere in the system is in one queryable table; skill contract gaps are caught at filing time not sprint time.\n\n## Measurement Signal\nWithin 30 days: confidence distribution query on clan.memories returns results (schema shipped); pe_evaluate logs show float distribution clustering near 0.1 or 0.9 (calibrated evaluator); instance.llm_calls has rows from both IgorBase and pe_chain paths.\n\n## Goal Link\nnone: self-improvement capability direction, not yet formalized as a numbered goal\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-deferred-inference-2026-05-21.20260521.035358656006",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-deferred-inference-2026-05-21"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-21T03:53:58.656006",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-deferred-inference-2026-05-21",
+    "title": "Add deferred-resolution node state to Igor's inference engine",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-21",
+    "spawned_tickets": [
+      "T-igor-deferred-node-state"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-deferred-inference-2026-05-21\n**title:** Add deferred-resolution node state to Igor's inference engine\n**date:** 2026-05-21\n**status:** open\n**spawned_tickets:** T-igor-deferred-node-state\n\n## Decision narrative\nIgor currently resolves nodes at query time — if evidence is insufficient it either\nassigns a low-confidence answer or drops the node. This is lossy. The correct behavior\n(modeled on how humans learn words from context) is to hold the node in an explicit\n\"clear/unresolved\" state, flag it as a watchlist item, and let subsequent passes\naccumulate edges. Resolution happens naturally when enough edges attach; if surrounding\ncontext renders the node irrelevant, it stays clear but stops being watched.\n\nForcing early resolution is lossy because it substitutes a dictionary-style definition\nfor the richer network of contextual edges that give a concept its actual color.\n\n## Hypothesis\nIgor nodes with insufficient evidence should remain explicitly unresolved rather than\nreceiving low-confidence guesses, and should accumulate edges from subsequent context\npasses until a resolution threshold is crossed naturally.\n\n## Measurement Signal\nA node queried with thin context returns status \"unresolved\" (not a low-confidence\nanswer). A second query with richer context either resolves it or keeps it flagged.\nVerifiable by inspecting node state before and after additional context passes.\n\n## Goal Link\nnone: this is a cognitive architecture quality improvement, not tied to a specific\nG-xxx product goal — but it underpins the accuracy of all inference Igor performs.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

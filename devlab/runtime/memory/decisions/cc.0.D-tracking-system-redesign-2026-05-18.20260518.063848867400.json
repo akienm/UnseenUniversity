@@ -1,0 +1,40 @@
+{
+  "id": "cc.0.D-tracking-system-redesign-2026-05-18.20260518.063848867400",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-tracking-system-redesign-2026-05-18"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-18T06:38:48.867400",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-tracking-system-redesign-2026-05-18",
+    "title": "Add goals layer, hypothesis tracking, outcomes, evals, and auto-validation to the tracking system",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-18",
+    "spawned_tickets": [
+      "T-goal-skill",
+      "T-audit-goal",
+      "T-goal-blocked",
+      "T-hypothesis-extract",
+      "T-audit-hypothesis",
+      "T-outcome-skill",
+      "T-weekly-retro",
+      "T-weekly-evals",
+      "T-questions-skill",
+      "T-auto-validate",
+      "T-challenge-step",
+      "T-workflow-skill",
+      "T-day-close-friday"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-tracking-system-redesign-2026-05-18\n**title:** Add goals layer, hypothesis tracking, outcomes, evals, and auto-validation to the tracking system\n**date:** 2026-05-18\n**status:** open\n**spawned_tickets:** T-goal-skill, T-audit-goal, T-goal-blocked, T-hypothesis-extract, T-audit-hypothesis, T-outcome-skill, T-weekly-retro, T-weekly-evals, T-questions-skill, T-auto-validate, T-challenge-step, T-workflow-skill, T-day-close-friday\n\n## Decision narrative\nThe current tracking system (decisions → tickets) is strong on activity and weak on outcomes — 1089 done tickets with no measurement of whether they helped. Adding a goals layer above decisions, mandatory hypothesis extraction at /decided time, outcome measurement at decision close, weekly evals, and auto-validation for low-risk tickets closes the learning loop. The system will track whether decisions actually achieve their stated hypotheses, feeding back to goal KRs. Every audit step gets a \"is there a better way?\" challenge question. The /workflow skill makes the whole system navigable after any absence.\n\n## Hypothesis\nBy making goals, hypotheses, and outcomes first-class tracked objects (not just implied in conversation), the system will produce measurable evidence of whether design decisions are working — and Akien's unvoiced hypotheses will survive compaction and accumulate into a track record.\n\n## Measurement signal\n/outcome verdicts accumulate on decisions; weekly-retro tracks confirmation rate; eval-run shows capability KR trends. Within 30 days: at least 3 /outcome verdicts recorded, weekly-retro running Fridays, eval-run producing weekly snapshots.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

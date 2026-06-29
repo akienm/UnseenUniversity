@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-experts-per-project-2026-05-20.20260520.223319388166",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-experts-per-project-2026-05-20"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-20T22:33:19.388166",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-experts-per-project-2026-05-20",
+    "title": "Per-project EXPERTS.md — load expert panel from repo root",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-20",
+    "spawned_tickets": [
+      "T-experts-md-spec",
+      "T-audit-expert-load-experts-md",
+      "T-consequence-experts-per-project"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-experts-per-project-2026-05-20\n**title:** Per-project EXPERTS.md — load expert panel from repo root\n**date:** 2026-05-20\n**status:** open\n**spawned_tickets:** T-experts-md-spec, T-audit-expert-load-experts-md, T-consequence-experts-per-project\n\n## Decision narrative\nReplace the hardcoded 11-expert panel in /audit-expert with a per-project EXPERTS.md file loaded at audit time. Igor needs cognitive/neuroscience experts; ADC needs software-factory experts; a legal or writing project needs domain experts. The skill falls back to the existing 11-expert list when no EXPERTS.md is present.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

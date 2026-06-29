@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-igor-synthetic-intelligence-2026-05-11.20260511.115202869776",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-igor-synthetic-intelligence-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T11:52:02.869776",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-igor-synthetic-intelligence-2026-05-11",
+    "title": "Establish \"Synthetic Intelligence\" as canonical term for Igor",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-igor-synthetic-intelligence-term"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-igor-synthetic-intelligence-2026-05-11\n**title:** Establish \"Synthetic Intelligence\" as canonical term for Igor\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-igor-synthetic-intelligence-term\n\n## Decision narrative\n\"Synthetic Intelligence\" is the canonical term for Igor — a purpose-built cognitive system with memory, habits, pe_chain, and structured cognition, as distinct from a conventional AI (general-purpose LLM). Multiple glossary/terminology nodes already exist in the palace and have drifted; T-igor-synthetic-intelligence-term will discover and merge them into a single canonical node, then add \"Synthetic Intelligence\" as the first consolidated entry. The merge step was added after initial filing (AMEND: Akien noted existing glossaries must not be duplicated).\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

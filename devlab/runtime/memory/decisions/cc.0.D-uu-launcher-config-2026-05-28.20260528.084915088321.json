@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-uu-launcher-config-2026-05-28.20260528.084915088321",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-uu-launcher-config-2026-05-28"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-28T08:49:15.088321",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-uu-launcher-config-2026-05-28",
+    "title": "UU zero-config launcher UX + config layout + configurable frontend shim",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-28",
+    "spawned_tickets": [
+      "T-uu-config-layout",
+      "T-uu-librarian-chat",
+      "T-consequence-uu-launcher"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-uu-launcher-config-2026-05-28\n**title:** UU zero-config launcher UX + config layout + configurable frontend shim\n**date:** 2026-05-28\n**status:** open\n**spawned_tickets:** T-uu-config-layout, T-uu-librarian-chat, T-consequence-uu-launcher\n**goal_link:** none: make UU accessible to non-technical users; zero-config startup\n**concept_links:** none\n\n## Decision narrative\nThree entry points at repo root (./igor, ./superclaude, ./uu) — clone, run, works. All internals hidden except elevation/install prompts. Config layout: ~/.UnseenUniversity/uu.cfg (global defaults) + per-device config.cfg (replaces env vars). Flat layout, no intermediate rack folder. ./uu launches a Librarian chat interface via a configurable frontend shim (terminal|web, driven by config) — leverages an existing open-source terminal chat library rather than building new UI. Any agent gets the same console by changing shim config.\n\n## Hypothesis\nA non-technical user can clone the repo, run ./igor or ./uu, and have a working session without manual configuration.\n\n## Measurement Signal\nFresh-clone test completes without requiring env var setup or manual config.\n\n## Goal Link\nnone: make UU accessible to non-technical users; zero-config startup\n\n## Alternatives considered\n- Keep current env var complexity (chose config.cfg — debuggable, committable, human-readable)\n- Build bespoke chat UI (chose existing library — don't build what already exists)\n- Intermediate rack01 folder (chose flat — no multi-rack need yet, simpler paths)\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

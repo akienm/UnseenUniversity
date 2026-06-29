@@ -1,0 +1,37 @@
+{
+  "id": "cc.0.D-diagnostic-base-class-2026-05-08.20260508.045212440596",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-diagnostic-base-class-2026-05-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-08T04:52:12.440596",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-diagnostic-base-class-2026-05-08",
+    "title": "Standalone python_diagnostic_base_class micro-package with loguru + tagged logging",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-08",
+    "spawned_tickets": [
+      "T-python-diagnostic-base-class-repo",
+      "T-swadl-add-pyautogui",
+      "T-swadl-add-dogtail",
+      "T-swadl-add-playwright",
+      "T-swadl-readme-interface-libs",
+      "T-adc-performance-points",
+      "T-swadl-performance-points",
+      "T-igor-pypi-tagged-release",
+      "T-adc-pypi-tagged-release",
+      "T-swadl-pypi-tagged-release"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-diagnostic-base-class-2026-05-08\n**title:** Standalone python_diagnostic_base_class micro-package with loguru + tagged logging\n**date:** 2026-05-08\n**status:** open\n**spawned_tickets:** T-python-diagnostic-base-class-repo, T-swadl-add-pyautogui, T-swadl-add-dogtail, T-swadl-add-playwright, T-swadl-readme-interface-libs, T-adc-performance-points, T-swadl-performance-points, T-igor-pypi-tagged-release, T-adc-pypi-tagged-release, T-swadl-pypi-tagged-release\n\n## Decision narrative\nExtract shared logging+perf+naming primitive into a standalone pip-installable micro-package (`python_diagnostic_base_class`). Merges SWADL's instance naming (gc.get_referrers, hierarchical get_name, substitution engine, bannerize/dump) with ADC's log path conventions. Uses loguru as the backend with a TaggedLogger proxy: `self.logger.perf('msg')` binds tag via loguru `.bind()`, enabling handler-level routing (e.g. PerformanceHandler writes tag=perf rows to rolling per-day CSV). Convenience shorthands (`self.debug()` etc.) remain. SWADL and ADC both pip-install this; neither imports the other. Also adds SWADL driver coverage (pyautogui, dogtail, playwright) and GitHub Actions PyPI publish pipelines for all three repos.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

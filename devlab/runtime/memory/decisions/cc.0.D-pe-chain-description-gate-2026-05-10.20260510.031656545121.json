@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-pe-chain-description-gate-2026-05-10.20260510.031656545121",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-pe-chain-description-gate-2026-05-10"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-10T03:16:56.545121",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-pe-chain-description-gate-2026-05-10",
+    "title": "Abort pe_chain early when ticket description is absent — stop SITUATE from inferring scope from title semantics",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-10",
+    "spawned_tickets": [
+      "T-pe-read-ticket-description-gate"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-pe-chain-description-gate-2026-05-10\n**title:** Abort pe_chain early when ticket description is absent — stop SITUATE from inferring scope from title semantics\n**date:** 2026-05-10\n**status:** open\n**spawned_tickets:** T-pe-read-ticket-description-gate\n\n## Decision narrative\npe_chain's SITUATE step infers HIGH-inertia files from title semantics when description is absent, hands that code to HYPOTHESIZE via OBSERVE, and a hallucinated scope edit fires. The scope guard catches it after 0 attempts but the 5-week recurring pattern shows guards alone aren't enough. Fix: pe_read_ticket aborts with basket[error] when description is missing/title-only, before SITUATE runs.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

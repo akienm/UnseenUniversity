@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.D-cap-map-followups-2026-04-27.20260427.022554105964",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-cap-map-followups-2026-04-27"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-04-27T02:25:54.105964",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-cap-map-followups-2026-04-27",
+    "title": "Capability map gaps → batch follow-up tickets (5 fixed inline, 3 deferred)",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-04-27",
+    "spawned_tickets": [
+      "T-cognition-module-audit",
+      "T-fill-missing-subsystem-palace-entries",
+      "T-reading-pipeline-placeholder-reconcile",
+      "T-turn-pipeline-status-doc",
+      "T-ne-stew-threshold-coupling-doc",
+      "T-habit-fire-rate-visibility",
+      "T-capability-map-drift-audit",
+      "T-igor-doc-reorg-9-pillars"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-cap-map-followups-2026-04-27\n**title:** Capability map gaps → batch follow-up tickets (5 fixed inline, 3 deferred)\n**date:** 2026-04-27\n**status:** open\n**spawned_tickets:** T-cognition-module-audit, T-fill-missing-subsystem-palace-entries, T-reading-pipeline-placeholder-reconcile, T-turn-pipeline-status-doc, T-ne-stew-threshold-coupling-doc, T-habit-fire-rate-visibility, T-capability-map-drift-audit, T-igor-doc-reorg-9-pillars\n\n## Decision narrative\n\nDrafting `lab/docs/capability_map.md` (the \"what's built today vs planned vs broken\" doc) as a forcing function exposed eight ticketable gaps. Five were small enough to fix in this session (palace-side documentation work + a /day-close-audit step). Three are larger and went to the queue as pending: a cognition/ module classification sweep (M), a per-habit fire-rate counter (M), and the umbrella 9-pillar doc reorg (L) Akien proposed in the same conversation.\n\nThe reorg umbrella supersedes the lighter-scoped T-context-load-review and overlaps T-docs-live-code-rollout / T-case-study-lessons-learned. Those stay open for now; the umbrella names them as related and will fold them at sprint time.\n\n## Context\n\nDiagnosis: Sonnet kept losing track of what Igor actually does today vs what's planned vs what's broken. The information existed but was scattered across code, .md files, .txt notes, the palace, the slate, and decision logs — with no clear load-order. The capability map is the first of nine pillars meant to fix that.\n\nInline fixes applied this session:\n- 3 new palace subsystem_index nodes (pursuits, voice_ab, graph_calving) for live subsystems that had no entry\n- 1 update to `reading_worker_pool` clarifying [PLACEHOLDER] vs the live reading subsystem\n- 1 new palace node for `turn_pipeline` (built but gated off)\n- 1 INVARIANT block on `narrative_engine` documenting the 0.6/0.65 stew-salience coupling\n- 1 new Step 18.6 in `/day-close-audit` for capability_map.md staleness\n\nDeferred work:\n- T-cognition-module-audit (M) — 84 modules in cognition/, only ~10 named in palace\n- T-habit-fire-rate-visibility (M) — 132 habits registered, no fire-rate observability\n- T-igor-doc-reorg-9-pillars (L) — the broader 9-doc reorg umbrella\n\n## Rollup\n\n**Closed at:** 2026-04-30T00:31:30.192315+00:00\n**Ticket count:** 8 (all closed)\n\n### Shipped via\n- T-fill-missing-subsystem-palace-entries (S) — Fill missing palace subsystem entries: pursuits, voice_ab, graph_calving  `done` — Added 3 palace nodes (pursuits, voice_ab, graph_calving) under theigors/subsystem_index/. Verified via SELECT updated_by='cap-map-followups'.\n- T-reading-pipeline-placeholder-reconcile (S) — Reconcile reading_worker_pool [PLACEHOLDER] vs IGOR_READING_EXTRACT=true  `done` — Updated theigors/subsystem_index/reading_worker_pool with 'DISTINCT FROM' note pointing at the live reading subsystem; [PLACEHOLDER] tag preserved (worker pool not built).\n- T-turn-pipeline-status-doc (S) — Document turn_pipeline.py completeness as palace subsystem entry  `done` — Added theigors/subsystem_index/turn_pipeline node — status BUILT-BUT-GATED-OFF, references T-retire-legacy-direct-reasoner-path as cutover ticket.\n- T-ne-stew-threshold-coupling-doc (S) — Document NE force-run / stew salience coupling invariant (0.6 / 0.65)  `done` — Appended INVARIANT block to theigors/subsystem_index/narrative_engine: 'stew salience (0.65) > NE force-run threshold (0.6)' constraint with file:line cites.\n- T-capability-map-drift-audit (S) — Add /day-close-audit Step for capability_map.md staleness  `done` — Added Step 18.6 (Capability map drift check) to ~/.claude/skills/day-close-audit/SKILL.md + Cap-map drift line in findings format. >7 day staleness triggers re-verify prompt.\n- T-habit-fire-rate-visibility (M) — Per-habit fire-rate counter — expose in habit_list MCP tool  `done` — pe_chain autonomous: pass\n- T-igor-doc-reorg-9-pillars (L) — Doc reorg — 9-pillar structure (premise, glossary, architecture, capability map, workflow, rules, tools, navigation, lessons, decisions)  `done` — pe_chain autonomous: pass\n- T-cognition-module-audit (M) — Cognition module audit — classify 70+ modules as live/dead/experimental  `done` — audit_cognition_modules.py classifies 93 modules: LIVE=72, EXPERIMENTAL=17, PLACEHOLDER=0, ORPHAN=4 (observer, pipeline_manager, prefrontal_cortex, reasoning_cache — verify before deleting). Report at\n\n_Generated by cc_queue.py _decision_rollup. File-stub until T-decisions-into-palace-subtree moves rollups into the memory palace._\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

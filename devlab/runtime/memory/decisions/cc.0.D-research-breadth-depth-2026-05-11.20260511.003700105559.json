@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-research-breadth-depth-2026-05-11.20260511.003700105559",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-research-breadth-depth-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T00:37:00.105559",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-research-breadth-depth-2026-05-11",
+    "title": "Librarian research API: breadth + depth floats replacing depth string param",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-research-api-breadth-depth"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-research-breadth-depth-2026-05-11\n**title:** Librarian research API: breadth + depth floats replacing depth string param\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-research-api-breadth-depth\n\n## Decision narrative\nReplace research(query, depth: str) with research(query, breadth: float=0.5, depth: float=0.5) — two independent 0.0-1.0 parameters analogous to model temperature. breadth scales number of sources (0=single, 1=broad multi-source); depth scales processing intensity (0=summary, 1=full synthesis). Canonical use: two-pass research — broad survey first (breadth=0.8, depth=0.2), deep dive second (breadth=0.1, depth=0.9). Backward compat shim converts old depth='shallow'/'deep' string calls. T-librarian-external-doc-fetch is gated on this ticket so external fetch is implemented against the new API.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

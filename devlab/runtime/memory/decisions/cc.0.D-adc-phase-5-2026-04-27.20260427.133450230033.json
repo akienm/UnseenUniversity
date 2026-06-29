@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-adc-phase-5-2026-04-27.20260427.133450230033",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-adc-phase-5-2026-04-27"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-04-27T13:34:50.230033",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-adc-phase-5-2026-04-27",
+    "title": "UnseenUniversity Phase 5 — cleanup (remove superseded TheIgors plumbing)",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-04-27",
+    "spawned_tickets": [
+      "T-adc-cc-mcp-server-deprecation",
+      "T-adc-network-discord-relocate"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-adc-phase-5-2026-04-27\n**title:** UnseenUniversity Phase 5 — cleanup (remove superseded TheIgors plumbing)\n**date:** 2026-04-27\n**status:** open\n**spawned_tickets:** T-adc-cc-mcp-server-deprecation, T-adc-network-discord-relocate\n\n## Decision narrative\n\nPhase 5 removes the old plumbing from TheIgors that is superseded by UnseenUniversity: cc_mcp_server.py (replaced by skeleton MCP aggregator) and wild_igor/igor/network/discord_bot.py (relocated into UnseenUniversity devices). Cleanup runs after Phase 1-4 are verified live.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-hermes-patterns-2026-05-11.20260511.121003816982",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-hermes-patterns-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T12:10:03.816982",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-hermes-patterns-2026-05-11",
+    "title": "Steal Hermes \"do-learn-improve\" patterns — palace FTS, pe_chain skill-gen, depth-over-breadth rule",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-palace-fts-index",
+      "T-pe-chain-skill-gen",
+      "T-depth-over-breadth-rule"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-hermes-patterns-2026-05-11\n**title:** Steal Hermes \"do-learn-improve\" patterns — palace FTS, pe_chain skill-gen, depth-over-breadth rule\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-palace-fts-index, T-pe-chain-skill-gen, T-depth-over-breadth-rule\n\n## Decision narrative\nHermes Agent overtook OpenClaw as OpenRouter's #1 agent by implementing a \"do, learn, improve\" loop with procedurally generated skill files rather than optimizing for 50+ platform integrations — validating depth over breadth as a design principle. We implement three analogues: (1) Postgres FTS index on adc.palace for session-content search (mirrors Hermes's SQLite FTS5 layer), (2) mandatory post-task skill synthesis in pe_chain for M/L/XL tickets writing PLAYBOOK palace nodes under theigors/skills/ (mirrors Hermes's auto-generated skill files), and (3) a theigors/rules/design-principles palace node formalizing the depth-over-breadth principle so it doesn't get relitigated. PLAYBOOK memory type already shipped (T-igor-playbook-memory-type done 2026-05-10).\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

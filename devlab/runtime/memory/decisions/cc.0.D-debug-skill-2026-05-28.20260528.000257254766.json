@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-debug-skill-2026-05-28.20260528.000257254766",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-debug-skill-2026-05-28"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-28T00:02:57.254766",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-debug-skill-2026-05-28",
+    "title": "/debug autonomous mixed-mode debugger — pointer resolution → Scraps → Haiku/Sonnet → report",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-28",
+    "spawned_tickets": [
+      "T-scraps-debug-extractor",
+      "T-debug-skill",
+      "T-consequence-debug-skill"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-debug-skill-2026-05-28\n**title:** /debug autonomous mixed-mode debugger — pointer resolution → Scraps → Haiku/Sonnet → report\n**date:** 2026-05-28\n**status:** open\n**spawned_tickets:** T-scraps-debug-extractor, T-debug-skill, T-consequence-debug-skill\n**goal_link:** none: reduce CC inference overhead per debug cycle; make debugging systematic\n**concept_links:** none\n\n## Decision narrative\nImplement /debug as an autonomous mixed-mode skill: freeform input (ticket ID, timestamp, pasted console text) → pointer resolution (light inference) → Scraps deterministic extraction (log window, state, test output) → Haiku classification + hypothesis → Sonnet escalation if needed → structured report. CC reads the report rather than investigating interactively. Report format: SUMMARY, WHERE, WHAT, STATE (type-specific), LOG WINDOW, HYPOTHESIS+confidence, NEXT step.\n\n## Hypothesis\nCC diagnoses most bugs from the structured report without running follow-up investigation commands.\n\n## Measurement Signal\nRun a known bug through /debug — report contains correct hypothesis and NEXT step without additional CC turns.\n\n## Goal Link\nnone: reduce CC inference overhead per debug cycle; compiled inference applied to debugging\n\n## Alternatives considered\n- Interactive CC investigation (chose report-first — compiles the investigation into a reusable output)\n- Haiku-only without escalation (chose escalation ladder — some bugs need Sonnet-level synthesis)\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

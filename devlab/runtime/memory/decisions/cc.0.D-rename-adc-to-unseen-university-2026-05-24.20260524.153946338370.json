@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-rename-adc-to-unseen-university-2026-05-24.20260524.153946338370",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-rename-adc-to-unseen-university-2026-05-24"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-24T15:39:46.338370",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-rename-adc-to-unseen-university-2026-05-24",
+    "title": "Rename agent_datacenter repo to UnseenUniversity",
+    "status": "historical",
+    "original_status": "closed",
+    "date": "2026-05-24",
+    "spawned_tickets": [
+      "T-gh-rename-adc-to-uu",
+      "T-codebase-refs-adc-to-uu",
+      "T-local-dir-rename-adc-to-uu",
+      "T-consequence-rename-adc-to-uu"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-rename-adc-to-unseen-university-2026-05-24\n**title:** Rename agent_datacenter repo to UnseenUniversity\n**date:** 2026-05-24\n**status:** closed\n**spawned_tickets:** T-gh-rename-adc-to-uu, T-codebase-refs-adc-to-uu, T-local-dir-rename-adc-to-uu, T-consequence-rename-adc-to-uu\n\n## Hypothesis\nGitHub renamed, local path renamed, all source references updated to UnseenUniversity.\n\n## Measurement Signal\n`git remote -v` shows new URL + `grep -r UnseenUniversity .` clean on live code paths.\n\n## Goal Link\nnone: platform naming hygiene — platform identity clarity before Igor migration begins\n\n## Decision narrative\nRename the `UnseenUniversity` GitHub repo and local directory to `UnseenUniversity` — the portable agent platform gets a permanent Discworld-themed name reflecting its purpose as a research institution where agents live (Igor, Librarian, Scraps). Renaming `UnseenUniversity` rather than `TheIgors` because GitHub issues/discussions (#792, #7, all T- ticket GH links) are already there and redirect automatically on rename. Alternative considered: move UnseenUniversity into TheIgors repo; rejected because it would require migrating all GH issues/discussions to the renamed repo — painful and lossy.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: closed."
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-adc-shared-agent-substrate-2026-05-08.20260508.153016137384",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-adc-shared-agent-substrate-2026-05-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-08T15:30:16.137384",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-adc-shared-agent-substrate-2026-05-08",
+    "title": "ADC as shared agent substrate — routing manifest + capability extraction",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-08",
+    "spawned_tickets": [
+      "T-adc-routing-manifest",
+      "T-skill-capability-check-dynamic"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-adc-shared-agent-substrate-2026-05-08\n**title:** ADC as shared agent substrate — routing manifest + capability extraction\n**date:** 2026-05-08\n**status:** open\n**spawned_tickets:** T-adc-routing-manifest, T-skill-capability-check-dynamic\n\n## Decision narrative\nADC is the shared capability substrate for both CC and Igor — capabilities extracted into ADC devices are consumed via MCP by both agents identically, with no per-agent wiring. The key insight: \"easier for CC is easier for Igor too\" because they are both agents consuming ADC capabilities. The upgrade that enables this is an opinionated routing manifest: datacenter_manifest upgraded to return a task-shape → MCP tool map, so both CC (CAPABILITY CHECK step in sprint-ticket) and Igor (habit routing) pick the right tool without reasoning overhead or hardcoded heuristics. T-librarian-db-proxy (filed under D-librarian-rack-agent-2026-05-08) is the first concrete capability extraction that this manifest will surface.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

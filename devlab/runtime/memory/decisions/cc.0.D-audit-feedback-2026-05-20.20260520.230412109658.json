@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-audit-feedback-2026-05-20.20260520.230412109658",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-audit-feedback-2026-05-20"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-20T23:04:12.109658",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-audit-feedback-2026-05-20",
+    "title": "Add /audit-feedback skill to enforce feedback-loop completeness in all skills",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-20",
+    "spawned_tickets": [
+      "T-audit-feedback-build",
+      "T-audit-ticket-integrate-feedback",
+      "T-consequence-audit-feedback"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-audit-feedback-2026-05-20\n**title:** Add /audit-feedback skill to enforce feedback-loop completeness in all skills\n**date:** 2026-05-20\n**status:** open\n**spawned_tickets:** T-audit-feedback-build, T-audit-ticket-integrate-feedback, T-consequence-audit-feedback\n\n## Decision narrative\nEvery skill must be designed with its feedback loop in mind: does it verify its own output, surface failures, feed the outcome back into context, and preserve what was learned? The principle \"I'm only as good as my feedback loop\" — stated during Windows porting work — implies a structural audit. We create /audit-feedback as a new audit skill (parallel to /audit-ticket, /audit-design, /audit-hypothesis) that checks these five properties on any skill directory, and wire it into /audit-ticket so skill-touching tickets get feedback-loop review at filing time.\n\n## Hypothesis\nSkills that are explicitly required to pass a feedback-loop audit will surface failures visibly, preserve learning across sessions, and compound quality over time rather than silently degrading.\n\n## Measurement Signal\nAfter /audit-feedback is wired into /audit-ticket: spot-check 5 existing skills against the audit. Count AMEND results. Each AMEND that leads to a skill edit (run script or SKILL.md update) is a learning-preservation event — if we see >0 such events in the first week, the audit is doing useful work.\n\n## Goal Link\nnone: /audit-feedback is a meta-quality mechanism for the skill layer, not tied to a specific G-xxx product goal.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

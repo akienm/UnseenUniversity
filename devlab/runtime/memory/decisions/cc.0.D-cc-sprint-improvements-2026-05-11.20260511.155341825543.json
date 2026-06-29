@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-cc-sprint-improvements-2026-05-11.20260511.155341825543",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-cc-sprint-improvements-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T15:53:41.825543",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-cc-sprint-improvements-2026-05-11",
+    "title": "Autonomous sprint loop + ultrathink plan review for CC sprinting",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-cc-autonomous-sprint-loop",
+      "T-sprint-ticket-ultrathink"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-cc-sprint-improvements-2026-05-11\n**title:** Autonomous sprint loop + ultrathink plan review for CC sprinting\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-cc-autonomous-sprint-loop, T-sprint-ticket-ultrathink\n\n## Decision narrative\nTwo sprint workflow improvements: (1) /sprint-loop skill uses ScheduleWakeup to keep sprinting a full queue autonomously — schedules its own next wakeup before starting the batch so compact mid-sprint does not lose the loop; terminates when queue is empty. Motivated by upcoming design-day queue fill. (2) Ultrathink added to sprint-ticket Step 4 for L/XL and HIGH-inertia tickets — forced deep plan review before coding on high-stakes work.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

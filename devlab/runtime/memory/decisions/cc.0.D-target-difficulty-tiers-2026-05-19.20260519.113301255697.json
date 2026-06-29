@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-target-difficulty-tiers-2026-05-19.20260519.113301255697",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-target-difficulty-tiers-2026-05-19"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-19T11:33:01.255697",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-target-difficulty-tiers-2026-05-19",
+    "title": "Ticket difficulty tiers — Apprentice/Sustainer/Creator/Master/Teacher capability routing",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-19",
+    "spawned_tickets": [
+      "T-ticket-difficulty-schema",
+      "T-queue-next-difficulty",
+      "T-igor-difficulty-cap"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-target-difficulty-tiers-2026-05-19\n**title:** Ticket difficulty tiers — Apprentice/Sustainer/Creator/Master/Teacher capability routing\n**date:** 2026-05-19\n**status:** open\n**spawned_tickets:** T-ticket-difficulty-schema, T-queue-next-difficulty, T-igor-difficulty-cap\n\n## Decision narrative\nAdd `target_difficulty: int` (1-5) to the ticket schema so consumers self-select tickets at or below their capability level. Tier scale: Apprentice(1/Igor), Sustainer(2/Librarian), Creator(3/Haiku), Master(4/Sonnet), Teacher(5/Opus). Igor's daemon passes `--max-difficulty=1` to `cc_queue.py next` so he only claims Apprentice-tier tickets; harder work sits pending until a capable consumer picks it up.\n\nAlternative considered: using the existing `worker=` field (doesn't generalize to capability routing, hardcodes destination) or ticket tags (unreliable, not machine-filterable). Chose difficulty field because it's explicit, range-validated, and generalizes across all consumers without per-consumer tag logic.\n\n## Hypothesis\nIgor never claims tickets with target_difficulty > 1 after the feature ships; high-difficulty tickets sit pending until a higher-tier consumer claims them.\n\n## Measurement Signal\n2-hour spot-check (approx 21:30 UTC 2026-05-19): workspace not crudded up = shipped and working. `cc_queue.py list --worker=igor` shows no difficulty>1 tickets in Igor's sprint history.\n\n## Goal Link\nnone: direct system self-regulation — reduces cleanup cycles from over-claimed tickets, not tied to a named G-xxx goal yet.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

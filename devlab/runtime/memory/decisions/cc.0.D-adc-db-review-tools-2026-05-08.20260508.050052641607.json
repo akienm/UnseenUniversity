@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-adc-db-review-tools-2026-05-08.20260508.050052641607",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-adc-db-review-tools-2026-05-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-08T05:00:52.641607",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-adc-db-review-tools-2026-05-08",
+    "title": "Database review/browse/edit tools for palace trees and shared tables",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-08",
+    "spawned_tickets": [
+      "T-librarian-palace-mcp-tools",
+      "T-palace-cli"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-adc-db-review-tools-2026-05-08\n**title:** Database review/browse/edit tools for palace trees and shared tables\n**date:** 2026-05-08\n**status:** open\n**spawned_tickets:** T-librarian-palace-mcp-tools, T-palace-cli\n\n## Decision narrative\n\nAkien needs the same review/browse/edit capability for palace trees that Igor\nhas for his memories. Two surfaces solve this cleanly:\n\n1. **In-session (MCP tools)**: Add 4 Librarian MCP tools — `palace_ls`,\n   `palace_read`, `palace_write`, `palace_delete` — usable directly inside CC\n   without leaving the session. Covers the palace tree specifically.\n\n2. **Out-of-session (CLI)**: A `palace_cli.py` script with tree-view, search,\n   read, and edit subcommands. Human-friendly terminal output (indented tree,\n   truncated content preview). Covers bulk review and offline edits.\n\nOff-the-shelf tools (pgAdmin, TablePlus, psql) already serve flat tables well;\nthey don't need custom tooling.\n\n---\n\n## Problem statement\n\nThe palace stores hierarchical nodes at paths like:\n```\npalace.decisions.D-foo-2026-05-08\npalace.shared.akien.goals\npalace.projects.unseen_university.summary\npalace.days.20260508\n```\n\nExisting tools (`db_query`, `db_dispatch`) allow raw SQL but require knowing\nthe schema. What's missing:\n\n- **Tree traversal**: \"show me everything under palace.projects.*\"\n- **Path-aware read**: \"read palace.shared.akien.goals in full\"\n- **Inline edit**: \"update the content of palace.projects.unseen_university.summary\"\n- **Tag-based search**: \"find all nodes tagged ['decision', 'adc']\"\n\n---\n\n## Proposed solution\n\n### Surface 1 — Librarian MCP tools (in-session)\n\nFour new tools in `UnseenUniversity/devices/librarian/tools/palace_tools.py`:\n\n**`palace_ls(prefix=\"\", limit=50)`**\nList all nodes under a path prefix, indented tree view:\n```\npalace.projects\n  palace.projects.unseen_university\n    palace.projects.unseen_university.map          [doc]    2026-05-08\n    palace.projects.unseen_university.summary      [doc]    2026-05-08\n    palace.projects.unseen_university.standards    [doc]    2026-05-08\n  palace.projects.theigors                        [pointer] 2026-05-08\n```\n\n**`palace_read(path)`**\nReturn full node content for a given path:\n```\npath:      palace.shared.akien.goals\ntitle:     Akien's Goals Tree\nnode_type: doc\nupdated:   2026-05-08T14:16Z\ntags:      [shared, akien]\n---\nROOT: 'Akien makes the world suck less' ...\n```\n\n**`palace_write(path, title, content, node_type=\"doc\", tags=[])`**\nUpsert a node. Returns the written path + updated_at.\nRequires explicit node_type to prevent accidental type changes.\n\n**`palace_search(query, tags=[], limit=10)`**\nFull-text + tag filter search. Uses existing GIN indexes.\nReturns list of {path, title, snippet}.\n\nThese 4 tools live alongside the existing Librarian tools and are exposed\nvia the `igor` MCP server (same entry point).\n\n### Surface 2 — CLI script (out-of-session)\n\n`scripts/palace_cli.py` with subcommands:\n\n```bash\n# Tree view\npython3 scripts/palace_cli.py ls palace.projects\npython3 scripts/palace_cli.py ls                     # full tree\n\n# Read a node\npython3 scripts/palace_cli.py read palace.shared.akien.goals\n\n# Search\npython3 scripts/palace_cli.py search \"capability extraction\"\npython3 scripts/palace_cli.py search --tag decision --limit 20\n\n# Edit (opens $EDITOR or takes --content inline)\npython3 scripts/palace_cli.py edit palace.projects.unseen_university.summary\npython3 scripts/palace_cli.py edit palace.foo --content \"new content\" --title \"New Title\"\n\n# Delete (with confirmation prompt)\npython3 scripts/palace_cli.py delete palace.foo.bar\n```\n\nOutput is human-readable by default; `--json` flag for scripting.\n\n### What off-the-shelf covers\n\n- **psql / pgAdmin / DBeaver**: flat tables (clan.memories, instance.ring_memory,\n  clan.traces, etc.). No custom tooling needed — `db_query` + `db_dispatch` MCP\n  tools already cover these from inside CC sessions.\n\n---\n\n## Design rules applied\n\n- Palace DB always (adc.palace); no SQLite.\n- palace_write uses `ON CONFLICT (path) DO UPDATE` — always upsert, never bare INSERT.\n- palace_delete is soft-confirmed (requires explicit `--yes` flag or y/n prompt).\n- MCP tools stay in Librarian device boundary; no TheIgors imports.\n\n---\n\n## Spawned tickets\n\n- **T-librarian-palace-mcp-tools** (S): Add palace_ls, palace_read, palace_write,\n  palace_search to Librarian tools. Wire into MCP tool list.\n- **T-palace-cli** (M): Build `scripts/palace_cli.py` with ls/read/search/edit/delete\n  subcommands.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

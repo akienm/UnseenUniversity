@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-cognition-health-metrics-2026-05-11.20260511.143152252855",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-cognition-health-metrics-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T14:31:52.252855",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-cognition-health-metrics-2026-05-11",
+    "title": "Cognition health metrics to infra.metrics — NE synthesis rate, LTM exposure count, arousal gate suppression",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-cognition-health-metrics"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-cognition-health-metrics-2026-05-11\n**title:** Cognition health metrics to infra.metrics — NE synthesis rate, LTM exposure count, arousal gate suppression\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-cognition-health-metrics\n\n## Decision narrative\nWrite three cognition health metrics to the existing infra.metrics table so Igor's signal/noise ratio is observable via SQL query. Points: cognition.ne_cycle_result (1.0/0.0 per NE cycle in coa.py), cognition.ltm_surfaced_count (per MemorySurfacer push), cognition.arousal_gate_suppression (when milieu_scale suppresses LTM salience). Add cortex.record_metric() helper first (OOP-first, table already exists). Alternative: write to ring_memory (wrong semantic — ring is conversation context, not telemetry). No purge in scope — infra.metrics accumulates but low-volume.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

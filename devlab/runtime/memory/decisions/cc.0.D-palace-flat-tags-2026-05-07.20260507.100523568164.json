@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-palace-flat-tags-2026-05-07.20260507.100523568164",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-palace-flat-tags-2026-05-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-07T10:05:23.568164",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-palace-flat-tags-2026-05-07",
+    "title": "Palace uses flat namespaces with tags, not nested project hierarchies",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-07",
+    "spawned_tickets": [
+      "T-adc-palace-bootstrap (pending)"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-palace-flat-tags-2026-05-07\n\n**title:** Palace uses flat namespaces with tags, not nested project hierarchies\n**date:** 2026-05-07\n**status:** open\n**spawned_tickets:** T-adc-palace-bootstrap (pending)\n\n## Decision narrative\n\nThe original schema had `palace.projects.<name>.tickets.*` and `palace.projects.<name>.decisions.*`\nas per-project subtrees. This was replaced with flat `palace.tickets.*` and `palace.decisions.*`\nnamespaces where project/domain membership is carried in `metadata.tags`. Prompted by Akien's\nobservation that the boundary between Igor, ADC, swadl, and other projects is nearly nonexistent\nin his head — siloing by path hierarchy forces artificial barriers where none exist conceptually.\nTags allow a node to belong to multiple projects simultaneously, support cross-cutting search,\nand match how both Akien and CC actually navigate (by topic/content, not by project container).\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

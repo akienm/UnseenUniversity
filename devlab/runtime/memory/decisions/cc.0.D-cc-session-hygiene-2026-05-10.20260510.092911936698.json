@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-cc-session-hygiene-2026-05-10.20260510.092911936698",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-cc-session-hygiene-2026-05-10"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-10T09:29:11.936698",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-cc-session-hygiene-2026-05-10",
+    "title": "Reduce CC session token cost: autocompact at 50%, test output pre-filter, path-scoped rules",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-10",
+    "spawned_tickets": [
+      "T-cc-autocompact-config",
+      "T-cc-test-prefilter",
+      "T-cc-path-scoped-rules"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-cc-session-hygiene-2026-05-10\n**title:** Reduce CC session token cost: autocompact at 50%, test output pre-filter, path-scoped rules\n**date:** 2026-05-10\n**status:** open\n**spawned_tickets:** T-cc-autocompact-config, T-cc-test-prefilter, T-cc-path-scoped-rules\n\n## Decision narrative\nThree targeted token-budget improvements for long agentic sessions: (1) CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50 compacts context at half-full instead of 95% — keeps context clean through sprint batches; (2) pre-filtering pytest output with grep before passing to Claude reduces noise on red runs while improving failure signal; (3) path-scoped rules load Igor-specific context only when editing Igor files, not every session. All committed to dotfiles/config so changes sync across machines.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

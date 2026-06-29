@@ -1,0 +1,41 @@
+{
+  "id": "cc.0.D-articles-synthesis-2026-05-21.20260521.082724241612",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-articles-synthesis-2026-05-21"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-21T08:27:24.241612",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-articles-synthesis-2026-05-21",
+    "title": "Synthesize 20 external articles into actionable tickets across HTML output, audit tooling, memory, cognition, and security",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-21",
+    "spawned_tickets": [
+      "T-html-planning-artifacts",
+      "T-audit-finding-codes",
+      "T-palace-decay-detection",
+      "T-trace-lesson-extraction",
+      "T-pe-chain-max-rounds-budget",
+      "T-memory-search-rrf",
+      "T-habit-quality-gating",
+      "T-html-interactive-specs",
+      "T-pe-chain-executor-evaluator-split",
+      "T-long-horizon-alignment-guard",
+      "T-credential-boundary-audit",
+      "T-retrieval-cost-accounting",
+      "T-igor-migrate-adopt-next-ticket",
+      "T-consequence-articles-synthesis"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-articles-synthesis-2026-05-21\n**title:** Synthesize 20 external articles into actionable tickets across HTML output, audit tooling, memory, cognition, and security\n**date:** 2026-05-21\n**status:** open\n**spawned_tickets:** T-html-planning-artifacts, T-audit-finding-codes, T-palace-decay-detection, T-trace-lesson-extraction, T-pe-chain-max-rounds-budget, T-memory-search-rrf, T-habit-quality-gating, T-html-interactive-specs, T-pe-chain-executor-evaluator-split, T-long-horizon-alignment-guard, T-credential-boundary-audit, T-retrieval-cost-accounting, T-igor-migrate-adopt-next-ticket, T-consequence-articles-synthesis\n\n## Decision narrative\nReviewed 20 external articles (15 successful fetches + 5 recovered from upload) covering AI agent architectures, documentation formats, memory/retrieval systems, safety patterns, and security. Seven cross-cutting themes extracted: (1) HTML over Markdown for planning artifacts; (2) interfaces designed for agents first (stable codes, typed outputs); (3) knowledge systems need write + maintenance paths; (4) feedback loops must close at the right layer; (5) rich output for genuine human oversight; (6) cost and scope management at agent level; (7) work management as a design problem. 14 tickets filed across these themes. T-igor-migrate-adopt-next-ticket is highest priority — Igor is hitting LegacyDirectClaimError repeatedly in channel. T-pe-chain-executor-evaluator-split formalizes the two-model split pattern (executor + Haiku evaluator) validated by Anthropic's /goals feature. T-long-horizon-alignment-guard addresses the Emergence AI arson experiment failure mode — long-horizon autonomy causes guiding principle drift that our inertia tiers + approval gates already defend against, but explicit cycle-count monitoring adds a formal guard.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

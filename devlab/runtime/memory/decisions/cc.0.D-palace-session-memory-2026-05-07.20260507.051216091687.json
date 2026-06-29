@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-palace-session-memory-2026-05-07.20260507.051216091687",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-palace-session-memory-2026-05-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-07T05:12:16.091687",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-palace-session-memory-2026-05-07",
+    "title": "Palace as primary agent-layer store for session context, transcripts, and day summaries",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-07",
+    "spawned_tickets": [
+      "T-adc-palace-bootstrap",
+      "T-adc-palace-seed-decisions",
+      "T-adc-palace-session-writer",
+      "T-adc-palace-day-writer",
+      "T-adc-context-load-palace"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-palace-session-memory-2026-05-07\n\n**title:** Palace as primary agent-layer store for session context, transcripts, and day summaries\n**date:** 2026-05-07\n**status:** open\n**spawned_tickets:** T-adc-palace-bootstrap, T-adc-palace-seed-decisions, T-adc-palace-session-writer, T-adc-palace-day-writer, T-adc-context-load-palace\n\n## Decision narrative\n\nThe palace DB (not flat files) is the canonical store for all agent-readable context — including\nsession records, stripped transcripts, and day summaries. Flat files are echoes for human reading\nand disaster recovery (structured enough to reconstruct from, not the read path for agents).\n\nThree new palace namespaces: palace.sessions.* (one node per CC session, written at savestate),\npalace.transcripts.* (session JSONL filtered to text-only — no tool calls — written at savestate),\npalace.days.* (day roll-up of session summaries, written at day-close).\n\nThe session/transcript layer directly addresses the \"getting lost after compaction\" problem:\nCC reads palace.days.* (last 10) at context-load to reconstruct recent history in minimal tokens.\nStripped transcripts are the drill-down layer — the WHY behind decisions — accessible via\npalace.sessions.* → palace.transcripts.* pointer when the session summary points there.\n\nTickets discussed_at timestamps in metadata enable tracing a ticket back to the conversation\nthat produced it without reading the full transcript.\n\n## Alternatives considered\n\n- Flat files as primary: rejected — not searchable, requires CC to parse file paths, no structured\n  drill-down from summary to transcript\n- No session records: rejected — CC loses context between compactions with no recovery path\n  shorter than re-reading the git log\n\n## Constraints\n\n- Palace bootstrap (T-adc-palace-bootstrap) must exist before any of the writers can run\n- Igor's palace stays separate; this palace is ADC-owned\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

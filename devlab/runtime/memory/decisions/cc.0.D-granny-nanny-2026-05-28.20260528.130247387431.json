@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-granny-nanny-2026-05-28.20260528.130247387431",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-granny-nanny-2026-05-28"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-28T13:02:47.387431",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-granny-nanny-2026-05-28",
+    "title": "Granny Weatherwax + Nanny Ogg — ticket gateway/orchestrator and scheduler/world-dispatcher devices",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-28",
+    "spawned_tickets": [
+      "T-granny-weatherwax-device",
+      "T-nanny-ogg-device",
+      "T-consequence-granny-nanny"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-granny-nanny-2026-05-28\n**title:** Granny Weatherwax + Nanny Ogg — ticket gateway/orchestrator and scheduler/world-dispatcher devices\n**date:** 2026-05-28\n**status:** open\n**spawned_tickets:** T-granny-weatherwax-device, T-nanny-ogg-device, T-consequence-granny-nanny\n**goal_link:** none: factory-of-factories — autonomous work routing without CC present\n**concept_links:** none\n\n## Decision narrative\nTwo rack devices replace scattered orchestration logic. Granny Weatherwax: ticket gateway + coding orchestrator — rules-based graph routing (ticket tags → capability edges → worker nodes), Hebbian learning on routes, CC escalation for novel/HIGH-inertia cases. Nanny Ogg: scheduler + world-interaction dispatcher — all when/then triggers (cron, gate conditions, consequence maturation, alignment reviews) plus world-interaction ticket dispatch (calendar, social, IoT, new agents). Supersedes T-adc-scheduling-primitive.\n\n## Hypothesis\nWork routes to the correct executor without CC present in the common case; Nanny surfaces time-gated tickets and schedules reliably without Igor internals.\n\n## Measurement Signal\nConsequence tickets surface on their gate date without CC manually checking; coding tickets route to Igor/Scraps without CC dispatch.\n\n## Goal Link\nnone: factory-of-factories — autonomous operation; rack routes itself\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

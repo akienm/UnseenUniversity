@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-xmemory-patterns-2026-05-11.20260511.205209950948",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-xmemory-patterns-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T20:52:09.950948",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-xmemory-patterns-2026-05-11",
+    "title": "xMemory paper — three implementable patterns for Igor memory architecture",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-igor-uncertainty-gated-recall",
+      "T-igor-memory-decay-dreaming",
+      "T-igor-consolidation-theme-palace"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-xmemory-patterns-2026-05-11\n**title:** xMemory paper — three implementable patterns for Igor memory architecture\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-igor-uncertainty-gated-recall, T-igor-memory-decay-dreaming, T-igor-consolidation-theme-palace\n\n## Decision narrative\nThe xMemory paper (VentureBeat, 2026-05) describes a four-level memory hierarchy (messages→episodes→semantics→themes) with Uncertainty Gating as the key retrieval innovation. Three patterns map directly to Igor gaps: (1) Igor's activate.py uses pure similarity with no uncertainty signal — add conditional trace-level expansion when top-K confidence is low; (2) clan.memories has last_activated_at + activation_score but no lifecycle decay — add archive pass in dreaming.py for stale low-activation memories; (3) consolidation.py produces high-importance patterns but never promotes them to palace theme nodes — the \"themes\" level that xMemory says is what enables fast top-down retrieval.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

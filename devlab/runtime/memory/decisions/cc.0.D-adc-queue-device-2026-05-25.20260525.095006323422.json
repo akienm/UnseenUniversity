@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-adc-queue-device-2026-05-25.20260525.095006323422",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-adc-queue-device-2026-05-25"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-25T09:50:06.323422",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-adc-queue-device-2026-05-25",
+    "title": "Build ADC queue rack device as the canonical ticket queue — MCP interface, no claiming",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-25",
+    "spawned_tickets": [
+      "T-adc-queue-device",
+      "T-adc-queue-no-claiming",
+      "T-query-ticket-mcp-switch",
+      "T-consequence-adc-queue-device"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-adc-queue-device-2026-05-25\n**title:** Build ADC queue rack device as the canonical ticket queue — MCP interface, no claiming\n**date:** 2026-05-25\n**status:** open\n**spawned_tickets:** T-adc-queue-device, T-adc-queue-no-claiming, T-query-ticket-mcp-switch, T-consequence-adc-queue-device\n\n## Decision narrative\nBuild a queue rack device in UnseenUniversity (devices/queue/) that IS the work ticket queue. Every consumer — CC, Igor, Librarian — calls queue_next(worker) → ticket JSON or None via MCP. No claiming: queue_next is atomic (marks returned ticket in_progress in one DB operation). Backend: cc_queue.py's existing Postgres table. Alternative considered: keep cc_queue.py as the direct consumer interface (chose rack device because single MCP mechanism = one place to change, works across all consumers, aligns with the erector-set architecture).\n\n## Hypothesis\nmcp__datacenter__queue_next(worker=\"claude\") is callable and returns a ticket from the existing queue; /query-ticket skill and context-load Step 5.95 use the MCP path; no direct cc_queue.py calls remain in skill files.\n\n## Measurement Signal\nqueue_next() tool appears in datacenter_manifest; /query-ticket SKILL.md Step 1 calls mcp__datacenter__queue_next; cc_queue.py fallback reference removed from skill files.\n\n## Goal Link\nnone: architectural infrastructure decision that enables the single-mechanism goal but is not directly a capability growth ticket.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

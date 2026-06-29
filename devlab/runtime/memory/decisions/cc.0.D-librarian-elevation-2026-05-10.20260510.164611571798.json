@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-librarian-elevation-2026-05-10.20260510.164611571798",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-librarian-elevation-2026-05-10"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-10T16:46:11.571798",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-librarian-elevation-2026-05-10",
+    "title": "Retarget memory curation to ADC Librarian device; add focus quality tracking; wire Librarian MCP into CC",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-10",
+    "spawned_tickets": [
+      "T-librarian-curation-tools",
+      "T-librarian-focus-quality-log",
+      "T-librarian-mcp-cc-wiring"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-librarian-elevation-2026-05-10\n**title:** Retarget memory curation to ADC Librarian device; add focus quality tracking; wire Librarian MCP into CC\n**date:** 2026-05-10\n**status:** open\n**spawned_tickets:** T-librarian-curation-tools, T-librarian-focus-quality-log, T-librarian-mcp-cc-wiring\n**closes:** T-igor-memory-librarian\n\n## Decision narrative\nThe Librarian device already exists in UnseenUniversity as a standalone reasoner with MCP surface. Memory curation (which T-igor-memory-librarian tried to put inside Igor's cognition stack) belongs in the Librarian device: standalone, independently debuggable, no Igor brain overhead. Debug it there first, then migrate logic into Igor later if warranted. The proposals queue (T-igor-proposals-queue) is the clean interface — Librarian PROPOSES, Igor DECIDES. Additionally: wire the Librarian's existing research/summarize MCP tools into CC context-load and sprint-ticket; add a focus quality log to track which memories actually contribute to NE output (feeding curation priority).\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

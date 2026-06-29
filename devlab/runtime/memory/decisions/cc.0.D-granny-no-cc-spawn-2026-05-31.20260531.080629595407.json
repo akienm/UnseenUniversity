@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-granny-no-cc-spawn-2026-05-31.20260531.080629595407",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-granny-no-cc-spawn-2026-05-31"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-31T08:06:29.595407",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-granny-no-cc-spawn-2026-05-31",
+    "title": "Granny must never spawn CC — ESCALATE goes to hold",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-31",
+    "spawned_tickets": [
+      "T-granny-escalate-hold"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-granny-no-cc-spawn-2026-05-31\n**title:** Granny must never spawn CC — ESCALATE goes to hold\n**date:** 2026-05-31\n**status:** open\n**spawned_tickets:** T-granny-escalate-hold\n**goal_link:** C-system-availability (CC must remain accessible)\n**concept_links:** none\n\n## Decision narrative\nEvery unplanned CC blackout has been caused by Granny spawning Claude workers. The ESCALATE path in inference_dispatch_fn must call cc_queue.py block, not _launch_cc_instance. Escalated tickets surface at next CC review session with Akien. No exceptions.\n\n## Hypothesis\nNo automated process ever spawns a CC worker again.\n\n## Measurement Signal\nZero CC blackouts caused by automated dispatch after ship.\n\n## Goal Link\nC-system-availability — CC must remain accessible to Akien at all times\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

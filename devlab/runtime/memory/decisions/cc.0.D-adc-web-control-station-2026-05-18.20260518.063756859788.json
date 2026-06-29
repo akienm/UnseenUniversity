@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-adc-web-control-station-2026-05-18.20260518.063756859788",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-adc-web-control-station-2026-05-18"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-18T06:37:56.859788",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-adc-web-control-station-2026-05-18",
+    "title": "Web UI phase 2 — two-tab control station + palace browser + Akien as rack device",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-18",
+    "spawned_tickets": [
+      "T-akien-rack-device",
+      "T-web-palace-read",
+      "T-web-palace-edit",
+      "T-web-two-tabs",
+      "T-web-akien-comms"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-adc-web-control-station-2026-05-18\n**title:** Web UI phase 2 — two-tab control station + palace browser + Akien as rack device\n**date:** 2026-05-18\n**status:** open\n**spawned_tickets:** T-akien-rack-device, T-web-palace-read, T-web-palace-edit, T-web-two-tabs, T-web-akien-comms\n\n## Decision narrative\nFormalize Akien as a rack device (devices/akien/) so web and Discord traffic share a comms://akien/ address. Add server-side HTML palace browser pages to the existing web server (/goals, /decisions, /questions, /hypotheses, /outcomes, /health) — no build step, any browser. Restructure web UI into two tabs: comms/chat and a control station showing device health and IMAP bus traffic.\n\n## Hypothesis\nAdding palace browser pages + Akien device shim will make all project state browsable and messageable from any machine with a browser, with no build step or terminal required.\n\n## Measurement Signal\nAkien navigates to /health from a remote browser and sees all device statuses; navigates to /goals and sees G-xxx list; navigates to /decisions and sees D-xxx list with linked tickets.\n\n## Goal Link\nGoals tree §3.5 (remote access / design from anywhere) + §1.4 (Igor helps Akien organize his world)\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

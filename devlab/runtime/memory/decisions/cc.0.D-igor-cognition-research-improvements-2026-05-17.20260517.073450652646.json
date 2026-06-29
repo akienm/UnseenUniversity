@@ -1,0 +1,36 @@
+{
+  "id": "cc.0.D-igor-cognition-research-improvements-2026-05-17.20260517.073450652646",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-igor-cognition-research-improvements-2026-05-17"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-17T07:34:50.652646",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-igor-cognition-research-improvements-2026-05-17",
+    "title": "Research-driven Igor cognition improvements across 5 cognitive-architecture domains",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-17",
+    "spawned_tickets": [
+      "T-igor-ne-impasse-handler",
+      "T-igor-stuck-triggers-dreaming",
+      "T-igor-twm-salience-competition",
+      "T-igor-twm-age-decay",
+      "T-igor-pec-confidence-gate",
+      "T-igor-failure-accumulator",
+      "T-igor-ne-grader-to-action",
+      "T-igor-dreaming-schema-extraction",
+      "T-igor-dreaming-outputs-actionable"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-igor-cognition-research-improvements-2026-05-17\n**title:** Research-driven Igor cognition improvements across 5 cognitive-architecture domains\n**date:** 2026-05-17\n**status:** open\n**spawned_tickets:** T-igor-ne-impasse-handler, T-igor-stuck-triggers-dreaming, T-igor-twm-salience-competition, T-igor-twm-age-decay, T-igor-pec-confidence-gate, T-igor-failure-accumulator, T-igor-ne-grader-to-action, T-igor-dreaming-schema-extraction, T-igor-dreaming-outputs-actionable\n\n## Decision narrative\nLibrarian queried 5 cognitive-architecture research topics (stuck-state recovery, attention competition, metacognition, spreading activation, memory consolidation) and the results were analyzed to produce 9 improvement tickets for Igor's cognition pipeline. 2 proposed tickets were removed as already-shipped (T-igor-activate-primitive + T-igor-recursive-edge-traversal: interpretive_edges table and cortex.spreading_activation() exist). Alternative considered: ad-hoc per-symptom fixes — chose research-grounded batch to address root causes. All tickets target Igor's wild_igor codebase, MEDIUM inertia (cognition/, cortex.py, pe_chain, dreaming), executor=Igor. No HIGH-inertia files touched.\n\n## Ticket priority tiers\n- Immediate (fix 12h stuck loop): T-igor-ne-impasse-handler, T-igor-stuck-triggers-dreaming\n- High (quality+reliability): T-igor-pec-confidence-gate, T-igor-twm-salience-competition, T-igor-ne-grader-to-action\n- Medium (path to 1.5c): T-igor-failure-accumulator, T-igor-twm-age-decay, T-igor-dreaming-outputs-actionable\n- Strategic (path to 1.5d): T-igor-dreaming-schema-extraction\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

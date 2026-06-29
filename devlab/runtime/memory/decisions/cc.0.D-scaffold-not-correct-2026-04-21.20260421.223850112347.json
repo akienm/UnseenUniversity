@@ -1,0 +1,26 @@
+{
+  "id": "cc.0.D-scaffold-not-correct-2026-04-21.20260421.223850112347",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-scaffold-not-correct-2026-04-21"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-04-21T22:38:50.112347",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-scaffold-not-correct-2026-04-21",
+    "title": "D-scaffold-not-correct-2026-04-21",
+    "status": "historical",
+    "original_status": "unknown",
+    "date": "2026-04-21",
+    "spawned_tickets": [],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "---\nid: D-scaffold-not-correct-2026-04-21\ndate: 2026-04-21\nstatus: closed\nspawned_tickets:\n  - T-palace-ticket-design-rules\n  - T-ticket-template-structured\n  - T-review-loads-palace-rules\n  - T-review-build-tightness-grade\n---\n\n# D-scaffold-not-correct-2026-04-21 — Shift design rules from implicit to explicit-at-filing-time\n\n## Summary\n\nMake Akien's implicit design rules (no-sqlite, OOP-first, docs-in-code, no-new-memory-schemas, test-plan-or-why-not) explicit at the moment a ticket is drafted. Palace holds the rules in check-shape; `/ticket` prompts for the fields each rule needs; `/review` verifies tickets positively against the rules at filing time; a build-tightness grade tells us whether a ticket is tight enough for a cheaper builder.\n\n## Narrative\n\nTonight's conversation — carried over from the post-compact topic break. Akien's frame: best-practices structures in Igor are his doing, not Claude's; more design-in-ticket produces better code; the lever isn't a more expensive model so much as making the rules visible at the point-of-use. The sqlite banner worked for that reason, not because Claude's defaults changed.\n\nKey reframe: \"drift\" is the wrong word for Claude's defaults meeting unspecified terrain. Scaffold beats correction. Making rules present at filing time lets Claude's want-to-be-thorough and want-to-satisfy lean against each other productively inside a tight scope — the same mechanism Akien uses on himself (two negatives leaned to make a positive).\n\nConcrete chain:\n\n1. Palace rules must be check-shaped (applies_when, check_body, failure_message) — not just narrative — before any reader can consume them as checks.\n2. `/ticket` must ask for the structured fields those checks need (test plan, affected files, design rules, scope boundary), because free-form description lets drafters skip the check.\n3. `/review` filing-time must load the palace checks and verify tickets positively, not just run its current generic negatives.\n4. A build-tightness grade makes the \"could a cheaper builder ship this?\" bar explicit, so loose tickets bounce back to design rather than shipping.\n\n## Scope boundary\n\n- No DB schema changes in cc_queue — structure lives in description (or a parallel payload within it).\n- Does not touch `/review`'s standalone plan/code/PR modes (Mode B).\n- Dispatch-category rules and observe-ticket rules are a separate track (already captured in `feedback_no_immobile_observe_tickets.md`); this decision is specifically about design-rule scaffolding at filing.\n\n## Related memories\n\n- `feedback_scaffold_not_correct.md` — the reframe that drove this decision\n- `feedback_no_immobile_observe_tickets.md` — adjacent rule, same shape (make the constraint visible)\n- `project_three_pass_audit_shape.md` — this work is pre-Pass-3 cleanup, sharpens the review bar for the remaining 149\n\n## Rollup\n\n**Closed at:** 2026-04-21T20:06:11.965184+00:00\n**Ticket count:** 4 (all closed)\n\n### Shipped via\n- T-palace-ticket-design-rules (M) — Palace-ize Akien's design rules as filing-time checks  `done` — 5 check-shape palace nodes + index under theigors/rules/ticket_design_checks/ (applies_when/check_body/failure_message) + bidirectional narrative backlinks. Commit 07b1c6cf. Unblocks T-ticket-template\n- T-review-loads-palace-rules (M) — /review filing-time: load palace rules + positive checks  `done` — /review SKILL.md Mode A Check 7 loads palace ticket_design_checks, iterates each check, emits failure_message as AMEND finding. Replaces old Test-plan check (subsumed). Commit b11ea1fa. Unblocks T-rev\n- T-ticket-template-structured (M) — Structure /ticket template: test plan, affected files, design rules, scope  `done` — /ticket SKILL.md new Description template section + Step 2 prompts for Affected files, Design rules, Scope boundary, Test plan. Labeled-text sections in description; no DB schema change. Commit 0a3887\n- T-review-build-tightness-grade (S) — /review build-tightness grade: could a cheap builder execute this?  `done` — /review SKILL.md Check 8: build-tightness grade (tight/medium/loose) from 4 structured fields. Loose forces AMEND with bounce-to-designer message. Output includes Build-tightness line. Commit 032ec98a\n\n_Generated by cc_queue.py _decision_rollup. File-stub until T-decisions-into-palace-subtree moves rollups into the memory palace._\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: unknown."
+  }
+}

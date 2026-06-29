@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-dreaming-enhancements-2026-05-11.20260511.054040113078",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-dreaming-enhancements-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T05:40:40.113078",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-dreaming-enhancements-2026-05-11",
+    "title": "Dreaming enhancements — CC /dream command + Hebbian co-activation edge strengthening",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-cc-dream-command",
+      "T-dreaming-wg-hebbian"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-dreaming-enhancements-2026-05-11\n**title:** Dreaming enhancements — CC /dream command + Hebbian co-activation edge strengthening\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-cc-dream-command, T-dreaming-wg-hebbian\n\n## Decision narrative\nTwo extensions to the shipped dreaming module (T-igor-dreaming-module): (1) CC-side /dream skill to manually trigger Igor's dreaming module via channel_send — analogous to AutoDream's /dream command, filling the gap between Igor having dreaming and CC having a way to invoke it. (2) Hebbian co-activation strengthening: after synthesis, parse recent clan.traces to find memory node pairs that co-activated 3+ times and UPSERT weight increases into clan.interpretive_edges. Inspired by MIT astrocyte research showing memory capacity scales dramatically faster when a mediating layer strengthens based on co-activation patterns.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "cc.0.D-librarian-rack-agent-2026-05-08.20260508.161501085270",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-librarian-rack-agent-2026-05-08"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-08T16:15:01.085270",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-librarian-rack-agent-2026-05-08",
+    "title": "The Librarian replaces rack-minion — always-on rack agent with MCP, inference, DB proxy",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-08",
+    "spawned_tickets": [
+      "T-librarian-device",
+      "T-librarian-mcp-tools",
+      "T-librarian-db-proxy",
+      "T-librarian-inference-routing",
+      "T-librarian-model-selection-skill",
+      "T-librarian-research-capability",
+      "T-igor-mcp-deprecate",
+      "T-claude-json-mcp-update"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-librarian-rack-agent-2026-05-08\n**title:** The Librarian replaces rack-minion — always-on rack agent with MCP, inference, DB proxy\n**date:** 2026-05-08\n**status:** open\n**spawned_tickets:** T-librarian-device, T-librarian-mcp-tools, T-librarian-db-proxy, T-librarian-inference-routing, T-librarian-model-selection-skill, T-librarian-research-capability, T-igor-mcp-deprecate, T-claude-json-mcp-update\n\n## Decision narrative\nRename/expand the rack-minion concept into \"the Librarian\" — a Discworld-themed always-on rack agent (OOK = 'Ook.'). The Librarian is a BaseDevice subclass in ADC. CC connects to it via MCP (stdio); the Librarian's backend speaks comms:// over the IMAP bus. Responsibilities: MCP tool surface (porting igor_mcp.py inventory), DB proxy (direct Postgres for sync MCP path, bus for async fire-and-forget), inference routing (Qwen 8B default; escalation tiers for research/summarization; cloud escalation for complex reasoning), research and summarization workflows, multi-interface (MCP, IMAP/bus, web channel). igor_mcp.py and cc_mcp_server.py deprecated once Librarian is live.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

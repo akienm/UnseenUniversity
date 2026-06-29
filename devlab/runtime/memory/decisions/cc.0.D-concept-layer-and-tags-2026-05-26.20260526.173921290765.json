@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-concept-layer-and-tags-2026-05-26.20260526.173921290765",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-concept-layer-and-tags-2026-05-26"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-26T17:39:21.290765",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-concept-layer-and-tags-2026-05-26",
+    "title": "palace.concepts.* layer as peer to goals; tags as connective tissue",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-26",
+    "spawned_tickets": [
+      "T-concept-skill",
+      "T-concept-palace-seed",
+      "T-sorted-concept-links",
+      "T-tag-vocabulary-connective-tissue",
+      "T-consequence-concept-layer-and-tags"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-concept-layer-and-tags-2026-05-26\n**title:** palace.concepts.* layer as peer to goals; tags as connective tissue\n**date:** 2026-05-26\n**status:** open\n**spawned_tickets:** T-concept-skill, T-concept-palace-seed, T-sorted-concept-links, T-tag-vocabulary-connective-tissue, T-consequence-concept-layer-and-tags\n\n## Decision narrative\nAdd a `palace.concepts.*` layer as a peer to `palace.goals.*` — both are foundational reference material at the same tier. Goals say where we're going; concepts say how things work. Decisions draw on both. The four-tier structure is: Goals + Concepts (same tier) → Decisions → Tickets. A `/concept` skill handles collaborative authoring: talk it over, accord check, write. Tags replace explicit cross-links across the whole stack — palace nodes and file headers share a tag vocabulary; related things are discovered by querying tags, not by maintaining links that break when things move.\n\n## Hypothesis\nA CC session reads a palace.concepts.* node cold and gets an architectural concept right without Akien correcting it.\n\n## Measurement Signal\nZero re-explanations of a concept that has a palace.concepts.* node within 30 days of seeding. Observable: check whether subsequent design sessions contradict or re-explain any concept already in the palace.\n\n## Goal Link\nG-system-self-improving — better concept documentation is how the CC/Librarian/Igor stack learns from its own operation and stops needing the same re-explanations.\n\n## Alternatives considered\n- Explicit bidirectional links instead of tags — rejected: maintenance burden; links break when things move; tags degrade gracefully\n- Concepts as a sequential layer between goals and decisions — rejected: concepts are reference material, not a stage; decisions draw on goals AND concepts as peers\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

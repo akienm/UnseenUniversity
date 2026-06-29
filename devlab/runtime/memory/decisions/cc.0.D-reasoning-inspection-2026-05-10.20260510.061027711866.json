@@ -1,0 +1,31 @@
+{
+  "id": "cc.0.D-reasoning-inspection-2026-05-10.20260510.061027711866",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-reasoning-inspection-2026-05-10"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-10T06:10:27.711866",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-reasoning-inspection-2026-05-10",
+    "title": "Expand audit framework to include reasoning inspection — engram purpose annotation, Igor interview, and longitudinal psych monitoring",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-10",
+    "spawned_tickets": [
+      "T-engram-purpose-schema",
+      "T-engram-annotator-habit",
+      "T-igor-psych-monitoring",
+      "T-reasoning-inspection-audit"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-reasoning-inspection-2026-05-10\n**title:** Expand audit framework to include reasoning inspection — engram purpose annotation, Igor interview, and longitudinal psych monitoring\n**date:** 2026-05-10\n**status:** open\n**spawned_tickets:** T-engram-purpose-schema, T-engram-annotator-habit, T-igor-psych-monitoring, T-reasoning-inspection-audit\n\n## Decision narrative\nThe audit framework currently inspects only code. This decision adds a \"reasoning inspection\" tier covering: (1) engram metadata enriched with purpose, purpose_category, and purpose_embedding fields so inspection is tractable without reading full content; (2) a procedural annotator habit inside Igor that writes these fields at creation time and retroactively sweeps existing engrams; (3) longitudinal psychological state tracking (valence, uncertainty, cognitive_load, coherence) captured at each NE run; (4) a new day-close-audit tier with a daily engram inspection pass and a weekly Igor interview pass that includes psychological state questions. The \"reasoning inspection\" framing captures the cogsci angle — inspecting not just whether the code works, but whether the system thinks correctly.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

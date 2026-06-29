@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-goal-factory-factory-2026-05-20.20260520.123855733395",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-goal-factory-factory-2026-05-20"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-20T12:38:55.733395",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-goal-factory-factory-2026-05-20",
+    "title": "Extend ADC goal to factory-factory — non-coding methodology portability",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-20",
+    "spawned_tickets": [
+      "T-goal-factory-factory-edit"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-goal-factory-factory-2026-05-20\n**title:** Extend ADC goal to factory-factory — non-coding methodology portability\n**date:** 2026-05-20\n**status:** open\n**spawned_tickets:** T-goal-factory-factory-edit\n\n## Decision narrative\nExtend the existing ADC program-factory goal node to include the factory-factory framing: the same skills/telemetry/audit methodology should be portable to non-coding project types. The ADC is not just a software factory — it is a substrate for building any kind of factory.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

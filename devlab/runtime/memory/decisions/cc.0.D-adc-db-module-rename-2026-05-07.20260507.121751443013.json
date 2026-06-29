@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-adc-db-module-rename-2026-05-07.20260507.121751443013",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-adc-db-module-rename-2026-05-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-07T12:17:51.443013",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-adc-db-module-rename-2026-05-07",
+    "title": "Rename UnseenUniversity/db.py → db_proxy.py for logger clarity",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-07",
+    "spawned_tickets": [
+      "T-adc-db-module-rename"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-adc-db-module-rename-2026-05-07\n**title:** Rename UnseenUniversity/db.py → db_proxy.py for logger clarity\n**date:** 2026-05-07\n**status:** open\n**spawned_tickets:** T-adc-db-module-rename\n\n## Decision narrative\nUnseenUniversity/db.py produces logger name unseen_university.db which reads as a SQLite file reference. Renaming to db_proxy.py clarifies it is a proxy layer (unseen_university.db_proxy). Pure rename — no logic changes.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

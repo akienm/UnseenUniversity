@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-skill-telemetry-2026-05-20.20260520.093321966516",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-skill-telemetry-2026-05-20"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-20T09:33:21.966516",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-skill-telemetry-2026-05-20",
+    "title": "Skill telemetry — per-skill forget-flags + improvement metrics",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-20",
+    "spawned_tickets": [
+      "T-skill-telemetry-schema",
+      "T-skill-telemetry-contracts",
+      "T-skill-telemetry-logger",
+      "T-skill-telemetry-rollup",
+      "T-consequence-skill-telemetry"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-skill-telemetry-2026-05-20\n**title:** Skill telemetry — per-skill forget-flags + improvement metrics\n**date:** 2026-05-20\n**status:** open\n**spawned_tickets:** T-skill-telemetry-schema, T-skill-telemetry-contracts, T-skill-telemetry-logger, T-skill-telemetry-rollup, T-consequence-skill-telemetry\n\n## Decision narrative\nAdd per-skill telemetry contracts (forget-flags + improvement metrics) so that CC behavioral drift is measurable and continuous skill improvement is data-driven rather than correction-dependent. Each skill gets a two-field spec defining what to log at execution time; a violation logger aggregates forget-flag trips; a monthly rollup surfaces the top recurring violations as reinforcement targets surfaced in context-load.\n\n## Context\nEmerged from Theory of Constraints discussion: the feedback loop is what lets you identify the constraint. Without execution telemetry, every skill looks equally broken or fine. Two specific problems: (1) CC forgets rules constantly and Akien manually re-states them — a violation log would surface which rules have the weakest retention; (2) there is no outcome metric per skill, so \"is this skill improving?\" is unanswerable. This decision builds the measurement instrument before the measurement-driven improvement work begins.\n\n## Hypothesis\nAfter these tickets ship, every skill execution emits a structured record, and the violation log surfaces recurring correction targets for the first time — replacing Akien's manual re-statements with a queryable signal.\n\n## Measurement Signal\nAt least one skill emitting execution records within first week; violation counts per rule visible after 30 days; trend (improving/stable/degrading) per skill answerable from data.\n\n## Goal Link\nnone: G-factory-factory not yet formally defined — candidate goal noted for separate /decided.\n\n## Notes\n- T-audit-feedback-build (filed same day) is complementary: audit-feedback is a static checker for whether skills HAVE feedback loops; telemetry is the runtime layer that CAPTURES the signal. Both needed.\n- G-factory-factory (\"build a system that can build any kind of factory\") surfaced as new meta-goal; warrants its own /decided.\n- Future /audit-expert expansion candidates noted: Schmidhuber, Shreya Shankar, Simon Willison, Boris Cherny lens.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

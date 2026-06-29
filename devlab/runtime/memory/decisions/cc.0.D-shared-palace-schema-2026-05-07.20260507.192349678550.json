@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-shared-palace-schema-2026-05-07.20260507.192349678550",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-shared-palace-schema-2026-05-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-07T19:23:49.678550",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-shared-palace-schema-2026-05-07",
+    "title": "Shared palace schema for 4-consumer agent layer (Akien/CC/Igor/Rack-Minion)",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-07",
+    "spawned_tickets": [
+      "T-cc-palace-schema-design",
+      "T-cc-skills-triage",
+      "T-adc-summarizer-device"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-shared-palace-schema-2026-05-07\n**title:** Shared palace schema for 4-consumer agent layer (Akien/CC/Igor/Rack-Minion)\n**date:** 2026-05-07\n**status:** open\n**spawned_tickets:** T-cc-palace-schema-design, T-cc-skills-triage, T-adc-summarizer-device\n\n## Decision narrative\nThe palace must serve all four first-class consumers (Akien, CC, Igor, Rack-Minion) — not be CC-private. Schema: `palace.shared.*` for cross-agent context (Akien profile, rules, capabilities, audits); `palace.projects.*` for per-project context (summary/map/standards/decisions). Igor's TheIgors palace stays in TheIgors postgres and federates via a pointer node. SummarizerDevice lands in ADC first; Igor is a depth consumer (reads detail/chunks tier for nuanced reading), and composes downstream graph deposit separately.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

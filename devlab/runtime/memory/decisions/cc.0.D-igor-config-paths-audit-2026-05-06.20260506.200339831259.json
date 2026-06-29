@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-igor-config-paths-audit-2026-05-06.20260506.200339831259",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-igor-config-paths-audit-2026-05-06"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-06T20:03:39.831259",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-igor-config-paths-audit-2026-05-06",
+    "title": "Audit Igor config/paths/logging — what stays vs. generalizes to datacenter",
+    "status": "historical",
+    "original_status": "closed",
+    "date": "2026-05-06",
+    "spawned_tickets": [
+      "T-igor-config-paths-audit (audit only; no move tickets needed)"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-igor-config-paths-audit-2026-05-06\n**title:** Audit Igor config/paths/logging — what stays vs. generalizes to datacenter\n**date:** 2026-05-06\n**status:** closed\n**spawned_tickets:** T-igor-config-paths-audit (audit only; no move tickets needed)\n\n## Decision narrative\n\nAll 7 files in scope are Igor-specific and should remain in Igor. The patterns\nthey implement (runtime root, restart guard) are replicated independently in\nUnseenUniversity as needed.\n\n## Per-file verdicts\n\n| File | Lines | Verdict | Reasoning |\n|---|---|---|---|\n| config.py | 126 | **KEEP** | Reads igor.switches.cfg / igor.models.cfg; IGOR_* env vars; Igor-specific config tree |\n| paths.py | 275 | **KEEP** | PathManager for ~/.TheIgors/*; IGOR_RUNTIME_ROOT / IGOR_INSTANCE_ID; UnseenUniversity has its own ADC_RUNTIME_ROOT pattern in device.py |\n| logging_setup.py | 228 | **KEEP + cleanup** | igor.* logging hierarchy; removed igor.network.* handler (network/ deleted by T-igor-network-remove) |\n| boot_check.py | 198 | **KEEP** | Verifies Ollama models at boot; writes to ring memory; NE integration — cognition infrastructure |\n| env_sync.py | 397 | **KEEP** | DB-first config sync via SWARM node in memory palace; tightly coupled to Igor's graph |\n| restart_guard.py | 82 | **KEEP** | Rate-limits restart.flag triggers; instance_dir paths; pattern could generalize but not worth the move yet |\n| first_start.py | 114 | **KEEP** | First-start wizard for Igor setup; prompts instance name / DB host; Igor-specific |\n\n## Changes made in this sprint\n- `logging_setup.py`: removed `igor.network` / `network.log` handler (dead since T-igor-network-remove)\n\n## Future consideration\n- `restart_guard.py` pattern could become a utility in UnseenUniversity for device restart-loop protection\n  (low priority; file a ticket when a device needs it)\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: closed."
+  }
+}

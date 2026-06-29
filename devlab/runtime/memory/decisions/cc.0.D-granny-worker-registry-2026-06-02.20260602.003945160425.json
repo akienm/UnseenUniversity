@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-granny-worker-registry-2026-06-02.20260602.003945160425",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-granny-worker-registry-2026-06-02"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-02T00:39:45.160425",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-granny-worker-registry-2026-06-02",
+    "title": "Granny worker registry — CC.0 + DickSimnel.0 dispatch with availability semaphores",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-06-02",
+    "spawned_tickets": [
+      "T-granny-availability-semaphore",
+      "T-granny-dispatch-config",
+      "T-granny-cc0-dispatch",
+      "T-dicksimnel-device",
+      "T-consequence-granny-worker-registry"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-granny-worker-registry-2026-06-02\n**title:** Granny worker registry — CC.0 + DickSimnel.0 dispatch with availability semaphores\n**date:** 2026-06-02\n**status:** open\n**spawned_tickets:** T-granny-availability-semaphore, T-granny-dispatch-config, T-granny-cc0-dispatch, T-dicksimnel-device, T-consequence-granny-worker-registry\n**goal_link:** factory-of-factories\n**concept_links:** none (docs section: build workflow and resource flagging — to be created)\n\n## Decision narrative\nGranny's dispatch loop will be refactored from hardcoded worker logic to a config-driven, generic worker registry. Each worker (CC.0, DickSimnel.0, Igor) registers availability via {name}.available.true/false file semaphores in ~/.granny/available/; .false wins over .true. Dispatch rules live in config/profiles/granny.yaml — time window, usage threshold, concurrency — not in Python. Three worker types: CC.0 dispatched via tmux send-keys to claude-main (not spawn); DickSimnel.0 as a new rack device (OR-powered persistent coding agent, named after Dick Simnel from Raising Steam); Igor via existing IMAP. \"Busy\" detection replaces the GRANNY_THROTTLED-producing tmux session count with an in_progress queue check.\n\n## Hypothesis\nGranny dispatches CC.0 and DickSimnel.0 tickets without hardcoded time checks — availability is controlled entirely by semaphore files, and the dispatch rules live in config.\n\n## Measurement Signal\nGRANNY_CC0_OFFER|ticket=T-xxx appears in the channel during idle window; DickSimnel.0.available.true absent/present changes dispatch without Granny restart.\n\n## Goal Link\nfactory-of-factories (autonomous round-the-clock ticket dispatch enables the self-improving factory)\n\n## Concept Links\nnone (docs section: build workflow and resource flagging — to be created as C-xxx)\n\n## Semaphore protocol\n- {worker_id}.available.true — file present = worker available (opt-in)\n- {worker_id}.available.false — file present = blocked, overrides everything\n- CC.x.available.false — blocks new CC spawn class (does NOT affect CC.0)\n- granny.queue.available.false — pauses Granny's dispatch loop without stopping the device\n- Same protocol universally: CC.0, DickSimnel.0, Igor, Granny itself\n\n## HIGH-INERTIA note\nT-granny-cc0-dispatch touches devices/granny/daemon.py (2026-06-01 runaway file).\nDesign is send-keys to existing session (not spawn). Akien approved inline 2026-06-02.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

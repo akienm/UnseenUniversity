@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-slate-done-first-2026-05-07.20260507.152240282497",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-slate-done-first-2026-05-07"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-07T15:22:40.282497",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-slate-done-first-2026-05-07",
+    "title": "Day-close rearranges slate Done section to top for future CC readability",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-07",
+    "spawned_tickets": [
+      "T-slate-done-first-ordering"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-slate-done-first-2026-05-07\n**title:** Day-close rearranges slate Done section to top for future CC readability\n**date:** 2026-05-07\n**status:** open\n**spawned_tickets:** T-slate-done-first-ordering\n\n## Decision narrative\nOld slates should be optimized for future CC reading. Done-first ordering answers \"what shipped?\" immediately. Day-close step 3 rearranges sections at close-time: Done today → Notes → Decided/Ticketed → everything else. Does not affect intra-day slate order.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

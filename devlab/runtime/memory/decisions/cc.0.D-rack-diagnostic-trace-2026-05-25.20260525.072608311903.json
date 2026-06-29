@@ -1,0 +1,30 @@
+{
+  "id": "cc.0.D-rack-diagnostic-trace-2026-05-25.20260525.072608311903",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-rack-diagnostic-trace-2026-05-25"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-25T07:26:08.311903",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-rack-diagnostic-trace-2026-05-25",
+    "title": "Add trace_record()/debug_mode to DiagnosticBase; collapse /debug-pe-chain + /igor-diagnose + /cognition-debug into one /diagnose skill",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-25",
+    "spawned_tickets": [
+      "T-diagnosticbase-trace",
+      "T-diagnose-skill",
+      "T-consequence-rack-diagnostic-trace"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-rack-diagnostic-trace-2026-05-25\n**title:** Add trace_record()/debug_mode to DiagnosticBase; collapse /debug-pe-chain + /igor-diagnose + /cognition-debug into one /diagnose skill\n**date:** 2026-05-25\n**status:** open\n**spawned_tickets:** T-diagnosticbase-trace, T-diagnose-skill, T-consequence-rack-diagnostic-trace\n\n## Decision narrative\nDiagnosticBase already has a tagged logger and dump(). Add structured trace_record(event, data) and debug_mode flag so every rack device gets queryable trace history out of the box. Then create a single /diagnose <device> skill that works for any device — surfaces last_traces(), categorizes the issue (code bug / state corruption / external noise), and suggests one fix. Retire /debug-pe-chain, /igor-diagnose, and /cognition-debug as DEPRECATED stubs pointing to /diagnose. Alternative considered: keep separate per-device debug skills (chose collapse because the shim-level trace makes per-device skills redundant and the single surface is simpler to reach for).\n\n## Hypothesis\nDiagnosticBase.trace_record() exists; `/diagnose igor` surfaces recent traces for any rack device; /debug-pe-chain shows a DEPRECATED header pointing to /diagnose.\n\n## Measurement Signal\n`from diagnostic_base.base import DiagnosticBase; DiagnosticBase('test').trace_record('e')` runs without error; ~/.claude/skills/debug-pe-chain/SKILL.md starts with DEPRECATED; ~/.claude/skills/diagnose/SKILL.md exists with device-agnostic Steps 1-3.\n\n## Goal Link\nnone: observability infrastructure — enables diagnosis for any future rack device without per-device skill work.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

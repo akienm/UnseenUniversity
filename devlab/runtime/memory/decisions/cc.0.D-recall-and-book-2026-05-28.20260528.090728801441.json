@@ -1,0 +1,32 @@
+{
+  "id": "cc.0.D-recall-and-book-2026-05-28.20260528.090728801441",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-recall-and-book-2026-05-28"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-28T09:07:28.801441",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-recall-and-book-2026-05-28",
+    "title": "recall-first tooling in skills + book chapters 3/4/5 updated for today's designs",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-28",
+    "spawned_tickets": [
+      "T-recall-in-skills",
+      "T-book-ch3-recall",
+      "T-book-ch4-debug",
+      "T-book-ch5-launcher",
+      "T-consequence-recall-tools"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-recall-and-book-2026-05-28\n**title:** recall-first tooling in skills + book chapters 3/4/5 updated for today's designs\n**date:** 2026-05-28\n**status:** open\n**spawned_tickets:** T-recall-in-skills, T-book-ch3-recall, T-book-ch4-debug, T-book-ch5-launcher, T-consequence-recall-tools\n**goal_link:** none: compiled inference — stored knowledge is the first lookup, not re-derived\n**concept_links:** none\n\n## Decision narrative\nTwo parts: (1) Update sprint-ticket, context-load, and sorted skill files to call recall(X) before bash/grep — recall-first is a mandatory step, bash is the fallback. (2) Update book chapters 3, 4, 5 to reflect today's design decisions: Chapter 3 adds recall-first lever; Chapter 4 adds /debug skill; Chapter 5 adds configurable frontend shim and launcher UX. Book goes to editor Monday 2026-06-01.\n\n## Hypothesis\nCC uses recall(X) before bash in the common case across sprint-ticket, context-load, sorted.\n\n## Measurement Signal\nSprint-ticket execution logs show recall call before bash investigation commands.\n\n## Goal Link\nnone: compiled inference — stored knowledge is the first lookup; book deadline Monday 2026-06-01\n\n## Alternatives considered\n- Suggest recall in skills but not mandate it (chose mandatory step — suggestions get skipped; gates don't)\n- Book updates as separate decision (folded in — same S-sized skill/doc changes from same design session)\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

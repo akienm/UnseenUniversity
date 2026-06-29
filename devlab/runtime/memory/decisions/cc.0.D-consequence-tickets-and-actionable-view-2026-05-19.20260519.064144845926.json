@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-consequence-tickets-and-actionable-view-2026-05-19.20260519.064144845926",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-consequence-tickets-and-actionable-view-2026-05-19"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-19T06:41:44.845926",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-consequence-tickets-and-actionable-view-2026-05-19",
+    "title": "Consequence-check tickets + actionable queue view for Akien",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-19",
+    "spawned_tickets": [
+      "T-decided-consequence-ticket",
+      "T-queue-actionable-view"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-consequence-tickets-and-actionable-view-2026-05-19\n**title:** Consequence-check tickets + actionable queue view for Akien\n**date:** 2026-05-19\n**status:** open\n**spawned_tickets:** T-decided-consequence-ticket, T-queue-actionable-view\n\n## Decision narrative\nTwo workflow hygiene improvements: (1) /decided auto-drafts a gated consequence-check follow-on ticket for any decision with M/L/XL tickets or MEDIUM+ inertia touches — the ticket carries predicted unintended effects + what to check + a gate condition, so consequence-checking becomes a first-class tracked item rather than an informal afterthought. (2) cc_queue.py list gets an --actionable flag that returns only tickets Akien can act on right now: status in {sprint, design, akien, awaiting_approval}, gate null or gate-ticket closed, worker≠igor. \"Needs design, open questions, ideas\" are all actionable-for-Akien.\n\nAlternative considered: embedding consequence checks in day-close audit (no follow-through ticket, just a pass at close time) — rejected because it doesn't carry the prediction forward, requires Akien to re-derive context at check time, and can't be triaged or escalated like a ticket.\n\n## Hypothesis\nEvery M/L/XL /decided includes a consequence-check ticket in the queue; `cc_queue.py list --actionable` returns only items Akien can act on now (excludes gated/igor-worker items).\n\n## Measurement Signal\nNext /decided on an M+ decision shows a consequence ticket with a gate set; running `list --actionable` on a mixed queue excludes gated and worker=igor items and includes design/akien-status tickets.\n\n## Goal Link\nnone: direct workflow hygiene — reduces decision-loop dead zones and attention fragmentation across actionable vs blocked items.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}

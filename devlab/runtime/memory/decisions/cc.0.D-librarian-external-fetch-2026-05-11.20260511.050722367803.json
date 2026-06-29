@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-librarian-external-fetch-2026-05-11.20260511.050722367803",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-librarian-external-fetch-2026-05-11"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-05-11T05:07:22.367803",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-librarian-external-fetch-2026-05-11",
+    "title": "Wire external doc fetch into librarian _research_deep",
+    "status": "historical",
+    "original_status": "open",
+    "date": "2026-05-11",
+    "spawned_tickets": [
+      "T-librarian-external-doc-fetch"
+    ],
+    "provenance": "Absorbed from TheIgors.archive/lab/design_docs/decisions 2026-06-28 (D-all-generations-consolidation-2026-06-28); historical lineage record.",
+    "text": "# D-librarian-external-fetch-2026-05-11\n**title:** Wire external doc fetch into librarian _research_deep\n**date:** 2026-05-11\n**status:** open\n**spawned_tickets:** T-librarian-external-doc-fetch\n\n## Decision narrative\nlibrarian/research.py _research_deep() has an explicit stub (`sources=[]  # populated when external search is wired`). Context 7 MCP is what general CC users use for live doc lookup — the librarian IS our equivalent. Wire the stub with a curated source index (Anthropic docs, psycopg2, Python stdlib, ADC/TheIgors) + urllib fetch + synthesis grounding. Non-blocking on fetch failure.\n\n## Provenance\nAbsorbed from the TheIgors.archive lineage 2026-06-28 (D-all-generations-consolidation-2026-06-28). Historical record; original status: open."
+  }
+}
