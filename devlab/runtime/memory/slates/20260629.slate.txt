@@ -52,3 +52,5 @@ Next: Next: /sprint T-inf-reroute-A (HIGH-inertia reason() seam, dedicated+revie
 ## In-flight: T-inf-reroute-A claimed in_progress (HIGH-inertia reason() seam); surveying current code before planning; awaiting Akien inline pre-approval before edits.
 
 ## In-flight: T-inf-reroute-A CLOSED PROVEN (f92b2fea impl + 630e45bf proof, red=AssertionError): igor reason() now routes through InferenceDevice.dispatch() — tier ladder yanked. Ungated T-inf-reroute-B + T-igor-inference-bypassers. Igor is a normal Proxy consumer now.
+
+## In-flight: RUNTIME-PATH CLEANUP DONE (4 phases): all bad-path tokens fixed+gated (datacenter_logs, Igor-wild-0001->Igor-Wild1, .TheIgors->.unseen_university), dead scripts deleted, 4 scattered ~/TheIgors* dirs consolidated to ~/TheIgorsProject deep-freeze, datacenter_logs deleted. ~/ clean. Commits 1637991e/fa4225c7/d62dc24a/55d0584c/32a06ef8/3fcfd070. Follow-up: restart stale web_server+sudoer_daemon to pick up new paths.
