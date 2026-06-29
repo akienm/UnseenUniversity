@@ -244,7 +244,7 @@ NE_ALPHA_DOWN = 0.03
 RESOLUTION_ALPHA_UP = 0.15
 RESOLUTION_ALPHA_DOWN = 0.04
 
-# Global milieu: shared across all instances with same ~/.TheIgors root
+# Global milieu: shared across all instances with same ~/.unseen_university root
 SPIKE_THRESHOLD = 0.15  # min delta on any dim to classify as spike
 GLOBAL_ALPHA_SPIKE = 0.05  # global EMA speed on notable change
 GLOBAL_ALPHA_ROUTINE = 0.01  # global EMA speed on routine tick

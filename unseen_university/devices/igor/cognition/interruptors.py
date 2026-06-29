@@ -290,7 +290,7 @@ class DiskInterruptor(BaseInterruptor):
 
         if free_gb < crit_gb:
             msg = (
-                f"⛔ DISK CRITICAL: Only {free_gb:.2f} GB free on ~/.TheIgors partition. "
+                f"⛔ DISK CRITICAL: Only {free_gb:.2f} GB free on ~/.unseen_university partition. "
                 "Stop large writes immediately. Skipping backups. Alert Akien!"
             )
             self._was_alerting = True
@@ -299,7 +299,7 @@ class DiskInterruptor(BaseInterruptor):
 
         if free_gb < warn_gb:
             msg = (
-                f"⚠️  DISK WARN: {free_gb:.2f} GB free on ~/.TheIgors partition. "
+                f"⚠️  DISK WARN: {free_gb:.2f} GB free on ~/.unseen_university partition. "
                 "Consider pruning logs or old cache files."
             )
             self._was_alerting = True

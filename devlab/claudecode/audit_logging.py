@@ -10,7 +10,7 @@ passes:
    class. Cross-check inheritance against IgorBase/AgentBase via shared
    logic with audit_check_igorbase.py.
 
-2. RUNTIME (--runtime): Walk ~/.TheIgors/logs/ + ~/.unseen_university/logs/
+2. RUNTIME (--runtime): Walk ~/.unseen_university/logs/
    over a window. Per logger, count lines, compute rate. Flag noisy/quiet
    sources and slot-misrouted writes.
 

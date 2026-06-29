@@ -649,7 +649,7 @@ registry.register(
     Tool(
         name="check_disk_usage",
         description=(
-            "Check free disk space for Igor's key paths (~/.TheIgors, ~/TheIgors, /). "
+            "Check free disk space for Igor's key paths (~/.unseen_university, ~/dev/src/UnseenUniversity, /). "
             "Returns usage summary with warnings if below IGOR_DISK_WARN_GB (default 1GB) "
             "or IGOR_DISK_CRITICAL_GB (default 0.2GB) thresholds. "
             "Call this after large ingestion tasks or whenever storage feels tight."

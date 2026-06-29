@@ -8,7 +8,7 @@ IMAP Shared mailbox (if unseen_university IMAP is reachable). The JSONL file
 is the authoritative read source until the IMAP migration is verified;
 after verification, the JSONL backend will be removed (Phase 5).
 
-Append-only JSONL log at ~/.TheIgors/cc_channel/messages.jsonl
+Append-only JSONL log at ~/.unseen_university/cc_channel/messages.jsonl
 Any process can post. Any process can read the tail.
 No Igor required. No web server required.
 
