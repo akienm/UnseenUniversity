@@ -1,0 +1,50 @@
+{
+  "id": "cc.0.T-contract-violation-audit-check.20260629.112045797211",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-contract-violation-audit-check"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-29T17:20:45.797211+00:00",
+  "links": {
+    "decisions": [
+      "D-device-contract-maps-2026-06-29"
+    ],
+    "tickets": [
+      "T-contract-violation-audit-check"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-contract-violation-audit-check",
+    "title": "[sprint] Audit check: flag code exercising a capability its device delegates away",
+    "size": "M",
+    "tags": [
+      "Architecture",
+      "Contracts",
+      "Audit"
+    ],
+    "decision_id": "D-device-contract-maps-2026-06-29",
+    "gate": "T-device-contract-schema",
+    "priority": 0.5,
+    "status": "sprint",
+    "description": "**Problem:** A contract map is only as strong as its enforcement. Without an automated check, code drifts into a device that violates its declared contract — exactly how igor's direct provider calls accumulated. The map (T-device-contract-schema) makes the boundary declarative; this makes it enforced.\n**Proposed shape:** Add an audit check (registered via audit_add.py, or a day-close-audit step) that reads `owns`/`delegates_to` from each architecture intention-point and, for each capability a device *delegates away*, greps that device's dir for signatures of the device exercising it directly (e.g. for inference: `urllib`/`OPENROUTER`/raw provider-reasoner imports inside a device whose delegates_to maps inference elsewhere). Emit a contract-violation finding per hit. Seed with the inference-in-igor case so it fires on the current tree.\n**Affected files:** devlab/claudecode/ (new check + registration), reads devlab/runtime/memory/architecture/*.json; possibly unseen_university/devices/auditor/device.py if wired as a device check.\n**Design rules:** device.py/shim.py design center; log every interface crossing (the check logs each violation); no-sqlite.\n**Scope boundary:** IN — a check that reads contract maps and flags violations; seeded capability-signature map (start with inference). OUT — auto-fixing violations; populating the contracts (T-device-contract-schema); a full capability-signature library for every capability (start with inference, grow as needed).\n**Test plan:** (1) run the check against the current tree → ≥1 finding: inference_gateway.py direct provider calls flagged as an igor contract violation. (2) after the inference reroute lands, the same check → 0 findings for igor inference. (3) a device cleanly within its contract → 0 findings.\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "created_at": "2026-06-29T17:20:41.792322+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-29T17:20:41.792434+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "22facdd5-c6c0-4055-96b6-59ce550192f7"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "cc.0.D-device-contract-maps-2026-06-29.20260629.112129350310",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-device-contract-maps-2026-06-29"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-29T11:21:29.350310",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-device-contract-maps-2026-06-29",
+    "title": "Per-device contract maps (owns/delegates_to) on architecture intention-points, enforced by audit",
+    "status": "open",
+    "date": "2026-06-29",
+    "spawned_tickets": [
+      "T-device-contract-schema",
+      "T-contract-violation-audit-check",
+      "T-consequence-device-contract-maps",
+      "T-igor-inference-gateway-bypasses-proxy"
+    ],
+    "text": "# D-device-contract-maps-2026-06-29\n**title:** Per-device contract maps (owns/delegates_to) on architecture intention-points, enforced by audit\n**date:** 2026-06-29\n**status:** open\n**spawned_tickets:** T-device-contract-schema, T-contract-violation-audit-check, T-consequence-device-contract-maps, T-igor-inference-gateway-bypasses-proxy\n\n## Decision narrative\nAdd a per-device *contract map* to the architecture intention-points (devlab/runtime/memory/architecture/*.json): two new fields, `owns` (the responsibilities the device holds) and `delegates_to` (capability → owning device). This turns \"does capability X belong in device Y?\" from a judgment CC re-derives each session (sometimes wrong) into a mechanical lookup, and — via a companion audit check — into an enforced boundary. It formalizes the already-stated rule [[feedback_igor_uses_not_contains]] (\"Igor *uses* systems, does not *contain* them\") into a machine-checkable contract.\n\nMotivating case: during the all-generations consolidation (D-all-generations-consolidation-2026-06-28), inference_gateway.py was found living inside igor/cognition/ making DIRECT provider calls (raw urllib to Ollama + openrouter.ai, OPENROUTER_* env reads, OllamaReasoner/OpenRouterReasoner imports across ~15 sites, 10 dependent callers). Under a contract map this isn't merely a 'Proxy-only' routing violation — inference is simply *not in igor.owns*; the code is misfiled, not just misrouted. T-igor-inference-gateway-bypasses-proxy becomes the FIRST CONSUMER of this decision: inference ∉ igor.owns → extract it to the inference (Proxy) device. (Note: the gateway's `skip_to` parameter is already DEPRECATED/ignored per D198 — the gateway moved to a binary cloud/local decision — so there are no live cascade semantics to preserve in that reroute.)\n\nThe contract map is the semantic layer on top of the existing mechanical BaseDevice contract (capabilities() = can_send/can_receive); it extends the architecture intention-points (which already carry implementing_files) rather than introducing a new artifact type. Capability vocabulary is kept homogeneous across devices ([[feedback_homogeneity_over_special_case]]).\n\nAlternatives considered: (a) leave the boundary as prose in [[feedback_igor_uses_not_contains]] + per-session judgment — rejected: that's exactly what let the inference misfiling persist; (b) a standalone contract-registry file — rejected: splits the source of truth from the intention-points that already describe each subsystem. Chosen: extend the intention-points in place + an audit check that reads them.\n\n## Hypothesis\nEach architecture intention-point declares `owns` + `delegates_to`, and an audit check flags any code inside a device that exercises a capability it doesn't own — e.g. igor's direct urllib/OPENROUTER provider calls auto-flag as a contract violation.\n\n## Measurement Signal\nThe contract audit emits a violation finding for inference_gateway.py's direct provider calls (>0 before the reroute, 0 after); a grep of architecture/*.json shows `owns`/`delegates_to` populated for every device, with igor.owns excluding inference and igor.delegates_to mapping inference → inference device.\n\n## Intention\nI intend that every device's allowed responsibilities are declared and enforced, so a misfiled capability (like inference living inside igor) is caught mechanically rather than re-judged from scratch each session."
+  }
+}
