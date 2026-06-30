@@ -1,0 +1,81 @@
+{
+  "id": "cc.0.llm-preparse-concept-removed-from-igor-c.T-igor-delete-local-preparse.20260630.113703006002",
+  "emitter": "cc.0",
+  "namespace": [
+    "llm-preparse-concept-removed-from-igor-c",
+    "T-igor-delete-local-preparse"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-30T11:37:03.006002",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-igor-delete-local-preparse"
+    ],
+    "commits": [
+      "007ceb841ab63f7897eaafaeb042a1761248d937"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "LLM-preparse concept removed from igor (CSB layer preserved)",
+    "intention": "The igor device contains zero references to the LLM-preparse concept while the rule-based CSB classifier survives",
+    "test": "tests/igor/test_preparse_removed.py::test_no_local_preparse_refs",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_preparse_removed.py::test_no_local_preparse_refs",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "E         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:65:    target_machine: Optional[str] = None  # None → local_preparse fallback\nE         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:154:    \"\"\"Default per-batch dispatch: route to local_preparse regardless of\nE         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:157:    from .local_preparse import preparse_local\nE         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:168:                error=\"local_preparse returned None\",\nE         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:361:    final whole-input local_preparse call. If that also fails, the\nE         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:381:    # Fallback: single local_preparse on whole input\nE         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:383:    from .local_preparse import preparse_local\nE         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:389:        notes.append(f\"fallback local_preparse raised: {exc}\")\nE         /home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/preparse_router.py:398:    notes.append(\"fallback local_preparse returned None\")\nE       assert ['/home/akien...allback', ...] == []\nE         \nE         Left contains 14 more items, first extra item: '/home/akien/dev/src/UnseenUniversity/unseen_university/devices/igor/cognition/local_preparse.py:2:local_preparse — local-only mini-LLM fallback for preparse.'\nE         Use -v to get more diff\n\ntests/igor/test_preparse_removed.py:47: AssertionError\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-30 11:37:02.701 | WARNING  | logging:callHandlers:1762 - slow query 256ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_preparse_removed.py::test_no_local_preparse_refs - Ass...\n1 failed in 1.55s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.57s"
+          }
+        }
+      }
+    ],
+    "commit": "007ceb841ab63f7897eaafaeb042a1761248d937",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-igor-retire-csb-classifier-to-wordgraph.20260630.112420150168.json",
+      "tests/igor/test_local_preparse.py",
+      "tests/igor/test_preparse_router.py",
+      "unseen_university/devices/igor/boot_check.py",
+      "unseen_university/devices/igor/brainstem/core_patterns.py",
+      "unseen_university/devices/igor/cognition/SUBSYSTEMS.md",
+      "unseen_university/devices/igor/cognition/boot_notes.md",
+      "unseen_university/devices/igor/cognition/chunker.py",
+      "unseen_university/devices/igor/cognition/cluster_router.py",
+      "unseen_university/devices/igor/cognition/forensic_logger.py",
+      "unseen_university/devices/igor/cognition/gist_gate.py",
+      "unseen_university/devices/igor/cognition/inference_gateway.py",
+      "unseen_university/devices/igor/cognition/inference_ollama.py",
+      "unseen_university/devices/igor/cognition/inference_openrouter.py",
+      "unseen_university/devices/igor/cognition/local_preparse.py",
+      "unseen_university/devices/igor/cognition/narrative_engine.py",
+      "unseen_university/devices/igor/cognition/preparse_router.py",
+      "unseen_university/devices/igor/cognition/prompt_contexts.py",
+      "unseen_university/devices/igor/cognition/reasoners/ollama_reasoner.py",
+      "unseen_university/devices/igor/cognition/reasoners/openrouter_reasoner.py",
+      "unseen_university/devices/igor/cognition/response_coherence_inhibitor.py",
+      "unseen_university/devices/igor/cognition/shadow_reasoner.py",
+      "unseen_university/devices/igor/cognition/system_prompt.py",
+      "unseen_university/devices/igor/dashboard/terminal.py",
+      "unseen_university/devices/igor/main.py",
+      "unseen_university/devices/igor/tools/inhibition_seeder.py"
+    ],
+    "ticket": "T-igor-delete-local-preparse",
+    "narrative": "",
+    "why": "preparse predates word-graphs; inference routes via the Proxy; dead and removable on sight",
+    "bootstrap": false
+  }
+}
