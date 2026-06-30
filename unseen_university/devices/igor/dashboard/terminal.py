@@ -40,7 +40,6 @@ def render(
     word_graph=None,
     latency_samples: list | None = None,
     inference_data: dict | None = None,  # per-turn inference details
-    cloud_mode_active: bool = False,
 ):
     counts = cortex.count_by_type()
     total = cortex.total_count()
@@ -157,10 +156,8 @@ def render(
     lines.append("")
     graph_pct = _get_graph_pct()
     local_pct = _get_local_pct()
-    cloud_mode_str = f"[green]ON[/]" if cloud_mode_active else "[dim]OFF[/]"
     lines.append(
         f"[bold]Local:[/] {local_pct}%  "
-        f"[bold]cloud_mode:[/] {cloud_mode_str}  "
         f"[bold]cloud calls:[/] {upstream_pct}%"
     )
     lines.append(f"  [bold]TWM:[/] {twm_depth}")

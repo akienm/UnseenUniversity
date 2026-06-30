@@ -488,25 +488,6 @@ class OllamaReasoner(LocalReasoner, IgorBase):
         # Resolve host + model dynamically via cluster_router
         _client, _model = _get_client_and_model("tier2")
 
-        # Cloud training mode: skip tier.2 Ollama — escalate to cloud (#CLOUD).
-        # force_local=True bypasses this gate: background/impulse turns run as long
-        # as needed regardless of cloud_mode (no interactive latency requirement).
-        # interactive_fallback=True also bypasses the gate (cloud already failed)
-        # but uses the full interactive timeout instead of the impulse timeout.
-        if not force_local and not interactive_fallback:
-            try:
-                from ..cloud_mode import is_cloud_training_active as _cloud_active
-
-                if _cloud_active():
-                    raise RuntimeError("cloud_mode active — skip tier.2 Ollama")
-            except RuntimeError:
-                raise
-            except Exception as _bare_e:
-                log_error(
-                    kind="BARE_EXCEPT",
-                    detail=f"devices/igor/cognition/reasoners/ollama_reasoner.py: {_bare_e}",
-                )
-
         # rule: unseenuniversity/rules/local-inference-no-timeouts — local takes
         # whatever time it takes; brain-modeled goal makes local-fast NOT a
         # constraint. Defaults are HOUR-scale sanity caps (catch a truly

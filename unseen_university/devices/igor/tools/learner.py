@@ -459,27 +459,6 @@ def learn_about(user_input: str) -> str:
         )
     ]
 
-    # ── 0. Set/clear cloud_ok override ────────────────────────────────────
-    if not tonight:
-        # "now" mode — activate cloud_ok override so drain runner and book_learner use cloud
-        try:
-            from ..cognition.cloud_mode import set_cloud_ok_override
-
-            status = set_cloud_ok_override(ttl_hours=4.0, reason="learn_about now")
-            lines.append(f"Cloud: {status}")
-        except Exception as e:
-            lines.append(f"Cloud: override failed ({e}) — will use local.")
-    else:
-        # "tonight" mode — clear any existing override so night runner stays local
-        try:
-            from ..cognition.cloud_mode import clear_cloud_ok_override
-
-            clear_cloud_ok_override(reason="learn_about tonight")
-        except Exception as _bare_e:
-            log_error(
-                kind="BARE_EXCEPT", detail=f"devices/igor/tools/learner.py: {_bare_e}"
-            )
-
     # ── 1. Calibre non-fiction ─────────────────────────────────────────────
     books = _calibre_nonfiction(topic)
     launched_books = []

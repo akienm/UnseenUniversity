@@ -84,7 +84,6 @@ response caching live here. Nothing above this layer talks to an LLM directly.
 | inference_gateway.py | Central LLM dispatch — selects provider, logs, retries |
 | inference_ollama.py | Ollama (local) LLM provider |
 | inference_openrouter.py | OpenRouter (cloud) LLM provider |
-| cloud_mode.py | Switches inference to cloud-only mode |
 | multi_cloud.py | Multi-provider cloud inference (fan-out or fallback) |
 | shadow_reasoner.py | Runs a second inference pass in shadow to check reasoning |
 | cluster_router.py | Routes inference across a compute cluster |
@@ -158,7 +157,6 @@ Logging, channel emission, escalation, metrics, and daemon supervision.
 | voice_ab.py | A/B test framework for voice/persona variations |
 | wandering_search.py | Background wandering search for opportunistic learning |
 | watch_problems.py | Lever-watcher: monitors instance.watch_problems and fires on trips |
-| cloud_mode.py | (also inference) Mode-switch for cloud-only operation |
 
 ---
 

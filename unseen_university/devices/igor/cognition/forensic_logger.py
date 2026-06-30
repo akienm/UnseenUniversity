@@ -1116,7 +1116,6 @@ def log_startup(
     warm_context: str = "none",  # "loaded" | "none" | "gap=Xh"
     ollama_status: str = "",  # "healthy(model)" | "unavailable"
     openrouter_status: str = "",  # "healthy($X.XX)" | "no_key"
-    cloud_mode: str = "off",
     notes: str = "",
 ) -> None:
     """
@@ -1136,8 +1135,7 @@ def log_startup(
             f"integrity={'ok' if integrity_ok else 'FAIL'} "
             f"warm_context={warm_context}\n"
             f"ollama={ollama_status or 'unknown'} "
-            f"openrouter={openrouter_status or 'unknown'} "
-            f"cloud_mode={cloud_mode}\n"
+            f"openrouter={openrouter_status or 'unknown'}\n"
             + (f"notes={notes}\n" if notes else "")
             + "=== BOOT READY ===\n\n"
         )

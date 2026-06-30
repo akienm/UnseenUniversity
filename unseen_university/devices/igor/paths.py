@@ -140,10 +140,6 @@ class _BootstrapPathManager:
     def claudecode(self) -> Path:
         return self._runtime / "claudecode"
 
-    @property
-    def cloud_ok_override(self) -> Path:
-        return self._runtime / "cloud_ok_override.json"
-
     # ── Instance-specific dirs ────────────────────────────────────────────────
 
     @property

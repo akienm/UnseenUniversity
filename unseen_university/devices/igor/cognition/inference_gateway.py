@@ -33,7 +33,7 @@ DAG routing (gateway.call() for pipeline calls):
 
   DAG purposes:
     winnow    — local Ollama → (fallback) → OR cheap
-    ne        — (cloud_mode) OR cheap ↔ local Ollama
+    ne        — OR cheap ↔ local Ollama
     think     — always local Ollama (no cloud fallback)
 
 Tier ladder (gateway.reason() for interactive/background/batch):
@@ -47,31 +47,23 @@ Tier ladder (gateway.reason() for interactive/background/batch):
     complexity=low  + is_user_turn=False → tier.3 (if cloud ok)
     complexity=med  + is_user_turn=True  → tier.3.5 OR tier.4
     complexity=high + is_user_turn=*     → tier.4
-    research_mode=True + cloud_ok_override → escalate (D359)
-
-Cloud availability gate (all three must pass, else fallback to local):
-  - IGOR_CLOUD_TRAINING_ENABLED=true
-  - OR balance ≥ IGOR_CLOUD_BUDGET_FLOOR_USD (default $10)
-  - local hour 06:00-22:59, with D071 file-backed TTL override
-
-  If balance is unknown (-1.0 sentinel), assume funded; never silently
-  disable.
+    research_mode=True → escalate (D359)
 
 Three call profiles:
   level="interactive"      — human turn: cascade; cloud=Sonnet
   level="background"       — NE impulse: cloud=gpt-4o-mini if funded, else local
   level="background_batch" — proactive habits: always local, quality priority
 
-InferenceContext (live routing state, passed to every edge condition):
-  cloud_active       — is_cloud_training_active() time-of-day + intent check
-  local_available    — Ollama health check passed
-  balance_ok         — OR API key present + balance > floor
+InferenceContext (routing intent snapshot, passed to _call_via_proxy):
+  cloud_active       — legacy; Proxy owns cloud decisions
+  local_available    — legacy
+  balance_ok         — legacy
   is_background      — no latency requirement
-  cloud_ok_override  — D071 file-backed TTL (night/local-only mode)
+  cloud_ok_override  — legacy
   is_user_turn       — D259: call is part of reply to human; gates complexity
   research_mode      — reading/extract path; allows escalation (D359)
   complexity         — low | medium | high (from thalamus.parsed_input)
-  db_colocated       — D205: Postgres on same box as Ollama (deprioritizes local)
+  db_colocated       — legacy
 
 prompt_role (optional override, cloud-path only):
   Lets interactive turns request a leaner persona (analysis vs interactive).
@@ -93,7 +85,6 @@ KEY DECISIONS SHAPING THIS SUBSYSTEM
   D018  reasoning cache — 12-min TTL + TWM watermark invalidation
   D035  interactive persona tier — tier.3.5 (Haiku) between cheap + Sonnet
   D053  NE response format — response_format:json_object
-  D071  cloud-ok runtime switch — file-backed TTL, not env var
   D198  primary reasoning interface — binary cloud/local + cascade
   D205  swarm hierarchy — db_colocated deprioritizes local
   D211  inference routing redesign — local-first, cloud only for high/med
@@ -105,8 +96,7 @@ KEY DECISIONS SHAPING THIS SUBSYSTEM
 
 ENGRAM PORTION
 ──────────────
-  PROC_SET_CLOUD_NOW    — human trigger; writes cloud_ok_override TTL
-  PROC_NIGHT_READ       — threshold habit; clears override + drains local
+  PROC_NIGHT_READ       — threshold habit; drains local
   escalation_stats tool — tracks cloud escalations per topic
 
 igor no longer owns a routing DAG or per-tier reasoners. reason() and call()

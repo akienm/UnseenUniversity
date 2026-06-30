@@ -3066,10 +3066,7 @@ class Igor(IgorBase):
 
                 _log_error(kind="EMBED_WARMUP", source="boot", detail=str(_e))
             try:
-                from .cognition.cloud_mode import is_cloud_training_active as _cma
-
-                if not _cma():
-                    self.cortex.backfill_embeddings()
+                self.cortex.backfill_embeddings()
             except Exception as _e:
                 from .cognition.forensic_logger import log_error as _log_error
 
@@ -3118,7 +3115,6 @@ class Igor(IgorBase):
                 warm_context="loaded" if self._boot_ring_tail else "none",
                 ollama_status=_ollama_status,
                 openrouter_status=_or_balance,
-                cloud_mode=os.getenv("IGOR_CLOUD_TRAINING_ENABLED", "false"),
             )
         except Exception as _bare_e:
             log_error(kind="BARE_EXCEPT", detail=f"devices/igor/main.py: {_bare_e}")
@@ -4056,14 +4052,6 @@ class Igor(IgorBase):
                 self.ne.record_actual(_thalamus_habit.id if _thalamus_habit else None)
             except Exception as _bare_e:
                 log_error(kind="BARE_EXCEPT", detail=f"devices/igor/main.py: {_bare_e}")
-        _cloud_mode_active = False
-        try:
-            from .cognition.cloud_mode import is_cloud_training_active as _cma
-
-            _cloud_mode_active = _cma()
-        except Exception as _bare_e:
-            log_error(kind="BARE_EXCEPT", detail=f"devices/igor/main.py: {_bare_e}")
-
         # [#139 P2] Adaptive routing from latency history.
         # Gate: IGOR_LATENCY_ADAPTIVE=true (default false until enough data collected).
         _latency_skip_to_override: str | None = None
@@ -6378,7 +6366,6 @@ class Igor(IgorBase):
             word_graph=self._word_graph,
             latency_samples=self._latency_samples,
             inference_data=_inf_data,
-            cloud_mode_active=_cloud_mode_active,
         )
 
         # [PRECOMPACT] Flush session summary to LTM before context window gets too large (change.32)

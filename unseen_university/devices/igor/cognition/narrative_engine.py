@@ -1077,8 +1077,7 @@ class NarrativeEngine(IgorBase):
     def _call_inference(self, prompt: str, max_twm_id: int = 0) -> Optional[dict]:
         """
         Run NE inference via the inference gateway (ne purpose).
-        Checks reasoning cache first. Gateway routes: cloud_mode → OR;
-        local NE model set → Ollama → OR fallback.
+        Checks reasoning cache first. Gateway dispatches via Inference Proxy.
         Returns parsed result dict or None.
         """
         cached = reasoning_cache.get(NE_MODEL, prompt, max_twm_id)
