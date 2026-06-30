@@ -25,6 +25,7 @@ NONE
 - T-inf-reroute-A — Repoint igor gateway.reason() onto Proxy dispatch() (tier ladder -> rules_engine) (igor reason() repointed onto InferenceDevice.dispatch() — tier ladder/direct reasoners/budget-gate/tool-loop/MODE-overri)
 - T-inf-reroute-B — Repoint igor gateway.call()/DAG purpose-nodes onto Proxy dispatch() (call()/DAG purpose path routes through InferenceDevice.dispatch(): purpose->task_class map (preparse/winnow/think=minion)
 - T-igor-inference-bypassers — Route igor's 3 direct-reasoner bypassers through the Proxy (/relay + /cloud route through the Inference Proxy: RelaySession dispatches with req.model (experiment), query_multiple d)
+- T-inf-reroute-C — Delete dead direct-provider paths from inference_gateway.py (Deleted dead direct-provider machinery from inference_gateway.py (from_env/_t* reasoners, _h_ollama/_h_or, routing DAG, )
 ## Session close 2026-06-29
 Done: Done: D-all-generations-consolidation autonomous overnight sprint — 113 ADC decisions migrated, 18 palace slates absorbed, 6 architecture intent-points created, ~16.7G dead bulk deleted. 8 gated tickets filed (awaiting_validation). Home reduced 42G→26G, tree clean.
 Next: Next: day-close-audit (assess overnight quality); assess 3 Akien judgment calls (archive/.git, training_corpus, D-numeric stubs); T-repoint-igor-refs code-ref fix work.
