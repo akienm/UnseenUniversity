@@ -1,0 +1,68 @@
+{
+  "id": "cc.0.inner-cc-tool-all-dependent-features-rem.T-igor-inner-cc-assess.20260630.114710278349",
+  "emitter": "cc.0",
+  "namespace": [
+    "inner-cc-tool-all-dependent-features-rem",
+    "T-igor-inner-cc-assess"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-30T11:47:10.278349",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-igor-inner-cc-assess"
+    ],
+    "commits": [
+      "bb54b4166694e76146ec5a1cc744137e362b2388"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "inner_cc tool + all dependent features removed from igor",
+    "intention": "The igor device contains zero references to inner_cc; the Proxy-bypassing tool and its 5 dependent feature branches are retired",
+    "test": "tests/igor/test_inner_cc_removed.py::test_no_inner_cc_refs_in_igor",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_inner_cc_removed.py::test_no_inner_cc_refs_in_igor",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "E         tools/inner_cc.py:504: def _tool_inner_cc(\nE         tools/inner_cc.py:511: \"\"\"Tool wrapper: calls inner_cc and returns formatted answer.\"\"\"\nE         tools/inner_cc.py:520: \"bare except in devices/igor/tools/inner_cc.py: %s\", _bare_e\nE         tools/inner_cc.py:524: result = call_inner_cc(\nE         tools/inner_cc.py:546: name=\"inner_cc\",\nE         tools/inner_cc.py:588: fn=_tool_inner_cc,\nE         memory/purpose_annotator.py:7: LLM call: call_inner_cc_long with a compact prompt. Haiku-tier.\nE         memory/purpose_annotator.py:45: from ..tools.inner_cc import call_inner_cc_long\nE         memory/purpose_annotator.py:51: result = call_inner_cc_long(task=prompt, model=\"anthropic/claude-haiku-4-5\")\nE       assert ['cognition/d...eaper\",', ...] == []\nE         \nE         Left contains 49 more items, first extra item: 'cognition/dreaming.py:213: from ..tools.inner_cc import call_inner_cc_long'\nE         Use -v to get more diff\n\ntests/igor/test_inner_cc_removed.py:37: AssertionError\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-30 11:47:10.022 | WARNING  | logging:callHandlers:1762 - slow query 260ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_inner_cc_removed.py::test_no_inner_cc_refs_in_igor - A...\n1 failed in 1.50s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.27s"
+          }
+        }
+      }
+    ],
+    "commit": "bb54b4166694e76146ec5a1cc744137e362b2388",
+    "impl_paths": [
+      "devlab/runtime/memory/tickets/cc.0.T-igor-delete-local-preparse.20260629.182423854029.json",
+      "devlab/runtime/memory/tickets/cc.0.T-igor-retire-csb-classifier-to-wordgraph.20260630.112420150168.json",
+      "devlab/runtime/memory/tickets/closed/cc.0.T-igor-delete-local-preparse.20260629.182423854029.json",
+      "tests/igor/test_dreaming.py",
+      "tests/igor/test_inner_cc.py",
+      "tests/igor/test_training_pass.py",
+      "unseen_university/devices/igor/cognition/coa.py",
+      "unseen_university/devices/igor/cognition/dreaming.py",
+      "unseen_university/devices/igor/cognition/system_prompt.py",
+      "unseen_university/devices/igor/memory/purpose_annotator.py",
+      "unseen_university/devices/igor/tools/__init__.py",
+      "unseen_university/devices/igor/tools/inner_cc.py",
+      "unseen_university/devices/igor/tools/training_pass.py"
+    ],
+    "ticket": "T-igor-inner-cc-assess",
+    "narrative": "",
+    "why": "inner_cc was a direct-OpenRouter call bypassing the Inference Proxy; superseded by CC.0/CC.1; all goes per Akien",
+    "bootstrap": false
+  }
+}
