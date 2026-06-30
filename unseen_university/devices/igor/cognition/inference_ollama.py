@@ -16,7 +16,6 @@ Public API (what the gateway calls):
   - compute_complexity(user_input) → dict
   - score_memories(query, memories, model, top_n) → [Memory]
   - summarize_session(ring_entries, instance_id, model) → str
-  - OllamaReasoner class
   - force_refresh(), set_override(), clear_override(), status_lines()
 
 Internal to inference layer:
@@ -58,8 +57,6 @@ from .reasoners.ollama_reasoner import (
     score_memories,
     summarize_session,
     is_healthy,
-    # Reasoner class
-    OllamaReasoner,
     # Internal (used by gateway handlers)
     _get_client_and_model,
     _rule_based_csb,
@@ -81,7 +78,6 @@ __all__ = [
     "compute_complexity",
     "score_memories",
     "summarize_session",
-    "OllamaReasoner",
     # Constants
     "OLLAMA_LOCAL_MODEL",
     "OLLAMA_HOST",

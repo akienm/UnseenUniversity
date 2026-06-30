@@ -18,7 +18,6 @@ from __future__ import annotations
 import os as _os
 
 from .reasoners.openrouter_reasoner import (
-    OpenRouterReasoner,
     MODEL_ALIASES,
     OPENROUTER_BASE,
 )
@@ -31,7 +30,6 @@ OR_INTERACTIVE_MODEL = _os.getenv(
 )
 
 __all__ = [
-    "OpenRouterReasoner",
     "MODEL_ALIASES",
     "OPENROUTER_BASE",
     "OR_CHEAP_MODEL",

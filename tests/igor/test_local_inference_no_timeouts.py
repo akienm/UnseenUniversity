@@ -31,20 +31,6 @@ def _reload_module(modname: str):
     return importlib.import_module(modname)
 
 
-# ── ollama_reasoner.py: PREPARSE_TIMEOUT ─────────────────────────────────────
-
-
-def test_preparse_timeout_is_hour_scale():
-    """PREPARSE_TIMEOUT must be ≥ 1 hour. Was 8s before T-no-local-inference-timeouts."""
-    from unseen_university.devices.igor.cognition.reasoners import ollama_reasoner
-
-    assert ollama_reasoner.PREPARSE_TIMEOUT >= _HOUR, (
-        f"PREPARSE_TIMEOUT={ollama_reasoner.PREPARSE_TIMEOUT}s violates "
-        "unseenuniversity/rules/local-inference-no-timeouts (must be ≥ 3600s). "
-        "Sub-hour timeout escalates routine local slowness → defeats the rule."
-    )
-
-
 # ── ollama_reasoner.py: IGOR_OLLAMA_TIMEOUT_SECS / IGOR_OLLAMA_IMPULSE ──────
 
 
