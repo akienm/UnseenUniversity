@@ -1,0 +1,20 @@
+# Slate — 2026-06-30
+
+## Rewound? (read this if you were rewound, not compacted)
+A rewind rolls your CONVERSATION back but NOT git/this slate — so your memory is now BEHIND reality. Read this slate + `git log --oneline -10`, trust slate+git over your memory, and `git status` for working-tree divergence (a code-rewind can delete committed files — `git restore` fixes it) before acting.
+
+## Summary
+(empty — session just started)
+
+## Notes
+
+## In-flight
+NONE
+
+## Planned
+
+## Ad hoc
+
+## Done today
+
+## In-flight: Morning 2026-06-30 check: all clean, branch=origin/main, inference-reroute chain (A/B/C+bypassers) holds proven. Akien morning directives RESOLVE sweep open-questions (all = DELETE, too old): (1) ALL preparse dead (predates word-graphs) — delete whole concept not just local_preparse: gateway preparse purpose + preparse_router + preparse_via_openrouter + use_local_preparse + all call('preparse') callers; T-igor-delete-local-preparse expanded, supersedes T-igor-preparse-via-or-reroute. (2) inner_cc all goes — delete tools/inner_cc.py + dreaming usage. (3) cloud_mode all goes — old routing. (4) embedder->rack embeddings generator (exists, find+repoint). Tickets patched with directives. PENDING: igor hibernation restart = boot test for C (Akien's gate). NEXT (post-compact): execute InferenceProxyOnly sweep — clear deletes first (preparse all, inner_cc, cloud_mode), then embedder->rack + delete-orphaned-reasoner-classes(L). Research project, userbase=Akien+CC, old machinery removable on sight.

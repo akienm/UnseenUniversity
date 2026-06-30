@@ -42,7 +42,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-30T00:24:34.073694+00:00"
   },
-  "description": "**Akien (2026-06-29):** inner_cc was 'you in the foreground, a minion doing your bidding in the background' -- may be superseded by all the CC.0/CC.1 stuff. **Sites:** dreaming.py:213/272/375/387 call tools/inner_cc.call_inner_cc_long(model='anthropic/...'). inner_cc is a claude-CLI subprocess tool (anthropic prompt-caching), NOT Proxy LLM dispatch. **Task:** confirm with Akien whether the dreaming inner_cc path is dead under CC.0/CC.1; if dead, remove dreaming's use + inner_cc tool; else document why it stays. **open_question.**\n\nPart of the igor Inference-Proxy-only sweep (post T-inf-reroute-A/B/C).",
+  "description": "**Akien (2026-06-29):** inner_cc was 'you in the foreground, a minion doing your bidding in the background' -- may be superseded by all the CC.0/CC.1 stuff. **Sites:** dreaming.py:213/272/375/387 call tools/inner_cc.call_inner_cc_long(model='anthropic/...'). inner_cc is a claude-CLI subprocess tool (anthropic prompt-caching), NOT Proxy LLM dispatch. **Task:** confirm with Akien whether the dreaming inner_cc path is dead under CC.0/CC.1; if dead, remove dreaming's use + inner_cc tool; else document why it stays. **open_question.**\n\nPart of the igor Inference-Proxy-only sweep (post T-inf-reroute-A/B/C).\n\n**Akien directive (2026-06-30): everything inner_cc goes.** Not an assessment \u2014 DELETE. Remove tools/inner_cc.py + dreaming.py's call_inner_cc_long usage (dreaming.py:213/272/375/387) + any other importers.",
   "intention": "I intend that dreaming's inner_cc path is confirmed superseded by CC.0/CC.1 and removed, or kept with a clear reason.",
-  "title": "Assess + remove inner_cc (dreaming) -- superseded by CC.0/CC.1?"
+  "title": "Delete inner_cc entirely (dead \u2014 superseded by CC.0/CC.1)"
 }

@@ -42,7 +42,7 @@
     "role": "apprentice",
     "scraps_validated": "2026-06-30T00:24:29.204297+00:00"
   },
-  "description": "**Violation:** reasoners/openrouter_reasoner.py:67 preparse_via_openrouter (raw OR; urllib at 107). Imported main.py:56. **Task:** check if still called on a live path; if yes, route via gateway.call('preparse') (already Proxy); if dead, delete it + the import. Coordinate with T-igor-delete-orphaned-reasoner-classes (same module). **Test:** grep igor for preparse_via_openrouter call sites; raw OR call gone.\n\nPart of the igor Inference-Proxy-only sweep (post T-inf-reroute-A/B/C).",
+  "description": "**Violation:** reasoners/openrouter_reasoner.py:67 preparse_via_openrouter (raw OR; urllib at 107). Imported main.py:56. **Task:** check if still called on a live path; if yes, route via gateway.call('preparse') (already Proxy); if dead, delete it + the import. Coordinate with T-igor-delete-orphaned-reasoner-classes (same module). **Test:** grep igor for preparse_via_openrouter call sites; raw OR call gone.\n\nPart of the igor Inference-Proxy-only sweep (post T-inf-reroute-A/B/C).\n\n**Akien (2026-06-30): all preparse dead.** Don't reroute \u2014 DELETE. Folded into T-igor-delete-local-preparse (delete ALL preparse). Close this when that lands.",
   "intention": "I intend that preparse_via_openrouter no longer makes a raw OR call -- it routes through the Proxy or is deleted if dead.",
-  "title": "Reroute or delete preparse_via_openrouter"
+  "title": "[SUPERSEDED by T-igor-delete-local-preparse] preparse_via_openrouter \u2014 delete"
 }
