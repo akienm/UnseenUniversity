@@ -1,0 +1,65 @@
+{
+  "id": "cc.0.orphaned-reasoner-classes-excised-from-i.T-igor-delete-orphaned-reasoner-classes.20260630.121507147946",
+  "emitter": "cc.0",
+  "namespace": [
+    "orphaned-reasoner-classes-excised-from-i",
+    "T-igor-delete-orphaned-reasoner-classes"
+  ],
+  "category": "proofs",
+  "kind": "proof",
+  "emitted_at": "2026-06-30T12:15:07.147946",
+  "links": {
+    "decisions": [],
+    "tickets": [
+      "T-igor-delete-orphaned-reasoner-classes"
+    ],
+    "commits": [
+      "900836ef7b20980efd72a0a79cd4b6614caeeab5"
+    ],
+    "whys": []
+  },
+  "body": {
+    "thing": "orphaned reasoner classes excised from igor (survivors + CSB kept)",
+    "intention": "The igor device defines zero OllamaReasoner/OpenRouterReasoner/BaseReasoner-hierarchy classes; all inference goes through the Proxy",
+    "test": "tests/igor/test_reasoner_classes_removed.py::test_ollama_reasoner_class_gone",
+    "kind_detail": "red-green",
+    "gates": [
+      {
+        "name": "tests/igor/test_reasoner_classes_removed.py::test_ollama_reasoner_class_gone",
+        "result": "green",
+        "evidence": {
+          "red_run": {
+            "outcome": "failed",
+            "exc_type": "AssertionError",
+            "exit_code": 1,
+            "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______________________ test_ollama_reasoner_class_gone ________________________\n\n    def test_ollama_reasoner_class_gone():\n        hits = _class_defs(\"OllamaReasoner\")\n>       assert not hits, f\"class OllamaReasoner still defined at: {hits}\"\nE       AssertionError: class OllamaReasoner still defined at: ['cognition/reasoners/ollama_reasoner.py:386']\nE       assert not ['cognition/reasoners/ollama_reasoner.py:386']\n\ntests/igor/test_reasoner_classes_removed.py:32: AssertionError\n--------------------------- Captured stderr teardown ---------------------------\n2026-06-30 12:15:06.957 | WARNING  | logging:callHandlers:1762 - slow query 260ms — DELETE FROM memories WHERE jsonb_exists(metadata, 'test_data')   AND (metadata->>'test_data')::text = 'true'\n=========================== short test summary info ============================\nFAILED tests/igor/test_reasoner_classes_removed.py::test_ollama_reasoner_class_gone\n1 failed in 1.45s",
+            "authentic_red": true
+          },
+          "green_run": {
+            "outcome": "passed",
+            "exc_type": null,
+            "exit_code": 0,
+            "summary": ".                                                                        [100%]\n1 passed in 1.50s"
+          }
+        }
+      }
+    ],
+    "commit": "900836ef7b20980efd72a0a79cd4b6614caeeab5",
+    "impl_paths": [
+      "devlab/runtime/memory/slates/20260630.slate.txt",
+      "devlab/runtime/memory/tickets/cc.0.T-igor-cloud-mode-assess.20260629.182440926476.json",
+      "devlab/runtime/memory/tickets/cc.0.T-igor-retire-csb-classifier-to-wordgraph.20260630.112420150168.json",
+      "devlab/runtime/memory/tickets/closed/cc.0.T-igor-cloud-mode-assess.20260629.182440926476.json",
+      "tests/igor/test_local_inference_no_timeouts.py",
+      "unseen_university/devices/igor/cognition/inference_ollama.py",
+      "unseen_university/devices/igor/cognition/inference_openrouter.py",
+      "unseen_university/devices/igor/cognition/reasoners/base.py",
+      "unseen_university/devices/igor/cognition/reasoners/ollama_reasoner.py",
+      "unseen_university/devices/igor/cognition/reasoners/openrouter_reasoner.py"
+    ],
+    "ticket": "T-igor-delete-orphaned-reasoner-classes",
+    "narrative": "",
+    "why": "reasoner classes orphaned post inference-reroute; all calls go through gateway.reason()",
+    "bootstrap": false
+  }
+}
