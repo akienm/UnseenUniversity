@@ -58,18 +58,8 @@ def test_impulse_ollama_timeout_default_is_hour_scale(monkeypatch):
     )
 
 
-# ── local_preparse.py: IGOR_LOCAL_PREPARSE_TIMEOUT_SEC ───────────────────────
-
-
-def test_local_preparse_timeout_default_is_hour_scale(monkeypatch):
-    """local_preparse timeout default ≥ 1 hour. Was 1.0s — flagrantly short."""
-    monkeypatch.delenv("IGOR_LOCAL_PREPARSE_TIMEOUT_SEC", raising=False)
-    # Reload to pick up current env (default reads at module-load time).
-    mod = _reload_module("unseen_university.devices.igor.cognition.local_preparse")
-    assert mod._DEFAULT_TIMEOUT_SEC >= _HOUR, (
-        f"local_preparse._DEFAULT_TIMEOUT_SEC={mod._DEFAULT_TIMEOUT_SEC}s "
-        "violates the rule (must be ≥ 3600s = 1hr)."
-    )
+# (local_preparse.py timeout test removed 2026-06-30 — local_preparse deleted in
+#  T-igor-delete-local-preparse; the whole preparse concept is gone.)
 
 
 # ── ollama_reasoner.py: is_healthy is NOT inference — exempt by design ───────
