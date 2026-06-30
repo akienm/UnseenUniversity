@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-consequence-D-intentions-store.20260630.104705699952",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-consequence-D-intentions-store"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T16:47:05.699952+00:00",
+  "links": {
+    "decisions": [
+      "D-intentions-store-2026-06-30"
+    ],
+    "tickets": [
+      "T-consequence-D-intentions-store"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-consequence-D-intentions-store",
+    "title": "[sprint] Consequence check: first-class intentions store + chatlog backfill",
+    "size": "S",
+    "tags": [
+      "Consequence",
+      "Workflow"
+    ],
+    "intention": "I intend that adding a new memory category does not silently split the source of truth or bloat session startup.",
+    "description": "**What changed:** Added devlab/runtime/memory/intentions/ as a first-class store and backfilled it from chat logs.\n**Predicted unintended effects:** (1) Source-of-truth split — intentions may keep being written embedded in decisions/architecture too, the exact renamed-store drift CLAUDE.md warns about; (2) memory_emit category-allowlist change could affect or mis-route other emit paths; (3) context-load token budget could grow past its 2000-token cap once active intentions are surfaced; (4) backfill could emit near-duplicate intentions that then compete confusingly.\n**Signals to watch:** grep decisions/ & architecture/ for NEW embedded 'I intend that...' after the store exists; memory_emit errors/mis-categorized files; context-load step output length; duplicate/near-duplicate I-<slug> records.\n**Gate condition:** Check by 2026-07-14 or when both T-intentions-store and T-extract-intentions-from-chatlogs close.\n\n**Affected files:** None — observation and verification only\n**Design rules:** none apply\n**Scope boundary:** Observe predicted effects; annotate outcome as occurred / clear / partial and close\n**Test plan:** no tests — this is an observation ticket\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-intentions-store-2026-06-30",
+    "gate": "2026-07-14",
+    "priority": 0.3,
+    "status": "sprint",
+    "created_at": "2026-06-30T16:47:03.352995+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T16:47:03.353040+00:00"
+  }
+}

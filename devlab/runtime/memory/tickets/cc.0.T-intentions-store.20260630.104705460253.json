@@ -1,0 +1,47 @@
+{
+  "id": "cc.0.T-intentions-store.20260630.104705460253",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-intentions-store"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T16:47:05.460253+00:00",
+  "links": {
+    "decisions": [
+      "D-intentions-store-2026-06-30"
+    ],
+    "tickets": [
+      "T-intentions-store"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-intentions-store",
+    "title": "[sprint] Create a first-class intentions store (devlab/runtime/memory/intentions/)",
+    "size": "M",
+    "tags": [
+      "Memory",
+      "Intentions"
+    ],
+    "intention": "I intend that intentions are first-class, grep-able living entities in their own store, so every new intention can be situated against the existing set instead of being buried inside decisions and architecture notes.",
+    "description": "**Problem:** Akien has asked repeatedly for an intentions folder. There is none. Intentions currently live embedded in decisions/ and architecture/ intention-points, so 'the extant intention list' that /sorted (T-sorted-intention-open-then-map) must map against is only a fragile grep, not a real store. Intentions are meant to be living entities that compete/merge/decompose (project_intentions_as_living_entities).\n\n**Proposed shape:** Add devlab/runtime/memory/intentions/ as a canonical store category. Extend memory_emit.py to accept --category intentions --kind intention. Define an intention envelope: id I-<kebab-slug>, statement ('I intend that...'), status (active/superseded/merged/decomposed), related[], supersedes[], spawned (decisions/tickets it drives). Surface in context-load (a terse 'active intentions' line) and make it the source /sorted maps against.\n\n**Affected files:** devlab/claudecode/memory_emit.py (category allowlist + filename convention), devlab/runtime/memory/intentions/ (new dir + .gitkeep), skills/context-load/run (surface active intentions), optionally a thin unseen_university/intention_store.py reader.\n**Design rules:** canonical memory home is devlab/runtime/memory/ (CLAUDE.md Structural rules); JSON flat-file only; NO SQLITE; memory_emit.py is the one write chokepoint.\n**Scope boundary:** create the store + emit support + context-load surfacing + one seed intention. Do NOT migrate existing embedded intentions here (that is T-extract-intentions-from-chatlogs). Do not change decision/ticket schemas.\n**Completion criteria:** `memory_emit.py --category intentions --kind intention --namespace I-test ...` writes a schema-valid file under intentions/; grep finds it; context-load prints an active-intentions line; the intention envelope is documented. Prove via the emit+grep round-trip test.\n**Test plan:** unit/integration: emit a test intention, assert file lands in intentions/ with correct envelope keys, assert reader lists it. Red form available (assert file absent before, present+valid after).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] ⛔ NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. — applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. — applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. — applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). — applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory — one home, no exceptions. Every dev-process artifact — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy — — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven — no discriminator. A ticket that — applies: tags: architecture (source: CLAUDE.md#structural-rules)\n…and 39 more (lower-severity or capped) — query constraints_get for the full set",
+    "decision_id": "D-intentions-store-2026-06-30",
+    "gate": null,
+    "priority": 0.55,
+    "status": "sprint",
+    "created_at": "2026-06-30T16:46:59.519756+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T16:46:59.565461+00:00"
+  }
+}

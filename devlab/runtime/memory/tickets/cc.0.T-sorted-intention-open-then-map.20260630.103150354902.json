@@ -1,0 +1,49 @@
+{
+  "id": "cc.0.T-sorted-intention-open-then-map.20260630.103150354902",
+  "emitter": "cc.0",
+  "namespace": [
+    "T-sorted-intention-open-then-map"
+  ],
+  "category": "tickets",
+  "kind": "ticket",
+  "emitted_at": "2026-06-30T16:31:50.354902+00:00",
+  "links": {
+    "decisions": [
+      "D-dev-pipeline-map-2026-06-30"
+    ],
+    "tickets": [
+      "T-sorted-intention-open-then-map"
+    ],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "id": "T-sorted-intention-open-then-map",
+    "title": "[sprint] /sorted: ask intention open-ended, then map it against the extant intention list",
+    "size": "S",
+    "tags": [
+      "Workflow",
+      "Skills"
+    ],
+    "description": "**Problem:** /sorted Step 2.6 Q1 ('Which intention does this serve?') can be presented to Akien as a menu of pre-written options. That is backwards: Akien does not pick an intention from a list. The correct shape is (a) ask the human their intention OPEN-ENDED (free text, no menu), then (b) the skill itself reads the EXTANT intentions and reports how the new one fits \u2014 advances / competes with / merges into / decomposes an existing intention. Intentions are living entities (see project_intentions_as_living_entities); a new one must be situated against the current set, not captured in isolation.\n\n**Proposed shape:** In skills/sorted/SKILL.md Step 2.6, change Q1 to an open-ended ask (no option list), and ADD an explicit sub-step after the human answers: 'Examine the stated intention against the extant intention list \u2014 report fit (advances/competes/merges/decomposes) and link the related intention(s).' Store the mapping in the decision body alongside the Intention section.\n\n**Open question (flag, do not guess):** there is no dedicated intentions/ store dir today; intentions currently live embedded in decisions/ and architecture/ intention-points. Until a dedicated intentions store exists, the 'extant intention list' = grep over devlab/runtime/memory/{decisions,architecture} for kind/Intention sections. Note this source explicitly in the skill so it is not silently wrong.\n\n**Affected files:** skills/sorted/SKILL.md (Step 2.6 only).\n**Design rules:** skills live in repo skills/ (canonical, not ~/.claude/skills) \u2014 feedback_skills_in_repo, feedback_no_skills_sync_symlink.\n**Scope boundary:** edit only Step 2.6 of the sorted skill; do not touch other steps or other skills. No code changes.\n**Test plan:** no automated test (skill-doc edit). Proof = next /sorted run asks Q1 open-ended and emits an intention-fit line in the decision JSON. Close shipped-unproven if proof must wait for a live /sorted run, naming the missing lever (skill-doc behavior has no red-test form).\n\n## Pre-computed constraints (auto-stamped at add time)\n[hard_block] \u26d4 NO SQLITE. EVER. POSTGRES OR FLAT-FILE ONLY. See banner at top of this file. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[hard_block] Log every state change and every interface crossing. State changes: ticket status \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] No TheIgors imports. UnseenUniversity must be portable without TheIgors present. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] No live keys or passwords in source. `.env` is gitignored. \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] `pip install -e .` must succeed at all times (even with empty stubs). \u2014 applies: all (source: CLAUDE.md#hard-rules)\n[error] Canonical dev-process memory \u2014 one home, no exceptions. Every dev-process artifact \u2014 \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] device.py and shim.py are the design center. Every component inherits from \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] bus/ owns comms:// routing. Nothing outside bus/ speaks to IMAP directly. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] skeleton/ owns the MCP aggregator and flat-file registry. No Postgres dependency. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] devices/ contains one subdirectory per device; each is independently deployable. \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] `~/.unseen_university/logs/<device>/<stream>/` is the canonical log hierarchy \u2014 \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n[error] Every ticket closes proven, or declares itself unproven \u2014 no discriminator. A ticket that \u2014 applies: tags: architecture (source: CLAUDE.md#structural-rules)\n\u2026and 39 more (lower-severity or capped) \u2014 query constraints_get for the full set\n**Completion criteria:** skills/sorted/SKILL.md Step 2.6 Q1 is open-ended (no option menu) AND a new explicit sub-step instructs the skill to map the stated intention against the extant intention list (source: grep over devlab/runtime/memory/{decisions,architecture}) and record the fit line in the decision JSON. Verified by a live /sorted run emitting an intention-fit line; close shipped-unproven naming the no-red-test-form lever if proof must wait.",
+    "decision_id": "D-dev-pipeline-map-2026-06-30",
+    "gate": null,
+    "priority": 0.5,
+    "status": "sprint",
+    "created_at": "2026-06-30T16:31:47.364307+00:00",
+    "worker": null,
+    "created_by": null,
+    "result": null,
+    "dispatched_at": null,
+    "completed_at": null,
+    "required_files": [],
+    "related_to": null,
+    "github_issue": null,
+    "intention": "I intend that every new intention captured by /sorted is situated against the intentions that already exist, so intentions evolve as living entities rather than accumulating in isolation.",
+    "target_difficulty": 1,
+    "role": "apprentice",
+    "scraps_validated": "2026-06-30T16:31:47.439026+00:00",
+    "inferred_intention": "unknown",
+    "inferred_intention_id": "a2bdb67e-0852-4596-8e69-3e40026eb705"
+  }
+}

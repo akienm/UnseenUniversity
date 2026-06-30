@@ -1,0 +1,28 @@
+{
+  "id": "cc.0.D-intentions-store-2026-06-30.20260630.104726371075",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-intentions-store-2026-06-30"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-30T10:47:26.371075",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-intentions-store-2026-06-30",
+    "title": "First-class intentions store + chatlog backfill (recover deliberately-stated intentions)",
+    "status": "open",
+    "date": "2026-06-30",
+    "spawned_tickets": [
+      "T-intentions-store",
+      "T-extract-intentions-from-chatlogs",
+      "T-consequence-D-intentions-store"
+    ],
+    "text": "# D-intentions-store-2026-06-30\n**title:** First-class intentions store + chatlog backfill\n**date:** 2026-06-30\n**status:** open\n**spawned_tickets:** T-intentions-store, T-extract-intentions-from-chatlogs, T-consequence-D-intentions-store\n\n## Decision narrative\nAkien has asked repeatedly for an intentions folder; none exists. Intentions live embedded in decisions/ and architecture/, so the 'extant intention list' that /sorted must map against is only a grep. Create devlab/runtime/memory/intentions/ as a canonical store (memory_emit category + intention envelope + context-load surfacing), then backfill it by scanning chat history for the word 'intent' (used deliberately, with intent, for weeks) and classifying keepers via Haiku. Source verified: history is the ~375 harness JSONL transcripts, not the empty memory/chat.cc.0 or claude_chat_logs/. Keepers get an Akien-review checkpoint; conflicts trigger a joint Akien+CC reconciliation pass (intentions compete/merge/decompose).\n\n## Hypothesis\nAfter this ships, intentions are a grep-able first-class store; /sorted maps each new intention against real records; and the intentions Akien stated across weeks of chat are recovered rather than lost to scrollback.\n\n## Measurement Signal\ndevlab/runtime/memory/intentions/ exists with schema-valid I-<slug> records; memory_emit accepts --category intentions; context-load prints an active-intentions line; the backfill logs candidate-count -> keeper-count; no NEW 'I intend that' statements get written embedded in decisions/architecture after the store exists.\n\n## Intention\nI intend that intentions are first-class living entities in their own store, situated against each other, and that Akien's deliberately-expressed intentions are recovered into it."
+  }
+}

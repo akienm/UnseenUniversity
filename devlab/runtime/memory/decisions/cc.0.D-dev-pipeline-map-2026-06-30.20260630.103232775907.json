@@ -1,0 +1,26 @@
+{
+  "id": "cc.0.D-dev-pipeline-map-2026-06-30.20260630.103232775907",
+  "emitter": "cc.0",
+  "namespace": [
+    "D-dev-pipeline-map-2026-06-30"
+  ],
+  "category": "decisions",
+  "kind": "decision",
+  "emitted_at": "2026-06-30T10:32:32.775907",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "decision_id": "D-dev-pipeline-map-2026-06-30",
+    "title": "Map the dev-process pipeline (Vetinari->Hubert->Granny->builders + verifier + critic); fix /sorted to map intentions against the extant list",
+    "status": "open",
+    "date": "2026-06-30",
+    "spawned_tickets": [
+      "T-sorted-intention-open-then-map"
+    ],
+    "text": "# D-dev-pipeline-map-2026-06-30\n**title:** Map the dev-process pipeline; fix /sorted intention-mapping\n**date:** 2026-06-30\n**status:** open\n**spawned_tickets:** T-sorted-intention-open-then-map\n\n## Decision narrative\nAkien restated the overall intention: the development process is CC decomposed into specialist devices, removed from being LLM-only one piece at a time. Pipeline: a human chats to VETINARI about intentions -> Vetinari codifies intent for HUBERT -> Hubert wraps it in architecture and emits TICKETS -> GRANNY dispatches to BUILDER(S) (DickSimnel/Haiku/CC) -> builders build AND prove -> a SEPARATE VERIFIER (evaluator + proof_store) checks -> a CRITIC runs adversarial check in-cycle. All six pieces already exist as devices; the gap was a connective map. CORRECTION captured: CC was wrongly framing the missing piece as worker-lifecycle (ephemeral vs kept-alive). The real levers are ticket provability + process strictness; the foreground (CC) must stop doing ungated build work. Two artifacts produced: (1) architecture intention-point architecture/cc.0.dev-pipeline.* (the map for next-session CC); (2) ticket T-sorted-intention-open-then-map fixing /sorted Step 2.6 to ask intention open-ended then map against the extant intention list.\n\n## Hypothesis\nAfter this ships, /sorted asks intention open-ended (no menu) and records how each new intention maps to the existing ones; and a next-session CC can read one architecture note to understand the full Vetinari->Hubert->Granny->builder->verifier->critic pipeline instead of re-deriving (or confabulating) it.\n\n## Measurement Signal\nskills/sorted/SKILL.md Step 2.6 contains an open-ended Q1 plus a 'map against extant intentions' sub-step; the decision JSON it produces carries an intention-fit line; architecture/cc.0.dev-pipeline.* exists and is surfaced by grep/context-load.\n\n## Intention\nI intend that the dev process is a transparent, decomposed pipeline of specialist devices that next-session CC can understand from durable notes, and that every new intention is situated against the intentions that already exist rather than captured in isolation."
+  }
+}

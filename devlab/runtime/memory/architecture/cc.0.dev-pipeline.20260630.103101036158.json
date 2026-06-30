@@ -1,0 +1,74 @@
+{
+  "id": "cc.0.dev-pipeline.20260630.103101036158",
+  "emitter": "cc.0",
+  "namespace": [
+    "dev-pipeline"
+  ],
+  "category": "architecture",
+  "kind": "intention-point",
+  "emitted_at": "2026-06-30T10:31:01.036158",
+  "links": {
+    "decisions": [],
+    "tickets": [],
+    "commits": [],
+    "whys": []
+  },
+  "body": {
+    "subsystem": "dev-pipeline",
+    "kind": "pipeline",
+    "title": "The dev-process pipeline — CC decomposed into specialist devices (intent → architecture → dispatch → build → prove)",
+    "summary": "UnseenUniversity's north star is to remove the development process from being LLM-only, ONE PIECE AT A TIME. The whole pipeline is 'CC, spread out among specialist devices.' Flow: (1) a human (anybody) chats to VETINARI about intentions; (2) Vetinari extracts/codifies that into an intent artifact HUBERT can consume (the compilation seam); (3) Hubert wraps it in good architecture and outputs TICKETS; (4) GRANNY dispatches tickets by handshake to available BUILDER(S) — DickSimnel / Haiku / CC; (5) builders build AND prove; (6) the VERIFIER (evaluator device + proof_store) checks independently — the prover is NOT the builder; (7) the CRITIC runs adversarial check inside the build cycle. The design target: tickets easy and well-designed enough that even Haiku can build and prove them. CRITICAL FRAMING (corrected 2026-06-30): the foreground (CC) is meant to be CYCLIC + disposable with DURABLE STATE, and its only product is intent→provable-tickets — NOT building. The bottleneck has never been worker-lifecycle; it is TICKET QUALITY + PROCESS STRICTNESS (and CC's own habit of doing ungated foreground work, which leaves the debris that then needs a cleanup step).",
+    "key_concepts": [
+      {
+        "name": "Vetinari — intent extractor",
+        "what": "devices/vetinari/ (device.py, shim.py, decompose_prompt.txt). Human chats; Vetinari codifies intent into something Hubert consumes. Has a clarification loop. The Intent Doc is the compilation seam."
+      },
+      {
+        "name": "Hubert — architecture specialist",
+        "what": "devices/hubert/ (device.py, tools.py, constraint_normalizer.py, repo_auditor.py). Consumes intent, wraps in good architecture, emits tickets. Owner of dev-process artifacts (SPEC.md)."
+      },
+      {
+        "name": "Granny — dispatch by handshake",
+        "what": "devices/granny/ (daemon.py, availability.py, cc_worker_listener.py). Routes tickets to available builders over the bus; never spawns/claims (send-keys handshake)."
+      },
+      {
+        "name": "Builders — build AND prove",
+        "what": "DickSimnel (devices/dicksimnel/), Haiku, CC. DS/Ollama run on the M1 Studio 32GB (~2026-07-02). Target: tickets so well-specified even Haiku builds+proves them."
+      },
+      {
+        "name": "Verifier — separate from builder",
+        "what": "devices/evaluator/ (core.py, loop.py) + unseen_university/proof_store.py. Independent proof-on-close (CP1); the prover is not the builder. Already exists."
+      },
+      {
+        "name": "Critic — adversarial, in-cycle",
+        "what": "devices/critic/ (device.py, agent.py). Helps inside the build cycle. Distinct from the post-hoc verifier."
+      },
+      {
+        "name": "Meta-goal",
+        "what": "Remove the dev process from being LLM-only, one piece at a time. Each device is a piece of CC's cognition lifted out of the LLM into a specialized, replaceable component. This IS the factory-of-factories / compiled-inference vision."
+      }
+    ],
+    "implementing_files": [
+      "unseen_university/devices/vetinari/device.py",
+      "unseen_university/devices/hubert/device.py",
+      "unseen_university/devices/hubert/tools.py",
+      "unseen_university/devices/granny/daemon.py",
+      "unseen_university/devices/dicksimnel/toolloop.py",
+      "unseen_university/devices/evaluator/loop.py",
+      "unseen_university/proof_store.py",
+      "unseen_university/devices/critic/device.py"
+    ],
+    "reference_docs": [
+      "devlab/runtime/memory/architecture/cc.0.intent.20260623.173756443248.json",
+      "devlab/runtime/memory/SPEC.md"
+    ],
+    "status_notes": "All six pieces exist as devices as of 2026-06-30 (vetinari, hubert, granny, dicksimnel, evaluator, critic). Pipeline is BUILT but was unmapped — this intention-point is the connective map requested by Akien 2026-06-30. Open: the foreground-discipline (CC stops doing ungated build work) and ticket-provability gate are the live levers, not new devices.",
+    "related": [
+      "D-intent-extractor-learning-substrate-2026-06-14",
+      "project_delta_uu_architecture",
+      "project_intention_compiler_reflexive",
+      "project_compiled_inference_vision",
+      "feedback_cc_defaults_to_foreground_build"
+    ]
+  }
+}
